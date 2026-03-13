@@ -8,10 +8,10 @@ module.exports = (req, res) => {
   let html;
   try {
     // Try __dirname (works when includeFiles bundles the file next to the function)
-    html = readFileSync(join(__dirname, 'index.html'), 'utf8');
+    html = readFileSync(join(__dirname, '_template.html'), 'utf8');
   } catch {
     // Fallback to project root via cwd
-    html = readFileSync(join(process.cwd(), 'index.html'), 'utf8');
+    html = readFileSync(join(process.cwd(), '_template.html'), 'utf8');
   }
 
   html = html.replace(
