@@ -2,11 +2,17 @@ const { readFileSync } = require('fs');
 const { join } = require('path');
 
 module.exports = (req, res) => {
-  const htmlPath = join(process.cwd(), 'index.html');
-  let html = readFileSync(htmlPath, 'utf8');
-
   const supabaseUrl = process.env.SUPABASE_URL || '';
   const supabaseAnon = process.env.SUPABASE_ANON || '';
+
+  let html;
+  try {
+    // Try __dirname (works when includeFiles bundles the file next to the function)
+    html = readFileSync(join(__dirname, 'index.html'), 'utf8');
+  } catch {
+    // Fallback to project root via cwd
+    html = readFileSync(join(process.cwd(), 'index.html'), 'utf8');
+  }
 
   html = html.replace(
     "window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '' };",
