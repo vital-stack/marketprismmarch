@@ -1477,47 +1477,50 @@ async function loadHero() {
 }
 
 // ── Sector Intelligence panel (fetched from Supabase) ─────────────────────────
+// Table is "Sector Intelligence" with quoted column names containing spaces/newlines.
+// We fetch all rows and filter client-side because the column names are not
+// PostgREST-friendly.
 async function loadSectorIntelligence(heroRow) {
   const el = document.getElementById('sector-body');
   if (!el || !TICKER) return;
   try {
-    // Try ticker-level row first, fall back to sector-level tickers array
-    let rows = await sbFetch('sector_intelligence', {
-      select: '*',
-      ticker: `eq.${TICKER}`,
-      limit: '5'
+    // Table name has a space — encode for the URL path
+    const allRows = await sbFetch('Sector%20Intelligence', {
+      select: '*'
     }).catch(() => []);
 
-    if (!rows.length) {
-      rows = await sbFetch('sector_intelligence', {
-        select: '*',
-        tickers: `cs.{"${TICKER}"}`,
-        limit: '5'
-      }).catch(() => []);
-    }
+    // Filter rows where ticker appears in "Associated Tickers" or "MarketPrism\nTickers"
+    const matches = allRows.filter(row => {
+      const assoc = row['Associated Tickers'] || '';
+      const mp    = row['MarketPrism\nTickers'] || '';
+      const combined = assoc + ',' + mp;
+      // Check for ticker as whole word (surrounded by commas, spaces, or string boundaries)
+      return new RegExp('(^|[,;\\s])' + TICKER + '($|[,;\\s])', 'i').test(combined);
+    });
 
     const r = heroRow || {};
 
-    if (!rows.length && !r.sector_name) {
+    if (!matches.length && !r.sector_name) {
       el.innerHTML = '<div class="no-data">No sector data available.</div>';
       return;
     }
 
-    const s = rows[0] || null;
-    const allSectors = rows.map(m => m.sector).filter(Boolean);
+    const s = matches[0] || null;
+    const allSectors = matches.map(m => m['Sector']).filter(Boolean);
 
-    const sectorName  = s?.sector      || r.sector_name       || '—';
-    const subsector   = s?.subsector   || null;
-    const cagr        = s?.cagr        || (r.sector_cagr_pct != null ? r.sector_cagr_pct.toFixed(1) + '%' : null);
-    const mkt2024     = s?.mktsize2024 || null;
-    const mkt2030     = s?.mktsize2030 || null;
-    const period      = s?.period      || null;
-    const strengths   = s?.strengths   || r.sector_key_strengths   || null;
-    const weaknesses  = s?.weaknesses  || r.sector_key_weaknesses  || null;
-    const threats     = s?.threats     || r.sector_threats         || null;
-    const emerging    = s?.emerging    || r.sector_emerging_themes || null;
-    const opps        = s?.opportunities || null;
-    const framework   = s?.framework   || r.sp_framework_match     || null;
+    // Map quoted column names to clean variables
+    const sectorName  = s?.['Sector']          || r.sector_name       || '—';
+    const subsector   = s?.['Subsector']        || null;
+    const cagr        = s?.['CAGR %\n2024-30']  || (r.sector_cagr_pct != null ? r.sector_cagr_pct.toFixed(1) + '%' : null);
+    const mkt2024     = s?.['Market Size\n2024 ($B)'] || null;
+    const mkt2030     = s?.['Market Size\n2030E ($B)'] || null;
+    const period      = s?.['Projection\nPeriod'] || null;
+    const strengths   = s?.['Key Strengths']    || r.sector_key_strengths   || null;
+    const weaknesses  = s?.['Key Weaknesses']   || r.sector_key_weaknesses  || null;
+    const threats     = s?.['Threats']           || r.sector_threats         || null;
+    const emerging    = s?.['Emerging Themes']   || r.sector_emerging_themes || null;
+    const opps        = s?.['Opportunities']     || null;
+    const framework   = s?.['SP Framework\nMatch'] || r.sp_framework_match   || null;
 
     const makeBlock = (label, text) => text
       ? `<div class="si-block">
