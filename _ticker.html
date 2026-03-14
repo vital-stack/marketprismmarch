@@ -1477,39 +1477,50 @@ async function loadHero() {
 }
 
 // ── Sector Intelligence panel (fetched from Supabase) ─────────────────────────
+// Table is "Sector Intelligence" with quoted column names containing spaces/newlines.
+// We fetch all rows and filter client-side because the column names are not
+// PostgREST-friendly.
 async function loadSectorIntelligence(heroRow) {
   const el = document.getElementById('sector-body');
   if (!el || !TICKER) return;
   try {
-    const rows = await sbFetch('sector_intelligence', {
-      select: 'sector,subsector,cagr,mktsize2024,mktsize2030,period,strengths,weaknesses,opportunities,threats,emerging,tickers,framework',
-      ticker: `eq.${TICKER}`,
-      order: 'created_at.desc',
-      limit: '5'
+    // Table name has a space — encode for the URL path
+    const allRows = await sbFetch('Sector%20Intelligence', {
+      select: '*'
     }).catch(() => []);
+
+    // Filter rows where ticker appears in "Associated Tickers" or "MarketPrism\nTickers"
+    const matches = allRows.filter(row => {
+      const assoc = row['Associated Tickers'] || '';
+      const mp    = row['MarketPrism\nTickers'] || '';
+      const combined = assoc + ',' + mp;
+      // Check for ticker as whole word (surrounded by commas, spaces, or string boundaries)
+      return new RegExp('(^|[,;\\s])' + TICKER + '($|[,;\\s])', 'i').test(combined);
+    });
 
     const r = heroRow || {};
 
-    if (!rows.length && !r.sector_name) {
+    if (!matches.length && !r.sector_name) {
       el.innerHTML = '<div class="no-data">No sector data available.</div>';
       return;
     }
 
-    const s = rows[0] || null;
-    const allSectors = rows.map(m => m.sector).filter(Boolean);
+    const s = matches[0] || null;
+    const allSectors = matches.map(m => m['Sector']).filter(Boolean);
 
-    const sectorName  = s?.sector      || r.sector_name       || '—';
-    const subsector   = s?.subsector   || null;
-    const cagr        = s?.cagr        || (r.sector_cagr_pct != null ? r.sector_cagr_pct.toFixed(1) + '%' : null);
-    const mkt2024     = s?.mktsize2024 || null;
-    const mkt2030     = s?.mktsize2030 || null;
-    const period      = s?.period      || null;
-    const strengths   = s?.strengths   || r.sector_key_strengths   || null;
-    const weaknesses  = s?.weaknesses  || r.sector_key_weaknesses  || null;
-    const threats     = s?.threats     || r.sector_threats         || null;
-    const emerging    = s?.emerging    || r.sector_emerging_themes || null;
-    const opps        = s?.opportunities || null;
-    const framework   = s?.framework   || r.sp_framework_match     || null;
+    // Map quoted column names to clean variables
+    const sectorName  = s?.['Sector']          || r.sector_name       || '—';
+    const subsector   = s?.['Subsector']        || null;
+    const cagr        = s?.['CAGR %\n2024-30']  || (r.sector_cagr_pct != null ? r.sector_cagr_pct.toFixed(1) + '%' : null);
+    const mkt2024     = s?.['Market Size\n2024 ($B)'] || null;
+    const mkt2030     = s?.['Market Size\n2030E ($B)'] || null;
+    const period      = s?.['Projection\nPeriod'] || null;
+    const strengths   = s?.['Key Strengths']    || r.sector_key_strengths   || null;
+    const weaknesses  = s?.['Key Weaknesses']   || r.sector_key_weaknesses  || null;
+    const threats     = s?.['Threats']           || r.sector_threats         || null;
+    const emerging    = s?.['Emerging Themes']   || r.sector_emerging_themes || null;
+    const opps        = s?.['Opportunities']     || null;
+    const framework   = s?.['SP Framework\nMatch'] || r.sp_framework_match   || null;
 
     const makeBlock = (label, text) => text
       ? `<div class="si-block">
@@ -1992,29 +2003,53 @@ async function loadContagion() {
   }
 }
 
-// ── 5. Prerequisites — claim_verifications ───────────────────────────────────
+// ── 5. Prerequisites — narrative_analyses.prerequisites_json ──────────────────
 async function loadPrerequisites() {
   if (!TICKER) return;
   try {
-    const items = await sbFetch('claim_verifications', {
-      select: 'status,condition,description,text,met',
+    const analyses = await sbFetch('narrative_analyses', {
+      select: 'prerequisites_json,prerequisites_met,prerequisites_total',
       ticker: `eq.${TICKER}`,
       order:  'created_at.desc',
-      limit:  '4'
+      limit:  '1'
     }).catch(() => []);
 
-    if (!items.length) {
+    if (!analyses.length) {
       document.getElementById('pr-body').innerHTML = '<div class="no-data">No prerequisite data available.</div>';
       return;
     }
 
-    const total = items.length;
-    const metCount = items.filter(p => {
-      const s = String(p.status || (p.met === true ? 'MET' : 'PENDING')).toUpperCase();
-      return s === 'MET';
-    }).length;
+    const row   = analyses[0];
+    const met   = row.prerequisites_met   ?? 0;
+    const total = row.prerequisites_total ?? 0;
 
-    const boxesHtml = items.map(p => {
+    let items = [];
+    if (row.prerequisites_json) {
+      try {
+        const raw = row.prerequisites_json;
+        items = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        if (!Array.isArray(items)) items = Object.values(items);
+      } catch { items = []; }
+    }
+
+    if (!items.length && !total) {
+      document.getElementById('pr-body').innerHTML = '<div class="no-data">No prerequisite data available.</div>';
+      return;
+    }
+
+    // Show up to 4 boxes — pad with empty if fewer than 4
+    const display = items.slice(0, 4);
+    while (display.length < 4 && total > display.length) {
+      display.push(null); // placeholder
+    }
+
+    const metCount = items.length ? items.filter(p => {
+      const s = String(p?.status || (p?.met === true ? 'MET' : 'PENDING')).toUpperCase();
+      return s === 'MET';
+    }).length : met;
+
+    const boxesHtml = display.map(p => {
+      if (!p) return `<div class="pr-box pr-box-pending"><span class="pr-status pr-pending">—</span><div class="pr-text" style="color:var(--text-tertiary);">Pending</div></div>`;
       const rawStatus = String(p.status || (p.met === true ? 'MET' : p.met === false ? 'NOT MET' : 'PENDING')).toUpperCase();
       const stCls  = rawStatus === 'MET' ? 'pr-met' : rawStatus === 'NOT MET' ? 'pr-not-met' : 'pr-pending';
       const label  = rawStatus === 'NOT MET' ? 'NOT MET' : rawStatus === 'MET' ? 'MET' : 'PENDING';
@@ -2028,7 +2063,7 @@ async function loadPrerequisites() {
       <div class="pr-pad">
         <div class="pr-top">
           <div class="pr-desc">Conditions for narrative validation</div>
-          <div class="pr-count"><strong>${metCount}</strong> / ${total} met</div>
+          <div class="pr-count"><strong>${metCount}</strong> / ${total || items.length} met</div>
         </div>
       </div>
       <div class="pr-boxes">${boxesHtml}</div>`;
