@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forensic Market Engine</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #F7F5F0;
+    --surface: #FFFFFF;
+    --surface2: #F0EDE8;
+    --border: #E2DED8;
+    --border-strong: #C8C4BE;
+    --text-primary: #1A1916;
+    --text-secondary: #5C5A55;
+    --text-tertiary: #9B9892;
+    --accent-breaking: #C0392B;
+    --accent-breaking-bg: #FDF0EE;
+    --accent-surging: #27AE60;
+    --accent-surging-bg: #EEF8F2;
+    --accent-fragile: #D68910;
+    --accent-fragile-bg: #FEF9EC;
+    --accent-stable: #2471A3;
+    --accent-stable-bg: #EBF5FB;
+    --accent-trap: #C0392B;
+    --accent-supported: #1E8449;
+    --font: 'DM Sans', system-ui, sans-serif;
+    --mono: 'DM Mono', monospace;
+  }
+
+  html { font-size: 16px; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* ── Layout ── */
+  .page-wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+
+  /* ── Header ── */
+  .site-header {
+    padding: 32px 0 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .header-left h1 {
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+  }
+  .header-left p {
+    font-size: 13px;
+    color: var(--text-tertiary);
+  }
+  .header-stats {
+    display: flex;
+    gap: 20px;
+  }
+  .stat-block {
+    text-align: right;
+  }
+  .stat-block .stat-num {
+    font-size: 20px;
+    font-weight: 500;
+    font-family: var(--mono);
+    color: var(--text-primary);
+    display: block;
+  }
+  .stat-block .stat-label {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  /* ── Filters ── */
+  .filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .filter-sep {
+    width: 1px;
+    height: 20px;
+    background: var(--border);
+    margin: 0 4px;
+  }
+  .filter-label {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+  }
+  .chip {
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: 99px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-family: var(--font);
+    transition: all 0.12s;
+    white-space: nowrap;
+  }
+  .chip:hover { border-color: var(--border-strong); color: var(--text-primary); }
+  .chip.active {
+    background: var(--text-primary);
+    color: var(--surface);
+    border-color: var(--text-primary);
+  }
+  .chip.active-breaking { background: var(--accent-breaking-bg); color: var(--accent-breaking); border-color: var(--accent-breaking); }
+  .chip.active-surging { background: var(--accent-surging-bg); color: var(--accent-surging); border-color: var(--accent-surging); }
+  .chip.active-fragile { background: var(--accent-fragile-bg); color: var(--accent-fragile); border-color: var(--accent-fragile); }
+  .chip.active-stable { background: var(--accent-stable-bg); color: var(--accent-stable); border-color: var(--accent-stable); }
+
+  .search-wrap { margin-left: auto; }
+  .search-input {
+    font-size: 13px;
+    font-family: var(--mono);
+    padding: 6px 14px;
+    border-radius: 99px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-primary);
+    width: 160px;
+    outline: none;
+    transition: border-color 0.12s;
+  }
+  .search-input:focus { border-color: var(--border-strong); }
+  .search-input::placeholder { color: var(--text-tertiary); }
+
+  /* ── Count line ── */
+  .count-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ── Feed ── */
+  .feed { display: flex; flex-direction: column; }
+
+  .story-card {
+    padding: 18px 0;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+    display: block;
+    text-decoration: none;
+    color: inherit;
+  }
+  .story-card:hover {
+    background: var(--surface);
+    padding-left: 14px;
+    padding-right: 14px;
+    margin: 0 -14px;
+    border-radius: 8px;
+    border-color: transparent;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .story-card:hover .card-arrow { opacity: 1; }
+
+  .card-arrow {
+    font-size: 18px;
+    color: var(--text-tertiary);
+    opacity: 0;
+    transition: opacity 0.12s;
+    line-height: 1;
+    margin-left: 6px;
+  }
+
+  .card-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .card-left {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .ticker-badge {
+    font-size: 11px;
+    font-weight: 500;
+    font-family: var(--mono);
+    min-width: 52px;
+    text-align: center;
+    padding: 4px 8px;
+    border-radius: 5px;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+    border: 1px solid;
+  }
+  .badge-breaking { background: var(--accent-breaking-bg); color: var(--accent-breaking); border-color: #F5C6C2; }
+  .badge-surging  { background: var(--accent-surging-bg);  color: var(--accent-surging);  border-color: #BCEACE; }
+  .badge-fragile  { background: var(--accent-fragile-bg);  color: var(--accent-fragile);  border-color: #FADED9; }
+  .badge-stable   { background: var(--accent-stable-bg);   color: var(--accent-stable);   border-color: #BAD6EC; }
+
+  .verdict-pip {
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 7px;
+  }
+  .pip-trap      { background: var(--accent-trap); }
+  .pip-supported { background: var(--accent-supported); }
+  .pip-monitoring { background: var(--border-strong); }
+
+  .story-claim {
+    font-size: 14px;
+    color: var(--text-primary);
+    line-height: 1.5;
+  }
+
+  .price-block {
+    text-align: right;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .price-nums { text-align: right; }
+  .price-main {
+    font-size: 14px;
+    font-weight: 500;
+    font-family: var(--mono);
+    color: var(--text-primary);
+  }
+  .price-delta { font-size: 12px; font-family: var(--mono); }
+  .delta-pos { color: var(--accent-surging); }
+  .delta-neg { color: var(--accent-breaking); }
+  .delta-flat { color: var(--text-tertiary); }
+
+  /* ── Meta row ── */
+  .card-meta {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .meta-tag {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .meta-tag strong {
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+  .trend-up   strong { color: var(--accent-surging); }
+  .trend-down strong { color: var(--accent-breaking); }
+  .trend-flat strong { color: var(--text-tertiary); }
+
+  .verdict-tag {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 99px;
+    font-weight: 500;
+    border: 1px solid;
+  }
+  .verdict-trap      { background: var(--accent-breaking-bg); color: var(--accent-breaking); border-color: #F5C6C2; }
+  .verdict-supported { background: var(--accent-surging-bg); color: var(--accent-supported); border-color: #BCEACE; }
+
+  /* ── Load more ── */
+  .load-more {
+    text-align: center;
+    margin-top: 32px;
+  }
+  .load-more-btn {
+    font-size: 13px;
+    font-family: var(--font);
+    padding: 10px 28px;
+    border-radius: 99px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .load-more-btn:hover {
+    background: var(--text-primary);
+    color: white;
+    border-color: var(--text-primary);
+  }
+
+  .empty-state {
+    padding: 60px 0;
+    text-align: center;
+    color: var(--text-tertiary);
+    font-size: 14px;
+  }
+
+</style>
+  <!-- Env vars injected by Vercel API handler — do not edit this line -->
+  <script id="__env_script">window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '' };</script>
+  <script>document.getElementById('header-date').textContent = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});</script>
+</head>
+<body>
+<div class="page-wrap">
+
+  <header class="site-header">
+    <div class="header-left">
+      <h1>Forensic Market Engine</h1>
+      <p id="header-date"></p>
+    </div>
+    <div class="header-stats">
+      <div class="stat-block">
+        <span class="stat-num" id="stat-total">—</span>
+        <span class="stat-label">Tickers</span>
+      </div>
+      <div class="stat-block">
+        <span class="stat-num" id="stat-traps">—</span>
+        <span class="stat-label">Traps</span>
+      </div>
+      <div class="stat-block">
+        <span class="stat-num" id="stat-breaking">—</span>
+        <span class="stat-label">Breaking</span>
+      </div>
+
+    </div>
+  </header>
+
+  <div class="filter-bar">
+    <span class="filter-label">State</span>
+    <div class="filter-group">
+      <button class="chip active" data-filter="state" data-val="all">All</button>
+      <button class="chip" data-filter="state" data-val="Breaking">Breaking</button>
+      <button class="chip" data-filter="state" data-val="Surging">Surging</button>
+      <button class="chip" data-filter="state" data-val="Fragile">Fragile</button>
+      <button class="chip" data-filter="state" data-val="Stable">Stable</button>
+    </div>
+    <div class="filter-sep"></div>
+    <span class="filter-label">Verdict</span>
+    <div class="filter-group">
+      <button class="chip" data-filter="verdict" data-val="Narrative Trap">Trap</button>
+      <button class="chip" data-filter="verdict" data-val="Structurally Supported">Supported</button>
+    </div>
+    <div class="search-wrap">
+      <input id="ticker-search" class="search-input" placeholder="Search ticker…" />
+    </div>
+  </div>
+
+  <div class="count-bar">
+    <span id="count-line">—</span>
+    <span style="font-size:11px;">click any ticker to open full forensic analysis</span>
+  </div>
+
+  <div class="feed" id="feed"></div>
+
+  <div class="load-more" id="load-more-wrap" style="display:none;">
+    <button class="load-more-btn" id="load-more-btn">Load more</button>
+  </div>
+
+
+</div>
+
+<script>
+// ── Supabase config (injected by Vercel env vars) ──────────────────────────
+const SUPABASE_URL  = window.__env?.SUPABASE_URL  || '';
+const SUPABASE_ANON = window.__env?.SUPABASE_ANON || '';
+
+const COLS = [
+  'ticker','price','price_change_pct','narrative_state','primary_driver',
+  'prism_verdict','story_claim','pe_ratio','days_to_earnings',
+  'eps_surprise_pct','guidance_direction','institutional_positioning','fair_value'
+].join(',');
+
+let DATA = [];
+
+async function loadData() {
+  const feed = document.getElementById('feed');
+  feed.innerHTML = '<div class="empty-state" style="padding:48px 0;">Loading stories…</div>';
+
+  try {
+    if (!SUPABASE_URL || !SUPABASE_ANON) {
+      throw new Error('Missing Supabase credentials – SUPABASE_URL or SUPABASE_ANON is empty');
+    }
+
+    const url = `${SUPABASE_URL}/rest/v1/v_dash_daily_story` +
+      `?select=${COLS}` +
+      `&story_claim=not.is.null` +
+      `&order=ticker.asc`;
+
+    const res = await fetch(url, {
+      headers: {
+        'apikey': SUPABASE_ANON,
+        'Authorization': `Bearer ${SUPABASE_ANON}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error(`Supabase error: ${res.status} – ${body}`);
+    }
+
+    const rows = await res.json();
+
+    // Fetch narrative health for trend indicators
+    let healthMap = {};
+    try {
+      const healthUrl = `${SUPABASE_URL}/rest/v1/v_dash_narrative_health` +
+        `?select=ticker,narrative_health,narrative_trend,attention_trend` +
+        `&order=snapshot_date.desc`;
+      const hr = await fetch(healthUrl, {
+        headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}`, 'Accept': 'application/json' }
+      });
+      if (hr.ok) {
+        const hrows = await hr.json();
+        // Keep latest row per ticker
+        hrows.forEach(h => { if (!healthMap[h.ticker]) healthMap[h.ticker] = h; });
+      }
+    } catch {}
+
+    // Deduplicate by ticker (keep first occurrence) and merge health data
+    const seen = new Set();
+    DATA = rows.filter(r => {
+      if (seen.has(r.ticker)) return false;
+      seen.add(r.ticker);
+      return true;
+    }).map(r => ({ ...r, ...(healthMap[r.ticker] || {}) }));
+
+    document.getElementById('stat-total').textContent    = DATA.length;
+    document.getElementById('stat-traps').textContent    = DATA.filter(r => r.prism_verdict === 'Narrative Trap').length;
+    document.getElementById('stat-breaking').textContent = DATA.filter(r => r.narrative_state === 'Breaking').length;
+
+    render();
+
+  } catch (err) {
+    feed.innerHTML = `<div class="empty-state" style="padding:48px 0; color:#C0392B;">
+      Failed to load data: ${err.message}<br>
+      <small>Check your Supabase URL and anon key in Vercel environment variables.</small>
+    </div>`;
+    console.error(err);
+  }
+}
+
+const PAGE_SIZE = 25;
+let activeState = 'all';
+let activeVerdict = null;
+let searchVal = '';
+let showing = PAGE_SIZE;
+
+function stateClass(s) {
+  return { Breaking: 'badge-breaking', Surging: 'badge-surging', Fragile: 'badge-fragile', Stable: 'badge-stable' }[s] || 'badge-stable';
+}
+function pipClass(v) {
+  if (v === 'Narrative Trap') return 'pip-trap';
+  if (v === 'Structurally Supported') return 'pip-supported';
+  return 'pip-monitoring';
+}
+function fmtPrice(p) { return p >= 100 ? p.toFixed(2) : p.toFixed(3); }
+function fmtDelta(d) {
+  if (d == null || d === 0) return { cls: 'delta-flat', txt: '—' };
+  return { cls: d > 0 ? 'delta-pos' : 'delta-neg', txt: (d > 0 ? '+' : '') + d.toFixed(2) + '%' };
+}
+function esc(s) {
+  return s ? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : '';
+}
+
+function getFiltered() {
+  return DATA.filter(r => {
+    if (activeState !== 'all' && r.narrative_state !== activeState) return false;
+    if (activeVerdict && r.prism_verdict !== activeVerdict) return false;
+    if (searchVal && !r.ticker.toLowerCase().includes(searchVal.toLowerCase())) return false;
+    return true;
+  });
+}
+
+function render() {
+  const filtered = getFiltered();
+  const slice = filtered.slice(0, showing);
+  const feed = document.getElementById('feed');
+  const countLine = document.getElementById('count-line');
+  const lmWrap = document.getElementById('load-more-wrap');
+
+  countLine.textContent = filtered.length + ' ticker' + (filtered.length === 1 ? '' : 's');
+
+  if (filtered.length === 0) {
+    feed.innerHTML = '<div class="empty-state">No stories match the current filter.</div>';
+    lmWrap.style.display = 'none';
+    return;
+  }
+
+  feed.innerHTML = slice.map(r => {
+    const delta = fmtDelta(r.price_change_pct);
+
+    // Verdict badge using prism_verdict
+    const verdictTag = r.prism_verdict === 'Narrative Trap'
+      ? '<span class="verdict-tag verdict-trap">Narrative Trap</span>'
+      : r.prism_verdict === 'Structurally Supported'
+      ? '<span class="verdict-tag verdict-supported">Structurally Supported</span>'
+      : '';
+
+    // Narrative trend indicator
+    const trendIcon = r.narrative_trend === 'Rising' ? '↑'
+      : r.narrative_trend === 'Collapsing' ? '↓'
+      : r.narrative_trend === 'Stable' ? '→' : '';
+    const trendCls = r.narrative_trend === 'Rising' ? 'trend-up'
+      : r.narrative_trend === 'Collapsing' ? 'trend-down' : 'trend-flat';
+
+    // Fundamentals — only show if present
+    const peTag = r.pe_ratio != null
+      ? `<span class="meta-tag">P/E <strong>${r.pe_ratio.toFixed(1)}x</strong></span>` : '';
+    const earningsTag = r.days_to_earnings != null
+      ? `<span class="meta-tag">Earnings <strong>${r.days_to_earnings}d</strong></span>` : '';
+    const guidanceTag = r.guidance_direction && r.guidance_direction !== 'Neutral'
+      ? `<span class="meta-tag">Guidance <strong>${esc(r.guidance_direction)}</strong></span>` : '';
+
+    return `<a class="story-card" href="/ticker/${encodeURIComponent(r.ticker)}">
+      <div class="card-top">
+        <div class="card-left">
+          <span class="ticker-badge ${stateClass(r.narrative_state)}">${r.ticker}</span>
+          <span class="verdict-pip ${pipClass(r.prism_verdict)}" title="${esc(r.prism_verdict)}"></span>
+          <span class="story-claim">${esc(r.story_claim)}</span>
+        </div>
+        <div class="price-block">
+          <div class="price-nums">
+            <div class="price-main">$${fmtPrice(r.price)}</div>
+            <div class="price-delta ${delta.cls}">${delta.txt}</div>
+          </div>
+          <span class="card-arrow">›</span>
+        </div>
+      </div>
+      <div class="card-meta">
+        <span class="meta-tag">Driver: <strong>${esc(r.primary_driver)}</strong></span>
+        ${peTag}
+        ${earningsTag}
+        ${guidanceTag}
+        ${r.institutional_positioning && r.institutional_positioning !== 'Neutral' ? `<span class="meta-tag">Inst: <strong>${esc(r.institutional_positioning)}</strong></span>` : ''}
+        ${trendIcon ? `<span class="meta-tag ${trendCls}">${trendIcon} <strong>${esc(r.narrative_trend)}</strong></span>` : ''}
+        ${verdictTag}
+      </div>
+    </a>`;
+  }).join('');
+
+  lmWrap.style.display = showing < filtered.length ? 'block' : 'none';
+}
+
+// Filter chips
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const filter = chip.dataset.filter;
+    const val = chip.dataset.val;
+
+    if (filter === 'state') {
+      activeState = val;
+      document.querySelectorAll('[data-filter="state"]').forEach(c => {
+        c.classList.remove('active', 'active-breaking', 'active-surging', 'active-fragile', 'active-stable');
+        if (c.dataset.val === val) {
+          const cls = val === 'Breaking' ? 'active-breaking'
+            : val === 'Surging' ? 'active-surging'
+            : val === 'Fragile' ? 'active-fragile'
+            : val === 'Stable' ? 'active-stable'
+            : 'active';
+          c.classList.add(cls);
+        }
+      });
+    } else if (filter === 'verdict') {
+      if (activeVerdict === val) {
+        activeVerdict = null;
+        chip.classList.remove('active');
+      } else {
+        activeVerdict = val;
+        document.querySelectorAll('[data-filter="verdict"]').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+      }
+    }
+    showing = PAGE_SIZE;
+    render();
+  });
+});
+
+document.getElementById('ticker-search').addEventListener('input', e => {
+  searchVal = e.target.value;
+  showing = PAGE_SIZE;
+  render();
+});
+
+document.getElementById('load-more-btn').addEventListener('click', () => {
+  showing += PAGE_SIZE;
+  render();
+});
+
+loadData();
+</script>
+</body>
+</html>
