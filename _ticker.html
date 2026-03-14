@@ -1481,12 +1481,20 @@ async function loadSectorIntelligence(heroRow) {
   const el = document.getElementById('sector-body');
   if (!el || !TICKER) return;
   try {
-    const rows = await sbFetch('sector_intelligence', {
-      select: 'sector,subsector,cagr,mktsize2024,mktsize2030,period,strengths,weaknesses,opportunities,threats,emerging,tickers,framework',
+    // Try ticker-level row first, fall back to sector-level tickers array
+    let rows = await sbFetch('sector_intelligence', {
+      select: '*',
       ticker: `eq.${TICKER}`,
-      order: 'created_at.desc',
       limit: '5'
     }).catch(() => []);
+
+    if (!rows.length) {
+      rows = await sbFetch('sector_intelligence', {
+        select: '*',
+        tickers: `cs.{"${TICKER}"}`,
+        limit: '5'
+      }).catch(() => []);
+    }
 
     const r = heroRow || {};
 
