@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ticker — Forensic Market Engine</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #F7F5F0;
+    --surface: #FFFFFF;
+    --surface2: #F0EDE8;
+    --surface3: #E8E5DF;
+    --border: #E2DED8;
+    --border-strong: #C8C4BE;
+    --text-primary: #1A1916;
+    --text-secondary: #5C5A55;
+    --text-tertiary: #9B9892;
+    --accent-breaking: #C0392B;
+    --accent-breaking-bg: #FDF0EE;
+    --accent-surging: #27AE60;
+    --accent-surging-bg: #EEF8F2;
+    --accent-fragile: #D68910;
+    --accent-fragile-bg: #FEF9EC;
+    --accent-stable: #2471A3;
+    --accent-stable-bg: #EBF5FB;
+    --accent-trap: #C0392B;
+    --accent-supported: #1E8449;
+    --font: 'DM Sans', system-ui, sans-serif;
+    --mono: 'DM Mono', monospace;
+  }
+
+  html { font-size: 16px; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  .page-wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+
+  /* ── Nav ── */
+  .site-nav {
+    padding: 24px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-tertiary);
+    margin-bottom: 20px;
+  }
+  .nav-back {
+    color: var(--text-tertiary);
+    text-decoration: none;
+    transition: color 0.12s;
+  }
+  .nav-back:hover { color: var(--text-primary); }
+  .nav-sep { color: var(--border-strong); }
+  .nav-ticker { color: var(--text-secondary); font-family: var(--mono); font-size: 12px; }
+
+  /* ── Hero ── */
+  .ticker-hero {
+    padding: 20px 0 22px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 28px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+  }
+  .hero-left { flex: 1; min-width: 0; }
+  .hero-ticker-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+  .hero-ticker {
+    font-size: 30px;
+    font-weight: 500;
+    font-family: var(--mono);
+    letter-spacing: -0.02em;
+  }
+  .hero-state-badge {
+    font-size: 11px;
+    font-weight: 500;
+    font-family: var(--mono);
+    padding: 4px 10px;
+    border-radius: 5px;
+    border: 1px solid;
+    letter-spacing: 0.04em;
+  }
+  .badge-breaking { background: var(--accent-breaking-bg); color: var(--accent-breaking); border-color: #F5C6C2; }
+  .badge-surging  { background: var(--accent-surging-bg);  color: var(--accent-surging);  border-color: #BCEACE; }
+  .badge-fragile  { background: var(--accent-fragile-bg);  color: var(--accent-fragile);  border-color: #FADED9; }
+  .badge-stable   { background: var(--accent-stable-bg);   color: var(--accent-stable);   border-color: #BAD6EC; }
+
+  .verdict-badge {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 99px;
+    border: 1px solid;
+  }
+  .verdict-trap       { background: var(--accent-breaking-bg); color: var(--accent-breaking); border-color: #F5C6C2; }
+  .verdict-supported  { background: var(--accent-surging-bg);  color: var(--accent-supported); border-color: #BCEACE; }
+  .verdict-monitoring { background: var(--surface2); color: var(--text-secondary); border-color: var(--border); }
+
+  .hero-claim {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    max-width: 520px;
+  }
+  .hero-right { text-align: right; flex-shrink: 0; }
+  .hero-price {
+    font-size: 26px;
+    font-weight: 500;
+    font-family: var(--mono);
+    letter-spacing: -0.02em;
+  }
+  .hero-delta { font-size: 13px; font-family: var(--mono); margin-top: 2px; }
+  .delta-pos { color: var(--accent-surging); }
+  .delta-neg { color: var(--accent-breaking); }
+  .delta-flat { color: var(--text-tertiary); }
+  .hero-fv { font-size: 12px; color: var(--text-tertiary); margin-top: 6px; }
+  .hero-fv span { font-family: var(--mono); color: var(--text-secondary); }
+
+  /* ── Section ── */
+  .section { margin-bottom: 24px; }
+  .section-label {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .section-label-sub {
+    font-size: 11px;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--text-tertiary);
+  }
+  .section-body {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  /* ── Skeleton ── */
+  .skel {
+    background: var(--surface3);
+    border-radius: 4px;
+    animation: skel-pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes skel-pulse { 0%,100% { opacity:1; } 50% { opacity:0.45; } }
+
+  /* ── Metrics strip ── */
+  .metrics-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid var(--border);
+  }
+  @media (max-width: 600px) { .metrics-strip { grid-template-columns: repeat(2, 1fr); } }
+  .metric-cell {
+    padding: 12px 16px;
+    border-right: 1px solid var(--border);
+  }
+  .metric-cell:last-child { border-right: none; }
+  .metric-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-tertiary);
+    margin-bottom: 3px;
+  }
+  .metric-value {
+    font-size: 15px;
+    font-weight: 500;
+    font-family: var(--mono);
+    color: var(--text-primary);
+  }
+  .metric-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 1px; }
+
+  /* ── Forensic text ── */
+  .forensic-pad { padding: 16px 18px; }
+  .forensic-text {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.65;
+  }
+
+  /* ── Chart ── */
+  .chart-outer {
+    position: relative;
+    padding: 14px 14px 0;
+    height: 210px;
+  }
+  .chart-outer canvas { display: block; width: 100%; height: 100%; }
+  .chart-legend {
+    display: flex;
+    gap: 14px;
+    padding: 9px 14px 12px;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--text-tertiary);
+  }
+  .leg-line { width: 14px; height: 2px; border-radius: 1px; }
+  .leg-dash {
+    width: 14px;
+    height: 0;
+    border-top: 2px dashed var(--border-strong);
+  }
+  .leg-dot { width: 7px; height: 7px; border-radius: 50%; }
+  .chart-tip {
+    position: absolute;
+    background: var(--text-primary);
+    color: #fff;
+    font-size: 11px;
+    font-family: var(--mono);
+    padding: 4px 8px;
+    border-radius: 5px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.1s;
+    white-space: nowrap;
+    z-index: 10;
+    top: 0; left: 0;
+  }
+  .chart-no-data {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    font-size: 13px;
+    color: var(--text-tertiary);
+  }
+
+  /* ── Story Lifecycle ── */
+  .lc-pad { padding: 16px 18px; }
+  .lc-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .lc-stage { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+  .lc-energy { font-size: 12px; font-family: var(--mono); color: var(--text-tertiary); }
+  .lc-track {
+    height: 7px;
+    background: var(--surface2);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-bottom: 7px;
+  }
+  .lc-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.9s cubic-bezier(0.16,1,0.3,1);
+  }
+  .lc-fill-birth    { background: linear-gradient(90deg,#1E8449,#27AE60); }
+  .lc-fill-growth   { background: linear-gradient(90deg,#2471A3,#3498DB); }
+  .lc-fill-maturity { background: linear-gradient(90deg,#D68910,#F39C12); }
+  .lc-fill-decline  { background: linear-gradient(90deg,#C0392B,#E74C3C); }
+  .lc-fill-death    { background: var(--border-strong); }
+  .lc-markers {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .lc-marker {
+    font-size: 10px;
+    color: var(--text-tertiary);
+  }
+  .lc-marker.active { color: var(--text-secondary); font-weight: 500; }
+  .lc-stats {
+    display: grid;
+    grid-template-columns: repeat(3,1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    overflow: hidden;
+  }
+  .lc-stat { background: var(--bg); padding: 9px 13px; }
+  .lc-stat-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-tertiary);
+    margin-bottom: 2px;
+  }
+  .lc-stat-val {
+    font-size: 14px;
+    font-weight: 500;
+    font-family: var(--mono);
+    color: var(--text-primary);
+  }
+
+  /* ── Contagion ── */
+  .ct-pad { padding: 16px 18px; }
+  .ct-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .ct-desc { font-size: 13px; color: var(--text-secondary); }
+  .ct-score {
+    font-size: 11px;
+    font-weight: 500;
+    font-family: var(--mono);
+    padding: 3px 9px;
+    border-radius: 99px;
+    border: 1px solid;
+    white-space: nowrap;
+  }
+  .ct-score-high   { background: var(--accent-breaking-bg); color: var(--accent-breaking); border-color: #F5C6C2; }
+  .ct-score-mid    { background: var(--accent-fragile-bg);  color: var(--accent-fragile);  border-color: #FADED9; }
+  .ct-score-low    { background: var(--accent-stable-bg);   color: var(--accent-stable);   border-color: #BAD6EC; }
+  .ct-score-none   { background: var(--surface2); color: var(--text-tertiary); border-color: var(--border); }
+  .ct-map {
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+  .ct-col { flex: 1; }
+  .ct-col-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-tertiary);
+    margin-bottom: 7px;
+  }
+  .ct-tickers { display: flex; flex-direction: column; gap: 5px; }
+  .ct-ticker {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-family: var(--mono);
+    font-weight: 500;
+    padding: 4px 9px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text-secondary);
+    width: fit-content;
+  }
+  .ct-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--border-strong); flex-shrink: 0; }
+  .ct-ticker.up   { background: var(--accent-stable-bg);   border-color: #BAD6EC; color: var(--accent-stable); }
+  .ct-ticker.up   .ct-dot { background: var(--accent-stable); }
+  .ct-ticker.down { background: var(--accent-breaking-bg); border-color: #F5C6C2; color: var(--accent-breaking); }
+  .ct-ticker.down .ct-dot { background: var(--accent-breaking); }
+  .ct-empty { font-size: 12px; color: var(--text-tertiary); font-style: italic; }
+  .ct-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 18px;
+  }
+  .ct-focal {
+    width: 66px;
+    height: 66px;
+    border-radius: 50%;
+    background: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: var(--mono);
+    color: #fff;
+    letter-spacing: 0.02em;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .ct-focal::after {
+    content: '';
+    position: absolute;
+    inset: -7px;
+    border-radius: 50%;
+    border: 1px dashed var(--border-strong);
+  }
+
+  /* ── Prerequisites ── */
+  .pr-pad { padding: 14px 18px; }
+  .pr-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .pr-desc { font-size: 13px; color: var(--text-secondary); }
+  .pr-count {
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--text-tertiary);
+  }
+  .pr-count strong { font-size: 14px; color: var(--text-primary); }
+  .pr-list { display: flex; flex-direction: column; }
+  .pr-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .pr-item:last-child { border-bottom: none; }
+  .pr-status {
+    font-size: 10px;
+    font-weight: 500;
+    font-family: var(--mono);
+    letter-spacing: 0.05em;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .pr-met     { background: var(--accent-surging-bg); color: var(--accent-supported); border-color: #BCEACE; }
+  .pr-not-met { background: var(--accent-breaking-bg); color: var(--accent-breaking); border-color: #F5C6C2; }
+  .pr-pending { background: var(--surface2); color: var(--text-tertiary); border-color: var(--border); }
+  .pr-text { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+
+  /* ── Historical Parallels ── */
+  .par-item {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .par-item:last-child { border-bottom: none; }
+  .par-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 5px;
+  }
+  .par-left { display: flex; align-items: center; gap: 7px; }
+  .par-ticker {
+    font-size: 11px;
+    font-weight: 500;
+    font-family: var(--mono);
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+  }
+  .par-date { font-size: 12px; color: var(--text-tertiary); }
+  .par-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .par-days { font-size: 11px; font-family: var(--mono); color: var(--text-tertiary); }
+  .par-pct { font-size: 13px; font-weight: 500; font-family: var(--mono); }
+  .par-pct-pos { color: var(--accent-surging); }
+  .par-pct-neg { color: var(--accent-breaking); }
+  .par-name { font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 6px; }
+  .par-sim {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .par-sim-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); }
+  .par-sim-track { width: 72px; height: 3px; background: var(--surface3); border-radius: 99px; overflow: hidden; }
+  .par-sim-fill { height: 100%; background: var(--accent-stable); border-radius: 99px; }
+  .par-sim-pct { font-size: 11px; font-family: var(--mono); color: var(--text-tertiary); }
+
+  /* ── Error ── */
+  .inline-err { padding: 14px 18px; font-size: 13px; color: var(--accent-breaking); }
+  .no-data { padding: 16px 18px; font-size: 13px; color: var(--text-tertiary); }
+</style>
+  <!-- Env vars injected by Vercel — do not edit this line -->
+  <script id="__env_script">window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '' };</script>
+</head>
+<body>
+<div class="page-wrap">
+
+  <nav class="site-nav">
+    <a class="nav-back" href="/">← Forensic Market Engine</a>
+    <span class="nav-sep">/</span>
+    <span class="nav-ticker" id="nav-ticker">—</span>
+  </nav>
+
+  <!-- Hero -->
+  <div class="ticker-hero" id="hero">
+    <div class="hero-left">
+      <div class="hero-ticker-row">
+        <div class="skel" style="width:90px;height:30px;"></div>
+        <div class="skel" style="width:70px;height:22px;border-radius:5px;"></div>
+        <div class="skel" style="width:110px;height:22px;border-radius:99px;"></div>
+      </div>
+      <div class="skel" style="width:340px;height:14px;margin-top:8px;"></div>
+    </div>
+    <div class="hero-right">
+      <div class="skel" style="width:90px;height:26px;margin-bottom:5px;"></div>
+      <div class="skel" style="width:60px;height:13px;"></div>
+    </div>
+  </div>
+
+  <!-- 1. Price Chart -->
+  <div class="section">
+    <div class="section-label">Price &amp; Narratives</div>
+    <div class="section-body">
+      <div class="chart-outer" id="chart-outer">
+        <canvas id="price-canvas"></canvas>
+        <div class="chart-tip" id="chart-tip"></div>
+      </div>
+      <div class="chart-legend">
+        <div class="legend-item"><div class="leg-line" style="background:var(--text-primary);"></div> Price</div>
+        <div class="legend-item"><div class="leg-dash"></div> Fair Value</div>
+        <div class="legend-item"><div class="leg-dot" style="background:var(--accent-surging);"></div> Bullish narrative</div>
+        <div class="legend-item"><div class="leg-dot" style="background:var(--accent-breaking);"></div> Bearish narrative</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Forensic Analysis -->
+  <div class="section">
+    <div class="section-label">Forensic Analysis</div>
+    <div class="section-body">
+      <div class="forensic-pad">
+        <div id="forensic-text">
+          <div class="skel" style="height:13px;margin-bottom:7px;"></div>
+          <div class="skel" style="height:13px;width:92%;margin-bottom:7px;"></div>
+          <div class="skel" style="height:13px;width:78%;"></div>
+        </div>
+      </div>
+      <div class="metrics-strip" id="metrics-strip">
+        <div class="metric-cell"><div class="skel" style="height:10px;width:50%;margin-bottom:5px;"></div><div class="skel" style="height:16px;width:70%;"></div></div>
+        <div class="metric-cell"><div class="skel" style="height:10px;width:50%;margin-bottom:5px;"></div><div class="skel" style="height:16px;width:70%;"></div></div>
+        <div class="metric-cell"><div class="skel" style="height:10px;width:50%;margin-bottom:5px;"></div><div class="skel" style="height:16px;width:70%;"></div></div>
+        <div class="metric-cell"><div class="skel" style="height:10px;width:50%;margin-bottom:5px;"></div><div class="skel" style="height:16px;width:70%;"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Story Lifecycle -->
+  <div class="section">
+    <div class="section-label">Story Lifecycle</div>
+    <div class="section-body">
+      <div class="lc-pad" id="lc-body">
+        <div class="skel" style="height:14px;width:40%;margin-bottom:14px;"></div>
+        <div class="skel" style="height:7px;margin-bottom:8px;"></div>
+        <div class="skel" style="height:10px;width:80%;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Contagion Map -->
+  <div class="section">
+    <div class="section-label">Contagion Map</div>
+    <div class="section-body">
+      <div class="ct-pad" id="ct-body">
+        <div class="skel" style="height:13px;width:55%;margin-bottom:12px;"></div>
+        <div class="skel" style="height:50px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Prerequisite Check -->
+  <div class="section">
+    <div class="section-label">Prerequisite Check</div>
+    <div class="section-body">
+      <div class="pr-pad" id="pr-body">
+        <div class="skel" style="height:13px;width:50%;margin-bottom:12px;"></div>
+        <div class="skel" style="height:13px;margin-bottom:8px;"></div>
+        <div class="skel" style="height:13px;width:85%;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. Historical Parallels -->
+  <div class="section">
+    <div class="section-label">
+      What Happened Last Time
+      <span class="section-label-sub">Similar historical narratives</span>
+    </div>
+    <div class="section-body">
+      <div id="par-body">
+        <div class="par-item">
+          <div class="skel" style="height:12px;width:40%;margin-bottom:8px;"></div>
+          <div class="skel" style="height:13px;width:85%;"></div>
+        </div>
+        <div class="par-item">
+          <div class="skel" style="height:12px;width:40%;margin-bottom:8px;"></div>
+          <div class="skel" style="height:13px;width:75%;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<script>
+// ── Config ──────────────────────────────────────────────────────────────────
+const SUPABASE_URL  = window.__env?.SUPABASE_URL  || '';
+const SUPABASE_ANON = window.__env?.SUPABASE_ANON || '';
+
+// Extract ticker from URL path: /ticker/NVDA
+const pathParts = location.pathname.split('/').filter(Boolean);
+const TICKER = decodeURIComponent(pathParts[pathParts.length - 1] || '');
+
+if (!TICKER) {
+  document.getElementById('hero').innerHTML = '<div class="no-data">No ticker specified in URL.</div>';
+}
+
+document.title = TICKER ? `${TICKER} — Forensic Market Engine` : 'Forensic Market Engine';
+document.getElementById('nav-ticker').textContent = TICKER;
+
+// ── Supabase helper ──────────────────────────────────────────────────────────
+async function sbFetch(table, params) {
+  const qs = Object.entries(params)
+    .map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+    .join('&');
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${qs}`, {
+    headers: {
+      'apikey': SUPABASE_ANON,
+      'Authorization': `Bearer ${SUPABASE_ANON}`,
+      'Accept': 'application/json'
+    }
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`${res.status}: ${body}`);
+  }
+  return res.json();
+}
+
+// ── Utils ────────────────────────────────────────────────────────────────────
+function esc(s) {
+  return s ? String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;') : '';
+}
+function fmtPrice(p) {
+  if (p == null) return '—';
+  return '$' + (p >= 100 ? p.toFixed(2) : p.toFixed(3));
+}
+function fmtPct(p) {
+  if (p == null) return { cls:'delta-flat', txt:'—' };
+  return { cls: p > 0 ? 'delta-pos' : p < 0 ? 'delta-neg' : 'delta-flat', txt: (p > 0 ? '+' : '') + p.toFixed(2) + '%' };
+}
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+}
+function stateClass(s) {
+  return ({ Breaking:'badge-breaking', Surging:'badge-surging', Fragile:'badge-fragile', Stable:'badge-stable' })[s] || 'badge-stable';
+}
+
+// ── 1. Hero + Forensic ───────────────────────────────────────────────────────
+async function loadHero() {
+  if (!TICKER) return null;
+  try {
+    const cols = [
+      'ticker','price','price_change_pct','narrative_state','story_claim',
+      'forensic_rebuttal','source_verdict','source_nrs','source_energy_regime',
+      'recovery_probability','recovery_window_days','institutional_positioning','fair_value'
+    ].join(',');
+
+    const rows = await sbFetch('v_dash_daily_story', {
+      select: cols,
+      ticker: `eq.${TICKER}`,
+      limit: '1'
+    });
+
+    if (!rows.length) {
+      document.getElementById('hero').innerHTML = `<div class="no-data">No data found for "${esc(TICKER)}".</div>`;
+      return null;
+    }
+
+    const r = rows[0];
+    const delta = fmtPct(r.price_change_pct);
+    const verdictClass = r.source_verdict === 'Narrative Trap' ? 'verdict-trap'
+      : r.source_verdict === 'Structurally Supported' ? 'verdict-supported'
+      : 'verdict-monitoring';
+
+    document.getElementById('hero').innerHTML = `
+      <div class="hero-left">
+        <div class="hero-ticker-row">
+          <span class="hero-ticker">${esc(r.ticker)}</span>
+          <span class="hero-state-badge ${stateClass(r.narrative_state)}">${esc(r.narrative_state || '—')}</span>
+          <span class="verdict-badge ${verdictClass}">${esc(r.source_verdict || 'Monitoring')}</span>
+        </div>
+        <div class="hero-claim">${esc(r.story_claim || '')}</div>
+      </div>
+      <div class="hero-right">
+        <div class="hero-price">${fmtPrice(r.price)}</div>
+        <div class="hero-delta ${delta.cls}">${delta.txt}</div>
+        ${r.fair_value != null ? `<div class="hero-fv">Fair value <span>${fmtPrice(r.fair_value)}</span></div>` : ''}
+      </div>`;
+
+    // Forensic text
+    document.getElementById('forensic-text').innerHTML = r.forensic_rebuttal
+      ? `<div class="forensic-text">${esc(r.forensic_rebuttal)}</div>`
+      : `<div class="no-data" style="padding:0;">No forensic analysis available.</div>`;
+
+    // Metrics strip
+    const energy = r.source_energy_regime
+      ? r.source_energy_regime.charAt(0) + r.source_energy_regime.slice(1).toLowerCase()
+      : '—';
+    document.getElementById('metrics-strip').innerHTML = `
+      <div class="metric-cell">
+        <div class="metric-label">NRS</div>
+        <div class="metric-value">${r.source_nrs != null ? r.source_nrs.toFixed(1) : '—'}</div>
+        <div class="metric-sub">Narrative Risk Score</div>
+      </div>
+      <div class="metric-cell">
+        <div class="metric-label">Energy</div>
+        <div class="metric-value" style="font-size:13px;">${esc(energy)}</div>
+        <div class="metric-sub">Regime</div>
+      </div>
+      <div class="metric-cell">
+        <div class="metric-label">Recovery</div>
+        <div class="metric-value">${r.recovery_probability != null ? Math.round(r.recovery_probability * 100) + '%' : '—'}</div>
+        <div class="metric-sub">${r.recovery_window_days ? r.recovery_window_days + 'd window' : 'Probability'}</div>
+      </div>
+      <div class="metric-cell">
+        <div class="metric-label">Positioning</div>
+        <div class="metric-value" style="font-size:12px;">${esc(r.institutional_positioning || '—')}</div>
+        <div class="metric-sub">Institutional</div>
+      </div>`;
+
+    return r;
+  } catch (err) {
+    document.getElementById('hero').innerHTML = `<div class="inline-err">Failed to load: ${esc(err.message)}</div>`;
+    return null;
+  }
+}
+
+// ── 2. Price Chart ───────────────────────────────────────────────────────────
+async function loadChart(fairValue) {
+  if (!TICKER) return;
+  try {
+    const snaps = await sbFetch('ticker_snapshots', {
+      select: 'snapshot_date,price_close',
+      ticker: `eq.${TICKER}`,
+      order:  'snapshot_date.asc',
+      limit:  '60'
+    });
+
+    const narrs = await sbFetch('narratives', {
+      select: 'genesis_date,initial_sentiment',
+      ticker: `eq.${TICKER}`,
+      limit:  '40'
+    });
+
+    if (!snaps.length) {
+      document.getElementById('chart-outer').innerHTML = '<div class="chart-no-data">No price history available.</div>';
+      return;
+    }
+    drawChart(snaps, narrs, fairValue);
+  } catch (err) {
+    document.getElementById('chart-outer').innerHTML = `<div class="chart-no-data" style="color:var(--accent-breaking);">Chart: ${esc(err.message)}</div>`;
+  }
+}
+
+function drawChart(snaps, narrs, fairValue) {
+  const outer  = document.getElementById('chart-outer');
+  const canvas = document.getElementById('price-canvas');
+  const tip    = document.getElementById('chart-tip');
+
+  const W = outer.clientWidth - 28;   // 14px padding each side
+  const H = outer.clientHeight - 14;  // 14px top padding
+  const DPR = devicePixelRatio || 1;
+
+  canvas.width  = W * DPR;
+  canvas.height = H * DPR;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+
+  const ctx = canvas.getContext('2d');
+  ctx.scale(DPR, DPR);
+
+  const prices = snaps.map(s => s.price_close).filter(p => p != null);
+  if (!prices.length) return;
+
+  const minP = Math.min(...prices) * 0.975;
+  const maxP = Math.max(...prices) * 1.025;
+
+  const PAD = { top:8, right:8, bottom:28, left:50 };
+  const CW  = W - PAD.left - PAD.right;
+  const CH  = H - PAD.top  - PAD.bottom;
+  const N   = snaps.length;
+
+  function xOf(i) { return PAD.left + (i / (N - 1)) * CW; }
+  function yOf(p) { return PAD.top  + (1 - (p - minP) / (maxP - minP)) * CH; }
+
+  // Grid
+  ctx.font      = `10px 'DM Mono', monospace`;
+  ctx.fillStyle = '#9B9892';
+  ctx.textAlign = 'right';
+  const gridLines = 4;
+  for (let i = 0; i <= gridLines; i++) {
+    const p = minP + (maxP - minP) * (i / gridLines);
+    const y = yOf(p);
+    ctx.strokeStyle = '#E2DED8';
+    ctx.lineWidth   = 1;
+    ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(W - PAD.right, y); ctx.stroke();
+    ctx.fillText((p >= 100 ? '$' + p.toFixed(0) : '$' + p.toFixed(2)), PAD.left - 4, y + 3);
+  }
+
+  // X labels
+  ctx.textAlign = 'center';
+  const every = Math.max(1, Math.floor(N / 6));
+  snaps.forEach((s, i) => {
+    if (i % every !== 0 && i !== N - 1) return;
+    const d   = new Date(s.snapshot_date);
+    const lbl = d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+    ctx.fillText(lbl, xOf(i), H - PAD.bottom + 14);
+  });
+
+  // Fair value dashed line
+  if (fairValue != null && fairValue > minP && fairValue < maxP * 1.1) {
+    const yFV = yOf(fairValue);
+    ctx.save();
+    ctx.setLineDash([5, 4]);
+    ctx.strokeStyle = '#C8C4BE';
+    ctx.lineWidth   = 1.5;
+    ctx.beginPath(); ctx.moveTo(PAD.left, yFV); ctx.lineTo(W - PAD.right, yFV); ctx.stroke();
+    ctx.restore();
+  }
+
+  // Price area fill
+  const grad = ctx.createLinearGradient(0, PAD.top, 0, H - PAD.bottom);
+  grad.addColorStop(0, 'rgba(26,25,22,0.07)');
+  grad.addColorStop(1, 'rgba(26,25,22,0)');
+  ctx.beginPath();
+  snaps.forEach((s, i) => {
+    if (s.price_close == null) return;
+    i === 0 ? ctx.moveTo(xOf(i), yOf(s.price_close)) : ctx.lineTo(xOf(i), yOf(s.price_close));
+  });
+  ctx.lineTo(xOf(N - 1), H - PAD.bottom);
+  ctx.lineTo(xOf(0),     H - PAD.bottom);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Price line
+  ctx.beginPath();
+  ctx.setLineDash([]);
+  snaps.forEach((s, i) => {
+    if (s.price_close == null) return;
+    i === 0 ? ctx.moveTo(xOf(i), yOf(s.price_close)) : ctx.lineTo(xOf(i), yOf(s.price_close));
+  });
+  ctx.strokeStyle = '#1A1916';
+  ctx.lineWidth   = 1.5;
+  ctx.stroke();
+
+  // Narrative dots
+  const dateIdx = {};
+  snaps.forEach((s, i) => { if (s.snapshot_date) dateIdx[s.snapshot_date.slice(0,10)] = i; });
+  narrs.forEach(n => {
+    const key = n.genesis_date?.slice(0,10);
+    const idx = dateIdx[key];
+    if (idx == null) return;
+    const s = snaps[idx];
+    if (s.price_close == null) return;
+    ctx.beginPath();
+    ctx.arc(xOf(idx), yOf(s.price_close), 4.5, 0, Math.PI * 2);
+    ctx.fillStyle   = n.initial_sentiment > 0 ? '#27AE60' : '#C0392B';
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth   = 1.5;
+    ctx.stroke();
+  });
+
+  // Tooltip on hover
+  canvas.addEventListener('mousemove', e => {
+    const rect = canvas.getBoundingClientRect();
+    const mx   = e.clientX - rect.left;
+    const idx  = Math.max(0, Math.min(N - 1, Math.round(((mx - PAD.left) / CW) * (N - 1))));
+    const s    = snaps[idx];
+    if (!s?.price_close) { tip.style.opacity = '0'; return; }
+    const x = xOf(idx);
+    const y = yOf(s.price_close);
+    tip.style.opacity = '1';
+    tip.style.left    = (x + 12) + 'px';
+    tip.style.top     = (y - 10) + 'px';
+    tip.textContent   = s.snapshot_date?.slice(5) + ' · ' + fmtPrice(s.price_close);
+  });
+  canvas.addEventListener('mouseleave', () => { tip.style.opacity = '0'; });
+}
+
+// ── 3. Story Lifecycle ───────────────────────────────────────────────────────
+async function loadLifecycle() {
+  if (!TICKER) return;
+  try {
+    const lc = await sbFetch('dashboard_lifecycle', {
+      select: 'lifecycle_stage,lifecycle_pct',
+      ticker: `eq.${TICKER}`,
+      order:  'created_at.desc',
+      limit:  '1'
+    }).catch(() => []);
+
+    const dm = await sbFetch('decay_metrics', {
+      select: 'energy_remaining_pct,days_until_exhaustion,decay_rate',
+      ticker: `eq.${TICKER}`,
+      order:  'created_at.desc',
+      limit:  '1'
+    }).catch(() => []);
+
+    let stage = lc[0]?.lifecycle_stage || null;
+    let pct   = lc[0]?.lifecycle_pct   ?? dm[0]?.energy_remaining_pct ?? null;
+    const daysLeft  = dm[0]?.days_until_exhaustion ?? null;
+    const decayRate = dm[0]?.decay_rate ?? null;
+
+    if (pct == null && !stage) {
+      document.getElementById('lc-body').innerHTML = '<div class="no-data">No lifecycle data available.</div>';
+      return;
+    }
+
+    if (!stage && pct != null) {
+      stage = pct > 75 ? 'Birth' : pct > 50 ? 'Growth' : pct > 25 ? 'Maturity' : pct > 5 ? 'Decline' : 'Death';
+    }
+
+    const stages    = ['Birth','Growth','Maturity','Decline','Death'];
+    const activeIdx = stages.indexOf(stage);
+    const fillCls   = { Birth:'lc-fill-birth', Growth:'lc-fill-growth', Maturity:'lc-fill-maturity', Decline:'lc-fill-decline', Death:'lc-fill-death' }[stage] || 'lc-fill-maturity';
+    const barPct    = pct != null ? Math.max(2, Math.round(pct)) : 0;
+
+    document.getElementById('lc-body').innerHTML = `
+      <div class="lc-top">
+        <div class="lc-stage">${esc(stage)}</div>
+        <div class="lc-energy">${pct != null ? Math.round(pct) + '% energy remaining' : '—'}</div>
+      </div>
+      <div class="lc-track"><div class="lc-fill ${fillCls}" style="width:${barPct}%;"></div></div>
+      <div class="lc-markers">
+        ${stages.map((s,i) => `<div class="lc-marker ${i === activeIdx ? 'active' : ''}">${s}</div>`).join('')}
+      </div>
+      <div class="lc-stats">
+        <div class="lc-stat">
+          <div class="lc-stat-label">Days Remaining</div>
+          <div class="lc-stat-val">${daysLeft != null ? daysLeft : '—'}</div>
+        </div>
+        <div class="lc-stat">
+          <div class="lc-stat-label">Decay Rate</div>
+          <div class="lc-stat-val">${decayRate != null ? decayRate.toFixed(3) : '—'}</div>
+        </div>
+        <div class="lc-stat">
+          <div class="lc-stat-label">Energy</div>
+          <div class="lc-stat-val">${pct != null ? Math.round(pct) + '%' : '—'}</div>
+        </div>
+      </div>`;
+  } catch (err) {
+    document.getElementById('lc-body').innerHTML = `<div class="inline-err">Lifecycle: ${esc(err.message)}</div>`;
+  }
+}
+
+// ── 4. Contagion Map ─────────────────────────────────────────────────────────
+async function loadContagion() {
+  if (!TICKER) return;
+  try {
+    const analyses = await sbFetch('narrative_analyses', {
+      select: 'upstream_tickers,downstream_tickers',
+      ticker: `eq.${TICKER}`,
+      order:  'created_at.desc',
+      limit:  '1'
+    }).catch(() => []);
+
+    const scorecard = await sbFetch('narrative_scorecard', {
+      select: 'coordination_score,nrs',
+      ticker: `eq.${TICKER}`,
+      order:  'snapshot_date.desc',
+      limit:  '1'
+    }).catch(() => []);
+
+    const sc  = scorecard[0] || {};
+    const nrs = sc.coordination_score ?? sc.nrs ?? null;
+
+    let upstream = [], downstream = [];
+    if (analyses[0]) {
+      try { upstream   = JSON.parse(analyses[0].upstream_tickers   || '[]'); } catch { upstream   = []; }
+      try { downstream = JSON.parse(analyses[0].downstream_tickers || '[]'); } catch { downstream = []; }
+      if (!Array.isArray(upstream))   upstream   = [];
+      if (!Array.isArray(downstream)) downstream = [];
+    }
+
+    const scoreCls = nrs == null ? 'ct-score-none'
+      : nrs >= 60 ? 'ct-score-high'
+      : nrs >= 30 ? 'ct-score-mid'
+      : 'ct-score-low';
+
+    const upHtml   = upstream.length
+      ? upstream.slice(0,5).map(t => `<div class="ct-ticker up"><span class="ct-dot"></span>${esc(t)}</div>`).join('')
+      : `<div class="ct-empty">None identified</div>`;
+    const downHtml = downstream.length
+      ? downstream.slice(0,5).map(t => `<div class="ct-ticker down"><span class="ct-dot"></span>${esc(t)}</div>`).join('')
+      : `<div class="ct-empty">None identified</div>`;
+
+    document.getElementById('ct-body').innerHTML = `
+      <div class="ct-top">
+        <div class="ct-desc">Supply chain contagion risk</div>
+        ${nrs != null ? `<span class="ct-score ${scoreCls}">Risk ${Math.round(nrs)}/100</span>` : ''}
+      </div>
+      <div class="ct-map">
+        <div class="ct-col">
+          <div class="ct-col-label">↑ Upstream</div>
+          <div class="ct-tickers">${upHtml}</div>
+        </div>
+        <div class="ct-center">
+          <div class="ct-focal">${esc(TICKER)}</div>
+        </div>
+        <div class="ct-col">
+          <div class="ct-col-label">↓ Downstream</div>
+          <div class="ct-tickers">${downHtml}</div>
+        </div>
+      </div>`;
+  } catch (err) {
+    document.getElementById('ct-body').innerHTML = `<div class="inline-err">Contagion: ${esc(err.message)}</div>`;
+  }
+}
+
+// ── 5. Prerequisites ─────────────────────────────────────────────────────────
+async function loadPrerequisites() {
+  if (!TICKER) return;
+  try {
+    const scorecard = await sbFetch('narrative_scorecard', {
+      select: 'prerequisites_met,prerequisites_total',
+      ticker: `eq.${TICKER}`,
+      order:  'snapshot_date.desc',
+      limit:  '1'
+    }).catch(() => []);
+
+    const analyses = await sbFetch('narrative_analyses', {
+      select: 'prerequisites',
+      ticker: `eq.${TICKER}`,
+      order:  'created_at.desc',
+      limit:  '1'
+    }).catch(() => []);
+
+    const sc    = scorecard[0] || {};
+    const met   = sc.prerequisites_met   ?? 0;
+    const total = sc.prerequisites_total ?? 0;
+
+    // Parse the prerequisites JSON array from narrative_analyses
+    let items = [];
+    if (analyses[0]?.prerequisites) {
+      try {
+        const raw = analyses[0].prerequisites;
+        items = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        if (!Array.isArray(items)) items = Object.values(items);
+      } catch { items = []; }
+    }
+
+    if (!items.length && !total) {
+      document.getElementById('pr-body').innerHTML = '<div class="no-data">No prerequisite data available.</div>';
+      return;
+    }
+
+    const itemsHtml = items.length
+      ? items.map(p => {
+          const rawStatus = String(p.status || (p.met === true ? 'MET' : p.met === false ? 'NOT MET' : 'PENDING')).toUpperCase();
+          const stCls = rawStatus === 'MET' ? 'pr-met' : rawStatus === 'NOT MET' ? 'pr-not-met' : 'pr-pending';
+          const label = rawStatus === 'NOT MET' ? 'NOT MET' : rawStatus === 'MET' ? 'MET' : 'PENDING';
+          return `<div class="pr-item">
+            <span class="pr-status ${stCls}">${label}</span>
+            <div class="pr-text">${esc(p.text || p.condition || p.description || '—')}</div>
+          </div>`;
+        }).join('')
+      : `<div class="no-data" style="padding:0;">${met} of ${total} conditions met.</div>`;
+
+    document.getElementById('pr-body').innerHTML = `
+      <div class="pr-top">
+        <div class="pr-desc">Conditions for narrative validation</div>
+        <div class="pr-count"><strong>${met}</strong> / ${total || items.length} met</div>
+      </div>
+      <div class="pr-list">${itemsHtml}</div>`;
+  } catch (err) {
+    document.getElementById('pr-body').innerHTML = `<div class="inline-err">Prerequisites: ${esc(err.message)}</div>`;
+  }
+}
+
+// ── 6. Historical Parallels ──────────────────────────────────────────────────
+async function loadParallels() {
+  if (!TICKER) return;
+  try {
+    // Primary: narrative_parallels table (v5.0+)
+    let items = await sbFetch('narrative_parallels', {
+      select: 'similar_ticker,similar_date,similar_narrative_name,price_change_pct,days_elapsed,similarity_score,outcome_summary',
+      ticker: `eq.${TICKER}`,
+      order:  'similarity_score.desc',
+      limit:  '3'
+    }).catch(() => []);
+
+    // Fallback: exhausted/failed narratives from the main narratives table
+    if (!items.length) {
+      items = await sbFetch('narratives', {
+        select: 'ticker,narrative_name,genesis_date,days_elapsed,initial_price,current_price,status',
+        status: 'in.(EXHAUSTED,FAILED)',
+        order:  'days_elapsed.desc',
+        limit:  '3'
+      }).catch(() => []);
+    }
+
+    if (!items.length) {
+      document.getElementById('par-body').innerHTML = '<div class="par-item"><div class="no-data">No historical parallels found yet.</div></div>';
+      return;
+    }
+
+    document.getElementById('par-body').innerHTML = items.map(p => {
+      const pticker  = p.similar_ticker || p.ticker || '—';
+      const pdate    = p.similar_date   || p.genesis_date;
+      const pname    = p.similar_narrative_name || p.narrative_name || '—';
+      const pdays    = p.days_elapsed != null ? p.days_elapsed + 'd' : '—';
+      const simScore = p.similarity_score;
+
+      let pricePct = p.price_change_pct;
+      if (pricePct == null && p.initial_price && p.current_price) {
+        pricePct = ((p.current_price - p.initial_price) / p.initial_price) * 100;
+      }
+      const pctTxt = pricePct != null ? (pricePct > 0 ? '+' : '') + pricePct.toFixed(1) + '%' : '—';
+      const pctCls = pricePct > 0 ? 'par-pct-pos' : pricePct < 0 ? 'par-pct-neg' : '';
+
+      return `<div class="par-item">
+        <div class="par-top">
+          <div class="par-left">
+            <span class="par-ticker">${esc(pticker)}</span>
+            <span class="par-date">${fmtDate(pdate)}</span>
+          </div>
+          <div class="par-right">
+            <span class="par-days">${pdays}</span>
+            <span class="par-pct ${pctCls}">${pctTxt}</span>
+          </div>
+        </div>
+        <div class="par-name">${esc(pname)}${p.outcome_summary ? ' — ' + esc(p.outcome_summary) : ''}</div>
+        ${simScore != null ? `<div class="par-sim">
+          <span class="par-sim-label">Similarity</span>
+          <div class="par-sim-track"><div class="par-sim-fill" style="width:${Math.round(simScore * 100)}%;"></div></div>
+          <span class="par-sim-pct">${Math.round(simScore * 100)}%</span>
+        </div>` : ''}
+      </div>`;
+    }).join('');
+  } catch (err) {
+    document.getElementById('par-body').innerHTML = `<div class="par-item inline-err">Parallels: ${esc(err.message)}</div>`;
+  }
+}
+
+// ── Boot ─────────────────────────────────────────────────────────────────────
+(async () => {
+  if (!TICKER) return;
+  const heroData = await loadHero();
+  const fairValue = heroData?.fair_value ?? null;
+
+  await Promise.all([
+    loadChart(fairValue),
+    loadLifecycle(),
+    loadContagion(),
+    loadPrerequisites(),
+    loadParallels()
+  ]);
+})();
+</script>
+</body>
+</html>
