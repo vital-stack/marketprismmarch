@@ -1467,8 +1467,7 @@ async function loadHero() {
         <div class="metric-sub">${esc(r.institutional_positioning || 'Institutional')}</div>
       </div>`;
 
-    // ── Sector Intelligence panel ──
-    renderSectorPanel(r);
+    // ── Sector Intelligence panel (loaded separately from Supabase) ──
 
     return { ...r, narrative_health: h.narrative_health, narrative_trend: h.narrative_trend };
   } catch (err) {
@@ -1477,86 +1476,80 @@ async function loadHero() {
   }
 }
 
-// ── Static sector intelligence lookup (keyed by ticker) ──────────────────────
-const SECTOR_DATA = [{"sector": "Agentic AI / Autonomous Systems", "subsector": "LLM Agents / Workflow Automation / Robotics AI", "cagr": "36.60%", "mktsize2024": "20.4", "mktsize2030": "82.2", "period": "2024\u20132030", "strengths": "Enterprise workflow automation (coding/legal/finance); AI-assisted drug discovery; autonomous customer service; code generation as productivity multiplier", "weaknesses": "Regulatory backlash (EU AI Act high-risk classification); OpenAI/Anthropic burning cash at scale without clear path to profitability at frontier; open-source models (Llama/DeepSeek) commoditizing capabilities faster than proprietary moats can be built", "opportunities": "The capability-autonomy conflation: frontier LLMs are extraordinarily capable pattern matchers but lack causal reasoning, persistent memory, and genuine goal-directed agency. The market is pricing \u2018autonomous\u2019 when it should be pricing \u2018sophisticated autocomplete.\u2019", "threats": "Agent Washing is the defining risk of the current AI investment cycle. The market has priced autonomous agents into valuations of every AI company. The evidence from SWE-Bench, METR evaluations, and real-world deployments shows agents consistently fail outside controlled demos. The party ends when enterprise buyers demand ROI evidence, not demos.", "emerging": "Agent Washing / When Does the Party End?", "tickers": ["PLTR", "TSLA", "GOOGL", "MSFT", "AMZN", "NVDA"], "framework": ""}, {"sector": "AI Infrastructure", "subsector": "GPU / Compute Hardware", "cagr": "30.40%", "mktsize2024": "35.4", "mktsize2030": "223.5", "period": "2024\u20132030", "strengths": "Compounding demand from LLM training; sovereign AI programs globally; enterprise AI adoption still early; inference market scaling faster than training", "weaknesses": "Extreme customer concentration (Microsoft/Google/Meta = ~60% NVIDIA revenue); custom ASIC threat from hyperscalers (TPU, Trainium, Maia); DeepSeek efficiency shock reducing training demand narrative; power grid constraints capping data center expansion", "opportunities": "Sovereign Compute War: nations treating GPU allocation as strategic national resource equivalent to oil reserves; liquid-immersion cooling as new infrastructure layer", "threats": "NVIDIA's moat is more temporal than structural. Custom silicon (Broadcom/Marvell) + AMD MI300X convergence will erode pricing power faster than consensus models. The $1T TAM projection by 2030 assumes compute scaling laws continue \u2014 DeepSeek proved efficiency gains can collapse demand narratives overnight.", "emerging": "Stackflation / Instability Premium", "tickers": ["NVDA", "AMD", "SMCI", "ARM", "AVGO", "TSM", "AMAT", "LRCX", "MU"], "framework": ""}, {"sector": "Cloud Computing", "subsector": "Hyperscale / IaaS / SaaS", "cagr": "20.40%", "mktsize2024": "752.4", "mktsize2030": "2390.2", "period": "2024\u20132030", "strengths": "AI workloads creating new cloud consumption layer; multi-cloud adoption accelerating; edge computing extending reach; government cloud contracts (DoD JWCC = $9B)", "weaknesses": "Stackflation loop: AI compute costs inflate cloud pricing which inflates SaaS pricing; margin compression as AI inference costs scale; regulatory fragmentation (EU AI Act, GDPR) adding compliance overhead", "opportunities": "Sovereign cloud mandates: EU/Middle East/APAC requiring data residency is fragmenting the global cloud model and creating regional moats for local providers", "threats": "Cloud growth is not a margin story \u2014 it's a volume story where AI workloads consume disproportionate compute relative to revenue. The hyperscaler capex cycle is outrunning monetization. Microsoft's 20% Azure price increase signals the Stackflation loop is already active.", "emerging": "Stackflation / Infrastructural Parasitism", "tickers": ["MSFT", "AMZN", "GOOGL", "ORCL", "CRM", "NOW", "WDAY", "INTU"], "framework": ""}, {"sector": "Cybersecurity", "subsector": "Enterprise / Cloud / AI-Native Security", "cagr": "12.90%", "mktsize2024": "219", "mktsize2030": "500.7", "period": "2025\u20132030", "strengths": "AI-powered autonomous security operations (SOC automation); zero-trust as new perimeter in post-VPN world; OT/ICS security for critical infrastructure (power grids, water systems); SME segment fastest growing (15.47% CAGR) and underpenetrated", "weaknesses": "Microsoft security bundling is a structural threat to point-solution vendors; regulatory compliance complexity adding overhead without proportional security improvement; quantum computing will eventually break current encryption standards", "opportunities": "Agentic attack surface: as enterprises deploy AI agents with broad system access, the attack surface multiplies in ways current security architecture wasn't designed to handle. This is a multi-year growth catalyst for AI-native security vendors.", "threats": "The cybersecurity spend narrative conflates compliance spend with security effectiveness. Post-breach forensics consistently show companies that met compliance requirements and still got breached. The market is pricing governance theater, not actual risk reduction. The real opportunity is in runtime security for AI agents \u2014 currently unaddressed.", "emerging": "Onopticon / Agent Washing (applied to security)", "tickers": ["PANW", "CRWD", "PLTR"], "framework": ""}, {"sector": "Data Licensing & AI Training Data", "subsector": "Human Content / Synthetic Data / RSL", "cagr": "28.40%", "mktsize2024": "0.44", "mktsize2030": "1.93", "period": "2025\u20132030", "strengths": "Really Simple Licensing (RSL) as emerging standard; domain-specific data (medical/legal/code) commanding premium; multilingual data scarcity for non-English LLMs; real-time data streams (social APIs) for RLHF", "weaknesses": "OpenAI/Google building synthetic data pipelines to reduce dependence on licensed human content; web scraping legal battles still unresolved (NYT v. OpenAI); fair use doctrine uncertainty", "opportunities": "The synthetic data quality ceiling is the most underreported risk in AI development. As training sets become increasingly model-generated, the human signal layer (Reddit, Stack Overflow, academic papers) becomes exponentially more valuable \u2014 and scarce.", "threats": "The data licensing market size ($437M in 2024) dramatically understates the real economic value being transferred. Every Reddit post that trains an LLM is worth orders of magnitude more than current licensing rates imply. Reddit is in the early innings of a repricing event that the $60M contract doesn't capture.", "emerging": "Infrastructural Parasitism / Stackflation", "tickers": ["RDDT", "SPOT", "SNAP", "SONY"], "framework": ""}, {"sector": "Defense Technology", "subsector": "AI Defense / Surveillance / Autonomous Systems", "cagr": "11.20%", "mktsize2024": "12.9", "mktsize2030": "36.6", "period": "2026\u20132035", "strengths": "NATO allies increasing defense budgets (2% GDP commitment creates $100B+ new spend); Ukraine conflict as real-world AI weapons testbed; autonomous drone swarms scaling; AI-enabled ISR replacing human analysts", "weaknesses": "Algorithmic accountability crisis: when AI-assisted targeting produces civilian casualties, the legal liability framework is undefined; Black box strategy (Palantir trade secrets) protects moat but creates constitutional litigation risk; European market resistance (GDPR + ethics concerns)", "opportunities": "Sovereign AI defense: nations refusing U.S. defense AI tools due to data sovereignty concerns are building domestic alternatives. This creates a fragmentation of the defense AI stack that could erode Palantir's international expansion thesis.", "threats": "Palantir's market cap prices in a monopoly on Western defense AI. The constitutional exposure is the asymmetric risk \u2014 a single federal court ruling on algorithmic targeting liability could create a liability overhang that no current DCF model accounts for. The Digital Guantanamo mechanism works until it doesn't.", "emerging": "Onopticon / Digital Guantanamo / Epistemic Capitalism", "tickers": ["LMT", "RTX", "BA", "PLTR"], "framework": ""}, {"sector": "Electric Vehicles & Autonomous Transport", "subsector": "EVs / AV Software / Charging Infrastructure", "cagr": "17.80%", "mktsize2024": "500.5", "mktsize2030": "1580", "period": "2024\u20132030", "strengths": "AV software layer (FSD/Waymo) represents highest-margin opportunity in transport; V2G (vehicle-to-grid) as distributed energy storage; robotaxi commercialization (Waymo San Francisco proving unit economics)", "weaknesses": "China EV exports creating structural oversupply in EU/emerging markets; LFP battery chemistry (cheaper, no cobalt) eroding Tesla's premium chemistry advantage; EU tariffs on Chinese EVs creating trade war escalation risk", "opportunities": "The critical mineral supply chain is the most underpriced geopolitical risk in the EV bull thesis. China's control of rare earth processing (85%+) is not a 'supply chain risk' \u2014 it's a strategic lever. The U.S. EV transition requires Chinese cooperation to succeed. Markets have not priced this structural dependency.", "threats": "Agent Washing (applied to AV): Every autonomous vehicle company claims 'Level 4 autonomy' in marketing materials. The SAE definition requires full capability in all conditions without human oversight. No production vehicle currently meets this. The gap between marketed capability and engineering reality is the defining investment risk in AV.", "emerging": "Agent Washing / Stackflation (battery supply chain)", "tickers": ["TSLA", "RIVN", "LCID", "NIO", "GM", "F", "TM", "HMC"], "framework": ""}, {"sector": "Energy Infrastructure / Power Grid", "subsector": "AI Data Center Power / Renewables / Grid Modernization", "cagr": "14.30%", "mktsize2024": "380", "mktsize2030": "870", "period": "2024\u20132030", "strengths": "Nuclear power renaissance (Small Modular Reactors) as only viable 24/7 carbon-free option for AI data centers; demand response programs creating new revenue streams for large industrial customers", "weaknesses": "Water crisis: data center cooling in water-stressed regions is becoming a regulatory constraint that no AI infrastructure model accounts for. Google's water consumption disclosure triggered shareholder scrutiny; Arizona/New Mexico water rights conflicts accelerating.", "opportunities": "AI's energy demand is structurally underestimated. Epoch AI projects frontier model training could require 3-5x current data center power by 2030. The grid wasn't built for this. The winners are utilities, nuclear operators, and SiC power semiconductor makers \u2014 not necessarily the AI companies consuming the power.", "threats": "The AI energy demand story is universally bullish in consensus models. The contrarian view: water scarcity constraints will force data center relocation to colder/wetter climates (Pacific Northwest, Nordic countries, Canada) faster than current capex plans accommodate.", "emerging": "Instability Premium / Stackflation", "tickers": ["DUK", "SO", "NEE", "VST", "CEG", "PWR"], "framework": ""}, {"sector": "Fintech & Digital Payments", "subsector": "Payments / Banking-as-a-Service / Crypto Infrastructure", "cagr": "16.80%", "mktsize2024": "294.7", "mktsize2030": "1152.6", "period": "2024\u20132030", "strengths": "Stablecoin infrastructure becoming settlement layer for cross-border B2B payments; tokenization of real-world assets on blockchain rails; open banking creating API-driven financial services layer", "weaknesses": "FedNow real-time payment adoption slower than projected; CBDC programs globally threatening private payment intermediaries; Buy Now Pay Later credit quality deterioration in rising rate environment", "opportunities": "Tokenization is the underappreciated second-order effect. Once real-world assets (T-bills, equity, real estate) are tokenized on blockchain rails, the settlement infrastructure becomes a new economic layer that legacy payment networks don't control.", "threats": "The fintech CAGR consensus is anchored on payment volume growth. The unpriced risk is CBDC adoption \u2014 if the Fed launches a digital dollar and enables direct consumer accounts, the business model of retail banking and payment processing changes structurally.", "emerging": "Epistemic Capitalism / Stackflation", "tickers": ["V", "MA", "PYPL", "HOOD", "SOFI", "COIN", "JPM", "GS", "WFC", "MS", "BAC"], "framework": ""}, {"sector": "Healthcare Technology & Biotech", "subsector": "Digital Health / AI Drug Discovery / Genomics", "cagr": "18.50%", "mktsize2024": "56.3", "mktsize2030": "220", "period": "2025\u20132030", "strengths": "GLP-1 receptor agonist obesity/diabetes pipeline ($100B+ market); AI-accelerated oncology (early detection from imaging); longevity medicine emerging as investable category; gene therapy (CRISPR scaling toward commercial treatments)", "weaknesses": "AI diagnostic hallucination: FDA has cleared 700+ AI/ML medical devices but post-market surveillance data on real-world performance is sparse. The liability framework for AI-assisted misdiagnosis is undefined.", "opportunities": "The GLP-1 revolution is compressing the pharma business model. If obesity/diabetes/cardiovascular conditions are treatable with once-weekly injections, the downstream demand for cardiac procedures, dialysis, and metabolic disease management collapses.", "threats": "Onopticon (health data surveillance) / Instability Premium", "emerging": "", "tickers": ["LLY", "JNJ", "MRK", "PFE", "ABBV", "ABT", "TMO", "DHR"], "framework": ""}, {"sector": "Predictive Analytics & Narrative Intelligence", "subsector": "Market Intelligence / NLP / Sentiment Analytics", "cagr": "23.60%", "mktsize2024": "14.9", "mktsize2030": "56.4", "period": "2024\u20132030", "strengths": "Institutional investors seeking edge beyond consensus sell-side research; narrative manipulation detection becoming compliance requirement; real-time social sentiment as leading indicator for early-IPO stocks", "weaknesses": "Alternative data without interpretive framework is noise. Bloomberg Terminal users have access to the same data \u2014 the edge comes from the analytical layer on top. Pure data aggregators will be commoditized.", "opportunities": "The narrative intelligence market is measuring the wrong things. Volume of mentions and sentiment polarity are lagging indicators \u2014 they tell you what already happened. Leading indicators are coordination patterns, epistemic drift from SEC filings, and narrative resilience scores.", "threats": "Epistemic Drift / Pod Mechanics / VMS Framework", "emerging": "", "tickers": ["PLTR", "CRM", "INTU", "SNPS", "CDNS"], "framework": ""}, {"sector": "Quantum Computing", "subsector": "Quantum Hardware / Error Correction / Quantum-as-a-Service", "cagr": "34.80%", "mktsize2024": "1.3", "mktsize2030": "7.2", "period": "2024\u20132030", "strengths": "Quantum-safe cryptography (NIST standards published 2024) creating immediate $30B+ security upgrade market; optimization problems (logistics/finance) showing near-term quantum advantage", "weaknesses": "Harvest-now-decrypt-later attacks: nation-states are already harvesting encrypted data today to decrypt when quantum computers arrive. This creates immediate demand for post-quantum cryptography migration.", "opportunities": "Quantum computing is simultaneously the most overhyped near-term and most underhyped long-term technology. The real near-term investment is quantum-safe cryptography, not quantum hardware.", "threats": "Agent Washing (quantum hype mirrors AI hype cycle)", "emerging": "", "tickers": ["IBM", "GOOGL", "MSFT"], "framework": ""}, {"sector": "Real Estate & PropTech", "subsector": "Commercial RE / Data Centers / PropTech", "cagr": "16.80%", "mktsize2024": "18.2", "mktsize2030": "94.3", "period": "2024\u20132030", "strengths": "Data center demand from AI creating 10-15 year lease commitments from hyperscalers; industrial outdoor storage (IOS) as underpenetrated niche; life sciences lab space driven by biotech investment", "weaknesses": "Rate sensitivity: commercial real estate is a leveraged asset class in a higher-for-longer rate environment; office conversion economics challenging in most markets.", "opportunities": "Data center REITs are the proxy for AI infrastructure investment with a yield. The market hasn't fully priced that Equinix/Digital Realty lease commitments from Google/Microsoft/Meta are effectively government bonds in terms of credit quality.", "threats": "The office real estate write-down cycle is not complete. Banks are still extending-and-pretending on commercial loans. The regional bank exposure to commercial RE is the quiet systemic risk.", "emerging": "Instability Premium / Stackflation", "tickers": ["PLD", "AMT", "OPEN"], "framework": ""}, {"sector": "Semiconductors", "subsector": "Broad Market / Logic / Memory", "cagr": "8.60%", "mktsize2024": "627", "mktsize2030": "1000", "period": "2024\u20132030", "strengths": "AI accelerator sub-market growing 30%+ CAGR; automotive semiconductors (EV powertrain SiC/GaN); edge AI chips for smartphones/PCs; chiplet architecture enabling new design flexibility", "weaknesses": "China self-sufficiency push (CXMT threatening DRAM, YMTC threatening NAND) at legacy nodes; U.S. export controls accelerating Chinese domestic capability; geopolitical risk premium not fully priced by market", "opportunities": "Chiplet disaggregation: moving from monolithic SoC to modular dies. AMD EPYC architecture showing 35% yield improvement. TSMC CoWoS advanced packaging becoming the new moat layer.", "threats": "The semiconductor CAGR consensus is anchored on AI demand continuing to scale. The critical unpriced risk: China's CXMT successfully replicating DDR5 at scale by 2027 would collapse HBM pricing and erase SK Hynix/Micron's most profitable segment.", "emerging": "Stackflation / Sovereign Compute War", "tickers": ["NVDA", "AMD", "INTC", "AVGO", "QCOM", "TSM", "MRVL", "AMAT", "LRCX", "TXN", "ARM", "MU", "SMCI"], "framework": ""}, {"sector": "Social Media & Digital Advertising", "subsector": "Platforms / Ad Tech / Data Monetization", "cagr": "15.20%", "mktsize2024": "479.1", "mktsize2030": "1481.9", "period": "2025\u20132032", "strengths": "AI-generated content reducing content production costs; social commerce (TikTok Shop model); Reddit's AI data licensing ($60M+ annual revenue and growing); creator monetization tools", "weaknesses": "Short-form video's neurochemical exploitation creates regulatory risk (children's screen time legislation); platform authenticity crisis from AI-generated content flooding feeds; advertising CPMs structurally compressed by programmatic efficiency", "opportunities": "Human signal premium: as synthetic content floods the web, authentic human-generated discussion (Reddit model) becomes the scarcer, more valuable training data for LLMs. Reddit is Standard Oil for the AI data economy.", "threats": "The social media advertising CAGR consensus is anchored on programmatic efficiency gains. The unpriced risk: a single children's screen time federal mandate could trigger advertiser liability reform that restructures platform business models.", "emerging": "Infrastructural Parasitism / Epistemic Drift", "tickers": ["META", "SNAP", "RDDT", "GOOGL", "SPOT", "CMCSA", "DIS"], "framework": ""}];
-
-// Build ticker → sector lookup map
-const TICKER_SECTOR_MAP = {};
-SECTOR_DATA.forEach(s => {
-  s.tickers.forEach(t => {
-    if (!TICKER_SECTOR_MAP[t]) TICKER_SECTOR_MAP[t] = [];
-    TICKER_SECTOR_MAP[t].push(s);
-  });
-});
-
-// ── Sector Intelligence panel (called from loadHero) ─────────────────────────
-function renderSectorPanel(r) {
+// ── Sector Intelligence panel (fetched from Supabase) ─────────────────────────
+async function loadSectorIntelligence(heroRow) {
   const el = document.getElementById('sector-body');
-  if (!el) return;
+  if (!el || !TICKER) return;
+  try {
+    const rows = await sbFetch('sector_intelligence', {
+      select: 'sector,subsector,cagr,mktsize2024,mktsize2030,period,strengths,weaknesses,opportunities,threats,emerging,tickers,framework',
+      ticker: `eq.${TICKER}`,
+      order: 'created_at.desc',
+      limit: '5'
+    }).catch(() => []);
 
-  // 1. Try ticker lookup from embedded data first
-  // 2. Fall back to DB columns on r
-  const staticMatches = TICKER_SECTOR_MAP[TICKER] || [];
-  const s = staticMatches[0] || null;  // primary sector match
+    const r = heroRow || {};
 
-  // If neither source has data
-  if (!s && !r.sector_name) {
-    el.innerHTML = '<div class="no-data">No sector data available.</div>';
-    return;
+    if (!rows.length && !r.sector_name) {
+      el.innerHTML = '<div class="no-data">No sector data available.</div>';
+      return;
+    }
+
+    const s = rows[0] || null;
+    const allSectors = rows.map(m => m.sector).filter(Boolean);
+
+    const sectorName  = s?.sector      || r.sector_name       || '—';
+    const subsector   = s?.subsector   || null;
+    const cagr        = s?.cagr        || (r.sector_cagr_pct != null ? r.sector_cagr_pct.toFixed(1) + '%' : null);
+    const mkt2024     = s?.mktsize2024 || null;
+    const mkt2030     = s?.mktsize2030 || null;
+    const period      = s?.period      || null;
+    const strengths   = s?.strengths   || r.sector_key_strengths   || null;
+    const weaknesses  = s?.weaknesses  || r.sector_key_weaknesses  || null;
+    const threats     = s?.threats     || r.sector_threats         || null;
+    const emerging    = s?.emerging    || r.sector_emerging_themes || null;
+    const opps        = s?.opportunities || null;
+    const framework   = s?.framework   || r.sp_framework_match     || null;
+
+    const makeBlock = (label, text) => text
+      ? `<div class="si-block">
+          <div class="si-block-label">${label}</div>
+          <div class="si-block-text">${esc(text)}</div>
+         </div>` : '';
+
+    const mktHtml = (mkt2024 && mkt2030)
+      ? `<span class="si-cagr">$${mkt2024}B → $${mkt2030}B (${period || ''})</span>` : '';
+
+    el.innerHTML = `
+      <div class="si-header">
+        <div>
+          <div class="si-sector-name">${esc(sectorName)}</div>
+          ${subsector ? `<div style="font-size:12px;color:var(--text-tertiary);margin-top:3px;">${esc(subsector)}</div>` : ''}
+          ${allSectors.length > 1 ? `<div style="font-size:11px;color:var(--text-tertiary);margin-top:4px;">Also in: ${allSectors.slice(1).map(esc).join(', ')}</div>` : ''}
+        </div>
+        <div class="si-meta">
+          ${cagr ? `<span class="si-cagr">${cagr} CAGR</span>` : ''}
+          ${mktHtml}
+          ${framework ? `<span class="si-framework">${esc(framework)}</span>` : ''}
+          ${r.sector_trap_flag ? `<span class="si-trap-badge">⚠ Sector Trap: ${esc(r.sector_trap_name || '')}</span>` : ''}
+        </div>
+      </div>
+      <div class="si-grid">
+        ${makeBlock('Strengths',       strengths)}
+        ${makeBlock('Weaknesses',      weaknesses)}
+        ${makeBlock('Threats',         threats)}
+        ${makeBlock('Emerging Themes', emerging)}
+      </div>
+      ${opps ? `<div class="si-contrarian">
+        <div class="si-contrarian-label">Opportunity / Contrarian View</div>
+        <div class="si-contrarian-text">${esc(opps)}</div>
+      </div>` : (r.sector_contrarian_thesis ? `<div class="si-contrarian">
+        <div class="si-contrarian-label">Contrarian Thesis</div>
+        <div class="si-contrarian-text">${esc(r.sector_contrarian_thesis)}</div>
+      </div>` : '')}`;
+  } catch (err) {
+    document.getElementById('sector-body').innerHTML = `<div class="inline-err">Sector: ${esc(err.message)}</div>`;
   }
-
-  const sectorName  = s?.sector      || r.sector_name       || '—';
-  const subsector   = s?.subsector   || null;
-  const cagr        = s?.cagr        || (r.sector_cagr_pct != null ? r.sector_cagr_pct.toFixed(1) + '%' : null);
-  const mkt2024     = s?.mktsize2024 || null;
-  const mkt2030     = s?.mktsize2030 || null;
-  const period      = s?.period      || null;
-  const strengths   = s?.strengths   || r.sector_key_strengths   || null;
-  const weaknesses  = s?.weaknesses  || r.sector_key_weaknesses  || null;
-  const threats     = s?.threats     || r.sector_threats         || null;
-  const emerging    = s?.emerging    || r.sector_emerging_themes || null;
-  const opps        = s?.opportunities || null;
-  const framework   = s?.framework   || r.sp_framework_match     || null;
-
-  // If ticker appears in multiple sectors, show all sector names
-  const allSectors = staticMatches.map(m => m.sector);
-
-  const makeBlock = (label, text) => text
-    ? `<div class="si-block">
-        <div class="si-block-label">${label}</div>
-        <div class="si-block-text">${esc(text)}</div>
-       </div>` : '';
-
-  const mktHtml = (mkt2024 && mkt2030)
-    ? `<span class="si-cagr">$${mkt2024}B → $${mkt2030}B (${period || ''})</span>` : '';
-
-  el.innerHTML = `
-    <div class="si-header">
-      <div>
-        <div class="si-sector-name">${esc(sectorName)}</div>
-        ${subsector ? `<div style="font-size:12px;color:var(--text-tertiary);margin-top:3px;">${esc(subsector)}</div>` : ''}
-        ${allSectors.length > 1 ? `<div style="font-size:11px;color:var(--text-tertiary);margin-top:4px;">Also in: ${allSectors.slice(1).map(esc).join(', ')}</div>` : ''}
-      </div>
-      <div class="si-meta">
-        ${cagr ? `<span class="si-cagr">${cagr} CAGR</span>` : ''}
-        ${mktHtml}
-        ${framework ? `<span class="si-framework">${esc(framework)}</span>` : ''}
-        ${r.sector_trap_flag ? `<span class="si-trap-badge">⚠ Sector Trap: ${esc(r.sector_trap_name || '')}</span>` : ''}
-      </div>
-    </div>
-    <div class="si-grid">
-      ${makeBlock('Strengths',       strengths)}
-      ${makeBlock('Weaknesses',      weaknesses)}
-      ${makeBlock('Threats',         threats)}
-      ${makeBlock('Emerging Themes', emerging)}
-    </div>
-    ${opps ? `<div class="si-contrarian">
-      <div class="si-contrarian-label">Opportunity / Contrarian View</div>
-      <div class="si-contrarian-text">${esc(opps)}</div>
-    </div>` : (r.sector_contrarian_thesis ? `<div class="si-contrarian">
-      <div class="si-contrarian-label">Contrarian Thesis</div>
-      <div class="si-contrarian-text">${esc(r.sector_contrarian_thesis)}</div>
-    </div>` : '')}`;
 }
 
 // ── 2. Price Chart ───────────────────────────────────────────────────────────
@@ -1999,53 +1992,29 @@ async function loadContagion() {
   }
 }
 
-// ── 5. Prerequisites ─────────────────────────────────────────────────────────
+// ── 5. Prerequisites — claim_verifications ───────────────────────────────────
 async function loadPrerequisites() {
   if (!TICKER) return;
   try {
-    const analyses = await sbFetch('narrative_analyses', {
-      select: 'prerequisites_json,prerequisites_met,prerequisites_total',
+    const items = await sbFetch('claim_verifications', {
+      select: 'status,condition,description,text,met',
       ticker: `eq.${TICKER}`,
       order:  'created_at.desc',
-      limit:  '1'
+      limit:  '4'
     }).catch(() => []);
 
-    if (!analyses.length) {
+    if (!items.length) {
       document.getElementById('pr-body').innerHTML = '<div class="no-data">No prerequisite data available.</div>';
       return;
     }
 
-    const row   = analyses[0];
-    const met   = row.prerequisites_met   ?? 0;
-    const total = row.prerequisites_total ?? 0;
-
-    let items = [];
-    if (row.prerequisites_json) {
-      try {
-        const raw = row.prerequisites_json;
-        items = typeof raw === 'string' ? JSON.parse(raw) : raw;
-        if (!Array.isArray(items)) items = Object.values(items);
-      } catch { items = []; }
-    }
-
-    if (!items.length && !total) {
-      document.getElementById('pr-body').innerHTML = '<div class="no-data">No prerequisite data available.</div>';
-      return;
-    }
-
-    // Show up to 4 boxes — pad with empty if fewer than 4
-    const display = items.slice(0, 4);
-    while (display.length < 4 && total > display.length) {
-      display.push(null); // placeholder
-    }
-
-    const metCount   = items.length ? items.filter(p => {
-      const s = String(p?.status || (p?.met === true ? 'MET' : 'PENDING')).toUpperCase();
+    const total = items.length;
+    const metCount = items.filter(p => {
+      const s = String(p.status || (p.met === true ? 'MET' : 'PENDING')).toUpperCase();
       return s === 'MET';
-    }).length : met;
+    }).length;
 
-    const boxesHtml = display.map(p => {
-      if (!p) return `<div class="pr-box pr-box-pending"><span class="pr-status pr-pending">—</span><div class="pr-text" style="color:var(--text-tertiary);">Pending</div></div>`;
+    const boxesHtml = items.map(p => {
       const rawStatus = String(p.status || (p.met === true ? 'MET' : p.met === false ? 'NOT MET' : 'PENDING')).toUpperCase();
       const stCls  = rawStatus === 'MET' ? 'pr-met' : rawStatus === 'NOT MET' ? 'pr-not-met' : 'pr-pending';
       const label  = rawStatus === 'NOT MET' ? 'NOT MET' : rawStatus === 'MET' ? 'MET' : 'PENDING';
@@ -2059,7 +2028,7 @@ async function loadPrerequisites() {
       <div class="pr-pad">
         <div class="pr-top">
           <div class="pr-desc">Conditions for narrative validation</div>
-          <div class="pr-count"><strong>${metCount}</strong> / ${total || items.length} met</div>
+          <div class="pr-count"><strong>${metCount}</strong> / ${total} met</div>
         </div>
       </div>
       <div class="pr-boxes">${boxesHtml}</div>`;
@@ -2374,7 +2343,8 @@ async function loadNarratives() {
     loadContagion(),
     loadPrerequisites(),
     loadParallels(),
-    loadMoveDrivers()
+    loadMoveDrivers(),
+    loadSectorIntelligence(heroData)
   ]);
 })();
 </script>
