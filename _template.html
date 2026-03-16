@@ -258,7 +258,9 @@ body{
   font-family:var(--font-mono);font-size:10px;
   padding:2px 8px;border-radius:4px;
   background:var(--mp-surface);border:1px solid var(--mp-border);color:var(--mp-text-secondary);
+  cursor:pointer;transition:border-color .12s,color .12s,background .12s;
 }
+.sector-ticker-chip:hover{border-color:var(--mp-blue);color:var(--mp-text-primary);background:rgba(26,110,255,.06);}
 .sector-footer{
   padding:10px 16px;border-top:1px solid var(--mp-border);
   display:flex;align-items:center;justify-content:space-between;
@@ -1210,7 +1212,7 @@ function renderSectors(){
       +'</div>'
       +'<div class="sector-body">'
         +'<div class="sector-desc">'+esc(s.desc)+'</div>'
-        +'<div class="sector-tickers">'+s.tickers.map(function(t){return '<span class="sector-ticker-chip" style="display:inline-flex;align-items:center;gap:4px;">'+logoHTML(t,'sm')+t+'</span>';}).join('')+'</div>'
+        +'<div class="sector-tickers">'+s.tickers.map(function(t){return '<a href="/ticker/'+encodeURIComponent(t)+'" class="sector-ticker-chip" style="display:inline-flex;align-items:center;gap:4px;text-decoration:none;color:inherit;">'+logoHTML(t,'sm')+t+'</a>';}).join('')+'</div>'
       +'</div>'
       +'<div class="sector-momentum-bar">'
         +'<span class="sector-bar-lbl">Momentum</span>'
