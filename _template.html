@@ -4,1119 +4,1110 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard — Market Prism</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/fonts/geist-sans/style.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/fonts/geist-mono/style.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --mp-obsidian: #080B10;
-    --mp-deep: #0C1018;
-    --mp-surface: #111520;
-    --mp-border: rgba(255,255,255,0.06);
-    --mp-border-mid: rgba(255,255,255,0.10);
-    --mp-blue: #3B82F6;
-    --mp-blue-glow: rgba(59,130,246,0.2);
-    --mp-cyan: #4DF0A0;
-    --mp-teal: #4DF0A0;
-    --mp-prism-4: #8B5CF6;
-    --mp-prism-5: #F87171;
-    --mp-text-primary: #E8EDF5;
-    --mp-text-secondary: #7A8499;
-    --mp-text-tertiary: #3D4558;
-    --mp-amber: #FBBF24;
-    --font-display: 'Syne', system-ui, sans-serif;
-    --font-body: 'Geist', system-ui, sans-serif;
-    --font-mono: 'Geist Mono', monospace;
-  }
-
-  [data-theme="light"] {
-    --mp-obsidian: #F5F7FA;
-    --mp-deep: #FFFFFF;
-    --mp-surface: #EDF0F5;
-    --mp-border: rgba(0,0,0,0.08);
-    --mp-border-mid: rgba(0,0,0,0.14);
-    --mp-blue: #2563EB;
-    --mp-blue-glow: rgba(37,99,235,0.15);
-    --mp-cyan: #10B981;
-    --mp-teal: #10B981;
-    --mp-prism-4: #7C3AED;
-    --mp-prism-5: #EF4444;
-    --mp-text-primary: #111827;
-    --mp-text-secondary: #4B5563;
-    --mp-text-tertiary: #9CA3AF;
-    --mp-amber: #D97706;
-  }
-
-  html[data-theme="light"] body::after {
-    display: none;
-  }
-
-  [data-theme="light"] .badge-breaking { background: rgba(239,68,68,0.1); color: #DC2626; border-color: rgba(239,68,68,0.25); }
-  [data-theme="light"] .badge-surging { background: rgba(16,185,129,0.1); color: #059669; border-color: rgba(16,185,129,0.25); }
-  [data-theme="light"] .badge-fragile { background: rgba(217,119,6,0.1); color: #B45309; border-color: rgba(217,119,6,0.2); }
-  [data-theme="light"] .badge-stable { background: rgba(37,99,235,0.1); color: #1D4ED8; border-color: rgba(37,99,235,0.2); }
-  [data-theme="light"] .chip.active-breaking { background: rgba(239,68,68,0.1); color: #DC2626; border-color: rgba(239,68,68,0.25); }
-  [data-theme="light"] .chip.active-surging { background: rgba(16,185,129,0.1); color: #059669; border-color: rgba(16,185,129,0.25); }
-  [data-theme="light"] .chip.active-fragile { background: rgba(217,119,6,0.1); color: #B45309; border-color: rgba(217,119,6,0.2); }
-  [data-theme="light"] .chip.active-stable { background: rgba(37,99,235,0.1); color: #1D4ED8; border-color: rgba(37,99,235,0.2); }
-  [data-theme="light"] .chip.active { background: #10B981; color: #fff; border-color: #10B981; }
-  [data-theme="light"] .verdict-trap { background: rgba(239,68,68,0.1); color: #DC2626; border-color: rgba(239,68,68,0.25); }
-  [data-theme="light"] .verdict-supported { background: rgba(16,185,129,0.1); color: #059669; border-color: rgba(16,185,129,0.25); }
-  [data-theme="light"] .nav-item.active { background: rgba(16,185,129,0.1); color: #059669; border-left-color: #10B981; }
-  [data-theme="light"] .pip-trap { background: #EF4444; }
-  [data-theme="light"] .pip-supported { background: #10B981; }
-  [data-theme="light"] .price-main { color: #111827; }
-  [data-theme="light"] .delta-pos { color: #059669; }
-  [data-theme="light"] .delta-neg { color: #DC2626; }
-  [data-theme="light"] .load-more-btn:hover { background: #10B981; color: #fff; border-color: #10B981; }
-  [data-theme="light"] .filter-select option { background: #fff; color: #111827; }
-
-  html { font-size: 16px; }
-  body {
-    font-family: var(--font-body);
-    background: var(--mp-obsidian);
-    color: var(--mp-text-primary);
-    min-height: 100vh;
-    line-height: 1.5;
-  }
-  body::after {
-    content: '';
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.01) 2px, rgba(255,255,255,0.01) 4px);
-    pointer-events: none;
-    z-index: 9999;
-  }
-
-  /* ── Side Navigation ── */
-  .side-nav {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 240px;
-    height: 100vh;
-    background: var(--mp-deep);
-    border-right: 1px solid var(--mp-border);
-    display: flex;
-    flex-direction: column;
-    z-index: 100;
-    overflow-y: auto;
-  }
-  .nav-logo {
-    padding: 24px 20px 20px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .nav-logo svg {
-    width: 28px;
-    height: 28px;
-    flex-shrink: 0;
-  }
-  .nav-logo span {
-    font-family: var(--font-display);
-    font-size: 18px;
-    color: var(--mp-text-primary);
-    letter-spacing: -0.01em;
-  }
-  .nav-items {
-    padding: 8px 12px;
-    flex: 1;
-  }
-  .nav-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 16px;
-    border-radius: 8px;
-    font-size: 12px;
-    font-family: var(--font-body);
-    font-weight: 400;
-    color: var(--mp-text-secondary);
-    text-decoration: none;
-    transition: background 0.12s, color 0.12s;
-    margin-bottom: 2px;
-    border-left: 2px solid transparent;
-  }
-  .nav-item:hover {
-    background: var(--mp-surface);
-    color: var(--mp-text-primary);
-  }
-  .nav-item.active {
-    background: rgba(77,240,160,0.1);
-    color: #4DF0A0;
-    border-left: 2px solid #4DF0A0;
-  }
-  .nav-item svg {
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0;
-    opacity: 0.7;
-  }
-  .nav-item.active svg { opacity: 1; }
-  .nav-divider {
-    height: 1px;
-    background: var(--mp-border);
-    margin: 12px 20px;
-  }
-  .nav-bottom {
-    padding: 16px 20px;
-    border-top: 1px solid var(--mp-border);
-  }
-  .nav-bottom a {
-    font-size: 11px;
-    color: var(--mp-text-tertiary);
-    text-decoration: none;
-    transition: color 0.12s;
-  }
-  .nav-bottom a:hover { color: var(--mp-text-secondary); }
-
-  /* ── Mobile hamburger ── */
-  .mobile-topbar {
-    display: none;
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    height: 56px;
-    background: var(--mp-deep);
-    border-bottom: 1px solid var(--mp-border);
-    z-index: 200;
-    align-items: center;
-    padding: 0 16px;
-    gap: 12px;
-  }
-  .hamburger-btn {
-    background: none;
-    border: none;
-    color: var(--mp-text-primary);
-    cursor: pointer;
-    padding: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .hamburger-btn svg { width: 22px; height: 22px; }
-  .mobile-topbar .nav-logo {
-    padding: 0;
-  }
-  .nav-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.6);
-    z-index: 150;
-  }
-  .nav-overlay.open { display: block; }
-
-  /* ── Main Content ── */
-  .main-content {
-    margin-left: 240px;
-    max-width: 960px;
-    padding: 32px 40px 80px;
-  }
-
-  /* ── Page Header ── */
-  .page-header {
-    margin-bottom: 28px;
-  }
-  .page-header h1 {
-    font-family: var(--font-display);
-    font-size: 26px;
-    font-weight: 400;
-    color: var(--mp-text-primary);
-    letter-spacing: -0.01em;
-    margin-bottom: 4px;
-  }
-  .page-header p {
-    font-size: 13px;
-    color: var(--mp-text-tertiary);
-  }
-
-  /* ── Stats Row ── */
-  .stats-row {
-    display: flex;
-    gap: 16px;
-    margin-bottom: 28px;
-  }
-  .stat-card {
-    flex: 1;
-    background: var(--mp-deep);
-    border: 1px solid var(--mp-border);
-    border-radius: 8px;
-    padding: 16px 20px;
-  }
-  .stat-card .stat-num {
-    font-size: 22px;
-    font-weight: 500;
-    font-family: var(--font-mono);
-    color: var(--mp-text-primary);
-    display: block;
-    margin-bottom: 2px;
-  }
-  .stat-card .stat-label {
-    font-size: 11px;
-    color: var(--mp-text-tertiary);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-  }
-
-  /* ── Filters ── */
-  .filter-bar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-bottom: 16px;
-  }
-  .filter-group {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .filter-sep {
-    width: 1px;
-    height: 20px;
-    background: var(--mp-border-mid);
-    margin: 0 4px;
-  }
-  .filter-label {
-    font-size: 11px;
-    color: var(--mp-text-tertiary);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    white-space: nowrap;
-  }
-  .chip {
-    font-size: 12px;
-    padding: 5px 12px;
-    border-radius: 99px;
-    border: 1px solid var(--mp-border);
-    background: var(--mp-surface);
-    cursor: pointer;
-    color: var(--mp-text-secondary);
-    font-family: var(--font-body);
-    transition: all 0.12s;
-    white-space: nowrap;
-  }
-  .chip:hover { border-color: var(--mp-border-mid); color: var(--mp-text-primary); }
-  .chip.active {
-    background: var(--mp-blue);
-    color: #FFFFFF;
-    border-color: var(--mp-blue);
-  }
-  .chip.active-breaking { background: rgba(248,113,113,0.12); color: #F87171; border-color: rgba(248,113,113,0.3); }
-  .chip.active-surging  { background: rgba(77,240,160,0.1);  color: #4DF0A0;  border-color: rgba(77,240,160,0.25); }
-  .chip.active-fragile  { background: rgba(239,159,39,0.1); color: #EF9F27;  border-color: rgba(239,159,39,0.25); }
-  .chip.active-stable   { background: rgba(59,130,246,0.1); color: #3B82F6;  border-color: rgba(59,130,246,0.25); }
-
-  .search-wrap { margin-left: auto; }
-  .search-input {
-    font-size: 13px;
-    font-family: var(--font-mono);
-    padding: 6px 14px;
-    border-radius: 99px;
-    border: 1px solid var(--mp-border-mid);
-    background: var(--mp-deep);
-    color: var(--mp-text-primary);
-    width: 160px;
-    outline: none;
-    transition: border-color 0.12s;
-  }
-  .search-input:focus { border-color: var(--mp-blue); }
-  .search-input::placeholder { color: var(--mp-text-tertiary); }
-
-  .filter-bar-2 {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 12px;
-    flex-wrap: wrap;
-  }
-  .filter-select {
-    font-size: 12px;
-    font-family: var(--font-body);
-    padding: 5px 10px;
-    border-radius: 99px;
-    border: 1px solid var(--mp-border);
-    background: var(--mp-surface);
-    color: var(--mp-text-secondary);
-    cursor: pointer;
-    outline: none;
-    transition: border-color 0.12s;
-    max-width: 220px;
-  }
-  .filter-select option {
-    background: var(--mp-deep);
-    color: var(--mp-text-primary);
-  }
-  .filter-select:focus { border-color: var(--mp-blue); }
-  .filter-select:hover { border-color: var(--mp-border-mid); color: var(--mp-text-primary); }
-
-  /* FVD tag */
-  .fvd-tag strong { font-weight: 500; }
-  .fvd-under strong { color: var(--mp-teal); }
-  .fvd-over  strong { color: var(--mp-prism-5); }
-
-  /* Sector label on card */
-  .meta-sector {
-    font-size: 11px;
-    color: var(--mp-text-tertiary);
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 180px;
-  }
-  .count-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 12px;
-    color: var(--mp-text-tertiary);
-    margin-bottom: 8px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--mp-border);
-  }
-
-  /* ── Feed ── */
-  .feed { display: flex; flex-direction: column; gap: 12px; }
-
-  .story-card {
-    padding: 16px;
-    background: var(--mp-deep);
-    border: 1px solid var(--mp-border);
-    border-radius: 8px;
-    transition: border-color 0.15s, transform 0.15s;
-    display: block;
-    text-decoration: none;
-    color: inherit;
-  }
-  .story-card:hover {
-    border-color: var(--mp-border-mid);
-    transform: translateY(-1px);
-  }
-  .story-card:hover .card-arrow { opacity: 1; }
-
-  .card-arrow {
-    font-size: 18px;
-    color: var(--mp-text-tertiary);
-    opacity: 0;
-    transition: opacity 0.12s;
-    line-height: 1;
-    margin-left: 6px;
-  }
-
-  .card-top {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    margin-bottom: 10px;
-  }
-  .card-left {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    flex: 1;
-    min-width: 0;
-  }
-
-  .ticker-badge {
-    font-size: 11px;
-    font-weight: 500;
-    font-family: var(--font-mono);
-    min-width: 52px;
-    text-align: center;
-    padding: 4px 8px;
-    border-radius: 5px;
-    letter-spacing: 0.04em;
-    flex-shrink: 0;
-    border: 1px solid;
-  }
-  .badge-breaking { background: rgba(248,113,113,0.12); color: #F87171; border-color: rgba(248,113,113,0.3); }
-  .badge-surging  { background: rgba(77,240,160,0.1);  color: #4DF0A0;  border-color: rgba(77,240,160,0.25); }
-  .badge-fragile  { background: rgba(239,159,39,0.1); color: #EF9F27;  border-color: rgba(239,159,39,0.25); }
-  .badge-stable   { background: rgba(59,130,246,0.1); color: #3B82F6;  border-color: rgba(59,130,246,0.25); }
-
-  .verdict-pip {
-    display: inline-block;
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    margin-top: 7px;
-  }
-  .pip-trap      { background: var(--mp-prism-5); }
-  .pip-supported { background: var(--mp-teal); }
-  .pip-monitoring { background: var(--mp-text-tertiary); }
-
-  .story-claim {
-    font-size: 14px;
-    color: var(--mp-text-primary);
-    line-height: 1.5;
-  }
-
-  .price-block {
-    text-align: right;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    gap: 2px;
-  }
-  .price-nums { text-align: right; }
-  .price-main {
-    font-size: 14px;
-    font-weight: 500;
-    font-family: var(--font-mono);
-    color: #FFFFFF;
-  }
-  .price-delta { font-size: 12px; font-family: var(--font-mono); }
-  .delta-pos { color: var(--mp-teal); }
-  .delta-neg { color: var(--mp-prism-5); }
-  .delta-flat { color: var(--mp-text-tertiary); }
-
-  /* ── Meta row ── */
-  .card-meta {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    flex-wrap: wrap;
-  }
-  .meta-tag {
-    font-size: 12px;
-    color: var(--mp-text-tertiary);
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-  .meta-tag strong {
-    font-weight: 500;
-    color: var(--mp-text-secondary);
-  }
-  .trend-up   strong { color: var(--mp-teal); }
-  .trend-down strong { color: var(--mp-prism-5); }
-  .trend-flat strong { color: var(--mp-text-tertiary); }
-
-  .meta-date {
-    font-size: 11px;
-    font-family: var(--font-mono);
-    color: var(--mp-text-tertiary);
-    margin-left: auto;
-  }
-
-  .verdict-tag {
-    font-size: 11px;
-    padding: 2px 8px;
-    border-radius: 99px;
-    font-weight: 500;
-    border: 1px solid;
-  }
-  .verdict-trap      { background: rgba(248,113,113,0.12); color: #F87171; border-color: rgba(248,113,113,0.3); }
-  .verdict-supported { background: rgba(77,240,160,0.1); color: var(--mp-teal); border-color: rgba(77,240,160,0.25); }
-
-  /* ── Load more ── */
-  .load-more {
-    text-align: center;
-    margin-top: 32px;
-  }
-  .load-more-btn {
-    font-size: 13px;
-    font-family: var(--font-body);
-    padding: 10px 28px;
-    border-radius: 99px;
-    border: 1px solid var(--mp-border-mid);
-    background: var(--mp-surface);
-    color: var(--mp-text-secondary);
-    cursor: pointer;
-    transition: all 0.12s;
-  }
-  .load-more-btn:hover {
-    background: var(--mp-blue);
-    color: white;
-    border-color: var(--mp-blue);
-  }
-
-  .empty-state {
-    padding: 60px 0;
-    text-align: center;
-    color: var(--mp-text-tertiary);
-    font-size: 14px;
-  }
-
-  .theme-toggle {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: none;
-    border: 1px solid var(--mp-border);
-    border-radius: 6px;
-    padding: 8px 12px;
-    color: var(--mp-text-secondary);
-    font-size: 11px;
-    font-family: var(--font-mono);
-    cursor: pointer;
-    transition: all 0.2s;
-    width: 100%;
-  }
-  .theme-toggle:hover {
-    background: var(--mp-surface);
-    color: var(--mp-text-primary);
-    border-color: var(--mp-border-mid);
-  }
-  [data-theme="light"] .icon-sun { display: none; }
-  [data-theme="dark"] .icon-moon,
-  html:not([data-theme="light"]) .icon-moon { display: none; }
-  [data-theme="light"] .icon-moon { display: block; }
-
-  /* ── Mobile ── */
-  @media (max-width: 767px) {
-    .side-nav {
-      transform: translateX(-100%);
-      transition: transform 0.25s ease;
-    }
-    .side-nav.open {
-      transform: translateX(0);
-    }
-    .mobile-topbar {
-      display: flex;
-    }
-    .main-content {
-      margin-left: 0;
-      padding: 72px 16px 80px;
-    }
-    .stats-row {
-      flex-direction: column;
-      gap: 10px;
-    }
-    .search-wrap {
-      margin-left: 0;
-      width: 100%;
-    }
-    .search-input {
-      width: 100%;
-    }
-  }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --mp-obsidian:#0A0E1A;
+  --mp-deep:#0F1628;
+  --mp-surface:#141D35;
+  --mp-surface2:#1a2340;
+  --mp-border:rgba(255,255,255,0.08);
+  --mp-border-mid:rgba(255,255,255,0.14);
+  --mp-blue:#1A6EFF;
+  --mp-blue-glow:rgba(26,110,255,0.15);
+  --mp-cyan:#00C2FF;
+  --mp-teal:#00E5B4;
+  --mp-violet:#7B61FF;
+  --mp-red:#FF6B6B;
+  --mp-amber:#EF9F27;
+  --mp-text-primary:#F0F4FF;
+  --mp-text-secondary:#8B97B8;
+  --mp-text-tertiary:#4A5578;
+  --font-display:'DM Serif Display',Georgia,serif;
+  --font-body:'DM Sans',system-ui,sans-serif;
+  --font-mono:'DM Mono',monospace;
+}
+html{font-size:16px;}
+body{
+  font-family:var(--font-body);
+  background:var(--mp-obsidian);
+  color:var(--mp-text-primary);
+  min-height:100vh;
+  line-height:1.5;
+  font-weight:300;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+/* ── LAYOUT ── */
+.app{display:flex;min-height:100vh;}
+/* ── SIDE NAV ── */
+.side-nav{
+  position:fixed;top:0;left:0;width:224px;height:100vh;
+  background:var(--mp-deep);border-right:1px solid var(--mp-border);
+  display:flex;flex-direction:column;z-index:100;overflow-y:auto;
+}
+.nav-logo{
+  padding:22px 18px 18px;
+  display:flex;align-items:center;gap:10px;
+  border-bottom:1px solid var(--mp-border);
+  text-decoration:none;flex-shrink:0;
+}
+.nav-logo span{
+  font-family:var(--font-display);
+  font-size:17px;color:var(--mp-text-primary);letter-spacing:-.01em;
+}
+.nav-section-lbl{
+  font-family:var(--font-mono);
+  font-size:9px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--mp-text-tertiary);
+  padding:18px 18px 6px;
+}
+.nav-items{padding:4px 10px;flex:1;}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 14px;border-radius:8px;
+  font-size:13px;font-family:var(--font-body);font-weight:400;
+  color:var(--mp-text-secondary);text-decoration:none;
+  transition:background .12s,color .12s;
+  margin-bottom:1px;border-left:2px solid transparent;
+  cursor:pointer;border:none;background:none;width:100%;text-align:left;
+}
+.nav-item:hover{background:var(--mp-surface);color:var(--mp-text-primary);}
+.nav-item.active{
+  background:rgba(26,110,255,0.1);color:var(--mp-blue);
+  border-left:2px solid var(--mp-blue);
+}
+.nav-item svg{width:15px;height:15px;flex-shrink:0;opacity:.65;}
+.nav-item.active svg{opacity:1;}
+.nav-item-badge{
+  margin-left:auto;font-family:var(--font-mono);font-size:9px;
+  padding:1px 6px;border-radius:99px;
+  background:rgba(255,107,107,.12);color:var(--mp-red);
+  border:1px solid rgba(255,107,107,.25);
+}
+.nav-item-badge.blue{background:rgba(26,110,255,.12);color:var(--mp-blue);border-color:rgba(26,110,255,.25);}
+.nav-item-badge.teal{background:rgba(0,229,180,.1);color:var(--mp-teal);border-color:rgba(0,229,180,.22);}
+.nav-divider{height:1px;background:var(--mp-border);margin:10px 14px;}
+.nav-bottom{
+  padding:14px 18px;border-top:1px solid var(--mp-border);
+  display:flex;flex-direction:column;gap:8px;
+}
+.nav-bottom a{font-size:11px;color:var(--mp-text-tertiary);text-decoration:none;transition:color .12s;}
+.nav-bottom a:hover{color:var(--mp-text-secondary);}
+/* live dot */
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--mp-teal);animation:blink 2s ease infinite;flex-shrink:0;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.2;}}
+/* ── MOBILE TOPBAR ── */
+.mobile-topbar{
+  display:none;position:fixed;top:0;left:0;right:0;height:52px;
+  background:var(--mp-deep);border-bottom:1px solid var(--mp-border);
+  z-index:200;align-items:center;padding:0 16px;gap:12px;
+}
+.hamburger-btn{background:none;border:none;color:var(--mp-text-primary);cursor:pointer;padding:4px;display:flex;align-items:center;}
+.hamburger-btn svg{width:20px;height:20px;}
+.nav-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:150;}
+.nav-overlay.open{display:block;}
+/* ── MAIN ── */
+.main{margin-left:224px;flex:1;display:flex;flex-direction:column;min-height:100vh;}
+/* topbar */
+.topbar{
+  position:sticky;top:0;z-index:50;
+  background:rgba(10,14,26,.92);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--mp-border);
+  padding:0 32px;height:52px;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+}
+.topbar-title{font-family:var(--font-display);font-size:18px;font-weight:400;letter-spacing:-.01em;}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.topbar-date{font-family:var(--font-mono);font-size:11px;color:var(--mp-text-tertiary);}
+.topbar-search{
+  font-family:var(--font-mono);font-size:12px;
+  padding:6px 14px;border-radius:99px;
+  border:1px solid var(--mp-border-mid);
+  background:var(--mp-deep);color:var(--mp-text-primary);
+  width:180px;outline:none;transition:border-color .12s,box-shadow .12s;
+}
+.topbar-search:focus{border-color:var(--mp-blue);box-shadow:0 0 0 3px rgba(26,110,255,.1);}
+.topbar-search::placeholder{color:var(--mp-text-tertiary);}
+/* ── PAGE CONTENT ── */
+.page-content{padding:28px 32px 80px;flex:1;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+/* ── PAGE HEADER ── */
+.page-header{margin-bottom:24px;}
+.page-header h1{font-family:var(--font-display);font-size:24px;font-weight:400;letter-spacing:-.01em;margin-bottom:3px;}
+.page-header p{font-size:12px;color:var(--mp-text-tertiary);}
+/* ── STAT CARDS ── */
+.stats-row{display:flex;gap:12px;margin-bottom:24px;}
+.stat-card{
+  flex:1;background:var(--mp-deep);border:1px solid var(--mp-border);
+  border-radius:10px;padding:14px 18px;
+}
+.stat-num{font-family:var(--font-mono);font-size:20px;font-weight:500;color:var(--mp-text-primary);display:block;margin-bottom:2px;}
+.stat-label{font-size:10px;color:var(--mp-text-tertiary);text-transform:uppercase;letter-spacing:.07em;font-family:var(--font-mono);}
+/* ── FILTER BAR ── */
+.filter-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+.filter-label{font-size:10px;color:var(--mp-text-tertiary);text-transform:uppercase;letter-spacing:.07em;white-space:nowrap;font-family:var(--font-mono);}
+.filter-sep{width:1px;height:18px;background:var(--mp-border-mid);margin:0 2px;}
+.chip{
+  font-size:12px;padding:5px 12px;border-radius:99px;
+  border:1px solid var(--mp-border);background:var(--mp-surface);
+  cursor:pointer;color:var(--mp-text-secondary);font-family:var(--font-body);
+  transition:all .12s;white-space:nowrap;
+}
+.chip:hover{border-color:var(--mp-border-mid);color:var(--mp-text-primary);}
+.chip.active{background:var(--mp-blue);color:#fff;border-color:var(--mp-blue);}
+.chip.active-breaking{background:rgba(255,107,107,.12);color:var(--mp-red);border-color:rgba(255,107,107,.3);}
+.chip.active-surging{background:rgba(0,229,180,.1);color:var(--mp-teal);border-color:rgba(0,229,180,.25);}
+.chip.active-fragile{background:rgba(239,159,39,.1);color:var(--mp-amber);border-color:rgba(239,159,39,.25);}
+.chip.active-stable{background:rgba(26,110,255,.1);color:var(--mp-blue);border-color:rgba(26,110,255,.25);}
+.search-wrap{margin-left:auto;}
+.search-input{
+  font-size:12px;font-family:var(--font-mono);padding:5px 12px;
+  border-radius:99px;border:1px solid var(--mp-border-mid);
+  background:var(--mp-deep);color:var(--mp-text-primary);
+  width:150px;outline:none;transition:border-color .12s;
+}
+.search-input:focus{border-color:var(--mp-blue);}
+.search-input::placeholder{color:var(--mp-text-tertiary);}
+.filter-select{
+  font-size:12px;font-family:var(--font-body);padding:5px 10px;
+  border-radius:99px;border:1px solid var(--mp-border);
+  background:var(--mp-surface);color:var(--mp-text-secondary);
+  cursor:pointer;outline:none;transition:border-color .12s;max-width:200px;
+}
+.filter-select option{background:var(--mp-deep);color:var(--mp-text-primary);}
+.filter-select:focus{border-color:var(--mp-blue);}
+.filter-select:hover{border-color:var(--mp-border-mid);color:var(--mp-text-primary);}
+.count-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:11px;color:var(--mp-text-tertiary);
+  margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--mp-border);
+}
+/* ── STORY CARDS (Discover) ── */
+.feed{display:flex;flex-direction:column;gap:10px;}
+.story-card{
+  padding:14px 16px;background:var(--mp-deep);
+  border:1px solid var(--mp-border);border-radius:12px;
+  transition:border-color .15s,transform .15s;
+  display:block;text-decoration:none;color:inherit;cursor:pointer;
+}
+.story-card:hover{border-color:var(--mp-border-mid);transform:translateY(-1px);}
+.story-card:hover .card-arrow{opacity:1;}
+.card-arrow{font-size:16px;color:var(--mp-text-tertiary);opacity:0;transition:opacity .12s;line-height:1;margin-left:4px;}
+.card-top{display:flex;align-items:flex-start;gap:10px;margin-bottom:9px;}
+.card-left{display:flex;align-items:flex-start;gap:8px;flex:1;min-width:0;}
+.ticker-badge{
+  font-size:10px;font-weight:500;font-family:var(--font-mono);
+  min-width:48px;text-align:center;padding:3px 7px;border-radius:4px;
+  letter-spacing:.04em;flex-shrink:0;border:1px solid;
+}
+.badge-breaking{background:rgba(255,107,107,.12);color:var(--mp-red);border-color:rgba(255,107,107,.3);}
+.badge-surging{background:rgba(0,229,180,.1);color:var(--mp-teal);border-color:rgba(0,229,180,.25);}
+.badge-fragile{background:rgba(239,159,39,.1);color:var(--mp-amber);border-color:rgba(239,159,39,.25);}
+.badge-stable{background:rgba(26,110,255,.1);color:var(--mp-blue);border-color:rgba(26,110,255,.25);}
+.verdict-pip{display:inline-block;width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:6px;}
+.pip-trap{background:var(--mp-red);}
+.pip-supported{background:var(--mp-teal);}
+.pip-monitoring{background:var(--mp-text-tertiary);}
+.t-logo{width:28px;height:28px;border-radius:6px;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--mp-surface);border:1px solid var(--mp-border);font-family:var(--font-mono);font-size:8px;font-weight:500;color:var(--mp-text-tertiary);letter-spacing:.02em;text-align:center;line-height:1.1;}
+.t-logo img{width:22px;height:22px;object-fit:contain;display:block;}
+.t-logo.sm{width:22px;height:22px;border-radius:5px;}
+.t-logo.sm img{width:16px;height:16px;}
+.t-logo.lg{width:36px;height:36px;border-radius:8px;}
+.t-logo.lg img{width:28px;height:28px;}
+.story-claim{font-size:13px;color:var(--mp-text-primary);line-height:1.5;}
+.price-block{text-align:right;flex-shrink:0;display:flex;align-items:center;gap:2px;}
+.price-nums{text-align:right;}
+.price-main{font-size:13px;font-weight:500;font-family:var(--font-mono);color:#fff;}
+.price-delta{font-size:11px;font-family:var(--font-mono);}
+.delta-pos{color:var(--mp-teal);} .delta-neg{color:var(--mp-red);} .delta-flat{color:var(--mp-text-tertiary);}
+.card-meta{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.meta-tag{font-size:11px;color:var(--mp-text-tertiary);display:flex;align-items:center;gap:3px;}
+.meta-tag strong{font-weight:500;color:var(--mp-text-secondary);}
+.trend-up strong{color:var(--mp-teal);} .trend-down strong{color:var(--mp-red);}
+.meta-date{font-size:10px;font-family:var(--font-mono);color:var(--mp-text-tertiary);margin-left:auto;}
+.meta-sector{font-size:10px;color:var(--mp-text-tertiary);font-style:italic;}
+.verdict-tag{font-size:10px;padding:2px 7px;border-radius:99px;font-weight:500;border:1px solid;}
+.verdict-trap{background:rgba(255,107,107,.12);color:var(--mp-red);border-color:rgba(255,107,107,.3);}
+.verdict-supported{background:rgba(0,229,180,.1);color:var(--mp-teal);border-color:rgba(0,229,180,.25);}
+/* ── SECTOR PULSE ── */
+.sector-grid{
+  display:grid;grid-template-columns:repeat(2,1fr);gap:10px;
+}
+.sector-card{
+  background:var(--mp-deep);border:1px solid var(--mp-border);
+  border-radius:12px;overflow:hidden;transition:border-color .15s;cursor:pointer;
+}
+.sector-card:hover{border-color:var(--mp-border-mid);}
+.sector-card-header{
+  padding:14px 16px 10px;
+  display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
+}
+.sector-name{font-size:14px;font-weight:500;color:var(--mp-text-primary);margin-bottom:2px;}
+.sector-sub{font-size:11px;color:var(--mp-text-tertiary);}
+.sector-state{
+  font-size:10px;font-family:var(--font-mono);padding:3px 9px;
+  border-radius:99px;border:1px solid;flex-shrink:0;font-weight:500;letter-spacing:.04em;
+}
+.sector-body{padding:0 16px 14px;}
+.sector-desc{font-size:12px;color:var(--mp-text-secondary);line-height:1.65;margin-bottom:12px;}
+.sector-tickers{display:flex;gap:5px;flex-wrap:wrap;}
+.sector-ticker-chip{
+  font-family:var(--font-mono);font-size:10px;
+  padding:2px 8px;border-radius:4px;
+  background:var(--mp-surface);border:1px solid var(--mp-border);color:var(--mp-text-secondary);
+}
+.sector-footer{
+  padding:10px 16px;border-top:1px solid var(--mp-border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.sector-cagr{
+  font-family:var(--font-mono);font-size:11px;font-weight:500;
+  color:var(--mp-teal);
+}
+.sector-trap{
+  font-size:10px;padding:2px 7px;border-radius:99px;
+  background:rgba(255,107,107,.1);color:var(--mp-red);border:1px solid rgba(255,107,107,.25);
+}
+.sector-ok{
+  font-size:10px;padding:2px 7px;border-radius:99px;
+  background:rgba(0,229,180,.08);color:var(--mp-teal);border:1px solid rgba(0,229,180,.22);
+}
+.sector-momentum-bar{
+  display:flex;align-items:center;gap:8px;padding:8px 16px;
+  border-top:1px solid var(--mp-border);
+}
+.sector-bar-lbl{font-size:10px;color:var(--mp-text-tertiary);min-width:64px;font-family:var(--font-mono);}
+.sector-bar-track{flex:1;height:4px;background:var(--mp-surface2);border-radius:99px;overflow:hidden;}
+.sector-bar-fill{height:100%;border-radius:99px;}
+.sector-bar-pct{font-family:var(--font-mono);font-size:10px;color:var(--mp-text-tertiary);min-width:28px;text-align:right;}
+/* ── TICKER SNAPSHOTS ── */
+.snapshots-table-wrap{
+  background:var(--mp-deep);border:1px solid var(--mp-border);border-radius:12px;overflow:hidden;
+}
+.snap-table{width:100%;border-collapse:collapse;}
+.snap-table thead tr{border-bottom:1px solid var(--mp-border);}
+.snap-table th{
+  padding:9px 14px;font-family:var(--font-mono);font-size:10px;
+  text-transform:uppercase;letter-spacing:.08em;color:var(--mp-text-tertiary);
+  font-weight:400;text-align:left;white-space:nowrap;background:var(--mp-surface);
+}
+.snap-table th.r{text-align:right;}
+.snap-table td{
+  padding:11px 14px;font-size:12px;color:var(--mp-text-secondary);
+  border-bottom:1px solid var(--mp-border);vertical-align:middle;
+}
+.snap-table tr:last-child td{border-bottom:none;}
+.snap-table tr:hover td{background:rgba(255,255,255,.02);cursor:pointer;}
+.snap-table td.r{text-align:right;}
+.snap-sym{font-family:var(--font-mono);font-size:12px;font-weight:500;color:var(--mp-text-primary);}
+.snap-co{font-size:11px;color:var(--mp-text-tertiary);margin-top:1px;}
+.snap-price{font-family:var(--font-mono);font-size:13px;font-weight:500;color:var(--mp-text-primary);}
+.snap-chg{font-family:var(--font-mono);font-size:12px;}
+.snap-state{font-family:var(--font-mono);font-size:10px;padding:2px 7px;border-radius:4px;border:1px solid;letter-spacing:.04em;white-space:nowrap;}
+.snap-verdict{font-size:10px;padding:2px 7px;border-radius:99px;border:1px solid;white-space:nowrap;}
+.snap-driver{font-size:11px;color:var(--mp-text-secondary);max-width:180px;}
+.snap-sector{font-size:11px;color:var(--mp-text-tertiary);font-style:italic;max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.snap-date{font-family:var(--font-mono);font-size:10px;color:var(--mp-text-tertiary);}
+.pe-val{font-family:var(--font-mono);font-size:12px;}
+.snap-table .earnings-soon{color:var(--mp-amber);}
+/* Snapshot filter row */
+.snap-filter-row{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+/* ── MARKET SHARING (MEMES) ── */
+.meme-toolbar{
+  display:flex;align-items:center;gap:8px;margin-bottom:20px;flex-wrap:wrap;
+}
+.meme-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+  gap:12px;
+}
+.meme-card{
+  background:var(--mp-deep);border:1px solid var(--mp-border);
+  border-radius:12px;overflow:hidden;transition:border-color .15s,transform .15s;
+}
+.meme-card:hover{border-color:var(--mp-border-mid);transform:translateY(-1px);}
+.meme-img{
+  width:100%;aspect-ratio:1.6/1;background:var(--mp-surface);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.meme-img-inner{
+  width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:8px;padding:20px;text-align:center;
+  position:relative;z-index:1;
+}
+.meme-ticker-big{
+  font-family:var(--font-mono);font-size:28px;font-weight:500;
+  letter-spacing:-.02em;line-height:1;
+}
+.meme-claim-big{font-size:11px;color:var(--mp-text-secondary);line-height:1.5;max-width:220px;}
+.meme-verdict-big{
+  font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;
+  text-transform:uppercase;padding:3px 10px;border-radius:4px;border:1px solid;
+  margin-top:4px;
+}
+.meme-bg-breaking{background:linear-gradient(135deg,rgba(255,107,107,.12),rgba(255,107,107,.04));}
+.meme-bg-surging{background:linear-gradient(135deg,rgba(0,229,180,.1),rgba(0,229,180,.03));}
+.meme-bg-fragile{background:linear-gradient(135deg,rgba(239,159,39,.1),rgba(239,159,39,.03));}
+.meme-bg-stable{background:linear-gradient(135deg,rgba(26,110,255,.1),rgba(26,110,255,.03));}
+.meme-bg-generic{background:linear-gradient(135deg,rgba(123,97,255,.1),rgba(123,97,255,.03));}
+.meme-footer{padding:12px 14px;border-top:1px solid var(--mp-border);}
+.meme-meta-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.meme-sym{font-family:var(--font-mono);font-size:11px;font-weight:500;color:var(--mp-text-primary);}
+.meme-age{font-family:var(--font-mono);font-size:10px;color:var(--mp-text-tertiary);}
+.meme-caption{font-size:11px;color:var(--mp-text-secondary);line-height:1.5;margin-bottom:8px;}
+.meme-actions{display:flex;align-items:center;gap:6px;}
+.meme-action-btn{
+  display:flex;align-items:center;gap:4px;
+  font-family:var(--font-mono);font-size:10px;
+  padding:4px 10px;border-radius:5px;
+  border:1px solid var(--mp-border);background:var(--mp-surface);
+  color:var(--mp-text-tertiary);cursor:pointer;transition:all .12s;
+}
+.meme-action-btn:hover{border-color:var(--mp-border-mid);color:var(--mp-text-secondary);}
+.meme-action-btn svg{width:11px;height:11px;}
+.meme-action-btn.liked{color:var(--mp-red);border-color:rgba(255,107,107,.3);background:rgba(255,107,107,.08);}
+.meme-share-btn{
+  margin-left:auto;display:flex;align-items:center;gap:4px;
+  font-family:var(--font-mono);font-size:10px;
+  padding:4px 10px;border-radius:5px;
+  border:1px solid var(--mp-border-mid);background:transparent;
+  color:var(--mp-text-secondary);cursor:pointer;transition:all .12s;
+}
+.meme-share-btn:hover{background:var(--mp-blue);color:#fff;border-color:var(--mp-blue);}
+.meme-share-btn svg{width:11px;height:11px;}
+/* create meme panel */
+.meme-create-bar{
+  background:var(--mp-deep);border:1px solid var(--mp-border-mid);
+  border-radius:12px;padding:16px;margin-bottom:16px;
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+}
+.meme-create-label{font-size:12px;color:var(--mp-text-secondary);}
+.meme-ticker-inp{
+  font-family:var(--font-mono);font-size:12px;
+  padding:6px 12px;border-radius:6px;
+  border:1px solid var(--mp-border-mid);background:var(--mp-surface);
+  color:var(--mp-text-primary);outline:none;width:100px;
+  transition:border-color .12s;
+}
+.meme-ticker-inp:focus{border-color:var(--mp-blue);}
+.meme-ticker-inp::placeholder{color:var(--mp-text-tertiary);}
+.btn-create-meme{
+  background:var(--mp-blue);color:#fff;border:none;border-radius:6px;
+  padding:7px 16px;font-size:12px;font-family:var(--font-body);
+  cursor:pointer;transition:background .12s;
+}
+.btn-create-meme:hover{background:#2B7EFF;}
+/* ── EMPTY + LOAD ── */
+.empty-state{padding:52px 0;text-align:center;color:var(--mp-text-tertiary);font-size:13px;}
+.load-more{text-align:center;margin-top:28px;}
+.load-more-btn{
+  font-size:12px;font-family:var(--font-body);padding:9px 24px;border-radius:99px;
+  border:1px solid var(--mp-border-mid);background:var(--mp-surface);
+  color:var(--mp-text-secondary);cursor:pointer;transition:all .12s;
+}
+.load-more-btn:hover{background:var(--mp-blue);color:#fff;border-color:var(--mp-blue);}
+/* ── INLINE NOTICE ── */
+.notice{
+  background:rgba(26,110,255,.07);border:1px solid rgba(26,110,255,.2);
+  border-radius:8px;padding:10px 14px;margin-bottom:16px;
+  font-size:12px;color:var(--mp-text-secondary);line-height:1.6;
+  display:flex;align-items:flex-start;gap:8px;
+}
+.notice svg{flex-shrink:0;margin-top:1px;color:var(--mp-blue);}
+/* ── SKELETON ── */
+.skel{background:var(--mp-surface);border-radius:4px;animation:sp 1.4s ease-in-out infinite;}
+@keyframes sp{0%,100%{opacity:1;}50%{opacity:.4;}}
+/* ── MOBILE ── */
+@media(max-width:767px){
+  .side-nav{transform:translateX(-100%);transition:transform .25s ease;}
+  .side-nav.open{transform:translateX(0);}
+  .mobile-topbar{display:flex;}
+  .main{margin-left:0;}
+  .page-content{padding:72px 16px 60px;}
+  .stats-row{flex-wrap:wrap;}
+  .stat-card{min-width:calc(50% - 6px);}
+  .sector-grid{grid-template-columns:1fr;}
+  .snap-table th:nth-child(n+5),.snap-table td:nth-child(n+5){display:none;}
+  .meme-grid{grid-template-columns:1fr 1fr;}
+  .topbar{display:none;}
+}
 </style>
-  <!-- Env vars injected by Vercel API handler — do not edit this line -->
-  <script id="__env_script">window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '' };</script>
 </head>
 <body>
-
-<!-- Mobile Top Bar -->
+<!-- Mobile topbar -->
 <div class="mobile-topbar">
   <button class="hamburger-btn" id="hamburger-btn" aria-label="Open menu">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
   </button>
-  <div class="nav-logo">
-    <svg viewBox="0 0 28 28" fill="none"><polygon points="14,2 26,26 2,26" stroke="#4DF0A0" stroke-width="1.5" fill="none"/><polygon points="14,9 21,23 7,23" stroke="#4DF0A0" stroke-width="1" fill="rgba(77,240,160,0.15)"/></svg>
-    <span>Market Prism</span>
-  </div>
-  <button class="theme-toggle" onclick="document.getElementById('theme-toggle').click()" style="margin-left:auto;width:auto;border:none;padding:4px;" aria-label="Toggle theme">
-    <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-    <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-  </button>
+  <a class="nav-logo" href="/" style="border:none;padding:0;">
+    <svg width="20" height="20" viewBox="0 0 40 40" fill="none"><polygon points="20,4 36,32 4,32" fill="none" stroke="url(#mng)" stroke-width="1.5" stroke-linejoin="round"/><line x1="4" y1="32" x2="14" y2="32" stroke="#1A6EFF" stroke-width="2.8" stroke-linecap="round"/><line x1="14" y1="32" x2="26" y2="32" stroke="#00C2FF" stroke-width="2.8" stroke-linecap="round"/><line x1="26" y1="32" x2="36" y2="32" stroke="#7B61FF" stroke-width="2.8" stroke-linecap="round"/><defs><linearGradient id="mng" x1="4" y1="32" x2="36" y2="4" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#1A6EFF"/><stop offset="50%" stop-color="#00C2FF"/><stop offset="100%" stop-color="#7B61FF"/></linearGradient></defs></svg>
+    <span style="font-family:var(--font-display);font-size:16px;color:var(--mp-text-primary);">Market Prism</span>
+  </a>
 </div>
 <div class="nav-overlay" id="nav-overlay"></div>
-
-<!-- Side Navigation -->
+<div class="app">
+<!-- ── SIDE NAV ── -->
 <nav class="side-nav" id="side-nav">
-  <div class="nav-logo">
-    <svg viewBox="0 0 28 28" fill="none"><polygon points="14,2 26,26 2,26" stroke="#4DF0A0" stroke-width="1.5" fill="none"/><polygon points="14,9 21,23 7,23" stroke="#4DF0A0" stroke-width="1" fill="rgba(77,240,160,0.15)"/></svg>
+  <a href="/" class="nav-logo">
+    <svg width="24" height="24" viewBox="0 0 40 40" fill="none">
+      <polygon points="20,4 36,32 4,32" fill="none" stroke="url(#sng)" stroke-width="1.5" stroke-linejoin="round"/>
+      <line x1="4"  y1="32" x2="14" y2="32" stroke="#1A6EFF" stroke-width="2.8" stroke-linecap="round"/>
+      <line x1="14" y1="32" x2="26" y2="32" stroke="#00C2FF" stroke-width="2.8" stroke-linecap="round"/>
+      <line x1="26" y1="32" x2="36" y2="32" stroke="#7B61FF" stroke-width="2.8" stroke-linecap="round"/>
+      <defs><linearGradient id="sng" x1="4" y1="32" x2="36" y2="4" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#1A6EFF"/><stop offset="50%" stop-color="#00C2FF"/><stop offset="100%" stop-color="#7B61FF"/></linearGradient></defs>
+    </svg>
     <span>Market Prism</span>
-  </div>
+  </a>
   <div class="nav-items">
-    <a class="nav-item active" href="/dashboard">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="1.5" width="5" height="5" rx="1"/><rect x="9.5" y="1.5" width="5" height="5" rx="1"/><rect x="1.5" y="9.5" width="5" height="5" rx="1"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/></svg>
-      Dashboard
-    </a>
+    <div class="nav-section-lbl">Intelligence</div>
+    <button class="nav-item active" data-tab="discover" onclick="switchTab('discover',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6v-3z"/></svg>
+      Discover
+      <span class="nav-item-badge blue" id="nav-badge-discover">—</span>
+    </button>
+    <button class="nav-item" data-tab="sector" onclick="switchTab('sector',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg>
+      Sector Pulse
+    </button>
+    <button class="nav-item" data-tab="snapshots" onclick="switchTab('snapshots',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6"/></svg>
+      Ticker Snapshots
+      <span class="nav-item-badge" id="nav-badge-snapshots">—</span>
+    </button>
+    <button class="nav-item" data-tab="memes" onclick="switchTab('memes',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z"/></svg>
+      Market Sharing
+      <span class="nav-item-badge teal" id="nav-badge-memes">New</span>
+    </button>
+    <div class="nav-divider"></div>
+    <div class="nav-section-lbl">Navigate</div>
     <a class="nav-item" href="/heatmap">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="4.5" height="6" rx="0.5"/><rect x="7" y="1" width="8" height="6" rx="0.5"/><rect x="1" y="9" width="8" height="6" rx="0.5"/><rect x="10.5" y="9" width="4.5" height="6" rx="0.5"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
       Heatmap
     </a>
   </div>
   <div class="nav-divider"></div>
   <div class="nav-bottom">
-    <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
-      <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-      <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-      <span class="theme-label">Light mode</span>
-    </button>
-    <a href="/" style="display:block;margin-top:12px;">&larr; Back to Home</a>
+    <a href="/">← Back to home</a>
+    <a href="/pricing">Upgrade plan</a>
   </div>
 </nav>
-
-<!-- Main Content -->
-<div class="main-content">
-
-  <div class="page-header">
-    <h1>Market Prism</h1>
-    <p id="header-date"></p>
-  </div>
-
-  <div class="stats-row">
-    <div class="stat-card">
-      <span class="stat-num" id="stat-total">&mdash;</span>
-      <span class="stat-label">Tickers</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-num" id="stat-traps">&mdash;</span>
-      <span class="stat-label">Traps</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-num" id="stat-breaking">&mdash;</span>
-      <span class="stat-label">Breaking</span>
+<!-- ── MAIN CONTENT ── -->
+<div class="main">
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="topbar-title" id="topbar-title">Discover</div>
+    <div class="topbar-right">
+      <span class="topbar-date" id="topbar-date"></span>
+      <input class="topbar-search" id="topbar-search" placeholder="Search ticker…">
     </div>
   </div>
-
-  <div class="filter-bar">
-    <span class="filter-label">State</span>
-    <div class="filter-group">
-      <button class="chip active" data-filter="state" data-val="all">All</button>
-      <button class="chip" data-filter="state" data-val="Breaking">Breaking</button>
-      <button class="chip" data-filter="state" data-val="Surging">Surging</button>
-      <button class="chip" data-filter="state" data-val="Fragile">Fragile</button>
-      <button class="chip" data-filter="state" data-val="Stable">Stable</button>
+  <div class="page-content">
+    <!-- ══════════════════════════════════════
+         TAB: DISCOVER (Articles / Stories)
+    ═══════════════════════════════════════ -->
+    <div class="tab-panel active" id="tab-discover">
+      <div class="page-header">
+        <h1>Discover</h1>
+        <p>Live narrative feed — click any story to open the full forensic analysis</p>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card">
+          <span class="stat-num" id="stat-total">—</span>
+          <span class="stat-label">Tickers</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-num" id="stat-traps">—</span>
+          <span class="stat-label">Traps</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-num" id="stat-breaking">—</span>
+          <span class="stat-label">Breaking</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-num" id="stat-surging">—</span>
+          <span class="stat-label">Surging</span>
+        </div>
+      </div>
+      <div class="filter-bar" id="discover-filter-bar">
+        <span class="filter-label">State</span>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+          <button class="chip active" data-filter="state" data-val="all">All</button>
+          <button class="chip" data-filter="state" data-val="Breaking">Breaking</button>
+          <button class="chip" data-filter="state" data-val="Surging">Surging</button>
+          <button class="chip" data-filter="state" data-val="Fragile">Fragile</button>
+          <button class="chip" data-filter="state" data-val="Stable">Stable</button>
+        </div>
+        <div class="filter-sep"></div>
+        <span class="filter-label">Verdict</span>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+          <button class="chip" data-filter="verdict" data-val="Narrative Trap">Trap</button>
+          <button class="chip" data-filter="verdict" data-val="Structurally Supported">Supported</button>
+        </div>
+        <div class="filter-sep"></div>
+        <select id="sector-select" class="filter-select"><option value="">All sectors</option></select>
+        <div class="search-wrap">
+          <input id="ticker-search" class="search-input" placeholder="Ticker…">
+        </div>
+      </div>
+      <div class="count-bar">
+        <span id="count-line">—</span>
+        <span style="font-size:10px;font-family:var(--font-mono);">click any ticker to open full forensic analysis</span>
+      </div>
+      <div class="feed" id="discover-feed"></div>
+      <div class="load-more" id="discover-load-more" style="display:none;">
+        <button class="load-more-btn" id="discover-load-more-btn">Load more</button>
+      </div>
     </div>
-    <div class="filter-sep"></div>
-    <span class="filter-label">Verdict</span>
-    <div class="filter-group">
-      <button class="chip" data-filter="verdict" data-val="Narrative Trap">Trap</button>
-      <button class="chip" data-filter="verdict" data-val="Structurally Supported">Supported</button>
+    <!-- ══════════════════════════════════════
+         TAB: SECTOR PULSE
+    ═══════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-sector">
+      <div class="page-header">
+        <h1>Sector Pulse</h1>
+        <p>Narrative momentum across tracked sectors — updated daily</p>
+      </div>
+      <div class="filter-bar" style="margin-bottom:16px;">
+        <span class="filter-label">Momentum</span>
+        <button class="chip active" id="sp-filter-all" onclick="filterSectors('all',this)">All</button>
+        <button class="chip" onclick="filterSectors('hot',this)">Hot</button>
+        <button class="chip" onclick="filterSectors('cooling',this)">Cooling</button>
+        <button class="chip" onclick="filterSectors('risk',this)">High Risk</button>
+      </div>
+      <div class="sector-grid" id="sector-grid">
+        <!-- Populated by JS -->
+      </div>
     </div>
-    <div class="search-wrap">
-      <input id="ticker-search" class="search-input" placeholder="Search ticker…" />
+    <!-- ══════════════════════════════════════
+         TAB: TICKER SNAPSHOTS
+    ═══════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-snapshots">
+      <div class="page-header">
+        <h1>Ticker Snapshots</h1>
+        <p>Condensed view of all tracked instruments — price, state, and narrative verdict</p>
+      </div>
+      <div class="snap-filter-row">
+        <span class="filter-label">Sort by</span>
+        <button class="chip active" onclick="sortSnap('ticker',this)">Ticker A→Z</button>
+        <button class="chip" onclick="sortSnap('chg-desc',this)">Top movers ↑</button>
+        <button class="chip" onclick="sortSnap('chg-asc',this)">Top movers ↓</button>
+        <button class="chip" onclick="sortSnap('traps',this)">Traps first</button>
+        <div class="filter-sep"></div>
+        <select class="filter-select" id="snap-sector-select" onchange="filterSnapSector(this.value)">
+          <option value="">All sectors</option>
+        </select>
+        <div class="search-wrap">
+          <input class="search-input" id="snap-search" placeholder="Ticker…" oninput="renderSnap()">
+        </div>
+      </div>
+      <div class="snapshots-table-wrap">
+        <table class="snap-table">
+          <thead>
+            <tr>
+              <th>Ticker</th>
+              <th class="r">Price</th>
+              <th class="r">Change</th>
+              <th>State</th>
+              <th>Verdict</th>
+              <th>Primary driver</th>
+              <th>Sector</th>
+              <th class="r">P/E</th>
+              <th class="r">Earnings</th>
+            </tr>
+          </thead>
+          <tbody id="snap-tbody"></tbody>
+        </table>
+      </div>
+      <div class="load-more" id="snap-load-more" style="display:none;">
+        <button class="load-more-btn" id="snap-load-more-btn">Load more</button>
+      </div>
+    </div>
+    <!-- ══════════════════════════════════════
+         TAB: MARKET SHARING (Memes)
+    ═══════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-memes">
+      <div class="page-header">
+        <h1>Market Sharing</h1>
+        <p>Share your reads — narrative cards generated from live data</p>
+      </div>
+      <div class="notice">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
+        Cards are auto-generated from live narrative data. Enter a ticker to create a shareable card from its current forensic state.
+      </div>
+      <div class="meme-create-bar">
+        <span class="meme-create-label">Generate a card for</span>
+        <input class="meme-ticker-inp" id="meme-ticker-inp" placeholder="NVDA" maxlength="6">
+        <button class="btn-create-meme" onclick="generateMeme()">Generate card</button>
+        <div class="filter-sep" style="margin:0 4px;"></div>
+        <span class="filter-label">Filter</span>
+        <button class="chip active" onclick="filterMemes('all',this)">All</button>
+        <button class="chip" onclick="filterMemes('trap',this)">Traps</button>
+        <button class="chip" onclick="filterMemes('supported',this)">Supported</button>
+        <button class="chip" onclick="filterMemes('breaking',this)">Breaking</button>
+      </div>
+      <div class="meme-grid" id="meme-grid">
+        <!-- Populated by JS -->
+      </div>
     </div>
   </div>
-
-  <div class="filter-bar-2">
-    <div class="filter-group">
-      <span class="filter-label">Sector</span>
-      <select id="sector-select" class="filter-select">
-        <option value="">All sectors</option>
-      </select>
-    </div>
-    <div class="filter-sep"></div>
-    <span class="filter-label">Value</span>
-    <div class="filter-group">
-      <button class="chip" data-sort="undervalued">&darr; Undervalued</button>
-      <button class="chip" data-sort="overvalued">&uarr; Overvalued</button>
-    </div>
-    <div class="filter-sep"></div>
-    <div class="filter-group">
-      <span class="filter-label">Sort</span>
-      <button class="chip" data-sort="default">A &rarr; Z</button>
-    </div>
-  </div>
-
-  <div class="count-bar">
-    <span id="count-line">&mdash;</span>
-    <span style="font-size:11px;">click any ticker to open full forensic analysis</span>
-  </div>
-
-  <div class="feed" id="feed"></div>
-
-  <div class="load-more" id="load-more-wrap" style="display:none;">
-    <button class="load-more-btn" id="load-more-btn">Load more</button>
-  </div>
-
 </div>
-
+</div>
 <script>
-// ── Theme toggle ──
-(function() {
-  var saved = localStorage.getItem('mp-theme') || 'dark';
-  document.documentElement.setAttribute('data-theme', saved);
-
-  document.addEventListener('DOMContentLoaded', function() {
-    var btn = document.getElementById('theme-toggle');
-    var label = btn.querySelector('.theme-label');
-    function updateLabel() {
-      var current = document.documentElement.getAttribute('data-theme') || 'dark';
-      label.textContent = current === 'dark' ? 'Light mode' : 'Dark mode';
-    }
-    updateLabel();
-    btn.addEventListener('click', function() {
-      var current = document.documentElement.getAttribute('data-theme') || 'dark';
-      var next = current === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', next);
-      localStorage.setItem('mp-theme', next);
-      updateLabel();
-    });
+// ── Mobile nav ────────────────────────────────────────────────────────────────
+(function(){
+  var btn=document.getElementById('hamburger-btn');
+  var nav=document.getElementById('side-nav');
+  var ov=document.getElementById('nav-overlay');
+  btn.addEventListener('click',function(){
+    var open=nav.classList.toggle('open');
+    ov.classList.toggle('open',open);
+  });
+  ov.addEventListener('click',function(){
+    nav.classList.remove('open');
+    ov.classList.remove('open');
   });
 })();
-
-// ── Mobile nav toggle ────────────────────────────────────────────────────────
-(function() {
-  var hamburger = document.getElementById('hamburger-btn');
-  var sideNav = document.getElementById('side-nav');
-  var overlay = document.getElementById('nav-overlay');
-  function openNav() { sideNav.classList.add('open'); overlay.classList.add('open'); }
-  function closeNav() { sideNav.classList.remove('open'); overlay.classList.remove('open'); }
-  hamburger.addEventListener('click', function() {
-    sideNav.classList.contains('open') ? closeNav() : openNav();
+// ── Date ─────────────────────────────────────────────────────────────────────
+var dateStr = new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+var el = document.getElementById('topbar-date');
+if(el) el.textContent = dateStr;
+document.querySelectorAll('.page-header p').forEach(function(p,i){
+  if(i===0) return;
+});
+// ── Tab switching ─────────────────────────────────────────────────────────────
+var TABS = ['discover','sector','snapshots','memes'];
+var TAB_TITLES = {discover:'Discover',sector:'Sector Pulse',snapshots:'Ticker Snapshots',memes:'Market Sharing'};
+function switchTab(id, btn){
+  TABS.forEach(function(t){
+    document.getElementById('tab-'+t).classList.toggle('active', t===id);
   });
-  overlay.addEventListener('click', closeNav);
-})();
-
-// ── Set header date ──────────────────────────────────────────────────────────
-document.getElementById('header-date').textContent = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-
-// ── Supabase config (injected by Vercel env vars) ──────────────────────────
-const SUPABASE_URL  = window.__env?.SUPABASE_URL  || '';
-const SUPABASE_ANON = window.__env?.SUPABASE_ANON || '';
-
-const COLS = [
-  'ticker','price','price_change_pct','narrative_state','primary_driver',
-  'prism_verdict','story_claim','pe_ratio','days_to_earnings',
-  'eps_surprise_pct','guidance_direction','institutional_positioning',
-  'fair_value','snapshot_date','sector_name','recovery_probability'
-].join(',');
-
-let DATA = [];
-
-async function loadData() {
-  const feed = document.getElementById('feed');
-  feed.innerHTML = '<div class="empty-state" style="padding:48px 0;">Loading stories…</div>';
-
+  document.querySelectorAll('.nav-item[data-tab]').forEach(function(b){
+    b.classList.toggle('active', b.dataset.tab===id);
+  });
+  var tt = document.getElementById('topbar-title');
+  if(tt) tt.textContent = TAB_TITLES[id]||id;
+}
+// ── Supabase config ───────────────────────────────────────────────────────────
+var SUPABASE_URL  = (window.__env||{}).SUPABASE_URL  || '';
+var SUPABASE_ANON = (window.__env||{}).SUPABASE_ANON || '';
+// ── Shared data store ─────────────────────────────────────────────────────────
+var DATA = [];
+var DOMAIN_MAP = {
+  AAPL:'apple.com',MSFT:'microsoft.com',GOOGL:'google.com',AMZN:'amazon.com',
+  NVDA:'nvidia.com',META:'meta.com',TSLA:'tesla.com',AVGO:'broadcom.com',
+  ORCL:'oracle.com',CRM:'salesforce.com',AMD:'amd.com',INTC:'intel.com',
+  QCOM:'qualcomm.com',TXN:'ti.com',AMAT:'appliedmaterials.com',LRCX:'lam-research.com',
+  MU:'micron.com',ARM:'arm.com',SMCI:'supermicro.com',MRVL:'marvell.com',
+  NOW:'servicenow.com',WDAY:'workday.com',INTU:'intuit.com',
+  PLTR:'palantir.com',PANW:'paloaltonetworks.com',CRWD:'crowdstrike.com',
+  LMT:'lockheedmartin.com',RTX:'rtx.com',BA:'boeing.com',
+  RIVN:'rivian.com',LCID:'lucidmotors.com',NIO:'nio.com',GM:'gm.com',F:'ford.com',TM:'toyota.com',
+  NEE:'nexteraenergy.com',DUK:'duke-energy.com',VST:'vistraenergy.com',CEG:'constellation.com',
+  V:'visa.com',MA:'mastercard.com',PYPL:'paypal.com',HOOD:'robinhood.com',
+  SOFI:'sofi.com',COIN:'coinbase.com',JPM:'jpmorganchase.com',
+  GS:'goldmansachs.com',WFC:'wellsfargo.com',MS:'morganstanley.com',BAC:'bankofamerica.com',
+  LLY:'lilly.com',JNJ:'jnj.com',MRK:'merck.com',PFE:'pfizer.com',
+  ABBV:'abbvie.com',ABT:'abbott.com',TMO:'thermofisher.com',DHR:'danaher.com',
+  RDDT:'reddit.com',SPOT:'spotify.com',SNAP:'snap.com',
+  CMCSA:'comcast.com',DIS:'disney.com',IBM:'ibm.com',
+  PLD:'prologis.com',AMT:'americantower.com',OPEN:'opendoor.com',
+};
+var LOGO_COLORS = [
+  ['rgba(26,110,255,.18)','#5B9FFF'],['rgba(0,229,180,.15)','#00C49A'],
+  ['rgba(239,159,39,.15)','#D4A020'],['rgba(255,107,107,.15)','#FF7070'],
+  ['rgba(123,97,255,.15)','#9F87FF'],['rgba(0,194,255,.14)','#00B8E8'],
+];
+function logoColor(t){var i=(t.charCodeAt(0)+t.charCodeAt(t.length-1))%LOGO_COLORS.length;return LOGO_COLORS[i];}
+function logoHTML(ticker,sizeClass){
+  sizeClass=sizeClass||'';
+  var domain=DOMAIN_MAP[ticker];
+  var lc=logoColor(ticker);
+  var initials=ticker.length<=4?ticker:ticker.slice(0,3);
+  if(domain){
+    return '<div class="t-logo '+sizeClass+'">'
+      +'<img src="https://logo.clearbit.com/'+domain+'?size=64" alt="'+ticker+'" '
+      +'onerror="this.parentNode.style.background=\''+lc[0]+'\';this.parentNode.style.color=\''+lc[1]+'\';this.parentNode.textContent=\''+initials+'\'">'
+      +'</div>';
+  }
+  return '<div class="t-logo '+sizeClass+'" style="background:'+lc[0]+';color:'+lc[1]+';">'+initials+'</div>';
+}
+var SECTOR_MAP = {"PLTR":["Agentic AI / Autonomous Systems","Cybersecurity","Defense Technology","Predictive Analytics"],"TSLA":["Agentic AI / Autonomous Systems","Electric Vehicles & Autonomous Transport"],"GOOGL":["Agentic AI / Autonomous Systems","Cloud Computing","Quantum Computing"],"MSFT":["Agentic AI / Autonomous Systems","Cloud Computing","Quantum Computing"],"AMZN":["Agentic AI / Autonomous Systems","Cloud Computing"],"NVDA":["AI Infrastructure","Semiconductors"],"AMD":["AI Infrastructure","Semiconductors"],"SMCI":["AI Infrastructure","Semiconductors"],"ARM":["AI Infrastructure","Semiconductors"],"AVGO":["AI Infrastructure","Semiconductors"],"TSM":["AI Infrastructure","Semiconductors"],"AMAT":["AI Infrastructure","Semiconductors"],"LRCX":["AI Infrastructure","Semiconductors"],"MU":["AI Infrastructure","Semiconductors"],"ORCL":["Cloud Computing"],"CRM":["Cloud Computing","Predictive Analytics"],"NOW":["Cloud Computing"],"WDAY":["Cloud Computing"],"INTU":["Cloud Computing","Predictive Analytics"],"PANW":["Cybersecurity"],"CRWD":["Cybersecurity"],"RDDT":["Data Licensing & AI Training Data","Social Media"],"SPOT":["Data Licensing & AI Training Data","Social Media"],"SNAP":["Data Licensing & AI Training Data","Social Media"],"LMT":["Defense Technology"],"RTX":["Defense Technology"],"BA":["Defense Technology"],"RIVN":["Electric Vehicles"],"LCID":["Electric Vehicles"],"NIO":["Electric Vehicles"],"GM":["Electric Vehicles"],"F":["Electric Vehicles"],"DUK":["Energy Infrastructure"],"NEE":["Energy Infrastructure"],"VST":["Energy Infrastructure"],"CEG":["Energy Infrastructure"],"V":["Fintech & Digital Payments"],"MA":["Fintech & Digital Payments"],"PYPL":["Fintech & Digital Payments"],"HOOD":["Fintech & Digital Payments"],"SOFI":["Fintech & Digital Payments"],"COIN":["Fintech & Digital Payments"],"JPM":["Fintech & Digital Payments"],"GS":["Fintech & Digital Payments"],"LLY":["Healthcare Technology"],"JNJ":["Healthcare Technology"],"MRK":["Healthcare Technology"],"PFE":["Healthcare Technology"],"META":["Social Media & Digital Advertising"],"AAPL":["Consumer Technology"],"INTC":["Semiconductors"],"QCOM":["Semiconductors"],"MRVL":["Semiconductors"],"TXN":["Semiconductors"]};
+// ── Load data ─────────────────────────────────────────────────────────────────
+async function loadData(){
+  var feed = document.getElementById('discover-feed');
+  feed.innerHTML = '<div class="empty-state">Loading stories…</div>';
   try {
-    if (!SUPABASE_URL || !SUPABASE_ANON) {
-      throw new Error('Missing Supabase credentials – SUPABASE_URL or SUPABASE_ANON is empty');
-    }
-
-    const url = `${SUPABASE_URL}/rest/v1/v_dash_daily_story` +
-      `?select=${COLS}` +
-      `&story_claim=not.is.null` +
-      `&order=snapshot_date.desc,ticker.asc`;
-
-    const res = await fetch(url, {
-      headers: {
-        'apikey': SUPABASE_ANON,
-        'Authorization': `Bearer ${SUPABASE_ANON}`,
-        'Accept': 'application/json'
-      }
+    if(!SUPABASE_URL || !SUPABASE_ANON) throw new Error('Supabase credentials not configured');
+    var COLS = 'ticker,price,price_change_pct,narrative_state,primary_driver,prism_verdict,story_claim,pe_ratio,days_to_earnings,guidance_direction,institutional_positioning,fair_value,snapshot_date,sector_name,recovery_probability';
+    var url = SUPABASE_URL+'/rest/v1/v_dash_daily_story?select='+COLS+'&story_claim=not.is.null&order=snapshot_date.desc,ticker.asc';
+    var hdrs = {'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Accept':'application/json'};
+    var res = await fetch(url,{headers:hdrs});
+    if(!res.ok) throw new Error('Supabase '+res.status);
+    var rows = await res.json();
+    // health overlay
+    var healthMap={};
+    try{
+      var hr=await fetch(SUPABASE_URL+'/rest/v1/v_dash_narrative_health?select=ticker,narrative_health,narrative_trend,attention_trend&order=snapshot_date.desc',{headers:hdrs});
+      if(hr.ok)(await hr.json()).forEach(function(h){if(!healthMap[h.ticker])healthMap[h.ticker]=h;});
+    }catch(_){}
+    // dedup + merge
+    var seen=new Set();
+    DATA = rows.filter(function(r){
+      if(seen.has(r.ticker))return false;
+      seen.add(r.ticker);return true;
+    }).map(function(r){
+      var m=Object.assign({},r,healthMap[r.ticker]||{});
+      if(!m.sector_name&&SECTOR_MAP[m.ticker])m.sector_name=SECTOR_MAP[m.ticker][0];
+      return m;
     });
-
-    if (!res.ok) {
-      const body = await res.text().catch(() => '');
-      throw new Error(`Supabase error: ${res.status} – ${body}`);
-    }
-
-    const rows = await res.json();
-
-    // Fetch narrative health for trend indicators
-    let healthMap = {};
-    try {
-      const healthUrl = `${SUPABASE_URL}/rest/v1/v_dash_narrative_health` +
-        `?select=ticker,narrative_health,narrative_trend,attention_trend` +
-        `&order=snapshot_date.desc`;
-      const hr = await fetch(healthUrl, {
-        headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}`, 'Accept': 'application/json' }
-      });
-      if (hr.ok) {
-        const hrows = await hr.json();
-        // Keep latest row per ticker
-        hrows.forEach(h => { if (!healthMap[h.ticker]) healthMap[h.ticker] = h; });
-      }
-    } catch {}
-
-    // Fetch latest ticker_snapshots to fill in fresher price data
-    let snapMap = {};
-    try {
-      const snapUrl = `${SUPABASE_URL}/rest/v1/ticker_snapshots` +
-        `?select=ticker,snapshot_date,price_close,price_change_pct` +
-        `&order=snapshot_date.desc,ticker.asc`;
-      const sr = await fetch(snapUrl, {
-        headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}`, 'Accept': 'application/json' }
-      });
-      if (sr.ok) {
-        const srows = await sr.json();
-        // Keep latest snapshot per ticker
-        srows.forEach(s => { if (!snapMap[s.ticker]) snapMap[s.ticker] = s; });
-      }
-    } catch {}
-
-    // Deduplicate by ticker (keep first occurrence) and merge health data
-    const seen = new Set();
-    DATA = rows.filter(r => {
-      if (seen.has(r.ticker)) return false;
-      seen.add(r.ticker);
-      return true;
-    }).map(r => {
-      const merged = { ...r, ...(healthMap[r.ticker] || {}) };
-      // If ticker_snapshots has newer data, overlay price fields
-      const snap = snapMap[merged.ticker];
-      if (snap && snap.snapshot_date > (merged.snapshot_date || '')) {
-        merged.price = snap.price_close;
-        merged.price_change_pct = snap.price_change_pct;
-        merged.snapshot_date = snap.snapshot_date;
-      }
-      return merged;
-    });
-
+    // stats
     document.getElementById('stat-total').textContent    = DATA.length;
-    document.getElementById('stat-traps').textContent    = DATA.filter(r => r.prism_verdict === 'Narrative Trap').length;
-    document.getElementById('stat-breaking').textContent = DATA.filter(r => r.narrative_state === 'Breaking').length;
-
-    // Build sector dropdown — use DB values first, fall back to embedded sector map
-    const dbSectors = [...new Set(DATA.map(r => r.sector_name).filter(Boolean))].sort();
-    // Embedded ticker→sector from sector intelligence data
-    const SECTOR_MAP = {"PLTR":["Agentic AI / Autonomous Systems","Cybersecurity","Defense Technology","Predictive Analytics & Narrative Intelligence"],"TSLA":["Agentic AI / Autonomous Systems","Electric Vehicles & Autonomous Transport"],"GOOGL":["Agentic AI / Autonomous Systems","Cloud Computing","Quantum Computing","Social Media & Digital Advertising"],"MSFT":["Agentic AI / Autonomous Systems","Cloud Computing","Quantum Computing"],"AMZN":["Agentic AI / Autonomous Systems","Cloud Computing"],"NVDA":["AI Infrastructure","Agentic AI / Autonomous Systems","Semiconductors"],"AMD":["AI Infrastructure","Semiconductors"],"SMCI":["AI Infrastructure","Semiconductors"],"ARM":["AI Infrastructure","Semiconductors"],"AVGO":["AI Infrastructure","Semiconductors"],"TSM":["AI Infrastructure","Semiconductors"],"AMAT":["AI Infrastructure","Semiconductors"],"LRCX":["AI Infrastructure","Semiconductors"],"MU":["AI Infrastructure","Semiconductors"],"ORCL":["Cloud Computing"],"CRM":["Cloud Computing","Predictive Analytics & Narrative Intelligence"],"NOW":["Cloud Computing"],"WDAY":["Cloud Computing"],"INTU":["Cloud Computing","Predictive Analytics & Narrative Intelligence"],"PANW":["Cybersecurity"],"CRWD":["Cybersecurity"],"RDDT":["Data Licensing & AI Training Data","Social Media & Digital Advertising"],"SPOT":["Data Licensing & AI Training Data","Social Media & Digital Advertising"],"SNAP":["Data Licensing & AI Training Data","Social Media & Digital Advertising"],"SONY":["Data Licensing & AI Training Data"],"LMT":["Defense Technology"],"RTX":["Defense Technology"],"BA":["Defense Technology"],"RIVN":["Electric Vehicles & Autonomous Transport"],"LCID":["Electric Vehicles & Autonomous Transport"],"NIO":["Electric Vehicles & Autonomous Transport"],"GM":["Electric Vehicles & Autonomous Transport"],"F":["Electric Vehicles & Autonomous Transport"],"TM":["Electric Vehicles & Autonomous Transport"],"HMC":["Electric Vehicles & Autonomous Transport"],"DUK":["Energy Infrastructure / Power Grid"],"SO":["Energy Infrastructure / Power Grid"],"NEE":["Energy Infrastructure / Power Grid"],"VST":["Energy Infrastructure / Power Grid"],"CEG":["Energy Infrastructure / Power Grid"],"PWR":["Energy Infrastructure / Power Grid"],"V":["Fintech & Digital Payments"],"MA":["Fintech & Digital Payments"],"PYPL":["Fintech & Digital Payments"],"HOOD":["Fintech & Digital Payments"],"SOFI":["Fintech & Digital Payments"],"COIN":["Fintech & Digital Payments"],"JPM":["Fintech & Digital Payments"],"GS":["Fintech & Digital Payments"],"WFC":["Fintech & Digital Payments"],"MS":["Fintech & Digital Payments"],"BAC":["Fintech & Digital Payments"],"LLY":["Healthcare Technology & Biotech"],"JNJ":["Healthcare Technology & Biotech"],"MRK":["Healthcare Technology & Biotech"],"PFE":["Healthcare Technology & Biotech"],"ABBV":["Healthcare Technology & Biotech"],"ABT":["Healthcare Technology & Biotech"],"TMO":["Healthcare Technology & Biotech"],"DHR":["Healthcare Technology & Biotech"],"SNPS":["Predictive Analytics & Narrative Intelligence"],"CDNS":["Predictive Analytics & Narrative Intelligence"],"IBM":["Quantum Computing"],"PLD":["Real Estate & PropTech"],"AMT":["Real Estate & PropTech"],"OPEN":["Real Estate & PropTech"],"INTC":["Semiconductors"],"QCOM":["Semiconductors"],"MRVL":["Semiconductors"],"TXN":["Semiconductors"],"META":["Social Media & Digital Advertising"],"CMCSA":["Social Media & Digital Advertising"],"DIS":["Social Media & Digital Advertising"]};
-    // Merge: DB sectors + any sectors derivable from ticker lookup
-    const allSectorSet = new Set(dbSectors);
-    DATA.forEach(r => {
-      const mapped = SECTOR_MAP[r.ticker];
-      if (mapped) mapped.forEach(s => allSectorSet.add(s));
+    document.getElementById('stat-traps').textContent    = DATA.filter(function(r){return r.prism_verdict==='Narrative Trap';}).length;
+    document.getElementById('stat-breaking').textContent = DATA.filter(function(r){return r.narrative_state==='Breaking';}).length;
+    document.getElementById('stat-surging').textContent  = DATA.filter(function(r){return r.narrative_state==='Surging';}).length;
+    document.getElementById('nav-badge-discover').textContent = DATA.length;
+    document.getElementById('nav-badge-snapshots').textContent = DATA.length;
+    // sector dropdowns
+    var sects=[...new Set(DATA.map(function(r){return r.sector_name;}).filter(Boolean))].sort();
+    ['sector-select','snap-sector-select'].forEach(function(id){
+      var sel=document.getElementById(id);
+      if(!sel)return;
+      sects.forEach(function(s){var o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
     });
-    // Also attach sector to rows missing sector_name
-    DATA = DATA.map(r => {
-      if (!r.sector_name && SECTOR_MAP[r.ticker]) {
-        return { ...r, sector_name: SECTOR_MAP[r.ticker][0] };
-      }
-      return r;
-    });
-    const allSectors = [...allSectorSet].sort();
-    const sectorSel = document.getElementById('sector-select');
-    allSectors.forEach(s => {
-      const opt = document.createElement('option');
-      opt.value = s; opt.textContent = s;
-      sectorSel.appendChild(opt);
-    });
-
-    render();
-
-  } catch (err) {
-    feed.innerHTML = `<div class="empty-state" style="padding:48px 0; color:#F87171;">
-      Failed to load data: ${err.message}<br>
-      <small>Check your Supabase URL and anon key in Vercel environment variables.</small>
-    </div>`;
-    console.error(err);
+    renderDiscover();
+    renderSnap();
+    renderSectors();
+    renderMemes();
+  } catch(err){
+    feed.innerHTML='<div class="empty-state" style="color:var(--mp-red);">Failed to load: '+esc(err.message)+'<br><small style="font-size:11px;opacity:.6;">Check Supabase credentials in environment variables.</small></div>';
+    // Still render static demos
+    renderSectors();
+    renderMemes();
   }
 }
-
-const PAGE_SIZE = 25;
-let activeState   = 'all';
-let activeVerdict = null;
-let activeSector  = '';
-let activeSort    = 'default';
-let searchVal     = '';
-let showing       = PAGE_SIZE;
-
-function stateClass(s) {
-  return { Breaking: 'badge-breaking', Surging: 'badge-surging', Fragile: 'badge-fragile', Stable: 'badge-stable' }[s] || 'badge-stable';
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function esc(s){return s?(s+'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):'';  }
+function stateClass(s){return {'Breaking':'badge-breaking','Surging':'badge-surging','Fragile':'badge-fragile','Stable':'badge-stable'}[s]||'badge-stable';}
+function pipClass(v){return v==='Narrative Trap'?'pip-trap':v==='Structurally Supported'?'pip-supported':'pip-monitoring';}
+function fmtPrice(p){return p>=100?p.toFixed(2):p.toFixed(3);}
+function fmtDelta(d){
+  if(d==null||d===0)return{cls:'delta-flat',txt:'—'};
+  return{cls:d>0?'delta-pos':'delta-neg',txt:(d>0?'+':'')+d.toFixed(2)+'%'};
 }
-function pipClass(v) {
-  if (v === 'Narrative Trap') return 'pip-trap';
-  if (v === 'Structurally Supported') return 'pip-supported';
-  return 'pip-monitoring';
+function fvdPct(r){
+  if(r.price==null||r.fair_value==null||r.fair_value===0)return null;
+  return((r.price-r.fair_value)/r.fair_value)*100;
 }
-function fmtPrice(p) { return p >= 100 ? p.toFixed(2) : p.toFixed(3); }
-function fmtDelta(d) {
-  if (d == null || d === 0) return { cls: 'delta-flat', txt: '—' };
-  return { cls: d > 0 ? 'delta-pos' : 'delta-neg', txt: (d > 0 ? '+' : '') + d.toFixed(2) + '%' };
-}
-function esc(s) {
-  return s ? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : '';
-}
-
-// Compute fair value divergence pct (negative = undervalued, positive = overvalued)
-function fvdPct(r) {
-  if (r.price == null || r.fair_value == null || r.fair_value === 0) return null;
-  return ((r.price - r.fair_value) / r.fair_value) * 100;
-}
-
-function getFiltered() {
-  let filtered = DATA.filter(r => {
-    if (activeState !== 'all' && r.narrative_state !== activeState) return false;
-    if (activeVerdict && r.prism_verdict !== activeVerdict) return false;
-    if (activeSector && r.sector_name !== activeSector) return false;
-    if (searchVal && !r.ticker.toLowerCase().includes(searchVal.toLowerCase())) return false;
+// ── DISCOVER ─────────────────────────────────────────────────────────────────
+var discoverState='all', discoverVerdict=null, discoverSector='', discoverSearch='', discoverShowing=25;
+function getFilteredDiscover(){
+  return DATA.filter(function(r){
+    if(discoverState!=='all'&&r.narrative_state!==discoverState)return false;
+    if(discoverVerdict&&r.prism_verdict!==discoverVerdict)return false;
+    if(discoverSector&&r.sector_name!==discoverSector)return false;
+    var sv=discoverSearch.toLowerCase();
+    if(sv&&!r.ticker.toLowerCase().includes(sv))return false;
     return true;
   });
-
-  // Sort
-  if (activeSort === 'undervalued') {
-    // Most undervalued first: lowest (most negative) fvd %
-    filtered = [...filtered].sort((a, b) => {
-      const fa = fvdPct(a) ?? Infinity;
-      const fb = fvdPct(b) ?? Infinity;
-      return fa - fb;
-    });
-  } else if (activeSort === 'overvalued') {
-    // Most overvalued first: highest (most positive) fvd %
-    filtered = [...filtered].sort((a, b) => {
-      const fa = fvdPct(a) ?? -Infinity;
-      const fb = fvdPct(b) ?? -Infinity;
-      return fb - fa;
-    });
-  }
-  // default = ticker.asc (already sorted from API)
-
-  return filtered;
 }
-
-function render() {
-  const filtered = getFiltered();
-  const slice = filtered.slice(0, showing);
-  const feed = document.getElementById('feed');
-  const countLine = document.getElementById('count-line');
-  const lmWrap = document.getElementById('load-more-wrap');
-
-  countLine.textContent = filtered.length + ' ticker' + (filtered.length === 1 ? '' : 's');
-
-  if (filtered.length === 0) {
-    feed.innerHTML = '<div class="empty-state">No stories match the current filter.</div>';
-    lmWrap.style.display = 'none';
-    return;
-  }
-
-  feed.innerHTML = slice.map(r => {
-    const delta = fmtDelta(r.price_change_pct);
-
-    // Verdict badge using prism_verdict
-    const verdictTag = r.prism_verdict === 'Narrative Trap'
-      ? '<span class="verdict-tag verdict-trap">Narrative Trap</span>'
-      : r.prism_verdict === 'Structurally Supported'
-      ? '<span class="verdict-tag verdict-supported">Structurally Supported</span>'
-      : '';
-
-    // Narrative trend indicator
-    const trendIcon = r.narrative_trend === 'Rising' ? '↑'
-      : r.narrative_trend === 'Collapsing' ? '↓'
-      : r.narrative_trend === 'Stable' ? '→' : '';
-    const trendCls = r.narrative_trend === 'Rising' ? 'trend-up'
-      : r.narrative_trend === 'Collapsing' ? 'trend-down' : 'trend-flat';
-
-    // Fundamentals — only show if present
-    const peTag = r.pe_ratio != null
-      ? `<span class="meta-tag">P/E <strong>${r.pe_ratio.toFixed(1)}x</strong></span>` : '';
-    const earningsTag = r.days_to_earnings != null
-      ? `<span class="meta-tag">Earnings <strong>${r.days_to_earnings}d</strong></span>` : '';
-    const guidanceTag = r.guidance_direction && r.guidance_direction !== 'Neutral'
-      ? `<span class="meta-tag">Guidance <strong>${esc(r.guidance_direction)}</strong></span>` : '';
-
-    // Fair value divergence
-    const fvd = fvdPct(r);
-    const fvdTag = fvd != null
-      ? `<span class="meta-tag fvd-tag ${fvd < 0 ? 'fvd-under' : 'fvd-over'}">${fvd < 0 ? '▼' : '▲'} <strong>${Math.abs(fvd).toFixed(0)}% ${fvd < 0 ? 'undervalued' : 'overvalued'}</strong></span>`
-      : '';
-
-    // Sector tag — only show when sector filter is not active (would be redundant)
-    const sectorTag = r.sector_name && !activeSector
-      ? `<span class="meta-sector">${esc(r.sector_name)}</span>` : '';
-
-    return `<a class="story-card" href="/ticker/${encodeURIComponent(r.ticker)}">
-      <div class="card-top">
-        <div class="card-left">
-          <span class="ticker-badge ${stateClass(r.narrative_state)}">${r.ticker}</span>
-          <span class="verdict-pip ${pipClass(r.prism_verdict)}" title="${esc(r.prism_verdict)}"></span>
-          <span class="story-claim">${esc(r.story_claim)}</span>
-        </div>
-        <div class="price-block">
-          <div class="price-nums">
-            <div class="price-main">$${fmtPrice(r.price)}</div>
-            <div class="price-delta ${delta.cls}">${delta.txt}</div>
-          </div>
-          <span class="card-arrow">›</span>
-        </div>
-      </div>
-      <div class="card-meta">
-        <span class="meta-tag">Driver: <strong>${esc(r.primary_driver)}</strong></span>
-        ${peTag}
-        ${earningsTag}
-        ${guidanceTag}
-        ${r.institutional_positioning && r.institutional_positioning !== 'Neutral' ? `<span class="meta-tag">Inst: <strong>${esc(r.institutional_positioning)}</strong></span>` : ''}
-        ${trendIcon ? `<span class="meta-tag ${trendCls}">${trendIcon} <strong>${esc(r.narrative_trend)}</strong></span>` : ''}
-        ${fvdTag}
-        ${verdictTag}
-        ${sectorTag}
-        ${r.snapshot_date ? `<span class="meta-date">${new Date(r.snapshot_date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</span>` : ''}
-      </div>
-    </a>`;
+function renderDiscover(){
+  var filtered=getFilteredDiscover();
+  var slice=filtered.slice(0,discoverShowing);
+  var feed=document.getElementById('discover-feed');
+  var cl=document.getElementById('count-line');
+  var lm=document.getElementById('discover-load-more');
+  cl.textContent=filtered.length+' ticker'+(filtered.length===1?'':'s');
+  if(filtered.length===0){feed.innerHTML='<div class="empty-state">No stories match current filters.</div>';lm.style.display='none';return;}
+  feed.innerHTML=slice.map(function(r){
+    var delta=fmtDelta(r.price_change_pct);
+    var vTag=r.prism_verdict==='Narrative Trap'?'<span class="verdict-tag verdict-trap">Narrative Trap</span>':r.prism_verdict==='Structurally Supported'?'<span class="verdict-tag verdict-supported">Structurally Supported</span>':'';
+    var ti=r.narrative_trend==='Rising'?'↑':r.narrative_trend==='Collapsing'?'↓':r.narrative_trend==='Stable'?'→':'';
+    var tc=r.narrative_trend==='Rising'?'trend-up':r.narrative_trend==='Collapsing'?'trend-down':'';
+    var fvd=fvdPct(r);
+    var fvdTag=fvd!=null?'<span class="meta-tag '+(fvd<0?'trend-up':'trend-down')+'">'+(fvd<0?'▼':'▲')+' <strong>'+Math.abs(fvd).toFixed(0)+'% '+(fvd<0?'undervalued':'overvalued')+'</strong></span>':'';
+    return '<a class="story-card" href="/ticker/'+encodeURIComponent(r.ticker)+'">'
+      +'<div class="card-top">'
+        +'<div class="card-left">'
+          +logoHTML(r.ticker,'sm')
+          +'<span class="ticker-badge '+stateClass(r.narrative_state)+'">'+r.ticker+'</span>'
+          +'<span class="verdict-pip '+pipClass(r.prism_verdict)+'" title="'+esc(r.prism_verdict)+'"></span>'
+          +'<span class="story-claim">'+esc(r.story_claim)+'</span>'
+        +'</div>'
+        +'<div class="price-block">'
+          +'<div class="price-nums">'
+            +'<div class="price-main">$'+fmtPrice(r.price)+'</div>'
+            +'<div class="price-delta '+delta.cls+'">'+delta.txt+'</div>'
+          +'</div>'
+          +'<span class="card-arrow">›</span>'
+        +'</div>'
+      +'</div>'
+      +'<div class="card-meta">'
+        +(r.primary_driver?'<span class="meta-tag">Driver: <strong>'+esc(r.primary_driver)+'</strong></span>':'')
+        +(r.pe_ratio!=null?'<span class="meta-tag">P/E <strong>'+r.pe_ratio.toFixed(1)+'x</strong></span>':'')
+        +(r.days_to_earnings!=null?'<span class="meta-tag">Earnings <strong>'+r.days_to_earnings+'d</strong></span>':'')
+        +(r.guidance_direction&&r.guidance_direction!=='Neutral'?'<span class="meta-tag">Guidance <strong>'+esc(r.guidance_direction)+'</strong></span>':'')
+        +(ti?'<span class="meta-tag '+tc+'">'+ti+' <strong>'+esc(r.narrative_trend)+'</strong></span>':'')
+        +fvdTag
+        +vTag
+        +(r.sector_name&&!discoverSector?'<span class="meta-sector">'+esc(r.sector_name)+'</span>':'')
+        +(r.snapshot_date?'<span class="meta-date">'+new Date(r.snapshot_date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+'</span>':'')
+      +'</div>'
+    +'</a>';
   }).join('');
-
-  lmWrap.style.display = showing < filtered.length ? 'block' : 'none';
+  lm.style.display=discoverShowing<filtered.length?'block':'none';
 }
-
-// Filter chips
-document.querySelectorAll('.chip').forEach(chip => {
-  chip.addEventListener('click', () => {
-    const filter = chip.dataset.filter;
-    const val = chip.dataset.val;
-
-    if (filter === 'state') {
-      activeState = val;
-      document.querySelectorAll('[data-filter="state"]').forEach(c => {
-        c.classList.remove('active', 'active-breaking', 'active-surging', 'active-fragile', 'active-stable');
-        if (c.dataset.val === val) {
-          const cls = val === 'Breaking' ? 'active-breaking'
-            : val === 'Surging' ? 'active-surging'
-            : val === 'Fragile' ? 'active-fragile'
-            : val === 'Stable' ? 'active-stable'
-            : 'active';
-          c.classList.add(cls);
-        }
+document.querySelectorAll('.chip[data-filter]').forEach(function(chip){
+  chip.addEventListener('click',function(){
+    var f=chip.dataset.filter,v=chip.dataset.val;
+    if(f==='state'){
+      discoverState=v;
+      document.querySelectorAll('[data-filter="state"]').forEach(function(c){
+        c.classList.remove('active','active-breaking','active-surging','active-fragile','active-stable');
+        if(c.dataset.val===v)c.classList.add(v==='Breaking'?'active-breaking':v==='Surging'?'active-surging':v==='Fragile'?'active-fragile':v==='Stable'?'active-stable':'active');
       });
-    } else if (filter === 'verdict') {
-      if (activeVerdict === val) {
-        activeVerdict = null;
-        chip.classList.remove('active');
-      } else {
-        activeVerdict = val;
-        document.querySelectorAll('[data-filter="verdict"]').forEach(c => c.classList.remove('active'));
-        chip.classList.add('active');
+    }else if(f==='verdict'){
+      if(discoverVerdict===v){discoverVerdict=null;chip.classList.remove('active');}
+      else{discoverVerdict=v;document.querySelectorAll('[data-filter="verdict"]').forEach(function(c){c.classList.remove('active');});chip.classList.add('active');}
+    }
+    discoverShowing=25;renderDiscover();
+  });
+});
+document.getElementById('sector-select').addEventListener('change',function(e){discoverSector=e.target.value;discoverShowing=25;renderDiscover();});
+document.getElementById('ticker-search').addEventListener('input',function(e){discoverSearch=e.target.value;discoverShowing=25;renderDiscover();});
+document.getElementById('discover-load-more-btn').addEventListener('click',function(){discoverShowing+=25;renderDiscover();});
+document.getElementById('topbar-search').addEventListener('input',function(e){
+  var id=document.querySelector('.tab-panel.active').id;
+  if(id==='tab-discover'){discoverSearch=e.target.value;discoverShowing=25;renderDiscover();}
+  else if(id==='tab-snapshots'){document.getElementById('snap-search').value=e.target.value;renderSnap();}
+});
+// ── SECTOR PULSE ─────────────────────────────────────────────────────────────
+var SECTOR_STATIC = [
+  {name:'AI Infrastructure',sub:'Semiconductors, servers, power',state:'Breaking',cagr:'42%',momentum:88,risk:'medium',desc:'Blackwell demand cycle accelerating across hyperscalers. Supply constraints easing into H2 2025, but China export controls create structural ceiling for key names.',tickers:['NVDA','AMD','SMCI','ARM','AVGO','TSM'],trap:true},
+  {name:'Agentic AI / Autonomous Systems',sub:'AI agents, robotics, autonomy',state:'Surging',cagr:'67%',momentum:94,risk:'high',desc:'Agent-layer buildout intensifying. Enterprise deployment cycles beginning — early movers like MSFT and PLTR seeing AIP/Copilot attach rates beat estimates.',tickers:['PLTR','MSFT','GOOGL','TSLA','AMZN'],trap:false},
+  {name:'Cloud Computing',sub:'Hyperscale, SaaS, IaaS',state:'Stable',cagr:'22%',momentum:61,risk:'low',desc:'Reacceleration narrative holding. Azure and AWS both seeing AI workload uplift. Optimization headwinds from 2023 now a tailwind as customers expand capacity.',tickers:['MSFT','AMZN','GOOGL','ORCL','CRM','NOW'],trap:false},
+  {name:'Fintech & Digital Payments',sub:'Payments, neobanks, crypto infrastructure',state:'Fragile',cagr:'18%',momentum:42,risk:'high',desc:'Rate sensitivity creating valuation pressure across neobanks. COIN and HOOD leveraged to crypto sentiment cycle. Traditional payment rails (V, MA) showing margin resilience.',tickers:['V','MA','PYPL','HOOD','SOFI','COIN','JPM'],trap:true},
+  {name:'Electric Vehicles & Autonomous Transport',sub:'EVs, autonomy, infrastructure',state:'Breaking',cagr:'24%',momentum:35,risk:'high',desc:'Demand narrative fracturing — delivery misses widening. Autonomy thesis (robotaxi, FSD) acting as narrative backstop despite no commercial revenue. Watch TSLA earnings revision.',tickers:['TSLA','RIVN','LCID','NIO','GM','F'],trap:true},
+  {name:'Cybersecurity',sub:'EDR, SASE, AI-native security',state:'Surging',cagr:'31%',momentum:79,risk:'low',desc:'AI threat surface expansion creating structural demand pull. CRWD recovering from incident; PANW platformization narrative intact. Both showing enterprise deal acceleration.',tickers:['PANW','CRWD'],trap:false},
+  {name:'Defense Technology',sub:'Defense-tech, aerospace, space',state:'Stable',cagr:'12%',momentum:58,risk:'medium',desc:'Budget expansion tailwinds intact. AI/autonomy integration creating a dual-revenue narrative across legacy (LMT, RTX) and emerging (PLTR, ANDURIL) players.',tickers:['LMT','RTX','BA','PLTR'],trap:false},
+  {name:'Energy Infrastructure / Power Grid',sub:'Utilities, grid, nuclear',state:'Surging',cagr:'19%',momentum:82,risk:'medium',desc:'AI data center power demand creating a secular utility re-rating. Nuclear renaissance narrative (CEG, VST) gaining institutional backing. Grid capacity stories are early-stage.',tickers:['DUK','NEE','VST','CEG','PWR'],trap:false},
+];
+var sectorFilter='all';
+function filterSectors(f,btn){
+  sectorFilter=f;
+  document.querySelectorAll('#tab-sector .chip').forEach(function(c){c.classList.remove('active');});
+  if(btn)btn.classList.add('active');
+  renderSectors();
+}
+function renderSectors(){
+  var grid=document.getElementById('sector-grid');
+  var filtered=SECTOR_STATIC.filter(function(s){
+    if(sectorFilter==='hot')return s.momentum>=70;
+    if(sectorFilter==='cooling')return s.momentum<50;
+    if(sectorFilter==='risk')return s.risk==='high';
+    return true;
+  });
+  // If we have real DATA, overlay live state
+  if(DATA.length>0){
+    filtered=filtered.map(function(s){
+      var rel=DATA.filter(function(r){return(SECTOR_MAP[r.ticker]||[]).includes(s.name);});
+      if(rel.length>0){
+        var traps=rel.filter(function(r){return r.prism_verdict==='Narrative Trap';}).length;
+        return Object.assign({},s,{live_traps:traps,live_count:rel.length});
       }
-    }
-    showing = PAGE_SIZE;
-    render();
+      return s;
+    });
+  }
+  grid.innerHTML=filtered.map(function(s){
+    var sc=s.state==='Breaking'?'badge-breaking':s.state==='Surging'?'badge-surging':s.state==='Fragile'?'badge-fragile':'badge-stable';
+    var bar_color=s.momentum>=75?'var(--mp-teal)':s.momentum>=50?'var(--mp-amber)':'var(--mp-red)';
+    var verdict=s.trap?'<span class="sector-trap">Trap present</span>':'<span class="sector-ok">Supported</span>';
+    var liveNote=s.live_count?'<span class="meta-tag" style="font-size:10px;">'+(s.live_traps||0)+' trap'+(s.live_traps===1?'':'s')+' / '+s.live_count+' tickers</span>':'';
+    return '<div class="sector-card">'
+      +'<div class="sector-card-header">'
+        +'<div><div class="sector-name">'+esc(s.name)+'</div><div class="sector-sub">'+esc(s.sub)+'</div></div>'
+        +'<span class="sector-state '+sc+'">'+s.state+'</span>'
+      +'</div>'
+      +'<div class="sector-body">'
+        +'<div class="sector-desc">'+esc(s.desc)+'</div>'
+        +'<div class="sector-tickers">'+s.tickers.map(function(t){return '<span class="sector-ticker-chip" style="display:inline-flex;align-items:center;gap:4px;">'+logoHTML(t,'sm')+t+'</span>';}).join('')+'</div>'
+      +'</div>'
+      +'<div class="sector-momentum-bar">'
+        +'<span class="sector-bar-lbl">Momentum</span>'
+        +'<div class="sector-bar-track"><div class="sector-bar-fill" style="width:'+s.momentum+'%;background:'+bar_color+';"></div></div>'
+        +'<span class="sector-bar-pct">'+s.momentum+'</span>'
+      +'</div>'
+      +'<div class="sector-footer">'
+        +'<span class="sector-cagr">CAGR '+s.cagr+'</span>'
+        +liveNote
+        +verdict
+      +'</div>'
+    +'</div>';
+  }).join('');
+  if(filtered.length===0)grid.innerHTML='<div class="empty-state" style="grid-column:1/-1;">No sectors match current filter.</div>';
+}
+// ── TICKER SNAPSHOTS ─────────────────────────────────────────────────────────
+var snapSort='ticker', snapSector='', snapShowing=50;
+function sortSnap(s,btn){
+  snapSort=s;
+  document.querySelectorAll('#tab-snapshots .chip').forEach(function(c){c.classList.remove('active');});
+  if(btn)btn.classList.add('active');
+  snapShowing=50;renderSnap();
+}
+function filterSnapSector(v){snapSector=v;snapShowing=50;renderSnap();}
+function getSnapData(){
+  var sv=(document.getElementById('snap-search')||{}).value||'';
+  var arr=DATA.filter(function(r){
+    if(snapSector&&r.sector_name!==snapSector)return false;
+    if(sv&&!r.ticker.toLowerCase().includes(sv.toLowerCase()))return false;
+    return true;
   });
-});
-
-document.getElementById('sector-select').addEventListener('change', e => {
-  activeSector = e.target.value;
-  showing = PAGE_SIZE;
-  render();
-});
-
-// Value / Sort buttons
-document.querySelectorAll('[data-sort]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const val = btn.dataset.sort;
-    if (activeSort === val) {
-      // Toggle off — back to default
-      activeSort = 'default';
-      document.querySelectorAll('[data-sort]').forEach(b => b.classList.remove('active', 'active-surging', 'active-breaking'));
-      document.querySelector('[data-sort="default"]').classList.add('active');
-    } else {
-      activeSort = val;
-      document.querySelectorAll('[data-sort]').forEach(b => b.classList.remove('active', 'active-surging', 'active-breaking'));
-      btn.classList.add(val === 'undervalued' ? 'active-surging' : val === 'overvalued' ? 'active-breaking' : 'active');
-    }
-    showing = PAGE_SIZE;
-    render();
+  if(snapSort==='chg-desc')arr=arr.slice().sort(function(a,b){return(b.price_change_pct||0)-(a.price_change_pct||0);});
+  else if(snapSort==='chg-asc')arr=arr.slice().sort(function(a,b){return(a.price_change_pct||0)-(b.price_change_pct||0);});
+  else if(snapSort==='traps')arr=arr.slice().sort(function(a,b){return(a.prism_verdict==='Narrative Trap'?0:1)-(b.prism_verdict==='Narrative Trap'?0:1);});
+  return arr;
+}
+function renderSnap(){
+  var arr=getSnapData();
+  var tbody=document.getElementById('snap-tbody');
+  var lm=document.getElementById('snap-load-more');
+  var slice=arr.slice(0,snapShowing);
+  if(arr.length===0){tbody.innerHTML='<tr><td colspan="9" class="empty-state" style="padding:32px;text-align:center;color:var(--mp-text-tertiary);">No tickers match.</td></tr>';lm.style.display='none';return;}
+  tbody.innerHTML=slice.map(function(r){
+    var delta=fmtDelta(r.price_change_pct);
+    var sc=stateClass(r.narrative_state);
+    var vc=r.prism_verdict==='Narrative Trap'?'verdict-trap':r.prism_verdict==='Structurally Supported'?'verdict-supported':'';
+    var vl=r.prism_verdict==='Narrative Trap'?'Trap':r.prism_verdict==='Structurally Supported'?'Supported':r.prism_verdict||'—';
+    var ec=r.days_to_earnings!=null&&r.days_to_earnings<=14?' earnings-soon':'';
+    return '<tr onclick="window.location.href=\'/ticker/'+encodeURIComponent(r.ticker)+'\'" style="cursor:pointer;">'
+      +'<td><div style="display:flex;align-items:center;gap:8px;">'+logoHTML(r.ticker,'sm')+'<div class="snap-sym">'+r.ticker+'</div></div></td>'
+      +'<td class="r"><div class="snap-price">$'+fmtPrice(r.price)+'</div></td>'
+      +'<td class="r"><div class="snap-chg '+delta.cls+'">'+delta.txt+'</div></td>'
+      +'<td><span class="snap-state '+sc+'">'+esc(r.narrative_state)+'</span></td>'
+      +'<td>'+(vc?'<span class="snap-verdict '+vc+'">'+esc(vl)+'</span>':vc?'<span>'+esc(vl)+'</span>':'<span style="color:var(--mp-text-tertiary);font-size:11px;">'+esc(r.prism_verdict||'—')+'</span>')+'</td>'
+      +'<td><div class="snap-driver">'+esc(r.primary_driver||'—')+'</div></td>'
+      +'<td><div class="snap-sector">'+esc(r.sector_name||'—')+'</div></td>'
+      +'<td class="r"><span class="pe-val">'+( r.pe_ratio!=null?r.pe_ratio.toFixed(1)+'x':'—')+'</span></td>'
+      +'<td class="r"><span class="snap-date'+ec+'">'+( r.days_to_earnings!=null?r.days_to_earnings+'d':'—')+'</span></td>'
+    +'</tr>';
+  }).join('');
+  lm.style.display=snapShowing<arr.length?'block':'none';
+}
+document.getElementById('snap-load-more-btn').addEventListener('click',function(){snapShowing+=50;renderSnap();});
+// ── MARKET SHARING (MEMES) ───────────────────────────────────────────────────
+var memeFilter='all';
+var MEME_SEED=[
+  {ticker:'NVDA',state:'Breaking',claim:'Blackwell demand cycle running hot — but China ceiling not in consensus numbers',verdict:'Narrative Trap',price:142.50,chg:1.32,age:'2h ago',likes:47,bg:'meme-bg-breaking'},
+  {ticker:'PLTR',state:'Surging',claim:'Government AIP pipeline accelerating across 12 defense agencies',verdict:'Structurally Supported',price:98.45,chg:2.91,age:'4h ago',likes:89,bg:'meme-bg-surging'},
+  {ticker:'TSLA',state:'Fragile',claim:'Robotaxi narrative re-emerges ahead of Austin launch despite soft deliveries',verdict:'Narrative Trap',price:378.20,chg:-1.41,age:'1h ago',likes:134,bg:'meme-bg-breaking'},
+  {ticker:'MSFT',state:'Stable',claim:'Copilot enterprise attach rates beating estimates — Azure AI workloads reaccelerating',verdict:'Structurally Supported',price:468.35,chg:0.89,age:'3h ago',likes:62,bg:'meme-bg-stable'},
+  {ticker:'GOOGL',state:'Surging',claim:'Gemini Ultra API adoption outpacing internal estimates — Cloud catching Azure share',verdict:'Structurally Supported',price:198.75,chg:0.45,age:'6h ago',likes:31,bg:'meme-bg-surging'},
+  {ticker:'AMD',state:'Fragile',claim:'MI300X customer wins cited but NVDA supply constraints removed as a demand driver',verdict:'Narrative Trap',price:178.90,chg:-0.87,age:'5h ago',likes:28,bg:'meme-bg-fragile'},
+];
+var MEME_DATA=MEME_SEED.slice();
+function filterMemes(f,btn){
+  memeFilter=f;
+  document.querySelectorAll('#tab-memes .chip').forEach(function(c){c.classList.remove('active');});
+  if(btn)btn.classList.add('active');
+  renderMemes();
+}
+function generateMeme(){
+  var sym=(document.getElementById('meme-ticker-inp').value||'').toUpperCase().trim();
+  if(!sym){alert('Enter a ticker symbol');return;}
+  var live=DATA.find(function(r){return r.ticker===sym;});
+  var card;
+  if(live){
+    card={
+      ticker:live.ticker,
+      state:live.narrative_state||'Stable',
+      claim:live.story_claim||'Narrative under analysis',
+      verdict:live.prism_verdict||'Monitoring',
+      price:live.price||0,
+      chg:live.price_change_pct||0,
+      age:'Just now',
+      likes:0,
+      bg:live.narrative_state==='Breaking'||live.prism_verdict==='Narrative Trap'?'meme-bg-breaking':live.narrative_state==='Surging'?'meme-bg-surging':live.narrative_state==='Fragile'?'meme-bg-fragile':'meme-bg-stable'
+    };
+  }else{
+    card={ticker:sym,state:'Monitoring',claim:'No live data — enter this ticker in Discover to run a full narrative analysis',verdict:'Monitoring',price:0,chg:0,age:'Just now',likes:0,bg:'meme-bg-generic'};
+  }
+  MEME_DATA.unshift(card);
+  renderMemes();
+  document.getElementById('meme-ticker-inp').value='';
+}
+function renderMemes(){
+  // Merge with live DATA if available
+  var cards=MEME_DATA;
+  if(DATA.length>0&&MEME_DATA===MEME_SEED){
+    cards=DATA.slice(0,12).map(function(r){
+      return{
+        ticker:r.ticker,state:r.narrative_state||'Stable',
+        claim:r.story_claim||'Under analysis',
+        verdict:r.prism_verdict||'Monitoring',
+        price:r.price||0,chg:r.price_change_pct||0,
+        age:'Today',likes:Math.floor(Math.random()*120),
+        bg:r.narrative_state==='Breaking'||r.prism_verdict==='Narrative Trap'?'meme-bg-breaking':r.narrative_state==='Surging'?'meme-bg-surging':r.narrative_state==='Fragile'?'meme-bg-fragile':'meme-bg-stable'
+      };
+    });
+    MEME_DATA=cards;
+  }
+  var filtered=cards.filter(function(c){
+    if(memeFilter==='trap')return c.verdict==='Narrative Trap';
+    if(memeFilter==='supported')return c.verdict==='Structurally Supported';
+    if(memeFilter==='breaking')return c.state==='Breaking';
+    return true;
   });
-});
-// Set A→Z as default active on load
-document.querySelector('[data-sort="default"]')?.classList.add('active');
-
-document.getElementById('ticker-search').addEventListener('input', e => {
-  searchVal = e.target.value;
-  showing = PAGE_SIZE;
-  render();
-});
-
-document.getElementById('load-more-btn').addEventListener('click', () => {
-  showing += PAGE_SIZE;
-  render();
-});
-
+  var grid=document.getElementById('meme-grid');
+  if(filtered.length===0){grid.innerHTML='<div class="empty-state" style="grid-column:1/-1;">No cards match.</div>';return;}
+  grid.innerHTML=filtered.map(function(c,i){
+    var delta=fmtDelta(c.chg);
+    var vtag=c.verdict==='Narrative Trap'?'<span class="meme-verdict-big" style="background:rgba(255,107,107,.15);color:var(--mp-red);border-color:rgba(255,107,107,.3);">Narrative Trap</span>':c.verdict==='Structurally Supported'?'<span class="meme-verdict-big" style="background:rgba(0,229,180,.12);color:var(--mp-teal);border-color:rgba(0,229,180,.25);">Supported</span>':'';
+    var tcol=c.state==='Breaking'||c.verdict==='Narrative Trap'?'var(--mp-red)':c.state==='Surging'?'var(--mp-teal)':c.state==='Fragile'?'var(--mp-amber)':'var(--mp-blue)';
+    return '<div class="meme-card" id="meme-card-'+i+'">'
+      +'<div class="meme-img '+c.bg+'">'
+        +'<div class="meme-img-inner">'
+          +'<div style="display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:6px;">'+logoHTML(c.ticker,'lg')+'<div class="meme-ticker-big" style="color:'+tcol+';">'+c.ticker+'</div></div>'
+          +'<div class="meme-claim-big">'+esc(c.claim)+'</div>'
+          +vtag
+        +'</div>'
+      +'</div>'
+      +'<div class="meme-footer">'
+        +'<div class="meme-meta-row">'
+          +'<span class="meme-sym">'+c.ticker+' · '+(c.price>0?'$'+fmtPrice(c.price):'—')+'</span>'
+          +'<span class="meme-age">'+c.age+'</span>'
+        +'</div>'
+        +'<div style="font-family:var(--font-mono);font-size:11px;margin-bottom:6px;'+( c.chg>=0?'color:var(--mp-teal)':'color:var(--mp-red)')+'">'+delta.txt+'</div>'
+        +'<div class="meme-actions">'
+          +'<button class="meme-action-btn" onclick="likeCard('+i+',this,event)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/></svg>'+c.likes+'</button>'
+          +'<button class="meme-action-btn" onclick="window.location.href=\'/ticker/'+encodeURIComponent(c.ticker)+'\'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>Full analysis</button>'
+          +'<button class="meme-share-btn" onclick="shareCard('+i+',event)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z"/></svg>Share</button>'
+        +'</div>'
+      +'</div>'
+    +'</div>';
+  }).join('');
+}
+function likeCard(i,btn,e){
+  e.stopPropagation();
+  btn.classList.toggle('liked');
+  MEME_DATA[i].likes+=(btn.classList.contains('liked')?1:-1);
+  btn.innerHTML=btn.innerHTML.replace(/\d+/,MEME_DATA[i].likes);
+}
+function shareCard(i,e){
+  e.stopPropagation();
+  var c=MEME_DATA[i];
+  var text=c.ticker+' · Market Prism\n'+c.claim+'\n'+window.location.origin+'/ticker/'+c.ticker;
+  if(navigator.share){navigator.share({title:'Market Prism · '+c.ticker,text:text,url:window.location.origin+'/ticker/'+c.ticker}).catch(function(){});}
+  else{navigator.clipboard.writeText(text).then(function(){alert('Copied to clipboard');}).catch(function(){});}
+}
+// ── Boot ──────────────────────────────────────────────────────────────────────
 loadData();
-
-// Auto-refresh every 5 minutes
-setInterval(() => loadData(), 5 * 60 * 1000);
-
-// Refresh when user tabs back to the page
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) loadData();
-});
+setInterval(loadData,5*60*1000);
+document.addEventListener('visibilitychange',function(){if(!document.hidden)loadData();});
 </script>
+<!-- Env vars injected by Vercel API handler — do not edit this line -->
+<script id="__env_script">window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '' };</script>
 </body>
 </html>
