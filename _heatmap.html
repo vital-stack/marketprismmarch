@@ -3,107 +3,169 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Narrative Heatmap — Market Prism</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>Heatmap — Market Prism</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg: #F7F5F0;
-    --surface: #FFFFFF;
-    --surface2: #F0EDE8;
-    --surface3: #E8E5DF;
-    --border: #E2DED8;
-    --border-strong: #C8C4BE;
-    --text-primary: #1A1916;
-    --text-secondary: #5C5A55;
-    --text-tertiary: #9B9892;
-    --green: #1E8449;
-    --green-mid: #27AE60;
-    --green-bg: #EEF8F2;
-    --green-bd: #BCEACE;
-    --red: #C0392B;
-    --red-bg: #FDF0EE;
-    --red-bd: #F5C6C2;
-    --amber: #D68910;
-    --amber-bg: #FEF9EC;
-    --amber-bd: #FADED9;
-    --blue: #2471A3;
-    --blue-bg: #EBF5FB;
-    --font: 'DM Sans', system-ui, sans-serif;
-    --mono: 'DM Mono', monospace;
+    --mp-obsidian: #0A0E1A;
+    --mp-deep: #0F1628;
+    --mp-surface: #141D35;
+    --mp-border: rgba(255,255,255,0.08);
+    --mp-border-mid: rgba(255,255,255,0.14);
+    --mp-blue: #1A6EFF;
+    --mp-cyan: #00C2FF;
+    --mp-teal: #00E5B4;
+    --mp-prism-4: #7B61FF;
+    --mp-prism-5: #FF6B6B;
+    --mp-text-primary: #F0F4FF;
+    --mp-text-secondary: #8B97B8;
+    --mp-text-tertiary: #4A5578;
+    --mp-amber: #EF9F27;
+    --font-display: 'DM Serif Display', Georgia, serif;
+    --font-body: 'DM Sans', system-ui, sans-serif;
+    --font-mono: 'DM Mono', monospace;
   }
 
   html { font-size: 16px; }
   body {
-    font-family: var(--font);
-    background: var(--bg);
-    color: var(--text-primary);
+    font-family: var(--font-body);
+    background: var(--mp-obsidian);
+    color: var(--mp-text-primary);
     min-height: 100vh;
     line-height: 1.5;
   }
 
-  /* ── Layout ── */
-  .page-wrap {
+  /* ── Side Nav ── */
+  .side-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 240px;
+    height: 100vh;
+    background: var(--mp-deep);
+    border-right: 1px solid var(--mp-border);
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+    padding: 28px 0 24px;
+  }
+  .side-nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 24px;
+    margin-bottom: 36px;
+    text-decoration: none;
+  }
+  .side-nav-logo svg { flex-shrink: 0; }
+  .side-nav-logo-text {
+    font-family: var(--font-display);
+    font-size: 18px;
+    color: var(--mp-text-primary);
+    letter-spacing: -0.01em;
+  }
+  .side-nav-items { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+  .side-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 24px;
+    font-size: 14px;
+    font-family: var(--font-body);
+    color: var(--mp-text-secondary);
+    text-decoration: none;
+    border-left: 3px solid transparent;
+    transition: all 0.15s;
+  }
+  .side-nav-item:hover {
+    color: var(--mp-text-primary);
+    background: rgba(255,255,255,0.03);
+  }
+  .side-nav-item.active {
+    color: var(--mp-blue);
+    border-left-color: var(--mp-blue);
+    background: rgba(26,110,255,0.1);
+    font-weight: 500;
+  }
+  .side-nav-item svg { flex-shrink: 0; opacity: 0.7; }
+  .side-nav-item.active svg { opacity: 1; }
+  .side-nav-bottom {
+    padding: 0 24px;
+    border-top: 1px solid var(--mp-border);
+    padding-top: 16px;
+  }
+  .side-nav-bottom a {
+    font-size: 13px;
+    color: var(--mp-text-tertiary);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.15s;
+  }
+  .side-nav-bottom a:hover { color: var(--mp-text-secondary); }
+
+  /* ── Main Content ── */
+  .main-content {
+    margin-left: 240px;
     max-width: 1100px;
-    margin: 0 auto;
-    padding: 0 24px 80px;
+    padding: 32px 40px 80px;
   }
 
-  /* ── Nav ── */
-  .site-nav {
-    padding: 20px 0 0;
+  /* ── Top bar (refresh area) ── */
+  .top-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
     margin-bottom: 24px;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 16px;
   }
-  .nav-left { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-tertiary); }
-  .nav-back { color: var(--text-tertiary); text-decoration: none; transition: color .12s; }
-  .nav-back:hover { color: var(--text-primary); }
-  .nav-sep { color: var(--border-strong); }
-  .nav-current { color: var(--text-secondary); font-family: var(--mono); font-size: 12px; }
-  .nav-right { display: flex; align-items: center; gap: 8px; }
-  .last-updated { font-size: 11px; color: var(--text-tertiary); font-family: var(--mono); }
+  .top-bar-left { display: flex; align-items: center; gap: 12px; }
+  .last-updated { font-size: 11px; color: var(--mp-text-tertiary); font-family: var(--font-mono); }
   .refresh-btn {
     font-size: 11px;
-    font-family: var(--mono);
-    padding: 5px 11px;
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    padding: 6px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--mp-border);
+    background: var(--mp-surface);
+    color: var(--mp-text-secondary);
     cursor: pointer;
-    transition: all .12s;
+    transition: all .15s;
   }
-  .refresh-btn:hover { background: var(--surface2); border-color: var(--border-strong); }
-  .refresh-btn.spinning { color: var(--text-tertiary); pointer-events: none; }
+  .refresh-btn:hover { background: rgba(26,110,255,0.15); border-color: var(--mp-blue); color: var(--mp-text-primary); }
+  .refresh-btn.spinning { color: var(--mp-text-tertiary); pointer-events: none; }
 
   /* ── Page header ── */
-  .page-header { margin-bottom: 22px; }
-  .page-title { font-size: 22px; font-weight: 500; letter-spacing: -.02em; margin-bottom: 4px; }
-  .page-sub { font-size: 13px; color: var(--text-secondary); }
+  .page-header { margin-bottom: 24px; }
+  .page-title {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    color: var(--mp-text-primary);
+    margin-bottom: 4px;
+  }
+  .page-sub { font-size: 13px; color: var(--mp-text-secondary); }
 
   /* ── Summary strip ── */
   .summary-strip {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     gap: 1px;
-    background: var(--border);
-    border: 1px solid var(--border);
-    border-radius: 10px;
+    background: var(--mp-border);
+    border: 1px solid var(--mp-border);
+    border-radius: 12px;
     overflow: hidden;
-    margin-bottom: 20px;
+    margin-bottom: 22px;
   }
-  @media (max-width: 700px) { .summary-strip { grid-template-columns: repeat(3, 1fr); } }
-  @media (max-width: 440px) { .summary-strip { grid-template-columns: repeat(2, 1fr); } }
-  .sum-cell { background: var(--surface); padding: 12px 16px; }
-  .sum-label { font-size: 9px; text-transform: uppercase; letter-spacing: .07em; color: var(--text-tertiary); margin-bottom: 3px; }
-  .sum-val { font-size: 22px; font-weight: 500; font-family: var(--mono); line-height: 1; margin-bottom: 2px; }
-  .sum-sub { font-size: 10px; color: var(--text-tertiary); }
+  @media (max-width: 900px) { .summary-strip { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 540px) { .summary-strip { grid-template-columns: repeat(2, 1fr); } }
+  .sum-cell { background: var(--mp-surface); padding: 14px 18px; }
+  .sum-label { font-size: 9px; text-transform: uppercase; letter-spacing: .07em; color: var(--mp-text-tertiary); margin-bottom: 4px; }
+  .sum-val { font-size: 22px; font-weight: 500; font-family: var(--font-mono); line-height: 1; margin-bottom: 2px; }
+  .sum-sub { font-size: 10px; color: var(--mp-text-tertiary); }
 
   /* ── Controls bar ── */
   .controls-bar {
@@ -112,41 +174,41 @@
     justify-content: space-between;
     gap: 12px;
     flex-wrap: wrap;
-    margin-bottom: 14px;
+    margin-bottom: 16px;
   }
-  .filter-group { display: flex; gap: 5px; flex-wrap: wrap; }
+  .filter-group { display: flex; gap: 6px; flex-wrap: wrap; }
   .filter-btn {
     font-size: 11px;
-    padding: 5px 12px;
+    padding: 6px 14px;
     border-radius: 99px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text-secondary);
+    border: 1px solid var(--mp-border);
+    background: var(--mp-surface);
+    color: var(--mp-text-secondary);
     cursor: pointer;
-    font-family: var(--font);
-    transition: all .12s;
+    font-family: var(--font-body);
+    transition: all .15s;
     white-space: nowrap;
   }
-  .filter-btn:hover { background: var(--surface2); }
-  .filter-btn.on { background: var(--text-primary); color: #fff; border-color: var(--text-primary); }
-  .filter-btn.on-red { background: var(--red); color: #fff; border-color: var(--red); }
-  .filter-btn.on-green { background: var(--green); color: #fff; border-color: var(--green); }
+  .filter-btn:hover { background: rgba(255,255,255,0.06); border-color: var(--mp-border-mid); }
+  .filter-btn.on { background: var(--mp-blue); color: #fff; border-color: var(--mp-blue); }
+  .filter-btn.on-red { background: var(--mp-prism-5); color: #fff; border-color: var(--mp-prism-5); }
+  .filter-btn.on-green { background: var(--mp-teal); color: #fff; border-color: var(--mp-teal); }
 
   .sort-group { display: flex; align-items: center; gap: 6px; }
-  .sort-label { font-size: 11px; color: var(--text-tertiary); white-space: nowrap; }
+  .sort-label { font-size: 11px; color: var(--mp-text-tertiary); white-space: nowrap; }
   .sort-btn {
     font-size: 11px;
-    font-family: var(--mono);
-    padding: 5px 10px;
-    border-radius: 5px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--mp-border);
+    background: var(--mp-surface);
+    color: var(--mp-text-secondary);
     cursor: pointer;
-    transition: all .12s;
+    transition: all .15s;
   }
-  .sort-btn:hover { background: var(--surface2); }
-  .sort-btn.on { background: var(--text-primary); color: #fff; border-color: var(--text-primary); }
+  .sort-btn:hover { background: rgba(255,255,255,0.06); border-color: var(--mp-border-mid); }
+  .sort-btn.on { background: var(--mp-blue); color: #fff; border-color: var(--mp-blue); }
 
   /* ── Color legend ── */
   .legend-bar {
@@ -156,19 +218,19 @@
     flex-wrap: wrap;
     margin-bottom: 14px;
     font-size: 11px;
-    color: var(--text-tertiary);
+    color: var(--mp-text-tertiary);
   }
   .legend-item { display: flex; align-items: center; gap: 5px; }
-  .legend-swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+  .legend-swatch { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
 
   /* ── Count bar ── */
   .count-bar {
     font-size: 11px;
-    color: var(--text-tertiary);
+    color: var(--mp-text-tertiary);
     margin-bottom: 10px;
-    font-family: var(--mono);
+    font-family: var(--font-mono);
   }
-  .count-bar span { color: var(--text-secondary); font-weight: 500; }
+  .count-bar span { color: var(--mp-text-secondary); font-weight: 500; }
 
   /* ── Heatmap grid ── */
   .heatmap-grid {
@@ -182,7 +244,7 @@
 
   /* ── Cell ── */
   .hm-cell {
-    border-radius: 8px;
+    border-radius: 10px;
     padding: 9px 8px 7px;
     cursor: pointer;
     min-height: 72px;
@@ -192,41 +254,42 @@
     transition: transform .1s, box-shadow .1s;
     position: relative;
     text-decoration: none;
+    color: #fff;
   }
   .hm-cell:hover {
     transform: scale(1.05);
     z-index: 5;
-    box-shadow: 0 6px 18px rgba(0,0,0,.18);
+    box-shadow: 0 6px 24px rgba(0,0,0,.4);
   }
   .cell-top { display: flex; align-items: flex-start; justify-content: space-between; }
-  .cell-ticker { font-size: 11px; font-weight: 500; font-family: var(--mono); line-height: 1; }
+  .cell-ticker { font-size: 11px; font-weight: 500; font-family: var(--font-mono); line-height: 1; color: #fff; }
   .cell-trap { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.45); flex-shrink: 0; margin-top: 1px; }
-  .cell-score { font-size: 20px; font-weight: 500; font-family: var(--mono); line-height: 1; margin: 4px 0 2px; }
+  .cell-score { font-size: 20px; font-weight: 500; font-family: var(--font-mono); line-height: 1; margin: 4px 0 2px; color: #fff; }
   .cell-bottom { display: flex; align-items: center; justify-content: space-between; }
-  .cell-dir { font-size: 9px; font-weight: 500; letter-spacing: .03em; opacity: .85; }
-  .cell-days { font-size: 9px; opacity: .7; font-family: var(--mono); }
+  .cell-dir { font-size: 9px; font-weight: 500; letter-spacing: .03em; opacity: .85; color: #fff; }
+  .cell-days { font-size: 9px; opacity: .7; font-family: var(--font-mono); color: #fff; }
 
-  /* Health bands */
-  .hb-5 { background: #1A7A43; color: #fff; }  /* 80–100 */
-  .hb-4 { background: #27AE60; color: #fff; }  /* 70–79  */
-  .hb-3 { background: #6BBF5E; color: #1A1916; } /* 60–69  */
-  .hb-2 { background: #D4AC0D; color: #1A1916; } /* 50–59  */
-  .hb-1 { background: #E07015; color: #fff; }  /* 40–49  */
-  .hb-0 { background: #C0392B; color: #fff; }  /* <40     */
+  /* Health bands — dark theme */
+  .hb-5 { background: #0D5A30; }  /* 80–100 */
+  .hb-4 { background: #1A7A43; }  /* 70–79  */
+  .hb-3 { background: #3D7A30; }  /* 60–69  */
+  .hb-2 { background: #7A6D0D; }  /* 50–59  */
+  .hb-1 { background: #8A4A0D; }  /* 40–49  */
+  .hb-0 { background: #7A1A1A; }  /* <40    */
 
   /* Verdict outline overlay */
-  .hm-cell.supported { outline: 2px solid rgba(255,255,255,.5); outline-offset: -2px; }
-  .hm-cell.trap { outline: 2px solid rgba(255,80,60,.6); outline-offset: -2px; }
+  .hm-cell.supported { outline: 2px solid rgba(0,229,180,0.6); outline-offset: -2px; }
+  .hm-cell.trap { outline: 2px solid rgba(255,107,107,0.6); outline-offset: -2px; }
 
   /* ── Skeleton ── */
-  .skel { background: var(--surface3); border-radius: 6px; animation: skel-pulse 1.4s ease-in-out infinite; }
+  .skel { background: var(--mp-surface); border-radius: 6px; animation: skel-pulse 1.4s ease-in-out infinite; }
   @keyframes skel-pulse { 0%,100% { opacity:1; } 50% { opacity:.4; } }
 
   /* ── Tooltip ── */
   .tooltip {
     position: fixed;
-    background: var(--surface);
-    border: 1px solid var(--border-strong);
+    background: var(--mp-surface);
+    border: 1px solid var(--mp-border-mid);
     border-radius: 10px;
     padding: 14px 16px;
     width: 280px;
@@ -234,10 +297,10 @@
     pointer-events: none;
     opacity: 0;
     transition: opacity .1s;
-    box-shadow: 0 8px 28px rgba(0,0,0,.14);
+    box-shadow: 0 8px 32px rgba(0,0,0,.45);
   }
   .tooltip.visible { opacity: 1; }
-  .tt-ticker { font-size: 18px; font-weight: 500; font-family: var(--mono); margin-bottom: 3px; }
+  .tt-ticker { font-size: 18px; font-weight: 500; font-family: var(--font-mono); margin-bottom: 3px; color: var(--mp-text-primary); }
   .tt-verdict {
     display: inline-block;
     font-size: 10px;
@@ -247,44 +310,108 @@
     border: 1px solid;
     margin-bottom: 9px;
   }
-  .tt-v-trap { background: var(--red-bg); color: var(--red); border-color: var(--red-bd); }
-  .tt-v-supported { background: var(--green-bg); color: var(--green); border-color: var(--green-bd); }
-  .tt-v-monitor { background: var(--surface2); color: var(--text-secondary); border-color: var(--border); }
-  .tt-narrative { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 10px; }
+  .tt-v-trap { background: rgba(255,107,107,0.15); color: var(--mp-prism-5); border-color: rgba(255,107,107,0.3); }
+  .tt-v-supported { background: rgba(0,229,180,0.12); color: var(--mp-teal); border-color: rgba(0,229,180,0.3); }
+  .tt-v-monitor { background: rgba(255,255,255,0.05); color: var(--mp-text-secondary); border-color: var(--mp-border); }
+  .tt-narrative { font-size: 12px; color: var(--mp-text-secondary); line-height: 1.6; margin-bottom: 10px; }
   .tt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
-  .tt-stat { background: var(--surface2); border-radius: 5px; padding: 6px 9px; }
-  .tt-stat-lbl { font-size: 9px; text-transform: uppercase; letter-spacing: .07em; color: var(--text-tertiary); margin-bottom: 1px; }
-  .tt-stat-val { font-size: 13px; font-weight: 500; font-family: var(--mono); }
-  .tt-dir-bull { color: var(--green); }
-  .tt-dir-bear { color: var(--red); }
-  .tt-dir-neutral { color: var(--amber); }
+  .tt-stat { background: var(--mp-deep); border-radius: 6px; padding: 6px 9px; }
+  .tt-stat-lbl { font-size: 9px; text-transform: uppercase; letter-spacing: .07em; color: var(--mp-text-tertiary); margin-bottom: 1px; }
+  .tt-stat-val { font-size: 13px; font-weight: 500; font-family: var(--font-mono); color: var(--mp-text-primary); }
+  .tt-dir-bull { color: var(--mp-teal); }
+  .tt-dir-bear { color: var(--mp-prism-5); }
+  .tt-dir-neutral { color: var(--mp-amber); }
 
   /* ── Empty / error ── */
-  .no-results { padding: 40px; text-align: center; font-size: 13px; color: var(--text-tertiary); }
-  .inline-err { padding: 16px; font-size: 13px; color: var(--red); }
+  .no-results { padding: 40px; text-align: center; font-size: 13px; color: var(--mp-text-tertiary); }
+  .inline-err { padding: 16px; font-size: 13px; color: var(--mp-prism-5); }
+
+  /* ── Mobile: side nav becomes top bar ── */
+  @media (max-width: 768px) {
+    .side-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      height: auto;
+      flex-direction: row;
+      align-items: center;
+      padding: 12px 16px;
+      border-right: none;
+      border-bottom: 1px solid var(--mp-border);
+      gap: 16px;
+    }
+    .side-nav-logo { margin-bottom: 0; padding: 0; }
+    .side-nav-items { flex-direction: row; gap: 4px; flex: 0; }
+    .side-nav-item {
+      padding: 6px 12px;
+      border-left: none;
+      border-bottom: 2px solid transparent;
+      font-size: 13px;
+    }
+    .side-nav-item.active {
+      border-left-color: transparent;
+      border-bottom-color: var(--mp-blue);
+    }
+    .side-nav-bottom { display: none; }
+    .main-content {
+      margin-left: 0;
+      padding: 80px 16px 60px;
+      max-width: 100%;
+    }
+  }
 </style>
 
   <!-- Env vars injected by Vercel -->
   <script id="__env_script">window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '' };</script>
 </head>
 <body>
-<div class="page-wrap">
 
-  <nav class="site-nav">
-    <div class="nav-left">
-      <a class="nav-back" href="/">← Market Prism</a>
-      <span class="nav-sep">/</span>
-      <span class="nav-current">Narrative Heatmap</span>
+<!-- Side Navigation -->
+<nav class="side-nav">
+  <a class="side-nav-logo" href="/">
+    <svg width="28" height="28" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="40" height="40" rx="8" fill="#1A6EFF" fill-opacity="0.15"/>
+      <path d="M20 8L30 14V26L20 32L10 26V14L20 8Z" stroke="#1A6EFF" stroke-width="1.5" fill="none"/>
+      <path d="M20 8L30 14L20 20L10 14L20 8Z" fill="#1A6EFF" fill-opacity="0.3"/>
+      <path d="M20 20V32" stroke="#1A6EFF" stroke-width="1.5"/>
+      <path d="M10 14V26" stroke="#1A6EFF" stroke-width="1" opacity="0.4"/>
+      <path d="M30 14V26" stroke="#1A6EFF" stroke-width="1" opacity="0.4"/>
+    </svg>
+    <span class="side-nav-logo-text">Market Prism</span>
+  </a>
+  <div class="side-nav-items">
+    <a class="side-nav-item" href="/dashboard">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/></svg>
+      Dashboard
+    </a>
+    <a class="side-nav-item active" href="/heatmap">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="4" height="4" rx="1" fill="currentColor" opacity="0.9"/><rect x="6" y="1" width="4" height="4" rx="1" fill="currentColor" opacity="0.6"/><rect x="11" y="1" width="4" height="4" rx="1" fill="currentColor" opacity="0.3"/><rect x="1" y="6" width="4" height="4" rx="1" fill="currentColor" opacity="0.7"/><rect x="6" y="6" width="4" height="4" rx="1" fill="currentColor" opacity="0.4"/><rect x="11" y="6" width="4" height="4" rx="1" fill="currentColor" opacity="0.8"/><rect x="1" y="11" width="4" height="4" rx="1" fill="currentColor" opacity="0.5"/><rect x="6" y="11" width="4" height="4" rx="1" fill="currentColor" opacity="0.9"/><rect x="11" y="11" width="4" height="4" rx="1" fill="currentColor" opacity="0.6"/></svg>
+      Heatmap
+    </a>
+  </div>
+  <div class="side-nav-bottom">
+    <a href="/">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M6 12L2 8l4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 8h12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      Back to Home
+    </a>
+  </div>
+</nav>
+
+<!-- Main Content -->
+<div class="main-content">
+
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <span class="last-updated" id="last-updated">&mdash;</span>
     </div>
-    <div class="nav-right">
-      <span class="last-updated" id="last-updated">—</span>
-      <button class="refresh-btn" id="refresh-btn" onclick="refreshData()">↻ Refresh</button>
-    </div>
-  </nav>
+    <button class="refresh-btn" id="refresh-btn" onclick="refreshData()">&#8635; Refresh</button>
+  </div>
 
   <div class="page-header">
-    <div class="page-title">Market Narrative Heatmap</div>
-    <div class="page-sub">Every ticker's story health at a glance — scored by narrative coherence, not price change</div>
+    <div class="page-title">Narrative Heatmap</div>
+    <div class="page-sub">Every ticker's story health at a glance &mdash; scored by narrative coherence, not price change</div>
   </div>
 
   <div id="summary-strip" class="summary-strip">
@@ -311,30 +438,30 @@
       <button class="sort-btn" data-s="energy">Energy</button>
       <button class="sort-btn" data-s="frag">Fragility</button>
       <button class="sort-btn" data-s="exdays">Exhaustion</button>
-      <button class="sort-btn" data-s="az">A–Z</button>
+      <button class="sort-btn" data-s="az">A&ndash;Z</button>
     </div>
   </div>
 
   <div class="legend-bar">
-    <div class="legend-item"><div class="legend-swatch" style="background:#1A7A43"></div>80–100 Strong</div>
-    <div class="legend-item"><div class="legend-swatch" style="background:#27AE60"></div>70–79 Good</div>
-    <div class="legend-item"><div class="legend-swatch" style="background:#6BBF5E"></div>60–69 Moderate</div>
-    <div class="legend-item"><div class="legend-swatch" style="background:#D4AC0D"></div>50–59 Fragile</div>
-    <div class="legend-item"><div class="legend-swatch" style="background:#E07015"></div>40–49 Weak</div>
-    <div class="legend-item"><div class="legend-swatch" style="background:#C0392B"></div>&lt;40 Stressed</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#0D5A30"></div>80&ndash;100 Strong</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#1A7A43"></div>70&ndash;79 Good</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#3D7A30"></div>60&ndash;69 Moderate</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#7A6D0D"></div>50&ndash;59 Fragile</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#8A4A0D"></div>40&ndash;49 Weak</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#7A1A1A"></div>&lt;40 Stressed</div>
     <div class="legend-item" style="margin-left:8px;">
-      <div style="width:10px;height:10px;border-radius:2px;border:2px solid rgba(255,80,60,.6);"></div>Trap flag
+      <div style="width:10px;height:10px;border-radius:3px;border:2px solid rgba(255,107,107,0.6);"></div>Trap flag
     </div>
     <div class="legend-item">
-      <div style="width:10px;height:10px;border-radius:2px;border:2px solid rgba(255,255,255,.5);background:#27AE60;"></div>Supported
+      <div style="width:10px;height:10px;border-radius:3px;border:2px solid rgba(0,229,180,0.6);background:#1A7A43;"></div>Supported
     </div>
-    <div class="legend-item">↑ Bullish &nbsp; ↓ Bearish &nbsp; → Neutral</div>
+    <div class="legend-item">&uarr; Bullish &nbsp; &darr; Bearish &nbsp; &rarr; Neutral</div>
   </div>
 
-  <div class="count-bar" id="count-bar">Loading…</div>
+  <div class="count-bar" id="count-bar">Loading&hellip;</div>
   <div class="heatmap-grid" id="heatmap-grid">
     <!-- skeleton -->
-    ${Array(60).fill(0).map(() => `<div class="skel" style="height:72px;border-radius:8px;"></div>`).join('')}
+    ${Array(60).fill(0).map(() => `<div class="skel" style="height:72px;border-radius:10px;"></div>`).join('')}
   </div>
 
 </div>
@@ -399,10 +526,10 @@ function healthBand(h) {
 }
 
 function dirArrow(d) {
-  if (!d) return '→';
-  if (d.includes('BULL')) return '↑';
-  if (d.includes('BEAR')) return '↓';
-  return '→';
+  if (!d) return '\u2192';
+  if (d.includes('BULL')) return '\u2191';
+  if (d.includes('BEAR')) return '\u2193';
+  return '\u2192';
 }
 
 function dirCls(d) {
@@ -469,7 +596,7 @@ function renderSummary(data) {
   const stressed  = data.filter(d => d.label  === 'STRESSED').length;
   const avgHealth = Math.round(data.reduce((a,b) => a + b.health, 0) / data.length);
   const avgEnergy = Math.round(data.reduce((a,b) => a + b.energy, 0) / data.length);
-  const hCol      = avgHealth >= 70 ? 'var(--green)' : avgHealth >= 55 ? 'var(--amber)' : 'var(--red)';
+  const hCol      = avgHealth >= 70 ? 'var(--mp-teal)' : avgHealth >= 55 ? 'var(--mp-amber)' : 'var(--mp-prism-5)';
 
   const latestDate = data[0]?.date ?? '';
   document.getElementById('last-updated').textContent = latestDate
@@ -489,17 +616,17 @@ function renderSummary(data) {
     </div>
     <div class="sum-cell">
       <div class="sum-label">Strong Narratives</div>
-      <div class="sum-val" style="color:var(--green)">${strong}</div>
-      <div class="sum-sub">health ≥ 75</div>
+      <div class="sum-val" style="color:var(--mp-teal)">${strong}</div>
+      <div class="sum-sub">health \u2265 75</div>
     </div>
     <div class="sum-cell">
       <div class="sum-label">Trap Flags</div>
-      <div class="sum-val" style="color:var(--red)">${traps}</div>
+      <div class="sum-val" style="color:var(--mp-prism-5)">${traps}</div>
       <div class="sum-sub">${supported} structurally supported</div>
     </div>
     <div class="sum-cell">
       <div class="sum-label">Stressed</div>
-      <div class="sum-val" style="color:var(--amber)">${stressed}</div>
+      <div class="sum-val" style="color:var(--mp-amber)">${stressed}</div>
       <div class="sum-sub">label = STRESSED</div>
     </div>`;
 }
@@ -570,7 +697,7 @@ function showTooltip(e, ticker) {
   const d = ALL_TICKERS.find(x => x.t === ticker);
   if (!d) return;
   const tt   = document.getElementById('tooltip');
-  const fvdStr = d.fvd != null ? (d.fvd > 0 ? '+' : '') + d.fvd + '% vs FV' : '—';
+  const fvdStr = d.fvd != null ? (d.fvd > 0 ? '+' : '') + d.fvd + '% vs FV' : '\u2014';
 
   tt.innerHTML = `
     <div class="tt-ticker">${esc(d.t)}</div>
@@ -636,7 +763,7 @@ document.querySelector('.sort-group').addEventListener('click', e => {
 // ── Refresh ────────────────────────────────────────────────────────────────
 async function refreshData() {
   const btn = document.getElementById('refresh-btn');
-  btn.textContent = '↻ Loading…';
+  btn.textContent = '\u21BB Loading\u2026';
   btn.classList.add('spinning');
   try {
     ALL_TICKERS = await fetchData();
@@ -645,7 +772,7 @@ async function refreshData() {
     document.getElementById('heatmap-grid').innerHTML =
       `<div class="inline-err">Failed to load: ${esc(err.message)}</div>`;
   } finally {
-    btn.textContent = '↻ Refresh';
+    btn.textContent = '\u21BB Refresh';
     btn.classList.remove('spinning');
   }
 }
