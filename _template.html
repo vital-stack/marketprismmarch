@@ -31,6 +31,48 @@
     --font-mono: 'Geist Mono', monospace;
   }
 
+  [data-theme="light"] {
+    --mp-obsidian: #F5F7FA;
+    --mp-deep: #FFFFFF;
+    --mp-surface: #EDF0F5;
+    --mp-border: rgba(0,0,0,0.08);
+    --mp-border-mid: rgba(0,0,0,0.14);
+    --mp-blue: #2563EB;
+    --mp-blue-glow: rgba(37,99,235,0.15);
+    --mp-cyan: #10B981;
+    --mp-teal: #10B981;
+    --mp-prism-4: #7C3AED;
+    --mp-prism-5: #EF4444;
+    --mp-text-primary: #111827;
+    --mp-text-secondary: #4B5563;
+    --mp-text-tertiary: #9CA3AF;
+    --mp-amber: #D97706;
+  }
+
+  html[data-theme="light"] body::after {
+    display: none;
+  }
+
+  [data-theme="light"] .badge-breaking { background: rgba(239,68,68,0.1); color: #DC2626; border-color: rgba(239,68,68,0.25); }
+  [data-theme="light"] .badge-surging { background: rgba(16,185,129,0.1); color: #059669; border-color: rgba(16,185,129,0.25); }
+  [data-theme="light"] .badge-fragile { background: rgba(217,119,6,0.1); color: #B45309; border-color: rgba(217,119,6,0.2); }
+  [data-theme="light"] .badge-stable { background: rgba(37,99,235,0.1); color: #1D4ED8; border-color: rgba(37,99,235,0.2); }
+  [data-theme="light"] .chip.active-breaking { background: rgba(239,68,68,0.1); color: #DC2626; border-color: rgba(239,68,68,0.25); }
+  [data-theme="light"] .chip.active-surging { background: rgba(16,185,129,0.1); color: #059669; border-color: rgba(16,185,129,0.25); }
+  [data-theme="light"] .chip.active-fragile { background: rgba(217,119,6,0.1); color: #B45309; border-color: rgba(217,119,6,0.2); }
+  [data-theme="light"] .chip.active-stable { background: rgba(37,99,235,0.1); color: #1D4ED8; border-color: rgba(37,99,235,0.2); }
+  [data-theme="light"] .chip.active { background: #10B981; color: #fff; border-color: #10B981; }
+  [data-theme="light"] .verdict-trap { background: rgba(239,68,68,0.1); color: #DC2626; border-color: rgba(239,68,68,0.25); }
+  [data-theme="light"] .verdict-supported { background: rgba(16,185,129,0.1); color: #059669; border-color: rgba(16,185,129,0.25); }
+  [data-theme="light"] .nav-item.active { background: rgba(16,185,129,0.1); color: #059669; border-left-color: #10B981; }
+  [data-theme="light"] .pip-trap { background: #EF4444; }
+  [data-theme="light"] .pip-supported { background: #10B981; }
+  [data-theme="light"] .price-main { color: #111827; }
+  [data-theme="light"] .delta-pos { color: #059669; }
+  [data-theme="light"] .delta-neg { color: #DC2626; }
+  [data-theme="light"] .load-more-btn:hover { background: #10B981; color: #fff; border-color: #10B981; }
+  [data-theme="light"] .filter-select option { background: #fff; color: #111827; }
+
   html { font-size: 16px; }
   body {
     font-family: var(--font-body);
@@ -500,6 +542,31 @@
     font-size: 14px;
   }
 
+  .theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: 1px solid var(--mp-border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: var(--mp-text-secondary);
+    font-size: 11px;
+    font-family: var(--font-mono);
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+  }
+  .theme-toggle:hover {
+    background: var(--mp-surface);
+    color: var(--mp-text-primary);
+    border-color: var(--mp-border-mid);
+  }
+  [data-theme="light"] .icon-sun { display: none; }
+  [data-theme="dark"] .icon-moon,
+  html:not([data-theme="light"]) .icon-moon { display: none; }
+  [data-theme="light"] .icon-moon { display: block; }
+
   /* ── Mobile ── */
   @media (max-width: 767px) {
     .side-nav {
@@ -543,6 +610,10 @@
     <svg viewBox="0 0 28 28" fill="none"><polygon points="14,2 26,26 2,26" stroke="#4DF0A0" stroke-width="1.5" fill="none"/><polygon points="14,9 21,23 7,23" stroke="#4DF0A0" stroke-width="1" fill="rgba(77,240,160,0.15)"/></svg>
     <span>Market Prism</span>
   </div>
+  <button class="theme-toggle" onclick="document.getElementById('theme-toggle').click()" style="margin-left:auto;width:auto;border:none;padding:4px;" aria-label="Toggle theme">
+    <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
 </div>
 <div class="nav-overlay" id="nav-overlay"></div>
 
@@ -564,7 +635,12 @@
   </div>
   <div class="nav-divider"></div>
   <div class="nav-bottom">
-    <a href="/">&larr; Back to Home</a>
+    <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+      <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <span class="theme-label">Light mode</span>
+    </button>
+    <a href="/" style="display:block;margin-top:12px;">&larr; Back to Home</a>
   </div>
 </nav>
 
@@ -645,6 +721,29 @@
 </div>
 
 <script>
+// ── Theme toggle ──
+(function() {
+  var saved = localStorage.getItem('mp-theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var btn = document.getElementById('theme-toggle');
+    var label = btn.querySelector('.theme-label');
+    function updateLabel() {
+      var current = document.documentElement.getAttribute('data-theme') || 'dark';
+      label.textContent = current === 'dark' ? 'Light mode' : 'Dark mode';
+    }
+    updateLabel();
+    btn.addEventListener('click', function() {
+      var current = document.documentElement.getAttribute('data-theme') || 'dark';
+      var next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('mp-theme', next);
+      updateLabel();
+    });
+  });
+})();
+
 // ── Mobile nav toggle ────────────────────────────────────────────────────────
 (function() {
   var hamburger = document.getElementById('hamburger-btn');

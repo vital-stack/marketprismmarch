@@ -48,6 +48,39 @@
     --font-mono: 'Geist Mono', monospace;
   }
 
+  [data-theme="light"] {
+    --bg: #F5F7FA;
+    --surface: #EDF0F5;
+    --surface2: #FFFFFF;
+    --surface3: #E5E8ED;
+    --border: rgba(0,0,0,0.08);
+    --border-strong: rgba(0,0,0,0.14);
+    --text-primary: #111827;
+    --text-secondary: #4B5563;
+    --text-tertiary: #9CA3AF;
+    --accent-breaking: #EF4444;
+    --accent-breaking-bg: rgba(239,68,68,0.1);
+    --accent-surging: #10B981;
+    --accent-surging-bg: rgba(16,185,129,0.1);
+    --accent-fragile: #D97706;
+    --accent-fragile-bg: rgba(217,119,6,0.1);
+    --accent-stable: #2563EB;
+    --accent-stable-bg: rgba(37,99,235,0.1);
+    --accent-trap: #EF4444;
+    --accent-supported: #10B981;
+    --mp-obsidian: #F5F7FA;
+    --mp-deep: #FFFFFF;
+    --mp-surface: #EDF0F5;
+    --mp-border: rgba(0,0,0,0.08);
+    --mp-border-mid: rgba(0,0,0,0.14);
+    --mp-blue: #2563EB;
+    --mp-cyan: #10B981;
+    --mp-teal: #10B981;
+    --mp-text-primary: #111827;
+    --mp-text-secondary: #4B5563;
+    --mp-text-tertiary: #9CA3AF;
+  }
+
   html { font-size: 16px; }
   body {
     font-family: var(--font);
@@ -1317,6 +1350,49 @@
     .heatmap-head { display: none; }
     .heatmap-row  { grid-template-columns: 1fr; gap: 4px; }
   }
+
+  /* ── Light mode overrides ── */
+  html[data-theme="light"] body::after {
+    display: none;
+  }
+  [data-theme="light"] .side-nav-item.active {
+    background: rgba(16,185,129,0.1);
+    color: #059669;
+  }
+  [data-theme="light"] .badge-breaking { background: rgba(239,68,68,0.1); color: #DC2626; border-color: rgba(239,68,68,0.25); }
+  [data-theme="light"] .badge-surging { background: rgba(16,185,129,0.1); color: #059669; border-color: rgba(16,185,129,0.25); }
+  [data-theme="light"] .badge-fragile { background: rgba(217,119,6,0.1); color: #B45309; border-color: rgba(217,119,6,0.2); }
+  [data-theme="light"] .badge-stable { background: rgba(37,99,235,0.1); color: #1D4ED8; border-color: rgba(37,99,235,0.2); }
+  [data-theme="light"] .verdict-trap { background: rgba(239,68,68,0.1); color: #DC2626; border-color: rgba(239,68,68,0.25); }
+  [data-theme="light"] .verdict-supported { background: rgba(16,185,129,0.1); color: #059669; border-color: rgba(16,185,129,0.25); }
+  [data-theme="light"] .verdict-monitoring { background: #F3F4F6; color: #4B5563; border-color: rgba(0,0,0,0.1); }
+
+  /* ── Theme toggle ── */
+  .theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-family: var(--mono);
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+    margin-bottom: 8px;
+  }
+  .theme-toggle:hover {
+    background: var(--surface);
+    color: var(--text-primary);
+    border-color: var(--border-strong);
+  }
+  [data-theme="light"] .icon-sun { display: none; }
+  [data-theme="dark"] .icon-moon,
+  html:not([data-theme="light"]) .icon-moon { display: none; }
+  [data-theme="light"] .icon-moon { display: block; }
 </style>
   <!-- Env vars injected by Vercel — do not edit this line -->
   <script id="__env_script">window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '', TICKER: '' };</script>
@@ -1331,6 +1407,10 @@
       Market Prism
     </a>
     <button class="hamburger" onclick="document.getElementById('side-nav').classList.toggle('open')">☰</button>
+    <button onclick="document.getElementById('theme-toggle').click()" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;padding:4px;margin-left:auto;" aria-label="Toggle theme">
+      <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
   </div>
 
   <!-- Side Navigation -->
@@ -1350,6 +1430,11 @@
       </a>
     </div>
     <div class="side-nav-bottom">
+      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+        <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <span class="theme-label">Light mode</span>
+      </button>
       <a href="/">← Back to Home</a>
     </div>
   </nav>
@@ -1618,6 +1703,34 @@
 
 </div>
 <script>
+// ── Theme toggle ──
+(function() {
+  var saved = localStorage.getItem('mp-theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+  var btn = document.getElementById('theme-toggle');
+  if (btn) {
+    var label = btn.querySelector('.theme-label');
+    function updateLabel() {
+      var current = document.documentElement.getAttribute('data-theme') || 'dark';
+      label.textContent = current === 'dark' ? 'Light mode' : 'Dark mode';
+    }
+    updateLabel();
+    btn.addEventListener('click', function() {
+      var current = document.documentElement.getAttribute('data-theme') || 'dark';
+      var next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('mp-theme', next);
+      updateLabel();
+      // Re-render chart if it exists
+      if (typeof renderChart === 'function') renderChart();
+    });
+  }
+})();
+
+function isLightMode() {
+  return document.documentElement.getAttribute('data-theme') === 'light';
+}
+
 // ── Config ──────────────────────────────────────────────────────────────────
 const SUPABASE_URL  = window.__env?.SUPABASE_URL  || '';
 const SUPABASE_ANON = window.__env?.SUPABASE_ANON || '';
@@ -2101,12 +2214,12 @@ function drawChart(snaps, narrs, fairValue) {
 
   // Grid lines + Y axis (price)
   ctx.font = `10px 'Geist Mono', monospace`;
-  ctx.fillStyle = '#7A8499';
+  ctx.fillStyle = isLightMode() ? '#4B5563' : '#7A8499';
   ctx.textAlign = 'right';
   for (let i = 0; i <= 4; i++) {
     const p = minP + (maxP - minP) * (i / 4);
     const y = yOf(p);
-    ctx.strokeStyle = '#161B28'; ctx.lineWidth = 1;
+    ctx.strokeStyle = isLightMode() ? '#E5E8ED' : '#161B28'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(W - PAD.right, y); ctx.stroke();
     ctx.fillText((p >= 100 ? '$' + p.toFixed(0) : '$' + p.toFixed(2)), PAD.left - 4, y + 3);
   }
@@ -2124,15 +2237,15 @@ function drawChart(snaps, narrs, fairValue) {
   if (fairValue != null && fairValue > minP && fairValue < maxP * 1.1) {
     const yFV = yOf(fairValue);
     ctx.save(); ctx.setLineDash([5,4]);
-    ctx.strokeStyle = '#3D4558'; ctx.lineWidth = 1.5;
+    ctx.strokeStyle = isLightMode() ? '#9CA3AF' : '#3D4558'; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(PAD.left, yFV); ctx.lineTo(W - PAD.right, yFV); ctx.stroke();
     ctx.restore();
   }
 
   // Area fill under price
   const grad = ctx.createLinearGradient(0, PAD.top, 0, H - PAD.bottom);
-  grad.addColorStop(0, 'rgba(59,130,246,0.12)');
-  grad.addColorStop(1, 'rgba(59,130,246,0)');
+  grad.addColorStop(0, isLightMode() ? 'rgba(37,99,235,0.12)' : 'rgba(59,130,246,0.12)');
+  grad.addColorStop(1, isLightMode() ? 'rgba(37,99,235,0)' : 'rgba(59,130,246,0)');
   ctx.beginPath();
   snaps.forEach((s,i) => { if (s.price_close==null) return; i===0 ? ctx.moveTo(xOf(i),yOf(s.price_close)) : ctx.lineTo(xOf(i),yOf(s.price_close)); });
   ctx.lineTo(xOf(N-1), H-PAD.bottom); ctx.lineTo(xOf(0), H-PAD.bottom); ctx.closePath();
@@ -2141,7 +2254,7 @@ function drawChart(snaps, narrs, fairValue) {
   // Price line
   ctx.beginPath(); ctx.setLineDash([]);
   snaps.forEach((s,i) => { if (s.price_close==null) return; i===0 ? ctx.moveTo(xOf(i),yOf(s.price_close)) : ctx.lineTo(xOf(i),yOf(s.price_close)); });
-  ctx.strokeStyle = '#E8EDF5'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.strokeStyle = isLightMode() ? '#111827' : '#E8EDF5'; ctx.lineWidth = 1.5; ctx.stroke();
 
   // Narrative energy overlay (blue dashed, right axis 0-100)
   const lo = snaps[0]?.snapshot_date?.slice(0,10) || '';
@@ -2191,7 +2304,7 @@ function drawChart(snaps, narrs, fairValue) {
     ctx.arc(cx, cy, 5, 0, Math.PI*2);
     ctx.fillStyle   = isBull ? '#4DF0A0' : '#F87171';
     ctx.fill();
-    ctx.strokeStyle = '#080B10'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.strokeStyle = isLightMode() ? '#F5F7FA' : '#080B10'; ctx.lineWidth = 1.5; ctx.stroke();
     dotHits.push({ cx, cy, n });
   });
 

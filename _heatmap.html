@@ -30,6 +30,23 @@
     --font-mono: 'Geist Mono', monospace;
   }
 
+  [data-theme="light"] {
+    --mp-obsidian: #F5F7FA;
+    --mp-deep: #FFFFFF;
+    --mp-surface: #EDF0F5;
+    --mp-border: rgba(0,0,0,0.08);
+    --mp-border-mid: rgba(0,0,0,0.14);
+    --mp-blue: #2563EB;
+    --mp-cyan: #10B981;
+    --mp-teal: #10B981;
+    --mp-prism-4: #7C3AED;
+    --mp-prism-5: #EF4444;
+    --mp-text-primary: #111827;
+    --mp-text-secondary: #4B5563;
+    --mp-text-tertiary: #9CA3AF;
+    --mp-amber: #D97706;
+  }
+
   html { font-size: 16px; }
   body {
     font-family: var(--font-body);
@@ -336,6 +353,57 @@
   .no-results { padding: 40px; text-align: center; font-size: 13px; color: var(--mp-text-tertiary); }
   .inline-err { padding: 16px; font-size: 13px; color: var(--mp-prism-5); }
 
+  /* ── Light mode scanline disable ── */
+  html[data-theme="light"] body::after {
+    display: none;
+  }
+
+  /* ── Light mode overrides ── */
+  [data-theme="light"] .side-nav-item.active {
+    background: rgba(16,185,129,0.1);
+    color: #059669;
+    border-left-color: #10B981;
+  }
+  [data-theme="light"] .filter-btn.on { background: #10B981; color: #fff; }
+  [data-theme="light"] .filter-btn.on-red { background: #EF4444; color: #fff; }
+  [data-theme="light"] .filter-btn.on-green { background: #10B981; color: #fff; }
+  [data-theme="light"] .sort-btn.on { background: #10B981; color: #fff; }
+  [data-theme="light"] .refresh-btn:hover { background: rgba(16,185,129,0.1); border-color: #10B981; }
+  [data-theme="light"] .hm-cell.supported { outline-color: rgba(16,185,129,0.6); }
+  [data-theme="light"] .hm-cell.trap { outline-color: rgba(239,68,68,0.6); }
+  [data-theme="light"] .hm-cell { color: #fff; }
+  [data-theme="light"] .tt-v-trap { background: rgba(239,68,68,0.1); color: #DC2626; border-color: rgba(239,68,68,0.25); }
+  [data-theme="light"] .tt-v-supported { background: rgba(16,185,129,0.1); color: #059669; border-color: rgba(16,185,129,0.25); }
+  [data-theme="light"] .tt-v-monitor { background: rgba(0,0,0,0.04); color: #4B5563; border-color: rgba(0,0,0,0.1); }
+  [data-theme="light"] .tt-stat { background: #F3F4F6; }
+
+  /* ── Theme toggle ── */
+  .theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: 1px solid var(--mp-border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: var(--mp-text-secondary);
+    font-size: 11px;
+    font-family: var(--font-mono);
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+    margin-bottom: 8px;
+  }
+  .theme-toggle:hover {
+    background: var(--mp-surface);
+    color: var(--mp-text-primary);
+    border-color: var(--mp-border-mid);
+  }
+  [data-theme="light"] .icon-sun { display: none; }
+  [data-theme="dark"] .icon-moon,
+  html:not([data-theme="light"]) .icon-moon { display: none; }
+  [data-theme="light"] .icon-moon { display: block; }
+
   /* ── Mobile: side nav becomes top bar ── */
   @media (max-width: 768px) {
     .side-nav {
@@ -363,6 +431,9 @@
     .side-nav-item.active {
       border-left-color: transparent;
       border-bottom-color: var(--mp-cyan);
+    }
+    [data-theme="light"] .side-nav-item.active {
+      border-bottom-color: #10B981;
     }
     .side-nav-bottom { display: none; }
     .main-content {
@@ -402,7 +473,12 @@
     </a>
   </div>
   <div class="side-nav-bottom">
-    <a href="/">
+    <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+      <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <span class="theme-label">Light mode</span>
+    </button>
+    <a href="/" style="margin-top:12px;display:flex;">
       <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M6 12L2 8l4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 8h12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
       Back to Home
     </a>
@@ -479,6 +555,26 @@
 <div class="tooltip" id="tooltip"></div>
 
 <script>
+// ── Theme toggle ──
+(function() {
+  var saved = localStorage.getItem('mp-theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+  var btn = document.getElementById('theme-toggle');
+  var label = btn.querySelector('.theme-label');
+  function updateLabel() {
+    var current = document.documentElement.getAttribute('data-theme') || 'dark';
+    label.textContent = current === 'dark' ? 'Light mode' : 'Dark mode';
+  }
+  updateLabel();
+  btn.addEventListener('click', function() {
+    var current = document.documentElement.getAttribute('data-theme') || 'dark';
+    var next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('mp-theme', next);
+    updateLabel();
+  });
+})();
+
 const SUPABASE_URL  = window.__env?.SUPABASE_URL  || '';
 const SUPABASE_ANON = window.__env?.SUPABASE_ANON || '';
 
