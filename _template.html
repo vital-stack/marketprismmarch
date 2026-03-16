@@ -258,7 +258,9 @@ body{
   font-family:var(--font-mono);font-size:10px;
   padding:2px 8px;border-radius:4px;
   background:var(--mp-surface);border:1px solid var(--mp-border);color:var(--mp-text-secondary);
+  cursor:pointer;transition:border-color .12s,color .12s,background .12s;
 }
+.sector-ticker-chip:hover{border-color:var(--mp-blue);color:var(--mp-text-primary);background:rgba(26,110,255,.06);}
 .sector-footer{
   padding:10px 16px;border-top:1px solid var(--mp-border);
   display:flex;align-items:center;justify-content:space-between;
@@ -516,6 +518,51 @@ body{
   cursor:pointer;transition:background .12s;
 }
 .btn-create-meme:hover{background:#2B7EFF;}
+/* ── DISCOVER LAYOUT ── */
+.discover-split{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;}
+@media(max-width:1100px){.discover-split{grid-template-columns:1fr;}}
+.discover-heatmap-wrap{
+  background:var(--mp-deep);border:1px solid var(--mp-border);
+  border-radius:12px;overflow:hidden;
+}
+.dhm-header{
+  padding:12px 16px;border-bottom:1px solid var(--mp-border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.dhm-header h3{font-family:var(--font-display);font-size:15px;font-weight:400;letter-spacing:-.01em;}
+.dhm-header a{font-size:11px;color:var(--mp-blue);text-decoration:none;font-family:var(--font-mono);}
+.dhm-header a:hover{text-decoration:underline;}
+.dhm-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(56px,1fr));
+  gap:3px;padding:12px;
+}
+.dhm-cell{
+  border-radius:6px;padding:6px 5px 4px;cursor:pointer;
+  min-height:48px;display:flex;flex-direction:column;
+  justify-content:space-between;transition:transform .1s,box-shadow .1s;
+  position:relative;text-decoration:none;color:#fff;
+}
+.dhm-cell:hover{transform:scale(1.08);z-index:5;box-shadow:0 4px 16px rgba(0,0,0,.4);}
+.dhm-cell .cell-ticker{font-size:9px;font-weight:500;font-family:var(--font-mono);color:#fff;}
+.dhm-cell .cell-score{font-size:14px;font-weight:500;font-family:var(--font-mono);color:#fff;margin:2px 0 1px;}
+.dhm-cell .cell-dir{font-size:8px;opacity:.8;color:#fff;}
+/* Heatmap health bands */
+.dhb-5{background:#0D5A30;}.dhb-4{background:#1A7A43;}.dhb-3{background:#3D7A30;}
+.dhb-2{background:#7A6D0D;}.dhb-1{background:#8A4A0D;}.dhb-0{background:#7A1A1A;}
+.dhm-cell.hm-supported{outline:2px solid rgba(0,229,180,.5);outline-offset:-2px;}
+.dhm-cell.hm-trap{outline:2px solid rgba(255,107,107,.5);outline-offset:-2px;}
+.dhm-summary{
+  display:flex;gap:0;border-top:1px solid var(--mp-border);
+}
+.dhm-sum-cell{
+  flex:1;padding:8px 12px;text-align:center;
+  border-right:1px solid var(--mp-border);
+}
+.dhm-sum-cell:last-child{border-right:none;}
+.dhm-sum-val{font-family:var(--font-mono);font-size:16px;font-weight:500;color:var(--mp-text-primary);}
+.dhm-sum-lbl{font-size:9px;color:var(--mp-text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-top:1px;}
+/* Discover stories column */
+.discover-stories-col{min-width:0;}
 /* ── EMPTY + LOAD ── */
 .empty-state{padding:52px 0;text-align:center;color:var(--mp-text-tertiary);font-size:13px;}
 .load-more{text-align:center;margin-top:28px;}
@@ -689,35 +736,51 @@ body{
           <span class="stat-label">Surging</span>
         </div>
       </div>
-      <div class="filter-bar" id="discover-filter-bar">
-        <span class="filter-label">State</span>
-        <div style="display:flex;gap:5px;flex-wrap:wrap;">
-          <button class="chip active" data-filter="state" data-val="all">All</button>
-          <button class="chip" data-filter="state" data-val="Breaking">Breaking</button>
-          <button class="chip" data-filter="state" data-val="Surging">Surging</button>
-          <button class="chip" data-filter="state" data-val="Fragile">Fragile</button>
-          <button class="chip" data-filter="state" data-val="Stable">Stable</button>
+      <!-- ── Heatmap + Stories split ── -->
+      <div class="discover-split">
+        <!-- HEATMAP -->
+        <div class="discover-heatmap-wrap" id="discover-heatmap-wrap">
+          <div class="dhm-header">
+            <h3>Narrative Health Map</h3>
+            <a href="/heatmap">Full heatmap →</a>
+          </div>
+          <div class="dhm-grid" id="dhm-grid">
+            <div class="empty-state" style="grid-column:1/-1;padding:32px 0;">Loading heatmap…</div>
+          </div>
+          <div class="dhm-summary" id="dhm-summary"></div>
         </div>
-        <div class="filter-sep"></div>
-        <span class="filter-label">Verdict</span>
-        <div style="display:flex;gap:5px;flex-wrap:wrap;">
-          <button class="chip" data-filter="verdict" data-val="Narrative Trap">Trap</button>
-          <button class="chip" data-filter="verdict" data-val="Structurally Supported">Supported</button>
-        </div>
-        <div class="filter-sep"></div>
-        <select id="sector-select" class="filter-select"><option value="">All sectors</option></select>
-        <div class="search-wrap">
-          <input id="ticker-search" class="search-input" placeholder="Ticker…">
-        </div>
-      </div>
-      <div class="count-bar">
-        <span id="count-line">—</span>
-        <span style="font-size:10px;font-family:var(--font-mono);">click any ticker to open full forensic analysis</span>
-      </div>
-      <div class="feed" id="discover-feed"></div>
-      <div class="load-more" id="discover-load-more" style="display:none;">
-        <button class="load-more-btn" id="discover-load-more-btn">Load more</button>
-      </div>
+        <!-- STORIES -->
+        <div class="discover-stories-col">
+          <div class="filter-bar" id="discover-filter-bar" style="margin-bottom:10px;">
+            <span class="filter-label">State</span>
+            <div style="display:flex;gap:5px;flex-wrap:wrap;">
+              <button class="chip active" data-filter="state" data-val="all">All</button>
+              <button class="chip" data-filter="state" data-val="Breaking">Breaking</button>
+              <button class="chip" data-filter="state" data-val="Surging">Surging</button>
+              <button class="chip" data-filter="state" data-val="Fragile">Fragile</button>
+              <button class="chip" data-filter="state" data-val="Stable">Stable</button>
+            </div>
+            <div class="filter-sep"></div>
+            <span class="filter-label">Verdict</span>
+            <div style="display:flex;gap:5px;flex-wrap:wrap;">
+              <button class="chip" data-filter="verdict" data-val="Narrative Trap">Trap</button>
+              <button class="chip" data-filter="verdict" data-val="Structurally Supported">Supported</button>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+            <select id="sector-select" class="filter-select"><option value="">All sectors</option></select>
+            <input id="ticker-search" class="search-input" placeholder="Ticker…">
+          </div>
+          <div class="count-bar">
+            <span id="count-line">—</span>
+            <span style="font-size:10px;font-family:var(--font-mono);">click any ticker to open full forensic analysis</span>
+          </div>
+          <div class="feed" id="discover-feed"></div>
+          <div class="load-more" id="discover-load-more" style="display:none;">
+            <button class="load-more-btn" id="discover-load-more-btn">Load more</button>
+          </div>
+        </div><!-- /discover-stories-col -->
+      </div><!-- /discover-split -->
     </div>
     <!-- ══════════════════════════════════════
          TAB: SECTOR PULSE
@@ -1059,6 +1122,7 @@ async function loadData(){
     renderSnap();
     renderSectors();
     renderMemes();
+    loadDiscoverHeatmap();
   } catch(err){
     feed.innerHTML='<div class="empty-state" style="color:var(--mp-red);">Failed to load: '+esc(err.message)+'<br><small style="font-size:11px;opacity:.6;">Check Supabase credentials in environment variables.</small></div>';
     // Still render static demos
@@ -1210,7 +1274,7 @@ function renderSectors(){
       +'</div>'
       +'<div class="sector-body">'
         +'<div class="sector-desc">'+esc(s.desc)+'</div>'
-        +'<div class="sector-tickers">'+s.tickers.map(function(t){return '<span class="sector-ticker-chip" style="display:inline-flex;align-items:center;gap:4px;">'+logoHTML(t,'sm')+t+'</span>';}).join('')+'</div>'
+        +'<div class="sector-tickers">'+s.tickers.map(function(t){return '<a href="/ticker/'+encodeURIComponent(t)+'" class="sector-ticker-chip" style="display:inline-flex;align-items:center;gap:4px;text-decoration:none;color:inherit;">'+logoHTML(t,'sm')+t+'</a>';}).join('')+'</div>'
       +'</div>'
       +'<div class="sector-momentum-bar">'
         +'<span class="sector-bar-lbl">Momentum</span>'
@@ -1378,6 +1442,42 @@ function shareCard(i,e){
   var text=c.ticker+' · Market Prism\n'+c.claim+'\n'+window.location.origin+'/ticker/'+c.ticker;
   if(navigator.share){navigator.share({title:'Market Prism · '+c.ticker,text:text,url:window.location.origin+'/ticker/'+c.ticker}).catch(function(){});}
   else{navigator.clipboard.writeText(text).then(function(){alert('Copied to clipboard');}).catch(function(){});}
+}
+// ── Discover heatmap ─────────────────────────────────────────────────────────
+async function loadDiscoverHeatmap(){
+  if(!SUPABASE_URL||!SUPABASE_ANON)return;
+  try{
+    var hdrs={'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Accept':'application/json'};
+    var url=SUPABASE_URL+'/rest/v1/ticker_pulse?select=ticker,pulse_health_score,direction_forecast,prevailing_verdict,trap_count&order=pulse_health_score.desc&limit=200';
+    var res=await fetch(url,{headers:hdrs});
+    if(!res.ok)return;
+    var rows=await res.json();
+    if(!rows.length)return;
+    var grid=document.getElementById('dhm-grid');
+    grid.innerHTML=rows.map(function(r){
+      var h=Math.round(r.pulse_health_score||50);
+      var band=h>=80?'dhb-5':h>=70?'dhb-4':h>=60?'dhb-3':h>=50?'dhb-2':h>=40?'dhb-1':'dhb-0';
+      var dir=r.direction_forecast||'NEUTRAL';
+      var arrow=dir.includes('BULL')?'↑':dir.includes('BEAR')?'↓':'→';
+      var vCls=r.prevailing_verdict==='Narrative Trap'?'hm-trap':r.prevailing_verdict==='Structurally Supported'?'hm-supported':'';
+      return '<a class="dhm-cell '+band+' '+vCls+'" href="/ticker/'+encodeURIComponent(r.ticker)+'" title="'+esc(r.ticker)+' · Health: '+h+'">'
+        +'<span class="cell-ticker">'+esc(r.ticker)+'</span>'
+        +'<span class="cell-score">'+h+'</span>'
+        +'<span class="cell-dir">'+arrow+'</span>'
+      +'</a>';
+    }).join('');
+    // Summary
+    var traps=rows.filter(function(r){return r.prevailing_verdict==='Narrative Trap';}).length;
+    var supported=rows.filter(function(r){return r.prevailing_verdict==='Structurally Supported';}).length;
+    var strong=rows.filter(function(r){return(r.pulse_health_score||0)>=75;}).length;
+    var avg=Math.round(rows.reduce(function(a,r){return a+(r.pulse_health_score||0);},0)/rows.length);
+    var avgCol=avg>=70?'var(--mp-teal)':avg>=55?'var(--mp-amber)':'var(--mp-red)';
+    document.getElementById('dhm-summary').innerHTML=
+      '<div class="dhm-sum-cell"><div class="dhm-sum-val" style="color:'+avgCol+'">'+avg+'</div><div class="dhm-sum-lbl">Avg Health</div></div>'
+      +'<div class="dhm-sum-cell"><div class="dhm-sum-val" style="color:var(--mp-teal)">'+strong+'</div><div class="dhm-sum-lbl">Strong</div></div>'
+      +'<div class="dhm-sum-cell"><div class="dhm-sum-val" style="color:var(--mp-red)">'+traps+'</div><div class="dhm-sum-lbl">Traps</div></div>'
+      +'<div class="dhm-sum-cell"><div class="dhm-sum-val">'+supported+'</div><div class="dhm-sum-lbl">Supported</div></div>';
+  }catch(e){console.error('Heatmap:',e);}
 }
 // ── Sharing sub-tabs ─────────────────────────────────────────────────────────
 function switchSharingTab(id,btn){
