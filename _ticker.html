@@ -484,7 +484,7 @@
     border-radius: 99px;
     transition: width 0.9s cubic-bezier(0.16,1,0.3,1);
   }
-  .lc-fill-birth    { background: linear-gradient(90deg,#00B88C,#00E5B4); }
+  .lc-fill-birth    { background: linear-gradient(90deg,#00B88C,#4DF0A0); }
   .lc-fill-growth   { background: linear-gradient(90deg,#3B82F6,#4DF0A0); }
   .lc-fill-maturity { background: linear-gradient(90deg,#D68910,#EF9F27); }
   .lc-fill-decline  { background: linear-gradient(90deg,#E04040,#FF6B6B); }
@@ -2100,13 +2100,13 @@ function drawChart(snaps, narrs, fairValue) {
   snaps.forEach((s,i) => { if (s.snapshot_date) dateIdx[s.snapshot_date.slice(0,10)] = i; });
 
   // Grid lines + Y axis (price)
-  ctx.font = `10px 'DM Mono', monospace`;
-  ctx.fillStyle = '#8B97B8';
+  ctx.font = `10px 'Geist Mono', monospace`;
+  ctx.fillStyle = '#7A8499';
   ctx.textAlign = 'right';
   for (let i = 0; i <= 4; i++) {
     const p = minP + (maxP - minP) * (i / 4);
     const y = yOf(p);
-    ctx.strokeStyle = '#1a2340'; ctx.lineWidth = 1;
+    ctx.strokeStyle = '#161B28'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(W - PAD.right, y); ctx.stroke();
     ctx.fillText((p >= 100 ? '$' + p.toFixed(0) : '$' + p.toFixed(2)), PAD.left - 4, y + 3);
   }
@@ -2124,15 +2124,15 @@ function drawChart(snaps, narrs, fairValue) {
   if (fairValue != null && fairValue > minP && fairValue < maxP * 1.1) {
     const yFV = yOf(fairValue);
     ctx.save(); ctx.setLineDash([5,4]);
-    ctx.strokeStyle = '#4A5578'; ctx.lineWidth = 1.5;
+    ctx.strokeStyle = '#3D4558'; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(PAD.left, yFV); ctx.lineTo(W - PAD.right, yFV); ctx.stroke();
     ctx.restore();
   }
 
   // Area fill under price
   const grad = ctx.createLinearGradient(0, PAD.top, 0, H - PAD.bottom);
-  grad.addColorStop(0, 'rgba(26,110,255,0.12)');
-  grad.addColorStop(1, 'rgba(26,110,255,0)');
+  grad.addColorStop(0, 'rgba(59,130,246,0.12)');
+  grad.addColorStop(1, 'rgba(59,130,246,0)');
   ctx.beginPath();
   snaps.forEach((s,i) => { if (s.price_close==null) return; i===0 ? ctx.moveTo(xOf(i),yOf(s.price_close)) : ctx.lineTo(xOf(i),yOf(s.price_close)); });
   ctx.lineTo(xOf(N-1), H-PAD.bottom); ctx.lineTo(xOf(0), H-PAD.bottom); ctx.closePath();
@@ -2141,7 +2141,7 @@ function drawChart(snaps, narrs, fairValue) {
   // Price line
   ctx.beginPath(); ctx.setLineDash([]);
   snaps.forEach((s,i) => { if (s.price_close==null) return; i===0 ? ctx.moveTo(xOf(i),yOf(s.price_close)) : ctx.lineTo(xOf(i),yOf(s.price_close)); });
-  ctx.strokeStyle = '#F0F4FF'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.strokeStyle = '#E8EDF5'; ctx.lineWidth = 1.5; ctx.stroke();
 
   // Narrative energy overlay (blue dashed, right axis 0-100)
   const lo = snaps[0]?.snapshot_date?.slice(0,10) || '';
@@ -2153,7 +2153,7 @@ function drawChart(snaps, narrs, fairValue) {
   if (decayFiltered.length > 1) {
     // Right axis ticks for energy
     ctx.save();
-    ctx.font = `9px 'DM Mono', monospace`;
+    ctx.font = `9px 'Geist Mono', monospace`;
     ctx.fillStyle = '#4DF0A0'; ctx.textAlign = 'left'; ctx.globalAlpha = 0.7;
     [0, 50, 100].forEach(v => {
       ctx.fillText(v, W - PAD.right + 4, yEnergy(v) + 3);
@@ -2189,9 +2189,9 @@ function drawChart(snaps, narrs, fairValue) {
     const isBull = (n.sentiment_score ?? 0) > 0;
     ctx.beginPath();
     ctx.arc(cx, cy, 5, 0, Math.PI*2);
-    ctx.fillStyle   = isBull ? '#00E5B4' : '#FF6B6B';
+    ctx.fillStyle   = isBull ? '#4DF0A0' : '#F87171';
     ctx.fill();
-    ctx.strokeStyle = '#0A0E1A'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.strokeStyle = '#080B10'; ctx.lineWidth = 1.5; ctx.stroke();
     dotHits.push({ cx, cy, n });
   });
 
