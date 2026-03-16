@@ -3,88 +3,207 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Forensic Market Engine</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>Dashboard — Market Prism</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg: #F7F5F0;
-    --surface: #FFFFFF;
-    --surface2: #F0EDE8;
-    --border: #E2DED8;
-    --border-strong: #C8C4BE;
-    --text-primary: #1A1916;
-    --text-secondary: #5C5A55;
-    --text-tertiary: #9B9892;
-    --accent-breaking: #C0392B;
-    --accent-breaking-bg: #FDF0EE;
-    --accent-surging: #27AE60;
-    --accent-surging-bg: #EEF8F2;
-    --accent-fragile: #D68910;
-    --accent-fragile-bg: #FEF9EC;
-    --accent-stable: #2471A3;
-    --accent-stable-bg: #EBF5FB;
-    --accent-trap: #C0392B;
-    --accent-supported: #1E8449;
-    --font: 'DM Sans', system-ui, sans-serif;
-    --mono: 'DM Mono', monospace;
+    --mp-obsidian: #0A0E1A;
+    --mp-deep: #0F1628;
+    --mp-surface: #141D35;
+    --mp-border: rgba(255,255,255,0.08);
+    --mp-border-mid: rgba(255,255,255,0.14);
+    --mp-blue: #1A6EFF;
+    --mp-blue-glow: rgba(26,110,255,0.2);
+    --mp-cyan: #00C2FF;
+    --mp-teal: #00E5B4;
+    --mp-prism-4: #7B61FF;
+    --mp-prism-5: #FF6B6B;
+    --mp-text-primary: #F0F4FF;
+    --mp-text-secondary: #8B97B8;
+    --mp-text-tertiary: #4A5578;
+    --font-display: 'DM Serif Display', Georgia, serif;
+    --font-body: 'DM Sans', system-ui, sans-serif;
+    --font-mono: 'DM Mono', monospace;
   }
 
   html { font-size: 16px; }
   body {
-    font-family: var(--font);
-    background: var(--bg);
-    color: var(--text-primary);
+    font-family: var(--font-body);
+    background: var(--mp-obsidian);
+    color: var(--mp-text-primary);
     min-height: 100vh;
     line-height: 1.5;
   }
 
-  /* ── Layout ── */
-  .page-wrap {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 0 24px 80px;
+  /* ── Side Navigation ── */
+  .side-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 240px;
+    height: 100vh;
+    background: var(--mp-deep);
+    border-right: 1px solid var(--mp-border);
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+    overflow-y: auto;
+  }
+  .nav-logo {
+    padding: 24px 20px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .nav-logo svg {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+  }
+  .nav-logo span {
+    font-family: var(--font-display);
+    font-size: 18px;
+    color: var(--mp-text-primary);
+    letter-spacing: -0.01em;
+  }
+  .nav-items {
+    padding: 8px 12px;
+    flex: 1;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-family: var(--font-body);
+    font-weight: 400;
+    color: var(--mp-text-secondary);
+    text-decoration: none;
+    transition: background 0.12s, color 0.12s;
+    margin-bottom: 2px;
+    border-left: 2px solid transparent;
+  }
+  .nav-item:hover {
+    background: var(--mp-surface);
+    color: var(--mp-text-primary);
+  }
+  .nav-item.active {
+    background: rgba(26,110,255,0.1);
+    color: #1A6EFF;
+    border-left: 2px solid #1A6EFF;
+  }
+  .nav-item svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    opacity: 0.7;
+  }
+  .nav-item.active svg { opacity: 1; }
+  .nav-divider {
+    height: 1px;
+    background: var(--mp-border);
+    margin: 12px 20px;
+  }
+  .nav-bottom {
+    padding: 16px 20px;
+    border-top: 1px solid var(--mp-border);
+  }
+  .nav-bottom a {
+    font-size: 11px;
+    color: var(--mp-text-tertiary);
+    text-decoration: none;
+    transition: color 0.12s;
+  }
+  .nav-bottom a:hover { color: var(--mp-text-secondary); }
+
+  /* ── Mobile hamburger ── */
+  .mobile-topbar {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 56px;
+    background: var(--mp-deep);
+    border-bottom: 1px solid var(--mp-border);
+    z-index: 200;
+    align-items: center;
+    padding: 0 16px;
+    gap: 12px;
+  }
+  .hamburger-btn {
+    background: none;
+    border: none;
+    color: var(--mp-text-primary);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .hamburger-btn svg { width: 22px; height: 22px; }
+  .mobile-topbar .nav-logo {
+    padding: 0;
+  }
+  .nav-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 150;
+  }
+  .nav-overlay.open { display: block; }
+
+  /* ── Main Content ── */
+  .main-content {
+    margin-left: 240px;
+    max-width: 960px;
+    padding: 32px 40px 80px;
   }
 
-  /* ── Header ── */
-  .site-header {
-    padding: 32px 0 20px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 24px;
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 16px;
+  /* ── Page Header ── */
+  .page-header {
+    margin-bottom: 28px;
   }
-  .header-left h1 {
+  .page-header h1 {
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 400;
+    color: var(--mp-text-primary);
+    letter-spacing: -0.01em;
+    margin-bottom: 4px;
+  }
+  .page-header p {
+    font-size: 13px;
+    color: var(--mp-text-tertiary);
+  }
+
+  /* ── Stats Row ── */
+  .stats-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .stat-card {
+    flex: 1;
+    background: var(--mp-deep);
+    border: 1px solid var(--mp-border);
+    border-radius: 12px;
+    padding: 16px 20px;
+  }
+  .stat-card .stat-num {
     font-size: 22px;
     font-weight: 500;
-    letter-spacing: -0.02em;
-    color: var(--text-primary);
+    font-family: var(--font-mono);
+    color: var(--mp-text-primary);
+    display: block;
     margin-bottom: 2px;
   }
-  .header-left p {
-    font-size: 13px;
-    color: var(--text-tertiary);
-  }
-  .header-stats {
-    display: flex;
-    gap: 20px;
-  }
-  .stat-block {
-    text-align: right;
-  }
-  .stat-block .stat-num {
-    font-size: 20px;
-    font-weight: 500;
-    font-family: var(--mono);
-    color: var(--text-primary);
-    display: block;
-  }
-  .stat-block .stat-label {
+  .stat-card .stat-label {
     font-size: 11px;
-    color: var(--text-tertiary);
+    color: var(--mp-text-tertiary);
     text-transform: uppercase;
     letter-spacing: 0.06em;
   }
@@ -105,12 +224,12 @@
   .filter-sep {
     width: 1px;
     height: 20px;
-    background: var(--border);
+    background: var(--mp-border-mid);
     margin: 0 4px;
   }
   .filter-label {
     font-size: 11px;
-    color: var(--text-tertiary);
+    color: var(--mp-text-tertiary);
     text-transform: uppercase;
     letter-spacing: 0.06em;
     white-space: nowrap;
@@ -119,40 +238,40 @@
     font-size: 12px;
     padding: 5px 12px;
     border-radius: 99px;
-    border: 1px solid var(--border);
-    background: var(--surface);
+    border: 1px solid var(--mp-border);
+    background: var(--mp-surface);
     cursor: pointer;
-    color: var(--text-secondary);
-    font-family: var(--font);
+    color: var(--mp-text-secondary);
+    font-family: var(--font-body);
     transition: all 0.12s;
     white-space: nowrap;
   }
-  .chip:hover { border-color: var(--border-strong); color: var(--text-primary); }
+  .chip:hover { border-color: var(--mp-border-mid); color: var(--mp-text-primary); }
   .chip.active {
-    background: var(--text-primary);
-    color: var(--surface);
-    border-color: var(--text-primary);
+    background: var(--mp-blue);
+    color: #FFFFFF;
+    border-color: var(--mp-blue);
   }
-  .chip.active-breaking { background: var(--accent-breaking-bg); color: var(--accent-breaking); border-color: var(--accent-breaking); }
-  .chip.active-surging { background: var(--accent-surging-bg); color: var(--accent-surging); border-color: var(--accent-surging); }
-  .chip.active-fragile { background: var(--accent-fragile-bg); color: var(--accent-fragile); border-color: var(--accent-fragile); }
-  .chip.active-stable { background: var(--accent-stable-bg); color: var(--accent-stable); border-color: var(--accent-stable); }
+  .chip.active-breaking { background: rgba(255,107,107,0.12); color: #FF6B6B; border-color: rgba(255,107,107,0.3); }
+  .chip.active-surging  { background: rgba(0,229,180,0.1);  color: #00E5B4;  border-color: rgba(0,229,180,0.25); }
+  .chip.active-fragile  { background: rgba(239,159,39,0.1); color: #EF9F27;  border-color: rgba(239,159,39,0.25); }
+  .chip.active-stable   { background: rgba(26,110,255,0.1); color: #1A6EFF;  border-color: rgba(26,110,255,0.25); }
 
   .search-wrap { margin-left: auto; }
   .search-input {
     font-size: 13px;
-    font-family: var(--mono);
+    font-family: var(--font-mono);
     padding: 6px 14px;
     border-radius: 99px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text-primary);
+    border: 1px solid var(--mp-border-mid);
+    background: var(--mp-deep);
+    color: var(--mp-text-primary);
     width: 160px;
     outline: none;
     transition: border-color 0.12s;
   }
-  .search-input:focus { border-color: var(--border-strong); }
-  .search-input::placeholder { color: var(--text-tertiary); }
+  .search-input:focus { border-color: var(--mp-blue); }
+  .search-input::placeholder { color: var(--mp-text-tertiary); }
 
   .filter-bar-2 {
     display: flex;
@@ -163,29 +282,33 @@
   }
   .filter-select {
     font-size: 12px;
-    font-family: var(--font);
+    font-family: var(--font-body);
     padding: 5px 10px;
     border-radius: 99px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text-secondary);
+    border: 1px solid var(--mp-border);
+    background: var(--mp-surface);
+    color: var(--mp-text-secondary);
     cursor: pointer;
     outline: none;
     transition: border-color 0.12s;
     max-width: 220px;
   }
-  .filter-select:focus { border-color: var(--border-strong); }
-  .filter-select:hover { border-color: var(--border-strong); color: var(--text-primary); }
+  .filter-select option {
+    background: var(--mp-deep);
+    color: var(--mp-text-primary);
+  }
+  .filter-select:focus { border-color: var(--mp-blue); }
+  .filter-select:hover { border-color: var(--mp-border-mid); color: var(--mp-text-primary); }
 
   /* FVD tag */
   .fvd-tag strong { font-weight: 500; }
-  .fvd-under strong { color: var(--accent-surging); }
-  .fvd-over  strong { color: var(--accent-breaking); }
+  .fvd-under strong { color: var(--mp-teal); }
+  .fvd-over  strong { color: var(--mp-prism-5); }
 
   /* Sector label on card */
   .meta-sector {
     font-size: 11px;
-    color: var(--text-tertiary);
+    color: var(--mp-text-tertiary);
     font-style: italic;
     white-space: nowrap;
     overflow: hidden;
@@ -197,37 +320,34 @@
     align-items: center;
     justify-content: space-between;
     font-size: 12px;
-    color: var(--text-tertiary);
+    color: var(--mp-text-tertiary);
     margin-bottom: 8px;
     padding-bottom: 8px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--mp-border);
   }
 
   /* ── Feed ── */
-  .feed { display: flex; flex-direction: column; }
+  .feed { display: flex; flex-direction: column; gap: 12px; }
 
   .story-card {
-    padding: 18px 0;
-    border-bottom: 1px solid var(--border);
-    transition: background 0.1s;
+    padding: 16px;
+    background: var(--mp-deep);
+    border: 1px solid var(--mp-border);
+    border-radius: 12px;
+    transition: border-color 0.15s, transform 0.15s;
     display: block;
     text-decoration: none;
     color: inherit;
   }
   .story-card:hover {
-    background: var(--surface);
-    padding-left: 14px;
-    padding-right: 14px;
-    margin: 0 -14px;
-    border-radius: 8px;
-    border-color: transparent;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    border-color: var(--mp-border-mid);
+    transform: translateY(-1px);
   }
   .story-card:hover .card-arrow { opacity: 1; }
 
   .card-arrow {
     font-size: 18px;
-    color: var(--text-tertiary);
+    color: var(--mp-text-tertiary);
     opacity: 0;
     transition: opacity 0.12s;
     line-height: 1;
@@ -251,7 +371,7 @@
   .ticker-badge {
     font-size: 11px;
     font-weight: 500;
-    font-family: var(--mono);
+    font-family: var(--font-mono);
     min-width: 52px;
     text-align: center;
     padding: 4px 8px;
@@ -260,10 +380,10 @@
     flex-shrink: 0;
     border: 1px solid;
   }
-  .badge-breaking { background: var(--accent-breaking-bg); color: var(--accent-breaking); border-color: #F5C6C2; }
-  .badge-surging  { background: var(--accent-surging-bg);  color: var(--accent-surging);  border-color: #BCEACE; }
-  .badge-fragile  { background: var(--accent-fragile-bg);  color: var(--accent-fragile);  border-color: #FADED9; }
-  .badge-stable   { background: var(--accent-stable-bg);   color: var(--accent-stable);   border-color: #BAD6EC; }
+  .badge-breaking { background: rgba(255,107,107,0.12); color: #FF6B6B; border-color: rgba(255,107,107,0.3); }
+  .badge-surging  { background: rgba(0,229,180,0.1);  color: #00E5B4;  border-color: rgba(0,229,180,0.25); }
+  .badge-fragile  { background: rgba(239,159,39,0.1); color: #EF9F27;  border-color: rgba(239,159,39,0.25); }
+  .badge-stable   { background: rgba(26,110,255,0.1); color: #1A6EFF;  border-color: rgba(26,110,255,0.25); }
 
   .verdict-pip {
     display: inline-block;
@@ -272,13 +392,13 @@
     flex-shrink: 0;
     margin-top: 7px;
   }
-  .pip-trap      { background: var(--accent-trap); }
-  .pip-supported { background: var(--accent-supported); }
-  .pip-monitoring { background: var(--border-strong); }
+  .pip-trap      { background: var(--mp-prism-5); }
+  .pip-supported { background: var(--mp-teal); }
+  .pip-monitoring { background: var(--mp-text-tertiary); }
 
   .story-claim {
     font-size: 14px;
-    color: var(--text-primary);
+    color: var(--mp-text-primary);
     line-height: 1.5;
   }
 
@@ -293,13 +413,13 @@
   .price-main {
     font-size: 14px;
     font-weight: 500;
-    font-family: var(--mono);
-    color: var(--text-primary);
+    font-family: var(--font-mono);
+    color: #FFFFFF;
   }
-  .price-delta { font-size: 12px; font-family: var(--mono); }
-  .delta-pos { color: var(--accent-surging); }
-  .delta-neg { color: var(--accent-breaking); }
-  .delta-flat { color: var(--text-tertiary); }
+  .price-delta { font-size: 12px; font-family: var(--font-mono); }
+  .delta-pos { color: var(--mp-teal); }
+  .delta-neg { color: var(--mp-prism-5); }
+  .delta-flat { color: var(--mp-text-tertiary); }
 
   /* ── Meta row ── */
   .card-meta {
@@ -310,23 +430,23 @@
   }
   .meta-tag {
     font-size: 12px;
-    color: var(--text-tertiary);
+    color: var(--mp-text-tertiary);
     display: flex;
     align-items: center;
     gap: 4px;
   }
   .meta-tag strong {
     font-weight: 500;
-    color: var(--text-secondary);
+    color: var(--mp-text-secondary);
   }
-  .trend-up   strong { color: var(--accent-surging); }
-  .trend-down strong { color: var(--accent-breaking); }
-  .trend-flat strong { color: var(--text-tertiary); }
+  .trend-up   strong { color: var(--mp-teal); }
+  .trend-down strong { color: var(--mp-prism-5); }
+  .trend-flat strong { color: var(--mp-text-tertiary); }
 
   .meta-date {
     font-size: 11px;
-    font-family: var(--mono);
-    color: var(--text-tertiary);
+    font-family: var(--font-mono);
+    color: var(--mp-text-tertiary);
     margin-left: auto;
   }
 
@@ -337,8 +457,8 @@
     font-weight: 500;
     border: 1px solid;
   }
-  .verdict-trap      { background: var(--accent-breaking-bg); color: var(--accent-breaking); border-color: #F5C6C2; }
-  .verdict-supported { background: var(--accent-surging-bg); color: var(--accent-supported); border-color: #BCEACE; }
+  .verdict-trap      { background: rgba(255,107,107,0.12); color: #FF6B6B; border-color: rgba(255,107,107,0.3); }
+  .verdict-supported { background: rgba(0,229,180,0.1); color: var(--mp-teal); border-color: rgba(0,229,180,0.25); }
 
   /* ── Load more ── */
   .load-more {
@@ -347,57 +467,118 @@
   }
   .load-more-btn {
     font-size: 13px;
-    font-family: var(--font);
+    font-family: var(--font-body);
     padding: 10px 28px;
     border-radius: 99px;
-    border: 1px solid var(--border-strong);
-    background: var(--surface);
-    color: var(--text-secondary);
+    border: 1px solid var(--mp-border-mid);
+    background: var(--mp-surface);
+    color: var(--mp-text-secondary);
     cursor: pointer;
     transition: all 0.12s;
   }
   .load-more-btn:hover {
-    background: var(--text-primary);
+    background: var(--mp-blue);
     color: white;
-    border-color: var(--text-primary);
+    border-color: var(--mp-blue);
   }
 
   .empty-state {
     padding: 60px 0;
     text-align: center;
-    color: var(--text-tertiary);
+    color: var(--mp-text-tertiary);
     font-size: 14px;
   }
 
+  /* ── Mobile ── */
+  @media (max-width: 767px) {
+    .side-nav {
+      transform: translateX(-100%);
+      transition: transform 0.25s ease;
+    }
+    .side-nav.open {
+      transform: translateX(0);
+    }
+    .mobile-topbar {
+      display: flex;
+    }
+    .main-content {
+      margin-left: 0;
+      padding: 72px 16px 80px;
+    }
+    .stats-row {
+      flex-direction: column;
+      gap: 10px;
+    }
+    .search-wrap {
+      margin-left: 0;
+      width: 100%;
+    }
+    .search-input {
+      width: 100%;
+    }
+  }
 </style>
   <!-- Env vars injected by Vercel API handler — do not edit this line -->
   <script id="__env_script">window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '' };</script>
-  <script>document.getElementById('header-date').textContent = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});</script>
 </head>
 <body>
-<div class="page-wrap">
 
-  <header class="site-header">
-    <div class="header-left">
-      <h1>Forensic Market Engine</h1>
-      <p id="header-date"></p>
-    </div>
-    <div class="header-stats">
-      <div class="stat-block">
-        <span class="stat-num" id="stat-total">—</span>
-        <span class="stat-label">Tickers</span>
-      </div>
-      <div class="stat-block">
-        <span class="stat-num" id="stat-traps">—</span>
-        <span class="stat-label">Traps</span>
-      </div>
-      <div class="stat-block">
-        <span class="stat-num" id="stat-breaking">—</span>
-        <span class="stat-label">Breaking</span>
-      </div>
+<!-- Mobile Top Bar -->
+<div class="mobile-topbar">
+  <button class="hamburger-btn" id="hamburger-btn" aria-label="Open menu">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <div class="nav-logo">
+    <svg viewBox="0 0 28 28" fill="none"><polygon points="14,2 26,26 2,26" stroke="#1A6EFF" stroke-width="1.5" fill="none"/><polygon points="14,9 21,23 7,23" stroke="#00C2FF" stroke-width="1" fill="rgba(26,110,255,0.15)"/></svg>
+    <span>Market Prism</span>
+  </div>
+</div>
+<div class="nav-overlay" id="nav-overlay"></div>
 
+<!-- Side Navigation -->
+<nav class="side-nav" id="side-nav">
+  <div class="nav-logo">
+    <svg viewBox="0 0 28 28" fill="none"><polygon points="14,2 26,26 2,26" stroke="#1A6EFF" stroke-width="1.5" fill="none"/><polygon points="14,9 21,23 7,23" stroke="#00C2FF" stroke-width="1" fill="rgba(26,110,255,0.15)"/></svg>
+    <span>Market Prism</span>
+  </div>
+  <div class="nav-items">
+    <a class="nav-item active" href="/dashboard">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="1.5" width="5" height="5" rx="1"/><rect x="9.5" y="1.5" width="5" height="5" rx="1"/><rect x="1.5" y="9.5" width="5" height="5" rx="1"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/></svg>
+      Dashboard
+    </a>
+    <a class="nav-item" href="/heatmap">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="4.5" height="6" rx="0.5"/><rect x="7" y="1" width="8" height="6" rx="0.5"/><rect x="1" y="9" width="8" height="6" rx="0.5"/><rect x="10.5" y="9" width="4.5" height="6" rx="0.5"/></svg>
+      Heatmap
+    </a>
+  </div>
+  <div class="nav-divider"></div>
+  <div class="nav-bottom">
+    <a href="/">&larr; Back to Home</a>
+  </div>
+</nav>
+
+<!-- Main Content -->
+<div class="main-content">
+
+  <div class="page-header">
+    <h1>Market Prism</h1>
+    <p id="header-date"></p>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <span class="stat-num" id="stat-total">&mdash;</span>
+      <span class="stat-label">Tickers</span>
     </div>
-  </header>
+    <div class="stat-card">
+      <span class="stat-num" id="stat-traps">&mdash;</span>
+      <span class="stat-label">Traps</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-num" id="stat-breaking">&mdash;</span>
+      <span class="stat-label">Breaking</span>
+    </div>
+  </div>
 
   <div class="filter-bar">
     <span class="filter-label">State</span>
@@ -429,18 +610,18 @@
     <div class="filter-sep"></div>
     <span class="filter-label">Value</span>
     <div class="filter-group">
-      <button class="chip" data-sort="undervalued">↓ Undervalued</button>
-      <button class="chip" data-sort="overvalued">↑ Overvalued</button>
+      <button class="chip" data-sort="undervalued">&darr; Undervalued</button>
+      <button class="chip" data-sort="overvalued">&uarr; Overvalued</button>
     </div>
     <div class="filter-sep"></div>
     <div class="filter-group">
       <span class="filter-label">Sort</span>
-      <button class="chip" data-sort="default">A → Z</button>
+      <button class="chip" data-sort="default">A &rarr; Z</button>
     </div>
   </div>
 
   <div class="count-bar">
-    <span id="count-line">—</span>
+    <span id="count-line">&mdash;</span>
     <span style="font-size:11px;">click any ticker to open full forensic analysis</span>
   </div>
 
@@ -450,10 +631,25 @@
     <button class="load-more-btn" id="load-more-btn">Load more</button>
   </div>
 
-
 </div>
 
 <script>
+// ── Mobile nav toggle ────────────────────────────────────────────────────────
+(function() {
+  var hamburger = document.getElementById('hamburger-btn');
+  var sideNav = document.getElementById('side-nav');
+  var overlay = document.getElementById('nav-overlay');
+  function openNav() { sideNav.classList.add('open'); overlay.classList.add('open'); }
+  function closeNav() { sideNav.classList.remove('open'); overlay.classList.remove('open'); }
+  hamburger.addEventListener('click', function() {
+    sideNav.classList.contains('open') ? closeNav() : openNav();
+  });
+  overlay.addEventListener('click', closeNav);
+})();
+
+// ── Set header date ──────────────────────────────────────────────────────────
+document.getElementById('header-date').textContent = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+
 // ── Supabase config (injected by Vercel env vars) ──────────────────────────
 const SUPABASE_URL  = window.__env?.SUPABASE_URL  || '';
 const SUPABASE_ANON = window.__env?.SUPABASE_ANON || '';
@@ -578,7 +774,7 @@ async function loadData() {
     render();
 
   } catch (err) {
-    feed.innerHTML = `<div class="empty-state" style="padding:48px 0; color:#C0392B;">
+    feed.innerHTML = `<div class="empty-state" style="padding:48px 0; color:#FF6B6B;">
       Failed to load data: ${err.message}<br>
       <small>Check your Supabase URL and anon key in Vercel environment variables.</small>
     </div>`;

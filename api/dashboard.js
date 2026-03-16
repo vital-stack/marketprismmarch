@@ -7,9 +7,9 @@ module.exports = (req, res) => {
 
   let html;
   try {
-    html = readFileSync(join(__dirname, '_home.html'), 'utf8');
+    html = readFileSync(join(__dirname, '_template.html'), 'utf8');
   } catch {
-    html = readFileSync(join(process.cwd(), '_home.html'), 'utf8');
+    html = readFileSync(join(process.cwd(), '_template.html'), 'utf8');
   }
 
   html = html.replace(
