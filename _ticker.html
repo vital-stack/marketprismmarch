@@ -1186,6 +1186,59 @@
   }
   .diag-sub { font-size: 10px; color: var(--text-tertiary); }
 
+  /* ── Action bar (Export / Image) ── */
+  .action-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .action-bar-spacer { flex: 1; }
+  .action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 400;
+    padding: 7px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface2);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .action-btn:hover {
+    color: var(--text-primary);
+    border-color: var(--mp-blue);
+    background: rgba(26,110,255,.06);
+  }
+  .action-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+  .action-btn.primary {
+    background: var(--mp-blue);
+    color: #fff;
+    border-color: var(--mp-blue);
+  }
+  .action-btn.primary:hover { background: #2B7EFF; }
+  /* capture overlay */
+  .capture-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(0,0,0,.6);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity .2s;
+  }
+  .capture-overlay.active { opacity: 1; pointer-events: auto; }
+  .capture-spinner {
+    width: 36px; height: 36px;
+    border: 3px solid rgba(255,255,255,.2);
+    border-top-color: var(--mp-blue);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
   /* ── Two-col layout for pulse panels ── */
   .pulse-two {
     display: grid;
@@ -1433,6 +1486,20 @@
       <div class="skel" style="width:60px;height:13px;"></div>
     </div>
   </div>
+
+  <!-- Action bar -->
+  <div class="action-bar" id="action-bar" style="display:none;">
+    <div class="action-bar-spacer"></div>
+    <button class="action-btn" onclick="exportReport()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 10v6m0 0l-3-3m3 3l3-3"/><path d="M3 17v1a2 2 0 002 2h14a2 2 0 002-2v-1"/><path d="M7 3h10l4 4v3H3V7l4-4z"/></svg>
+      Export Report
+    </button>
+    <button class="action-btn primary" onclick="createImage()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+      Create Image
+    </button>
+  </div>
+  <div class="capture-overlay" id="capture-overlay"><div class="capture-spinner"></div></div>
 
   <!-- Diagnosis Strip -->
   <div id="diag-strip" class="diag-strip">
@@ -1903,6 +1970,9 @@ async function loadHero() {
       </div>`;
 
     // ── Sector Intelligence panel (loaded separately from Supabase) ──
+
+    // Show action bar once data is loaded
+    document.getElementById('action-bar').style.display = 'flex';
 
     return { ...r, narrative_health: h.narrative_health, narrative_trend: h.narrative_trend };
   } catch (err) {
@@ -3125,6 +3195,155 @@ function renderHeatmap(p) {
     <div class="heatmap-foot">
       Prevailing: <strong>${esc(p.prevailing_narrative || '—')}</strong>
     </div>`;
+}
+
+// ── Export Report (text file) ─────────────────────────────────────────────────
+function exportReport() {
+  const t = TICKER;
+  const hero = document.getElementById('hero');
+  const price = hero?.querySelector('.hero-price')?.textContent || '';
+  const delta = hero?.querySelector('.hero-delta')?.textContent || '';
+  const state = hero?.querySelector('.hero-state-badge')?.textContent || '';
+  const verdict = hero?.querySelector('.verdict-badge')?.textContent || '';
+  const claim = hero?.querySelector('.hero-claim')?.textContent || '';
+  const sector = hero?.querySelector('.hero-sector')?.textContent || '';
+  const fv = hero?.querySelector('.hero-fv span')?.textContent || '';
+
+  // Diagnosis strip
+  const diagCells = document.querySelectorAll('#diag-strip .diag-cell');
+  const diag = [];
+  diagCells.forEach(c => {
+    const label = c.querySelector('.diag-label')?.textContent || '';
+    const val = c.querySelector('.diag-val')?.textContent?.trim() || '';
+    if (label && val) diag.push(`  ${label}: ${val}`);
+  });
+
+  // Forensic analysis
+  const forensic = document.getElementById('forensic-text')?.textContent?.trim() || '';
+
+  // Metrics
+  const metricCells = document.querySelectorAll('#metrics-strip .metric-cell');
+  const metrics = [];
+  metricCells.forEach(c => {
+    const label = c.querySelector('.metric-label')?.textContent || '';
+    const val = c.querySelector('.metric-value')?.textContent?.trim() || '';
+    const sub = c.querySelector('.metric-sub')?.textContent?.trim() || '';
+    if (label) metrics.push(`  ${label}: ${val}${sub ? ' (' + sub + ')' : ''}`);
+  });
+
+  // Sector intelligence
+  const sectorBlocks = document.querySelectorAll('#sector-body .si-block');
+  const sectorInfo = [];
+  sectorBlocks.forEach(b => {
+    const lbl = b.querySelector('.si-label')?.textContent || '';
+    const val = b.querySelector('.si-val')?.textContent?.trim() || '';
+    if (lbl && val) sectorInfo.push(`  ${lbl}: ${val}`);
+  });
+
+  // Lifecycle
+  const lcBody = document.getElementById('lc-body');
+  const lifecycle = lcBody?.textContent?.trim().replace(/\s+/g, ' ') || '';
+
+  // Prerequisites
+  const prBody = document.getElementById('pr-body');
+  const prereqs = prBody?.textContent?.trim().replace(/\s+/g, ' ') || '';
+
+  const date = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+  let report = `MARKET PRISM — FORENSIC INTELLIGENCE REPORT
+${'═'.repeat(50)}
+Ticker: ${t}
+Date: ${date}
+${sector ? 'Sector: ' + sector : ''}
+
+OVERVIEW
+${'─'.repeat(50)}
+  Price: ${price}  (${delta})
+  Narrative State: ${state}
+  Verdict: ${verdict}
+  ${fv ? 'Fair Value: ' + fv : ''}
+  Primary Driver: ${claim}
+
+DIAGNOSIS
+${'─'.repeat(50)}
+${diag.join('\n')}
+
+FUNDAMENTALS
+${'─'.repeat(50)}
+${metrics.join('\n')}
+
+FORENSIC ANALYSIS
+${'─'.repeat(50)}
+  ${forensic || 'No analysis available.'}
+`;
+
+  if (sectorInfo.length) {
+    report += `\nSECTOR INTELLIGENCE\n${'─'.repeat(50)}\n${sectorInfo.join('\n')}\n`;
+  }
+  if (lifecycle) {
+    report += `\nSTORY LIFECYCLE\n${'─'.repeat(50)}\n  ${lifecycle}\n`;
+  }
+  if (prereqs) {
+    report += `\nPREREQUISITE CHECK\n${'─'.repeat(50)}\n  ${prereqs}\n`;
+  }
+
+  report += `\n${'═'.repeat(50)}\nGenerated by Market Prism · ${date}\nhttps://marketprism.io/ticker/${t}\n`;
+
+  const blob = new Blob([report], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${t}-market-prism-report-${new Date().toISOString().slice(0,10)}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── Create Image (capture page as PNG) ───────────────────────────────────────
+async function createImage() {
+  const overlay = document.getElementById('capture-overlay');
+  overlay.classList.add('active');
+
+  try {
+    // Dynamically load html2canvas if not already loaded
+    if (typeof html2canvas === 'undefined') {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        script.onload = resolve;
+        script.onerror = () => reject(new Error('Failed to load html2canvas'));
+        document.head.appendChild(script);
+      });
+    }
+
+    // Capture the main content area (excluding sidebar)
+    const target = document.querySelector('.page-wrap');
+    const canvas = await html2canvas(target, {
+      backgroundColor: isLight() ? '#F5F6FA' : '#0A0E1A',
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      windowWidth: 960,
+      onclone: (doc) => {
+        // Hide the action bar in the captured image
+        const ab = doc.getElementById('action-bar');
+        if (ab) ab.style.display = 'none';
+      }
+    });
+
+    canvas.toBlob(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${TICKER}-market-prism-${new Date().toISOString().slice(0,10)}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }, 'image/png');
+  } catch (err) {
+    console.error('Image capture failed:', err);
+    alert('Failed to create image. Please try again.');
+  } finally {
+    overlay.classList.remove('active');
+  }
 }
 
 // ── Boot ─────────────────────────────────────────────────────────────────────
