@@ -777,6 +777,14 @@ document.getElementById('load-more-btn').addEventListener('click', () => {
 });
 
 loadData();
+
+// Auto-refresh every 5 minutes
+setInterval(() => loadData(), 5 * 60 * 1000);
+
+// Refresh when user tabs back to the page
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) loadData();
+});
 </script>
 </body>
 </html>

@@ -2366,7 +2366,7 @@ async function loadNarratives() {
 }
 
 // ── Boot ─────────────────────────────────────────────────────────────────────
-(async () => {
+async function refreshAll() {
   if (!TICKER) return;
   const heroData = await loadHero();
   const fairValue = heroData?.fair_value ?? null;
@@ -2381,7 +2381,17 @@ async function loadNarratives() {
     loadMoveDrivers(),
     loadSectorIntelligence(heroData)
   ]);
-})();
+}
+
+refreshAll();
+
+// Auto-refresh every 5 minutes
+setInterval(() => refreshAll(), 5 * 60 * 1000);
+
+// Refresh when user tabs back to the page
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) refreshAll();
+});
 </script>
 </body>
 </html>
