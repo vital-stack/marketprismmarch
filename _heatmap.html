@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Narrative Heatmap — Market Prism</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #F7F5F0;
+    --surface: #FFFFFF;
+    --surface2: #F0EDE8;
+    --surface3: #E8E5DF;
+    --border: #E2DED8;
+    --border-strong: #C8C4BE;
+    --text-primary: #1A1916;
+    --text-secondary: #5C5A55;
+    --text-tertiary: #9B9892;
+    --green: #1E8449;
+    --green-mid: #27AE60;
+    --green-bg: #EEF8F2;
+    --green-bd: #BCEACE;
+    --red: #C0392B;
+    --red-bg: #FDF0EE;
+    --red-bd: #F5C6C2;
+    --amber: #D68910;
+    --amber-bg: #FEF9EC;
+    --amber-bd: #FADED9;
+    --blue: #2471A3;
+    --blue-bg: #EBF5FB;
+    --font: 'DM Sans', system-ui, sans-serif;
+    --mono: 'DM Mono', monospace;
+  }
+
+  html { font-size: 16px; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* ── Layout ── */
+  .page-wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+
+  /* ── Nav ── */
+  .site-nav {
+    padding: 20px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 16px;
+  }
+  .nav-left { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-tertiary); }
+  .nav-back { color: var(--text-tertiary); text-decoration: none; transition: color .12s; }
+  .nav-back:hover { color: var(--text-primary); }
+  .nav-sep { color: var(--border-strong); }
+  .nav-current { color: var(--text-secondary); font-family: var(--mono); font-size: 12px; }
+  .nav-right { display: flex; align-items: center; gap: 8px; }
+  .last-updated { font-size: 11px; color: var(--text-tertiary); font-family: var(--mono); }
+  .refresh-btn {
+    font-size: 11px;
+    font-family: var(--mono);
+    padding: 5px 11px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all .12s;
+  }
+  .refresh-btn:hover { background: var(--surface2); border-color: var(--border-strong); }
+  .refresh-btn.spinning { color: var(--text-tertiary); pointer-events: none; }
+
+  /* ── Page header ── */
+  .page-header { margin-bottom: 22px; }
+  .page-title { font-size: 22px; font-weight: 500; letter-spacing: -.02em; margin-bottom: 4px; }
+  .page-sub { font-size: 13px; color: var(--text-secondary); }
+
+  /* ── Summary strip ── */
+  .summary-strip {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 700px) { .summary-strip { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 440px) { .summary-strip { grid-template-columns: repeat(2, 1fr); } }
+  .sum-cell { background: var(--surface); padding: 12px 16px; }
+  .sum-label { font-size: 9px; text-transform: uppercase; letter-spacing: .07em; color: var(--text-tertiary); margin-bottom: 3px; }
+  .sum-val { font-size: 22px; font-weight: 500; font-family: var(--mono); line-height: 1; margin-bottom: 2px; }
+  .sum-sub { font-size: 10px; color: var(--text-tertiary); }
+
+  /* ── Controls bar ── */
+  .controls-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .filter-group { display: flex; gap: 5px; flex-wrap: wrap; }
+  .filter-btn {
+    font-size: 11px;
+    padding: 5px 12px;
+    border-radius: 99px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-family: var(--font);
+    transition: all .12s;
+    white-space: nowrap;
+  }
+  .filter-btn:hover { background: var(--surface2); }
+  .filter-btn.on { background: var(--text-primary); color: #fff; border-color: var(--text-primary); }
+  .filter-btn.on-red { background: var(--red); color: #fff; border-color: var(--red); }
+  .filter-btn.on-green { background: var(--green); color: #fff; border-color: var(--green); }
+
+  .sort-group { display: flex; align-items: center; gap: 6px; }
+  .sort-label { font-size: 11px; color: var(--text-tertiary); white-space: nowrap; }
+  .sort-btn {
+    font-size: 11px;
+    font-family: var(--mono);
+    padding: 5px 10px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all .12s;
+  }
+  .sort-btn:hover { background: var(--surface2); }
+  .sort-btn.on { background: var(--text-primary); color: #fff; border-color: var(--text-primary); }
+
+  /* ── Color legend ── */
+  .legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+    font-size: 11px;
+    color: var(--text-tertiary);
+  }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+  /* ── Count bar ── */
+  .count-bar {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-bottom: 10px;
+    font-family: var(--mono);
+  }
+  .count-bar span { color: var(--text-secondary); font-weight: 500; }
+
+  /* ── Heatmap grid ── */
+  .heatmap-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 5px;
+  }
+  @media (max-width: 640px) {
+    .heatmap-grid { grid-template-columns: repeat(auto-fill, minmax(66px, 1fr)); gap: 4px; }
+  }
+
+  /* ── Cell ── */
+  .hm-cell {
+    border-radius: 8px;
+    padding: 9px 8px 7px;
+    cursor: pointer;
+    min-height: 72px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform .1s, box-shadow .1s;
+    position: relative;
+    text-decoration: none;
+  }
+  .hm-cell:hover {
+    transform: scale(1.05);
+    z-index: 5;
+    box-shadow: 0 6px 18px rgba(0,0,0,.18);
+  }
+  .cell-top { display: flex; align-items: flex-start; justify-content: space-between; }
+  .cell-ticker { font-size: 11px; font-weight: 500; font-family: var(--mono); line-height: 1; }
+  .cell-trap { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.45); flex-shrink: 0; margin-top: 1px; }
+  .cell-score { font-size: 20px; font-weight: 500; font-family: var(--mono); line-height: 1; margin: 4px 0 2px; }
+  .cell-bottom { display: flex; align-items: center; justify-content: space-between; }
+  .cell-dir { font-size: 9px; font-weight: 500; letter-spacing: .03em; opacity: .85; }
+  .cell-days { font-size: 9px; opacity: .7; font-family: var(--mono); }
+
+  /* Health bands */
+  .hb-5 { background: #1A7A43; color: #fff; }  /* 80–100 */
+  .hb-4 { background: #27AE60; color: #fff; }  /* 70–79  */
+  .hb-3 { background: #6BBF5E; color: #1A1916; } /* 60–69  */
+  .hb-2 { background: #D4AC0D; color: #1A1916; } /* 50–59  */
+  .hb-1 { background: #E07015; color: #fff; }  /* 40–49  */
+  .hb-0 { background: #C0392B; color: #fff; }  /* <40     */
+
+  /* Verdict outline overlay */
+  .hm-cell.supported { outline: 2px solid rgba(255,255,255,.5); outline-offset: -2px; }
+  .hm-cell.trap { outline: 2px solid rgba(255,80,60,.6); outline-offset: -2px; }
+
+  /* ── Skeleton ── */
+  .skel { background: var(--surface3); border-radius: 6px; animation: skel-pulse 1.4s ease-in-out infinite; }
+  @keyframes skel-pulse { 0%,100% { opacity:1; } 50% { opacity:.4; } }
+
+  /* ── Tooltip ── */
+  .tooltip {
+    position: fixed;
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    padding: 14px 16px;
+    width: 280px;
+    z-index: 1000;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .1s;
+    box-shadow: 0 8px 28px rgba(0,0,0,.14);
+  }
+  .tooltip.visible { opacity: 1; }
+  .tt-ticker { font-size: 18px; font-weight: 500; font-family: var(--mono); margin-bottom: 3px; }
+  .tt-verdict {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 99px;
+    border: 1px solid;
+    margin-bottom: 9px;
+  }
+  .tt-v-trap { background: var(--red-bg); color: var(--red); border-color: var(--red-bd); }
+  .tt-v-supported { background: var(--green-bg); color: var(--green); border-color: var(--green-bd); }
+  .tt-v-monitor { background: var(--surface2); color: var(--text-secondary); border-color: var(--border); }
+  .tt-narrative { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 10px; }
+  .tt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+  .tt-stat { background: var(--surface2); border-radius: 5px; padding: 6px 9px; }
+  .tt-stat-lbl { font-size: 9px; text-transform: uppercase; letter-spacing: .07em; color: var(--text-tertiary); margin-bottom: 1px; }
+  .tt-stat-val { font-size: 13px; font-weight: 500; font-family: var(--mono); }
+  .tt-dir-bull { color: var(--green); }
+  .tt-dir-bear { color: var(--red); }
+  .tt-dir-neutral { color: var(--amber); }
+
+  /* ── Empty / error ── */
+  .no-results { padding: 40px; text-align: center; font-size: 13px; color: var(--text-tertiary); }
+  .inline-err { padding: 16px; font-size: 13px; color: var(--red); }
+</style>
+
+  <!-- Env vars injected by Vercel -->
+  <script id="__env_script">window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '' };</script>
+</head>
+<body>
+<div class="page-wrap">
+
+  <nav class="site-nav">
+    <div class="nav-left">
+      <a class="nav-back" href="/">← Market Prism</a>
+      <span class="nav-sep">/</span>
+      <span class="nav-current">Narrative Heatmap</span>
+    </div>
+    <div class="nav-right">
+      <span class="last-updated" id="last-updated">—</span>
+      <button class="refresh-btn" id="refresh-btn" onclick="refreshData()">↻ Refresh</button>
+    </div>
+  </nav>
+
+  <div class="page-header">
+    <div class="page-title">Market Narrative Heatmap</div>
+    <div class="page-sub">Every ticker's story health at a glance — scored by narrative coherence, not price change</div>
+  </div>
+
+  <div id="summary-strip" class="summary-strip">
+    <div class="sum-cell"><div class="skel" style="height:10px;width:60%;margin-bottom:6px;"></div><div class="skel" style="height:22px;width:50%;"></div></div>
+    <div class="sum-cell"><div class="skel" style="height:10px;width:60%;margin-bottom:6px;"></div><div class="skel" style="height:22px;width:50%;"></div></div>
+    <div class="sum-cell"><div class="skel" style="height:10px;width:60%;margin-bottom:6px;"></div><div class="skel" style="height:22px;width:50%;"></div></div>
+    <div class="sum-cell"><div class="skel" style="height:10px;width:60%;margin-bottom:6px;"></div><div class="skel" style="height:22px;width:50%;"></div></div>
+    <div class="sum-cell"><div class="skel" style="height:10px;width:60%;margin-bottom:6px;"></div><div class="skel" style="height:22px;width:50%;"></div></div>
+  </div>
+
+  <div class="controls-bar">
+    <div class="filter-group" id="filter-group">
+      <button class="filter-btn on" data-f="all">All</button>
+      <button class="filter-btn" data-f="strong">Strong 75+</button>
+      <button class="filter-btn" data-f="bull">Bullish</button>
+      <button class="filter-btn" data-f="bear">Bearish</button>
+      <button class="filter-btn" data-f="trap">Trap flags</button>
+      <button class="filter-btn" data-f="supported">Supported</button>
+      <button class="filter-btn" data-f="stress">Stressed</button>
+    </div>
+    <div class="sort-group">
+      <span class="sort-label">Sort</span>
+      <button class="sort-btn on" data-s="health">Health</button>
+      <button class="sort-btn" data-s="energy">Energy</button>
+      <button class="sort-btn" data-s="frag">Fragility</button>
+      <button class="sort-btn" data-s="exdays">Exhaustion</button>
+      <button class="sort-btn" data-s="az">A–Z</button>
+    </div>
+  </div>
+
+  <div class="legend-bar">
+    <div class="legend-item"><div class="legend-swatch" style="background:#1A7A43"></div>80–100 Strong</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#27AE60"></div>70–79 Good</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#6BBF5E"></div>60–69 Moderate</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#D4AC0D"></div>50–59 Fragile</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#E07015"></div>40–49 Weak</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#C0392B"></div>&lt;40 Stressed</div>
+    <div class="legend-item" style="margin-left:8px;">
+      <div style="width:10px;height:10px;border-radius:2px;border:2px solid rgba(255,80,60,.6);"></div>Trap flag
+    </div>
+    <div class="legend-item">
+      <div style="width:10px;height:10px;border-radius:2px;border:2px solid rgba(255,255,255,.5);background:#27AE60;"></div>Supported
+    </div>
+    <div class="legend-item">↑ Bullish &nbsp; ↓ Bearish &nbsp; → Neutral</div>
+  </div>
+
+  <div class="count-bar" id="count-bar">Loading…</div>
+  <div class="heatmap-grid" id="heatmap-grid">
+    <!-- skeleton -->
+    ${Array(60).fill(0).map(() => `<div class="skel" style="height:72px;border-radius:8px;"></div>`).join('')}
+  </div>
+
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+const SUPABASE_URL  = window.__env?.SUPABASE_URL  || '';
+const SUPABASE_ANON = window.__env?.SUPABASE_ANON || '';
+
+if (!SUPABASE_URL || !SUPABASE_ANON) {
+  document.getElementById('heatmap-grid').innerHTML =
+    '<div class="inline-err">Config error: SUPABASE_URL or SUPABASE_ANON not set. Check Vercel environment variables.</div>';
+  throw new Error('Missing Supabase config');
+}
+
+async function sbFetch(table, params) {
+  const qs = Object.entries(params)
+    .filter(([,v]) => v !== undefined && v !== null && v !== '')
+    .map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+    .join('&');
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${qs}`, {
+    headers: {
+      'apikey': SUPABASE_ANON,
+      'Authorization': `Bearer ${SUPABASE_ANON}`,
+      'Accept': 'application/json'
+    }
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`[${table}] ${res.status}: ${body.slice(0,200)}`);
+  }
+  const text = await res.text();
+  try { return JSON.parse(text); }
+  catch(e) { throw new Error(`[${table}] JSON parse failed. Starts with: ${text.slice(0,120)}`); }
+}
+
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── State ──────────────────────────────────────────────────────────────────
+let ALL_TICKERS = [];
+let activeFilter = 'all';
+let activeSort   = 'health';
+
+// ── Derived helpers ────────────────────────────────────────────────────────
+function fragility(r) {
+  const coord  = r.worst_coordination ?? 0;
+  const invH   = 100 - (r.pulse_health_score ?? 50);
+  const drift  = Math.min(100, Math.abs(r.pulse_drift ?? 0));
+  return Math.round(coord * 0.35 + invH * 0.35 + drift * 0.30);
+}
+
+function healthBand(h) {
+  if (h >= 80) return 'hb-5';
+  if (h >= 70) return 'hb-4';
+  if (h >= 60) return 'hb-3';
+  if (h >= 50) return 'hb-2';
+  if (h >= 40) return 'hb-1';
+  return 'hb-0';
+}
+
+function dirArrow(d) {
+  if (!d) return '→';
+  if (d.includes('BULL')) return '↑';
+  if (d.includes('BEAR')) return '↓';
+  return '→';
+}
+
+function dirCls(d) {
+  if (!d) return 'tt-dir-neutral';
+  if (d.includes('BULL')) return 'tt-dir-bull';
+  if (d.includes('BEAR')) return 'tt-dir-bear';
+  return 'tt-dir-neutral';
+}
+
+function verdictCls(v) {
+  if (v === 'Narrative Trap')          return 'tt-v-trap';
+  if (v === 'Structurally Supported')  return 'tt-v-supported';
+  return 'tt-v-monitor';
+}
+
+function cellVerdictClass(v) {
+  if (v === 'Narrative Trap')         return 'trap';
+  if (v === 'Structurally Supported') return 'supported';
+  return '';
+}
+
+// ── Data fetch ─────────────────────────────────────────────────────────────
+async function fetchData() {
+  const rows = await sbFetch('ticker_pulse', {
+    select: [
+      'ticker','snapshot_date','pulse_health_score','pulse_label',
+      'direction_forecast','decay_status','prevailing_verdict',
+      'avg_energy_remaining','nearest_exhaustion_days','pulse_vms',
+      'worst_coordination','trap_count','fvd_pct','net_sentiment',
+      'prevailing_narrative','pulse_drift','active_narrative_count',
+      'pulse_nrs','pulse_coordination','pulse_summary','worst_nrs'
+    ].join(','),
+    order: 'pulse_health_score.desc',
+    limit: '500'
+  });
+
+  return rows.map(r => ({
+    t:         r.ticker,
+    date:      r.snapshot_date,
+    health:    Math.round(r.pulse_health_score ?? 50),
+    label:     r.pulse_label ?? 'STABLE',
+    dir:       r.direction_forecast ?? 'NEUTRAL',
+    verdict:   r.prevailing_verdict ?? 'Monitoring',
+    energy:    Math.round(r.avg_energy_remaining ?? 50),
+    exdays:    Math.round(r.nearest_exhaustion_days ?? 0),
+    frag:      fragility(r),
+    traps:     r.trap_count ?? 0,
+    coord:     Math.round(r.worst_coordination ?? 0),
+    fvd:       (r.fvd_pct != null && Math.abs(r.fvd_pct) < 400) ? +r.fvd_pct.toFixed(1) : null,
+    sentiment: Math.round(r.net_sentiment ?? 0),
+    narrative: (r.prevailing_narrative ?? '').slice(0, 120),
+    vms:       Math.round(r.pulse_vms ?? 50),
+    status:    r.decay_status ?? 'FRESH',
+    summary:   (r.pulse_summary ?? '').slice(0, 200),
+  }));
+}
+
+// ── Summary strip ──────────────────────────────────────────────────────────
+function renderSummary(data) {
+  if (!data.length) return;
+  const traps     = data.filter(d => d.verdict === 'Narrative Trap').length;
+  const supported = data.filter(d => d.verdict === 'Structurally Supported').length;
+  const strong    = data.filter(d => d.health >= 75).length;
+  const stressed  = data.filter(d => d.label  === 'STRESSED').length;
+  const avgHealth = Math.round(data.reduce((a,b) => a + b.health, 0) / data.length);
+  const avgEnergy = Math.round(data.reduce((a,b) => a + b.energy, 0) / data.length);
+  const hCol      = avgHealth >= 70 ? 'var(--green)' : avgHealth >= 55 ? 'var(--amber)' : 'var(--red)';
+
+  const latestDate = data[0]?.date ?? '';
+  document.getElementById('last-updated').textContent = latestDate
+    ? `Snapshot: ${new Date(latestDate).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`
+    : '';
+
+  document.getElementById('summary-strip').innerHTML = `
+    <div class="sum-cell">
+      <div class="sum-label">Avg Narrative Health</div>
+      <div class="sum-val" style="color:${hCol}">${avgHealth}</div>
+      <div class="sum-sub">out of 100</div>
+    </div>
+    <div class="sum-cell">
+      <div class="sum-label">Avg Energy</div>
+      <div class="sum-val">${avgEnergy}</div>
+      <div class="sum-sub">avg remaining</div>
+    </div>
+    <div class="sum-cell">
+      <div class="sum-label">Strong Narratives</div>
+      <div class="sum-val" style="color:var(--green)">${strong}</div>
+      <div class="sum-sub">health ≥ 75</div>
+    </div>
+    <div class="sum-cell">
+      <div class="sum-label">Trap Flags</div>
+      <div class="sum-val" style="color:var(--red)">${traps}</div>
+      <div class="sum-sub">${supported} structurally supported</div>
+    </div>
+    <div class="sum-cell">
+      <div class="sum-label">Stressed</div>
+      <div class="sum-val" style="color:var(--amber)">${stressed}</div>
+      <div class="sum-sub">label = STRESSED</div>
+    </div>`;
+}
+
+// ── Grid render ────────────────────────────────────────────────────────────
+function getFiltered() {
+  let data = [...ALL_TICKERS];
+  if (activeFilter === 'strong')    data = data.filter(d => d.health >= 75);
+  if (activeFilter === 'bull')      data = data.filter(d => d.dir.includes('BULL'));
+  if (activeFilter === 'bear')      data = data.filter(d => d.dir.includes('BEAR'));
+  if (activeFilter === 'trap')      data = data.filter(d => d.verdict === 'Narrative Trap');
+  if (activeFilter === 'supported') data = data.filter(d => d.verdict === 'Structurally Supported');
+  if (activeFilter === 'stress')    data = data.filter(d => d.label === 'STRESSED');
+
+  const sortFns = {
+    health:  (a,b) => b.health - a.health,
+    energy:  (a,b) => b.energy - a.energy,
+    frag:    (a,b) => b.frag   - a.frag,
+    exdays:  (a,b) => a.exdays - b.exdays,
+    az:      (a,b) => a.t.localeCompare(b.t),
+  };
+  data.sort(sortFns[activeSort] || sortFns.health);
+  return data;
+}
+
+function renderGrid() {
+  const data = getFiltered();
+  renderSummary(ALL_TICKERS);
+
+  document.getElementById('count-bar').innerHTML =
+    `Showing <span>${data.length}</span> of <span>${ALL_TICKERS.length}</span> tickers`;
+
+  if (!data.length) {
+    document.getElementById('heatmap-grid').innerHTML =
+      '<div class="no-results">No tickers match this filter.</div>';
+    return;
+  }
+
+  document.getElementById('heatmap-grid').innerHTML = data.map(d => {
+    const vCls = cellVerdictClass(d.verdict);
+    return `<a class="hm-cell ${healthBand(d.health)} ${vCls}"
+         href="/ticker/${encodeURIComponent(d.t)}"
+         data-t="${esc(d.t)}"
+         title="${esc(d.t)}">
+      <div class="cell-top">
+        <span class="cell-ticker">${esc(d.t)}</span>
+        ${d.traps > 0 ? `<span class="cell-trap"></span>` : ''}
+      </div>
+      <div class="cell-score">${d.health}</div>
+      <div class="cell-bottom">
+        <span class="cell-dir">${dirArrow(d.dir)}</span>
+        <span class="cell-days">${d.exdays}d</span>
+      </div>
+    </a>`;
+  }).join('');
+
+  // Attach tooltips (prevent navigation on hover)
+  document.querySelectorAll('.hm-cell').forEach(cell => {
+    cell.addEventListener('mouseenter', e => showTooltip(e, cell.dataset.t));
+    cell.addEventListener('mouseleave', () => {
+      document.getElementById('tooltip').classList.remove('visible');
+    });
+  });
+}
+
+// ── Tooltip ────────────────────────────────────────────────────────────────
+function showTooltip(e, ticker) {
+  const d = ALL_TICKERS.find(x => x.t === ticker);
+  if (!d) return;
+  const tt   = document.getElementById('tooltip');
+  const fvdStr = d.fvd != null ? (d.fvd > 0 ? '+' : '') + d.fvd + '% vs FV' : '—';
+
+  tt.innerHTML = `
+    <div class="tt-ticker">${esc(d.t)}</div>
+    <span class="tt-verdict ${verdictCls(d.verdict)}">${esc(d.verdict)}</span>
+    <div class="tt-narrative">${esc(d.narrative || d.summary || 'No narrative summary available.')}</div>
+    <div class="tt-grid">
+      <div class="tt-stat">
+        <div class="tt-stat-lbl">Health</div>
+        <div class="tt-stat-val">${d.health}/100</div>
+      </div>
+      <div class="tt-stat">
+        <div class="tt-stat-lbl">Direction</div>
+        <div class="tt-stat-val ${dirCls(d.dir)}">${dirArrow(d.dir)} ${esc(d.dir.replace(/_/g,' '))}</div>
+      </div>
+      <div class="tt-stat">
+        <div class="tt-stat-lbl">Narrative Energy</div>
+        <div class="tt-stat-val">${d.energy}/100</div>
+      </div>
+      <div class="tt-stat">
+        <div class="tt-stat-lbl">Exhaustion</div>
+        <div class="tt-stat-val">${d.exdays}d</div>
+      </div>
+      <div class="tt-stat">
+        <div class="tt-stat-lbl">Fragility</div>
+        <div class="tt-stat-val">${d.frag}/100</div>
+      </div>
+      <div class="tt-stat">
+        <div class="tt-stat-lbl">FV Gap</div>
+        <div class="tt-stat-val">${fvdStr}</div>
+      </div>
+    </div>`;
+
+  tt.classList.add('visible');
+
+  const rect = e.currentTarget.getBoundingClientRect();
+  let left = rect.right + 10;
+  if (left + 290 > window.innerWidth) left = rect.left - 298;
+  let top  = rect.top;
+  if (top + 240 > window.innerHeight) top = window.innerHeight - 248;
+  tt.style.left = left + 'px';
+  tt.style.top  = top  + 'px';
+}
+
+// ── Controls ───────────────────────────────────────────────────────────────
+document.getElementById('filter-group').addEventListener('click', e => {
+  const btn = e.target.closest('.filter-btn');
+  if (!btn) return;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('on','on-red','on-green'));
+  btn.classList.add('on');
+  activeFilter = btn.dataset.f;
+  renderGrid();
+});
+
+document.querySelector('.sort-group').addEventListener('click', e => {
+  const btn = e.target.closest('.sort-btn');
+  if (!btn) return;
+  document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  activeSort = btn.dataset.s;
+  renderGrid();
+});
+
+// ── Refresh ────────────────────────────────────────────────────────────────
+async function refreshData() {
+  const btn = document.getElementById('refresh-btn');
+  btn.textContent = '↻ Loading…';
+  btn.classList.add('spinning');
+  try {
+    ALL_TICKERS = await fetchData();
+    renderGrid();
+  } catch(err) {
+    document.getElementById('heatmap-grid').innerHTML =
+      `<div class="inline-err">Failed to load: ${esc(err.message)}</div>`;
+  } finally {
+    btn.textContent = '↻ Refresh';
+    btn.classList.remove('spinning');
+  }
+}
+
+// ── Auto-refresh every 5 minutes ──────────────────────────────────────────
+setInterval(() => refreshData(), 5 * 60 * 1000);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) refreshData();
+});
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+refreshData();
+</script>
+</body>
+</html>
