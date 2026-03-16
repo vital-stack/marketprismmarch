@@ -4,28 +4,30 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Heatmap — Market Prism</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/fonts/geist-sans/style.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/fonts/geist-mono/style.min.css" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --mp-obsidian: #0A0E1A;
-    --mp-deep: #0F1628;
-    --mp-surface: #141D35;
-    --mp-border: rgba(255,255,255,0.08);
-    --mp-border-mid: rgba(255,255,255,0.14);
-    --mp-blue: #1A6EFF;
-    --mp-cyan: #00C2FF;
-    --mp-teal: #00E5B4;
-    --mp-prism-4: #7B61FF;
-    --mp-prism-5: #FF6B6B;
-    --mp-text-primary: #F0F4FF;
-    --mp-text-secondary: #8B97B8;
-    --mp-text-tertiary: #4A5578;
-    --mp-amber: #EF9F27;
-    --font-display: 'DM Serif Display', Georgia, serif;
-    --font-body: 'DM Sans', system-ui, sans-serif;
-    --font-mono: 'DM Mono', monospace;
+    --mp-obsidian: #080B10;
+    --mp-deep: #0C1018;
+    --mp-surface: #111520;
+    --mp-border: rgba(255,255,255,0.06);
+    --mp-border-mid: rgba(255,255,255,0.10);
+    --mp-blue: #3B82F6;
+    --mp-cyan: #4DF0A0;
+    --mp-teal: #4DF0A0;
+    --mp-prism-4: #8B5CF6;
+    --mp-prism-5: #F87171;
+    --mp-text-primary: #E8EDF5;
+    --mp-text-secondary: #7A8499;
+    --mp-text-tertiary: #3D4558;
+    --mp-amber: #FBBF24;
+    --font-display: 'Syne', system-ui, sans-serif;
+    --font-body: 'Geist', system-ui, sans-serif;
+    --font-mono: 'Geist Mono', monospace;
   }
 
   html { font-size: 16px; }
@@ -35,6 +37,14 @@
     color: var(--mp-text-primary);
     min-height: 100vh;
     line-height: 1.5;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.01) 2px, rgba(255,255,255,0.01) 4px);
+    pointer-events: none;
+    z-index: 9999;
   }
 
   /* ── Side Nav ── */
@@ -84,9 +94,9 @@
     background: rgba(255,255,255,0.03);
   }
   .side-nav-item.active {
-    color: var(--mp-blue);
-    border-left-color: var(--mp-blue);
-    background: rgba(26,110,255,0.1);
+    color: var(--mp-cyan);
+    border-left-color: var(--mp-cyan);
+    background: rgba(77,240,160,0.1);
     font-weight: 500;
   }
   .side-nav-item svg { flex-shrink: 0; opacity: 0.7; }
@@ -134,7 +144,7 @@
     cursor: pointer;
     transition: all .15s;
   }
-  .refresh-btn:hover { background: rgba(26,110,255,0.15); border-color: var(--mp-blue); color: var(--mp-text-primary); }
+  .refresh-btn:hover { background: rgba(77,240,160,0.15); border-color: var(--mp-cyan); color: var(--mp-text-primary); }
   .refresh-btn.spinning { color: var(--mp-text-tertiary); pointer-events: none; }
 
   /* ── Page header ── */
@@ -372,12 +382,12 @@
 <nav class="side-nav">
   <a class="side-nav-logo" href="/">
     <svg width="28" height="28" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="40" height="40" rx="8" fill="#1A6EFF" fill-opacity="0.15"/>
-      <path d="M20 8L30 14V26L20 32L10 26V14L20 8Z" stroke="#1A6EFF" stroke-width="1.5" fill="none"/>
-      <path d="M20 8L30 14L20 20L10 14L20 8Z" fill="#1A6EFF" fill-opacity="0.3"/>
-      <path d="M20 20V32" stroke="#1A6EFF" stroke-width="1.5"/>
-      <path d="M10 14V26" stroke="#1A6EFF" stroke-width="1" opacity="0.4"/>
-      <path d="M30 14V26" stroke="#1A6EFF" stroke-width="1" opacity="0.4"/>
+      <rect width="40" height="40" rx="8" fill="#4DF0A0" fill-opacity="0.15"/>
+      <path d="M20 8L30 14V26L20 32L10 26V14L20 8Z" stroke="#4DF0A0" stroke-width="1.5" fill="none"/>
+      <path d="M20 8L30 14L20 20L10 14L20 8Z" fill="#4DF0A0" fill-opacity="0.3"/>
+      <path d="M20 20V32" stroke="#4DF0A0" stroke-width="1.5"/>
+      <path d="M10 14V26" stroke="#4DF0A0" stroke-width="1" opacity="0.4"/>
+      <path d="M30 14V26" stroke="#4DF0A0" stroke-width="1" opacity="0.4"/>
     </svg>
     <span class="side-nav-logo-text">Market Prism</span>
   </a>
