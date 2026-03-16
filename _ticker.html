@@ -1059,9 +1059,180 @@
   /* ── Error / empty states ── */
   .inline-err { padding: 14px 18px; font-size: 13px; color: var(--accent-breaking); }
   .no-data    { padding: 16px 18px; font-size: 13px; color: var(--text-tertiary); }
+
+  /* ── Diagnosis Strip ── */
+  .diag-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 22px;
+  }
+  @media (max-width: 640px) { .diag-strip { grid-template-columns: repeat(2,1fr); } }
+  .diag-cell {
+    background: var(--surface);
+    padding: 11px 14px;
+  }
+  .diag-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--text-tertiary);
+    margin-bottom: 3px;
+  }
+  .diag-val {
+    font-size: 17px;
+    font-weight: 500;
+    font-family: var(--mono);
+    line-height: 1.1;
+    margin-bottom: 2px;
+  }
+  .diag-sub { font-size: 10px; color: var(--text-tertiary); }
+
+  /* ── Two-col layout for pulse panels ── */
+  .pulse-two {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 640px) { .pulse-two { grid-template-columns: 1fr; } }
+
+  /* ── Primary Claim card ── */
+  .claim-title {
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+    margin-bottom: 8px;
+  }
+  .claim-meta {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+  .claim-bullets {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .claim-bullet {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    padding: 5px 8px;
+    background: var(--surface2);
+    border-radius: 6px;
+  }
+  .claim-bullet span { color: var(--text-tertiary); }
+  .claim-bullet strong { font-family: var(--mono); font-weight: 500; }
+  .claim-summary {
+    font-size: 11px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    background: var(--surface2);
+    padding: 9px 11px;
+    border-radius: 7px;
+  }
+
+  /* ── Warranted vs Hype ── */
+  .dual-score {
+    display: grid;
+    grid-template-columns: 1fr 1px 1fr;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .dual-divider { height: 44px; background: var(--border); }
+  .score-block { text-align: center; }
+  .score-block-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--text-tertiary);
+    margin-bottom: 3px;
+  }
+  .score-block-num {
+    font-size: 30px;
+    font-weight: 500;
+    font-family: var(--mono);
+    line-height: 1;
+  }
+  .score-bar-row { margin-bottom: 8px; }
+  .score-bar-top {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-bottom: 3px;
+  }
+  .score-bar-top strong { font-family: var(--mono); color: var(--text-primary); font-weight: 500; }
+  .score-bar-track {
+    height: 5px;
+    background: var(--surface3);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .score-bar-fill { height: 100%; border-radius: 99px; }
+  .fill-green { background: var(--accent-surging); }
+  .fill-amber { background: var(--accent-fragile); }
+  .fill-red   { background: var(--accent-breaking); }
+
+  /* ── Heatmap ── */
+  .heatmap-head {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .heatmap-head > div {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--text-tertiary);
+    text-align: center;
+  }
+  .heatmap-head > div:first-child { text-align: left; }
+  .heatmap-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+  }
+  .heatmap-row:last-child { border-bottom: none; }
+  .hm-name { font-size: 12px; font-weight: 500; color: var(--text-primary); }
+  .hm-sub  { font-size: 10px; color: var(--text-tertiary); }
+  .hm-cell {
+    text-align: center;
+    border-radius: 5px;
+    padding: 4px 2px;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    margin: 0 3px;
+  }
+  .hc-green { background: var(--accent-surging-bg); color: var(--accent-supported); }
+  .hc-amber { background: var(--accent-fragile-bg); color: var(--accent-fragile); }
+  .hc-red   { background: var(--accent-breaking-bg); color: var(--accent-breaking); }
+  .heatmap-foot {
+    padding: 9px 14px;
+    font-size: 11px;
+    color: var(--text-tertiary);
+    border-top: 1px solid var(--border);
+  }
+  @media (max-width: 500px) {
+    .heatmap-head { display: none; }
+    .heatmap-row  { grid-template-columns: 1fr; gap: 4px; }
+  }
 </style>
   <!-- Env vars injected by Vercel — do not edit this line -->
-  <script id="__env_script">window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '' };</script>
+  <script id="__env_script">window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '', TICKER: '' };</script>
 </head>
 <body>
 <div class="page-wrap">
@@ -1085,6 +1256,47 @@
     <div class="hero-right">
       <div class="skel" style="width:90px;height:26px;margin-bottom:5px;"></div>
       <div class="skel" style="width:60px;height:13px;"></div>
+    </div>
+  </div>
+
+  <!-- Diagnosis Strip -->
+  <div id="diag-strip" class="diag-strip">
+    <div class="diag-cell"><div class="diag-label">Phase</div><div class="diag-val"><div class="skel" style="width:70px;height:20px;border-radius:99px;"></div></div></div>
+    <div class="diag-cell"><div class="diag-label">Fragility</div><div class="diag-val"><div class="skel" style="width:50px;height:17px;"></div></div></div>
+    <div class="diag-cell"><div class="diag-label">Energy</div><div class="diag-val"><div class="skel" style="width:50px;height:17px;"></div></div></div>
+    <div class="diag-cell"><div class="diag-label">Exhaustion</div><div class="diag-val"><div class="skel" style="width:40px;height:17px;"></div></div></div>
+    <div class="diag-cell"><div class="diag-label">Net Pressure</div><div class="diag-val"><div class="skel" style="width:40px;height:17px;"></div></div></div>
+    <div class="diag-cell"><div class="diag-label">Health</div><div class="diag-val"><div class="skel" style="width:50px;height:17px;"></div></div></div>
+    <div class="diag-cell"><div class="diag-label">Direction</div><div class="diag-val"><div class="skel" style="width:60px;height:17px;"></div></div></div>
+    <div class="diag-cell"><div class="diag-label">Fair Value Gap</div><div class="diag-val"><div class="skel" style="width:50px;height:17px;"></div></div></div>
+  </div>
+
+  <!-- Primary Claim + Warranted vs Hype -->
+  <div class="pulse-two">
+    <div class="section" style="margin-bottom:0;">
+      <div class="section-label">Primary Claim</div>
+      <div class="section-body" style="padding:14px 16px;" id="primary-claim-body">
+        <div class="skel" style="height:14px;width:90%;margin-bottom:8px;"></div>
+        <div class="skel" style="height:14px;width:70%;margin-bottom:12px;"></div>
+        <div class="skel" style="height:60px;border-radius:7px;"></div>
+      </div>
+    </div>
+    <div class="section" style="margin-bottom:0;">
+      <div class="section-label">Warranted vs Hype</div>
+      <div class="section-body" style="padding:14px 16px;" id="warranted-body">
+        <div class="skel" style="height:44px;margin-bottom:14px;"></div>
+        <div class="skel" style="height:5px;margin-bottom:10px;border-radius:99px;"></div>
+        <div class="skel" style="height:5px;margin-bottom:10px;border-radius:99px;"></div>
+        <div class="skel" style="height:5px;border-radius:99px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Narrative Heatmap -->
+  <div class="section">
+    <div class="section-label">Narrative Heatmap</div>
+    <div class="section-body" id="heatmap-body">
+      <div style="padding:14px;"><div class="skel" style="height:80px;border-radius:7px;"></div></div>
     </div>
   </div>
 
@@ -1157,6 +1369,7 @@
           <div class="legend-item"><div class="leg-dash"></div> Fair Value</div>
           <div class="legend-item"><div class="leg-dot" style="background:var(--accent-surging);"></div> Bullish</div>
           <div class="legend-item"><div class="leg-dot" style="background:var(--accent-breaking);"></div> Bearish</div>
+          <div class="legend-item"><div class="leg-line" style="background:var(--accent-stable);opacity:0.7;border-top:2px dashed var(--accent-stable);height:0;width:14px;"></div> Narrative energy</div>
         </div>
       </div>
       <div class="bear-stories-wrap" id="bear-stories-wrap" style="display:none;">
@@ -1291,7 +1504,11 @@ const SUPABASE_ANON = window.__env?.SUPABASE_ANON || '';
 
 // Extract ticker from URL path: /ticker/NVDA
 const pathParts = location.pathname.split('/').filter(Boolean);
-const TICKER = decodeURIComponent(pathParts[pathParts.length - 1] || '');
+const TICKER = (
+  window.__env?.TICKER ||
+  new URLSearchParams(location.search).get('t') ||
+  decodeURIComponent(pathParts[pathParts.length - 1] || '')
+).toUpperCase().replace(/[^A-Z0-9.\-]/g, '');
 
 if (!TICKER) {
   document.getElementById('hero').innerHTML = '<div class="no-data">No ticker specified in URL.</div>';
@@ -1388,8 +1605,9 @@ async function loadHero() {
     }
     const h = healthRows[0] || {};
     const delta = fmtPct(r.price_change_pct);
-    const verdictClass = r.prism_verdict === 'Narrative Trap' ? 'verdict-trap'
-      : r.prism_verdict === 'Structurally Supported' ? 'verdict-supported'
+    const verdict = r.prism_verdict || r.source_verdict || 'Monitoring';
+    const verdictClass = verdict === 'Narrative Trap' ? 'verdict-trap'
+      : (verdict === 'Structurally Supported' || verdict === 'Monitoring' && r.source_verdict === 'Structurally Supported') ? 'verdict-supported'
       : 'verdict-monitoring';
 
     // Narrative trend badge
@@ -1406,7 +1624,7 @@ async function loadHero() {
         <div class="hero-ticker-row">
           <span class="hero-ticker">${esc(r.ticker)}</span>
           <span class="hero-state-badge ${stateClass(r.narrative_state)}">${esc(r.narrative_state || '—')}</span>
-          <span class="verdict-badge ${verdictClass}">${esc(r.prism_verdict || 'Monitoring')}</span>
+          <span class="verdict-badge ${verdictClass}">${esc(verdict)}</span>
           ${trendBadge}
           ${stockTypeBadge}
         </div>
@@ -1579,26 +1797,33 @@ async function loadSectorIntelligence(heroRow) {
 // ── 2. Price Chart ───────────────────────────────────────────────────────────
 let ALL_SNAPS = [];   // full price history
 let ALL_NARRS = [];   // full scorecard rows with story data
+let ALL_DECAY = [];   // narrative energy time series
 let CHART_FV  = null; // fair value for dashed line
 
 async function loadChart(fairValue) {
   if (!TICKER) return;
   CHART_FV = fairValue;
   try {
-    ALL_SNAPS = await sbFetch('ticker_snapshots', {
-      select: 'snapshot_date,price_close',
-      ticker: `eq.${TICKER}`,
-      order:  'snapshot_date.asc',
-      limit:  '365'
-    });
-
-    // v_dash_narrative_health has sentiment_score and story context per date
-    ALL_NARRS = await sbFetch('v_dash_narrative_health', {
-      select: 'snapshot_date,sentiment_score,narrative_trend',
-      ticker: `eq.${TICKER}`,
-      order:  'snapshot_date.asc',
-      limit:  '365'
-    }).catch(() => []);
+    [ALL_SNAPS, ALL_NARRS, ALL_DECAY] = await Promise.all([
+      sbFetch('ticker_snapshots', {
+        select: 'snapshot_date,price_close',
+        ticker: `eq.${TICKER}`,
+        order:  'snapshot_date.asc',
+        limit:  '365'
+      }),
+      sbFetch('v_dash_narrative_health', {
+        select: 'snapshot_date,sentiment_score,narrative_trend',
+        ticker: `eq.${TICKER}`,
+        order:  'snapshot_date.asc',
+        limit:  '365'
+      }).catch(() => []),
+      sbFetch('decay_metrics', {
+        select: 'snapshot_date,energy_remaining_pct,day_number',
+        ticker: `eq.${TICKER}`,
+        order:  'snapshot_date.asc',
+        limit:  '365'
+      }).catch(() => [])
+    ]);
 
     if (!ALL_SNAPS.length) {
       document.getElementById('chart-outer').innerHTML = '<div class="chart-no-data">No price history available.</div>';
@@ -1767,6 +1992,41 @@ function drawChart(snaps, narrs, fairValue) {
   ctx.beginPath(); ctx.setLineDash([]);
   snaps.forEach((s,i) => { if (s.price_close==null) return; i===0 ? ctx.moveTo(xOf(i),yOf(s.price_close)) : ctx.lineTo(xOf(i),yOf(s.price_close)); });
   ctx.strokeStyle = '#1A1916'; ctx.lineWidth = 1.5; ctx.stroke();
+
+  // Narrative energy overlay (right axis, 0-100 scale, blue dashed)
+  const decayFiltered = ALL_DECAY.filter(d => {
+    if (!d.snapshot_date) return false;
+    const ds = d.snapshot_date.slice(0,10);
+    if (!snaps.length) return true;
+    return ds >= snaps[0].snapshot_date.slice(0,10) && ds <= snaps[snaps.length-1].snapshot_date.slice(0,10);
+  });
+  if (decayFiltered.length > 1) {
+    function yEnergy(v) { return PAD.top + (1 - Math.min(100, Math.max(0, v)) / 100) * CH; }
+    ctx.save();
+    ctx.setLineDash([3,3]);
+    ctx.strokeStyle = '#2471A3';
+    ctx.lineWidth = 1.2;
+    ctx.globalAlpha = 0.7;
+    ctx.beginPath();
+    decayFiltered.forEach((d, i) => {
+      const key = d.snapshot_date.slice(0,10);
+      const idx = dateIdx[key];
+      if (idx == null) return;
+      const x = xOf(idx);
+      const y = yEnergy(d.energy_remaining_pct ?? 0);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    ctx.restore();
+    // Right axis label
+    ctx.save();
+    ctx.font = `9px 'DM Mono', monospace`;
+    ctx.fillStyle = '#2471A3';
+    ctx.globalAlpha = 0.8;
+    ctx.textAlign = 'left';
+    ctx.fillText('Energy', W - PAD.right + 2, PAD.top + 8);
+    ctx.restore();
+  }
 
   // Build dot map keyed by date
   const dateIdx = {};
@@ -2378,11 +2638,305 @@ async function loadNarratives() {
   }
 }
 
+// ── Pulse: fetch ticker_pulse for new panels ──────────────────────────────────
+async function loadPulse() {
+  if (!TICKER) return null;
+  try {
+    const rows = await sbFetch('ticker_pulse', {
+      select: [
+        'decay_status','direction_forecast','pulse_health_score',
+        'avg_energy_remaining','nearest_exhaustion_days','pulse_drift',
+        'worst_coordination','trap_count','prevailing_verdict','fvd_pct',
+        'fair_value','pulse_label','pulse_vms','pulse_coordination',
+        'pulse_or','prevailing_narrative','prevailing_energy',
+        'narrative_shifted','pulse_nrs','pulse_ccp','net_sentiment',
+        'sentiment_momentum','active_narrative_count','pulse_summary',
+        'narrative_loyalty','worst_nrs','coordinated_count','worst_vms'
+      ].join(','),
+      ticker:  `eq.${TICKER}`,
+      order:   'snapshot_date.desc',
+      limit:   '1'
+    }).catch(() => []);
+    return rows[0] || null;
+  } catch { return null; }
+}
+
+// ── Helpers for pulse panels ──────────────────────────────────────────────────
+function fragility(p) {
+  // Derived: worst_coordination weight + inverse health + divergence proxy
+  if (!p) return null;
+  const coord   = p.worst_coordination ?? 0;
+  const invHlth = 100 - (p.pulse_health_score ?? 50);
+  const drift   = Math.min(100, Math.abs(p.pulse_drift ?? 0));
+  return Math.round(coord * 0.35 + invHlth * 0.35 + drift * 0.30);
+}
+
+function phaseFromPulse(p) {
+  if (!p) return 'Monitoring';
+  const s = (p.decay_status || '').toUpperCase();
+  if (s === 'FRESH')    return 'Emerging';
+  if (s === 'ACTIVE')   return 'Surging';
+  if (s === 'STABLE')   return 'Mature';
+  if (s === 'DECAYING') return 'Fading';
+  if (s === 'DORMANT')  return 'Exhausting';
+  const e = p.avg_energy_remaining ?? 50;
+  const f = fragility(p) ?? 50;
+  if (e >= 75 && f < 35) return 'Surging';
+  if (e >= 55 && f < 55) return 'Mature';
+  if (e >= 35)           return 'Fading';
+  return 'Exhausting';
+}
+
+function phaseBadgeClass(phase) {
+  if (/surging|emerg/i.test(phase))  return 'badge-surging';
+  if (/mature/i.test(phase))         return 'badge-stable';
+  if (/fading|exhaust/i.test(phase)) return 'badge-breaking';
+  return 'badge-stable';
+}
+
+function heatClass(score) {
+  if (score >= 65) return 'hc-green';
+  if (score >= 40) return 'hc-amber';
+  return 'hc-red';
+}
+
+function statusFromScores(evidence, energy, coord) {
+  if (evidence >= 65 && energy >= 60 && coord < 45) return { label:'Strengthening', cls:'verdict-supported' };
+  if (coord >= 65)                                   return { label:'Crowded',        cls:'verdict-trap' };
+  if (evidence < 45 || energy < 35)                 return { label:'Breaking',       cls:'verdict-trap' };
+  return { label:'Fragile', cls:'verdict-monitoring' };
+}
+
+// ── Render: Diagnosis Strip ───────────────────────────────────────────────────
+function renderDiagStrip(p) {
+  const el = document.getElementById('diag-strip');
+  if (!el) return;
+  if (!p) { el.innerHTML = '<div class="diag-cell" style="grid-column:1/-1;"><div class="no-data" style="padding:12px;">No pulse data available.</div></div>'; return; }
+
+  const phase  = phaseFromPulse(p);
+  const frag   = fragility(p);
+  const energy = p.avg_energy_remaining != null ? Math.round(p.avg_energy_remaining) : null;
+  const exdays = p.nearest_exhaustion_days != null ? Math.round(p.nearest_exhaustion_days) : null;
+  const press  = p.pulse_drift != null ? (p.pulse_drift > 0 ? '+' : '') + Math.round(p.pulse_drift) : '—';
+  const health = p.pulse_health_score != null ? Math.round(p.pulse_health_score) : null;
+  const fvd    = p.fvd_pct != null ? (p.fvd_pct > 0 ? '+' : '') + p.fvd_pct.toFixed(1) + '%' : '—';
+  const fvdCls = p.fvd_pct > 5 ? 'color:var(--accent-breaking)' : p.fvd_pct < -5 ? 'color:var(--accent-surging)' : '';
+
+  el.innerHTML = `
+    <div class="diag-cell">
+      <div class="diag-label">Phase</div>
+      <div class="diag-val" style="font-size:13px;padding-top:2px;">
+        <span class="hero-state-badge ${phaseBadgeClass(phase)}">${esc(phase)}</span>
+      </div>
+      <div class="diag-sub">${esc(p.decay_status || '')}</div>
+    </div>
+    <div class="diag-cell">
+      <div class="diag-label">Fragility</div>
+      <div class="diag-val">${frag != null ? frag : '—'}<span style="font-size:11px;color:var(--text-tertiary)">${frag != null ? '/100' : ''}</span></div>
+      <div class="diag-sub">${frag == null ? '—' : frag >= 65 ? 'Vulnerable' : frag >= 40 ? 'Moderate' : 'Stable'}</div>
+    </div>
+    <div class="diag-cell">
+      <div class="diag-label">Residual Energy</div>
+      <div class="diag-val">${energy != null ? energy : '—'}<span style="font-size:11px;color:var(--text-tertiary)">${energy != null ? '/100' : ''}</span></div>
+      <div class="diag-sub">${esc(p.decay_status || 'Energy')}</div>
+    </div>
+    <div class="diag-cell">
+      <div class="diag-label">Exhaustion</div>
+      <div class="diag-val">${exdays != null ? exdays : '—'}<span style="font-size:11px;color:var(--text-tertiary)">${exdays != null ? 'd' : ''}</span></div>
+      <div class="diag-sub">Estimated fade</div>
+    </div>
+    <div class="diag-cell">
+      <div class="diag-label">Net Pressure</div>
+      <div class="diag-val" style="${p.pulse_drift > 0 ? 'color:var(--accent-surging)' : p.pulse_drift < 0 ? 'color:var(--accent-breaking)' : ''}">${press}</div>
+      <div class="diag-sub">${p.pulse_drift > 0 ? 'Bull pressure' : p.pulse_drift < 0 ? 'Bear pressure' : 'Balanced'}</div>
+    </div>
+    <div class="diag-cell">
+      <div class="diag-label">Health</div>
+      <div class="diag-val">${health != null ? health : '—'}<span style="font-size:11px;color:var(--text-tertiary)">${health != null ? '/100' : ''}</span></div>
+      <div class="diag-sub">${health == null ? '—' : health >= 70 ? 'Coherent' : health >= 50 ? 'Mixed' : 'Diverging'}</div>
+    </div>
+    <div class="diag-cell">
+      <div class="diag-label">Direction</div>
+      <div class="diag-val" style="font-size:14px;padding-top:2px;">${esc(p.direction_forecast || '—')}</div>
+      <div class="diag-sub">${esc(p.sentiment_momentum || 'Momentum')}</div>
+    </div>
+    <div class="diag-cell">
+      <div class="diag-label">Fair Value Gap</div>
+      <div class="diag-val" style="${fvdCls}">${fvd}</div>
+      <div class="diag-sub">${p.fvd_pct != null ? (Math.abs(p.fvd_pct) > 5 ? 'Price stretched' : 'Near fair value') : '—'}</div>
+    </div>`;
+}
+
+// ── Render: Primary Claim ─────────────────────────────────────────────────────
+function renderPrimaryClaim(p) {
+  const el = document.getElementById('primary-claim-body');
+  if (!el || !p) return;
+
+  const phase   = phaseFromPulse(p);
+  const verdict = p.prevailing_verdict || 'Monitoring';
+  const vCls    = verdict === 'Narrative Trap' ? 'verdict-trap'
+    : verdict === 'Structurally Supported' ? 'verdict-supported'
+    : 'verdict-monitoring';
+  const energy  = p.prevailing_energy != null ? Math.round(p.prevailing_energy) : '—';
+  const exdays  = p.nearest_exhaustion_days != null ? Math.round(p.nearest_exhaustion_days) + 'd' : '—';
+  const coord   = p.pulse_coordination != null ? Math.round(p.pulse_coordination) + '/100' : '—';
+  const shifted = p.narrative_shifted
+    ? '<span class="hero-state-badge badge-breaking" style="font-size:10px;">Narrative shifted</span>' : '';
+
+  el.innerHTML = `
+    <div class="claim-title">${esc(p.prevailing_narrative || 'No prevailing narrative found')}</div>
+    <div class="claim-meta">
+      <span class="hero-state-badge ${phaseBadgeClass(phase)}" style="font-size:10px;">${esc(phase)}</span>
+      <span class="verdict-badge ${vCls}" style="font-size:10px;">${esc(verdict)}</span>
+      ${shifted}
+    </div>
+    <div class="claim-bullets">
+      <div class="claim-bullet"><span>Narrative energy</span><strong>${energy}/100</strong></div>
+      <div class="claim-bullet"><span>Est. exhaustion</span><strong>${exdays}</strong></div>
+      <div class="claim-bullet"><span>Coordination risk</span><strong>${coord}</strong></div>
+      <div class="claim-bullet"><span>Active narratives</span><strong>${p.active_narrative_count ?? '—'}</strong></div>
+    </div>
+    <div class="claim-summary">${esc(p.pulse_summary || 'Awaiting forensic summary from pipeline.')}</div>`;
+}
+
+// ── Render: Warranted vs Hype ─────────────────────────────────────────────────
+function renderWarranted(p) {
+  const el = document.getElementById('warranted-body');
+  if (!el || !p) return;
+
+  const evidence  = Math.round(p.pulse_vms ?? 50);
+  const frag      = fragility(p) ?? 50;
+  const valStr    = Math.min(100, Math.round(Math.abs(p.fvd_pct ?? 0)));
+  const pressure  = Math.min(100, Math.round(Math.abs(p.pulse_drift ?? 0)));
+  const warranted = Math.round((evidence * 0.45) + ((100 - frag) * 0.25) + ((100 - valStr) * 0.20) + ((100 - pressure) * 0.10));
+  const hype      = 100 - warranted;
+
+  function barFill(v) {
+    return v >= 65 ? 'fill-green' : v >= 40 ? 'fill-amber' : 'fill-red';
+  }
+
+  el.innerHTML = `
+    <div class="dual-score">
+      <div class="score-block">
+        <div class="score-block-label">Warranted</div>
+        <div class="score-block-num" style="${warranted >= 60 ? 'color:var(--accent-supported)' : 'color:var(--accent-fragile)'}">${warranted}</div>
+      </div>
+      <div class="dual-divider"></div>
+      <div class="score-block">
+        <div class="score-block-label">Hype</div>
+        <div class="score-block-num" style="${hype >= 50 ? 'color:var(--accent-breaking)' : 'color:var(--text-secondary)'}">${hype}</div>
+      </div>
+    </div>
+    <div class="score-bar-row">
+      <div class="score-bar-top"><span>Evidence quality</span><strong>${evidence}</strong></div>
+      <div class="score-bar-track"><div class="score-bar-fill ${barFill(evidence)}" style="width:${evidence}%"></div></div>
+    </div>
+    <div class="score-bar-row">
+      <div class="score-bar-top"><span>Fragility</span><strong>${frag}</strong></div>
+      <div class="score-bar-track"><div class="score-bar-fill ${barFill(100 - frag)}" style="width:${frag}%"></div></div>
+    </div>
+    <div class="score-bar-row">
+      <div class="score-bar-top"><span>Valuation stretch</span><strong>${valStr}</strong></div>
+      <div class="score-bar-track"><div class="score-bar-fill ${barFill(100 - valStr)}" style="width:${valStr}%"></div></div>
+    </div>
+    <div class="score-bar-row">
+      <div class="score-bar-top"><span>Narrative pressure</span><strong>${pressure}</strong></div>
+      <div class="score-bar-track"><div class="score-bar-fill ${barFill(100 - pressure)}" style="width:${pressure}%"></div></div>
+    </div>
+    <div class="claim-summary" style="margin-top:10px;">
+      ${warranted >= 60 ? 'Move looks more evidence-backed than hype-driven.' : 'Narrative looks looser than the price action implies.'}
+    </div>`;
+}
+
+// ── Render: Narrative Heatmap ─────────────────────────────────────────────────
+function renderHeatmap(p) {
+  const el = document.getElementById('heatmap-body');
+  if (!el || !p) return;
+
+  // Build rows from available pulse data
+  // Row 1: prevailing narrative
+  // Row 2: worst narrative (if different)
+  // Row 3+: derived from coordination / trap signals
+  const rows = [];
+
+  const evidence1 = Math.round(p.pulse_vms ?? 50);
+  const energy1   = Math.round(p.prevailing_energy ?? p.avg_energy_remaining ?? 50);
+  const coord1    = Math.round(p.pulse_coordination ?? 0);
+  const frag1     = fragility(p) ?? 50;
+  const st1       = statusFromScores(evidence1, energy1, coord1);
+
+  rows.push({
+    name:   p.prevailing_narrative || 'Prevailing narrative',
+    sub:    `Prevailing · ${p.nearest_exhaustion_days != null ? Math.round(p.nearest_exhaustion_days) + 'd window' : ''}`,
+    evidence: evidence1, energy: energy1, coord: coord1,
+    status: st1.label, statusCls: st1.cls
+  });
+
+  // Row 2: worst narrative signals (coordination-heavy narrative)
+  if (p.worst_coordination > 40 || p.trap_count > 0) {
+    const evW  = Math.round(p.worst_vms ?? evidence1 * 0.7);
+    const enW  = Math.round((p.avg_energy_remaining ?? 50) * 0.75);
+    const coW  = Math.round(p.worst_coordination ?? 60);
+    const stW  = statusFromScores(evW, enW, coW);
+    rows.push({
+      name:   p.trap_count > 0 ? 'Coordinated / trap narrative' : 'High-coordination narrative',
+      sub:    `${p.trap_count > 0 ? p.trap_count + ' trap flag(s)' : 'Coordination signal'} · ${p.coordinated_count ?? 0} coordinated`,
+      evidence: evW, energy: enW, coord: coW,
+      status: stW.label, statusCls: stW.cls
+    });
+  }
+
+  // Row 3: bear thesis if drift is negative
+  if (p.pulse_drift < 0 || p.net_sentiment < -20) {
+    const evB = Math.round((p.pulse_vms ?? 50) * 0.6);
+    const enB = Math.round((p.avg_energy_remaining ?? 50) * 0.5);
+    const coB = Math.round(p.worst_coordination ?? 30);
+    const stB = statusFromScores(evB, enB, coB);
+    rows.push({
+      name:   'Bear / counter-narrative',
+      sub:    `Sentiment ${p.net_sentiment != null ? p.net_sentiment.toFixed(0) : '—'} · Drift ${p.pulse_drift != null ? p.pulse_drift.toFixed(0) : '—'}`,
+      evidence: evB, energy: enB, coord: coB,
+      status: stB.label, statusCls: stB.cls
+    });
+  }
+
+  el.innerHTML = `
+    <div class="heatmap-head">
+      <div>Claim</div>
+      <div>Evidence</div>
+      <div>Energy</div>
+      <div>Coord.</div>
+      <div>Status</div>
+    </div>
+    ${rows.map(r => `
+      <div class="heatmap-row">
+        <div>
+          <div class="hm-name">${esc(r.name)}</div>
+          <div class="hm-sub">${esc(r.sub)}</div>
+        </div>
+        <div><div class="hm-cell ${heatClass(r.evidence)}">${r.evidence}</div></div>
+        <div><div class="hm-cell ${heatClass(r.energy)}">${r.energy}</div></div>
+        <div><div class="hm-cell ${heatClass(100 - r.coord)}">${r.coord}</div></div>
+        <div><span class="verdict-badge ${r.statusCls}" style="font-size:10px;padding:2px 7px;">${esc(r.status)}</span></div>
+      </div>`).join('')}
+    <div class="heatmap-foot">
+      Prevailing: <strong>${esc(p.prevailing_narrative || '—')}</strong>
+    </div>`;
+}
+
 // ── Boot ─────────────────────────────────────────────────────────────────────
 async function refreshAll() {
   if (!TICKER) return;
-  const heroData = await loadHero();
-  const fairValue = heroData?.fair_value ?? null;
+  const [heroData, pulse] = await Promise.all([
+    loadHero(),
+    loadPulse()
+  ]);
+  const fairValue = heroData?.fair_value ?? pulse?.fair_value ?? null;
+
+  renderDiagStrip(pulse);
+  renderPrimaryClaim(pulse);
+  renderWarranted(pulse);
+  renderHeatmap(pulse);
 
   await Promise.all([
     loadNarratives(),
