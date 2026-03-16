@@ -1324,9 +1324,58 @@
     .heatmap-head { display: none; }
     .heatmap-row  { grid-template-columns: 1fr; gap: 4px; }
   }
+  /* ── LIGHT THEME ── */
+  [data-theme="light"] {
+    --mp-obsidian: #F5F6FA;
+    --mp-deep: #FFFFFF;
+    --mp-surface: #F0F1F5;
+    --mp-border: rgba(0,0,0,0.08);
+    --mp-border-mid: rgba(0,0,0,0.14);
+    --mp-blue: #1A6EFF;
+    --mp-blue-glow: rgba(26,110,255,0.1);
+    --mp-cyan: #0097CC;
+    --mp-teal: #00A87A;
+    --mp-prism-4: #6B4FE8;
+    --mp-prism-5: #DC4444;
+    --mp-text-primary: #1A1D2B;
+    --mp-text-secondary: #5A6072;
+    --mp-text-tertiary: #8B90A0;
+    --bg: #F5F6FA;
+    --surface: #F0F1F5;
+    --surface2: #FFFFFF;
+    --surface3: #E8EAF0;
+    --border: rgba(0,0,0,0.08);
+    --border-strong: rgba(0,0,0,0.14);
+    --text-primary: #1A1D2B;
+    --text-secondary: #5A6072;
+    --text-tertiary: #8B90A0;
+    --accent-breaking: #DC4444;
+    --accent-breaking-bg: rgba(220,68,68,0.1);
+    --accent-surging: #00A87A;
+    --accent-surging-bg: rgba(0,168,122,0.08);
+    --accent-fragile: #C97F00;
+    --accent-fragile-bg: rgba(201,127,0,0.08);
+    --accent-stable: #1A6EFF;
+    --accent-stable-bg: rgba(26,110,255,0.08);
+    --accent-trap: #DC4444;
+    --accent-supported: #00A87A;
+    --green: #00A87A;
+    --red: #DC4444;
+    --amber: #C97F00;
+    --blue: #1A6EFF;
+  }
+  [data-theme="light"] body { background: var(--bg); color: var(--text-primary); }
+  [data-theme="light"] .sidebar { background: #FFFFFF; border-color: rgba(0,0,0,0.08); }
+  [data-theme="light"] .sidebar-logo span { color: var(--text-primary); }
+  [data-theme="light"] .section-body { background: #FFFFFF; }
+  [data-theme="light"] .chart-tip { background: #FFFFFF; color: var(--text-primary); }
 </style>
   <!-- Env vars injected by Vercel — do not edit this line -->
   <script id="__env_script">window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '', TICKER: '' };</script>
+  <script>
+    // Apply saved theme immediately to prevent flash
+    (function(){ var t=localStorage.getItem('mp-theme'); if(t==='light') document.documentElement.setAttribute('data-theme','light'); })();
+  </script>
 </head>
 <body>
 <div class="app-layout">
@@ -2053,6 +2102,8 @@ function filterNarrs() {
   return rows;
 }
 
+function isLight(){ return document.documentElement.getAttribute('data-theme')==='light'; }
+
 function renderChart() {
   const snaps = filterSnaps();
   const narrs = filterNarrs();
@@ -2121,12 +2172,12 @@ function drawChart(snaps, narrs, fairValue) {
 
   // Grid lines + Y axis (price)
   ctx.font = `10px 'DM Mono', monospace`;
-  ctx.fillStyle = '#8B97B8';
+  ctx.fillStyle = isLight() ? '#8B90A0' : '#8B97B8';
   ctx.textAlign = 'right';
   for (let i = 0; i <= 4; i++) {
     const p = minP + (maxP - minP) * (i / 4);
     const y = yOf(p);
-    ctx.strokeStyle = '#2a3350'; ctx.lineWidth = 1;
+    ctx.strokeStyle = isLight() ? '#D4D6DD' : '#2a3350'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(W - PAD.right, y); ctx.stroke();
     ctx.fillText((p >= 100 ? '$' + p.toFixed(0) : '$' + p.toFixed(2)), PAD.left - 4, y + 3);
   }
@@ -2161,7 +2212,7 @@ function drawChart(snaps, narrs, fairValue) {
   // Price line
   ctx.beginPath(); ctx.setLineDash([]);
   snaps.forEach((s,i) => { if (s.price_close==null) return; i===0 ? ctx.moveTo(xOf(i),yOf(s.price_close)) : ctx.lineTo(xOf(i),yOf(s.price_close)); });
-  ctx.strokeStyle = '#F0F4FF'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.strokeStyle = isLight() ? '#1A6EFF' : '#F0F4FF'; ctx.lineWidth = 1.5; ctx.stroke();
 
   // Narrative energy overlay (blue dashed, right axis 0-100)
   const lo = snaps[0]?.snapshot_date?.slice(0,10) || '';
@@ -2211,7 +2262,7 @@ function drawChart(snaps, narrs, fairValue) {
     ctx.arc(cx, cy, 5, 0, Math.PI*2);
     ctx.fillStyle   = isBull ? '#00E5B4' : '#FF6B6B';
     ctx.fill();
-    ctx.strokeStyle = '#0A0E1A'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.strokeStyle = isLight() ? '#FFFFFF' : '#0A0E1A'; ctx.lineWidth = 1.5; ctx.stroke();
     dotHits.push({ cx, cy, n });
   });
 
