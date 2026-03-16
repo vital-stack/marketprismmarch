@@ -1810,22 +1810,38 @@ async function loadSectorIntelligence(heroRow) {
 }
 
 // ── 2. Price Chart ───────────────────────────────────────────────────────────
-let ALL_SNAPS = [];   // full price history
-let ALL_NARRS = [];   // full scorecard rows with story data
+let ALL_SNAPS = [];   // full price history (from Yahoo Finance)
+let ALL_NARRS = [];   // narrative health rows with sentiment dots
 let ALL_DECAY = [];   // narrative energy time series
 let CHART_FV  = null; // fair value for dashed line
+
+// ── Yahoo Finance price fetch (via allorigins CORS proxy) ────────────────────
+async function fetchYahooPrice(ticker, days) {
+  const period2 = Math.floor(Date.now() / 1000);
+  const period1 = period2 - (days || 365) * 86400;
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&period1=${period1}&period2=${period2}`;
+  const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+  const res = await fetch(proxy);
+  if (!res.ok) throw new Error(`Yahoo proxy ${res.status}`);
+  const wrapper = await res.json();
+  const data = JSON.parse(wrapper.contents);
+  const result = data?.chart?.result?.[0];
+  if (!result) throw new Error('No Yahoo data returned');
+  const timestamps = result.timestamp || [];
+  const closes    = result.indicators?.quote?.[0]?.close || [];
+  return timestamps.map((ts, i) => ({
+    snapshot_date: new Date(ts * 1000).toISOString().slice(0, 10),
+    price_close:   closes[i] != null ? +closes[i].toFixed(2) : null
+  })).filter(r => r.price_close != null);
+}
 
 async function loadChart(fairValue) {
   if (!TICKER) return;
   CHART_FV = fairValue;
   try {
-    [ALL_SNAPS, ALL_NARRS, ALL_DECAY] = await Promise.all([
-      sbFetch('ticker_snapshots', {
-        select: 'snapshot_date,price_close',
-        ticker: `eq.${TICKER}`,
-        order:  'snapshot_date.asc',
-        limit:  '365'
-      }),
+    // Fetch Yahoo price + narrative overlays in parallel
+    const [yahooSnaps, narrativeRows, decayRows] = await Promise.all([
+      fetchYahooPrice(TICKER, 365).catch(() => []),
       sbFetch('v_dash_narrative_health', {
         select: 'snapshot_date,sentiment_score,narrative_trend',
         ticker: `eq.${TICKER}`,
@@ -1839,6 +1855,21 @@ async function loadChart(fairValue) {
         limit:  '365'
       }).catch(() => [])
     ]);
+
+    // Fall back to Supabase price if Yahoo failed
+    if (yahooSnaps.length) {
+      ALL_SNAPS = yahooSnaps;
+    } else {
+      ALL_SNAPS = await sbFetch('ticker_snapshots', {
+        select: 'snapshot_date,price_close',
+        ticker: `eq.${TICKER}`,
+        order:  'snapshot_date.asc',
+        limit:  '365'
+      }).catch(() => []);
+    }
+
+    ALL_NARRS = narrativeRows;
+    ALL_DECAY = decayRows;
 
     if (!ALL_SNAPS.length) {
       document.getElementById('chart-outer').innerHTML = '<div class="chart-no-data">No price history available.</div>';
@@ -1857,38 +1888,29 @@ function getActiveDays() {
   return active ? parseInt(active.dataset.days) : 90;
 }
 
-function getActiveSort() {
-  return document.getElementById('story-sort')?.value || 'date-desc';
-}
-
 function filterSnaps() {
   const days = getActiveDays();
   if (!days) return ALL_SNAPS;
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days);
-  const cutStr = cutoff.toISOString().slice(0, 10);
+  const cutStr = cutoff.toISOString().slice(0,10);
   return ALL_SNAPS.filter(s => s.snapshot_date >= cutStr);
 }
 
 function filterNarrs() {
-  const snaps   = filterSnaps();
-  if (!snaps.length) return [];
-  const minDate = snaps[0].snapshot_date;
-  const maxDate = snaps[snaps.length - 1].snapshot_date;
-  const sort    = getActiveSort();
-
-  let narrs = ALL_NARRS.filter(n => {
+  const snaps = filterSnaps();
+  if (!snaps.length) return ALL_NARRS;
+  const lo = snaps[0].snapshot_date.slice(0,10);
+  const hi = snaps[snaps.length-1].snapshot_date.slice(0,10);
+  const sort = document.getElementById('story-sort')?.value || 'date-desc';
+  let rows = ALL_NARRS.filter(n => {
     const d = n.snapshot_date?.slice(0,10);
-    if (!d || d < minDate || d > maxDate) return false;
-    if (sort === 'bear') return n.sentiment_score == null || n.sentiment_score <= 0;
-    if (sort === 'bull') return n.sentiment_score != null && n.sentiment_score > 0;
-    return true;
+    return d >= lo && d <= hi;
   });
-
-  if (sort === 'date-asc') narrs = [...narrs].sort((a,b) => a.snapshot_date < b.snapshot_date ? -1 : 1);
-  else narrs = [...narrs].sort((a,b) => a.snapshot_date > b.snapshot_date ? -1 : 1);
-
-  return narrs;
+  if (sort === 'bear') rows = rows.filter(n => (n.sentiment_score ?? 0) <= 0 || n.narrative_trend === 'Collapsing');
+  if (sort === 'bull') rows = rows.filter(n => (n.sentiment_score ?? 0) >  0);
+  if (sort === 'date-asc') rows = rows.slice().sort((a,b) => a.snapshot_date < b.snapshot_date ? -1 : 1);
+  return rows;
 }
 
 function renderChart() {
@@ -1899,7 +1921,6 @@ function renderChart() {
 }
 
 function buildBearList() {
-  // Bears = negative sentiment or collapsing trend
   const bears = ALL_NARRS.filter(n =>
     (n.sentiment_score != null && n.sentiment_score <= 0) ||
     n.narrative_trend === 'Collapsing'
@@ -1907,22 +1928,17 @@ function buildBearList() {
   const wrap  = document.getElementById('bear-stories-wrap');
   const list  = document.getElementById('bear-stories-list');
   const count = document.getElementById('bear-count');
-
   if (!bears.length) { wrap.style.display = 'none'; return; }
-
   wrap.style.display = 'block';
   count.textContent  = bears.length;
-
   list.innerHTML = bears.map(n => `
     <div class="bear-story-item">
       <div class="bear-dot"></div>
       <div class="bear-story-date">${n.snapshot_date?.slice(0,10) || '—'}</div>
       <div class="bear-story-text">${esc(n.narrative_trend || '')}${n.sentiment_score != null ? ' · Sentiment ' + n.sentiment_score.toFixed(1) : ''}</div>
     </div>`).join('');
-
   document.getElementById('bear-stories-header').addEventListener('click', () => {
-    const icon = document.getElementById('bear-toggle-icon');
-    icon.classList.toggle('open');
+    document.getElementById('bear-toggle-icon').classList.toggle('open');
     list.classList.toggle('open');
   });
 }
@@ -1933,7 +1949,6 @@ function drawChart(snaps, narrs, fairValue) {
   const tip    = document.getElementById('chart-tip');
   const popup  = document.getElementById('story-popup');
 
-  // Remove old listeners by replacing canvas
   const fresh = canvas.cloneNode(false);
   outer.replaceChild(fresh, canvas);
   const cv  = document.getElementById('price-canvas');
@@ -1942,11 +1957,8 @@ function drawChart(snaps, narrs, fairValue) {
   const W   = outer.clientWidth - 28;
   const H   = outer.clientHeight - 10;
   const DPR = devicePixelRatio || 1;
-
-  cv.width  = W * DPR;
-  cv.height = H * DPR;
-  cv.style.width  = W + 'px';
-  cv.style.height = H + 'px';
+  cv.width  = W * DPR; cv.height = H * DPR;
+  cv.style.width = W + 'px'; cv.style.height = H + 'px';
   ctx.scale(DPR, DPR);
 
   const prices = snaps.map(s => s.price_close).filter(p => p != null);
@@ -1954,17 +1966,21 @@ function drawChart(snaps, narrs, fairValue) {
 
   const minP = Math.min(...prices) * 0.975;
   const maxP = Math.max(...prices) * 1.025;
-
-  const PAD = { top:8, right:8, bottom:28, left:50 };
-  const CW  = W - PAD.left - PAD.right;
-  const CH  = H - PAD.top  - PAD.bottom;
-  const N   = snaps.length;
+  const PAD  = { top:8, right:36, bottom:28, left:50 };
+  const CW   = W - PAD.left - PAD.right;
+  const CH   = H - PAD.top  - PAD.bottom;
+  const N    = snaps.length;
 
   function xOf(i) { return PAD.left + (i / Math.max(N-1,1)) * CW; }
   function yOf(p) { return PAD.top  + (1 - (p - minP) / (maxP - minP)) * CH; }
+  function yEnergy(v) { return PAD.top + (1 - Math.min(100, Math.max(0, v)) / 100) * CH; }
 
-  // Grid
-  ctx.font      = `10px 'DM Mono', monospace`;
+  // Build dateIdx FIRST — used by both dots and energy overlay
+  const dateIdx = {};
+  snaps.forEach((s,i) => { if (s.snapshot_date) dateIdx[s.snapshot_date.slice(0,10)] = i; });
+
+  // Grid lines + Y axis (price)
+  ctx.font = `10px 'DM Mono', monospace`;
   ctx.fillStyle = '#9B9892';
   ctx.textAlign = 'right';
   for (let i = 0; i <= 4; i++) {
@@ -1975,7 +1991,7 @@ function drawChart(snaps, narrs, fairValue) {
     ctx.fillText((p >= 100 ? '$' + p.toFixed(0) : '$' + p.toFixed(2)), PAD.left - 4, y + 3);
   }
 
-  // X labels
+  // X axis labels
   ctx.textAlign = 'center';
   const every = Math.max(1, Math.floor(N / 6));
   snaps.forEach((s, i) => {
@@ -1984,17 +2000,16 @@ function drawChart(snaps, narrs, fairValue) {
     ctx.fillText(d.toLocaleDateString('en-US', { month:'short', day:'numeric' }), xOf(i), H - PAD.bottom + 14);
   });
 
-  // Fair value line
+  // Fair value dashed line
   if (fairValue != null && fairValue > minP && fairValue < maxP * 1.1) {
     const yFV = yOf(fairValue);
-    ctx.save();
-    ctx.setLineDash([5,4]);
+    ctx.save(); ctx.setLineDash([5,4]);
     ctx.strokeStyle = '#C8C4BE'; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(PAD.left, yFV); ctx.lineTo(W - PAD.right, yFV); ctx.stroke();
     ctx.restore();
   }
 
-  // Area fill
+  // Area fill under price
   const grad = ctx.createLinearGradient(0, PAD.top, 0, H - PAD.bottom);
   grad.addColorStop(0, 'rgba(26,25,22,0.07)');
   grad.addColorStop(1, 'rgba(26,25,22,0)');
@@ -2008,57 +2023,50 @@ function drawChart(snaps, narrs, fairValue) {
   snaps.forEach((s,i) => { if (s.price_close==null) return; i===0 ? ctx.moveTo(xOf(i),yOf(s.price_close)) : ctx.lineTo(xOf(i),yOf(s.price_close)); });
   ctx.strokeStyle = '#1A1916'; ctx.lineWidth = 1.5; ctx.stroke();
 
-  // Narrative energy overlay (right axis, 0-100 scale, blue dashed)
+  // Narrative energy overlay (blue dashed, right axis 0-100)
+  const lo = snaps[0]?.snapshot_date?.slice(0,10) || '';
+  const hi = snaps[snaps.length-1]?.snapshot_date?.slice(0,10) || '';
   const decayFiltered = ALL_DECAY.filter(d => {
-    if (!d.snapshot_date) return false;
-    const ds = d.snapshot_date.slice(0,10);
-    if (!snaps.length) return true;
-    return ds >= snaps[0].snapshot_date.slice(0,10) && ds <= snaps[snaps.length-1].snapshot_date.slice(0,10);
+    const ds = d.snapshot_date?.slice(0,10);
+    return ds && ds >= lo && ds <= hi;
   });
   if (decayFiltered.length > 1) {
-    function yEnergy(v) { return PAD.top + (1 - Math.min(100, Math.max(0, v)) / 100) * CH; }
+    // Right axis ticks for energy
+    ctx.save();
+    ctx.font = `9px 'DM Mono', monospace`;
+    ctx.fillStyle = '#2471A3'; ctx.textAlign = 'left'; ctx.globalAlpha = 0.7;
+    [0, 50, 100].forEach(v => {
+      ctx.fillText(v, W - PAD.right + 4, yEnergy(v) + 3);
+    });
+    ctx.restore();
+
     ctx.save();
     ctx.setLineDash([3,3]);
-    ctx.strokeStyle = '#2471A3';
-    ctx.lineWidth = 1.2;
-    ctx.globalAlpha = 0.7;
+    ctx.strokeStyle = '#2471A3'; ctx.lineWidth = 1.2; ctx.globalAlpha = 0.7;
     ctx.beginPath();
-    decayFiltered.forEach((d, i) => {
-      const key = d.snapshot_date.slice(0,10);
-      const idx = dateIdx[key];
+    let started = false;
+    decayFiltered.forEach(d => {
+      const idx = dateIdx[d.snapshot_date.slice(0,10)];
       if (idx == null) return;
       const x = xOf(idx);
       const y = yEnergy(d.energy_remaining_pct ?? 0);
-      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      if (!started) { ctx.moveTo(x, y); started = true; }
+      else ctx.lineTo(x, y);
     });
     ctx.stroke();
     ctx.restore();
-    // Right axis label
-    ctx.save();
-    ctx.font = `9px 'DM Mono', monospace`;
-    ctx.fillStyle = '#2471A3';
-    ctx.globalAlpha = 0.8;
-    ctx.textAlign = 'left';
-    ctx.fillText('Energy', W - PAD.right + 2, PAD.top + 8);
-    ctx.restore();
   }
 
-  // Build dot map keyed by date
-  const dateIdx = {};
-  snaps.forEach((s,i) => { if (s.snapshot_date) dateIdx[s.snapshot_date.slice(0,10)] = i; });
-
-  // Track dot positions for click detection
+  // Narrative sentiment dots
   const dotHits = [];
-
   narrs.forEach(n => {
-    const key = n.snapshot_date?.slice(0,10);
-    const idx = dateIdx[key];
+    const idx = dateIdx[n.snapshot_date?.slice(0,10)];
     if (idx == null) return;
     const s = snaps[idx];
-    if (s.price_close == null) return;
+    if (s?.price_close == null) return;
     const cx = xOf(idx);
     const cy = yOf(s.price_close);
-    const isBull = n.sentiment_score != null && n.sentiment_score > 0;
+    const isBull = (n.sentiment_score ?? 0) > 0;
     ctx.beginPath();
     ctx.arc(cx, cy, 5, 0, Math.PI*2);
     ctx.fillStyle   = isBull ? '#27AE60' : '#C0392B';
@@ -2067,58 +2075,47 @@ function drawChart(snaps, narrs, fairValue) {
     dotHits.push({ cx, cy, n });
   });
 
-  // Hover tooltip (price only)
+  // Hover tooltip
   cv.addEventListener('mousemove', e => {
     const rect = cv.getBoundingClientRect();
-    const mx   = e.clientX - rect.left;
-    const my   = e.clientY - rect.top;
-
-    // Check if near a dot
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
     const hit = dotHits.find(d => Math.hypot(mx - d.cx, my - d.cy) < 8);
     cv.style.cursor = hit ? 'pointer' : 'default';
-
     if (hit) { tip.style.opacity = '0'; return; }
-
     const idx = Math.max(0, Math.min(N-1, Math.round(((mx - PAD.left) / CW) * (N-1))));
-    const s   = snaps[idx];
+    const s = snaps[idx];
     if (!s?.price_close) { tip.style.opacity = '0'; return; }
     tip.style.opacity = '1';
-    tip.style.left    = (xOf(idx) + 10) + 'px';
-    tip.style.top     = (yOf(s.price_close) - 24) + 'px';
-    tip.textContent   = s.snapshot_date?.slice(5) + '  ' + fmtPrice(s.price_close);
+    const d = new Date(s.snapshot_date);
+    tip.textContent = `${d.toLocaleDateString('en-US',{month:'short',day:'numeric'})}  $${s.price_close.toFixed(2)}`;
+    let tx = xOf(idx) + 8;
+    if (tx + 120 > W) tx = xOf(idx) - 128;
+    tip.style.left = (tx + 14) + 'px';
+    tip.style.top  = (my - 18)  + 'px';
   });
-  cv.addEventListener('mouseleave', () => { tip.style.opacity = '0'; cv.style.cursor = 'default'; });
+  cv.addEventListener('mouseleave', () => { tip.style.opacity = '0'; popup.classList.remove('visible'); });
 
-  // Click dot → show popup
+  // Click dot to show story popup
   cv.addEventListener('click', e => {
     const rect = cv.getBoundingClientRect();
-    const mx   = e.clientX - rect.left;
-    const my   = e.clientY - rect.top;
-    const hit  = dotHits.find(d => Math.hypot(mx - d.cx, my - d.cy) < 8);
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const hit = dotHits.find(d => Math.hypot(mx - d.cx, my - d.cy) < 8);
     if (!hit) { popup.classList.remove('visible'); return; }
-
-    const n      = hit.n;
-    const isBull = n.sentiment_score != null && n.sentiment_score > 0;
-    const trendLbl = n.narrative_trend || (isBull ? 'Bullish' : 'Bearish');
-
-    document.getElementById('popup-date').textContent     = n.snapshot_date?.slice(0,10) || '—';
-    document.getElementById('popup-headline').textContent = trendLbl;
-    document.getElementById('popup-body').textContent     = n.attention_trend ? 'Attention: ' + n.attention_trend : '';
-    document.getElementById('popup-vms').innerHTML        = n.sentiment_score != null
-      ? `<span class="popup-vms ${isBull ? 'popup-vms-bull' : 'popup-vms-bear'}">${isBull ? '↑' : '↓'} Sentiment ${n.sentiment_score.toFixed(1)}</span>`
-      : '';
-
-    // Position popup — keep inside chart bounds
+    const n = hit.n;
+    document.getElementById('popup-date').textContent = n.snapshot_date?.slice(0,10) || '';
+    document.getElementById('popup-headline').textContent = n.narrative_trend || '';
+    document.getElementById('popup-body').textContent = n.sentiment_score != null ? `Sentiment: ${n.sentiment_score.toFixed(1)}` : '';
+    document.getElementById('popup-vms').innerHTML = '';
     let px = hit.cx + 10;
-    let py = hit.cy - 20;
-    if (px + 270 > W) px = hit.cx - 275;
-    if (py < 0) py = 4;
-    popup.style.left = px + 'px';
-    popup.style.top  = py + 'px';
+    if (px + 260 > W) px = hit.cx - 270;
+    let py = hit.cy - 10;
+    if (py + 140 > H) py = H - 145;
+    popup.style.left = (px + 14) + 'px';
+    popup.style.top  = (py + 10) + 'px';
     popup.classList.add('visible');
   });
-
-  document.getElementById('popup-close').onclick = () => popup.classList.remove('visible');
 }
 
 // Timeframe buttons
