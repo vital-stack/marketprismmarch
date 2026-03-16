@@ -1358,7 +1358,7 @@ async function loadHero() {
     ].join(',');
 
     const [rows, healthRows] = await Promise.all([
-      sbFetch('v_dash_daily_story', { select: cols, ticker: `eq.${TICKER}`, limit: '1' }),
+      sbFetch('v_dash_daily_story', { select: cols, ticker: `eq.${TICKER}`, order: 'snapshot_date.desc', limit: '1' }),
       sbFetch('v_dash_narrative_health', {
         select: 'narrative_health,narrative_trend,attention_trend',
         ticker: `eq.${TICKER}`,
