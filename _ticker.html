@@ -1357,10 +1357,16 @@ async function loadHero() {
       'sector_trap_flag','sector_trap_name','days_to_options_expiry','next_options_expiry'
     ].join(',');
 
-    const [rows, healthRows] = await Promise.all([
+    const [rows, healthRows, snapRows] = await Promise.all([
       sbFetch('v_dash_daily_story', { select: cols, ticker: `eq.${TICKER}`, order: 'snapshot_date.desc', limit: '1' }),
       sbFetch('v_dash_narrative_health', {
         select: 'narrative_health,narrative_trend,attention_trend',
+        ticker: `eq.${TICKER}`,
+        order:  'snapshot_date.desc',
+        limit:  '1'
+      }).catch(() => []),
+      sbFetch('ticker_snapshots', {
+        select: 'snapshot_date,price_close,price_change_pct',
         ticker: `eq.${TICKER}`,
         order:  'snapshot_date.desc',
         limit:  '1'
@@ -1373,6 +1379,13 @@ async function loadHero() {
     }
 
     const r = rows[0];
+    // Overlay fresher price data from ticker_snapshots if available
+    const snap = (snapRows || [])[0];
+    if (snap && snap.snapshot_date > (r.snapshot_date || '')) {
+      r.price = snap.price_close;
+      r.price_change_pct = snap.price_change_pct;
+      r.snapshot_date = snap.snapshot_date;
+    }
     const h = healthRows[0] || {};
     const delta = fmtPct(r.price_change_pct);
     const verdictClass = r.prism_verdict === 'Narrative Trap' ? 'verdict-trap'

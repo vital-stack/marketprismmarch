@@ -512,13 +512,39 @@ async function loadData() {
       }
     } catch {}
 
+    // Fetch latest ticker_snapshots to fill in fresher price data
+    let snapMap = {};
+    try {
+      const snapUrl = `${SUPABASE_URL}/rest/v1/ticker_snapshots` +
+        `?select=ticker,snapshot_date,price_close,price_change_pct` +
+        `&order=snapshot_date.desc,ticker.asc`;
+      const sr = await fetch(snapUrl, {
+        headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}`, 'Accept': 'application/json' }
+      });
+      if (sr.ok) {
+        const srows = await sr.json();
+        // Keep latest snapshot per ticker
+        srows.forEach(s => { if (!snapMap[s.ticker]) snapMap[s.ticker] = s; });
+      }
+    } catch {}
+
     // Deduplicate by ticker (keep first occurrence) and merge health data
     const seen = new Set();
     DATA = rows.filter(r => {
       if (seen.has(r.ticker)) return false;
       seen.add(r.ticker);
       return true;
-    }).map(r => ({ ...r, ...(healthMap[r.ticker] || {}) }));
+    }).map(r => {
+      const merged = { ...r, ...(healthMap[r.ticker] || {}) };
+      // If ticker_snapshots has newer data, overlay price fields
+      const snap = snapMap[merged.ticker];
+      if (snap && snap.snapshot_date > (merged.snapshot_date || '')) {
+        merged.price = snap.price_close;
+        merged.price_change_pct = snap.price_change_pct;
+        merged.snapshot_date = snap.snapshot_date;
+      }
+      return merged;
+    });
 
     document.getElementById('stat-total').textContent    = DATA.length;
     document.getElementById('stat-traps').textContent    = DATA.filter(r => r.prism_verdict === 'Narrative Trap').length;
