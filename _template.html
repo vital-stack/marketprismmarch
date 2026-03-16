@@ -467,6 +467,12 @@ const COLS = [
 
 let DATA = [];
 
+const SB_HEADERS = () => ({
+  'apikey': SUPABASE_ANON,
+  'Authorization': `Bearer ${SUPABASE_ANON}`,
+  'Accept': 'application/json'
+});
+
 async function loadData() {
   const feed = document.getElementById('feed');
   feed.innerHTML = '<div class="empty-state" style="padding:48px 0;">Loading stories…</div>';
@@ -476,49 +482,77 @@ async function loadData() {
       throw new Error('Missing Supabase credentials – SUPABASE_URL or SUPABASE_ANON is empty');
     }
 
-    const url = `${SUPABASE_URL}/rest/v1/v_dash_daily_story` +
-      `?select=${COLS}` +
-      `&story_claim=not.is.null` +
-      `&order=snapshot_date.desc,ticker.asc`;
+    // Fetch from view, narrative_analyses table, ticker_snapshots, and health in parallel
+    const [viewRes, naRes, snapRes, healthRes] = await Promise.all([
+      fetch(`${SUPABASE_URL}/rest/v1/v_dash_daily_story?select=${COLS}&order=snapshot_date.desc,ticker.asc`, { headers: SB_HEADERS() }).catch(() => null),
+      fetch(`${SUPABASE_URL}/rest/v1/narrative_analyses?select=${COLS}&order=snapshot_date.desc,ticker.asc`, { headers: SB_HEADERS() }).catch(() => null),
+      fetch(`${SUPABASE_URL}/rest/v1/ticker_snapshots?select=ticker,snapshot_date,price_close&order=snapshot_date.desc`, { headers: SB_HEADERS() }).catch(() => null),
+      fetch(`${SUPABASE_URL}/rest/v1/v_dash_narrative_health?select=ticker,narrative_health,narrative_trend,attention_trend&order=snapshot_date.desc`, { headers: SB_HEADERS() }).catch(() => null)
+    ]);
 
-    const res = await fetch(url, {
-      headers: {
-        'apikey': SUPABASE_ANON,
-        'Authorization': `Bearer ${SUPABASE_ANON}`,
-        'Accept': 'application/json'
-      }
-    });
+    const viewRows = viewRes?.ok ? await viewRes.json() : [];
+    const naRows   = naRes?.ok   ? await naRes.json()   : [];
+    const snapRows = snapRes?.ok ? await snapRes.json() : [];
 
-    if (!res.ok) {
-      const body = await res.text().catch(() => '');
-      throw new Error(`Supabase error: ${res.status} – ${body}`);
+    if (!viewRows.length && !naRows.length) {
+      throw new Error('No data returned from Supabase – check credentials and table access');
     }
 
-    const rows = await res.json();
+    // Build latest price map from ticker_snapshots (always fresh)
+    const priceMap = {};
+    snapRows.forEach(s => {
+      if (!priceMap[s.ticker]) priceMap[s.ticker] = s;
+    });
+
+    // Build latest row map from narrative_analyses (direct table, bypasses stale view)
+    const naMap = {};
+    naRows.forEach(r => {
+      if (!naMap[r.ticker]) naMap[r.ticker] = r;
+    });
+
+    // Build latest row map from the view
+    const viewMap = {};
+    viewRows.forEach(r => {
+      if (!viewMap[r.ticker]) viewMap[r.ticker] = r;
+    });
+
+    // Merge: for each ticker, prefer whichever source has the most recent snapshot_date
+    const allTickers = new Set([...Object.keys(viewMap), ...Object.keys(naMap)]);
+    let rows = [];
+    allTickers.forEach(ticker => {
+      const vr = viewMap[ticker];
+      const nr = naMap[ticker];
+      // Pick the row with the latest snapshot_date
+      let best;
+      if (vr && nr) {
+        best = (nr.snapshot_date || '') >= (vr.snapshot_date || '') ? { ...vr, ...nr } : { ...nr, ...vr };
+      } else {
+        best = nr || vr;
+      }
+      // Overlay latest price from ticker_snapshots if it's newer
+      const snap = priceMap[ticker];
+      if (snap && (snap.snapshot_date || '') >= (best.snapshot_date || '')) {
+        best.price = snap.price_close ?? best.price;
+        best.snapshot_date = snap.snapshot_date;
+      }
+      rows.push(best);
+    });
+
+    // Sort by ticker for consistent display
+    rows.sort((a, b) => (a.ticker || '').localeCompare(b.ticker || ''));
 
     // Fetch narrative health for trend indicators
     let healthMap = {};
     try {
-      const healthUrl = `${SUPABASE_URL}/rest/v1/v_dash_narrative_health` +
-        `?select=ticker,narrative_health,narrative_trend,attention_trend` +
-        `&order=snapshot_date.desc`;
-      const hr = await fetch(healthUrl, {
-        headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}`, 'Accept': 'application/json' }
-      });
-      if (hr.ok) {
-        const hrows = await hr.json();
+      if (healthRes?.ok) {
+        const hrows = await healthRes.json();
         // Keep latest row per ticker
         hrows.forEach(h => { if (!healthMap[h.ticker]) healthMap[h.ticker] = h; });
       }
     } catch {}
 
-    // Deduplicate by ticker (keep first occurrence) and merge health data
-    const seen = new Set();
-    DATA = rows.filter(r => {
-      if (seen.has(r.ticker)) return false;
-      seen.add(r.ticker);
-      return true;
-    }).map(r => ({ ...r, ...(healthMap[r.ticker] || {}) }));
+    // Merge health data
+    DATA = rows.map(r => ({ ...r, ...(healthMap[r.ticker] || {}) }));
 
     document.getElementById('stat-total').textContent    = DATA.length;
     document.getElementById('stat-traps').textContent    = DATA.filter(r => r.prism_verdict === 'Narrative Trap').length;
@@ -676,7 +710,7 @@ function render() {
         <div class="card-left">
           <span class="ticker-badge ${stateClass(r.narrative_state)}">${r.ticker}</span>
           <span class="verdict-pip ${pipClass(r.prism_verdict)}" title="${esc(r.prism_verdict)}"></span>
-          <span class="story-claim">${esc(r.story_claim)}</span>
+          <span class="story-claim">${esc(r.story_claim || r.primary_driver || 'Analysis pending…')}</span>
         </div>
         <div class="price-block">
           <div class="price-nums">
