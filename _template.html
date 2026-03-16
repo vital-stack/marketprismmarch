@@ -435,6 +435,41 @@ body{
   .meme-grid{grid-template-columns:1fr 1fr;}
   .topbar{display:none;}
 }
+/* ── LIGHT THEME ── */
+[data-theme="light"]{
+  --mp-obsidian:#F5F6FA;
+  --mp-deep:#FFFFFF;
+  --mp-surface:#F0F1F5;
+  --mp-surface2:#E8EAF0;
+  --mp-border:rgba(0,0,0,0.08);
+  --mp-border-mid:rgba(0,0,0,0.14);
+  --mp-text-primary:#1A1D2B;
+  --mp-text-secondary:#5A6072;
+  --mp-text-tertiary:#8B90A0;
+  --mp-blue:#1A6EFF;
+  --mp-blue-glow:rgba(26,110,255,0.1);
+  --mp-cyan:#0097CC;
+  --mp-teal:#00A87A;
+  --mp-violet:#6B4FE8;
+  --mp-red:#DC4444;
+  --mp-amber:#C97F00;
+}
+[data-theme="light"] body{background:var(--mp-obsidian);color:var(--mp-text-primary);}
+[data-theme="light"] .topbar{background:rgba(255,255,255,.92);border-color:var(--mp-border);}
+[data-theme="light"] .price-main{color:var(--mp-text-primary);}
+[data-theme="light"] .filter-select option{background:#fff;color:var(--mp-text-primary);}
+[data-theme="light"] .snap-table tr:hover td{background:rgba(0,0,0,.02);}
+[data-theme="light"] .mobile-topbar{background:rgba(255,255,255,.96);}
+[data-theme="light"] .nav-logo span{color:var(--mp-text-primary);}
+/* Theme toggle button */
+.theme-toggle-btn{
+  display:flex;align-items:center;gap:6px;
+  font-size:11px;color:var(--mp-text-tertiary);
+  background:none;border:none;cursor:pointer;padding:0;
+  transition:color .12s;font-family:var(--font-body);
+}
+.theme-toggle-btn:hover{color:var(--mp-text-secondary);}
+.theme-toggle-btn svg{width:14px;height:14px;}
 </style>
 </head>
 <body>
@@ -492,6 +527,11 @@ body{
   </div>
   <div class="nav-divider"></div>
   <div class="nav-bottom">
+    <button class="theme-toggle-btn" id="theme-toggle" onclick="toggleTheme()">
+      <svg id="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"/></svg>
+      <svg id="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.25v1.5m0 16.5v1.5M4.219 4.219l1.061 1.061m13.44 13.44l1.061 1.061M2.25 12h1.5m16.5 0h1.5M4.219 19.781l1.061-1.061M18.72 5.28l1.061-1.061"/></svg>
+      <span id="theme-label">Light mode</span>
+    </button>
     <a href="/">← Back to home</a>
     <a href="/pricing">Upgrade plan</a>
   </div>
@@ -673,6 +713,32 @@ body{
     ov.classList.remove('open');
   });
 })();
+// ── Theme toggle ──────────────────────────────────────────────────────────────
+(function(){
+  var saved = localStorage.getItem('mp-theme');
+  if(saved === 'light') applyTheme('light');
+})();
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme', t);
+  var moonIcon = document.getElementById('theme-icon-moon');
+  var sunIcon  = document.getElementById('theme-icon-sun');
+  var label    = document.getElementById('theme-label');
+  if(moonIcon && sunIcon && label){
+    if(t === 'light'){
+      moonIcon.style.display='none'; sunIcon.style.display='';
+      label.textContent='Dark mode';
+    } else {
+      moonIcon.style.display=''; sunIcon.style.display='none';
+      label.textContent='Light mode';
+    }
+  }
+}
+function toggleTheme(){
+  var cur = document.documentElement.getAttribute('data-theme');
+  var next = cur === 'light' ? 'dark' : 'light';
+  applyTheme(next);
+  localStorage.setItem('mp-theme', next);
+}
 // ── Date ─────────────────────────────────────────────────────────────────────
 var dateStr = new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
 var el = document.getElementById('topbar-date');
