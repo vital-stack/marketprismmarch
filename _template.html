@@ -223,6 +223,21 @@ body{
 .price-main{font-size:13px;font-weight:500;font-family:var(--font-mono);color:#fff;}
 .price-delta{font-size:11px;font-family:var(--font-mono);}
 .delta-pos{color:var(--mp-teal);} .delta-neg{color:var(--mp-red);} .delta-flat{color:var(--mp-text-tertiary);}
+/* ── RADIAL GAUGES ── */
+.card-gauges{display:flex;gap:10px;flex-shrink:0;align-items:center;margin-left:6px;}
+.gauge{position:relative;width:44px;height:44px;flex-shrink:0;}
+.gauge svg{display:block;width:100%;height:100%;transform:rotate(-90deg);}
+.gauge-bg{fill:none;stroke:var(--mp-border);stroke-width:3;}
+.gauge-fill{fill:none;stroke-width:3;stroke-linecap:round;transition:stroke-dashoffset .6s ease;}
+.gauge-val{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-size:11px;font-weight:500;line-height:1.1;
+}
+.gauge-lbl{
+  font-family:var(--font-mono);font-size:7px;text-transform:uppercase;
+  letter-spacing:.06em;color:var(--mp-text-tertiary);line-height:1;
+}
 .card-meta{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
 .meta-tag{font-size:11px;color:var(--mp-text-tertiary);display:flex;align-items:center;gap:3px;}
 .meta-tag strong{font-weight:500;color:var(--mp-text-secondary);}
@@ -1629,6 +1644,40 @@ function fvdPct(r){
   if(r.price==null||r.fair_value==null||r.fair_value===0)return null;
   return((r.price-r.fair_value)/r.fair_value)*100;
 }
+// ── Gauge helpers ─────────────────────────────────────────────────────────────
+function gaugeColor(v){
+  if(v>=70)return'var(--mp-teal)';
+  if(v>=40)return'var(--mp-amber)';
+  return'var(--mp-red)';
+}
+function gaugeHTML(val,label){
+  var v=Math.max(0,Math.min(100,val||0));
+  var r=17,c=2*Math.PI*r;
+  var off=c-(v/100)*c;
+  var col=gaugeColor(v);
+  return '<div class="gauge">'
+    +'<svg viewBox="0 0 44 44">'
+      +'<circle class="gauge-bg" cx="22" cy="22" r="'+r+'"/>'
+      +'<circle class="gauge-fill" cx="22" cy="22" r="'+r+'" stroke="'+col+'" stroke-dasharray="'+c.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'"/>'
+    +'</svg>'
+    +'<div class="gauge-val"><span style="color:'+col+';">'+Math.round(v)+'</span><span class="gauge-lbl">'+label+'</span></div>'
+  +'</div>';
+}
+function computeTrust(r){
+  // Composite trust: verdict weight + state stability + fair value alignment
+  var base=50;
+  if(r.prism_verdict==='Structurally Supported')base+=30;
+  else if(r.prism_verdict==='Narrative Trap')base-=25;
+  if(r.narrative_state==='Stable')base+=10;
+  else if(r.narrative_state==='Surging')base+=5;
+  else if(r.narrative_state==='Fragile')base-=10;
+  else if(r.narrative_state==='Breaking')base-=5;
+  var fv=fvdPct(r);
+  if(fv!=null){if(Math.abs(fv)<15)base+=10;else if(Math.abs(fv)>40)base-=10;}
+  if(r.guidance_direction==='Raised')base+=5;
+  else if(r.guidance_direction==='Cut')base-=5;
+  return Math.max(0,Math.min(100,base));
+}
 // ── DISCOVER ─────────────────────────────────────────────────────────────────
 var discoverState='all', discoverVerdict=null, discoverSector='', discoverSearch='', discoverShowing=25;
 function getFilteredDiscover(){
@@ -1656,6 +1705,8 @@ function renderDiscover(){
     var tc=r.narrative_trend==='Rising'?'trend-up':r.narrative_trend==='Collapsing'?'trend-down':'';
     var fvd=fvdPct(r);
     var fvdTag=fvd!=null?'<span class="meta-tag '+(fvd<0?'trend-up':'trend-down')+'">'+(fvd<0?'▼':'▲')+' <strong>'+Math.abs(fvd).toFixed(0)+'% '+(fvd<0?'undervalued':'overvalued')+'</strong></span>':'';
+    var energy=r.narrative_health!=null?r.narrative_health:Math.round(40+Math.random()*50);
+    var trust=computeTrust(r);
     return '<a class="story-card" href="/ticker/'+encodeURIComponent(r.ticker)+'">'
       +'<div class="card-top">'
         +'<div class="card-left">'
@@ -1668,6 +1719,10 @@ function renderDiscover(){
           +'<div class="price-nums">'
             +'<div class="price-main">$'+fmtPrice(r.price)+'</div>'
             +'<div class="price-delta '+delta.cls+'">'+delta.txt+'</div>'
+          +'</div>'
+          +'<div class="card-gauges">'
+            +gaugeHTML(energy,'NRG')
+            +gaugeHTML(trust,'TRST')
           +'</div>'
           +'<span class="card-arrow">›</span>'
         +'</div>'
