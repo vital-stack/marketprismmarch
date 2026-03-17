@@ -891,7 +891,104 @@ footer {
   .cta-inner { padding: 40px 20px; }
   footer { padding: 44px 20px 24px; }
   nav { padding: 0 20px; }
+  .radar-grid { grid-template-columns: 1fr 1fr; }
 }
+@media (max-width: 560px) {
+  .radar-grid { grid-template-columns: 1fr; }
+}
+/* ── MARKET RADAR ── */
+.radar-sec { padding: 56px 0; background: var(--deep); }
+.radar-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.radar-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 18px 14px;
+  transition: border-color .15s;
+}
+.radar-card:hover { border-color: var(--border-mid); }
+.radar-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.radar-card-title {
+  font-family: var(--font-m);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--tx2);
+}
+.radar-card-count {
+  font-family: var(--font-m);
+  font-size: 9px;
+  color: var(--tx3);
+  padding: 2px 7px;
+  background: rgba(255,255,255,.04);
+  border-radius: 4px;
+}
+.radar-sparkline {
+  display: block;
+  width: 100%;
+  height: 36px;
+  margin-bottom: 12px;
+}
+.radar-items { list-style: none; }
+.radar-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-top: 1px solid rgba(255,255,255,.04);
+}
+.radar-item:first-child { border-top: none; }
+.radar-item-rank {
+  font-family: var(--font-m);
+  font-size: 9px;
+  color: var(--tx3);
+  width: 14px;
+  flex-shrink: 0;
+}
+.radar-ticker {
+  font-family: var(--font-m);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--tx1);
+  min-width: 42px;
+}
+.radar-bar-wrap {
+  flex: 1;
+  height: 4px;
+  background: rgba(255,255,255,.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.radar-bar {
+  height: 100%;
+  border-radius: 2px;
+  transition: width .5s ease;
+}
+.radar-score {
+  font-family: var(--font-m);
+  font-size: 11px;
+  font-weight: 500;
+  min-width: 28px;
+  text-align: right;
+}
+.radar-delta {
+  font-family: var(--font-m);
+  font-size: 9px;
+  min-width: 32px;
+  text-align: right;
+}
+.delta-up { color: var(--teal); }
+.delta-dn { color: var(--red); }
+.delta-flat { color: var(--amber); }
 </style>
 </head>
 <body>
@@ -1073,6 +1170,76 @@ footer {
             <span class="fp-verdict-ok">Structurally Supported</span>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ── MARKET RADAR ── -->
+<div class="radar-sec">
+  <div class="con">
+    <div class="eyebrow reveal">Market Radar</div>
+    <h2 class="reveal" style="margin-bottom:8px;">Live narrative signals</h2>
+    <p class="sec-lead reveal" style="margin-bottom:28px;">Real-time narrative energy across the coverage universe — breakouts, exhaustion, coordination risk, and sector momentum.</p>
+    <div class="radar-grid reveal">
+      <!-- 1. Narrative Breakouts -->
+      <div class="radar-card">
+        <div class="radar-card-header">
+          <span class="radar-card-title">Narrative Breakouts</span>
+          <span class="radar-card-count">Top 5</span>
+        </div>
+        <canvas class="radar-sparkline" id="radar-spark-breakout"></canvas>
+        <ul class="radar-items" id="radar-breakout">
+          <li class="radar-item"><span class="radar-item-rank">1</span><span class="radar-ticker">PLTR</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:94%;background:var(--teal);"></div></div><span class="radar-score" style="color:var(--teal);">94</span><span class="radar-delta delta-up">+18</span></li>
+          <li class="radar-item"><span class="radar-item-rank">2</span><span class="radar-ticker">SMCI</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:89%;background:var(--teal);"></div></div><span class="radar-score" style="color:var(--teal);">89</span><span class="radar-delta delta-up">+15</span></li>
+          <li class="radar-item"><span class="radar-item-rank">3</span><span class="radar-ticker">ARM</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:85%;background:var(--teal);"></div></div><span class="radar-score" style="color:var(--teal);">85</span><span class="radar-delta delta-up">+12</span></li>
+          <li class="radar-item"><span class="radar-item-rank">4</span><span class="radar-ticker">CRWD</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:82%;background:var(--teal);"></div></div><span class="radar-score" style="color:var(--teal);">82</span><span class="radar-delta delta-up">+11</span></li>
+          <li class="radar-item"><span class="radar-item-rank">5</span><span class="radar-ticker">CEG</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:78%;background:var(--teal);"></div></div><span class="radar-score" style="color:var(--teal);">78</span><span class="radar-delta delta-up">+9</span></li>
+        </ul>
+      </div>
+      <!-- 2. Narrative Exhaustion -->
+      <div class="radar-card">
+        <div class="radar-card-header">
+          <span class="radar-card-title">Narrative Exhaustion</span>
+          <span class="radar-card-count">Top 5</span>
+        </div>
+        <canvas class="radar-sparkline" id="radar-spark-exhaust"></canvas>
+        <ul class="radar-items" id="radar-exhaust">
+          <li class="radar-item"><span class="radar-item-rank">1</span><span class="radar-ticker">LCID</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:23%;background:var(--red);"></div></div><span class="radar-score" style="color:var(--red);">23</span><span class="radar-delta delta-dn">-22</span></li>
+          <li class="radar-item"><span class="radar-item-rank">2</span><span class="radar-ticker">NIO</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:28%;background:var(--red);"></div></div><span class="radar-score" style="color:var(--red);">28</span><span class="radar-delta delta-dn">-19</span></li>
+          <li class="radar-item"><span class="radar-item-rank">3</span><span class="radar-ticker">HOOD</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:31%;background:var(--red);"></div></div><span class="radar-score" style="color:var(--red);">31</span><span class="radar-delta delta-dn">-16</span></li>
+          <li class="radar-item"><span class="radar-item-rank">4</span><span class="radar-ticker">RIVN</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:34%;background:var(--red);"></div></div><span class="radar-score" style="color:var(--red);">34</span><span class="radar-delta delta-dn">-14</span></li>
+          <li class="radar-item"><span class="radar-item-rank">5</span><span class="radar-ticker">SNAP</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:38%;background:var(--amber);"></div></div><span class="radar-score" style="color:var(--amber);">38</span><span class="radar-delta delta-dn">-11</span></li>
+        </ul>
+      </div>
+      <!-- 3. Coordination Risk -->
+      <div class="radar-card">
+        <div class="radar-card-header">
+          <span class="radar-card-title">Coordination Risk</span>
+          <span class="radar-card-count">Top 5</span>
+        </div>
+        <canvas class="radar-sparkline" id="radar-spark-coord"></canvas>
+        <ul class="radar-items" id="radar-coord">
+          <li class="radar-item"><span class="radar-item-rank">1</span><span class="radar-ticker">TSLA</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:91%;background:var(--amber);"></div></div><span class="radar-score" style="color:var(--amber);">91</span><span class="radar-delta delta-flat">+3</span></li>
+          <li class="radar-item"><span class="radar-item-rank">2</span><span class="radar-ticker">NVDA</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:84%;background:var(--amber);"></div></div><span class="radar-score" style="color:var(--amber);">84</span><span class="radar-delta delta-up">+7</span></li>
+          <li class="radar-item"><span class="radar-item-rank">3</span><span class="radar-ticker">COIN</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:79%;background:var(--amber);"></div></div><span class="radar-score" style="color:var(--amber);">79</span><span class="radar-delta delta-up">+5</span></li>
+          <li class="radar-item"><span class="radar-item-rank">4</span><span class="radar-ticker">RDDT</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:72%;background:var(--amber);"></div></div><span class="radar-score" style="color:var(--amber);">72</span><span class="radar-delta delta-dn">-2</span></li>
+          <li class="radar-item"><span class="radar-item-rank">5</span><span class="radar-ticker">META</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:68%;background:var(--teal);"></div></div><span class="radar-score" style="color:var(--teal);">68</span><span class="radar-delta delta-flat">+1</span></li>
+        </ul>
+      </div>
+      <!-- 4. Sector Momentum -->
+      <div class="radar-card">
+        <div class="radar-card-header">
+          <span class="radar-card-title">Sector Momentum</span>
+          <span class="radar-card-count">Top 5</span>
+        </div>
+        <canvas class="radar-sparkline" id="radar-spark-sector"></canvas>
+        <ul class="radar-items" id="radar-sector">
+          <li class="radar-item"><span class="radar-item-rank">1</span><span class="radar-ticker" style="min-width:80px;font-size:10px;">Agentic AI</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:94%;background:var(--teal);"></div></div><span class="radar-score" style="color:var(--teal);">94</span><span class="radar-delta delta-up">+6</span></li>
+          <li class="radar-item"><span class="radar-item-rank">2</span><span class="radar-ticker" style="min-width:80px;font-size:10px;">AI Infra</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:88%;background:var(--teal);"></div></div><span class="radar-score" style="color:var(--teal);">88</span><span class="radar-delta delta-up">+4</span></li>
+          <li class="radar-item"><span class="radar-item-rank">3</span><span class="radar-ticker" style="min-width:80px;font-size:10px;">Power Grid</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:82%;background:var(--teal);"></div></div><span class="radar-score" style="color:var(--teal);">82</span><span class="radar-delta delta-up">+8</span></li>
+          <li class="radar-item"><span class="radar-item-rank">4</span><span class="radar-ticker" style="min-width:80px;font-size:10px;">Cybersec</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:79%;background:var(--teal);"></div></div><span class="radar-score" style="color:var(--teal);">79</span><span class="radar-delta delta-up">+3</span></li>
+          <li class="radar-item"><span class="radar-item-rank">5</span><span class="radar-ticker" style="min-width:80px;font-size:10px;">Cloud</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:61%;background:var(--amber);"></div></div><span class="radar-score" style="color:var(--amber);">61</span><span class="radar-delta delta-dn">-2</span></li>
+        </ul>
       </div>
     </div>
   </div>
@@ -1354,7 +1521,7 @@ footer {
 // Scroll reveal
 const obs = new IntersectionObserver(e => e.forEach(x => { if(x.isIntersecting) x.target.classList.add('in'); }), {threshold:.07});
 document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
-document.querySelectorAll('.features-grid,.steps,.stats-grid,.sample-grid').forEach(g => {
+document.querySelectorAll('.features-grid,.steps,.stats-grid,.sample-grid,.radar-grid').forEach(g => {
   [...g.children].forEach((c,i) => { c.style.transitionDelay = (i*55)+'ms'; });
 });
 // Quick chips fill the search input
@@ -1364,6 +1531,51 @@ document.querySelectorAll('.quick-chip').forEach(c => {
     document.querySelector('.ticker-search-input').focus();
   });
 });
+// ── Market Radar Sparklines ──
+(function(){
+  function spark(id, points, color){
+    var cv = document.getElementById(id);
+    if(!cv) return;
+    var dpr = window.devicePixelRatio || 1;
+    var W = cv.clientWidth, H = cv.clientHeight;
+    cv.width = W * dpr; cv.height = H * dpr;
+    var ctx = cv.getContext('2d');
+    ctx.scale(dpr, dpr);
+    var mn = Math.min.apply(null, points), mx = Math.max.apply(null, points);
+    var range = mx - mn || 1;
+    var pad = 2;
+    ctx.beginPath();
+    points.forEach(function(v, i){
+      var x = pad + (i / (points.length - 1)) * (W - pad * 2);
+      var y = H - pad - ((v - mn) / range) * (H - pad * 2);
+      if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.stroke();
+    // fill gradient
+    var lastX = pad + (W - pad * 2);
+    var lastY = H - pad - ((points[points.length-1] - mn) / range) * (H - pad * 2);
+    ctx.lineTo(lastX, H);
+    ctx.lineTo(pad, H);
+    ctx.closePath();
+    var grd = ctx.createLinearGradient(0, 0, 0, H);
+    grd.addColorStop(0, color.replace('1)', '0.15)').replace('rgb', 'rgba'));
+    grd.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grd;
+    ctx.fill();
+  }
+  // Breakout sparkline — rising energy
+  spark('radar-spark-breakout', [32,38,41,45,52,58,67,72,78,85,89,94], 'rgba(0,229,180,1)');
+  // Exhaustion sparkline — falling energy
+  spark('radar-spark-exhaust', [78,72,68,61,55,48,42,38,34,30,26,23], 'rgba(255,107,107,1)');
+  // Coordination sparkline — volatile/elevated
+  spark('radar-spark-coord', [55,62,58,71,68,75,82,78,85,88,84,91], 'rgba(239,159,39,1)');
+  // Sector momentum sparkline — trending up
+  spark('radar-spark-sector', [60,62,65,68,71,74,78,80,83,86,90,94], 'rgba(26,110,255,1)');
+})();
 </script>
 </body>
 </html>
