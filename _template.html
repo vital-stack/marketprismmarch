@@ -445,15 +445,18 @@ body{
 .trap-chart-legend{display:none;}
 .trap-chart-legend-item{display:flex;align-items:center;gap:5px;font-size:10px;font-family:var(--font-mono);color:var(--mp-text-tertiary);}
 .trap-chart-legend-dot{width:10px;height:10px;border-radius:2px;}
-.trap-bar-row{display:flex;align-items:center;gap:0;margin-bottom:4px;height:36px;transition:all 0.3s;border-radius:6px;padding:0 4px;}
-.trap-bar-row:hover{background:rgba(255,255,255,0.02);}
-.trap-bar-label{width:180px;text-align:right;padding-right:16px;font-size:12px;color:var(--mp-text-secondary);flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--font-body);}
-.trap-bar-track{flex:1;height:6px;background:rgba(255,255,255,0.04);border-radius:99px;overflow:hidden;position:relative;}
-.trap-bar-fill{height:100%;border-radius:99px;animation:barGrow 1s cubic-bezier(0.16,1,0.3,1) both;min-width:2px;}
-.trap-bar-info{width:80px;text-align:right;flex-shrink:0;padding-left:12px;}
-.trap-bar-pct{font-family:var(--font-mono);font-size:12px;font-weight:400;color:var(--mp-text-primary);display:block;}
-.trap-bar-ticker{font-family:var(--font-mono);font-size:9px;color:var(--mp-text-tertiary);display:block;}
-@media(max-width:600px){.trap-bar-label{width:100px;font-size:10px;}.trap-bar-info{width:55px;}}
+/* Vertical bar chart */
+.trap-bars-v{display:flex;align-items:flex-end;gap:0;height:220px;padding:0 8px;border-bottom:1px solid var(--mp-border);}
+.trap-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:0;height:100%;justify-content:flex-end;position:relative;min-width:0;}
+.trap-col:hover .trap-vbar{filter:brightness(1.3);}
+.trap-col:hover .trap-col-pct{opacity:1;}
+.trap-vbar{width:60%;max-width:48px;border-radius:4px 4px 0 0;min-height:2px;animation:barGrowV 0.8s cubic-bezier(0.16,1,0.3,1) both;transform-origin:bottom;}
+@keyframes barGrowV{0%{transform:scaleY(0);}100%{transform:scaleY(1);}}
+.trap-col-pct{font-family:var(--font-mono);font-size:10px;font-weight:500;color:var(--mp-text-primary);margin-bottom:4px;opacity:0.7;transition:opacity 0.2s;}
+.trap-col-ticker{font-family:var(--font-mono);font-size:8px;color:var(--mp-text-tertiary);margin-bottom:2px;}
+.trap-labels-row{display:flex;gap:0;padding:0 8px;}
+.trap-col-label{flex:1;text-align:center;padding:10px 2px 0;min-width:0;}
+.trap-col-label span{display:inline-block;writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);font-family:var(--font-body);font-size:10px;color:var(--mp-text-tertiary);max-height:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2;}
 .sector-grid{
   display:grid;grid-template-columns:repeat(2,1fr);gap:12px;
 }
@@ -2375,15 +2378,21 @@ function renderTrapChart(){
     if(p>0)return 'rgba(255,255,255,0.2)';
     return 'rgba(255,255,255,0.1)';
   }
-  barsEl.innerHTML=rows.map(function(r){
-    var w=maxPct>0?Math.round((r.pct/maxPct)*100):0;
-    if(r.pct>0&&w<3)w=3;
-    return '<div class="trap-bar-row">'
-      +'<span class="trap-bar-label" title="'+esc(r.name)+'">'+esc(r.name)+'</span>'
-      +'<div class="trap-bar-track"><div class="trap-bar-fill" style="--bar-w:'+w+'%;width:'+w+'%;background:'+barColor(r.pct)+';"></div></div>'
-      +'<div class="trap-bar-info"><span class="trap-bar-pct">'+r.pct.toFixed(1)+'%</span><span class="trap-bar-ticker">'+esc(r.topTicker)+'</span></div>'
+  // Limit to top 8 sectors for clean vertical layout
+  var top=rows.slice(0,8);
+  var barsHTML='<div class="trap-bars-v">'+top.map(function(r,i){
+    var h=maxPct>0?Math.round((r.pct/maxPct)*100):0;
+    if(r.pct>0&&h<4)h=4;
+    return '<div class="trap-col" style="animation-delay:'+(i*0.06)+'s">'
+      +'<span class="trap-col-pct">'+r.pct.toFixed(1)+'%</span>'
+      +'<span class="trap-col-ticker">'+esc(r.topTicker)+'</span>'
+      +'<div class="trap-vbar" style="height:'+h+'%;background:'+barColor(r.pct)+';animation-delay:'+(i*0.06)+'s"></div>'
     +'</div>';
-  }).join('');
+  }).join('')+'</div>';
+  var labelsHTML='<div class="trap-labels-row">'+top.map(function(r){
+    return '<div class="trap-col-label"><span title="'+esc(r.name)+'">'+esc(r.name)+'</span></div>';
+  }).join('')+'</div>';
+  barsEl.innerHTML=barsHTML+labelsHTML;
 }
 function filterSectors(f,btn){
   sectorFilter=f;
