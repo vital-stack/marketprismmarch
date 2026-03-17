@@ -811,6 +811,7 @@ body{
 .dhm-sum-cell:last-child{border-right:none;}
 .dhm-sum-val{font-family:var(--font-mono);font-size:16px;font-weight:500;color:var(--mp-text-primary);}
 .dhm-sum-lbl{font-size:9px;color:var(--mp-text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-top:1px;}
+.dhm-sum-sub{font-size:8px;color:var(--mp-text-tertiary);opacity:0.5;margin-top:1px;font-family:var(--font-mono);letter-spacing:.04em;}
 /* Discover stories column */
 .discover-stories-col{
   min-width:0;
@@ -1215,7 +1216,9 @@ body{
   display:flex;flex-wrap:wrap;gap:16px;overflow:visible;
   justify-content:flex-start;
 }
-.cards-stories-split .card-scene{width:calc(50% - 8px);min-width:200px;}
+.cards-stories-split .card-scene{width:calc(50% - 8px);min-width:200px;flex-shrink:1;}
+.cards-stories-split .tc-narrative{overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.cards-stories-split .tc-signal-text{overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
 /* Stories stream column */
 .stories-stream-col{
   min-width:0;background:var(--mp-surface);border:1px solid var(--mp-border);
@@ -3235,13 +3238,14 @@ async function loadDiscoverHeatmap(){
     var traps=rows.filter(function(r){return r.prevailing_verdict==='Narrative Trap';}).length;
     var supported=rows.filter(function(r){return r.prevailing_verdict==='Structurally Supported';}).length;
     var strong=rows.filter(function(r){return(r.pulse_health_score||0)>=75;}).length;
+    var stressed=rows.filter(function(r){return r.narrative_state==='STRESSED'||(r.pulse_health_score||0)<40;}).length;
     var avg=Math.round(rows.reduce(function(a,r){return a+(r.pulse_health_score||0);},0)/rows.length);
     var avgCol=avg>=70?'var(--mp-teal)':avg>=55?'var(--mp-amber)':'var(--mp-red)';
     document.getElementById('dhm-summary').innerHTML=
-      '<div class="dhm-sum-cell"><div class="dhm-sum-val" style="color:'+avgCol+'">'+avg+'</div><div class="dhm-sum-lbl">Avg Health</div></div>'
-      +'<div class="dhm-sum-cell"><div class="dhm-sum-val" style="color:var(--mp-teal)">'+strong+'</div><div class="dhm-sum-lbl">Strong</div></div>'
-      +'<div class="dhm-sum-cell"><div class="dhm-sum-val" style="color:var(--mp-red)">'+traps+'</div><div class="dhm-sum-lbl">Traps</div></div>'
-      +'<div class="dhm-sum-cell"><div class="dhm-sum-val">'+supported+'</div><div class="dhm-sum-lbl">Supported</div></div>';
+      '<div class="dhm-sum-cell"><div class="dhm-sum-val" style="color:'+avgCol+'">'+avg+'</div><div class="dhm-sum-lbl">Avg Narrative Health</div><div class="dhm-sum-sub">out of 100</div></div>'
+      +'<div class="dhm-sum-cell"><div class="dhm-sum-val" style="color:var(--mp-teal)">'+strong+'</div><div class="dhm-sum-lbl">Strong Narratives</div><div class="dhm-sum-sub">health \u2265 75</div></div>'
+      +'<div class="dhm-sum-cell"><div class="dhm-sum-val" style="color:var(--mp-red)">'+traps+'</div><div class="dhm-sum-lbl">Trap Flags</div><div class="dhm-sum-sub">'+supported+' structurally supported</div></div>'
+      +'<div class="dhm-sum-cell"><div class="dhm-sum-val" style="color:var(--mp-amber)">'+stressed+'</div><div class="dhm-sum-lbl">Stressed</div><div class="dhm-sum-sub">label = STRESSED</div></div>';
   }catch(e){console.error('Heatmap:',e);}
 }
 // ── Sharing sub-tabs ─────────────────────────────────────────────────────────
