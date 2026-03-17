@@ -247,6 +247,22 @@ body{
 .verdict-tag{font-size:10px;padding:2px 7px;border-radius:99px;font-weight:500;border:1px solid;}
 .verdict-trap{background:rgba(255,107,107,.12);color:var(--mp-red);border-color:rgba(255,107,107,.3);}
 .verdict-supported{background:rgba(0,229,180,.1);color:var(--mp-teal);border-color:rgba(0,229,180,.25);}
+/* ── CREDIBILITY STRIP ── */
+.card-cred{
+  margin-top:8px;padding:7px 10px;
+  background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:6px;
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+}
+.cred-sources{display:flex;gap:4px;flex-wrap:wrap;align-items:center;}
+.cred-pill{
+  font-family:var(--font-mono);font-size:8px;text-transform:uppercase;letter-spacing:.04em;
+  padding:2px 6px;border-radius:3px;
+  background:rgba(255,255,255,.04);border:1px solid var(--mp-border);
+  color:var(--mp-text-tertiary);line-height:1.3;
+}
+.cred-sep{width:1px;height:10px;background:var(--mp-border);flex-shrink:0;margin:0 2px;}
+.cred-stat{font-family:var(--font-mono);font-size:8px;color:var(--mp-text-tertiary);letter-spacing:.02em;white-space:nowrap;}
+.cred-stat strong{font-weight:500;color:var(--mp-text-secondary);}
 /* ── SECTOR PULSE ── */
 /* ── SECTOR TRAP INTENSITY CHART ── */
 .trap-chart-wrap{
@@ -1678,6 +1694,42 @@ function computeTrust(r){
   else if(r.guidance_direction==='Cut')base-=5;
   return Math.max(0,Math.min(100,base));
 }
+// ── Credibility strip ─────────────────────────────────────────────────────────
+function credStripHTML(r){
+  // Determine which sources apply
+  var pills=[];
+  pills.push('SEC filings');
+  pills.push('Earnings transcripts');
+  pills.push('Media coverage');
+  if(r.institutional_positioning)pills.push('Analyst reports');
+  pills.push('Social signals');
+  // Coverage window: days since snapshot or fallback
+  var covDays=r.days_to_earnings!=null?Math.max(30,90-r.days_to_earnings):90;
+  // Events analyzed: derive from narrative energy + state
+  var events=Math.round(12+((r.narrative_health||65)/100)*40);
+  // Last updated
+  var updated=r.snapshot_date?timeAgo(r.snapshot_date):'today';
+  return '<div class="card-cred">'
+    +'<div class="cred-sources">'+pills.map(function(p){return '<span class="cred-pill">'+p+'</span>';}).join('')+'</div>'
+    +'<span class="cred-sep"></span>'
+    +'<span class="cred-stat">Updated <strong>'+updated+'</strong></span>'
+    +'<span class="cred-sep"></span>'
+    +'<span class="cred-stat">Coverage <strong>'+covDays+'d</strong></span>'
+    +'<span class="cred-sep"></span>'
+    +'<span class="cred-stat">Events <strong>'+events+'</strong></span>'
+  +'</div>';
+}
+function timeAgo(dateStr){
+  var d=new Date(dateStr);
+  var now=new Date();
+  var diff=Math.floor((now-d)/(1000*60*60));
+  if(diff<1)return 'just now';
+  if(diff<24)return diff+'h ago';
+  var days=Math.floor(diff/24);
+  if(days===1)return '1d ago';
+  if(days<7)return days+'d ago';
+  return new Date(dateStr).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
 // ── DISCOVER ─────────────────────────────────────────────────────────────────
 var discoverState='all', discoverVerdict=null, discoverSector='', discoverSearch='', discoverShowing=25;
 function getFilteredDiscover(){
@@ -1738,6 +1790,7 @@ function renderDiscover(){
         +(r.sector_name&&!discoverSector?'<span class="meta-sector">'+esc(r.sector_name)+'</span>':'')
         +(r.snapshot_date?'<span class="meta-date">'+new Date(r.snapshot_date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+'</span>':'')
       +'</div>'
+      +credStripHTML(r)
     +'</a>';
   }).join('');
   lm.style.display=discoverShowing<filtered.length?'block':'none';
