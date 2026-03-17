@@ -989,6 +989,150 @@ footer {
 .delta-up { color: var(--teal); }
 .delta-dn { color: var(--red); }
 .delta-flat { color: var(--amber); }
+/* ── TRADING CARD DECK ── */
+.deck {
+  display: flex;
+  gap: 20px;
+  padding: 2rem 0;
+  justify-content: center;
+  flex-wrap: wrap;
+  -webkit-font-smoothing: antialiased;
+}
+.card-scene {
+  width: 224px;
+  perspective: 1200px;
+  cursor: pointer;
+}
+.card-flipper {
+  position: relative;
+  width: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.75s cubic-bezier(0.4, 0.2, 0.2, 1);
+}
+.card-scene.flipped .card-flipper { transform: rotateY(180deg); }
+.card-front, .card-back {
+  width: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.card-back {
+  position: absolute;
+  top: 0; left: 0;
+  transform: rotateY(180deg);
+}
+.foil-layer {
+  position: absolute; inset: 0; border-radius: 12px; pointer-events: none;
+  opacity: 0; transition: opacity 0.3s; z-index: 10; mix-blend-mode: screen;
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%),
+    rgba(255,255,255,0.18) 0%, rgba(180,140,255,0.14) 20%,
+    rgba(0,229,180,0.1) 40%, rgba(0,194,255,0.08) 60%, transparent 75%);
+}
+.foil-rainbow {
+  position: absolute; inset: 0; border-radius: 12px; pointer-events: none;
+  opacity: 0; transition: opacity 0.3s; z-index: 9; mix-blend-mode: screen;
+  background: repeating-linear-gradient(calc(var(--angle, 105deg)),
+    rgba(255,0,128,0.04) 0px, rgba(255,100,0,0.04) 8px,
+    rgba(255,220,0,0.04) 16px, rgba(0,255,128,0.04) 24px,
+    rgba(0,200,255,0.04) 32px, rgba(120,0,255,0.04) 40px,
+    rgba(255,0,128,0.04) 48px);
+}
+.foil-scan {
+  position: absolute; inset: 0; border-radius: 12px; pointer-events: none;
+  opacity: 0; z-index: 11; overflow: hidden;
+}
+.foil-scan::after {
+  content: ''; position: absolute; top: -100%; left: -20%;
+  width: 140%; height: 60%;
+  background: linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.04) 40%,
+    rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.04) 60%, transparent 100%);
+  transform: skewX(-15deg);
+  animation: scanMove 3s ease-in-out infinite;
+}
+@keyframes scanMove { 0% { top: -100%; } 100% { top: 200%; } }
+.foil-border {
+  position: absolute; inset: 0; border-radius: 12px; pointer-events: none;
+  opacity: 0; transition: opacity 0.4s; z-index: 8;
+}
+.card-scene:not(.flipped):hover .foil-layer,
+.card-scene:not(.flipped):hover .foil-rainbow,
+.card-scene:not(.flipped):hover .foil-border { opacity: 1; }
+.card-scene:not(.flipped):hover .foil-scan { opacity: 1; }
+.card-scene.flipped:hover .foil-layer,
+.card-scene.flipped:hover .foil-rainbow,
+.card-scene.flipped:hover .foil-border { opacity: 1; }
+.card-scene.flipped:hover .foil-scan { opacity: 1; }
+.tc {
+  background: var(--deep); border: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  transition: border-color 0.25s, box-shadow 0.25s; position: relative;
+}
+.card-scene:hover .tc {
+  border-color: rgba(255,255,255,0.13);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+.tc-accent { height: 2px; width: 100%; flex-shrink: 0; }
+.tc-body { padding: 14px; display: flex; flex-direction: column; gap: 9px; }
+.tc-header { display: flex; justify-content: space-between; align-items: flex-start; }
+.tc-header-left { display: flex; align-items: center; gap: 8px; }
+.tc-logo {
+  width: 28px; height: 28px; border-radius: 7px; background: var(--surface);
+  border: 1px solid rgba(255,255,255,0.13); display: flex;
+  align-items: center; justify-content: center; flex-shrink: 0;
+}
+.tc-ticker { font-family: var(--font-d); font-size: 18px; line-height: 1; letter-spacing: -0.01em; color: var(--tx1); }
+.tc-date { font-family: var(--font-m); font-size: 8px; letter-spacing: 0.06em; color: var(--tx3); margin-top: 1px; text-transform: uppercase; }
+.tc-rarity { font-family: var(--font-m); font-size: 8px; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 7px; border-radius: 99px; }
+.tc-price-row { display: flex; align-items: baseline; gap: 7px; }
+.tc-price { font-family: var(--font-d); font-size: 20px; letter-spacing: -0.02em; color: var(--tx1); line-height: 1; }
+.tc-change { font-family: var(--font-m); font-size: 11px; }
+.tc-chart { border-radius: 7px; overflow: hidden; height: 60px; background: var(--surface); border: 1px solid var(--border); }
+.tc-move { font-family: var(--font-d); font-size: 14px; letter-spacing: -0.01em; color: var(--tx1); line-height: 1.2; }
+.tc-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+.tc-tag { font-family: var(--font-m); font-size: 7px; letter-spacing: 0.07em; text-transform: uppercase; padding: 2px 7px; border-radius: 99px; }
+.tc-divider { height: 1px; background: var(--border); }
+.tc-conf-row { display: flex; align-items: center; gap: 7px; }
+.tc-conf-label { font-family: var(--font-m); font-size: 8px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--tx3); width: 68px; flex-shrink: 0; }
+.tc-conf-bar { flex: 1; height: 2px; border-radius: 2px; background: rgba(255,255,255,0.13); overflow: hidden; }
+.tc-conf-fill { height: 100%; border-radius: 2px; }
+.tc-conf-val { font-family: var(--font-m); font-size: 11px; font-weight: 500; width: 28px; text-align: right; flex-shrink: 0; }
+.tc-window { font-family: var(--font-m); font-size: 8px; color: var(--tx3); letter-spacing: 0.05em; text-transform: uppercase; margin-top: -5px; }
+.tc-signals { display: flex; flex-direction: column; gap: 6px; }
+.tc-signal-row { display: flex; gap: 7px; align-items: flex-start; }
+.tc-pip { width: 3px; height: 3px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+.tc-signal-label { font-family: var(--font-m); font-size: 7px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--tx3); }
+.tc-signal-text { font-size: 11px; font-weight: 300; line-height: 1.4; color: var(--tx2); margin-top: 1px; }
+.tc-bias { font-family: var(--font-m); font-size: 9px; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; padding: 5px 10px; border-radius: 6px; text-align: center; background: var(--surface); border: 1px solid rgba(255,255,255,0.13); }
+.tc-metrics { display: flex; gap: 7px; }
+.tc-metric { flex: 1; border-radius: 7px; padding: 7px 9px; background: var(--surface); border: 1px solid var(--border); }
+.tc-metric-label { font-family: var(--font-m); font-size: 7px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--tx3); margin-bottom: 3px; }
+.tc-metric-val { font-family: var(--font-d); font-size: 17px; line-height: 1; }
+.tc-footer { display: flex; justify-content: space-between; align-items: center; padding: 5px 9px; border-radius: 6px; background: var(--surface); border: 1px solid var(--border); }
+.tc-verdict { font-family: var(--font-m); font-size: 8px; letter-spacing: 0.09em; text-transform: uppercase; font-weight: 500; }
+.tc-horizon { font-family: var(--font-m); font-size: 8px; color: var(--tx3); }
+.flip-hint { text-align: center; font-family: var(--font-m); font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--tx3); padding: 6px 0 10px; }
+.pulse-dot { width: 5px; height: 5px; border-radius: 50%; animation: blink 2s ease infinite; flex-shrink: 0; }
+@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.2;} }
+.card-back-inner { width: 100%; display: flex; flex-direction: column; position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,0.13); border-radius: 12px; }
+.back-graphic { width: 100%; height: 180px; position: relative; overflow: hidden; flex-shrink: 0; }
+.back-graphic svg { width: 100%; height: 100%; }
+.back-content { padding: 14px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.back-company-row { display: flex; align-items: center; gap: 10px; }
+.back-company-logo { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.13); }
+.back-company-name { font-family: var(--font-d); font-size: 16px; letter-spacing: -0.01em; color: var(--tx1); line-height: 1.1; }
+.back-company-sector { font-family: var(--font-m); font-size: 8px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tx3); margin-top: 1px; }
+.back-divider { height: 1px; background: var(--border); }
+.back-fact-label { font-family: var(--font-m); font-size: 7px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--tx3); margin-bottom: 3px; }
+.back-fact { font-family: var(--font-d); font-size: 13px; line-height: 1.45; color: var(--tx1); font-style: italic; }
+.back-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.back-stat { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; }
+.back-stat-label { font-family: var(--font-m); font-size: 7px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--tx3); margin-bottom: 2px; }
+.back-stat-val { font-family: var(--font-m); font-size: 12px; font-weight: 500; }
+.back-footer { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); }
+.back-footer-label { font-family: var(--font-m); font-size: 8px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tx3); }
+.back-footer-val { font-family: var(--font-m); font-size: 9px; font-weight: 500; }
+.flip-back-hint { text-align: center; font-family: var(--font-m); font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--tx3); padding: 8px 0 10px; }
 </style>
 </head>
 <body>
@@ -1060,12 +1204,11 @@ footer {
         narrative intelligence · live market coverage
       </div>
       <h1>
-        See what's driving<br>
-        <em>every story</em><br>
-        in the market.
+        Trade like a hedge fund.<br>
+        <em>Every day.</em>
       </h1>
       <p class="hero-lead">
-        Market Prism tracks the narratives behind stock movements — who's saying what, whether it holds up, and where the risk is hidden.
+        Every morning, Market Prism delivers the same forensic narrative analysis institutional desks pay $24,000 a year for. Verdict-driven. SEC-anchored. Statistically validated.
       </p>
       <div class="ticker-search-wrap">
         <div class="ticker-search-label">Analyse a ticker</div>
@@ -1174,72 +1317,275 @@ footer {
     </div>
   </div>
 </div>
-<!-- ── MARKET RADAR ── -->
+<!-- ── LIVE NARRATIVE SIGNALS ── -->
 <div class="radar-sec">
   <div class="con">
     <div class="eyebrow reveal">Market Radar</div>
     <h2 class="reveal" style="margin-bottom:8px;">Live narrative signals</h2>
     <p class="sec-lead reveal" style="margin-bottom:28px;">Real-time narrative energy across the coverage universe — breakouts, exhaustion, coordination risk, and sector momentum.</p>
-    <div class="radar-grid reveal">
-      <!-- 1. Narrative Breakouts -->
-      <div class="radar-card">
-        <div class="radar-card-header">
-          <span class="radar-card-title">Narrative Breakouts</span>
-          <span class="radar-card-count">Top 5</span>
+    <div class="deck reveal">
+      <!-- ── NVDA ── -->
+      <div class="card-scene" id="card-nvda" onclick="this.classList.toggle('flipped')">
+        <div class="card-flipper">
+          <div class="card-front" style="position:relative;">
+            <div class="foil-layer"></div>
+            <div class="foil-rainbow"></div>
+            <div class="foil-scan"></div>
+            <div class="foil-border" style="box-shadow:inset 0 0 0 1px rgba(255,107,107,0.4), 0 0 30px rgba(255,107,107,0.15);"></div>
+            <div class="tc">
+              <div class="tc-accent" style="background:linear-gradient(90deg,var(--red),#7B61FF);"></div>
+              <div class="tc-body">
+                <div class="tc-header">
+                  <div class="tc-header-left">
+                    <div class="tc-logo"><svg viewBox="0 0 80 80" width="16" height="16"><path d="M40 14C24 14 12 26 12 40C12 54 24 66 40 66C56 66 68 54 68 40C68 26 56 14 40 14ZM40 20C52 20 62 29 62 40C62 51 52 60 40 60C28 60 18 51 18 40C18 29 28 20 40 20ZM40 28C32 28 26 34 26 40C26 46 32 52 40 52C48 52 54 46 54 40C54 34 48 28 40 28ZM40 33C37 33 34 36 34 40C34 44 37 47 40 47C43 47 46 44 46 40C46 36 43 33 40 33Z" fill="#76b900"/></svg></div>
+                    <div><div class="tc-ticker">NVDA</div><div class="tc-date">Mar 17, 2026</div></div>
+                  </div>
+                  <span class="tc-rarity" style="background:rgba(255,107,107,0.1);color:#FF9090;border:1px solid rgba(255,107,107,0.22);">Rare</span>
+                </div>
+                <div class="tc-price-row"><span class="tc-price">$118.42</span><span class="tc-change" style="color:var(--red);">&#9660; 2.14%</span></div>
+                <div class="tc-chart"><svg width="100%" height="60" viewBox="0 0 200 60" preserveAspectRatio="none"><polyline points="0,20 28,16 50,22 75,12 98,30 118,40 142,47 165,41 185,51 200,55" fill="none" stroke="var(--red)" stroke-width="1.5" opacity="0.8"/><polygon points="0,20 28,16 50,22 75,12 98,30 118,40 142,47 165,41 185,51 200,55 200,60 0,60" fill="var(--red)" opacity="0.07"/></svg></div>
+                <div class="tc-move">Narrative Trap</div>
+                <div class="tc-tags">
+                  <span class="tc-tag" style="background:rgba(255,107,107,0.09);color:#FF9090;border:1px solid rgba(255,107,107,0.2);">Stressed</span>
+                  <span class="tc-tag" style="background:rgba(255,107,107,0.09);color:#FF9090;border:1px solid rgba(255,107,107,0.2);">Decaying</span>
+                  <span class="tc-tag" style="background:rgba(123,97,255,0.1);color:#B8AAFF;border:1px solid rgba(123,97,255,0.22);">ER &#8722;3d</span>
+                </div>
+                <div class="tc-divider"></div>
+                <div class="tc-conf-row"><span class="tc-conf-label">Confidence</span><div class="tc-conf-bar"><div class="tc-conf-fill" style="width:74%;background:var(--red);opacity:0.75;"></div></div><span class="tc-conf-val" style="color:var(--red);">74%</span></div>
+                <div class="tc-window">Window: 3&#8211;7 days</div>
+                <div class="tc-signals">
+                  <div class="tc-signal-row"><div class="tc-pip" style="background:var(--cyan);"></div><div><div class="tc-signal-label">Setup</div><div class="tc-signal-text">Market pricing in outdated growth expectations</div></div></div>
+                  <div class="tc-signal-row"><div class="tc-pip" style="background:#7B61FF;"></div><div><div class="tc-signal-label">Signal</div><div class="tc-signal-text">Narrative breaking &#8594; early decay phase</div></div></div>
+                  <div class="tc-signal-row"><div class="tc-pip" style="background:var(--red);"></div><div><div class="tc-signal-label">Risk</div><div class="tc-signal-text">Retail still chasing strength</div></div></div>
+                </div>
+                <div class="tc-bias" style="color:var(--red);border-color:rgba(255,107,107,0.18);">&#8594; Bias: Fade rallies</div>
+                <div class="tc-metrics">
+                  <div class="tc-metric"><div class="tc-metric-label">Pulse health</div><div class="tc-metric-val" style="color:var(--red);">28<span style="font-size:10px;color:var(--tx3);font-family:var(--font-m);"> /100</span></div></div>
+                  <div class="tc-metric"><div class="tc-metric-label">FV gap</div><div class="tc-metric-val" style="color:var(--tx2);">+34%</div></div>
+                </div>
+                <div class="tc-footer"><div class="pulse-dot" style="background:var(--red);"></div><span class="tc-verdict" style="color:var(--red);">Fading Bearish</span><span class="tc-horizon">3&#8211;5d</span></div>
+              </div>
+            </div>
+            <div class="flip-hint">tap to reveal &#8634;</div>
+          </div>
+          <div class="card-back" style="position:absolute;">
+            <div style="position:relative;">
+              <div class="foil-layer"></div>
+              <div class="foil-rainbow"></div>
+              <div class="foil-scan"></div>
+              <div class="foil-border" style="box-shadow:inset 0 0 0 1px rgba(118,185,0,0.4), 0 0 30px rgba(118,185,0,0.15);"></div>
+              <div class="card-back-inner" style="background:var(--deep);">
+                <div class="back-graphic">
+                  <svg viewBox="0 0 224 180" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+                    <defs>
+                      <radialGradient id="ng1" cx="50%" cy="60%" r="70%"><stop offset="0%" stop-color="#76b900" stop-opacity="0.25"/><stop offset="100%" stop-color="#0A0E1A" stop-opacity="0"/></radialGradient>
+                      <linearGradient id="nl1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#76b900" stop-opacity="0.12"/><stop offset="100%" stop-color="#1A6EFF" stop-opacity="0.08"/></linearGradient>
+                    </defs>
+                    <rect width="224" height="180" fill="#0A0E1A"/>
+                    <rect width="224" height="180" fill="url(#nl1)"/>
+                    <circle cx="112" cy="100" r="70" fill="url(#ng1)"/>
+                    <line x1="0" y1="40" x2="60" y2="40" stroke="#76b900" stroke-width="0.5" opacity="0.3"/><line x1="60" y1="40" x2="60" y2="20" stroke="#76b900" stroke-width="0.5" opacity="0.3"/><line x1="60" y1="20" x2="100" y2="20" stroke="#76b900" stroke-width="0.5" opacity="0.3"/>
+                    <line x1="224" y1="60" x2="160" y2="60" stroke="#76b900" stroke-width="0.5" opacity="0.3"/><line x1="160" y1="60" x2="160" y2="90" stroke="#76b900" stroke-width="0.5" opacity="0.3"/>
+                    <circle cx="60" cy="20" r="2" fill="#76b900" opacity="0.5"/><circle cx="100" cy="20" r="2" fill="#76b900" opacity="0.5"/><circle cx="160" cy="90" r="2" fill="#76b900" opacity="0.5"/>
+                    <rect x="72" y="50" width="80" height="80" rx="4" fill="none" stroke="#76b900" stroke-width="1" opacity="0.4"/>
+                    <rect x="82" y="60" width="60" height="60" rx="2" fill="#76b900" opacity="0.08"/>
+                    <rect x="88" y="66" width="48" height="48" rx="1" fill="none" stroke="#76b900" stroke-width="0.5" opacity="0.3"/>
+                    <text x="112" y="95" text-anchor="middle" font-family="monospace" font-size="10" fill="#76b900" opacity="0.6" letter-spacing="3">NVIDIA</text>
+                    <text x="112" y="109" text-anchor="middle" font-family="monospace" font-size="7" fill="#76b900" opacity="0.35" letter-spacing="2">H100 &#183; BLACKWELL</text>
+                  </svg>
+                </div>
+                <div class="back-content">
+                  <div class="back-company-row">
+                    <div class="back-company-logo" style="background:#0d1a00;"><svg viewBox="0 0 80 80" width="20" height="20"><path d="M40 14C24 14 12 26 12 40C12 54 24 66 40 66C56 66 68 54 68 40C68 26 56 14 40 14ZM40 20C52 20 62 29 62 40C62 51 52 60 40 60C28 60 18 51 18 40C18 29 28 20 40 20ZM40 28C32 28 26 34 26 40C26 46 32 52 40 52C48 52 54 46 54 40C54 34 48 28 40 28ZM40 33C37 33 34 36 34 40C34 44 37 47 40 47C43 47 46 44 46 40C46 36 43 33 40 33Z" fill="#76b900"/></svg></div>
+                    <div><div class="back-company-name">Nvidia Corp.</div><div class="back-company-sector">Semiconductors &#183; AI Infrastructure</div></div>
+                  </div>
+                  <div class="back-divider"></div>
+                  <div><div class="back-fact-label">Signal insight</div><div class="back-fact">"When narrative outpaces earnings, the gap always closes &#8212; the only question is direction."</div></div>
+                  <div class="back-stats">
+                    <div class="back-stat"><div class="back-stat-label">Mkt cap</div><div class="back-stat-val" style="color:var(--tx1);">$2.9T</div></div>
+                    <div class="back-stat"><div class="back-stat-label">P/E ratio</div><div class="back-stat-val" style="color:var(--red);">62x</div></div>
+                    <div class="back-stat"><div class="back-stat-label">52w high</div><div class="back-stat-val" style="color:var(--tx2);">$153.13</div></div>
+                    <div class="back-stat"><div class="back-stat-label">Short float</div><div class="back-stat-val" style="color:var(--red);">2.4%</div></div>
+                  </div>
+                  <div class="back-footer"><span class="back-footer-label">Signal type</span><span class="back-footer-val" style="color:var(--red);">Narrative Decay</span></div>
+                </div>
+                <div class="flip-back-hint">tap to flip back &#8634;</div>
+              </div>
+            </div>
+          </div>
         </div>
-        <canvas class="radar-sparkline" id="radar-spark-breakout"></canvas>
-        <ul class="radar-items" id="radar-breakout">
-          <li class="radar-item"><span class="radar-item-rank">1</span><span class="radar-ticker">PLTR</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:94%;background:var(--teal);"></div></div><span class="radar-score" style="color:var(--teal);">94</span><span class="radar-delta delta-up">+18</span></li>
-          <li class="radar-item"><span class="radar-item-rank">2</span><span class="radar-ticker">SMCI</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:89%;background:var(--teal);"></div></div><span class="radar-score" style="color:var(--teal);">89</span><span class="radar-delta delta-up">+15</span></li>
-          <li class="radar-item"><span class="radar-item-rank">3</span><span class="radar-ticker">ARM</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:85%;background:var(--teal);"></div></div><span class="radar-score" style="color:var(--teal);">85</span><span class="radar-delta delta-up">+12</span></li>
-          <li class="radar-item"><span class="radar-item-rank">4</span><span class="radar-ticker">CRWD</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:82%;background:var(--teal);"></div></div><span class="radar-score" style="color:var(--teal);">82</span><span class="radar-delta delta-up">+11</span></li>
-          <li class="radar-item"><span class="radar-item-rank">5</span><span class="radar-ticker">CEG</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:78%;background:var(--teal);"></div></div><span class="radar-score" style="color:var(--teal);">78</span><span class="radar-delta delta-up">+9</span></li>
-        </ul>
       </div>
-      <!-- 2. Narrative Exhaustion -->
-      <div class="radar-card">
-        <div class="radar-card-header">
-          <span class="radar-card-title">Narrative Exhaustion</span>
-          <span class="radar-card-count">Top 5</span>
+      <!-- ── AAPL ── -->
+      <div class="card-scene" id="card-aapl" onclick="this.classList.toggle('flipped')">
+        <div class="card-flipper">
+          <div class="card-front" style="position:relative;">
+            <div class="foil-layer"></div>
+            <div class="foil-rainbow"></div>
+            <div class="foil-scan"></div>
+            <div class="foil-border" style="box-shadow:inset 0 0 0 1px rgba(0,229,180,0.4), 0 0 30px rgba(0,229,180,0.12);"></div>
+            <div class="tc">
+              <div class="tc-accent" style="background:linear-gradient(90deg,#1A6EFF,var(--teal));"></div>
+              <div class="tc-body">
+                <div class="tc-header">
+                  <div class="tc-header-left">
+                    <div class="tc-logo"><svg viewBox="0 0 56 68" width="11" height="14"><path d="M46.3 35.8c-.1-7.4 6-10.9 6.2-11.1-3.4-5-8.6-5.6-10.5-5.7-4.5-.5-8.7 2.6-11 2.6-2.2 0-5.7-2.5-9.4-2.5-4.8.1-9.2 2.8-11.7 7.1-5 8.6-1.3 21.4 3.6 28.4 2.4 3.4 5.2 7.3 8.9 7.1 3.6-.1 4.9-2.3 9.3-2.3 4.3 0 5.5 2.3 9.3 2.2 3.8-.1 6.3-3.5 8.6-6.9 2.7-3.9 3.8-7.8 3.9-8C54 47 46.4 44.2 46.3 35.8zM39.2 12.8c2-2.4 3.3-5.8 3-9.2-2.9.1-6.3 1.9-8.4 4.3-1.8 2.1-3.4 5.5-3 8.7 3.2.3 6.4-1.5 8.4-3.8z" fill="var(--tx2)"/></svg></div>
+                    <div><div class="tc-ticker">AAPL</div><div class="tc-date">Mar 17, 2026</div></div>
+                  </div>
+                  <span class="tc-rarity" style="background:rgba(0,229,180,0.08);color:var(--teal);border:1px solid rgba(0,229,180,0.18);">Epic</span>
+                </div>
+                <div class="tc-price-row"><span class="tc-price">$212.80</span><span class="tc-change" style="color:var(--teal);">&#9650; 1.87%</span></div>
+                <div class="tc-chart"><svg width="100%" height="60" viewBox="0 0 200 60" preserveAspectRatio="none"><polyline points="0,52 28,44 50,40 75,43 98,32 118,22 142,16 165,10 185,6 200,3" fill="none" stroke="var(--teal)" stroke-width="1.5" opacity="0.8"/><polygon points="0,52 28,44 50,40 75,43 98,32 118,22 142,16 165,10 185,6 200,3 200,60 0,60" fill="var(--teal)" opacity="0.06"/></svg></div>
+                <div class="tc-move">Breakout Surge</div>
+                <div class="tc-tags">
+                  <span class="tc-tag" style="background:rgba(0,229,180,0.08);color:var(--teal);border:1px solid rgba(0,229,180,0.18);">Momentum</span>
+                  <span class="tc-tag" style="background:rgba(0,229,180,0.08);color:var(--teal);border:1px solid rgba(0,229,180,0.18);">Confirmed</span>
+                  <span class="tc-tag" style="background:rgba(0,194,255,0.08);color:var(--cyan);border:1px solid rgba(0,194,255,0.2);">ER +12d</span>
+                </div>
+                <div class="tc-divider"></div>
+                <div class="tc-conf-row"><span class="tc-conf-label">Confidence</span><div class="tc-conf-bar"><div class="tc-conf-fill" style="width:88%;background:var(--teal);opacity:0.75;"></div></div><span class="tc-conf-val" style="color:var(--teal);">88%</span></div>
+                <div class="tc-window">Window: 1&#8211;3 days</div>
+                <div class="tc-signals">
+                  <div class="tc-signal-row"><div class="tc-pip" style="background:var(--cyan);"></div><div><div class="tc-signal-label">Setup</div><div class="tc-signal-text">Clean breakout above multi-week resistance</div></div></div>
+                  <div class="tc-signal-row"><div class="tc-pip" style="background:var(--teal);"></div><div><div class="tc-signal-label">Signal</div><div class="tc-signal-text">Institutional flow showing accumulation</div></div></div>
+                  <div class="tc-signal-row"><div class="tc-pip" style="background:#7B61FF;"></div><div><div class="tc-signal-label">Risk</div><div class="tc-signal-text">Broad market pullback could drag momentum</div></div></div>
+                </div>
+                <div class="tc-bias" style="color:var(--teal);border-color:rgba(0,229,180,0.18);">&#8594; Bias: Ride the trend</div>
+                <div class="tc-metrics">
+                  <div class="tc-metric"><div class="tc-metric-label">Pulse health</div><div class="tc-metric-val" style="color:var(--teal);">84<span style="font-size:10px;color:var(--tx3);font-family:var(--font-m);"> /100</span></div></div>
+                  <div class="tc-metric"><div class="tc-metric-label">FV gap</div><div class="tc-metric-val" style="color:var(--tx2);">&#8722;8%</div></div>
+                </div>
+                <div class="tc-footer"><div class="pulse-dot" style="background:var(--teal);"></div><span class="tc-verdict" style="color:var(--teal);">Trending Bull</span><span class="tc-horizon">1&#8211;3d</span></div>
+              </div>
+            </div>
+            <div class="flip-hint">tap to reveal &#8634;</div>
+          </div>
+          <div class="card-back" style="position:absolute;">
+            <div style="position:relative;">
+              <div class="foil-layer"></div>
+              <div class="foil-rainbow"></div>
+              <div class="foil-scan"></div>
+              <div class="foil-border" style="box-shadow:inset 0 0 0 1px rgba(0,229,180,0.4), 0 0 30px rgba(0,229,180,0.12);"></div>
+              <div class="card-back-inner" style="background:var(--deep);">
+                <div class="back-graphic">
+                  <svg viewBox="0 0 224 180" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+                    <defs><radialGradient id="ag1" cx="50%" cy="50%" r="60%"><stop offset="0%" stop-color="#00E5B4" stop-opacity="0.2"/><stop offset="100%" stop-color="#0A0E1A" stop-opacity="0"/></radialGradient></defs>
+                    <rect width="224" height="180" fill="#040e0a"/>
+                    <circle cx="112" cy="90" r="75" fill="url(#ag1)"/>
+                    <g transform="translate(62,14) scale(1.8)" opacity="0.07"><path d="M46.3 35.8c-.1-7.4 6-10.9 6.2-11.1-3.4-5-8.6-5.6-10.5-5.7-4.5-.5-8.7 2.6-11 2.6-2.2 0-5.7-2.5-9.4-2.5-4.8.1-9.2 2.8-11.7 7.1-5 8.6-1.3 21.4 3.6 28.4 2.4 3.4 5.2 7.3 8.9 7.1 3.6-.1 4.9-2.3 9.3-2.3 4.3 0 5.5 2.3 9.3 2.2 3.8-.1 6.3-3.5 8.6-6.9 2.7-3.9 3.8-7.8 3.9-8C54 47 46.4 44.2 46.3 35.8zM39.2 12.8c2-2.4 3.3-5.8 3-9.2-2.9.1-6.3 1.9-8.4 4.3-1.8 2.1-3.4 5.5-3 8.7 3.2.3 6.4-1.5 8.4-3.8z" fill="#00E5B4"/></g>
+                    <circle cx="112" cy="90" r="30" fill="none" stroke="#00E5B4" stroke-width="0.5" opacity="0.2"/><circle cx="112" cy="90" r="50" fill="none" stroke="#00E5B4" stroke-width="0.5" opacity="0.12"/><circle cx="112" cy="90" r="70" fill="none" stroke="#00C2FF" stroke-width="0.5" opacity="0.08"/>
+                    <polygon points="112,36 106,52 118,52" fill="#00E5B4" opacity="0.35"/>
+                    <text x="112" y="100" text-anchor="middle" font-family="monospace" font-size="9" fill="#00E5B4" opacity="0.5" letter-spacing="3">AAPL</text>
+                    <text x="112" y="114" text-anchor="middle" font-family="monospace" font-size="6.5" fill="#00E5B4" opacity="0.3" letter-spacing="2">SERVICES &#183; SILICON</text>
+                  </svg>
+                </div>
+                <div class="back-content">
+                  <div class="back-company-row">
+                    <div class="back-company-logo" style="background:#041a0e;"><svg viewBox="0 0 56 68" width="14" height="17"><path d="M46.3 35.8c-.1-7.4 6-10.9 6.2-11.1-3.4-5-8.6-5.6-10.5-5.7-4.5-.5-8.7 2.6-11 2.6-2.2 0-5.7-2.5-9.4-2.5-4.8.1-9.2 2.8-11.7 7.1-5 8.6-1.3 21.4 3.6 28.4 2.4 3.4 5.2 7.3 8.9 7.1 3.6-.1 4.9-2.3 9.3-2.3 4.3 0 5.5 2.3 9.3 2.2 3.8-.1 6.3-3.5 8.6-6.9 2.7-3.9 3.8-7.8 3.9-8C54 47 46.4 44.2 46.3 35.8zM39.2 12.8c2-2.4 3.3-5.8 3-9.2-2.9.1-6.3 1.9-8.4 4.3-1.8 2.1-3.4 5.5-3 8.7 3.2.3 6.4-1.5 8.4-3.8z" fill="#00E5B4"/></svg></div>
+                    <div><div class="back-company-name">Apple Inc.</div><div class="back-company-sector">Consumer Tech &#183; Services</div></div>
+                  </div>
+                  <div class="back-divider"></div>
+                  <div><div class="back-fact-label">Signal insight</div><div class="back-fact">"Services margin expansion is the most underpriced story in large-cap tech right now."</div></div>
+                  <div class="back-stats">
+                    <div class="back-stat"><div class="back-stat-label">Mkt cap</div><div class="back-stat-val" style="color:var(--tx1);">$3.2T</div></div>
+                    <div class="back-stat"><div class="back-stat-label">P/E ratio</div><div class="back-stat-val" style="color:var(--teal);">29x</div></div>
+                    <div class="back-stat"><div class="back-stat-label">52w high</div><div class="back-stat-val" style="color:var(--tx2);">$237.23</div></div>
+                    <div class="back-stat"><div class="back-stat-label">Inst. own.</div><div class="back-stat-val" style="color:var(--teal);">61%</div></div>
+                  </div>
+                  <div class="back-footer"><span class="back-footer-label">Signal type</span><span class="back-footer-val" style="color:var(--teal);">Momentum Breakout</span></div>
+                </div>
+                <div class="flip-back-hint">tap to flip back &#8634;</div>
+              </div>
+            </div>
+          </div>
         </div>
-        <canvas class="radar-sparkline" id="radar-spark-exhaust"></canvas>
-        <ul class="radar-items" id="radar-exhaust">
-          <li class="radar-item"><span class="radar-item-rank">1</span><span class="radar-ticker">LCID</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:23%;background:var(--red);"></div></div><span class="radar-score" style="color:var(--red);">23</span><span class="radar-delta delta-dn">-22</span></li>
-          <li class="radar-item"><span class="radar-item-rank">2</span><span class="radar-ticker">NIO</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:28%;background:var(--red);"></div></div><span class="radar-score" style="color:var(--red);">28</span><span class="radar-delta delta-dn">-19</span></li>
-          <li class="radar-item"><span class="radar-item-rank">3</span><span class="radar-ticker">HOOD</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:31%;background:var(--red);"></div></div><span class="radar-score" style="color:var(--red);">31</span><span class="radar-delta delta-dn">-16</span></li>
-          <li class="radar-item"><span class="radar-item-rank">4</span><span class="radar-ticker">RIVN</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:34%;background:var(--red);"></div></div><span class="radar-score" style="color:var(--red);">34</span><span class="radar-delta delta-dn">-14</span></li>
-          <li class="radar-item"><span class="radar-item-rank">5</span><span class="radar-ticker">SNAP</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:38%;background:var(--amber);"></div></div><span class="radar-score" style="color:var(--amber);">38</span><span class="radar-delta delta-dn">-11</span></li>
-        </ul>
       </div>
-      <!-- 3. Coordination Risk -->
-      <div class="radar-card">
-        <div class="radar-card-header">
-          <span class="radar-card-title">Coordination Risk</span>
-          <span class="radar-card-count">Top 5</span>
+      <!-- ── TSLA ── -->
+      <div class="card-scene" id="card-tsla" onclick="this.classList.toggle('flipped')">
+        <div class="card-flipper">
+          <div class="card-front" style="position:relative;">
+            <div class="foil-layer"></div>
+            <div class="foil-rainbow"></div>
+            <div class="foil-scan"></div>
+            <div class="foil-border" style="box-shadow:inset 0 0 0 1px rgba(123,97,255,0.4), 0 0 30px rgba(123,97,255,0.12);"></div>
+            <div class="tc">
+              <div class="tc-accent" style="background:linear-gradient(90deg,#7B61FF,var(--cyan));"></div>
+              <div class="tc-body">
+                <div class="tc-header">
+                  <div class="tc-header-left">
+                    <div class="tc-logo"><svg viewBox="0 0 100 120" width="11" height="14"><path d="M15 10C22 13 35 15 50 15C65 15 78 13 85 10C78 7 65 4 50 4C35 4 22 7 15 10Z" fill="#cc0000"/><path d="M50 15L18 28L50 118L82 28Z" fill="#cc0000"/></svg></div>
+                    <div><div class="tc-ticker">TSLA</div><div class="tc-date">Mar 17, 2026</div></div>
+                  </div>
+                  <span class="tc-rarity" style="background:rgba(123,97,255,0.1);color:#B8AAFF;border:1px solid rgba(123,97,255,0.22);">Uncommon</span>
+                </div>
+                <div class="tc-price-row"><span class="tc-price">$247.15</span><span class="tc-change" style="color:var(--tx2);">&#9650; 0.42%</span></div>
+                <div class="tc-chart"><svg width="100%" height="60" viewBox="0 0 200 60" preserveAspectRatio="none"><polyline points="0,30 20,20 40,36 62,18 84,40 104,28 124,33 144,24 164,36 184,27 200,30" fill="none" stroke="#7B61FF" stroke-width="1.5" opacity="0.8"/><polygon points="0,30 20,20 40,36 62,18 84,40 104,28 124,33 144,24 164,36 184,27 200,30 200,60 0,60" fill="#7B61FF" opacity="0.05"/></svg></div>
+                <div class="tc-move">Coil Compress</div>
+                <div class="tc-tags">
+                  <span class="tc-tag" style="background:rgba(123,97,255,0.1);color:#B8AAFF;border:1px solid rgba(123,97,255,0.22);">Coiling</span>
+                  <span class="tc-tag" style="background:rgba(123,97,255,0.1);color:#B8AAFF;border:1px solid rgba(123,97,255,0.22);">Watch</span>
+                  <span class="tc-tag" style="background:rgba(255,107,107,0.08);color:#FF9090;border:1px solid rgba(255,107,107,0.2);">High vol</span>
+                </div>
+                <div class="tc-divider"></div>
+                <div class="tc-conf-row"><span class="tc-conf-label">Confidence</span><div class="tc-conf-bar"><div class="tc-conf-fill" style="width:51%;background:#7B61FF;opacity:0.75;"></div></div><span class="tc-conf-val" style="color:#B8AAFF;">51%</span></div>
+                <div class="tc-window">Window: 5&#8211;10 days</div>
+                <div class="tc-signals">
+                  <div class="tc-signal-row"><div class="tc-pip" style="background:var(--cyan);"></div><div><div class="tc-signal-label">Setup</div><div class="tc-signal-text">Tightening range under key resistance level</div></div></div>
+                  <div class="tc-signal-row"><div class="tc-pip" style="background:#7B61FF;"></div><div><div class="tc-signal-label">Signal</div><div class="tc-signal-text">Elevated IV suggests big move incoming</div></div></div>
+                  <div class="tc-signal-row"><div class="tc-pip" style="background:var(--red);"></div><div><div class="tc-signal-label">Risk</div><div class="tc-signal-text">Rate decision creates binary headline risk</div></div></div>
+                </div>
+                <div class="tc-bias" style="color:#B8AAFF;border-color:rgba(123,97,255,0.2);">&#8594; Bias: Wait for break</div>
+                <div class="tc-metrics">
+                  <div class="tc-metric"><div class="tc-metric-label">Pulse health</div><div class="tc-metric-val" style="color:#B8AAFF;">51<span style="font-size:10px;color:var(--tx3);font-family:var(--font-m);"> /100</span></div></div>
+                  <div class="tc-metric"><div class="tc-metric-label">FV gap</div><div class="tc-metric-val" style="color:var(--tx2);">+11%</div></div>
+                </div>
+                <div class="tc-footer"><div class="pulse-dot" style="background:#7B61FF;animation-duration:2.4s;"></div><span class="tc-verdict" style="color:#B8AAFF;">Awaiting Break</span><span class="tc-horizon">5&#8211;10d</span></div>
+              </div>
+            </div>
+            <div class="flip-hint">tap to reveal &#8634;</div>
+          </div>
+          <div class="card-back" style="position:absolute;">
+            <div style="position:relative;">
+              <div class="foil-layer"></div>
+              <div class="foil-rainbow"></div>
+              <div class="foil-scan"></div>
+              <div class="foil-border" style="box-shadow:inset 0 0 0 1px rgba(123,97,255,0.4), 0 0 30px rgba(123,97,255,0.12);"></div>
+              <div class="card-back-inner" style="background:var(--deep);">
+                <div class="back-graphic">
+                  <svg viewBox="0 0 224 180" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+                    <defs>
+                      <radialGradient id="tg1" cx="50%" cy="50%" r="65%"><stop offset="0%" stop-color="#7B61FF" stop-opacity="0.22"/><stop offset="100%" stop-color="#0A0E1A" stop-opacity="0"/></radialGradient>
+                      <radialGradient id="tg2" cx="50%" cy="80%" r="40%"><stop offset="0%" stop-color="#cc0000" stop-opacity="0.15"/><stop offset="100%" stop-color="#0A0E1A" stop-opacity="0"/></radialGradient>
+                    </defs>
+                    <rect width="224" height="180" fill="#080614"/>
+                    <circle cx="112" cy="85" r="75" fill="url(#tg1)"/><circle cx="112" cy="160" r="60" fill="url(#tg2)"/>
+                    <g transform="translate(86,20) scale(0.52)" opacity="0.12"><path d="M15 10C22 13 35 15 50 15C65 15 78 13 85 10C78 7 65 4 50 4C35 4 22 7 15 10Z" fill="#cc0000"/><path d="M50 15L18 28L50 118L82 28Z" fill="#cc0000"/></g>
+                    <ellipse cx="112" cy="90" rx="55" ry="18" fill="none" stroke="#7B61FF" stroke-width="0.8" opacity="0.3"/>
+                    <ellipse cx="112" cy="75" rx="42" ry="13" fill="none" stroke="#7B61FF" stroke-width="0.8" opacity="0.25"/>
+                    <ellipse cx="112" cy="63" rx="30" ry="9" fill="none" stroke="#00C2FF" stroke-width="0.8" opacity="0.2"/>
+                    <text x="112" y="138" text-anchor="middle" font-family="monospace" font-size="9" fill="#7B61FF" opacity="0.5" letter-spacing="3">TESLA</text>
+                    <text x="112" y="152" text-anchor="middle" font-family="monospace" font-size="6.5" fill="#7B61FF" opacity="0.3" letter-spacing="2">EV &#183; ENERGY &#183; FSD</text>
+                  </svg>
+                </div>
+                <div class="back-content">
+                  <div class="back-company-row">
+                    <div class="back-company-logo" style="background:#120010;"><svg viewBox="0 0 100 120" width="14" height="17"><path d="M15 10C22 13 35 15 50 15C65 15 78 13 85 10C78 7 65 4 50 4C35 4 22 7 15 10Z" fill="#cc0000"/><path d="M50 15L18 28L50 118L82 28Z" fill="#cc0000"/></svg></div>
+                    <div><div class="back-company-name">Tesla Inc.</div><div class="back-company-sector">EV &#183; Energy &#183; Autonomous</div></div>
+                  </div>
+                  <div class="back-divider"></div>
+                  <div><div class="back-fact-label">Signal insight</div><div class="back-fact">"A coiling range with elevated IV is a loaded spring. The direction of the break defines the trade."</div></div>
+                  <div class="back-stats">
+                    <div class="back-stat"><div class="back-stat-label">Mkt cap</div><div class="back-stat-val" style="color:var(--tx1);">$790B</div></div>
+                    <div class="back-stat"><div class="back-stat-label">IV rank</div><div class="back-stat-val" style="color:var(--red);">78th</div></div>
+                    <div class="back-stat"><div class="back-stat-label">52w high</div><div class="back-stat-val" style="color:var(--tx2);">$488.54</div></div>
+                    <div class="back-stat"><div class="back-stat-label">Short float</div><div class="back-stat-val" style="color:#7B61FF;">3.1%</div></div>
+                  </div>
+                  <div class="back-footer"><span class="back-footer-label">Signal type</span><span class="back-footer-val" style="color:#B8AAFF;">Volatility Coil</span></div>
+                </div>
+                <div class="flip-back-hint">tap to flip back &#8634;</div>
+              </div>
+            </div>
+          </div>
         </div>
-        <canvas class="radar-sparkline" id="radar-spark-coord"></canvas>
-        <ul class="radar-items" id="radar-coord">
-          <li class="radar-item"><span class="radar-item-rank">1</span><span class="radar-ticker">TSLA</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:91%;background:var(--amber);"></div></div><span class="radar-score" style="color:var(--amber);">91</span><span class="radar-delta delta-flat">+3</span></li>
-          <li class="radar-item"><span class="radar-item-rank">2</span><span class="radar-ticker">NVDA</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:84%;background:var(--amber);"></div></div><span class="radar-score" style="color:var(--amber);">84</span><span class="radar-delta delta-up">+7</span></li>
-          <li class="radar-item"><span class="radar-item-rank">3</span><span class="radar-ticker">COIN</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:79%;background:var(--amber);"></div></div><span class="radar-score" style="color:var(--amber);">79</span><span class="radar-delta delta-up">+5</span></li>
-          <li class="radar-item"><span class="radar-item-rank">4</span><span class="radar-ticker">RDDT</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:72%;background:var(--amber);"></div></div><span class="radar-score" style="color:var(--amber);">72</span><span class="radar-delta delta-dn">-2</span></li>
-          <li class="radar-item"><span class="radar-item-rank">5</span><span class="radar-ticker">META</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:68%;background:var(--teal);"></div></div><span class="radar-score" style="color:var(--teal);">68</span><span class="radar-delta delta-flat">+1</span></li>
-        </ul>
-      </div>
-      <!-- 4. Sector Momentum -->
-      <div class="radar-card">
-        <div class="radar-card-header">
-          <span class="radar-card-title">Sector Momentum</span>
-          <span class="radar-card-count">Top 5</span>
-        </div>
-        <canvas class="radar-sparkline" id="radar-spark-sector"></canvas>
-        <ul class="radar-items" id="radar-sector">
-          <li class="radar-item"><span class="radar-item-rank">1</span><span class="radar-ticker" style="min-width:80px;font-size:10px;">Agentic AI</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:94%;background:var(--teal);"></div></div><span class="radar-score" style="color:var(--teal);">94</span><span class="radar-delta delta-up">+6</span></li>
-          <li class="radar-item"><span class="radar-item-rank">2</span><span class="radar-ticker" style="min-width:80px;font-size:10px;">AI Infra</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:88%;background:var(--teal);"></div></div><span class="radar-score" style="color:var(--teal);">88</span><span class="radar-delta delta-up">+4</span></li>
-          <li class="radar-item"><span class="radar-item-rank">3</span><span class="radar-ticker" style="min-width:80px;font-size:10px;">Power Grid</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:82%;background:var(--teal);"></div></div><span class="radar-score" style="color:var(--teal);">82</span><span class="radar-delta delta-up">+8</span></li>
-          <li class="radar-item"><span class="radar-item-rank">4</span><span class="radar-ticker" style="min-width:80px;font-size:10px;">Cybersec</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:79%;background:var(--teal);"></div></div><span class="radar-score" style="color:var(--teal);">79</span><span class="radar-delta delta-up">+3</span></li>
-          <li class="radar-item"><span class="radar-item-rank">5</span><span class="radar-ticker" style="min-width:80px;font-size:10px;">Cloud</span><div class="radar-bar-wrap"><div class="radar-bar" style="width:61%;background:var(--amber);"></div></div><span class="radar-score" style="color:var(--amber);">61</span><span class="radar-delta delta-dn">-2</span></li>
-        </ul>
       </div>
     </div>
   </div>
@@ -1567,15 +1913,34 @@ document.querySelectorAll('.quick-chip').forEach(c => {
     ctx.fillStyle = grd;
     ctx.fill();
   }
-  // Breakout sparkline — rising energy
-  spark('radar-spark-breakout', [32,38,41,45,52,58,67,72,78,85,89,94], 'rgba(0,229,180,1)');
-  // Exhaustion sparkline — falling energy
-  spark('radar-spark-exhaust', [78,72,68,61,55,48,42,38,34,30,26,23], 'rgba(255,107,107,1)');
-  // Coordination sparkline — volatile/elevated
-  spark('radar-spark-coord', [55,62,58,71,68,75,82,78,85,88,84,91], 'rgba(239,159,39,1)');
-  // Sector momentum sparkline — trending up
-  spark('radar-spark-sector', [60,62,65,68,71,74,78,80,83,86,90,94], 'rgba(26,110,255,1)');
 })();
+// ── Trading card foil interaction ──
+document.querySelectorAll('.card-scene').forEach(function(scene) {
+  scene.addEventListener('mousemove', function(e) {
+    var rect = scene.getBoundingClientRect();
+    var x = ((e.clientX - rect.left) / rect.width) * 100;
+    var y = ((e.clientY - rect.top) / rect.height) * 100;
+    var angle = 105 + (x - 50) * 0.6;
+    scene.querySelectorAll('.foil-layer').forEach(function(el) {
+      el.style.setProperty('--mx', x + '%');
+      el.style.setProperty('--my', y + '%');
+    });
+    scene.querySelectorAll('.foil-rainbow').forEach(function(el) {
+      el.style.setProperty('--angle', angle + 'deg');
+    });
+    var rotX = ((y - 50) / 50) * -6;
+    var rotY = ((x - 50) / 50) * 6;
+    var isFlipped = scene.classList.contains('flipped');
+    scene.querySelector('.card-flipper').style.transform =
+      (isFlipped ? 'rotateY(180deg) ' : '') +
+      'rotateX(' + rotX + 'deg) rotateY(' + (isFlipped ? 180 + rotY : rotY) + 'deg)';
+  });
+  scene.addEventListener('mouseleave', function() {
+    var isFlipped = scene.classList.contains('flipped');
+    scene.querySelector('.card-flipper').style.transform =
+      isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)';
+  });
+});
 </script>
 </body>
 </html>
