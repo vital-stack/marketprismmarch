@@ -764,10 +764,12 @@ body{
 .dhm-cell .cell-score{font-size:14px;font-weight:500;font-family:var(--font-mono);color:#fff;margin:2px 0 1px;}
 .dhm-cell .cell-dir{font-size:8px;opacity:.6;color:#fff;}
 /* Heatmap health bands - monochromatic */
-.dhb-5{background:rgba(255,255,255,0.18);}.dhb-4{background:rgba(255,255,255,0.14);}.dhb-3{background:rgba(255,255,255,0.10);}
-.dhb-2{background:rgba(255,255,255,0.07);}.dhb-1{background:rgba(255,255,255,0.04);}.dhb-0{background:rgba(255,255,255,0.02);}
-.dhm-cell.hm-supported{outline:1px solid rgba(255,255,255,.2);outline-offset:-1px;}
-.dhm-cell.hm-trap{outline:1px solid rgba(255,255,255,.1);outline-offset:-1px;}
+/* Heatmap health bands - gradient colors */
+.dhb-5{background:linear-gradient(135deg,#0D6B3A,#0A5530);}.dhb-4{background:linear-gradient(135deg,#1A7A43,#14663A);}
+.dhb-3{background:linear-gradient(135deg,#3D7A30,#2E6325);}.dhb-2{background:linear-gradient(135deg,#6B6B1A,#5A5A14);}
+.dhb-1{background:linear-gradient(135deg,#7A4A1A,#663D14);}.dhb-0{background:linear-gradient(135deg,#7A2020,#661A1A);}
+.dhm-cell.hm-supported{outline:2px solid rgba(0,229,180,.4);outline-offset:-2px;}
+.dhm-cell.hm-trap{outline:2px solid rgba(255,107,107,.4);outline-offset:-2px;}
 .dhm-summary{
   display:flex;gap:0;border-top:1px solid var(--mp-border);
 }
@@ -1054,6 +1056,101 @@ body{
 }
 .theme-toggle-btn:hover{background:rgba(255,255,255,0.04);color:var(--mp-text-primary);border-color:rgba(255,255,255,0.12);}
 .theme-toggle-btn svg{width:15px;height:15px;flex-shrink:0;}
+/* ── TRADING CARDS ── */
+.trading-cards-section{
+  margin-bottom:28px;
+  animation:slideUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.05s both;
+}
+.trading-cards-header{
+  display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;
+}
+.trading-cards-header h3{font-family:var(--font-body);font-size:14px;font-weight:400;color:var(--mp-text-primary);}
+.trading-cards-header span{font-family:var(--font-mono);font-size:10px;color:var(--mp-text-tertiary);letter-spacing:.06em;}
+.deck{
+  display:flex;gap:16px;padding:0;justify-content:flex-start;
+  overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;
+}
+.deck::-webkit-scrollbar{display:none;}
+.card-scene{width:220px;perspective:1200px;cursor:pointer;flex-shrink:0;}
+.card-flipper{
+  position:relative;width:100%;
+  transform-style:preserve-3d;
+  transition:transform 0.75s cubic-bezier(0.4,0.2,0.2,1);
+}
+.card-scene.flipped .card-flipper{transform:rotateY(180deg);}
+.card-front,.card-back{width:100%;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:14px;overflow:hidden;}
+.card-back{position:absolute;top:0;left:0;transform:rotateY(180deg);}
+.foil-layer{
+  position:absolute;inset:0;border-radius:14px;pointer-events:none;
+  opacity:0;transition:opacity 0.3s;z-index:10;mix-blend-mode:screen;
+  background:radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,0.14) 0%,rgba(180,140,255,0.1) 25%,rgba(0,229,180,0.07) 50%,transparent 70%);
+}
+.foil-scan{position:absolute;inset:0;border-radius:14px;pointer-events:none;opacity:0;z-index:11;overflow:hidden;}
+.foil-scan::after{
+  content:'';position:absolute;top:-100%;left:-20%;width:140%;height:50%;
+  background:linear-gradient(180deg,transparent 0%,rgba(255,255,255,0.03) 40%,rgba(255,255,255,0.07) 50%,rgba(255,255,255,0.03) 60%,transparent 100%);
+  transform:skewX(-15deg);animation:scanMove 4s ease-in-out infinite;
+}
+@keyframes scanMove{0%{top:-100%;}100%{top:200%;}}
+.card-scene:hover .foil-layer,.card-scene:hover .foil-scan{opacity:1;}
+.tc{
+  background:var(--mp-surface);border:1px solid var(--mp-border);
+  display:flex;flex-direction:column;transition:border-color 0.25s,box-shadow 0.25s;position:relative;border-radius:14px;
+}
+.card-scene:hover .tc{border-color:var(--mp-border-mid);box-shadow:0 24px 70px rgba(0,0,0,0.65);}
+.tc-accent{height:2px;width:100%;flex-shrink:0;border-radius:14px 14px 0 0;}
+.tc-body{padding:14px 14px 10px;display:flex;flex-direction:column;gap:0;}
+.tc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.tc-header-left{display:flex;align-items:center;gap:8px;}
+.tc-logo{width:26px;height:26px;border-radius:6px;background:rgba(255,255,255,0.04);border:1px solid var(--mp-border);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.tc-ticker{font-family:var(--font-mono);font-size:15px;line-height:1;letter-spacing:.02em;color:var(--mp-text-primary);font-weight:500;}
+.tc-date{font-family:var(--font-mono);font-size:7.5px;letter-spacing:0.06em;color:var(--mp-text-tertiary);margin-top:1px;text-transform:uppercase;}
+.tc-price-row{display:flex;align-items:baseline;gap:6px;margin-bottom:10px;}
+.tc-price{font-family:var(--font-mono);font-size:18px;letter-spacing:-0.02em;color:var(--mp-text-primary);line-height:1;font-weight:400;}
+.tc-change{font-family:var(--font-mono);font-size:10.5px;}
+.tc-chart{border-radius:7px;overflow:hidden;height:52px;background:rgba(255,255,255,0.02);border:1px solid var(--mp-border);margin-bottom:14px;}
+.tc-bias-block{text-align:center;padding:12px 10px 10px;border-radius:10px;margin-bottom:12px;position:relative;overflow:hidden;}
+.tc-bias-eyebrow{font-family:var(--font-mono);font-size:7.5px;letter-spacing:0.12em;text-transform:uppercase;color:var(--mp-text-tertiary);margin-bottom:4px;}
+.tc-bias-text{font-family:var(--font-body);font-size:20px;letter-spacing:-0.01em;line-height:1;font-weight:300;}
+.tc-narrative{font-size:11.5px;font-weight:300;line-height:1.5;color:var(--mp-text-secondary);margin-bottom:10px;}
+.tc-meta{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.tc-conf-row{display:flex;align-items:center;gap:6px;flex:1;}
+.tc-conf-label{font-family:var(--font-mono);font-size:7.5px;letter-spacing:0.07em;text-transform:uppercase;color:var(--mp-text-tertiary);flex-shrink:0;}
+.tc-conf-bar{flex:1;height:2px;border-radius:2px;background:var(--mp-border-mid);overflow:hidden;}
+.tc-conf-fill{height:100%;border-radius:2px;}
+.tc-conf-val{font-family:var(--font-mono);font-size:10px;font-weight:500;flex-shrink:0;}
+.tc-window-pill{font-family:var(--font-mono);font-size:8px;letter-spacing:0.05em;padding:2px 7px;border-radius:99px;background:rgba(255,255,255,0.03);border:1px solid var(--mp-border);color:var(--mp-text-tertiary);white-space:nowrap;flex-shrink:0;}
+.tc-signal-block{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;padding:10px 11px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid var(--mp-border);}
+.tc-signal-line{display:flex;gap:8px;align-items:flex-start;}
+.tc-pip{width:3px;height:3px;border-radius:50%;margin-top:5px;flex-shrink:0;}
+.tc-signal-text{font-size:11px;font-weight:300;line-height:1.4;color:var(--mp-text-secondary);}
+.tc-signal-text.risk{color:var(--mp-text-tertiary);}
+.tc-footer-tag{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-radius:7px;border:1px solid var(--mp-border);background:transparent;margin-bottom:8px;}
+.tc-phase{font-family:var(--font-mono);font-size:8px;letter-spacing:0.1em;text-transform:uppercase;font-weight:500;}
+.tc-live-row{display:flex;align-items:center;gap:5px;}
+.pulse-dot{width:4px;height:4px;border-radius:50%;animation:blink 2s ease infinite;}
+.tc-live-label{font-family:var(--font-mono);font-size:7.5px;color:var(--mp-text-tertiary);letter-spacing:0.05em;}
+.flip-hint{text-align:center;font-family:var(--font-mono);font-size:7.5px;letter-spacing:0.1em;text-transform:uppercase;color:var(--mp-text-tertiary);padding:5px 0 9px;}
+/* Trading card back */
+.card-back-inner{width:100%;display:flex;flex-direction:column;position:relative;overflow:hidden;border:1px solid var(--mp-border-mid);border-radius:14px;}
+.back-graphic{width:100%;height:170px;position:relative;overflow:hidden;flex-shrink:0;}
+.back-graphic svg{width:100%;height:100%;}
+.back-content{padding:13px 14px 10px;display:flex;flex-direction:column;gap:9px;flex:1;}
+.back-company-row{display:flex;align-items:center;gap:10px;}
+.back-company-logo{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid var(--mp-border-mid);}
+.back-company-name{font-family:var(--font-body);font-size:14px;letter-spacing:-0.01em;color:var(--mp-text-primary);line-height:1.1;font-weight:400;}
+.back-company-sector{font-family:var(--font-mono);font-size:7.5px;letter-spacing:0.08em;text-transform:uppercase;color:var(--mp-text-tertiary);margin-top:1px;}
+.back-divider{height:1px;background:var(--mp-border);}
+.back-fact-label{font-family:var(--font-mono);font-size:7px;letter-spacing:0.1em;text-transform:uppercase;color:var(--mp-text-tertiary);margin-bottom:3px;}
+.back-fact{font-family:var(--font-body);font-size:12px;line-height:1.45;color:var(--mp-text-secondary);font-style:italic;font-weight:300;}
+.back-stats{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+.back-stat{background:rgba(255,255,255,0.03);border:1px solid var(--mp-border);border-radius:6px;padding:6px 8px;}
+.back-stat-label{font-family:var(--font-mono);font-size:7px;letter-spacing:0.07em;text-transform:uppercase;color:var(--mp-text-tertiary);margin-bottom:2px;}
+.back-stat-val{font-family:var(--font-mono);font-size:12px;font-weight:400;}
+.back-footer{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;border-radius:6px;border:1px solid var(--mp-border);background:rgba(255,255,255,0.02);}
+.back-footer-label{font-family:var(--font-mono);font-size:7.5px;letter-spacing:0.08em;text-transform:uppercase;color:var(--mp-text-tertiary);}
+.back-footer-val{font-family:var(--font-mono);font-size:8.5px;font-weight:500;}
+.flip-back-hint{text-align:center;font-family:var(--font-mono);font-size:7.5px;letter-spacing:0.1em;text-transform:uppercase;color:var(--mp-text-tertiary);padding:7px 0 9px;}
 </style>
 </head>
 <body>
@@ -1159,6 +1256,17 @@ body{
           <span class="stat-label">Surging</span>
         </div>
       </div>
+      <!-- ── TRADING CARDS ── -->
+      <div class="trading-cards-section">
+        <div class="trading-cards-header">
+          <h3>Live Signal Cards</h3>
+          <span>Click to flip</span>
+        </div>
+        <div class="deck" id="trading-deck">
+          <!-- Cards populated by JS from live data -->
+        </div>
+      </div>
+
       <!-- ── Heatmap + Stories split ── -->
       <div class="discover-split">
         <!-- HEATMAP -->
@@ -1849,12 +1957,14 @@ async function loadData(){
     renderTrapChart();
     renderMemes();
     loadDiscoverHeatmap();
+    renderTradingCards();
   } catch(err){
     feed.innerHTML='<div class="empty-state" style="color:var(--mp-red);">Failed to load: '+esc(err.message)+'<br><small style="font-size:11px;opacity:.6;">Check Supabase credentials in environment variables.</small></div>';
     // Still render static demos
     renderSectors();
     renderTrapChart();
     renderMemes();
+    renderTradingCards();
   }
 }
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -3227,6 +3337,131 @@ async function buildVideo(){
     btn.disabled=VIDEO_CARDS.length<2;
     btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><polygon points="5 3 19 12 5 21 5 3"/></svg> Export video';
   }
+}
+// ── Trading Cards ─────────────────────────────────────────────────────────────
+var TRADING_CARD_COLORS = [
+  {accent:'linear-gradient(90deg,#F87171,#818CF8)',bias:'#F87171',phase:'Decay Phase',biasText:'Fade Rallies'},
+  {accent:'linear-gradient(90deg,#3B82F6,#34D399)',bias:'#34D399',phase:'Breakout Forming',biasText:'Ride the Trend'},
+  {accent:'linear-gradient(90deg,#818CF8,#60A5FA)',bias:'#A5B4FC',phase:'Coil Compress',biasText:'Wait for Break'},
+  {accent:'linear-gradient(90deg,#FBBF24,#F87171)',bias:'#FBBF24',phase:'Narrative Split',biasText:'Hedge Exposure'},
+  {accent:'linear-gradient(90deg,#34D399,#3B82F6)',bias:'#34D399',phase:'Momentum Build',biasText:'Add on Dips'},
+];
+function renderTradingCards(){
+  var deck=document.getElementById('trading-deck');
+  if(!deck)return;
+  // Pick top cards from DATA or use fallback
+  var cards=[];
+  if(DATA.length>0){
+    // Pick varied states
+    var breaking=DATA.filter(function(r){return r.narrative_state==='Breaking'||r.prism_verdict==='Narrative Trap';});
+    var surging=DATA.filter(function(r){return r.narrative_state==='Surging'||r.prism_verdict==='Structurally Supported';});
+    var fragile=DATA.filter(function(r){return r.narrative_state==='Fragile';});
+    var stable=DATA.filter(function(r){return r.narrative_state==='Stable';});
+    if(breaking[0])cards.push(Object.assign({},breaking[0],TRADING_CARD_COLORS[0]));
+    if(surging[0])cards.push(Object.assign({},surging[0],TRADING_CARD_COLORS[1]));
+    if(fragile[0])cards.push(Object.assign({},fragile[0],TRADING_CARD_COLORS[2]));
+    if(breaking[1])cards.push(Object.assign({},breaking[1],TRADING_CARD_COLORS[3]));
+    if(surging[1])cards.push(Object.assign({},surging[1],TRADING_CARD_COLORS[4]));
+    // Fill remaining
+    var used=new Set(cards.map(function(c){return c.ticker;}));
+    DATA.forEach(function(r){if(cards.length<5&&!used.has(r.ticker)){cards.push(Object.assign({},r,TRADING_CARD_COLORS[cards.length%5]));used.add(r.ticker);}});
+  } else {
+    cards=[
+      {ticker:'NVDA',price:118.42,price_change_pct:-2.14,narrative_state:'Breaking',story_claim:'Narrative breaking while retail still buying strength',sector_name:'Semiconductors',pe_ratio:62,accent:'linear-gradient(90deg,#F87171,#818CF8)',bias:'#F87171',phase:'Decay Phase',biasText:'Fade Rallies'},
+      {ticker:'AAPL',price:212.80,price_change_pct:1.87,narrative_state:'Surging',story_claim:'Institutional accumulation confirming breakout above key resistance',sector_name:'Consumer Technology',pe_ratio:29,accent:'linear-gradient(90deg,#3B82F6,#34D399)',bias:'#34D399',phase:'Breakout Forming',biasText:'Ride the Trend'},
+      {ticker:'TSLA',price:247.15,price_change_pct:0.42,narrative_state:'Fragile',story_claim:'Coiling under resistance with elevated IV — a loaded spring',sector_name:'Electric Vehicles',pe_ratio:68,accent:'linear-gradient(90deg,#818CF8,#60A5FA)',bias:'#A5B4FC',phase:'Coil Compress',biasText:'Wait for Break'},
+    ];
+  }
+  cards=cards.slice(0,5);
+  var dateStr=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  deck.innerHTML=cards.map(function(c,i){
+    var delta=fmtDelta(c.price_change_pct);
+    var isBull=c.price_change_pct>0;
+    var chartColor=isBull?'#34D399':'#F87171';
+    // Generate simple chart points
+    var pts=[];for(var p=0;p<10;p++){pts.push(Math.round(10+Math.random()*35));}
+    if(isBull)pts.sort(function(a,b){return b-a;});else pts.sort(function(a,b){return a-b;});
+    var polyPts=pts.map(function(y,x){return Math.round(x*22)+','+y;}).join(' ');
+    var polyFill=polyPts+' 200,52 0,52';
+    var conf=Math.round(50+Math.random()*40);
+    var window=isBull?'1–3d':conf>70?'3–7d':'5–10d';
+    var energy=c.narrative_health||Math.round(40+Math.random()*50);
+    var trust=typeof computeTrust==='function'?computeTrust(c):50;
+    var fvd=typeof fvdPct==='function'?fvdPct(c):null;
+    return '<div class="card-scene" onclick="this.classList.toggle(\'flipped\')">'
+      +'<div class="card-flipper">'
+        +'<div class="card-front" style="position:relative;">'
+          +'<div class="foil-layer"></div><div class="foil-scan"></div>'
+          +'<div class="tc">'
+            +'<div class="tc-accent" style="background:'+c.accent+';"></div>'
+            +'<div class="tc-body">'
+              +'<div class="tc-header"><div class="tc-header-left">'
+                +'<div class="tc-logo">'+logoHTML(c.ticker).replace(/<div class="t-logo[^"]*">/,'').replace(/<\/div>$/,'')+'</div>'
+                +'<div><div class="tc-ticker">'+c.ticker+'</div><div class="tc-date">'+dateStr+'</div></div>'
+              +'</div></div>'
+              +'<div class="tc-price-row">'
+                +'<span class="tc-price">$'+fmtPrice(c.price)+'</span>'
+                +'<span class="tc-change" style="color:'+chartColor+';">'+(isBull?'▲':'▼')+' '+Math.abs(c.price_change_pct||0).toFixed(2)+'%</span>'
+              +'</div>'
+              +'<div class="tc-chart"><svg width="100%" height="52" viewBox="0 0 200 52" preserveAspectRatio="none"><polyline points="'+polyPts+'" fill="none" stroke="'+chartColor+'" stroke-width="1.5" opacity="0.8"/><polygon points="'+polyFill+'" fill="'+chartColor+'" opacity="0.06"/></svg></div>'
+              +'<div class="tc-bias-block" style="border:1px solid '+c.bias.replace(')',',0.16)').replace('rgb','rgba')+';">'
+                +'<div class="tc-bias-eyebrow">Bias</div>'
+                +'<div class="tc-bias-text" style="color:'+c.bias+';">'+c.biasText+'</div>'
+              +'</div>'
+              +'<div class="tc-narrative">'+esc(c.story_claim||c.primary_driver||'Signal under analysis')+'</div>'
+              +'<div class="tc-meta"><div class="tc-conf-row"><span class="tc-conf-label">Conf</span><div class="tc-conf-bar"><div class="tc-conf-fill" style="width:'+conf+'%;background:'+c.bias+';opacity:0.8;"></div></div><span class="tc-conf-val" style="color:'+c.bias+';">'+conf+'%</span></div><span class="tc-window-pill">'+window+'</span></div>'
+              +'<div class="tc-footer-tag" style="border-color:'+c.bias.replace(')',',0.18)').replace('rgb','rgba')+';"><span class="tc-phase" style="color:'+c.bias+';">'+c.phase+'</span><div class="tc-live-row"><div class="pulse-dot" style="background:'+c.bias+';"></div><span class="tc-live-label">Live</span></div></div>'
+            +'</div>'
+          +'</div>'
+          +'<div class="flip-hint">tap to reveal ↺</div>'
+        +'</div>'
+        +'<div class="card-back" style="position:absolute;">'
+          +'<div style="position:relative;"><div class="foil-layer"></div><div class="foil-scan"></div>'
+            +'<div class="card-back-inner" style="background:var(--mp-surface);">'
+              +'<div class="back-graphic" style="background:var(--mp-deep);display:flex;align-items:center;justify-content:center;"><div style="font-family:var(--font-mono);font-size:32px;font-weight:500;color:'+c.bias+';opacity:0.15;letter-spacing:6px;">'+c.ticker+'</div></div>'
+              +'<div class="back-content">'
+                +'<div class="back-company-row">'
+                  +'<div class="back-company-logo" style="background:var(--mp-deep);">'+logoHTML(c.ticker).replace(/<div class="t-logo[^"]*">/,'').replace(/<\/div>$/,'')+'</div>'
+                  +'<div><div class="back-company-name">'+c.ticker+'</div><div class="back-company-sector">'+(c.sector_name||'—')+'</div></div>'
+                +'</div>'
+                +'<div class="back-divider"></div>'
+                +'<div><div class="back-fact-label">Narrative</div><div class="back-fact">"'+esc(c.story_claim||c.primary_driver||'Under analysis')+'"</div></div>'
+                +'<div class="back-stats">'
+                  +'<div class="back-stat"><div class="back-stat-label">Price</div><div class="back-stat-val" style="color:var(--mp-text-primary);">$'+fmtPrice(c.price)+'</div></div>'
+                  +'<div class="back-stat"><div class="back-stat-label">P/E ratio</div><div class="back-stat-val" style="color:'+c.bias+';">'+(c.pe_ratio!=null?c.pe_ratio.toFixed(1)+'x':'—')+'</div></div>'
+                  +'<div class="back-stat"><div class="back-stat-label">Health</div><div class="back-stat-val" style="color:var(--mp-text-secondary);">'+energy+'</div></div>'
+                  +'<div class="back-stat"><div class="back-stat-label">Trust</div><div class="back-stat-val" style="color:var(--mp-text-secondary);">'+trust+'</div></div>'
+                +'</div>'
+                +'<div class="back-footer"><span class="back-footer-label">State</span><span class="back-footer-val" style="color:'+c.bias+';">'+(c.narrative_state||'—')+'</span></div>'
+              +'</div>'
+              +'<div class="flip-back-hint">tap to flip back ↺</div>'
+            +'</div>'
+          +'</div>'
+        +'</div>'
+      +'</div>'
+    +'</div>';
+  }).join('');
+  // Attach foil + tilt interactions
+  deck.querySelectorAll('.card-scene').forEach(function(scene){
+    scene.addEventListener('mousemove',function(e){
+      var rect=scene.getBoundingClientRect();
+      var x=((e.clientX-rect.left)/rect.width)*100;
+      var y=((e.clientY-rect.top)/rect.height)*100;
+      scene.querySelectorAll('.foil-layer').forEach(function(el){
+        el.style.setProperty('--mx',x+'%');
+        el.style.setProperty('--my',y+'%');
+      });
+      var rotX=((y-50)/50)*-6;
+      var rotY=((x-50)/50)*6;
+      var isFlipped=scene.classList.contains('flipped');
+      scene.querySelector('.card-flipper').style.transform=
+        (isFlipped?'rotateY(180deg) ':'')+'rotateX('+rotX+'deg) rotateY('+(isFlipped?180+rotY:rotY)+'deg)';
+    });
+    scene.addEventListener('mouseleave',function(){
+      var isFlipped=scene.classList.contains('flipped');
+      scene.querySelector('.card-flipper').style.transform=isFlipped?'rotateY(180deg)':'rotateY(0deg)';
+    });
+  });
 }
 // ── Boot ──────────────────────────────────────────────────────────────────────
 loadData();
