@@ -1206,33 +1206,39 @@ body{
 .flip-back-hint{text-align:center;font-family:var(--font-mono);font-size:7px;letter-spacing:0.12em;text-transform:uppercase;color:var(--mp-text-tertiary);padding:6px 0 9px;opacity:0.5;}
 /* ── CARDS + STORIES SPLIT LAYOUT ── */
 .cards-stories-split{
-  display:grid;grid-template-columns:auto 1fr;gap:24px;margin-bottom:28px;
+  display:grid;grid-template-columns:3fr 2fr;gap:24px;margin-bottom:28px;
   animation:slideUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.05s both;
 }
 @media(max-width:1100px){.cards-stories-split{grid-template-columns:1fr;}}
 .cards-stories-split .trading-cards-section{margin-bottom:0;}
-.cards-stories-split .deck{flex-direction:column;overflow-x:visible;overflow-y:visible;}
+.cards-stories-split .deck{
+  display:flex;flex-wrap:wrap;gap:16px;overflow:visible;
+  justify-content:flex-start;
+}
+.cards-stories-split .card-scene{width:calc(50% - 8px);min-width:200px;}
 /* Stories stream column */
 .stories-stream-col{
   min-width:0;background:var(--mp-surface);border:1px solid var(--mp-border);
   border-radius:16px;overflow:hidden;display:flex;flex-direction:column;
-  transition:border-color 0.3s;
+  transition:border-color 0.3s;max-height:820px;
 }
 .stories-stream-col:hover{border-color:rgba(255,255,255,0.10);}
 .stories-stream-header{
   display:flex;align-items:center;justify-content:space-between;
-  padding:14px 20px 0;
+  padding:14px 20px 0;flex-shrink:0;
 }
 .stories-stream-header h3{font-family:var(--font-body);font-size:14px;font-weight:400;color:var(--mp-text-primary);}
 .stories-stream-count{font-family:var(--font-mono);font-size:10px;color:var(--mp-text-tertiary);letter-spacing:.06em;}
-.stories-stream-filters{padding:10px 20px 0;}
-.stories-stream-col .count-bar{padding:6px 20px 0;}
+.stories-stream-filters{padding:10px 20px 0;flex-shrink:0;}
+.stories-stream-col .count-bar{padding:6px 20px 0;flex-shrink:0;}
 /* Scrolling viewport */
 .stories-stream-viewport{
   flex:1;overflow:hidden;position:relative;min-height:0;
+  mask-image:linear-gradient(to bottom,transparent 0%,black 3%,black 92%,transparent 100%);
+  -webkit-mask-image:linear-gradient(to bottom,transparent 0%,black 3%,black 92%,transparent 100%);
 }
 .stories-stream-inner{
-  animation:streamScroll 60s linear infinite;
+  will-change:transform;
 }
 .stories-stream-viewport:hover .stories-stream-inner{
   animation-play-state:paused;
@@ -2237,18 +2243,23 @@ function initStoryStream(){
   // Remove old clones
   var old=feed.querySelectorAll('.stream-clone');
   old.forEach(function(el){el.remove();});
-  // Clone all cards for seamless loop
-  var cards=feed.querySelectorAll('.story-card');
+  // Clone all story cards for seamless loop
+  var cards=feed.querySelectorAll('.story-card:not(.stream-clone)');
+  if(cards.length===0)return;
   cards.forEach(function(card){
     var clone=card.cloneNode(true);
     clone.classList.add('stream-clone');
+    clone.removeAttribute('style');
     feed.appendChild(clone);
   });
-  // Adjust animation duration based on content height
-  var totalH=0;
-  cards.forEach(function(c){totalH+=c.offsetHeight;});
-  var dur=Math.max(30,totalH/1.2);
-  feed.style.animationDuration=dur+'s';
+  // Measure original content height and set animation
+  requestAnimationFrame(function(){
+    var totalH=0;
+    cards.forEach(function(c){totalH+=c.offsetHeight;});
+    if(totalH<10)return;
+    var dur=Math.max(25,totalH/0.8);
+    feed.style.animation='streamScroll '+dur+'s linear infinite';
+  });
   // Update count
   var cnt=document.getElementById('stream-count');
   if(cnt)cnt.textContent=cards.length+' stories';
