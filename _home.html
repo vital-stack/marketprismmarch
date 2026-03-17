@@ -478,52 +478,55 @@ h2 {
 .features-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1px;
-  background: var(--border);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  overflow: hidden;
+  gap: 16px;
 }
 .feat {
-  background: var(--deep);
-  padding: 28px 24px;
-  transition: background .15s;
-}
-.feat:hover { background: var(--surface); }
-.feat-accent {
-  height: 3px;
-  border-radius: 2px;
-  margin-bottom: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 32px 28px 36px;
+  transition: border-color .2s, box-shadow .2s;
   position: relative;
-  overflow: hidden;
-  opacity: .5;
 }
-.feat:hover .feat-accent { opacity: 1; }
-.feat-accent::after {
-  content: '';
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%;
-  height: 100%;
-  border-radius: 2px;
-  background: inherit;
-  filter: brightness(1.6);
-  animation: accentPulse 6s ease-in-out infinite;
-  animation-delay: var(--d, 0s);
+.feat:hover {
+  border-color: rgba(255,255,255,0.13);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.4);
 }
-@keyframes accentPulse {
-  0%, 100% { opacity: 0; }
-  50% { opacity: .5; }
+.feat-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+.feat-num {
+  font-family: var(--font-d);
+  font-size: 64px;
+  line-height: 1;
+  color: var(--tx3);
+  opacity: 0.35;
+  letter-spacing: -0.03em;
+}
+.feat-badge {
+  font-family: var(--font-m);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  color: var(--tx2);
+  background: rgba(255,255,255,0.03);
 }
 .feat-title {
   font-family: var(--font-b);
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 18px;
+  font-weight: 600;
   color: var(--tx1);
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+  letter-spacing: -0.01em;
 }
 .feat-desc {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--tx2);
   line-height: 1.7;
 }
@@ -537,6 +540,7 @@ h2 {
   margin-top: 14px;
   letter-spacing: .04em;
 }
+.feat-accent { display: none; }
 /* ── HOW IT WORKS ── */
 .steps {
   display: grid;
@@ -1607,45 +1611,33 @@ footer {
 <!-- ── FEATURES ── -->
 <section class="sec" id="features">
   <div class="con">
-    <div class="eyebrow reveal">What's inside</div>
-    <h2 class="reveal">Everything behind the story</h2>
-    <p class="sec-lead reveal">Each ticker page is a complete forensic briefing — not just price and news, but the narrative structure underneath it.</p>
+    <div class="eyebrow reveal" style="display:flex;align-items:center;gap:10px;"><span style="display:inline-block;width:24px;height:2px;background:var(--cyan);"></span> From ticker to trading brief</div>
+    <h2 class="reveal" style="font-size:clamp(28px,4vw,44px);line-height:1.15;margin-bottom:12px;">Seven forensic layers. One daily verdict.</h2>
+    <p class="sec-lead reveal" style="max-width:680px;">Every morning before the bell, the engine runs across 100 tickers &#8212; the same systematic analysis a quant desk runs manually, delivered in a 30-second read.</p>
     <div class="features-grid reveal">
       <div class="feat">
-        <div class="feat-accent" style="background:var(--teal);"></div>
-        <div class="feat-title">Narrative dashboard</div>
-        <div class="feat-desc">All tracked tickers in one feed — filtered by narrative state (Breaking, Surging, Fragile, Stable), verdict, and sector. Updated continuously.</div>
-        <span class="feat-tag" style="background:rgba(0,229,180,.08);color:var(--teal);border:1px solid rgba(0,229,180,.2);">Core</span>
+        <div class="feat-head">
+          <div class="feat-num">01</div>
+          <span class="feat-badge">Input</span>
+        </div>
+        <div class="feat-title">Any ticker, every morning</div>
+        <div class="feat-desc">Price history, SEC filings, analyst calls, narrative clusters, and source credibility scores &#8212; pulled, scored, and waiting before the bell.</div>
       </div>
       <div class="feat">
-        <div class="feat-accent" style="background:var(--blue);--d:.5s;"></div>
-        <div class="feat-title">Price &amp; narrative chart</div>
-        <div class="feat-desc">Price history overlaid with every story published — bullish and bearish dots on the line, showing exactly when narratives formed and broke.</div>
-        <span class="feat-tag" style="background:rgba(26,110,255,.08);color:var(--blue);border:1px solid rgba(26,110,255,.2);">Core</span>
+        <div class="feat-head">
+          <div class="feat-num">02</div>
+          <span class="feat-badge">Engine</span>
+        </div>
+        <div class="feat-title">Seven forensic layers fire</div>
+        <div class="feat-desc">Narrative decay physics, SEC text-vs-table forensics, coordination detection, Bayesian analyst reliability, fair value stress testing, and exhaustion prediction &#8212; simultaneously.</div>
       </div>
       <div class="feat">
-        <div class="feat-accent" style="background:var(--amber);--d:1s;"></div>
-        <div class="feat-title">Story lifecycle</div>
-        <div class="feat-desc">Every narrative has a birth, growth, maturity, and decline. Track exactly where each story sits — and how much energy it still has.</div>
-        <span class="feat-tag" style="background:rgba(239,159,39,.08);color:var(--amber);border:1px solid rgba(239,159,39,.2);">Core</span>
-      </div>
-      <div class="feat">
-        <div class="feat-accent" style="background:var(--red);--d:1.5s;"></div>
-        <div class="feat-title">Forensic analysis</div>
-        <div class="feat-desc">Deep-dive verdict on the primary claim — what's driving the stock, whether the narrative is structurally supported, and what the key risk factors are.</div>
-        <span class="feat-tag" style="background:rgba(255,107,107,.08);color:var(--red);border:1px solid rgba(255,107,107,.2);">Core</span>
-      </div>
-      <div class="feat">
-        <div class="feat-accent" style="background:var(--violet);--d:2s;"></div>
-        <div class="feat-title">Contagion map</div>
-        <div class="feat-desc">Which tickers upstream caused this move? Which downstream names will feel it next? The causal chain, visualised in a single view.</div>
-        <span class="feat-tag" style="background:rgba(123,97,255,.08);color:var(--violet);border:1px solid rgba(123,97,255,.2);">Pro</span>
-      </div>
-      <div class="feat">
-        <div class="feat-accent" style="background:var(--cyan);--d:2.5s;"></div>
-        <div class="feat-title">Sector intelligence</div>
-        <div class="feat-desc">Per-sector context: macro tailwinds, structural risks, and contrarian views — so every ticker analysis sits inside its broader competitive landscape.</div>
-        <span class="feat-tag" style="background:rgba(0,194,255,.08);color:var(--cyan);border:1px solid rgba(0,194,255,.2);">Core</span>
+        <div class="feat-head">
+          <div class="feat-num">03</div>
+          <span class="feat-badge">Output</span>
+        </div>
+        <div class="feat-title">A verdict, not a score</div>
+        <div class="feat-desc">Narrative Trap. Structurally Supported. Monitoring. Three verdicts that translate directly into trading decisions, with the full forensic evidence trail behind each one.</div>
       </div>
     </div>
   </div>
