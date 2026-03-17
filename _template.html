@@ -1159,10 +1159,13 @@ body{
 .tc-price{font-family:var(--font-mono);font-size:20px;font-weight:500;letter-spacing:-0.02em;color:var(--mp-text-primary);line-height:1;}
 .tc-change{font-family:var(--font-mono);font-size:11px;font-weight:500;letter-spacing:0.02em;}
 .tc-chart{height:48px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,0.02);border:1px solid var(--mp-border);margin-bottom:14px;}
-.tc-bias-block{border-radius:5px;padding:10px 14px;margin-bottom:13px;border:1px solid;position:relative;overflow:hidden;text-align:center;}
+.tc-bias-block{border-radius:5px;padding:0;margin-bottom:13px;border:1px solid;position:relative;overflow:hidden;text-align:center;display:flex;flex-direction:column;}
+.tc-bias-block::after{content:'';position:absolute;inset:0;opacity:0.04;}
+.bias-graphic{display:block;width:100%;height:72px;flex-shrink:0;opacity:0.55;pointer-events:none;}
+.tc-bias-text-wrap{position:relative;z-index:1;padding:6px 14px 10px;border-top:1px solid rgba(255,255,255,0.05);}
 .tc-bias-eyebrow{font-family:var(--font-mono);font-size:7px;letter-spacing:0.14em;text-transform:uppercase;color:var(--mp-text-tertiary);margin-bottom:3px;}
 .tc-bias-text{font-family:'Anton','Franklin Gothic Heavy','Impact',sans-serif;font-size:30px;letter-spacing:0.04em;text-transform:uppercase;line-height:0.92;font-weight:400;display:block;width:100%;}
-.tc-narrative{font-family:var(--font-body);font-size:11px;font-weight:300;line-height:1.55;color:var(--mp-text-secondary);margin-bottom:12px;}
+.tc-narrative{font-family:var(--font-body);font-size:13px;font-weight:400;line-height:1.5;color:var(--mp-text-primary);margin-bottom:12px;}
 .tc-meta{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
 .tc-conf-row,.tc-conf-wrap{display:flex;align-items:center;gap:7px;flex:1;}
 .tc-conf-label,.tc-conf-lbl{font-family:var(--font-mono);font-size:7px;letter-spacing:0.1em;text-transform:uppercase;color:var(--mp-text-tertiary);flex-shrink:0;}
@@ -3477,17 +3480,17 @@ function renderTradingCards(){
                 +'<span class="tc-price">$'+fmtPrice(c.price)+'</span>'
                 +'<span class="tc-change" style="color:'+chartColor+';">'+(isBull?'\u25B2':'\u25BC')+' '+Math.abs(c.price_change_pct||0).toFixed(2)+'%</span>'
               +'</div>'
-              +'<div class="tc-chart"><svg width="100%" height="48" viewBox="0 0 200 48" preserveAspectRatio="none"><polyline points="'+polyPts+'" fill="none" stroke="'+chartColor+'" stroke-width="1.5" opacity="0.8"/><polygon points="'+polyFill+'" fill="'+chartColor+'" opacity="0.06"/></svg></div>'
-              +'<div class="tc-bias-block" style="border-color:'+c.bias.replace(')',',0.16)').replace('rgb','rgba')+';">'
-                +'<div class="tc-bias-eyebrow">Signal bias</div>'
-                +'<div class="tc-bias-text" style="color:'+c.bias+';">'+c.biasText.toUpperCase()+'</div>'
+              +'<div class="tc-bias-block" style="border-color:'+c.bias.replace(')',',0.22)').replace('rgb','rgba')+';background:'+c.bias.replace(')',',0.08)').replace('rgb','rgba')+';">'
+                +'<svg class="bias-graphic" viewBox="0 0 204 72" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bf'+i+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+c.bias+'" stop-opacity="0.4"/><stop offset="100%" stop-color="'+c.bias+'" stop-opacity="0"/></linearGradient></defs><polygon points="'+polyPts.split(' ').map(function(p,x){var parts=p.split(',');return Math.round(x*20.4)+','+parts[1];}).join(' ')+' 204,72 0,72" fill="url(#bf'+i+')"/><polyline points="'+polyPts.split(' ').map(function(p,x){var parts=p.split(',');return Math.round(x*20.4)+','+parts[1];}).join(' ')+'" fill="none" stroke="'+c.bias+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+                +'<div class="tc-bias-text-wrap"><div class="tc-bias-eyebrow">Signal bias</div><div class="tc-bias-text" style="color:'+c.bias+';">'+c.biasText.toUpperCase()+'</div></div>'
               +'</div>'
+              +'<div class="tc-narrative">'+esc(c.story_claim||c.primary_driver||'Signal under analysis')+'</div>'
+              +'<div class="tc-meta"><div class="tc-conf-wrap"><span class="tc-conf-lbl">Conf</span><div class="tc-conf-bar"><div class="tc-conf-fill" style="width:'+conf+'%;background:'+c.bias+';"></div></div><span class="tc-conf-val" style="color:'+c.bias+';">'+conf+'%</span></div><span class="tc-window-pill">'+window+'</span></div>'
               +'<div class="tc-signal-block">'
                 +'<div class="tc-signal-line"><div class="tc-pip" style="background:'+c.bias+';"></div><span class="tc-signal-text">'+signalPrimary+'</span></div>'
                 +'<div class="tc-signal-line"><div class="tc-pip" style="background:var(--mp-text-tertiary);"></div><span class="tc-signal-text risk">'+signalSecondary+'</span></div>'
               +'</div>'
-              +'<div class="tc-meta"><div class="tc-conf-row"><span class="tc-conf-label">Conf</span><div class="tc-conf-bar"><div class="tc-conf-fill" style="width:'+conf+'%;background:'+c.bias+';opacity:0.8;"></div></div><span class="tc-conf-val" style="color:'+c.bias+';">'+conf+'%</span></div><span class="tc-window-pill">'+window+'</span></div>'
-              +'<div class="tc-footer-tag" style="border-color:'+c.bias.replace(')',',0.18)').replace('rgb','rgba')+';"><span class="tc-phase" style="color:'+c.bias+';">'+c.phase+'</span><div class="tc-live-row"><div class="pulse-dot" style="background:'+c.bias+';"></div><span class="tc-live-label">Live</span></div></div>'
+              +'<div class="tc-footer" style="border-color:'+c.bias.replace(')',',0.18)').replace('rgb','rgba')+';"><span class="tc-phase" style="color:'+c.bias+';">'+c.phase+'</span><div class="tc-live-row"><div class="tc-pulse" style="background:'+c.bias+';"></div><span class="tc-live-lbl">Live</span></div></div>'
             +'</div>'
           +'</div>'
           +'<div class="flip-hint">tap to reveal \u21BA</div>'
