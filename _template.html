@@ -476,15 +476,15 @@ body{
   padding:14px 16px 10px;
   display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
 }
-.sector-name{font-size:14px;font-weight:500;color:var(--mp-text-primary);margin-bottom:2px;}
-.sector-sub{font-size:11px;color:var(--mp-text-tertiary);}
+.sector-name{font-size:17px;font-weight:500;color:#fff;margin-bottom:3px;}
+.sector-sub{font-size:12px;color:var(--mp-text-secondary);}
 .sector-state{
   font-size:9px;font-family:var(--font-mono);padding:4px 12px;
   border-radius:6px;border:1px solid rgba(255,255,255,0.08);flex-shrink:0;font-weight:400;letter-spacing:.06em;
   text-transform:uppercase;background:rgba(255,255,255,0.04);color:var(--mp-text-secondary);
 }
 .sector-body{padding:0 16px 14px;}
-.sector-desc{font-size:12px;color:var(--mp-text-secondary);line-height:1.65;margin-bottom:12px;}
+.sector-desc{font-size:13.5px;color:var(--mp-text-primary);line-height:1.65;margin-bottom:12px;}
 .sector-tickers{display:flex;gap:5px;flex-wrap:wrap;}
 .sector-ticker-chip{
   font-family:var(--font-mono);font-size:10px;
@@ -1220,13 +1220,19 @@ body{
   justify-content:flex-start;
 }
 .cards-stories-split .card-scene{width:calc(50% - 8px);min-width:200px;flex-shrink:1;}
-.cards-stories-split .tc-narrative{overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.cards-stories-split .tc-body{padding:12px 14px 10px;}
+.cards-stories-split .tc-bias-text{font-size:22px;}
+.cards-stories-split .tc-bias-block{margin-bottom:10px;}
+.cards-stories-split .tc-narrative{overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;font-size:11.5px;margin-bottom:8px;}
 .cards-stories-split .tc-signal-text{overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.cards-stories-split .tc-signal-block{margin-bottom:8px;}
+.cards-stories-split .tc-price{font-size:17px;}
+.cards-stories-split .tc-chart{height:48px;}
 /* Stories stream column */
 .stories-stream-col{
   min-width:0;background:var(--mp-surface);border:1px solid var(--mp-border);
   border-radius:16px;overflow:hidden;display:flex;flex-direction:column;
-  transition:border-color 0.3s;max-height:820px;
+  transition:border-color 0.3s;
 }
 .stories-stream-col:hover{border-color:rgba(255,255,255,0.10);}
 .stories-stream-header{
@@ -1994,6 +2000,8 @@ var DOMAIN_MAP = {
   RDDT:'reddit.com',SPOT:'spotify.com',SNAP:'snap.com',
   CMCSA:'comcast.com',DIS:'disney.com',IBM:'ibm.com',
   PLD:'prologis.com',AMT:'americantower.com',OPEN:'opendoor.com',
+  NFLX:'netflix.com',ADBE:'adobe.com',TSM:'tsmc.com',ABNB:'airbnb.com',
+  SHOP:'shopify.com',UBER:'uber.com',SQ:'squareup.com',SNOW:'snowflake.com',
 };
 var LOGO_COLORS = [
   ['rgba(26,110,255,.18)','#5B9FFF'],['rgba(0,229,180,.15)','#00C49A'],
@@ -3535,7 +3543,7 @@ function renderTradingCards(){
       {ticker:'TSLA',price:247.15,price_change_pct:0.42,narrative_state:'Fragile',story_claim:'Coiling under resistance with elevated IV — a loaded spring',sector_name:'Electric Vehicles',pe_ratio:68,accent:'linear-gradient(90deg,#818CF8,#60A5FA)',bias:'#A5B4FC',phase:'Coil Compress',biasText:'Wait for Break'},
     ];
   }
-  cards=cards.slice(0,5);
+  cards=cards.slice(0,4);
   var dateStr=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
   deck.innerHTML=cards.map(function(c,i){
     var delta=fmtDelta(c.price_change_pct);
