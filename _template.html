@@ -233,6 +233,25 @@ body{
 .verdict-trap{background:rgba(255,107,107,.12);color:var(--mp-red);border-color:rgba(255,107,107,.3);}
 .verdict-supported{background:rgba(0,229,180,.1);color:var(--mp-teal);border-color:rgba(0,229,180,.25);}
 /* ── SECTOR PULSE ── */
+/* ── SECTOR TRAP INTENSITY CHART ── */
+.trap-chart-wrap{
+  background:var(--mp-deep);border:1px solid var(--mp-border);
+  border-radius:12px;overflow:hidden;margin-bottom:20px;padding:20px 24px;
+}
+.trap-chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
+.trap-chart-header h3{font-family:var(--font-display);font-size:16px;font-weight:400;margin:0;letter-spacing:-.01em;}
+.trap-chart-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.trap-chart-legend{display:flex;gap:14px;margin-bottom:16px;flex-wrap:wrap;}
+.trap-chart-legend-item{display:flex;align-items:center;gap:5px;font-size:10px;font-family:var(--font-mono);color:var(--mp-text-tertiary);}
+.trap-chart-legend-dot{width:10px;height:10px;border-radius:2px;}
+.trap-bar-row{display:flex;align-items:center;gap:0;margin-bottom:6px;height:28px;}
+.trap-bar-label{width:160px;text-align:right;padding-right:12px;font-size:12px;color:var(--mp-text-secondary);flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.trap-bar-track{flex:1;height:22px;background:var(--mp-surface);border-radius:4px;overflow:hidden;position:relative;}
+.trap-bar-fill{height:100%;border-radius:4px;transition:width .6s ease;min-width:2px;}
+.trap-bar-info{width:70px;text-align:right;flex-shrink:0;padding-left:8px;}
+.trap-bar-pct{font-family:var(--font-mono);font-size:12px;font-weight:500;color:var(--mp-text-primary);display:block;}
+.trap-bar-ticker{font-family:var(--font-mono);font-size:9px;color:var(--mp-text-tertiary);display:block;}
+@media(max-width:600px){.trap-bar-label{width:100px;font-size:10px;}.trap-bar-info{width:55px;}}
 .sector-grid{
   display:grid;grid-template-columns:repeat(2,1fr);gap:10px;
 }
@@ -1083,6 +1102,27 @@ body{
         <h1>Sector Pulse</h1>
         <p>Narrative momentum across tracked sectors — updated daily</p>
       </div>
+      <!-- Trap Intensity Chart -->
+      <div class="trap-chart-wrap" id="trap-chart-wrap">
+        <div class="trap-chart-header">
+          <h3>Sector Trap Intensity</h3>
+          <div class="trap-chart-controls">
+            <select class="filter-select" id="trap-metric-select" onchange="renderTrapChart()" style="font-size:11px;padding:4px 10px;">
+              <option value="trap">Trap intensity</option>
+              <option value="breaking">Breaking %</option>
+              <option value="fragile">Fragile %</option>
+            </select>
+          </div>
+        </div>
+        <div class="trap-chart-legend">
+          <span class="trap-chart-legend-item"><span class="trap-chart-legend-dot" style="background:#A83232;"></span>Critical</span>
+          <span class="trap-chart-legend-item"><span class="trap-chart-legend-dot" style="background:#C8962E;"></span>Infected</span>
+          <span class="trap-chart-legend-item"><span class="trap-chart-legend-dot" style="background:#4A8FCC;"></span>Noisy</span>
+          <span class="trap-chart-legend-item"><span class="trap-chart-legend-dot" style="background:#2B9E6F;"></span>Clean</span>
+        </div>
+        <div id="trap-chart-bars"></div>
+      </div>
+
       <div class="filter-bar" style="margin-bottom:16px;">
         <span class="filter-label">Momentum</span>
         <button class="chip active" id="sp-filter-all" onclick="filterSectors('all',this)">All</button>
@@ -1565,12 +1605,14 @@ async function loadData(){
     renderDiscover();
     renderSnap();
     renderSectors();
+    renderTrapChart();
     renderMemes();
     loadDiscoverHeatmap();
   } catch(err){
     feed.innerHTML='<div class="empty-state" style="color:var(--mp-red);">Failed to load: '+esc(err.message)+'<br><small style="font-size:11px;opacity:.6;">Check Supabase credentials in environment variables.</small></div>';
     // Still render static demos
     renderSectors();
+    renderTrapChart();
     renderMemes();
   }
 }
@@ -1681,6 +1723,77 @@ var SECTOR_STATIC = [
   {name:'Energy Infrastructure / Power Grid',sub:'Utilities, grid, nuclear',state:'Surging',cagr:'19%',momentum:82,risk:'medium',desc:'AI data center power demand creating a secular utility re-rating. Nuclear renaissance narrative (CEG, VST) gaining institutional backing. Grid capacity stories are early-stage.',tickers:['DUK','NEE','VST','CEG','PWR'],trap:false},
 ];
 var sectorFilter='all';
+// ── Trap Intensity Chart ──────────────────────────────────────────────────────
+function renderTrapChart(){
+  var barsEl=document.getElementById('trap-chart-bars');
+  if(!barsEl)return;
+  var metric=(document.getElementById('trap-metric-select')||{}).value||'trap';
+  // Gather all unique sectors from SECTOR_MAP
+  var sectorTickers={};
+  Object.keys(SECTOR_MAP).forEach(function(tk){
+    SECTOR_MAP[tk].forEach(function(s){
+      if(!sectorTickers[s])sectorTickers[s]=[];
+      sectorTickers[s].push(tk);
+    });
+  });
+  // Also include SECTOR_STATIC sectors
+  SECTOR_STATIC.forEach(function(s){
+    if(!sectorTickers[s.name])sectorTickers[s.name]=[];
+    s.tickers.forEach(function(t){
+      if(sectorTickers[s.name].indexOf(t)===-1)sectorTickers[s.name].push(t);
+    });
+  });
+  // Compute per-sector metrics
+  var rows=[];
+  Object.keys(sectorTickers).forEach(function(sName){
+    var tickers=sectorTickers[sName];
+    var total=tickers.length;
+    if(total===0)return;
+    var matched=tickers.map(function(t){return DATA.find(function(d){return d.ticker===t;});}).filter(Boolean);
+    var count=matched.length||total; // use matched if available
+    var pct=0,topTicker='';
+    if(metric==='trap'){
+      var traps=matched.filter(function(r){return r.prism_verdict==='Narrative Trap';});
+      pct=count>0?Math.round((traps.length/count)*1000)/10:0;
+      topTicker=traps.length>0?traps[0].ticker:tickers[0];
+    }else if(metric==='breaking'){
+      var brk=matched.filter(function(r){return r.narrative_state==='Breaking';});
+      pct=count>0?Math.round((brk.length/count)*1000)/10:0;
+      topTicker=brk.length>0?brk[0].ticker:tickers[0];
+    }else if(metric==='fragile'){
+      var frag=matched.filter(function(r){return r.narrative_state==='Fragile';});
+      pct=count>0?Math.round((frag.length/count)*1000)/10:0;
+      topTicker=frag.length>0?frag[0].ticker:tickers[0];
+    }
+    // If no live data, use SECTOR_STATIC trap flag as fallback
+    if(matched.length===0&&metric==='trap'){
+      var ss=SECTOR_STATIC.find(function(s){return s.name===sName;});
+      if(ss&&ss.trap)pct=20;
+      topTicker=tickers[0];
+    }
+    rows.push({name:sName,pct:pct,topTicker:topTicker,count:count});
+  });
+  // Sort descending by pct
+  rows.sort(function(a,b){return b.pct-a.pct;});
+  // Max pct for scaling bars
+  var maxPct=Math.max.apply(null,rows.map(function(r){return r.pct;}).concat([1]));
+  // Color based on percentage tier
+  function barColor(p){
+    if(p>=30)return '#A83232'; // Critical
+    if(p>=20)return '#C8962E'; // Infected
+    if(p>0)return '#4A8FCC';   // Noisy
+    return '#2B9E6F';          // Clean
+  }
+  barsEl.innerHTML=rows.map(function(r){
+    var w=maxPct>0?Math.round((r.pct/maxPct)*100):0;
+    if(r.pct>0&&w<3)w=3;
+    return '<div class="trap-bar-row">'
+      +'<span class="trap-bar-label" title="'+esc(r.name)+'">'+esc(r.name)+'</span>'
+      +'<div class="trap-bar-track"><div class="trap-bar-fill" style="width:'+w+'%;background:'+barColor(r.pct)+';"></div></div>'
+      +'<div class="trap-bar-info"><span class="trap-bar-pct">'+r.pct.toFixed(1)+'%</span><span class="trap-bar-ticker">'+esc(r.topTicker)+'</span></div>'
+    +'</div>';
+  }).join('');
+}
 function filterSectors(f,btn){
   sectorFilter=f;
   document.querySelectorAll('#tab-sector .chip').forEach(function(c){c.classList.remove('active');});
