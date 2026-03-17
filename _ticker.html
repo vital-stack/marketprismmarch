@@ -380,9 +380,12 @@ const SUPABASE_URL  = window.__env?.SUPABASE_URL  || '';
 const SUPABASE_ANON = window.__env?.SUPABASE_ANON || '';
 
 if (!SUPABASE_URL || !SUPABASE_ANON) {
-  document.addEventListener('DOMContentLoaded', () => {
-    const el = document.getElementById('hero-card');
-    if (el) el.innerHTML = '<div class="card"><div class="inline-err">Config error: SUPABASE_URL or SUPABASE_ANON not set.</div></div>';
+  const el = document.getElementById('hero-card');
+  if (el) el.innerHTML = '<div class="card"><div class="inline-err">Config error: SUPABASE_URL or SUPABASE_ANON not set. Check Vercel environment variables.</div></div>';
+  // Clear other skeletons
+  ['verdict-card','diagnostics-card','narrative-card','signals-card'].forEach(id => {
+    const c = document.getElementById(id);
+    if (c) c.innerHTML = '';
   });
   throw new Error('Missing Supabase config');
 }
@@ -619,6 +622,10 @@ function buildIgnoreBullets(p, hero) {
 function renderVerdictCard(p, hero) {
   const el = document.getElementById('verdict-card');
   if (!el) return;
+  if (!p && !hero) {
+    el.innerHTML = '<div class="card"><div class="no-data">No trade verdict data available.</div></div>';
+    return;
+  }
 
   const { dir, isBear } = deriveDirection(p, hero);
   const confidence = deriveConfidence(p);
@@ -703,6 +710,10 @@ function renderHeroCard(p, hero) {
 function renderDiagnosticsCard(p) {
   const el = document.getElementById('diagnostics-card');
   if (!el) return;
+  if (!p) {
+    el.innerHTML = '<div class="card"><div class="no-data">No diagnostics data available.</div></div>';
+    return;
+  }
 
   const momentum = momentumLabel(p);
   const breakdown = breakdownRiskLabel(p);
@@ -797,7 +808,7 @@ async function loadHero() {
     const cols = [
       'ticker','price','price_change_pct','narrative_state','story_claim',
       'forensic_rebuttal','prism_verdict','institutional_positioning','fair_value',
-      'stock_type','mda_snippet','sector_name'
+      'stock_type','mda_snippet','sector_name','snapshot_date'
     ].join(',');
 
     const [rows, snapRows] = await Promise.all([
@@ -942,16 +953,32 @@ async function createImage() {
 async function refreshAll() {
   if (!TICKER) return;
 
-  const [heroData, pulse] = await Promise.all([
-    loadHero(),
-    loadPulse()
-  ]);
+  let heroData = null, pulse = null;
+  try {
+    [heroData, pulse] = await Promise.all([
+      loadHero(),
+      loadPulse()
+    ]);
+  } catch (err) {
+    console.error('Data fetch failed:', err);
+  }
 
-  renderVerdictCard(pulse, heroData);
-  renderHeroCard(pulse, heroData);
-  renderDiagnosticsCard(pulse);
-  renderNarrativeCard(pulse, heroData);
-  renderSignalsCard(pulse, heroData);
+  const cards = [
+    ['verdict-card',     () => renderVerdictCard(pulse, heroData)],
+    ['hero-card',        () => renderHeroCard(pulse, heroData)],
+    ['diagnostics-card', () => renderDiagnosticsCard(pulse)],
+    ['narrative-card',   () => renderNarrativeCard(pulse, heroData)],
+    ['signals-card',     () => renderSignalsCard(pulse, heroData)]
+  ];
+  for (const [id, fn] of cards) {
+    try {
+      fn();
+    } catch(e) {
+      console.error(`Render ${id}:`, e);
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = `<div class="card"><div class="inline-err">${id}: ${esc(e.message)}</div></div>`;
+    }
+  }
 
   // Show action bar once loaded
   document.getElementById('action-bar').style.display = 'flex';
