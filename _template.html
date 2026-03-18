@@ -210,22 +210,28 @@ body{
   animation:fadeInScale 0.6s cubic-bezier(0.16,1,0.3,1) both;
 }
 .stat-card.stat-highlight{
-  background:rgba(255,255,255,0.06);
-  border-color:rgba(255,255,255,0.28);
-  box-shadow:0 0 20px rgba(255,255,255,0.03);
+  background:rgba(255,255,255,0.04);
+  box-shadow:0 0 20px rgba(255,255,255,0.02);
 }
-.stat-card.stat-highlight .stat-num{color:#fff;}
-.stat-card.stat-highlight .stat-label{color:rgba(255,255,255,0.6);}
 .stat-card:nth-child(1){animation-delay:0.05s;}
 .stat-card:nth-child(2){animation-delay:0.12s;}
 .stat-card:nth-child(3){animation-delay:0.19s;}
 .stat-card:nth-child(4){animation-delay:0.26s;}
 .stat-card::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.08),transparent);
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--stat-accent,linear-gradient(90deg,transparent,rgba(255,255,255,0.08),transparent));
   opacity:1;
 }
 .stat-card::after{display:none;}
+/* Per-stat color accents */
+.stat-card:nth-child(1){--stat-accent:linear-gradient(90deg,#3B82F6,#60A5FA);border-color:rgba(59,130,246,0.15);}
+.stat-card:nth-child(1) .stat-num{color:#60A5FA;}
+.stat-card:nth-child(2){--stat-accent:linear-gradient(90deg,#FBBF24,#F59E0B);border-color:rgba(251,191,36,0.15);}
+.stat-card:nth-child(2) .stat-num{color:#FBBF24;}
+.stat-card:nth-child(3){--stat-accent:linear-gradient(90deg,#F87171,#EF4444);border-color:rgba(248,113,113,0.18);}
+.stat-card:nth-child(3) .stat-num{color:#F87171;}
+.stat-card:nth-child(4){--stat-accent:linear-gradient(90deg,#34D399,#10B981);border-color:rgba(52,211,153,0.18);}
+.stat-card:nth-child(4) .stat-num{color:#34D399;}
 .stat-card:hover{
   border-color:rgba(255,255,255,0.12);
   box-shadow:0 20px 60px rgba(0,0,0,0.4);
@@ -1910,13 +1916,7 @@ body{
         <div class="trading-cards-section">
           <div class="trading-cards-header">
             <h3>Live Signal Cards</h3>
-            <div style="display:flex;gap:8px;align-items:center;">
-              <button class="tcg-action-btn" onclick="switchTab('cards',document.querySelector('[data-tab=cards]'))" style="font-size:9px;padding:5px 10px;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15"/></svg>
-                View Full Size
-              </button>
-              <span>Click to flip</span>
-            </div>
+            <span style="font-family:var(--font-mono);font-size:10px;color:var(--mp-text-tertiary);letter-spacing:.06em;">Click to flip</span>
           </div>
           <div class="deck" id="trading-deck">
             <!-- Cards populated by JS from live data -->
@@ -2098,11 +2098,11 @@ body{
       <!-- Trap Intensity Chart -->
       <div class="trap-chart-wrap" id="trap-chart-wrap">
         <div class="trap-chart-header">
-          <h3>Sector Trap Intensity</h3>
+          <h3>Sector Signal Intensity</h3>
           <div class="trap-chart-controls">
             <select class="filter-select" id="trap-metric-select" onchange="renderTrapChart()" style="font-size:11px;padding:4px 10px;">
-              <option value="trap">Trap intensity</option>
               <option value="breaking">Breaking %</option>
+              <option value="trap">Trap intensity</option>
               <option value="fragile">Fragile %</option>
             </select>
           </div>
@@ -2945,7 +2945,7 @@ var sectorFilter='all';
 function renderTrapChart(){
   var barsEl=document.getElementById('trap-chart-bars');
   if(!barsEl)return;
-  var metric=(document.getElementById('trap-metric-select')||{}).value||'trap';
+  var metric=(document.getElementById('trap-metric-select')||{}).value||'breaking';
   // Gather all unique sectors from SECTOR_MAP
   var sectorTickers={};
   Object.keys(SECTOR_MAP).forEach(function(tk){

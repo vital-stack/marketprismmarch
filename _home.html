@@ -1378,7 +1378,7 @@ footer {
         <span class="quick-chip">AMZN</span>
       </div>
       <div class="social-row">
-        <div class="social-stat"><span class="social-num">50,000+</span><span class="social-lbl">Stories analysed</span></div>
+        <div class="social-stat"><span class="social-num">200,000+</span><span class="social-lbl">Stories analysed</span></div>
         <div class="social-sep"></div>
         <div class="social-stat"><span class="social-num">4,200+</span><span class="social-lbl">Active analysts</span></div>
         <div class="social-sep"></div>
@@ -1681,7 +1681,7 @@ footer {
     <div class="eyebrow reveal">Coverage</div>
     <h2 class="reveal">Built for serious market participants</h2>
     <div class="stats-grid reveal">
-      <div class="stat-cell"><div class="stat-n">50,000<span class="acc">+</span></div><div class="stat-l">Stories tracked</div><div class="stat-d">Active and historical narratives across equities, indexed and cross-referenced.</div></div>
+      <div class="stat-cell"><div class="stat-n">200,000<span class="acc">+</span></div><div class="stat-l">Stories tracked</div><div class="stat-d">Active and historical narratives across equities, indexed and cross-referenced.</div></div>
       <div class="stat-cell"><div class="stat-n">100<span class="acc">+</span></div><div class="stat-l">Tickers covered</div><div class="stat-d">US-listed equities across AI, fintech, defense, healthcare, and more.</div></div>
       <div class="stat-cell"><div class="stat-n">24<span class="acc">/7</span></div><div class="stat-l">Live monitoring</div><div class="stat-d">Continuous ingestion of filings, earnings, and market-moving publications.</div></div>
       <div class="stat-cell"><div class="stat-n">3</div><div class="stat-l">Patents pending</div><div class="stat-d">Proprietary methodology for narrative state classification and lifecycle modelling.</div></div>
@@ -1859,11 +1859,21 @@ document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
 document.querySelectorAll('.features-grid,.steps,.stats-grid,.sample-grid,.radar-grid').forEach(g => {
   [...g.children].forEach((c,i) => { c.style.transitionDelay = (i*55)+'ms'; });
 });
-// Quick chips fill the search input
+// Ticker search navigation
+function navigateToTicker(){
+  var inp = document.querySelector('.ticker-search-input');
+  var v = inp.value.trim().toUpperCase();
+  if(v) window.location.href = '/ticker/' + encodeURIComponent(v);
+}
+document.querySelector('.ticker-search-input').addEventListener('keydown', function(e){
+  if(e.key === 'Enter') navigateToTicker();
+});
+document.querySelector('.btn-primary').addEventListener('click', navigateToTicker);
+// Quick chips fill the search input and navigate
 document.querySelectorAll('.quick-chip').forEach(c => {
   c.addEventListener('click', () => {
     document.querySelector('.ticker-search-input').value = c.textContent;
-    document.querySelector('.ticker-search-input').focus();
+    navigateToTicker();
   });
 });
 // ── Market Radar Sparklines ──
