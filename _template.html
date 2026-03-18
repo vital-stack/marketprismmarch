@@ -366,13 +366,13 @@ body{
 .stat-card::after{display:none;}
 /* Per-stat color accents */
 .stat-card:nth-child(1){--stat-accent:linear-gradient(90deg,#00FFFF,#00AEFF);border-color:rgba(0,255,255,0.15);}
-.stat-card:nth-child(1) .stat-num{color:#00FFFF;}
+.stat-card:nth-child(1) .stat-num{color:#fff;}
 .stat-card:nth-child(2){--stat-accent:linear-gradient(90deg,#00AEFF,#00FFFF);border-color:rgba(0,174,255,0.15);}
-.stat-card:nth-child(2) .stat-num{color:#00AEFF;}
+.stat-card:nth-child(2) .stat-num{color:#fff;}
 .stat-card:nth-child(3){--stat-accent:linear-gradient(90deg,#00DE94,#00FF52);border-color:rgba(0,222,148,0.18);}
-.stat-card:nth-child(3) .stat-num{color:#00DE94;}
+.stat-card:nth-child(3) .stat-num{color:#fff;}
 .stat-card:nth-child(4){--stat-accent:linear-gradient(90deg,#00FF52,#00DE94);border-color:rgba(0,255,82,0.18);}
-.stat-card:nth-child(4) .stat-num{color:#00FF52;}
+.stat-card:nth-child(4) .stat-num{color:#fff;}
 .stat-card:hover{
   border-color:rgba(255,255,255,0.12);
   box-shadow:0 20px 60px rgba(0,0,0,0.4);
@@ -723,8 +723,8 @@ body{
 }
 .meme-grid{
   display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
-  gap:12px;
+  grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+  gap:18px;
 }
 .meme-card{
   background:var(--mp-surface);
@@ -3758,31 +3758,21 @@ function renderMemes(){
   });
   var grid=document.getElementById('meme-grid');
   if(filtered.length===0){grid.innerHTML='<div class="empty-state" style="grid-column:1/-1;">No cards match.</div>';return;}
+  // Build trading-card style cards
   grid.innerHTML=filtered.map(function(c,i){
-    var delta=fmtDelta(c.chg);
-    var vtag=c.verdict==='Narrative Trap'?'<span class="meme-verdict-big" style="background:rgba(255,107,107,.15);color:var(--mp-red);border-color:rgba(255,107,107,.3);">Narrative Trap</span>':c.verdict==='Structurally Supported'?'<span class="meme-verdict-big" style="background:rgba(0,229,180,.12);color:var(--mp-teal);border-color:rgba(0,229,180,.25);">Supported</span>':'';
-    var tcol=c.state==='Breaking'||c.verdict==='Narrative Trap'?'var(--mp-red)':c.state==='Surging'?'var(--mp-teal)':c.state==='Fragile'?'var(--mp-amber)':'var(--mp-blue)';
-    return '<div class="meme-card" id="meme-card-'+i+'">'
-      +'<div class="meme-img '+c.bg+'">'
-        +'<div class="meme-img-inner">'
-          +'<div style="display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:6px;">'+logoHTML(c.ticker,'lg')+'<div class="meme-ticker-big" style="color:'+tcol+';">'+c.ticker+'</div></div>'
-          +'<div class="meme-claim-big">'+esc(c.claim)+'</div>'
-          +vtag
-        +'</div>'
-      +'</div>'
-      +'<div class="meme-footer">'
-        +'<div class="meme-meta-row">'
-          +'<span class="meme-sym">'+c.ticker+' · '+(c.price>0?'$'+fmtPrice(c.price):'—')+'</span>'
-          +'<span class="meme-age">'+c.age+'</span>'
-        +'</div>'
-        +'<div style="font-family:var(--font-mono);font-size:11px;margin-bottom:6px;'+( c.chg>=0?'color:var(--mp-teal)':'color:var(--mp-red)')+'">'+delta.txt+'</div>'
-        +'<div class="meme-actions">'
-          +'<button class="meme-action-btn" onclick="likeCard('+i+',this,event)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/></svg>'+c.likes+'</button>'
-          +'<button class="meme-action-btn" onclick="window.location.href=\'/ticker/'+encodeURIComponent(c.ticker)+'\'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>Full analysis</button>'
-          +'<button class="meme-share-btn" onclick="shareCard('+i+',event)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z"/></svg>Share</button>'
-        +'</div>'
-      +'</div>'
-    +'</div>';
+    var cardData={
+      ticker:c.ticker,
+      price:c.price||0,
+      price_change_pct:c.chg||0,
+      narrative_state:c.state,
+      prism_verdict:c.verdict,
+      story_claim:c.claim,
+      sector_name:c.state,
+      biasText:c.verdict==='Narrative Trap'?'Fade Rallies':c.verdict==='Structurally Supported'?'Ride the Trend':c.state==='Fragile'?'Wait for Break':'Hold Steady',
+      narrative_health:Math.round(40+Math.random()*50)
+    };
+    var dateStr=c.age||'Today';
+    return buildCardFrontHTML(cardData,i,dateStr,'meme',true);
   }).join('');
 }
 function likeCard(i,btn,e){
