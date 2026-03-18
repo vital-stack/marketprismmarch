@@ -3468,6 +3468,13 @@ async function loadData(){
     var bearCount=DATA.filter(function(r){return r.direction_forecast&&r.direction_forecast.indexOf('BEAR')!==-1;}).length;
     var dailyBull=document.getElementById('daily-bullish');if(dailyBull)dailyBull.textContent=bullCount;
     var dailyBear=document.getElementById('daily-bearish');if(dailyBear)dailyBear.textContent=bearCount;
+    // Sentiment bar — compute from bull/bear ratio
+    var sentTotal=bullCount+bearCount||1;
+    var sentPct=Math.round((bullCount/sentTotal)*100);
+    var sentCursor=document.querySelector('.daily-sent-cursor');
+    var sentVal=document.querySelector('.daily-sent-val');
+    if(sentCursor)sentCursor.style.left=sentPct+'%';
+    if(sentVal)sentVal.textContent=sentPct+' · '+(sentPct>=60?'Risk-On':sentPct<=40?'Risk-Off':'Neutral');
     // Top movers
     var moversEl=document.getElementById('daily-top-movers');
     if(moversEl&&DATA.length>0){
@@ -3517,6 +3524,9 @@ async function loadData(){
     loadDiscoverHeatmap();
     renderTradingCards();
     renderDailySignalCards();
+    renderDailyOpportunityMatrix();
+    renderDailyLiveNarratives();
+    renderDailyMarketPulse();
   } catch(err){
     feed.innerHTML='<div class="empty-state" style="color:var(--mp-red);">Failed to load: '+esc(err.message)+'<br><small style="font-size:11px;opacity:.6;">Check Supabase credentials in environment variables.</small></div>';
     // Still render static demos
@@ -3526,6 +3536,81 @@ async function loadData(){
     renderTradingCards();
   }
 }
+// ── Daily Brief: Opportunity Matrix (replaces hardcoded rows) ─────────────────
+function renderDailyOpportunityMatrix(){
+  var el=document.querySelector('.daily-panel:first-child');
+  if(!el||!DATA.length)return;
+  // Find tickers with fair_value data where price is below fair value
+  var opps=DATA.filter(function(r){return r.fair_value!=null&&r.price!=null&&r.fair_value>0&&r.price<r.fair_value;})
+    .map(function(r){var gap=((r.fair_value-r.price)/r.price)*100;return Object.assign({},r,{gap:gap});})
+    .sort(function(a,b){return b.gap-a.gap;}).slice(0,4);
+  if(!opps.length)return;
+  // Keep the header, replace the rows
+  var header=el.querySelector('.daily-panel-head');
+  var rowsHTML=opps.map(function(r){
+    var pct=Math.round(r.gap);
+    var barW=Math.min(100,Math.round(r.gap*2));
+    var col=pct>=30?'#00AEFF':pct>=20?'#00DE94':'#38C8B8';
+    return '<div class="daily-orow"><div><div class="daily-otk">'+esc(r.ticker)+'</div><div class="daily-ots">'+esc(r.sector_name||'')+'</div></div>'
+      +'<div class="daily-ors"><strong>'+esc(r.story_claim||r.primary_driver||'Signal active')+'</strong></div>'
+      +'<div class="daily-oval"><div class="daily-opx">$'+fmtPrice(r.price)+'</div>'
+      +'<div class="daily-odl u">&#8593; '+pct+'% to fair</div>'
+      +'<div class="daily-obar"><div class="daily-ofill" style="width:'+barW+'%;background:'+col+'"></div></div></div></div>';
+  }).join('');
+  el.innerHTML=(header?header.outerHTML:'')+rowsHTML;
+}
+
+// ── Daily Brief: Live Narratives (replaces hardcoded rows) ───────────────────
+function renderDailyLiveNarratives(){
+  var panels=document.querySelectorAll('.daily-panel');
+  var el=panels.length>=2?panels[1]:null;
+  if(!el||!DATA.length)return;
+  // Show top 4 tickers with largest absolute price moves that have story claims
+  var movers=DATA.filter(function(r){return r.story_claim&&r.price!=null;})
+    .sort(function(a,b){return Math.abs(b.price_change_pct||0)-Math.abs(a.price_change_pct||0);}).slice(0,4);
+  if(!movers.length)return;
+  var header=el.querySelector('.daily-panel-head');
+  var rowsHTML=movers.map(function(r){
+    var pct=r.price_change_pct||0;
+    var isUp=pct>0;
+    var barCol=isUp?'#00AEFF':'#38C8B8';
+    return '<div class="daily-nrow"><div class="daily-nbb" style="background:'+barCol+'"></div><div class="daily-nm">'
+      +'<div class="daily-ntr"><span class="daily-ntk">'+esc(r.ticker)+'</span><span class="daily-npx">$'+fmtPrice(r.price)+'</span>'
+      +'<span class="daily-nch '+(isUp?'up':'dn')+'">'+(isUp?'&#9650;':'&#9660;')+' '+Math.abs(pct).toFixed(2)+'%</span>'
+      +'<span class="daily-nsc">'+esc(r.sector_name||'')+'</span></div>'
+      +'<div class="daily-ntx">'+esc(r.story_claim)+'</div></div><div class="daily-nag">Live</div></div>';
+  }).join('');
+  el.innerHTML=(header?header.outerHTML:'')+rowsHTML;
+}
+
+// ── Daily Brief: Market Pulse Strip (replaces hardcoded prices) ──────────────
+function renderDailyMarketPulse(){
+  var strip=document.querySelector('.daily-pulse-strip');
+  if(!strip||!DATA.length)return;
+  // Map tickers we want in the pulse strip to their DATA rows
+  var pulseTickers=['SPY','QQQ'];
+  var found=[];
+  pulseTickers.forEach(function(t){
+    var row=DATA.find(function(r){return r.ticker===t;});
+    if(row)found.push(row);
+  });
+  // Also add a few top movers to fill the strip
+  var extras=DATA.filter(function(r){return pulseTickers.indexOf(r.ticker)===-1&&r.price!=null;})
+    .sort(function(a,b){return Math.abs(b.price_change_pct||0)-Math.abs(a.price_change_pct||0);}).slice(0,6);
+  found=found.concat(extras).slice(0,8);
+  if(!found.length)return;
+  strip.innerHTML=found.map(function(r){
+    var pct=r.price_change_pct||0;
+    var isUp=pct>0;
+    var cls=isUp?'up':'dn';
+    var arrow=isUp?'&#9650;':'&#9660;';
+    var px=r.price!=null?(r.price>=1000?r.price.toFixed(0):r.price.toFixed(2)):'—';
+    return '<div class="dpi"><div class="dpi-tk">'+esc(r.ticker)+'</div><div class="dpi-px">'+px+'</div>'
+      +'<div class="dpi-ch '+cls+'">'+arrow+' '+Math.abs(pct).toFixed(2)+'%</div></div>';
+  }).join('');
+  if(window.mpInjectAll)setTimeout(window.mpInjectAll,50);
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function esc(s){return s?(s+'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):'';  }
 function stateClass(s){return {'Breaking':'badge-breaking','Surging':'badge-surging','Fragile':'badge-fragile','Stable':'badge-stable'}[s]||'badge-stable';}
