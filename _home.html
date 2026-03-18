@@ -1132,11 +1132,21 @@ footer {
   background: #0C1018; border: 1px solid rgba(255,255,255,0.06);
   display: flex; flex-direction: column;
   transition: box-shadow 0.25s; position: relative;
+  border-radius: 16px; overflow: hidden;
   background-image:
     linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
   background-size: 48px 48px;
 }
+.tc-sentiment-bar { position: absolute; top: 0; left: 0; right: 0; height: 2px; z-index: 2; border-radius: 16px 16px 0 0; }
+.tc-command { font-family: 'Inter', sans-serif; font-size: 17px; font-weight: 600; letter-spacing: -0.02em; text-transform: uppercase; line-height: 1.1; margin-bottom: 10px; color: #fff; }
+.tc-meta-line { font-family: var(--font-m); font-size: 11px; color: #A0A8B0; letter-spacing: 0.02em; margin-bottom: 12px; }
+.tc-context { font-size: 12px; font-weight: 300; line-height: 1.5; color: rgba(255,255,255,0.8); margin-bottom: auto; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.tc-sector-date { font-family: var(--font-m); font-size: 10px; color: #A0A8B0; letter-spacing: 0.02em; margin-top: 14px; margin-bottom: 12px; }
+.tc-foot { display: flex; align-items: center; justify-content: space-between; }
+.tc-state-tag { display: flex; align-items: center; gap: 6px; font-family: var(--font-m); font-size: 9px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: #A0A8B0; }
+.tc-view-btn { font-family: var(--font-m); font-size: 10px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; padding: 5px 14px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.12); background: transparent; color: rgba(255,255,255,0.7); cursor: pointer; transition: all .2s; text-decoration: none; }
+.tc-view-btn:hover { border-color: rgba(255,255,255,0.25); color: #fff; background: rgba(255,255,255,0.04); }
 .card-scene:hover .tc {
   box-shadow: 0 20px 60px rgba(0,0,0,0.6);
 }
@@ -1145,8 +1155,10 @@ footer {
 .tc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
 .tc-header-left { display: flex; align-items: center; gap: 11px; }
 .tc-logo-wrap, .tc-logo {
-  width: 42px; height: 42px; border-radius: 7px;
+  width: 32px; height: 32px; border-radius: 8px;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  font-family: var(--font-m); font-size: 9px; font-weight: 600; letter-spacing: .02em;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08);
 }
 .tc-id { display: flex; flex-direction: column; gap: 1px; }
 .tc-ticker { font-family: var(--font-m); font-size: 15px; font-weight: 600; line-height: 1; letter-spacing: 0.04em; color: var(--tx1); }
@@ -1450,82 +1462,114 @@ footer {
     <div class="eyebrow reveal">Market Radar</div>
     <h2 class="reveal" style="margin-bottom:8px;">Live narrative signals</h2>
     <p class="sec-lead reveal" style="margin-bottom:28px;">Real-time narrative energy across the coverage universe — breakouts, exhaustion, coordination risk, and sector momentum.</p>
-    <div class="deck reveal">
+    <div class="deck reveal" style="display:flex;gap:20px;justify-content:center;flex-wrap:wrap;">
       <!-- NVDA -->
-      <div class="card-peek">
-        <div class="card-peek-body">
-          <div class="card-peek-header">
-            <div class="card-peek-left">
-              <div class="card-peek-logo">NVDA</div>
-              <div><div class="card-peek-ticker">NVDA</div><div class="card-peek-name">Nvidia Corporation</div></div>
+      <div class="card-scene" style="width:232px;">
+        <div class="tc">
+          <div class="tc-sentiment-bar" style="background:#38C8B8;"></div>
+          <div class="tc-body">
+            <div class="tc-header">
+              <div class="tc-header-left">
+                <div class="tc-logo-wrap" style="background:rgba(118,185,0,0.08);color:#76B900;border-color:rgba(118,185,0,0.12);">NVDA</div>
+                <div class="tc-id"><span class="tc-ticker">NVDA</span><span class="tc-name">Nvidia Corporation</span></div>
+              </div>
+              <span class="tc-rarity" style="color:#38C8B8;border-color:rgba(56,200,184,0.25);background:rgba(56,200,184,0.08);">Rare</span>
             </div>
-            <span class="card-peek-rarity">Breaking</span>
-          </div>
-          <div class="card-peek-price">$118.42</div>
-          <div class="card-peek-change" style="color:#3DA5F5;">&#9660; 2.14%</div>
-          <div class="card-peek-bias">
-            <div class="card-peek-bias-eye">Signal bias</div>
-            <div class="card-peek-bias-text">FADE RALLIES</div>
+            <div class="tc-price-row">
+              <span class="tc-price">$118.42</span>
+              <span class="tc-change" style="color:#FF4D4D;">&#9660; 2.14%</span>
+            </div>
+            <div class="tc-command">FADE RALLIES</div>
+            <div class="tc-meta-line">74% &bull; 3&ndash;7d &bull; ACTIVE</div>
+            <div class="tc-context">Blackwell demand narrative running hot but China export ceiling not priced in.</div>
+            <div class="tc-sector-date">AI Infrastructure &bull; Semiconductors</div>
+            <div class="tc-foot">
+              <span class="tc-state-tag"><span class="tc-pulse" style="background:#38C8B8;"></span>BREAKING &bull; LIVE</span>
+              <a href="/ticker/NVDA" class="tc-view-btn">View</a>
+            </div>
           </div>
         </div>
-        <div class="card-peek-cta">See full signal &#8594;</div>
       </div>
       <!-- AAPL -->
-      <div class="card-peek">
-        <div class="card-peek-body">
-          <div class="card-peek-header">
-            <div class="card-peek-left">
-              <div class="card-peek-logo">AAPL</div>
-              <div><div class="card-peek-ticker">AAPL</div><div class="card-peek-name">Apple Inc.</div></div>
+      <div class="card-scene" style="width:232px;">
+        <div class="tc">
+          <div class="tc-sentiment-bar" style="background:#00DE94;"></div>
+          <div class="tc-body">
+            <div class="tc-header">
+              <div class="tc-header-left">
+                <div class="tc-logo-wrap" style="background:rgba(160,168,176,0.08);color:#A0A8B0;border-color:rgba(160,168,176,0.12);">AAPL</div>
+                <div class="tc-id"><span class="tc-ticker">AAPL</span><span class="tc-name">Apple Inc.</span></div>
+              </div>
+              <span class="tc-rarity" style="color:#00DE94;border-color:rgba(0,222,148,0.25);background:rgba(0,222,148,0.08);">Epic</span>
             </div>
-            <span class="card-peek-rarity">Surging</span>
-          </div>
-          <div class="card-peek-price">$212.80</div>
-          <div class="card-peek-change" style="color:#3DA5F5;">&#9650; 1.87%</div>
-          <div class="card-peek-bias">
-            <div class="card-peek-bias-eye">Signal bias</div>
-            <div class="card-peek-bias-text">RIDE THE TREND</div>
+            <div class="tc-price-row">
+              <span class="tc-price">$212.80</span>
+              <span class="tc-change" style="color:#00DE94;">&#9650; 1.87%</span>
+            </div>
+            <div class="tc-command">RIDE THE TREND</div>
+            <div class="tc-meta-line">88% &bull; 1&ndash;3d &bull; ACTIVE</div>
+            <div class="tc-context">Privacy-focused AI features driving upgrade cycle momentum across iPhone lineup.</div>
+            <div class="tc-sector-date">Consumer Technology</div>
+            <div class="tc-foot">
+              <span class="tc-state-tag"><span class="tc-pulse" style="background:#00DE94;"></span>SURGING &bull; LIVE</span>
+              <a href="/ticker/AAPL" class="tc-view-btn">View</a>
+            </div>
           </div>
         </div>
-        <div class="card-peek-cta">See full signal &#8594;</div>
       </div>
       <!-- TSLA -->
-      <div class="card-peek">
-        <div class="card-peek-body">
-          <div class="card-peek-header">
-            <div class="card-peek-left">
-              <div class="card-peek-logo">TSLA</div>
-              <div><div class="card-peek-ticker">TSLA</div><div class="card-peek-name">Tesla Inc.</div></div>
+      <div class="card-scene" style="width:232px;">
+        <div class="tc">
+          <div class="tc-sentiment-bar" style="background:#00AEFF;"></div>
+          <div class="tc-body">
+            <div class="tc-header">
+              <div class="tc-header-left">
+                <div class="tc-logo-wrap" style="background:rgba(232,33,39,0.08);color:#E82127;border-color:rgba(232,33,39,0.12);">TSLA</div>
+                <div class="tc-id"><span class="tc-ticker">TSLA</span><span class="tc-name">Tesla Inc.</span></div>
+              </div>
+              <span class="tc-rarity" style="color:#00AEFF;border-color:rgba(0,174,255,0.25);background:rgba(0,174,255,0.08);">Uncommon</span>
             </div>
-            <span class="card-peek-rarity">Fragile</span>
-          </div>
-          <div class="card-peek-price">$247.15</div>
-          <div class="card-peek-change" style="color:rgba(255,255,255,0.5);">&#9650; 0.42%</div>
-          <div class="card-peek-bias">
-            <div class="card-peek-bias-eye">Signal bias</div>
-            <div class="card-peek-bias-text">WAIT FOR BREAK</div>
+            <div class="tc-price-row">
+              <span class="tc-price">$247.15</span>
+              <span class="tc-change" style="color:#00DE94;">&#9650; 0.42%</span>
+            </div>
+            <div class="tc-command">WAIT FOR BREAK</div>
+            <div class="tc-meta-line">51% &bull; 5&ndash;10d &bull; ACTIVE</div>
+            <div class="tc-context">Robotaxi narrative building but production timeline uncertainty caps upside.</div>
+            <div class="tc-sector-date">Electric Vehicles &bull; Autonomous Transport</div>
+            <div class="tc-foot">
+              <span class="tc-state-tag"><span class="tc-pulse" style="background:#00AEFF;"></span>FRAGILE &bull; LIVE</span>
+              <a href="/ticker/TSLA" class="tc-view-btn">View</a>
+            </div>
           </div>
         </div>
-        <div class="card-peek-cta">See full signal &#8594;</div>
       </div>
       <!-- PLTR -->
-      <div class="card-peek">
-        <div class="card-peek-body">
-          <div class="card-peek-header">
-            <div class="card-peek-left">
-              <div class="card-peek-logo">PLTR</div>
-              <div><div class="card-peek-ticker">PLTR</div><div class="card-peek-name">Palantir Technologies</div></div>
+      <div class="card-scene" style="width:232px;">
+        <div class="tc">
+          <div class="tc-sentiment-bar" style="background:#00DE94;"></div>
+          <div class="tc-body">
+            <div class="tc-header">
+              <div class="tc-header-left">
+                <div class="tc-logo-wrap" style="background:rgba(0,222,148,0.08);color:#00DE94;border-color:rgba(0,222,148,0.12);">PLTR</div>
+                <div class="tc-id"><span class="tc-ticker">PLTR</span><span class="tc-name">Palantir Technologies</span></div>
+              </div>
+              <span class="tc-rarity" style="color:#00DE94;border-color:rgba(0,222,148,0.25);background:rgba(0,222,148,0.08);">Epic</span>
             </div>
-            <span class="card-peek-rarity">Surging</span>
-          </div>
-          <div class="card-peek-price">$98.45</div>
-          <div class="card-peek-change" style="color:#3DA5F5;">&#9650; 2.91%</div>
-          <div class="card-peek-bias">
-            <div class="card-peek-bias-eye">Signal bias</div>
-            <div class="card-peek-bias-text">BUY THE DIP</div>
+            <div class="tc-price-row">
+              <span class="tc-price">$98.45</span>
+              <span class="tc-change" style="color:#00DE94;">&#9650; 2.91%</span>
+            </div>
+            <div class="tc-command">BUY THE DIP</div>
+            <div class="tc-meta-line">67% &bull; 2&ndash;5d &bull; ACTIVE</div>
+            <div class="tc-context">Enterprise AIP attach rates beating estimates as agent deployment cycles intensify.</div>
+            <div class="tc-sector-date">Agentic AI &bull; Cybersecurity</div>
+            <div class="tc-foot">
+              <span class="tc-state-tag"><span class="tc-pulse" style="background:#00DE94;"></span>SURGING &bull; LIVE</span>
+              <a href="/ticker/PLTR" class="tc-view-btn">View</a>
+            </div>
           </div>
         </div>
-        <div class="card-peek-cta">See full signal &#8594;</div>
       </div>
     </div>
   </div>
