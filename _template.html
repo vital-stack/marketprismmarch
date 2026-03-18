@@ -210,9 +210,12 @@ body{
   animation:fadeInScale 0.6s cubic-bezier(0.16,1,0.3,1) both;
 }
 .stat-card.stat-highlight{
-  background:rgba(255,255,255,0.05);
-  border-color:rgba(255,255,255,0.18);
+  background:rgba(255,255,255,0.06);
+  border-color:rgba(255,255,255,0.28);
+  box-shadow:0 0 20px rgba(255,255,255,0.03);
 }
+.stat-card.stat-highlight .stat-num{color:#fff;}
+.stat-card.stat-highlight .stat-label{color:rgba(255,255,255,0.6);}
 .stat-card:nth-child(1){animation-delay:0.05s;}
 .stat-card:nth-child(2){animation-delay:0.12s;}
 .stat-card:nth-child(3){animation-delay:0.19s;}
@@ -279,7 +282,7 @@ body{
 /* ── STORY CARDS (Discover) ── */
 .feed{display:flex;flex-direction:column;gap:0;}
 .story-card{
-  padding:16px 20px;background:transparent;
+  padding:18px 20px;background:transparent;
   border:none;border-bottom:1px solid var(--mp-border);border-radius:0;
   transition:all 0.3s cubic-bezier(0.16,1,0.3,1);
   display:block;text-decoration:none;color:inherit;cursor:pointer;
@@ -556,6 +559,13 @@ body{
 .snap-date{font-family:var(--font-mono);font-size:10px;color:var(--mp-text-tertiary);}
 .pe-val{font-family:var(--font-mono);font-size:12px;}
 .snap-table .earnings-soon{color:var(--mp-amber);}
+.snap-cta{
+  font-family:var(--font-mono);font-size:9px;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--mp-cyan);text-decoration:none;
+  padding:4px 10px;border:1px solid rgba(96,165,250,.25);border-radius:4px;
+  white-space:nowrap;transition:all .2s;
+}
+.snap-cta:hover{background:rgba(96,165,250,.1);border-color:var(--mp-cyan);}
 /* Snapshot filter row */
 .snap-filter-row{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
 /* ── MARKET SHARING (MEMES) ── */
@@ -1080,7 +1090,7 @@ body{
   /* Sector */
   .sector-grid{grid-template-columns:1fr;}
   /* Snapshots */
-  .snap-table th:nth-child(n+5),.snap-table td:nth-child(n+5){display:none;}
+  .snap-table th:nth-child(n+6),.snap-table td:nth-child(n+6){display:none;}
   /* Memes */
   .meme-grid{grid-template-columns:1fr;}
   /* Trading Calendar */
@@ -1267,23 +1277,30 @@ body{
 .flip-back-hint{text-align:center;font-family:var(--font-mono);font-size:7px;letter-spacing:0.12em;text-transform:uppercase;color:var(--mp-text-tertiary);padding:6px 0 9px;opacity:0.5;}
 /* ── CARDS + STORIES SPLIT LAYOUT ── */
 .cards-stories-split{
-  display:grid;grid-template-columns:30fr 70fr;gap:20px;margin-bottom:28px;
+  display:grid;grid-template-columns:2fr 5fr;gap:20px;margin-bottom:28px;
   animation:slideUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.05s both;
   align-items:start;
 }
 @media(max-width:1100px){.cards-stories-split{grid-template-columns:1fr;}}
 .cards-stories-split .trading-cards-section{margin-bottom:0;}
 .cards-stories-split .deck{
-  display:grid;grid-template-columns:1fr;gap:12px;overflow:visible;
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;overflow:visible;
 }
-.cards-stories-split .tc-body{padding:12px 14px 10px;}
-.cards-stories-split .tc-bias-text{font-size:22px;}
-.cards-stories-split .tc-bias-block{margin-bottom:10px;}
-.cards-stories-split .tc-narrative{overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;font-size:11.5px;margin-bottom:8px;}
-.cards-stories-split .tc-signal-text{overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
-.cards-stories-split .tc-signal-block{margin-bottom:8px;}
-.cards-stories-split .tc-price{font-size:17px;}
-.cards-stories-split .tc-chart{height:48px;}
+.cards-stories-split .tc-body{padding:8px 10px 6px;}
+.cards-stories-split .tc-bias-text{font-size:16px;}
+.cards-stories-split .tc-bias-block{margin-bottom:6px;}
+.cards-stories-split .tc-narrative{overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;font-size:10px;margin-bottom:6px;}
+.cards-stories-split .tc-signal-text{overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;font-size:9px;}
+.cards-stories-split .tc-signal-block{margin-bottom:4px;padding:6px 8px;}
+.cards-stories-split .tc-price{font-size:14px;}
+.cards-stories-split .tc-chart{height:36px;}
+.cards-stories-split .tc-price-row{margin-bottom:6px;}
+.cards-stories-split .tc-header{padding:8px 10px 6px;}
+.cards-stories-split .tc-meta{margin-bottom:6px;gap:6px;}
+.cards-stories-split .tc-footer-tag,.cards-stories-split .tc-footer{padding:4px 8px;margin-bottom:4px;}
+.cards-stories-split .flip-hint{padding:2px 0 4px;}
+.cards-stories-split .card-scene{min-width:0;}
+.cards-stories-split .bias-graphic{height:48px;}
 /* Stories stream column */
 .stories-stream-col{
   min-width:0;background:var(--mp-surface);border:1px solid var(--mp-border);
@@ -2023,11 +2040,13 @@ body{
               <th class="r">Price</th>
               <th class="r">Change</th>
               <th>State</th>
+              <th>Primary narrative</th>
+              <th>Trade type</th>
               <th>Verdict</th>
-              <th>Primary driver</th>
               <th>Sector</th>
               <th class="r">P/E</th>
               <th class="r">Earnings</th>
+              <th></th>
             </tr>
           </thead>
           <tbody id="snap-tbody"></tbody>
@@ -2575,13 +2594,13 @@ function renderDiscover(){
           +'<div class="story-beacon '+sentClass+'"></div>'
           +'<div style="flex:1;min-width:0;">'
             +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">'
-              +'<span style="font-family:var(--font-mono);font-size:13px;font-weight:600;color:#fff;">'+r.ticker+'</span>'
-              +'<span class="story-typewriter" style="font-size:13px;color:var(--mp-text-primary);animation-delay:'+(idx*0.15)+'s;">'+esc(r.story_claim||r.primary_driver||'')+'</span>'
+              +'<span style="font-family:var(--font-mono);font-size:14px;font-weight:600;color:#fff;">'+r.ticker+'</span>'
+              +'<span class="story-typewriter" style="font-size:14px;color:#E8ECF4;font-weight:400;animation-delay:'+(idx*0.15)+'s;">'+esc(r.story_claim||r.primary_driver||'')+'</span>'
             +'</div>'
-            +'<div style="display:flex;align-items:center;gap:12px;font-size:12px;">'
-              +'<span style="font-family:var(--font-mono);color:#fff;">$'+fmtPrice(r.price)+'</span>'
+            +'<div style="display:flex;align-items:center;gap:12px;font-size:13px;">'
+              +'<span style="font-family:var(--font-mono);color:#fff;font-weight:500;">$'+fmtPrice(r.price)+'</span>'
               +'<span style="font-family:var(--font-mono);" class="'+delta.cls+'">'+delta.txt+'</span>'
-              +(r.sector_name?'<span style="color:var(--mp-text-secondary);">'+esc(r.sector_name)+'</span>':'')
+              +(r.sector_name?'<span style="color:#9BA8C0;">'+esc(r.sector_name)+'</span>':'')
               +(updated?'<span style="color:var(--mp-text-tertiary);margin-left:auto;font-family:var(--font-mono);font-size:10px;">'+updated+'</span>':'')
             +'</div>'
             +'<div class="story-sources">'
@@ -2856,23 +2875,26 @@ function renderSnap(){
   var tbody=document.getElementById('snap-tbody');
   var lm=document.getElementById('snap-load-more');
   var slice=arr.slice(0,snapShowing);
-  if(arr.length===0){tbody.innerHTML='<tr><td colspan="9" class="empty-state" style="padding:32px;text-align:center;color:var(--mp-text-tertiary);">No tickers match.</td></tr>';lm.style.display='none';return;}
+  if(arr.length===0){tbody.innerHTML='<tr><td colspan="11" class="empty-state" style="padding:32px;text-align:center;color:var(--mp-text-tertiary);">No tickers match.</td></tr>';lm.style.display='none';return;}
   tbody.innerHTML=slice.map(function(r){
     var delta=fmtDelta(r.price_change_pct);
     var sc=stateClass(r.narrative_state);
     var vc=r.prism_verdict==='Narrative Trap'?'verdict-trap':r.prism_verdict==='Structurally Supported'?'verdict-supported':'';
     var vl=r.prism_verdict==='Narrative Trap'?'Trap':r.prism_verdict==='Structurally Supported'?'Supported':r.prism_verdict||'—';
     var ec=r.days_to_earnings!=null&&r.days_to_earnings<=14?' earnings-soon':'';
+    var tradeType=r.narrative_state==='Surging'?'Momentum':r.narrative_state==='Breaking'?'Mean Reversion':r.narrative_state==='Fragile'?'Hedge':r.narrative_state==='Stable'?'Hold':'—';
     return '<tr onclick="window.location.href=\'/ticker/'+encodeURIComponent(r.ticker)+'\'" style="cursor:pointer;">'
       +'<td><div style="display:flex;align-items:center;gap:8px;">'+logoHTML(r.ticker,'sm')+'<div class="snap-sym">'+r.ticker+'</div></div></td>'
       +'<td class="r"><div class="snap-price">$'+fmtPrice(r.price)+'</div></td>'
       +'<td class="r"><div class="snap-chg '+delta.cls+'">'+delta.txt+'</div></td>'
       +'<td><span class="snap-state '+sc+'">'+esc(r.narrative_state)+'</span></td>'
-      +'<td>'+(vc?'<span class="snap-verdict '+vc+'">'+esc(vl)+'</span>':vc?'<span>'+esc(vl)+'</span>':'<span style="color:var(--mp-text-tertiary);font-size:11px;">'+esc(r.prism_verdict||'—')+'</span>')+'</td>'
-      +'<td><div class="snap-driver">'+esc(r.primary_driver||'—')+'</div></td>'
+      +'<td><div class="snap-driver" style="max-width:220px;">'+esc(r.story_claim||r.primary_driver||'—')+'</div></td>'
+      +'<td><span class="snap-state" style="font-size:9px;">'+tradeType+'</span></td>'
+      +'<td>'+(vc?'<span class="snap-verdict '+vc+'">'+esc(vl)+'</span>':'<span style="color:var(--mp-text-tertiary);font-size:11px;">'+esc(r.prism_verdict||'—')+'</span>')+'</td>'
       +'<td><div class="snap-sector">'+esc(r.sector_name||'—')+'</div></td>'
       +'<td class="r"><span class="pe-val">'+( r.pe_ratio!=null?r.pe_ratio.toFixed(1)+'x':'—')+'</span></td>'
       +'<td class="r"><span class="snap-date'+ec+'">'+( r.days_to_earnings!=null?r.days_to_earnings+'d':'—')+'</span></td>'
+      +'<td class="r"><a href="/ticker/'+encodeURIComponent(r.ticker)+'" class="snap-cta" onclick="event.stopPropagation();">View Card</a></td>'
     +'</tr>';
   }).join('');
   lm.style.display=snapShowing<arr.length?'block':'none';
