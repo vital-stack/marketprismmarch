@@ -2092,8 +2092,11 @@ if (!SUPABASE_URL || !SUPABASE_ANON) {
 
 // Extract ticker from URL path: /ticker/NVDA
 const pathParts = location.pathname.split('/').filter(Boolean);
+const _envTicker = (window.__env?.TICKER || '').toUpperCase().replace(/[^A-Z0-9.\-]/g, '');
+// Reject the server-injected value if it's clearly wrong (e.g. "TICKER" from bad rewrite)
+const _validEnvTicker = (_envTicker && _envTicker !== 'TICKER' && _envTicker !== 'API') ? _envTicker : '';
 const TICKER = (
-  window.__env?.TICKER ||
+  _validEnvTicker ||
   new URLSearchParams(location.search).get('t') ||
   decodeURIComponent(pathParts[pathParts.length - 1] || '')
 ).toUpperCase().replace(/[^A-Z0-9.\-]/g, '');
