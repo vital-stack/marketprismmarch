@@ -2553,6 +2553,334 @@ function switchTab(id, btn){
 // ── Supabase config ───────────────────────────────────────────────────────────
 var SUPABASE_URL  = (window.__env||{}).SUPABASE_URL  || '';
 var SUPABASE_ANON = (window.__env||{}).SUPABASE_ANON || '';
+var LIVE_EARNINGS_ROWS = [];
+var LIVE_EARNINGS_BY_DATE = {};
+var NHT_CACHE = {};
+var NHT_REQUEST_ID = 0;
+var DISPLAY_NAME_MAP = {
+  NVDA:'Nvidia',PLTR:'Palantir',RDDT:'Reddit',AAPL:'Apple',AMD:'AMD',META:'Meta',
+  TSLA:'Tesla',MSFT:'Microsoft',GOOGL:'Alphabet',AMZN:'Amazon',ORCL:'Oracle',
+  INTU:'Intuit',ABBV:'AbbVie',CRM:'Salesforce',NOW:'ServiceNow',CRWD:'CrowdStrike',
+  PANW:'Palo Alto Networks',AVGO:'Broadcom',SMCI:'Super Micro',TSM:'TSMC'
+};
+function sbFetch(table, params){
+  var qs = Object.keys(params||{}).filter(function(k){
+    var v = params[k];
+    return v !== undefined && v !== null && v !== '';
+  }).map(function(k){
+    return encodeURIComponent(k)+'='+encodeURIComponent(params[k]);
+  }).join('&');
+  var url = SUPABASE_URL+'/rest/v1/'+table+(qs?'?'+qs:'');
+  return fetch(url,{
+    headers:{
+      'apikey':SUPABASE_ANON,
+      'Authorization':'Bearer '+SUPABASE_ANON,
+      'Accept':'application/json'
+    }
+  }).then(async function(res){
+    if(!res.ok){
+      var body = await res.text().catch(function(){ return ''; });
+      throw new Error('['+table+'] '+res.status+' '+body.slice(0,160));
+    }
+    return res.json();
+  });
+}
+function pad2(n){ return n<10?'0'+n:''+n; }
+function isoDate(d){ return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()); }
+function addDaysISO(dateStr, days){
+  var d = new Date(dateStr+'T00:00:00');
+  if(isNaN(d.getTime())) return dateStr;
+  d.setDate(d.getDate() + (days || 0));
+  return isoDate(d);
+}
+function daysAgoISO(days){
+  var d = new Date();
+  d.setDate(d.getDate() - (days || 0));
+  return isoDate(d);
+}
+function fmtShortDate(dateStr){
+  var d = new Date(dateStr+'T00:00:00');
+  if(isNaN(d.getTime())) return dateStr || '—';
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+function fmtChartDate(dateStr){
+  var d = new Date(dateStr+'T00:00:00');
+  if(isNaN(d.getTime())) return dateStr || '—';
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+function startOfYearPrice(series){
+  var yr = new Date().getFullYear();
+  var row = (series||[]).find(function(pt){
+    return (pt.snapshot_date||'').slice(0,4) === String(yr);
+  });
+  return row ? row.price_close : null;
+}
+function nearestPricePoint(series, dateStr){
+  if(!series || !series.length) return null;
+  var target = new Date(dateStr+'T00:00:00').getTime();
+  if(!target) return series[series.length-1];
+  var best = series[0];
+  var bestDiff = Math.abs(new Date(best.snapshot_date+'T00:00:00').getTime() - target);
+  for(var i=1;i<series.length;i++){
+    var diff = Math.abs(new Date(series[i].snapshot_date+'T00:00:00').getTime() - target);
+    if(diff < bestDiff){
+      best = series[i];
+      bestDiff = diff;
+    }
+  }
+  return best;
+}
+function nearestPriceIndex(series, dateStr){
+  if(!series || !series.length) return 0;
+  var target = new Date(dateStr+'T00:00:00').getTime();
+  var bestIdx = 0;
+  var bestDiff = Math.abs(new Date(series[0].snapshot_date+'T00:00:00').getTime() - target);
+  for(var i=1;i<series.length;i++){
+    var diff = Math.abs(new Date(series[i].snapshot_date+'T00:00:00').getTime() - target);
+    if(diff < bestDiff){
+      bestIdx = i;
+      bestDiff = diff;
+    }
+  }
+  return bestIdx;
+}
+async function fetchPriceHistory(ticker, days){
+  var res = await fetch('/api/price-history?ticker='+encodeURIComponent(ticker)+'&days='+(days||730));
+  if(!res.ok){
+    var body = await res.text().catch(function(){ return ''; });
+    throw new Error('Price API '+res.status+' '+body.slice(0,120));
+  }
+  var json = await res.json();
+  return Array.isArray(json.series) ? json.series : [];
+}
+function getStoryForTicker(ticker){
+  for(var i=0;i<DATA.length;i++) if(DATA[i].ticker===ticker) return DATA[i];
+  return null;
+}
+function getDisplayName(ticker){
+  var story = getStoryForTicker(ticker);
+  return DISPLAY_NAME_MAP[ticker] || (story && story.sector_name) || ticker;
+}
+function dedupeEvents(events){
+  var seen = {};
+  return (events||[]).filter(function(ev){
+    var key = [ev.date_iso, ev.type, ev.label].join('|');
+    if(seen[key]) return false;
+    seen[key] = true;
+    return true;
+  });
+}
+function sentimentEventType(row){
+  var verdict = (row.verdict || '').toLowerCase();
+  var sentiment = row.sentiment_score;
+  if(verdict.indexOf('trap') !== -1 || verdict.indexOf('mislead') !== -1 || (sentiment != null && sentiment < 45)) return 'bear';
+  if(verdict.indexOf('support') !== -1 || verdict.indexOf('verified') !== -1 || (sentiment != null && sentiment >= 60)) return 'bull';
+  return 'neutral';
+}
+function getRangeDays(range){
+  return range === '3m' ? 95 : range === '6m' ? 190 : range === '1y' ? 370 : 5000;
+}
+function filterSeriesForRange(series, range){
+  if(range === 'all') return (series || []).slice();
+  var cutoff = daysAgoISO(getRangeDays(range));
+  var out = (series || []).filter(function(pt){ return pt.snapshot_date >= cutoff; });
+  return out.length ? out : (series || []).slice();
+}
+function generateOpexEvents(series){
+  if(!series || !series.length) return [];
+  var start = new Date(series[0].snapshot_date+'T00:00:00');
+  var end = new Date(series[series.length-1].snapshot_date+'T00:00:00');
+  var cur = new Date(start.getFullYear(), start.getMonth(), 1);
+  var events = [];
+  while(cur <= end){
+    var first = new Date(cur.getFullYear(), cur.getMonth(), 1);
+    var firstFridayOffset = (5 - first.getDay() + 7) % 7;
+    var thirdFriday = 1 + firstFridayOffset + 14;
+    var ds = isoDate(new Date(cur.getFullYear(), cur.getMonth(), thirdFriday));
+    if(ds >= series[0].snapshot_date && ds <= series[series.length-1].snapshot_date){
+      var pt = nearestPricePoint(series, ds);
+      events.push({
+        idx: nearestPriceIndex(series, ds),
+        type:'opex',
+        label:'Monthly options expiration (OPEX)',
+        date:fmtShortDate(ds),
+        date_iso:ds,
+        price:pt ? pt.price_close : null
+      });
+    }
+    cur = new Date(cur.getFullYear(), cur.getMonth()+1, 1);
+  }
+  return events;
+}
+function buildNHTRanges(model){
+  var ranges = {};
+  ['3m','6m','1y','all'].forEach(function(range){
+    var subset = filterSeriesForRange(model.series, range);
+    var startDate = subset.length ? subset[0].snapshot_date : null;
+    var endDate = subset.length ? subset[subset.length-1].snapshot_date : null;
+    var labels = subset.map(function(pt){ return fmtChartDate(pt.snapshot_date); });
+    var prices = subset.map(function(pt){ return pt.price_close; });
+    var events = dedupeEvents((model.events || []).filter(function(ev){
+      return (!startDate || ev.date_iso >= startDate) && (!endDate || ev.date_iso <= endDate);
+    }).concat(generateOpexEvents(subset))).map(function(ev){
+      return Object.assign({}, ev, { idx: nearestPriceIndex(subset, ev.date_iso) });
+    }).sort(function(a,b){ return (a.date_iso||'').localeCompare(b.date_iso||''); });
+    ranges[range] = { labels:labels, prices:prices, events:events };
+  });
+  return ranges;
+}
+async function ensureNHTData(ticker){
+  ticker = (ticker || '').toUpperCase();
+  if(!ticker) throw new Error('Ticker required');
+  if(NHT_CACHE[ticker]) return NHT_CACHE[ticker];
+  var healthSelect = 'snapshot_date,narrative_health,narrative_trend,attention_trend,sentiment_score';
+  var narrativeSelect = 'ticker,snapshot_date,narrative_text,verdict,sentiment_score,narrative_type';
+  var [prices, narratives, healthRows, earningsRows] = await Promise.all([
+    fetchPriceHistory(ticker, 730).catch(function(){ return []; }),
+    sbFetch('narrative_analyses', {
+      select:narrativeSelect,
+      ticker:'eq.'+ticker,
+      order:'snapshot_date.asc',
+      limit:'250'
+    }).catch(function(){ return []; }),
+    sbFetch('v_dash_narrative_health', {
+      select:healthSelect,
+      ticker:'eq.'+ticker,
+      order:'snapshot_date.desc',
+      limit:'40'
+    }).catch(function(){ return []; }),
+    sbFetch('earnings_window_active', {
+      select:'ticker,days_to_earnings,earnings_position,earnings_window_flag,narrative_earnings_alignment,snapshot_date',
+      ticker:'eq.'+ticker,
+      order:'snapshot_date.desc',
+      limit:'5'
+    }).catch(function(){ return []; })
+  ]);
+  if(!prices.length){
+    prices = await sbFetch('ticker_snapshots', {
+      select:'snapshot_date,price_close',
+      ticker:'eq.'+ticker,
+      order:'snapshot_date.asc',
+      limit:'730'
+    }).catch(function(){ return []; });
+  }
+  prices = (prices || []).filter(function(pt){ return pt && pt.snapshot_date && pt.price_close != null; });
+  var currentPrice = prices.length ? prices[prices.length-1].price_close : null;
+  var yearOpen = startOfYearPrice(prices);
+  var ytd = currentPrice != null && yearOpen ? ((currentPrice - yearOpen) / yearOpen) * 100 : 0;
+  var events = (narratives || []).map(function(row){
+    var pt = nearestPricePoint(prices, row.snapshot_date);
+    return {
+      idx: nearestPriceIndex(prices, row.snapshot_date),
+      type: sentimentEventType(row),
+      label: row.narrative_text || 'Narrative update',
+      date: fmtShortDate(row.snapshot_date),
+      date_iso: row.snapshot_date,
+      verdict: row.verdict || '',
+      price: pt ? pt.price_close : null
+    };
+  });
+  var earningsRow = (earningsRows || []).slice().sort(function(a,b){
+    return (a.days_to_earnings || 9999) - (b.days_to_earnings || 9999);
+  })[0];
+  if(earningsRow && earningsRow.snapshot_date){
+    var earningsDate = addDaysISO(earningsRow.snapshot_date, earningsRow.days_to_earnings || 0);
+    var earningsPt = nearestPricePoint(prices, earningsDate);
+    events.push({
+      idx: nearestPriceIndex(prices, earningsDate),
+      type:'earnings',
+      label:'Earnings window active' + (earningsRow.narrative_earnings_alignment ? ' · ' + earningsRow.narrative_earnings_alignment : ''),
+      date: fmtShortDate(earningsDate),
+      date_iso: earningsDate,
+      verdict: earningsRow.earnings_position || '',
+      price: earningsPt ? earningsPt.price_close : null
+    });
+  }
+  var model = {
+    ticker:ticker,
+    name:getDisplayName(ticker),
+    price:currentPrice || 0,
+    ytd:ytd || 0,
+    health:(healthRows || [])[0] || {},
+    series:prices,
+    events:events
+  };
+  model.ranges = buildNHTRanges(model);
+  NHT_CACHE[ticker] = model;
+  return model;
+}
+function populateNHTTickerSelect(){
+  var sel = document.getElementById('nht-ticker-select');
+  if(!sel || !DATA.length) return;
+  var current = (nhtTicker || 'NVDA').toUpperCase();
+  var tickers = DATA.slice(0, 40).map(function(r){ return r.ticker; });
+  if(tickers.indexOf(current) === -1) tickers.unshift(current);
+  sel.innerHTML = tickers.map(function(t){
+    return '<option value="'+t+'"'+(t===current?' selected':'')+'>'+t+' — '+esc(getDisplayName(t))+'</option>';
+  }).join('');
+}
+function tcSignalBias(row, story){
+  if((story && story.prism_verdict === 'Narrative Trap') || row.narrative_earnings_alignment === 'CONTRADICTED') return { text:'FADE RALLIES', color:'var(--mp-red)', rarity:'Rare' };
+  if((story && story.prism_verdict === 'Structurally Supported') || row.narrative_earnings_alignment === 'ALIGNED') return { text:'RIDE THE TREND', color:'var(--mp-teal)', rarity:'Epic' };
+  if((row.days_to_earnings || 0) <= 7) return { text:'WATCH EARNINGS', color:'var(--mp-violet)', rarity:'Uncommon' };
+  return { text:'HOLD STEADY', color:'var(--mp-amber)', rarity:'Common' };
+}
+function tcEventDate(row){
+  return row && row.snapshot_date ? addDaysISO(row.snapshot_date, row.days_to_earnings || 0) : null;
+}
+async function loadTradingCalendarLive(){
+  if(!SUPABASE_URL || !SUPABASE_ANON) return;
+  try{
+    var rows = await sbFetch('earnings_window_active', {
+      select:'ticker,days_to_earnings,earnings_position,earnings_window_flag,narrative_earnings_alignment,eps_actual,revenue_actual,earnings_surprise_pct,data_source,snapshot_date',
+      order:'days_to_earnings.asc,ticker.asc',
+      limit:'120'
+    });
+    LIVE_EARNINGS_ROWS = (rows || []).filter(function(r){
+      return r && r.ticker && r.snapshot_date && r.days_to_earnings != null && r.days_to_earnings >= 0;
+    });
+    LIVE_EARNINGS_BY_DATE = {};
+    LIVE_EARNINGS_ROWS.forEach(function(row){
+      var ds = tcEventDate(row);
+      if(!ds) return;
+      if(!LIVE_EARNINGS_BY_DATE[ds]) LIVE_EARNINGS_BY_DATE[ds] = [];
+      LIVE_EARNINGS_BY_DATE[ds].push(row);
+    });
+    TC_SIGNALS = LIVE_EARNINGS_ROWS.slice(0,5).map(function(row){
+      var story = getStoryForTicker(row.ticker) || {};
+      var bias = tcSignalBias(row, story);
+      var delta = fmtDelta(story.price_change_pct);
+      var confBase = story.narrative_health != null ? story.narrative_health : 55;
+      var conf = Math.max(40, Math.min(95, Math.round(confBase)));
+      return {
+        id:row.ticker.toLowerCase(),
+        ticker:row.ticker,
+        name:getDisplayName(row.ticker),
+        price:story.price != null ? '$'+fmtPrice(story.price) : '—',
+        change:delta.txt,
+        changeDir:story.price_change_pct > 0 ? 'up' : story.price_change_pct < 0 ? 'down' : 'flat',
+        rarity:bias.rarity,
+        ac:bias.color,
+        bias:bias.text,
+        conf:conf+'%',
+        window:(row.days_to_earnings || 0)+'d to earnings',
+        logo:logoHTML(row.ticker,''),
+        eventDate:tcEventDate(row),
+        narrative:story.story_claim || story.primary_driver || 'Upcoming earnings event',
+        alignment:row.narrative_earnings_alignment || 'NEUTRAL'
+      };
+    });
+    if(tcCalBooted){
+      tcRenderCards();
+      tcRenderCalendar();
+      tcUpdateQueuedBadges();
+      tcUpdateSummary();
+      tcCarouselGo(0);
+    }
+  }catch(err){
+    console.error('Trading calendar live load failed', err);
+  }
+}
 // ── Shared data store ─────────────────────────────────────────────────────────
 var DATA = [];
 var DOMAIN_MAP = {
@@ -2646,6 +2974,9 @@ async function loadData(){
     renderMemes();
     loadDiscoverHeatmap();
     renderTradingCards();
+    populateNHTTickerSelect();
+    loadTradingCalendarLive();
+    loadNHT(nhtTicker);
   } catch(err){
     feed.innerHTML='<div class="empty-state" style="color:var(--mp-red);">Failed to load: '+esc(err.message)+'<br><small style="font-size:11px;opacity:.6;">Check Supabase credentials in environment variables.</small></div>';
     // Still render static demos
@@ -4959,6 +5290,229 @@ function calendarBoot(){
   });
 }
 
+// Live dashboard overrides: narrative history + trading calendar
+NH_DATA = {'3m':{labels:[],prices:[],dots:[]},'6m':{labels:[],prices:[],dots:[]},'1y':{labels:[],prices:[],dots:[]}};
+tcCalMonth = new Date().getMonth();
+tcCalYear = new Date().getFullYear();
+
+function syncNHFromNHTModel(model){
+  if(!model || !model.ranges) return;
+  ['3m','6m','1y'].forEach(function(range){
+    var rd=model.ranges[range]||{labels:[],prices:[],events:[]};
+    NH_DATA[range]={
+      labels:rd.labels,
+      prices:rd.prices,
+      dots:(rd.events||[]).filter(function(ev){return ev.type==='bull'||ev.type==='bear'||ev.type==='neutral';}).map(function(ev){
+        return {idx:ev.idx,type:ev.type==='neutral'?'watch':ev.type,label:ev.label,date:ev.date};
+      }).slice(-10)
+    };
+  });
+}
+
+renderNHChart = function(){
+  var d=NH_DATA[nhRange];
+  var ctx=document.getElementById('nh-chart');
+  if(!ctx)return;
+  if(nhChart)nhChart.destroy();
+  if(!d || !d.labels.length){
+    var evEmpty=document.getElementById('nh-events');
+    if(evEmpty)evEmpty.innerHTML='<div class="empty-state">Loading live narrative timeline…</div>';
+    return;
+  }
+  var pointBg=d.prices.map(function(_,i){
+    var dot=d.dots.find(function(dd){return dd.idx===i;});
+    if(!dot)return 'transparent';
+    return dot.type==='bull'?'rgba(0,229,180,1)':dot.type==='bear'?'rgba(255,107,107,1)':'rgba(239,159,39,1)';
+  });
+  var pointR=d.prices.map(function(_,i){return d.dots.find(function(dd){return dd.idx===i;})?6:0;});
+  var pointBorder=d.prices.map(function(_,i){
+    var dot=d.dots.find(function(dd){return dd.idx===i;});
+    if(!dot)return 'transparent';
+    return dot.type==='bull'?'rgba(0,229,180,.3)':dot.type==='bear'?'rgba(255,107,107,.3)':'rgba(239,159,39,.3)';
+  });
+  var pointBorderW=d.prices.map(function(_,i){return d.dots.find(function(dd){return dd.idx===i;})?4:0;});
+  var isLt=document.documentElement.getAttribute('data-theme')==='light';
+  nhChart=new Chart(ctx,{
+    type:'line',
+    data:{labels:d.labels,datasets:[{data:d.prices,borderColor:isLt?'#1A6EFF':'#F0F4FF',borderWidth:2,fill:true,backgroundColor:isLt?'rgba(26,110,255,0.06)':'rgba(26,110,255,0.08)',tension:.3,pointBackgroundColor:pointBg,pointRadius:pointR,pointBorderColor:pointBorder,pointBorderWidth:pointBorderW,pointHoverRadius:8}]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){var dot=d.dots.find(function(dd){return dd.idx===ctx.dataIndex;});return dot?'$'+ctx.raw.toFixed(2)+' — '+dot.label:'$'+ctx.raw.toFixed(2);}},backgroundColor:isLt?'#fff':'#141D35',titleColor:isLt?'#1A1D2B':'#F0F4FF',bodyColor:isLt?'#5A6072':'#8B97B8',borderColor:isLt?'rgba(0,0,0,.1)':'rgba(255,255,255,.1)',borderWidth:1,padding:10,cornerRadius:8}},
+      scales:{x:{grid:{color:isLt?'rgba(0,0,0,.05)':'rgba(255,255,255,.04)'},ticks:{color:isLt?'#8B90A0':'#4A5578',font:{family:'DM Mono',size:10}}},y:{grid:{color:isLt?'rgba(0,0,0,.05)':'rgba(255,255,255,.04)'},ticks:{color:isLt?'#8B90A0':'#4A5578',font:{family:'DM Mono',size:10},callback:function(v){return '$'+v;}}}}
+    }
+  });
+  document.getElementById('nh-events').innerHTML=d.dots.map(function(dot){
+    var cls=dot.type==='bull'?'nh-event-bull':dot.type==='bear'?'nh-event-bear':'nh-event-watch';
+    var lbl=dot.type==='bull'?'Bullish':dot.type==='bear'?'Bearish':'Monitoring';
+    return '<div class="nh-event"><div class="nh-event-date">'+dot.date+'</div><div class="nh-event-title">'+esc(dot.label)+'</div><span class="nh-event-type '+cls+'">'+lbl+'</span></div>';
+  }).join('');
+};
+
+switchNHRange = function(r,btn){
+  nhRange=r;
+  document.querySelectorAll('.nh-tab').forEach(function(b){b.classList.remove('active');});
+  if(btn)btn.classList.add('active');
+  renderNHChart();
+};
+
+loadNHT = async function(ticker){
+  var reqId=++NHT_REQUEST_ID;
+  nhtTicker=(ticker||'').toUpperCase();
+  if(!nhtTicker)return;
+  nhtRange='3m';
+  document.querySelectorAll('.nht-range-tab').forEach(function(b){b.classList.toggle('active',b.textContent==='3M');});
+  nhtSentFilter='all';
+  document.querySelectorAll('.nht-sent-btn').forEach(function(b,i){b.classList.toggle('active',i===0);});
+  var sel=document.getElementById('nht-ticker-select');
+  if(sel){
+    var hasOpt=[].slice.call(sel.options).some(function(o){return o.value===nhtTicker;});
+    if(!hasOpt){
+      var opt=document.createElement('option');
+      opt.value=nhtTicker;
+      opt.textContent=nhtTicker+' — '+getDisplayName(nhtTicker);
+      sel.appendChild(opt);
+    }
+    sel.value=nhtTicker;
+  }
+  document.getElementById('nht-title').textContent=nhtTicker;
+  document.getElementById('nht-price').textContent='Loading…';
+  document.getElementById('nht-ytd').textContent='Fetching live data';
+  document.getElementById('nht-events-grid').innerHTML='<div class="empty-state">Loading live narrative history…</div>';
+  document.getElementById('nht-event-list').innerHTML='';
+  document.getElementById('nht-event-count').textContent='0';
+  try{
+    var model=await ensureNHTData(nhtTicker);
+    if(reqId!==NHT_REQUEST_ID)return;
+    syncNHFromNHTModel(model);
+    renderNHChart();
+    renderNHT();
+  }catch(err){
+    if(reqId!==NHT_REQUEST_ID)return;
+    document.getElementById('nht-events-grid').innerHTML='<div class="empty-state" style="color:var(--mp-red);">Failed to load narrative history.</div>';
+    document.getElementById('nht-event-list').innerHTML='<div class="empty-state" style="color:var(--mp-red);">'+esc(err.message)+'</div>';
+  }
+};
+
+renderNHT = function(){
+  var tdata=NHT_CACHE[nhtTicker];
+  if(!tdata)return;
+  var rd=tdata.ranges[nhtRange]||tdata.ranges['3m'];
+  document.getElementById('nht-title').textContent=nhtTicker;
+  document.getElementById('nht-price').textContent='$'+tdata.price.toFixed(2);
+  var ytdEl=document.getElementById('nht-ytd');
+  ytdEl.textContent=(tdata.ytd>=0?'▲ +':'▼ ')+tdata.ytd.toFixed(1)+'% YTD';
+  ytdEl.className='nht-ytd '+(tdata.ytd>=0?'delta-pos':'delta-neg');
+  var filtered=(rd.events||[]).filter(function(ev){
+    if(ev.type==='earnings'&&!nhtLayers.earnings)return false;
+    if(ev.type==='opex'&&!nhtLayers.opex)return false;
+    if((ev.type==='bull'||ev.type==='bear'||ev.type==='neutral')&&!nhtLayers.stories)return false;
+    if(nhtSentFilter!=='all'){
+      if(nhtSentFilter==='bull'&&ev.type!=='bull')return false;
+      if(nhtSentFilter==='bear'&&ev.type!=='bear')return false;
+      if(nhtSentFilter==='neutral'&&ev.type!=='neutral'&&ev.type!=='earnings'&&ev.type!=='opex')return false;
+    }
+    return true;
+  });
+  var ctx=document.getElementById('nht-chart');
+  if(!ctx)return;
+  if(nhtChart)nhtChart.destroy();
+  var isLt=document.documentElement.getAttribute('data-theme')==='light';
+  function evColor(t){ if(t==='bull')return 'rgba(0,229,180,1)'; if(t==='bear')return 'rgba(255,107,107,1)'; if(t==='earnings')return 'rgba(123,97,255,1)'; if(t==='opex')return 'rgba(239,159,39,1)'; return 'rgba(139,151,184,1)'; }
+  var pointBg=rd.prices.map(function(_,i){ var ev=filtered.find(function(e){return e.idx===i;}); return ev?evColor(ev.type):'transparent'; });
+  var pointR=rd.prices.map(function(_,i){ var ev=filtered.find(function(e){return e.idx===i;}); if(!ev)return 0; return ev.type==='earnings'?10:6; });
+  var pointBorder=rd.prices.map(function(_,i){ var ev=filtered.find(function(e){return e.idx===i;}); if(!ev)return 'transparent'; return evColor(ev.type).replace(',1)',',0.3)'); });
+  var pointBorderW=rd.prices.map(function(_,i){ var ev=filtered.find(function(e){return e.idx===i;}); return ev?(ev.type==='earnings'?3:4):0; });
+  var pointStyle=rd.prices.map(function(_,i){ var ev=filtered.find(function(e){return e.idx===i;}); if(!ev)return 'circle'; return ev.type==='opex'?'diamond':'circle'; });
+  var earningsLabelPlugin={id:'earningsLabels',afterDatasetsDraw:function(chart){var meta=chart.getDatasetMeta(0);var cx=chart.ctx;filtered.forEach(function(ev){if(ev.type!=='earnings')return;var pt=meta.data[ev.idx];if(!pt)return;cx.save();cx.font='bold 9px DM Mono';cx.fillStyle='#fff';cx.textAlign='center';cx.textBaseline='middle';cx.fillText('E',pt.x,pt.y);cx.restore();});}};
+  nhtChart=new Chart(ctx,{type:'line',data:{labels:rd.labels,datasets:[{data:rd.prices,borderColor:'#FF6B4A',borderWidth:2.5,fill:false,tension:.3,pointBackgroundColor:pointBg,pointRadius:pointR,pointBorderColor:pointBorder,pointBorderWidth:pointBorderW,pointStyle:pointStyle,pointHoverRadius:10}]},plugins:[earningsLabelPlugin],options:{responsive:true,maintainAspectRatio:false,onClick:function(evt,elements){if(!elements.length)return;var idx=elements[0].index;var ev=filtered.find(function(e){return e.idx===idx;});if(ev)highlightNHTEvent(ev);},plugins:{legend:{display:false},tooltip:{callbacks:{title:function(ctx){var ev=filtered.find(function(e){return e.idx===ctx[0].dataIndex;});return ev?ev.date:'';},label:function(ctx){var ev=filtered.find(function(e){return e.idx===ctx.dataIndex;});var lines=['$'+ctx.raw.toFixed(2)];if(ev)lines.push(ev.label);return lines;}},backgroundColor:isLt?'#fff':'#141D35',titleColor:isLt?'#1A1D2B':'#F0F4FF',bodyColor:isLt?'#5A6072':'#8B97B8',borderColor:isLt?'rgba(0,0,0,.1)':'rgba(255,255,255,.1)',borderWidth:1,padding:12,cornerRadius:8,maxWidth:300,bodyFont:{size:11}}},scales:{x:{grid:{color:isLt?'rgba(0,0,0,.05)':'rgba(255,255,255,.04)',drawBorder:false},ticks:{color:isLt?'#8B90A0':'#4A5578',font:{family:'DM Mono',size:10}}},y:{grid:{color:isLt?'rgba(0,0,0,.05)':'rgba(255,255,255,.04)',drawBorder:false},ticks:{color:isLt?'#8B90A0':'#4A5578',font:{family:'DM Mono',size:10},callback:function(v){return '$'+v;}}}}}});
+  var storyEvents=filtered.filter(function(ev){return ev.type==='bull'||ev.type==='bear'||ev.type==='neutral';}).slice(-8).reverse();
+  document.getElementById('nht-events-grid').innerHTML=storyEvents.map(function(ev){
+    var dotColor=ev.type==='bull'?'var(--mp-teal)':ev.type==='bear'?'var(--mp-red)':'#8B97B8';
+    return '<div class="nht-event-card" data-nht-idx="'+ev.idx+'" onclick="highlightNHTEvent((NHT_CACHE[nhtTicker]&&NHT_CACHE[nhtTicker].ranges[nhtRange]?NHT_CACHE[nhtTicker].ranges[nhtRange].events:[]).find(function(e){return e.idx==='+ev.idx+';}))"><span class="dot" style="background:'+dotColor+';"></span><span class="title">'+esc(ev.label)+'</span><div class="meta">'+ev.date+(ev.verdict?' · '+ev.verdict:'')+'</div></div>';
+  }).join('');
+  var sortedEvents=filtered.slice().sort(function(a,b){return (b.date_iso||'').localeCompare(a.date_iso||'');});
+  document.getElementById('nht-event-count').textContent=sortedEvents.length;
+  document.getElementById('nht-event-list').innerHTML=sortedEvents.map(function(ev){
+    return '<div class="nht-event-row"><span class="ev-date">'+ev.date+'</span><span class="ev-dot" style="background:'+evColor(ev.type)+';"></span><span class="ev-text">'+esc(ev.label)+'</span><span class="ev-price">'+(ev.price!=null?'$'+ev.price.toFixed(2):'—')+'</span></div>';
+  }).join('');
+};
+
+highlightNHTEvent = function(ev){
+  if(!ev)return;
+  document.querySelectorAll('.nht-event-card').forEach(function(c){c.classList.toggle('active',parseInt(c.dataset.nhtIdx)===ev.idx);});
+  if(nhtChart){
+    nhtChart.setActiveElements([{datasetIndex:0,index:ev.idx}]);
+    nhtChart.tooltip.setActiveElements([{datasetIndex:0,index:ev.idx}],{x:0,y:0});
+    nhtChart.update();
+  }
+};
+
+tcGetEventsForDate = function(dateStr){
+  var evts=[];
+  if(TC_HOLIDAYS_2026[dateStr]) evts.push({type:'holiday',color:'var(--mp-red)',label:TC_HOLIDAYS_2026[dateStr],detail:'NYSE Closed'});
+  TC_FOMC_2026.forEach(function(f){
+    if(dateStr===f.d1) evts.push({type:'fomc',color:'var(--mp-amber)',label:'FOMC Day 1'+(f.sep?' ★':''),detail:'Federal Open Market Committee meeting begins'});
+    if(dateStr===f.d2) evts.push({type:'fomc',color:'var(--mp-amber)',label:'FOMC Decision'+(f.sep?' ★':''),detail:'Rate decision at 2:00 PM ET'+(f.sep?' — SEP & dot-plot release':'')});
+  });
+  if(TC_OPEX_2026[dateStr]) evts.push({type:'opex',color:'var(--mp-violet)',label:TC_OPEX_2026[dateStr],detail:'Monthly options expiration'});
+  if(TC_QUAD_2026[dateStr]) evts.push({type:'quad',color:'#FF6B9D',label:'Quad Witching',detail:'Index and stock derivatives expiration'});
+  (LIVE_EARNINGS_BY_DATE[dateStr]||[]).forEach(function(row){
+    evts.push({
+      type:'earn',
+      color:'var(--mp-teal)',
+      label:row.ticker+' Earnings',
+      detail:(row.earnings_position||'NEUTRAL')+(row.narrative_earnings_alignment?' · '+row.narrative_earnings_alignment:'')
+    });
+  });
+  return evts;
+};
+
+tcRenderCards = function(){
+  var track=document.getElementById('tc-cal-track');
+  var pips=document.getElementById('tc-cal-pips');
+  if(!track)return;
+  if(!TC_SIGNALS.length){
+    track.innerHTML='<div class="empty-state">Loading live earnings events…</div>';
+    if(pips)pips.innerHTML='';
+    return;
+  }
+  track.innerHTML=TC_SIGNALS.map(function(s,i){
+    var rc=TC_RARITY_COLORS[s.rarity]||'var(--mp-text-tertiary)';
+    var qc=tcQueuedCount(s.id);
+    var changeClass=s.changeDir==='up'?'color:var(--mp-teal)':s.changeDir==='down'?'color:var(--mp-red)':'color:var(--mp-text-tertiary)';
+    return '<div class="tc-sig-card'+(qc>0?' queued':'')+'" draggable="true" data-idx="'+i+'" data-id="'+s.id+'"><div class="tc-sig-card-inner"><div class="tc-sig-card-accent"></div><div class="tc-sig-card-body"><div class="tc-sig-card-top"><div class="tc-sig-card-logo">'+s.logo+'</div><span class="tc-sig-card-ticker">'+s.ticker+'</span><span class="tc-sig-card-name">'+s.name+'</span><span class="tc-sig-card-rarity" style="color:'+rc+';border-color:'+rc+';">'+s.rarity+'</span></div><div class="tc-sig-card-price-row"><span class="tc-sig-card-price">'+s.price+'</span><span class="tc-sig-card-change" style="'+changeClass+'">'+s.change+'</span></div><div class="tc-sig-card-bias" style="background:rgba(255,255,255,.04);"><div class="tc-sig-card-bias-eyebrow">Signal Bias</div><div class="tc-sig-card-bias-text" style="color:'+rc+';">'+s.bias+'</div></div><div class="tc-sig-card-meta"><span class="tc-sig-card-conf">Conf '+s.conf+'</span><span class="tc-sig-card-window">'+s.window+'</span></div><div class="tc-sig-card-hint">drag to plan ↓</div></div></div><div class="tc-sig-card-queued-badge" id="tc-qbadge-'+s.id+'">Queued ×'+qc+'</div></div>';
+  }).join('');
+  var cs=getComputedStyle(document.documentElement);
+  track.querySelectorAll('.tc-sig-card-accent').forEach(function(el,i){
+    var s=TC_SIGNALS[i];
+    var raw=s.ac.replace('var(','').replace(')','').trim();
+    var resolved=cs.getPropertyValue(raw).trim()||raw;
+    el.style.background='linear-gradient(90deg,'+resolved+',transparent)';
+  });
+  if(pips){
+    pips.innerHTML=TC_SIGNALS.map(function(_,i){return '<span class="tc-cal-pip'+(i===tcCarouselIdx?' active':'')+'" data-i="'+i+'"></span>';}).join('');
+    pips.querySelectorAll('.tc-cal-pip').forEach(function(p){p.addEventListener('click',function(){tcCarouselPause(4000);tcCarouselGo(parseInt(this.dataset.i));});});
+  }
+  track.querySelectorAll('.tc-sig-card').forEach(function(card){
+    card.addEventListener('dragstart',function(e){
+      var idx=parseInt(this.dataset.idx);
+      var s=TC_SIGNALS[idx];
+      tcDragData=s;
+      this.classList.add('dragging');
+      e.dataTransfer.effectAllowed='copy';
+      e.dataTransfer.setData('text/plain',s.id);
+      var ghost=document.getElementById('tc-cal-drag-ghost');
+      if(!ghost){ghost=document.createElement('div');ghost.id='tc-cal-drag-ghost';ghost.className='tc-cal-ghost';document.body.appendChild(ghost);}
+      ghost.innerHTML='<span class="tc-cal-ghost-dot" style="background:'+(TC_RARITY_COLORS[s.rarity]||'#888')+';"></span>'+s.ticker+' — '+s.bias+' '+s.conf;
+      ghost.style.top='-999px';ghost.style.left='-999px';
+      e.dataTransfer.setDragImage(ghost,60,16);
+      tcCarouselPause(4000);
+    });
+    card.addEventListener('dragend',function(){this.classList.remove('dragging');tcDragData=null;});
+    card.addEventListener('click',function(e){if(e.defaultPrevented)return;tcCarouselPause(3000);tcExpandCard(parseInt(this.dataset.idx));});
+  });
+};
+
 // ── Sync stories col height to cards col ──
 function syncStoriesHeight(){
   var section=document.querySelector('.trading-cards-section');
@@ -4975,7 +5529,7 @@ window.addEventListener('resize',syncStoriesHeight);
 loadData();
 renderNHChart();
 initCoordField();
-renderNHT();
+loadNHT(nhtTicker);
 setInterval(loadData,5*60*1000);
 document.addEventListener('visibilitychange',function(){if(!document.hidden)loadData();});
 </script>
