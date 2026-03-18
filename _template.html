@@ -1903,26 +1903,41 @@ body{
 /* ── MARKET SCHOLAR AI CHAT WIDGET ── */
 .scholar-fab{
   position:fixed;bottom:24px;right:24px;z-index:800;
-  width:56px;height:56px;border-radius:50%;
-  border:1px solid rgba(0,174,255,0.2);
-  background:rgba(10,15,20,0.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  height:52px;border-radius:26px;
+  padding:0 20px 0 14px;gap:10px;
+  border:1px solid rgba(0,174,255,0.35);
+  background:linear-gradient(135deg,rgba(10,15,20,0.92),rgba(0,40,70,0.85));
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
   cursor:pointer;
   display:flex;align-items:center;justify-content:center;
-  box-shadow:0 4px 24px rgba(0,0,0,0.4),0 0 0 0 rgba(0,174,255,0);
+  box-shadow:0 4px 24px rgba(0,0,0,0.5),0 0 20px rgba(0,174,255,0.12),inset 0 1px 0 rgba(255,255,255,0.04);
   transition:box-shadow .3s,transform .2s,border-color .3s;
-  animation:scholarPulse 4s ease-in-out infinite;
+  animation:scholarPulse 3s ease-in-out infinite;
+}
+.scholar-fab-label{
+  display:flex;flex-direction:column;line-height:1;
+}
+.scholar-fab-title{
+  font-family:var(--font-display);font-size:13px;font-weight:500;
+  color:#F5F7FA;letter-spacing:0.01em;white-space:nowrap;
+}
+.scholar-fab-sub{
+  font-family:var(--font-mono);font-size:7.5px;font-weight:400;
+  letter-spacing:0.08em;text-transform:uppercase;
+  color:var(--mp-blue);opacity:0.8;margin-top:2px;white-space:nowrap;
 }
 .scholar-fab:hover{
-  transform:scale(1.06);
-  border-color:rgba(0,174,255,0.4);
-  box-shadow:0 8px 32px rgba(0,0,0,0.5),0 0 24px rgba(0,174,255,0.08);
+  transform:scale(1.04);
+  border-color:rgba(0,174,255,0.55);
+  box-shadow:0 8px 32px rgba(0,0,0,0.5),0 0 30px rgba(0,174,255,0.18),inset 0 1px 0 rgba(255,255,255,0.06);
 }
-.scholar-fab.open{animation:none;border-color:rgba(255,255,255,0.1);}
+.scholar-fab.open{animation:none;border-color:rgba(255,255,255,0.1);padding:0;width:52px;border-radius:50%;gap:0;}
+.scholar-fab.open .scholar-fab-label{display:none;}
 @keyframes scholarPulse{
-  0%,100%{box-shadow:0 4px 24px rgba(0,0,0,0.4),0 0 0 0 rgba(0,174,255,0.04);}
-  50%{box-shadow:0 4px 24px rgba(0,0,0,0.4),0 0 20px 3px rgba(0,174,255,0.06);}
+  0%,100%{box-shadow:0 4px 24px rgba(0,0,0,0.5),0 0 20px rgba(0,174,255,0.1),inset 0 1px 0 rgba(255,255,255,0.04);}
+  50%{box-shadow:0 4px 24px rgba(0,0,0,0.5),0 0 28px 4px rgba(0,174,255,0.18),inset 0 1px 0 rgba(255,255,255,0.04);}
 }
-.scholar-fab svg{width:28px;height:28px;}
+.scholar-fab svg{width:26px;height:26px;flex-shrink:0;}
 
 /* Mascot owl icon colors — brand blue, atmospheric */
 .scholar-mascot-body{fill:none;stroke:var(--mp-blue);stroke-width:1.5;opacity:0.8;}
@@ -5411,6 +5426,7 @@ document.addEventListener('visibilitychange',function(){if(!document.hidden)load
   var widgetHTML = ''
     +'<button class="scholar-fab" id="scholar-fab" title="Ask Market Scholar AI">'
     +  OWL_SVG
+    +'<div class="scholar-fab-label"><span class="scholar-fab-title">Market Scholar</span><span class="scholar-fab-sub">Polymathic Intelligence</span></div>'
     +'</button>'
     +'<div class="scholar-panel" id="scholar-panel">'
     +'  <div class="scholar-header">'
