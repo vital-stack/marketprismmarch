@@ -1,6 +1,6 @@
 /* ─────────────────────────────────────────────────────────────────────────────
    MARKET PRISM — TICKER LOGO SYSTEM
-   Clearbit Logo API (free, no key needed).
+   Google Favicon API (free, no key needed).
    Covers every ticker element across all four pages.
    ───────────────────────────────────────────────────────────────────────────── */
 
@@ -77,10 +77,17 @@ var MP_DOMAINS = {
   SPY:'ssga.com',
 };
 
-/* Returns a clearbit URL or null */
+var LOGO_COLORS = [
+  ['rgba(26,110,255,.18)','#5B9FFF'],['rgba(0,229,180,.15)','#00C49A'],
+  ['rgba(239,159,39,.15)','#D4A020'],['rgba(255,107,107,.15)','#FF7070'],
+  ['rgba(123,97,255,.15)','#9F87FF'],['rgba(0,194,255,.14)','#00B8E8'],
+];
+function _logoColorIdx(t){return(t.charCodeAt(0)+t.charCodeAt(t.length-1))%LOGO_COLORS.length;}
+
+/* Returns a Google Favicon URL or null */
 function mpLogoUrl(ticker, size) {
   var d = MP_DOMAINS[ticker];
-  return d ? 'https://logo.clearbit.com/' + d + '?size=' + (size || 64) : null;
+  return d ? 'https://www.google.com/s2/favicons?domain=' + d + '&sz=' + (size || 64) : null;
 }
 
 /* Builds an <img> element, returns null if no domain */
@@ -92,7 +99,14 @@ function mpLogoImg(ticker, px) {
   img.alt = ticker;
   img.className = 'mp-logo-img';
   img.style.cssText = 'width:' + (px||20) + 'px;height:' + (px||20) + 'px;object-fit:contain;flex-shrink:0;border-radius:3px;display:block;';
-  img.onerror = function() { this.style.display = 'none'; };
+  img.onerror = function() {
+    var lc = LOGO_COLORS[_logoColorIdx(ticker)];
+    var fb = document.createElement('span');
+    fb.className = 'mp-logo-img';
+    fb.style.cssText = 'width:'+(px||20)+'px;height:'+(px||20)+'px;border-radius:3px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;font-size:'+Math.max(Math.round((px||20)*0.42),7)+'px;font-weight:600;font-family:var(--font-m,monospace);background:'+lc[0]+';color:'+lc[1]+';line-height:1;letter-spacing:.01em;';
+    fb.textContent = ticker.length<=3?ticker:ticker.slice(0,3);
+    if (this.parentNode) this.parentNode.replaceChild(fb, this);
+  };
   return img;
 }
 
