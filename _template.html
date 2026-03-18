@@ -1641,24 +1641,27 @@ body{
 .tc-cal-pip.active{background:var(--mp-teal);transform:scale(1.3);}
 /* Signal Card */
 .tc-sig-card{
-  width:188px;flex-shrink:0;background:transparent;
-  border:none;border-radius:15px;overflow:hidden;padding:5px;
-  position:relative;transition:box-shadow .25s,opacity .2s,transform .2s;
+  width:188px;flex-shrink:0;background:#0C1018;
+  border:1px solid rgba(255,255,255,0.08);border-radius:16px;overflow:hidden;padding:0;
+  position:relative;transition:box-shadow .25s,opacity .2s,transform .2s,filter .3s;
   cursor:grab;user-select:none;
+  filter:drop-shadow(0 4px 12px rgba(0,0,0,0.4));
 }
 .tc-sig-card::before{
-  content:'';position:absolute;top:50%;left:50%;width:200%;height:200%;
-  transform:translate(-50%,-50%);z-index:0;
-  background:conic-gradient(from 0deg,
-    #00FFFF 0%,#00AEFF 25%,#00DE94 50%,#00FF52 75%,#00FFFF 100%
-  );
-  opacity:0.6;animation:borderSpinCard 4s linear infinite;
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size:48px 48px;
 }
-.tc-sig-card:hover::before{opacity:1;}
+.tc-sig-card:hover{border-color:rgba(255,255,255,0.14);filter:drop-shadow(0 12px 32px rgba(0,0,0,0.6));transform:translateY(-4px);}
 .tc-sig-card-accent,.tc-sig-card-body,.tc-sig-card-bias,.tc-sig-card-meta,.tc-sig-card-hint{position:relative;z-index:1;}
-.tc-sig-card>.tc-sig-card-accent:first-child{border-radius:10px 10px 0 0;}
-.tc-sig-card-inner{background:#0C1018;border-radius:10px;overflow:hidden;position:relative;z-index:1;}
-.tc-sig-card-inner::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:0;background:linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);background-size:48px 48px;}
+.tc-sig-card-inner{background:transparent;border-radius:0;overflow:hidden;position:relative;z-index:1;}
+/* Glisten effect */
+.tc-sig-card::after{
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:11;border-radius:16px;overflow:hidden;
+  background:linear-gradient(135deg,transparent 0%,rgba(255,255,255,0.03) 30%,rgba(255,255,255,0.06) 50%,rgba(255,255,255,0.03) 70%,transparent 100%);
+  opacity:0.5;transition:opacity .3s;
+}
+.tc-sig-card:hover::after{opacity:1;}
 .tc-sig-card:hover{border-color:var(--mp-border-mid);}
 .tc-sig-card.spotlight{
   border-color:rgba(255,255,255,.15);
@@ -3206,11 +3209,11 @@ async function loadData(){
         var pct=r.price_change_pct||0;
         var isUp=pct>0;
         var claim=r.story_claim||r.primary_driver||r.sector_name||'';
-        return '<div class="daily-mover">'
+        return '<a class="daily-mover" href="/ticker/'+encodeURIComponent(r.ticker)+'" style="text-decoration:none;color:inherit;">'
           +'<span class="daily-mover-tk">'+r.ticker+'</span>'
           +'<span class="daily-mover-claim">'+esc(claim)+'</span>'
           +'<span class="daily-mover-chg '+(isUp?'up':'dn')+'">'+(isUp?'\u25B2':'\u25BC')+' '+Math.abs(pct).toFixed(2)+'%</span>'
-        +'</div>';
+        +'</a>';
       }).join('');
     }
     // Narrative breakdown
@@ -4987,10 +4990,9 @@ function tcRenderCards(){
     var changeClass=s.changeDir==='up'?'color:var(--mp-teal)':'color:var(--mp-red)';
     return '<div class="tc-sig-card'+(qc>0?' queued':'')+'" draggable="true" data-idx="'+i+'" data-id="'+s.id+'">'+
       '<div class="tc-sig-card-inner">'+
-      '<div class="tc-sig-card-accent"></div>'+
+      '<div class="tc-sig-card-accent" style="height:2px;width:100%;background:'+rc+';border-radius:16px 16px 0 0;"></div>'+
       '<div class="tc-sig-card-body">'+
         '<div class="tc-sig-card-top">'+
-          '<div class="tc-sig-card-logo">'+s.logo+'</div>'+
           '<span class="tc-sig-card-ticker">'+s.ticker+'</span>'+
           '<span class="tc-sig-card-name">'+s.name+'</span>'+
           '<span class="tc-sig-card-rarity" style="color:'+rc+';border-color:'+rc+';">'+s.rarity+'</span>'+
@@ -5014,14 +5016,7 @@ function tcRenderCards(){
     '</div>';
   }).join('');
 
-  // Accent bar gradient — resolve CSS variable
-  var cs=getComputedStyle(document.documentElement);
-  track.querySelectorAll('.tc-sig-card-accent').forEach(function(el,i){
-    var s=TC_SIGNALS[i];
-    var raw=s.ac.replace('var(','').replace(')','').trim();
-    var resolved=cs.getPropertyValue(raw).trim()||raw;
-    el.style.background='linear-gradient(90deg,'+resolved+',transparent)';
-  });
+  // Accent bar already set inline with rarity color
 
   // Pips
   if(pips){
