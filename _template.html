@@ -1326,6 +1326,7 @@ body{
   width:240px;perspective:1400px;cursor:pointer;flex-shrink:0;
   animation:cardDrop 0.6s cubic-bezier(0.16,1,0.3,1) both;opacity:0;
   --border-color:#00AEFF;--card-glow:rgba(0,174,255,0.10);
+  --card-border-1:#00AEFF;--card-border-2:#1a6bff;--card-border-3:#4da8ff;
   position:relative;
 }
 .card-scene:nth-child(1){animation-delay:0.05s;}
@@ -1345,7 +1346,7 @@ body{
   padding:5px;
 }
 .card-back{position:absolute;top:0;left:0;transform:rotateY(180deg);}
-/* Thick rotating gradient border */
+/* Thick rotating gradient border — uses sentiment CSS vars */
 .card-front::before,.card-back::before{
   content:'';position:absolute;
   top:50%;left:50%;
@@ -1353,13 +1354,13 @@ body{
   transform:translate(-50%,-50%);
   z-index:0;
   background:conic-gradient(from 0deg,
-    #00FFFF 0%,
-    #00AEFF 25%,
-    #00DE94 50%,
-    #00FF52 75%,
-    #00FFFF 100%
+    var(--card-border-1) 0%,
+    var(--card-border-2) 25%,
+    var(--card-border-1) 50%,
+    var(--card-border-3) 75%,
+    var(--card-border-1) 100%
   );
-  opacity:0.4;
+  opacity:0.35;
   animation:borderSpinCard 4s linear infinite;
 }
 @keyframes borderSpinCard{
@@ -1396,12 +1397,18 @@ body{
 
 /* ── Card Front Layout ── */
 .tc{
-  background:linear-gradient(145deg,#1a1a1a 0%,#0d0d0d 25%,#1c1c1c 50%,#0a0a0a 75%,#151515 100%);
+  background:var(--card-bg, linear-gradient(145deg,#1a1a1a 0%,#0d0d0d 25%,#1c1c1c 50%,#0a0a0a 75%,#151515 100%));
   border:none;
   display:flex;flex-direction:column;position:relative;border-radius:14.5px;
   min-height:320px;
+  overflow:hidden;
 }
-.tc-body{padding:20px 20px 16px;display:flex;flex-direction:column;flex:1;}
+.tc::before{
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:var(--card-line-pattern, none);
+  opacity:0.035;
+}
+.tc-body{position:relative;z-index:1;padding:20px 20px 16px;display:flex;flex-direction:column;flex:1;}
 /* 1. HEADER */
 .tc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
 .tc-header-left{display:flex;align-items:center;gap:10px;}
@@ -1426,7 +1433,7 @@ body{
 .tc-command{
   font-family:'Inter',var(--font-body),sans-serif;font-size:17px;font-weight:600;
   letter-spacing:-0.02em;text-transform:uppercase;line-height:1.1;
-  margin-bottom:10px;opacity:0.85;
+  margin-bottom:10px;color:#FFFFFF !important;opacity:0.9;
 }
 /* 4. META LINE */
 .tc-meta-line{
@@ -1476,7 +1483,7 @@ body{
 .card-back-inner{
   width:100%;display:flex;flex-direction:column;position:relative;
   overflow:hidden;border:none;border-radius:14.5px;
-  background:linear-gradient(145deg,#1a1a1a 0%,#0d0d0d 25%,#1c1c1c 50%,#0a0a0a 75%,#151515 100%);
+  background:var(--card-bg, linear-gradient(145deg,#1a1a1a 0%,#0d0d0d 25%,#1c1c1c 50%,#0a0a0a 75%,#151515 100%));
   min-height:320px;
 }
 .back-content{padding:20px 20px 16px;display:flex;flex-direction:column;flex:1;}
@@ -4553,9 +4560,38 @@ var RISK_LINES={
   'Stable':'Underperformance in risk-on rotations'
 };
 // Shared card builder — Apple-level minimal design
+function cardSentiment(c){
+  // Determine bull/bear/neutral from bias text and price change
+  var bt=(c.biasText||'').toLowerCase();
+  if(bt==='ride the trend'||bt==='add on dips') return 'bull';
+  if(bt==='fade rallies') return 'bear';
+  if(c.price_change_pct>1.5) return 'bull';
+  if(c.price_change_pct<-1.5) return 'bear';
+  return 'neutral';
+}
+var SENTIMENT_STYLES={
+  bull:{
+    border1:'#00DE94',border2:'#00A86B',border3:'#4DFFC3',
+    glow:'rgba(0,222,148,0.12)',
+    bg:'linear-gradient(145deg,#0d1a14 0%,#0a0f0d 25%,#0f1c15 50%,#080d0a 75%,#0d1712 100%)',
+    linePattern:'repeating-linear-gradient(135deg,transparent,transparent 18px,rgba(0,222,148,1) 18px,rgba(0,222,148,1) 19px)'
+  },
+  bear:{
+    border1:'#FF4D4D',border2:'#CC2E2E',border3:'#FF8080',
+    glow:'rgba(255,77,77,0.12)',
+    bg:'linear-gradient(145deg,#1a0d0d 0%,#0f0808 25%,#1c0f0f 50%,#0d0808 75%,#170d0d 100%)',
+    linePattern:'repeating-linear-gradient(135deg,transparent,transparent 18px,rgba(255,77,77,1) 18px,rgba(255,77,77,1) 19px)'
+  },
+  neutral:{
+    border1:'#00AEFF',border2:'#1a6bff',border3:'#4da8ff',
+    glow:'rgba(0,174,255,0.12)',
+    bg:'linear-gradient(145deg,#0d1019 0%,#080a10 25%,#0f1220 50%,#0a0c14 75%,#0d101a 100%)',
+    linePattern:'repeating-linear-gradient(135deg,transparent,transparent 18px,rgba(0,174,255,1) 18px,rgba(0,174,255,1) 19px)'
+  }
+};
 function buildCardFrontHTML(c,i,dateStr,prefix,showActions){
   var isBull=c.price_change_pct>0;
-  var deltaColor=isBull?'#00DE94':'#38C8B8';
+  var deltaColor=isBull?'#00DE94':'#FF4D4D';
   var conf=Math.round(50+Math.random()*40);
   var winTxt=isBull?'1\u20133d':conf>70?'3\u20135d':'5\u20137d';
   var energy=c.narrative_health||Math.round(40+Math.random()*50);
@@ -4563,9 +4599,12 @@ function buildCardFrontHTML(c,i,dateStr,prefix,showActions){
   var rarity=RARITY_MAP[rKey]||RARITY_MAP['Stable'];
   var companyName=c.sector_name||'\u2014';
   var signalPrimary=esc(c.story_claim||c.primary_driver||'Signal under analysis');
-  var borderColor=c.bias||'#00AEFF';
-  var glowAlpha='0.12';
-  var styleVars='--border-color:'+borderColor+';--card-glow:'+hexToRgba(borderColor,glowAlpha)+';';
+  var sentiment=cardSentiment(c);
+  var ss=SENTIMENT_STYLES[sentiment];
+  var borderColor=ss.border1;
+  var styleVars='--border-color:'+borderColor+';--card-glow:'+ss.glow+';'
+    +'--card-border-1:'+ss.border1+';--card-border-2:'+ss.border2+';--card-border-3:'+ss.border3+';'
+    +'--card-bg:'+ss.bg+';--card-line-pattern:'+ss.linePattern+';';
   // Move date (next weekday +5-10 days)
   var moveDate=new Date();moveDate.setDate(moveDate.getDate()+Math.floor(5+Math.random()*6));
   var moveDateStr=moveDate.toLocaleDateString('en-US',{month:'short',day:'numeric'});
@@ -4609,8 +4648,8 @@ function buildCardFrontHTML(c,i,dateStr,prefix,showActions){
               +'<span class="tc-price">$'+fmtPrice(c.price)+'</span>'
               +'<span class="tc-change" style="color:'+deltaColor+';">'+(isBull?'\u25B2':'\u25BC')+' '+Math.abs(c.price_change_pct||0).toFixed(2)+'%</span>'
             +'</div>'
-            // 3. Command
-            +'<div class="tc-command" style="color:'+borderColor+';">'+c.biasText.toUpperCase()+'</div>'
+            // 3. Command (white for all cards)
+            +'<div class="tc-command">'+c.biasText.toUpperCase()+'</div>'
             // 4. Meta line
             +'<div class="tc-meta-line">'+conf+'% \u2022 '+winTxt+' \u2022 ACTIVE</div>'
             // 5. Context
@@ -4635,7 +4674,7 @@ function buildCardFrontHTML(c,i,dateStr,prefix,showActions){
               // Trade Signal header
               +'<div class="back-header-label">Trade Signal</div>'
               // Command
-              +'<div class="back-command" style="color:'+borderColor+';">'+c.biasText.toUpperCase()+'</div>'
+              +'<div class="back-command" style="color:#FFFFFF;">'+c.biasText.toUpperCase()+'</div>'
               // Meta rows
               +'<div class="back-meta-grid">'
                 +'<div class="back-meta-row">Confidence <strong style="color:'+borderColor+';">'+conf+'%</strong><span class="back-sep"></span>Window <strong>'+winTxt+'</strong></div>'
