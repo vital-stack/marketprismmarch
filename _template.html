@@ -339,7 +339,7 @@ body{
   color:#fff;line-height:1.15;
 }
 .page-header .ph-italic{font-family:'Instrument Serif',var(--font-display),Georgia,serif;font-size:clamp(28px,3vw,38px);font-weight:400;font-style:italic;color:#4DC8F0;line-height:1.15;letter-spacing:-.025em;display:block;margin-bottom:14px;}
-.page-header p{font-size:13.5px;color:#5A6A84;letter-spacing:0.01em;font-weight:300;line-height:1.65;max-width:520px;}
+.page-header p{font-size:13.5px;color:rgba(255,255,255,0.7);letter-spacing:0.01em;font-weight:300;line-height:1.65;max-width:520px;}
 /* ── STAT CARDS ── */
 .stats-row{display:flex;gap:12px;margin-bottom:24px;}
 .stat-card{
@@ -384,7 +384,7 @@ body{
   letter-spacing:-0.03em;
   animation:numberTick 0.8s cubic-bezier(0.16,1,0.3,1) both;
 }
-.stat-label{font-size:10px;color:var(--mp-text-tertiary);text-transform:uppercase;letter-spacing:.12em;font-family:var(--font-mono);font-weight:400;}
+.stat-label{font-size:10px;color:#fff;text-transform:uppercase;letter-spacing:.12em;font-family:var(--font-mono);font-weight:400;}
 /* ── FILTER BAR ── */
 .filter-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
 .filter-label{font-size:10px;color:var(--mp-text-tertiary);text-transform:uppercase;letter-spacing:.07em;white-space:nowrap;font-family:var(--font-mono);}
@@ -1397,16 +1397,17 @@ body{
 
 /* ── Card Front Layout ── */
 .tc{
-  background:var(--card-bg, linear-gradient(145deg,#1a1a1a 0%,#0d0d0d 25%,#1c1c1c 50%,#0a0a0a 75%,#151515 100%));
-  border:none;
+  background:var(--card-bg, #0C1018);
+  border:1px solid rgba(255,255,255,0.06);
   display:flex;flex-direction:column;position:relative;border-radius:14.5px;
   min-height:320px;
   overflow:hidden;
 }
 .tc::before{
   content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
-  background:var(--card-line-pattern, none);
-  opacity:0.035;
+  background:var(--card-line-pattern, linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px));
+  background-size:48px 48px;
+  opacity:1;
 }
 .tc-body{position:relative;z-index:1;padding:20px 20px 16px;display:flex;flex-direction:column;flex:1;}
 /* 1. HEADER */
@@ -1419,7 +1420,7 @@ body{
 }
 .tc-id{display:flex;flex-direction:column;gap:1px;}
 .tc-ticker{font-family:'Inter',var(--font-body),sans-serif;font-size:16px;font-weight:700;letter-spacing:-0.01em;color:#FFFFFF;line-height:1;}
-.tc-name{font-family:'Inter',var(--font-body),sans-serif;font-size:11px;font-weight:400;color:#A0A8B0;letter-spacing:0;}
+.tc-name{font-family:'Inter',var(--font-body),sans-serif;font-size:11px;font-weight:400;color:rgba(255,255,255,0.7);letter-spacing:0;}
 .tc-rarity{
   font-family:'Inter',var(--font-mono),monospace;font-size:8px;font-weight:500;
   letter-spacing:0.06em;text-transform:uppercase;padding:2px 8px;
@@ -1427,7 +1428,7 @@ body{
 }
 /* 2. PRICE ROW */
 .tc-price-row{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;}
-.tc-price{font-family:'Inter',var(--font-mono),monospace;font-size:15px;font-weight:500;letter-spacing:-0.02em;color:rgba(255,255,255,0.7);line-height:1;}
+.tc-price{font-family:'Inter',var(--font-mono),monospace;font-size:15px;font-weight:500;letter-spacing:-0.02em;color:#fff;line-height:1;}
 .tc-change{font-family:'Inter',var(--font-mono),monospace;font-size:10px;font-weight:400;letter-spacing:-0.01em;opacity:0.6;}
 /* 3. COMMAND (dominant) */
 .tc-command{
@@ -1443,13 +1444,18 @@ body{
 /* 5. CONTEXT */
 .tc-context{
   font-family:'Inter',var(--font-body),sans-serif;font-size:12px;font-weight:300;
-  line-height:1.5;color:rgba(255,255,255,0.55);margin-bottom:auto;
+  line-height:1.5;color:rgba(255,255,255,0.8);margin-bottom:auto;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
 }
 /* 6. SECTOR + DATE */
 .tc-sector-date{
   font-family:'Inter',var(--font-mono),monospace;font-size:10px;font-weight:400;
   color:#A0A8B0;letter-spacing:0.02em;margin-top:14px;margin-bottom:12px;
+}
+/* 6b. BULL/BEAR ACCENT BAR */
+.tc-sentiment-bar{
+  position:absolute;top:0;left:0;right:0;height:3px;z-index:2;
+  border-radius:14.5px 14.5px 0 0;
 }
 /* 7. FOOTER */
 .tc-foot{display:flex;align-items:center;justify-content:space-between;}
@@ -1472,7 +1478,7 @@ body{
 .tc-card-action{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;
   font-family:'Inter',var(--font-mono),monospace;font-size:9px;letter-spacing:.04em;
   color:#A0A8B0;padding:10px 6px;cursor:pointer;
-  background:#111111;border:none;transition:color .15s,background .15s;white-space:nowrap;}
+  background:#0C1018;border:none;transition:color .15s,background .15s;white-space:nowrap;}
 .tc-card-action:hover{color:#fff;background:rgba(255,255,255,.04);}
 .tc-card-action svg{width:12px;height:12px;flex-shrink:0;}
 .tc-card-action:first-child{border-radius:0 0 0 14.5px;}
@@ -1483,7 +1489,7 @@ body{
 .card-back-inner{
   width:100%;display:flex;flex-direction:column;position:relative;
   overflow:hidden;border:none;border-radius:14.5px;
-  background:var(--card-bg, linear-gradient(145deg,#1a1a1a 0%,#0d0d0d 25%,#1c1c1c 50%,#0a0a0a 75%,#151515 100%));
+  background:var(--card-bg, #0C1018);
   min-height:320px;
 }
 .back-content{padding:20px 20px 16px;display:flex;flex-direction:column;flex:1;}
@@ -4573,20 +4579,20 @@ var SENTIMENT_STYLES={
   bull:{
     border1:'#00DE94',border2:'#00A86B',border3:'#4DFFC3',
     glow:'rgba(0,222,148,0.12)',
-    bg:'linear-gradient(145deg,#0d1a14 0%,#0a0f0d 25%,#0f1c15 50%,#080d0a 75%,#0d1712 100%)',
-    linePattern:'repeating-linear-gradient(135deg,transparent,transparent 18px,rgba(0,222,148,1) 18px,rgba(0,222,148,1) 19px)'
+    bg:'#0C1018',
+    linePattern:'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)'
   },
   bear:{
     border1:'#FF4D4D',border2:'#CC2E2E',border3:'#FF8080',
     glow:'rgba(255,77,77,0.12)',
-    bg:'linear-gradient(145deg,#1a0d0d 0%,#0f0808 25%,#1c0f0f 50%,#0d0808 75%,#170d0d 100%)',
-    linePattern:'repeating-linear-gradient(135deg,transparent,transparent 18px,rgba(255,77,77,1) 18px,rgba(255,77,77,1) 19px)'
+    bg:'#0C1018',
+    linePattern:'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)'
   },
   neutral:{
     border1:'#00AEFF',border2:'#1a6bff',border3:'#4da8ff',
     glow:'rgba(0,174,255,0.12)',
-    bg:'linear-gradient(145deg,#0d1019 0%,#080a10 25%,#0f1220 50%,#0a0c14 75%,#0d101a 100%)',
-    linePattern:'repeating-linear-gradient(135deg,transparent,transparent 18px,rgba(0,174,255,1) 18px,rgba(0,174,255,1) 19px)'
+    bg:'#0C1018',
+    linePattern:'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)'
   }
 };
 function buildCardFrontHTML(c,i,dateStr,prefix,showActions){
@@ -4634,6 +4640,7 @@ function buildCardFrontHTML(c,i,dateStr,prefix,showActions){
       +'<div class="card-front">'
         +'<div class="foil-layer"></div><div class="foil-scan"></div>'
         +'<div class="tc">'
+          +'<div class="tc-sentiment-bar" style="background:'+(sentiment==='bull'?'#00DE94':sentiment==='bear'?'#FF4D4D':'#00AEFF')+';"></div>'
           +'<div class="tc-body">'
             // 1. Header
             +'<div class="tc-header">'
