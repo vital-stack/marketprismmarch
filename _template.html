@@ -1325,9 +1325,13 @@ body{
 .card-scene{
   width:240px;perspective:1400px;cursor:pointer;flex-shrink:0;
   animation:cardDrop 0.6s cubic-bezier(0.16,1,0.3,1) both;opacity:0;
-  --border-color:#00AEFF;--card-glow:rgba(0,174,255,0.10);
-  --card-border-1:#00AEFF;--card-border-2:#1a6bff;--card-border-3:#4da8ff;
   position:relative;
+  filter:drop-shadow(0 4px 12px rgba(0,0,0,0.4));
+  transition:filter .3s,transform .3s;
+}
+.card-scene:hover{
+  filter:drop-shadow(0 12px 32px rgba(0,0,0,0.6));
+  transform:translateY(-4px);
 }
 .card-scene:nth-child(1){animation-delay:0.05s;}
 .card-scene:nth-child(2){animation-delay:0.12s;}
@@ -1343,63 +1347,53 @@ body{
 .card-front,.card-back{
   width:100%;backface-visibility:hidden;-webkit-backface-visibility:hidden;
   border-radius:16px;overflow:hidden;position:relative;
-  padding:5px;
+  padding:0;
 }
 .card-back{position:absolute;top:0;left:0;transform:rotateY(180deg);}
-/* Thick rotating gradient border — uses sentiment CSS vars */
+/* Clean border — no rotating gradient */
 .card-front::before,.card-back::before{
-  content:'';position:absolute;
-  top:50%;left:50%;
-  width:200%;height:200%;
-  transform:translate(-50%,-50%);
-  z-index:0;
-  background:conic-gradient(from 0deg,
-    var(--card-border-1) 0%,
-    var(--card-border-2) 25%,
-    var(--card-border-1) 50%,
-    var(--card-border-3) 75%,
-    var(--card-border-1) 100%
-  );
-  opacity:0.35;
-  animation:borderSpinCard 4s linear infinite;
-}
-@keyframes borderSpinCard{
-  to{transform:translate(-50%,-50%) rotate(360deg);}
+  content:'';position:absolute;inset:0;z-index:0;
+  border-radius:16px;
+  border:1px solid rgba(255,255,255,0.08);
+  pointer-events:none;
 }
 .card-scene:hover .card-front::before,.card-scene:hover .card-back::before{
-  opacity:0.8;
+  border-color:rgba(255,255,255,0.14);
 }
-/* Subtle outer glow — confidence-based */
+/* Subtle outer glow on hover */
 .card-scene::after{
   content:'';position:absolute;inset:-4px;border-radius:20px;
-  background:var(--card-glow);
+  background:rgba(255,255,255,0.04);
   filter:blur(16px);opacity:0;transition:opacity .4s;z-index:-1;pointer-events:none;
 }
-.card-scene:hover::after{opacity:0.4;}
+.card-scene:hover::after{opacity:0.5;}
 /* Inner card */
 .card-front>.tc,.card-back>.card-back-inner{
-  position:relative;z-index:1;border-radius:14.5px;overflow:hidden;
+  position:relative;z-index:1;border-radius:16px;overflow:hidden;
 }
 /* Subtle foil effects */
 .foil-layer{
-  position:absolute;inset:0;border-radius:14.5px;pointer-events:none;
-  opacity:0;transition:opacity 0.3s;z-index:10;mix-blend-mode:screen;
-  background:radial-gradient(ellipse at var(--mx,50%) var(--my,50%),rgba(255,255,255,0.06) 0%,rgba(160,180,255,0.04) 35%,transparent 65%);
+  position:absolute;inset:0;border-radius:16px;pointer-events:none;
+  opacity:0.5;transition:opacity 0.3s;z-index:10;mix-blend-mode:screen;
+  background:linear-gradient(135deg,transparent 0%,rgba(255,255,255,0.03) 30%,rgba(255,255,255,0.06) 50%,rgba(255,255,255,0.03) 70%,transparent 100%);
 }
-.foil-scan{position:absolute;inset:0;border-radius:14.5px;pointer-events:none;opacity:0;z-index:11;overflow:hidden;}
+.foil-scan{position:absolute;inset:0;border-radius:16px;pointer-events:none;opacity:1;z-index:11;overflow:hidden;}
 .foil-scan::after{
-  content:'';position:absolute;top:-100%;left:-15%;width:130%;height:40%;
-  background:linear-gradient(180deg,transparent 0%,rgba(255,255,255,0.012) 40%,rgba(255,255,255,0.03) 50%,rgba(255,255,255,0.012) 60%,transparent 100%);
-  transform:skewX(-12deg);animation:scanMove 6s ease-in-out infinite;
+  content:'';position:absolute;top:-100%;left:-15%;width:130%;height:50%;
+  background:linear-gradient(180deg,transparent 0%,rgba(255,255,255,0.02) 35%,rgba(255,255,255,0.06) 50%,rgba(255,255,255,0.02) 65%,transparent 100%);
+  transform:skewX(-12deg);animation:scanMove 5s ease-in-out infinite;
 }
 @keyframes scanMove{0%{top:-100%;}100%{top:210%;}}
-.card-scene:hover .foil-layer,.card-scene:hover .foil-scan{opacity:1;}
+.card-scene:hover .foil-layer{opacity:1;}
+.card-scene:hover .foil-scan::after{
+  background:linear-gradient(180deg,transparent 0%,rgba(255,255,255,0.04) 35%,rgba(255,255,255,0.10) 50%,rgba(255,255,255,0.04) 65%,transparent 100%);
+}
 
 /* ── Card Front Layout ── */
 .tc{
   background:var(--card-bg, #0C1018);
   border:1px solid rgba(255,255,255,0.06);
-  display:flex;flex-direction:column;position:relative;border-radius:14.5px;
+  display:flex;flex-direction:column;position:relative;border-radius:16px;
   min-height:320px;
   overflow:hidden;
 }
@@ -1452,10 +1446,10 @@ body{
   font-family:'Inter',var(--font-mono),monospace;font-size:10px;font-weight:400;
   color:#A0A8B0;letter-spacing:0.02em;margin-top:14px;margin-bottom:12px;
 }
-/* 6b. BULL/BEAR ACCENT BAR */
+/* 6b. RARITY ACCENT STRIP */
 .tc-sentiment-bar{
-  position:absolute;top:0;left:0;right:0;height:3px;z-index:2;
-  border-radius:14.5px 14.5px 0 0;
+  position:absolute;top:0;left:0;right:0;height:2px;z-index:2;
+  border-radius:16px 16px 0 0;
 }
 /* 7. FOOTER */
 .tc-foot{display:flex;align-items:center;justify-content:space-between;}
@@ -1481,14 +1475,14 @@ body{
   background:#0C1018;border:none;transition:color .15s,background .15s;white-space:nowrap;}
 .tc-card-action:hover{color:#fff;background:rgba(255,255,255,.04);}
 .tc-card-action svg{width:12px;height:12px;flex-shrink:0;}
-.tc-card-action:first-child{border-radius:0 0 0 14.5px;}
-.tc-card-action:last-child{border-radius:0 0 14.5px 0;}
+.tc-card-action:first-child{border-radius:0 0 0 16px;}
+.tc-card-action:last-child{border-radius:0 0 16px 0;}
 .pulse-dot,.tc-pulse{width:5px;height:5px;border-radius:50%;animation:blink 2s ease infinite;}
 
 /* ── Card Back (Trade Signal Detail) ── */
 .card-back-inner{
   width:100%;display:flex;flex-direction:column;position:relative;
-  overflow:hidden;border:none;border-radius:14.5px;
+  overflow:hidden;border:none;border-radius:16px;
   background:var(--card-bg, #0C1018);
   min-height:320px;
 }
@@ -4609,9 +4603,7 @@ function buildCardFrontHTML(c,i,dateStr,prefix,showActions){
   var sentiment=cardSentiment(c);
   var ss=SENTIMENT_STYLES[sentiment];
   var borderColor=ss.border1;
-  var styleVars='--border-color:'+borderColor+';--card-glow:'+ss.glow+';'
-    +'--card-border-1:'+ss.border1+';--card-border-2:'+ss.border2+';--card-border-3:'+ss.border3+';'
-    +'--card-bg:'+ss.bg+';--card-line-pattern:'+ss.linePattern+';';
+  var styleVars='--card-bg:'+ss.bg+';--card-line-pattern:'+ss.linePattern+';';
   // Move date (next weekday +5-10 days)
   var moveDate=new Date();moveDate.setDate(moveDate.getDate()+Math.floor(5+Math.random()*6));
   var moveDateStr=moveDate.toLocaleDateString('en-US',{month:'short',day:'numeric'});
@@ -4641,12 +4633,11 @@ function buildCardFrontHTML(c,i,dateStr,prefix,showActions){
       +'<div class="card-front">'
         +'<div class="foil-layer"></div><div class="foil-scan"></div>'
         +'<div class="tc">'
-          +'<div class="tc-sentiment-bar" style="background:'+(sentiment==='bull'?'#00DE94':sentiment==='bear'?'#FF4D4D':'#00AEFF')+';"></div>'
+          +'<div class="tc-sentiment-bar" style="background:'+rarity.color+';"></div>'
           +'<div class="tc-body">'
             // 1. Header
             +'<div class="tc-header">'
               +'<div class="tc-header-left">'
-                +'<div class="tc-logo-wrap" style="color:'+logoColor(c.ticker)[1]+';background:'+logoColor(c.ticker)[0]+';border-color:rgba(255,255,255,0.06);">'+c.ticker.substring(0,2)+'</div>'
                 +'<div class="tc-id"><span class="tc-ticker">'+c.ticker+'</span><span class="tc-name">'+esc(companyName)+'</span></div>'
               +'</div>'
               +'<span class="tc-rarity" style="color:'+rarity.color+';border-color:'+rarity.border+';background:'+hexToRgba(rarity.color,0.08)+';">'+rarity.label+'</span>'
