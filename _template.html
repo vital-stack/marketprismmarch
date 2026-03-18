@@ -1184,6 +1184,7 @@ body{
 .card-scene{
   width:232px;perspective:1400px;cursor:pointer;flex-shrink:0;
   animation:cardDrop 0.75s cubic-bezier(0.22,1,0.36,1) both;opacity:0;
+  --cg1:#3B82F6;--cg2:#1E40AF;--cg3:#60A5FA;--cg4:#93C5FD;--cg5:#2563EB;--cg6:#BFDBFE;--card-glow:rgba(59,130,246,0.18);
 }
 .card-scene:nth-child(1){animation-delay:0.08s;}
 .card-scene:nth-child(2){animation-delay:0.22s;}
@@ -1196,9 +1197,9 @@ body{
   transition:transform 0.8s cubic-bezier(0.35,0.1,0.15,1);
 }
 .card-scene.flipped .card-flipper{transform:rotateY(180deg);}
-.card-front,.card-back{width:100%;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:17px;overflow:hidden;position:relative;padding:5px;}
+.card-front,.card-back{width:100%;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:17px;overflow:hidden;position:relative;padding:4px;}
 .card-back{position:absolute;top:0;left:0;transform:rotateY(180deg);}
-/* Rotating gradient border */
+/* Rotating shade-gradient border */
 .card-front::before,.card-back::before{
   content:'';position:absolute;
   top:50%;left:50%;
@@ -1206,16 +1207,15 @@ body{
   transform:translate(-50%,-50%);
   z-index:0;
   background:conic-gradient(from 0deg,
-    var(--card-ac,#3B82F6) 0%,
-    #818CF8 15%,
-    #34D399 30%,
-    #60A5FA 45%,
-    var(--card-ac,#3B82F6) 60%,
-    #F87171 75%,
-    #FBBF24 88%,
-    var(--card-ac,#3B82F6) 100%
+    var(--cg1) 0%,
+    var(--cg2) 15%,
+    var(--cg3) 30%,
+    var(--cg4) 45%,
+    var(--cg5) 60%,
+    var(--cg6) 75%,
+    var(--cg1) 100%
   );
-  opacity:0.65;
+  opacity:0.55;
   animation:borderSpinCard 4s linear infinite;
 }
 @keyframes borderSpinCard{
@@ -1224,16 +1224,23 @@ body{
 .card-scene:hover .card-front::before,.card-scene:hover .card-back::before{
   opacity:1;
 }
+/* Ambient glow behind card */
+.card-scene::after{
+  content:'';position:absolute;inset:-6px;border-radius:22px;
+  background:var(--card-glow);
+  filter:blur(18px);opacity:0;transition:opacity .35s;z-index:-1;pointer-events:none;
+}
+.card-scene:hover::after{opacity:1;}
 /* Inner card sits on top of gradient */
 .card-front>.tc,.card-back>.card-back-inner{
-  position:relative;z-index:1;border-radius:12px;overflow:hidden;
+  position:relative;z-index:1;border-radius:13px;overflow:hidden;
 }
 .foil-layer{
-  position:absolute;inset:0;border-radius:12px;pointer-events:none;
+  position:absolute;inset:0;border-radius:13px;pointer-events:none;
   opacity:0;transition:opacity 0.25s;z-index:10;mix-blend-mode:screen;
   background:radial-gradient(ellipse at var(--mx,50%) var(--my,50%),rgba(255,255,255,0.09) 0%,rgba(160,180,255,0.07) 30%,rgba(45,212,160,0.04) 55%,transparent 72%);
 }
-.foil-scan{position:absolute;inset:0;border-radius:12px;pointer-events:none;opacity:0;z-index:11;overflow:hidden;}
+.foil-scan{position:absolute;inset:0;border-radius:13px;pointer-events:none;opacity:0;z-index:11;overflow:hidden;}
 .foil-scan::after{
   content:'';position:absolute;top:-100%;left:-15%;width:130%;height:45%;
   background:linear-gradient(180deg,transparent 0%,rgba(255,255,255,0.018) 40%,rgba(255,255,255,0.045) 50%,rgba(255,255,255,0.018) 60%,transparent 100%);
@@ -1243,50 +1250,71 @@ body{
 .card-scene:hover .foil-layer,.card-scene:hover .foil-scan{opacity:1;}
 .tc{
   background:var(--mp-surface);border:none;
-  display:flex;flex-direction:column;transition:box-shadow 0.3s;position:relative;border-radius:12px;
+  display:flex;flex-direction:column;transition:box-shadow 0.3s;position:relative;border-radius:13px;
 }
-/* hover handled by gradient border opacity */
-.tc-accent{height:1px;width:100%;flex-shrink:0;border-radius:12px 12px 0 0;}
-.tc-body{padding:16px 16px 12px;display:flex;flex-direction:column;gap:0;}
-.tc-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;}
+.tc-accent{height:2px;width:100%;flex-shrink:0;border-radius:13px 13px 0 0;}
+.tc-body{padding:18px 18px 14px;display:flex;flex-direction:column;gap:0;}
+.tc-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px;}
 .tc-header-left{display:flex;align-items:center;gap:11px;}
 .tc-logo-wrap{width:42px;height:42px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.tc-id{display:flex;flex-direction:column;gap:1px;}
-.tc-ticker{font-family:var(--font-mono);font-size:15px;font-weight:600;letter-spacing:0.04em;color:var(--mp-text-primary);line-height:1;}
-.tc-name{font-family:var(--font-body);font-size:10px;font-weight:300;color:var(--mp-text-tertiary);letter-spacing:0.01em;}
+.tc-id{display:flex;flex-direction:column;gap:2px;}
+.tc-ticker{font-family:var(--font-mono);font-size:18px;font-weight:700;letter-spacing:0.04em;color:var(--mp-text-primary);line-height:1;}
+.tc-name{font-family:var(--font-body);font-size:11px;font-weight:300;color:var(--mp-text-tertiary);letter-spacing:0.01em;}
 .tc-date-badge{font-family:var(--font-mono);font-size:8px;letter-spacing:0.08em;text-transform:uppercase;color:var(--mp-text-tertiary);padding:2px 7px;border-radius:3px;border:1px solid var(--mp-border);background:rgba(255,255,255,0.02);white-space:nowrap;}
-.tc-rarity{font-family:var(--font-mono);font-size:8px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;padding:3px 9px;border-radius:99px;border:1px solid;white-space:nowrap;}
-.tc-price-row{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;}
-.tc-price{font-family:var(--font-mono);font-size:20px;font-weight:500;letter-spacing:-0.02em;color:var(--mp-text-primary);line-height:1;}
-.tc-change{font-family:var(--font-mono);font-size:11px;font-weight:500;letter-spacing:0.02em;}
-.tc-chart{height:48px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,0.02);border:1px solid var(--mp-border);margin-bottom:14px;}
-.tc-bias-block{border-radius:5px;padding:0;margin-bottom:13px;border:1px solid;position:relative;overflow:hidden;text-align:center;display:flex;flex-direction:column;}
+.tc-rarity{font-family:var(--font-mono);font-size:8px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;padding:4px 10px;border-radius:4px;border:1px solid;white-space:nowrap;}
+/* Live status strip */
+.tc-live-strip{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-bottom:10px;}
+.tc-live-strip .tc-updated{font-family:var(--font-mono);font-size:8px;color:var(--mp-text-tertiary);letter-spacing:.04em;}
+.tc-live-strip .tc-live-badge{display:flex;align-items:center;gap:4px;font-family:var(--font-mono);font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;}
+.tc-price-row{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;}
+.tc-price{font-family:var(--font-mono);font-size:24px;font-weight:600;letter-spacing:-0.02em;color:var(--mp-text-primary);line-height:1;}
+.tc-change{font-family:var(--font-mono);font-size:12px;font-weight:500;letter-spacing:0.02em;}
+/* Chart + Bias combined block */
+.tc-bias-block{border-radius:8px;padding:0;margin-bottom:16px;border:1px solid;position:relative;overflow:hidden;text-align:center;display:flex;flex-direction:column;}
 .tc-bias-block::after{content:'';position:absolute;inset:0;opacity:0.04;}
-.bias-graphic{display:block;width:100%;height:72px;flex-shrink:0;opacity:0.55;pointer-events:none;}
-.tc-bias-text-wrap{position:relative;z-index:1;padding:6px 14px 10px;border-top:1px solid rgba(255,255,255,0.05);}
-.tc-bias-eyebrow{font-family:var(--font-mono);font-size:7px;letter-spacing:0.14em;text-transform:uppercase;color:var(--mp-text-tertiary);margin-bottom:3px;}
-.tc-bias-text{font-family:'Anton','Franklin Gothic Heavy','Impact',sans-serif;font-size:30px;letter-spacing:0.04em;text-transform:uppercase;line-height:0.92;font-weight:400;display:block;width:100%;}
-.tc-narrative{font-family:var(--font-body);font-size:13px;font-weight:400;line-height:1.5;color:var(--mp-text-primary);margin-bottom:12px;}
-.tc-meta{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
-.tc-conf-row,.tc-conf-wrap{display:flex;align-items:center;gap:7px;flex:1;}
-.tc-conf-label,.tc-conf-lbl{font-family:var(--font-mono);font-size:7px;letter-spacing:0.1em;text-transform:uppercase;color:var(--mp-text-tertiary);flex-shrink:0;}
-.tc-conf-bar{flex:1;height:1px;border-radius:1px;background:var(--mp-border-mid);overflow:hidden;}
-.tc-conf-fill{height:100%;border-radius:1px;}
-.tc-conf-val{font-family:var(--font-mono);font-size:11px;font-weight:500;flex-shrink:0;}
-.tc-window-pill{font-family:var(--font-mono);font-size:8px;letter-spacing:0.06em;padding:3px 8px;border-radius:3px;background:rgba(255,255,255,0.02);border:1px solid var(--mp-border);color:var(--mp-text-secondary);white-space:nowrap;flex-shrink:0;}
-.tc-signal-block{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;padding:10px 11px;border-radius:6px;background:rgba(255,255,255,0.02);border:1px solid var(--mp-border);}
+.bias-graphic{display:block;width:100%;height:80px;flex-shrink:0;opacity:0.6;pointer-events:none;}
+.tc-bias-text-wrap{position:relative;z-index:1;padding:10px 14px 14px;}
+.tc-bias-eyebrow{font-family:var(--font-mono);font-size:7px;letter-spacing:0.14em;text-transform:uppercase;color:var(--mp-text-tertiary);margin-bottom:4px;display:none;}
+.tc-bias-text{font-family:'Anton','Franklin Gothic Heavy','Impact',sans-serif;font-size:28px;letter-spacing:0.06em;text-transform:uppercase;line-height:1;font-weight:400;display:block;width:100%;}
+/* Narrative */
+.tc-narrative{font-family:var(--font-body);font-size:12px;font-weight:400;line-height:1.55;color:var(--mp-text-secondary);margin-bottom:10px;}
+/* Detail lines: Execution Window, Phase */
+.tc-detail-lines{display:flex;flex-direction:column;gap:4px;margin-bottom:14px;}
+.tc-detail-line{font-family:var(--font-mono);font-size:10px;color:var(--mp-text-tertiary);letter-spacing:.02em;}
+.tc-detail-line strong{color:var(--mp-text-primary);font-weight:600;}
+/* Confidence arc */
+.tc-conf-arc{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+.tc-conf-arc-label{font-family:var(--font-mono);font-size:8px;letter-spacing:0.12em;text-transform:uppercase;color:var(--mp-text-tertiary);flex-shrink:0;}
+.tc-conf-arc-line{flex:1;height:1px;background:var(--mp-border);}
+.tc-conf-arc svg{flex-shrink:0;}
+.tc-conf-arc-val{font-family:var(--font-mono);font-size:22px;font-weight:600;flex-shrink:0;}
+/* Signal block */
+.tc-signal-block{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;padding:12px 14px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid var(--mp-border);}
 .tc-signal-line{display:flex;gap:8px;align-items:flex-start;}
-.tc-pip{width:2px;height:2px;border-radius:50%;margin-top:6px;flex-shrink:0;}
-.tc-signal-text{font-family:var(--font-body);font-size:10.5px;font-weight:300;line-height:1.45;color:var(--mp-text-secondary);}
-.tc-signal-text.risk{color:var(--mp-text-tertiary);}
-.tc-footer-tag,.tc-footer{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-radius:5px;border:1px solid var(--mp-border);background:rgba(255,255,255,0.02);margin-bottom:8px;}
-.tc-phase{font-family:var(--font-mono);font-size:7.5px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;}
+.tc-pip{width:4px;height:4px;border-radius:50%;margin-top:5px;flex-shrink:0;}
+.tc-signal-text{font-family:var(--font-body);font-size:11px;font-weight:300;line-height:1.5;color:var(--mp-text-secondary);}
+.tc-signal-text.risk{color:var(--mp-text-tertiary);font-weight:400;}
+.tc-signal-text.risk strong{color:var(--mp-text-secondary);font-weight:600;}
+/* State footer */
+.tc-footer-tag,.tc-footer{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:6px;border:1px solid var(--mp-border);background:rgba(255,255,255,0.02);margin-bottom:8px;}
+.tc-phase{font-family:var(--font-mono);font-size:8px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;}
+.tc-state-label{font-family:var(--font-mono);font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--mp-text-tertiary);margin-right:4px;}
 .tc-live-row{display:flex;align-items:center;gap:5px;}
-.pulse-dot,.tc-pulse{width:4px;height:4px;border-radius:50%;animation:blink 2s ease infinite;}
-.tc-live-label,.tc-live-lbl{font-family:var(--font-mono);font-size:7.5px;color:var(--mp-text-tertiary);letter-spacing:0.06em;text-transform:uppercase;}
+.pulse-dot,.tc-pulse{width:5px;height:5px;border-radius:50%;animation:blink 2s ease infinite;}
+.tc-live-label,.tc-live-lbl{font-family:var(--font-mono);font-size:8px;color:var(--mp-text-tertiary);letter-spacing:0.06em;text-transform:uppercase;}
+/* Card action buttons (inside card) */
+.tc-card-actions{display:flex;gap:1px;border-top:1px solid var(--mp-border);margin:0 -18px -14px;background:var(--mp-border);}
+.tc-card-action{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;
+  font-family:var(--font-mono);font-size:9px;letter-spacing:.05em;
+  color:var(--mp-text-tertiary);padding:10px 6px;cursor:pointer;
+  background:var(--mp-surface);border:none;transition:color .15s,background .15s;white-space:nowrap;}
+.tc-card-action:hover{color:var(--mp-text-primary);background:rgba(255,255,255,.04);}
+.tc-card-action svg{width:12px;height:12px;flex-shrink:0;}
+.tc-card-action:first-child{border-radius:0 0 0 13px;}
+.tc-card-action:last-child{border-radius:0 0 13px 0;}
 .flip-hint{text-align:center;font-family:var(--font-mono);font-size:7px;letter-spacing:0.12em;text-transform:uppercase;color:var(--mp-text-tertiary);padding:4px 0 8px;opacity:0.5;}
 /* Trading card back */
-.card-back-inner{width:100%;display:flex;flex-direction:column;position:relative;overflow:hidden;border:none;border-radius:12px;background:var(--mp-surface);}
+.card-back-inner{width:100%;display:flex;flex-direction:column;position:relative;overflow:hidden;border:none;border-radius:13px;background:var(--mp-surface);}
 .back-graphic{width:100%;height:152px;position:relative;overflow:hidden;flex-shrink:0;}
 .back-graphic svg{width:100%;height:100%;}
 .back-content{padding:14px 16px 10px;display:flex;flex-direction:column;gap:10px;flex:1;}
@@ -1658,33 +1686,11 @@ body{
   position:relative;
 }
 .tcg-card-wrap .card-scene{
-  width:100%;cursor:pointer;
+  width:100%;cursor:pointer;animation-delay:0s;
 }
 .tcg-card-wrap .card-front,.tcg-card-wrap .card-back{
   width:100%;
 }
-/* Card actions bar */
-.tcg-actions{
-  display:flex;gap:6px;margin-top:10px;justify-content:center;
-}
-.tcg-action-btn{
-  display:inline-flex;align-items:center;gap:5px;
-  font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;
-  text-transform:uppercase;color:var(--mp-text-tertiary);
-  padding:7px 14px;border-radius:6px;
-  border:1px solid var(--mp-border);background:rgba(255,255,255,.02);
-  cursor:pointer;transition:all .2s;white-space:nowrap;
-}
-.tcg-action-btn:hover{
-  color:var(--mp-text-primary);border-color:var(--mp-border-mid);
-  background:rgba(255,255,255,.05);
-}
-.tcg-action-btn svg{width:13px;height:13px;flex-shrink:0;}
-.tcg-action-btn.primary{
-  background:rgba(52,211,153,.08);border-color:rgba(52,211,153,.2);
-  color:var(--mp-teal);
-}
-.tcg-action-btn.primary:hover{background:rgba(52,211,153,.15);}
 /* Share toast */
 .tcg-toast{
   position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);
@@ -4079,131 +4085,160 @@ var TRADING_CARD_COLORS = [
   {accent:'linear-gradient(90deg,#FBBF24,#F87171)',bias:'#FBBF24',phase:'Narrative Split',biasText:'Hedge Exposure'},
   {accent:'linear-gradient(90deg,#34D399,#3B82F6)',bias:'#34D399',phase:'Momentum Build',biasText:'Add on Dips'},
 ];
-function renderTradingCards(){
-  var deck=document.getElementById('trading-deck');
-  if(!deck)return;
-  // Rarity mapping by state
-  var RARITY_MAP={
-    'Breaking':{label:'Rare',color:'#F87171',border:'rgba(248,113,113,0.3)'},
-    'Narrative Trap':{label:'Rare',color:'#F87171',border:'rgba(248,113,113,0.3)'},
-    'Surging':{label:'Epic',color:'#34D399',border:'rgba(52,211,153,0.3)'},
-    'Structurally Supported':{label:'Epic',color:'#34D399',border:'rgba(52,211,153,0.3)'},
-    'Fragile':{label:'Uncommon',color:'#A5B4FC',border:'rgba(129,140,248,0.3)'},
-    'Stable':{label:'Common',color:'#60A5FA',border:'rgba(96,165,250,0.3)'}
-  };
-  // Pick top cards from DATA or use fallback
-  var cards=[];
-  if(DATA.length>0){
-    // Pick varied states
-    var breaking=DATA.filter(function(r){return r.narrative_state==='Breaking'||r.prism_verdict==='Narrative Trap';});
-    var surging=DATA.filter(function(r){return r.narrative_state==='Surging'||r.prism_verdict==='Structurally Supported';});
-    var fragile=DATA.filter(function(r){return r.narrative_state==='Fragile';});
-    var stable=DATA.filter(function(r){return r.narrative_state==='Stable';});
-    if(breaking[0])cards.push(Object.assign({},breaking[0],TRADING_CARD_COLORS[0]));
-    if(surging[0])cards.push(Object.assign({},surging[0],TRADING_CARD_COLORS[1]));
-    if(fragile[0])cards.push(Object.assign({},fragile[0],TRADING_CARD_COLORS[2]));
-    if(breaking[1])cards.push(Object.assign({},breaking[1],TRADING_CARD_COLORS[3]));
-    if(surging[1])cards.push(Object.assign({},surging[1],TRADING_CARD_COLORS[4]));
-    // Fill remaining
-    var used=new Set(cards.map(function(c){return c.ticker;}));
-    DATA.forEach(function(r){if(cards.length<5&&!used.has(r.ticker)){cards.push(Object.assign({},r,TRADING_CARD_COLORS[cards.length%5]));used.add(r.ticker);}});
-  } else {
-    cards=[
-      {ticker:'NVDA',price:118.42,price_change_pct:-2.14,narrative_state:'Breaking',story_claim:'Narrative breaking while retail still buying strength',sector_name:'Semiconductors',pe_ratio:62,accent:'linear-gradient(90deg,#F87171,#818CF8)',bias:'#F87171',phase:'Decay Phase',biasText:'Fade Rallies'},
-      {ticker:'AAPL',price:212.80,price_change_pct:1.87,narrative_state:'Surging',story_claim:'Institutional accumulation confirming breakout above key resistance',sector_name:'Consumer Technology',pe_ratio:29,accent:'linear-gradient(90deg,#3B82F6,#34D399)',bias:'#34D399',phase:'Breakout Forming',biasText:'Ride the Trend'},
-      {ticker:'TSLA',price:247.15,price_change_pct:0.42,narrative_state:'Fragile',story_claim:'Coiling under resistance with elevated IV — a loaded spring',sector_name:'Electric Vehicles',pe_ratio:68,accent:'linear-gradient(90deg,#818CF8,#60A5FA)',bias:'#A5B4FC',phase:'Coil Compress',biasText:'Wait for Break'},
-    ];
+// Gradient shades per state for the spinning border
+var CARD_SHADES={
+  'Breaking':    {s:['#F87171','#991B1B','#EF4444','#FCA5A5','#DC2626','#FECACA'],glow:'rgba(248,113,113,0.22)'},
+  'Narrative Trap':{s:['#F87171','#991B1B','#EF4444','#FCA5A5','#DC2626','#FECACA'],glow:'rgba(248,113,113,0.22)'},
+  'Surging':     {s:['#34D399','#065F46','#10B981','#6EE7B7','#059669','#A7F3D0'],glow:'rgba(52,211,153,0.22)'},
+  'Structurally Supported':{s:['#34D399','#065F46','#10B981','#6EE7B7','#059669','#A7F3D0'],glow:'rgba(52,211,153,0.22)'},
+  'Fragile':     {s:['#A5B4FC','#4338CA','#818CF8','#C4B5FD','#6366F1','#DDD6FE'],glow:'rgba(165,180,252,0.22)'},
+  'Stable':      {s:['#60A5FA','#1E40AF','#3B82F6','#93C5FD','#2563EB','#BFDBFE'],glow:'rgba(96,165,250,0.22)'},
+  'Amber':       {s:['#FBBF24','#92400E','#F59E0B','#FCD34D','#D97706','#FDE68A'],glow:'rgba(251,191,36,0.22)'}
+};
+var RARITY_MAP={
+  'Breaking':{label:'Rare Signal',color:'#F87171',border:'rgba(248,113,113,0.3)'},
+  'Narrative Trap':{label:'Rare Signal',color:'#F87171',border:'rgba(248,113,113,0.3)'},
+  'Surging':{label:'Epic Signal',color:'#34D399',border:'rgba(52,211,153,0.3)'},
+  'Structurally Supported':{label:'Epic Signal',color:'#34D399',border:'rgba(52,211,153,0.3)'},
+  'Fragile':{label:'Uncommon',color:'#A5B4FC',border:'rgba(129,140,248,0.3)'},
+  'Stable':{label:'Common',color:'#60A5FA',border:'rgba(96,165,250,0.3)'}
+};
+var RISK_LINES={
+  'Breaking':'Overextension if momentum fades',
+  'Narrative Trap':'Narrative divergence from fundamentals',
+  'Surging':'Overextension if macro weakens',
+  'Structurally Supported':'Crowding risk on consensus trades',
+  'Fragile':'Breakdown if support levels fail',
+  'Stable':'Underperformance in risk-on rotations'
+};
+// Shared card front builder
+function buildCardFrontHTML(c,i,dateStr,prefix,showActions){
+  var isBull=c.price_change_pct>0;
+  var chartColor=isBull?'#34D399':'#F87171';
+  var pts=[];for(var p=0;p<10;p++){pts.push(Math.round(10+Math.random()*35));}
+  if(isBull)pts.sort(function(a,b){return b-a;});else pts.sort(function(a,b){return a-b;});
+  var polyPts=pts.map(function(y,x){return Math.round(x*22)+','+y;}).join(' ');
+  var conf=Math.round(50+Math.random()*40);
+  var winTxt=isBull?'3\u20135 days':conf>70?'5\u20137 days':'7\u201314 days';
+  var energy=c.narrative_health||Math.round(40+Math.random()*50);
+  var trust=typeof computeTrust==='function'?computeTrust(c):50;
+  var rKey=c.prism_verdict||c.narrative_state||'Stable';
+  var rarity=RARITY_MAP[rKey]||RARITY_MAP['Stable'];
+  var companyName=c.sector_name||'\u2014';
+  var signalPrimary=esc(c.story_claim||c.primary_driver||'Signal under analysis');
+  var signalSecondary=c.narrative_state==='Breaking'||c.prism_verdict==='Narrative Trap'?'Media + analyst divergence increasing volatility expectations.':'Media + analyst alignment increasing demand expectations.';
+  var riskLine=RISK_LINES[rKey]||'Monitor for regime change';
+  // Gradient shades
+  var sh=CARD_SHADES[rKey]||CARD_SHADES['Stable'];
+  var styleVars='--cg1:'+sh.s[0]+';--cg2:'+sh.s[1]+';--cg3:'+sh.s[2]+';--cg4:'+sh.s[3]+';--cg5:'+sh.s[4]+';--cg6:'+sh.s[5]+';--card-glow:'+sh.glow+';';
+  // Confidence arc SVG
+  var arcLen=157;
+  var arcOff=Math.round(arcLen*(1-conf/100));
+  var confArc='<svg viewBox="0 0 120 60" width="80" height="40">'
+    +'<path d="M 10 55 A 50 50 0 0 1 110 55" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="6" stroke-linecap="round"/>'
+    +'<path d="M 10 55 A 50 50 0 0 1 110 55" fill="none" stroke="'+c.bias+'" stroke-width="6" stroke-linecap="round" stroke-dasharray="'+arcLen+'" stroke-dashoffset="'+arcOff+'"/>'
+    +'</svg>';
+  // Action buttons HTML
+  var actionsHTML='';
+  if(showActions){
+    actionsHTML='<div class="tc-card-actions">'
+      +'<button class="tc-card-action" onclick="event.stopPropagation();window.location.href=\'/ticker/'+encodeURIComponent(c.ticker)+'\'">'
+        +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>'
+        +'\u2192 View Full Analysis'
+      +'</button>'
+      +'<button class="tc-card-action" onclick="event.stopPropagation();tcgSaveImage('+i+')">'
+        +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z"/></svg>'
+        +'Save'
+      +'</button>'
+      +'<button class="tc-card-action" onclick="event.stopPropagation();tcgShareTwitter('+i+')">'
+        +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z"/></svg>'
+        +'Share'
+      +'</button>'
+    +'</div>';
   }
-  cards=cards.slice(0,4);
-  var dateStr=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-  deck.innerHTML=cards.map(function(c,i){
-    var delta=fmtDelta(c.price_change_pct);
-    var isBull=c.price_change_pct>0;
-    var chartColor=isBull?'#34D399':'#F87171';
-    // Generate simple chart points
-    var pts=[];for(var p=0;p<10;p++){pts.push(Math.round(10+Math.random()*35));}
-    if(isBull)pts.sort(function(a,b){return b-a;});else pts.sort(function(a,b){return a-b;});
-    var polyPts=pts.map(function(y,x){return Math.round(x*22)+','+y;}).join(' ');
-    var polyFill=polyPts+' 200,48 0,48';
-    var conf=Math.round(50+Math.random()*40);
-    var window=isBull?'1\u20133d':conf>70?'3\u20137d':'5\u201310d';
-    var energy=c.narrative_health||Math.round(40+Math.random()*50);
-    var trust=typeof computeTrust==='function'?computeTrust(c):50;
-    var fvd=typeof fvdPct==='function'?fvdPct(c):null;
-    // Rarity badge
-    var rKey=c.prism_verdict||c.narrative_state||'Stable';
-    var rarity=RARITY_MAP[rKey]||RARITY_MAP['Stable'];
-    // Company name
-    var companyName=c.sector_name||'—';
-    // Signal lines
-    var signalPrimary=esc(c.story_claim||c.primary_driver||'Signal under analysis');
-    var signalSecondary=c.narrative_state==='Breaking'||c.prism_verdict==='Narrative Trap'?'Elevated risk — monitor for reversal':'Momentum aligns with narrative trajectory';
-    return '<div class="card-scene" onclick="this.classList.toggle(\'flipped\')">'
-      +'<div class="card-flipper">'
-        +'<div class="card-front" style="position:relative;">'
-          +'<div class="foil-layer"></div><div class="foil-scan"></div>'
-          +'<div class="tc">'
-            +'<div class="tc-accent" style="background:'+c.accent+';"></div>'
-            +'<div class="tc-body">'
-              +'<div class="tc-header"><div class="tc-header-left">'
-                +'<div class="tc-logo-wrap" style="background:'+logoColor(c.ticker)[0]+';color:'+logoColor(c.ticker)[1]+';border-radius:7px;font-family:var(--font-mono);font-size:10px;font-weight:500;letter-spacing:.02em;">'+c.ticker+'</div>'
-                +'<div class="tc-id"><div class="tc-ticker">'+c.ticker+'</div><div class="tc-name">'+esc(companyName)+'</div></div>'
-              +'</div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;"><span class="tc-rarity" style="color:'+rarity.color+';border-color:'+rarity.border+';background:'+hexToRgba(rarity.color,0.1)+';">'+rarity.label+'</span><span class="tc-date-badge">'+dateStr+'</span></div></div>'
-              +'<div class="tc-price-row">'
-                +'<span class="tc-price">$'+fmtPrice(c.price)+'</span>'
-                +'<span class="tc-change" style="color:'+chartColor+';">'+(isBull?'\u25B2':'\u25BC')+' '+Math.abs(c.price_change_pct||0).toFixed(2)+'%</span>'
-              +'</div>'
-              +'<div class="tc-bias-block" style="border-color:'+hexToRgba(c.bias,0.22)+';background:'+hexToRgba(c.bias,0.1)+';">'
-                +'<svg class="bias-graphic" viewBox="0 0 204 72" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bf'+i+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+c.bias+'" stop-opacity="0.4"/><stop offset="100%" stop-color="'+c.bias+'" stop-opacity="0"/></linearGradient></defs><polygon points="'+polyPts.split(' ').map(function(p,x){var parts=p.split(',');return Math.round(x*20.4)+','+parts[1];}).join(' ')+' 204,72 0,72" fill="url(#bf'+i+')"/><polyline points="'+polyPts.split(' ').map(function(p,x){var parts=p.split(',');return Math.round(x*20.4)+','+parts[1];}).join(' ')+'" fill="none" stroke="'+c.bias+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
-                +'<div class="tc-bias-text-wrap"><div class="tc-bias-eyebrow">Signal bias</div><div class="tc-bias-text" style="color:'+c.bias+';">'+c.biasText.toUpperCase()+'</div></div>'
-              +'</div>'
-              +'<div class="tc-narrative">'+esc(c.story_claim||c.primary_driver||'Signal under analysis')+'</div>'
-              +'<div class="tc-meta"><div class="tc-conf-wrap"><span class="tc-conf-lbl">Conf</span><div class="tc-conf-bar"><div class="tc-conf-fill" style="width:'+conf+'%;background:'+c.bias+';"></div></div><span class="tc-conf-val" style="color:'+c.bias+';">'+conf+'%</span></div><span class="tc-window-pill">'+window+'</span></div>'
-              +'<div class="tc-signal-block">'
-                +'<div class="tc-signal-line"><div class="tc-pip" style="background:'+c.bias+';"></div><span class="tc-signal-text">'+signalPrimary+'</span></div>'
-                +'<div class="tc-signal-line"><div class="tc-pip" style="background:var(--mp-text-tertiary);"></div><span class="tc-signal-text risk">'+signalSecondary+'</span></div>'
-              +'</div>'
-              +'<div class="tc-footer" style="border-color:'+hexToRgba(c.bias,0.18)+';"><span class="tc-phase" style="color:'+c.bias+';">'+c.phase+'</span><div class="tc-live-row"><div class="tc-pulse" style="background:'+c.bias+';"></div><span class="tc-live-lbl">Live</span></div></div>'
+  return '<div class="card-scene" style="'+styleVars+'" onclick="this.classList.toggle(\'flipped\')">'
+    +'<div class="card-flipper">'
+      +'<div class="card-front" style="position:relative;">'
+        +'<div class="foil-layer"></div><div class="foil-scan"></div>'
+        +'<div class="tc">'
+          +'<div class="tc-accent" style="background:'+c.accent+';"></div>'
+          +'<div class="tc-body">'
+            // Header
+            +'<div class="tc-header"><div class="tc-header-left">'
+              +'<div class="tc-logo-wrap" style="background:'+logoColor(c.ticker)[0]+';color:'+logoColor(c.ticker)[1]+';border-radius:8px;font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:.02em;">'+c.ticker+'</div>'
+              +'<div class="tc-id"><div class="tc-ticker">'+c.ticker+'</div><div class="tc-name">'+esc(companyName)+'</div></div>'
+            +'</div><span class="tc-rarity" style="color:'+rarity.color+';border-color:'+rarity.border+';background:'+hexToRgba(rarity.color,0.08)+';">'+rarity.label+'</span></div>'
+            // Live strip
+            +'<div class="tc-live-strip"><span class="tc-updated">Updated just now</span><div class="tc-live-badge"><div class="tc-pulse" style="background:'+c.bias+';"></div><span style="color:'+c.bias+';">LIVE</span></div></div>'
+            // Price
+            +'<div class="tc-price-row">'
+              +'<span class="tc-price">$'+fmtPrice(c.price)+'</span>'
+              +'<span class="tc-change" style="color:'+chartColor+';">'+(isBull?'\u25B2':'\u25BC')+' '+Math.abs(c.price_change_pct||0).toFixed(2)+'%</span>'
             +'</div>'
-          +'</div>'
-          +'<div class="flip-hint">tap to reveal \u21BA</div>'
-        +'</div>'
-        +'<div class="card-back" style="position:absolute;">'
-          +'<div style="position:relative;"><div class="foil-layer"></div><div class="foil-scan"></div>'
-            +'<div class="card-back-inner">'
-              +'<div class="back-graphic" style="background:var(--mp-deep);display:flex;align-items:center;justify-content:center;"><div style="font-family:var(--font-mono);font-size:32px;font-weight:500;color:'+c.bias+';opacity:0.15;letter-spacing:6px;">'+c.ticker+'</div></div>'
-              +'<div class="back-content">'
-                +'<div class="back-company-row">'
-                  +'<div class="back-company-logo" style="background:var(--mp-deep);font-family:var(--font-mono);font-size:9px;font-weight:500;color:'+logoColor(c.ticker)[1]+';letter-spacing:.02em;">'+c.ticker+'</div>'
-                  +'<div><div class="back-company-name">'+c.ticker+'</div><div class="back-company-sector">'+(c.sector_name||'\u2014')+'</div></div>'
-                +'</div>'
-                +'<div class="back-divider"></div>'
-                +'<div><div class="back-fact-label">Narrative</div><div class="back-fact">"\u200A'+esc(c.story_claim||c.primary_driver||'Under analysis')+'\u200A"</div></div>'
-                +'<div class="back-stats">'
-                  +'<div class="back-stat"><div class="back-stat-label">Price</div><div class="back-stat-val" style="color:var(--mp-text-primary);">$'+fmtPrice(c.price)+'</div></div>'
-                  +'<div class="back-stat"><div class="back-stat-label">P/E ratio</div><div class="back-stat-val" style="color:'+c.bias+';">'+(c.pe_ratio!=null?c.pe_ratio.toFixed(1)+'x':'\u2014')+'</div></div>'
-                  +'<div class="back-stat"><div class="back-stat-label">Health</div><div class="back-stat-val" style="color:var(--mp-text-secondary);">'+energy+'</div></div>'
-                  +'<div class="back-stat"><div class="back-stat-label">Trust</div><div class="back-stat-val" style="color:var(--mp-text-secondary);">'+trust+'</div></div>'
-                +'</div>'
-                +'<div class="back-footer"><span class="back-footer-label">State</span><span class="back-footer-val" style="color:'+c.bias+';">'+(c.narrative_state||'\u2014')+'</span></div>'
-              +'</div>'
-              +'<div class="flip-back-hint">tap to flip back \u21BA</div>'
+            // Chart + Bias block
+            +'<div class="tc-bias-block" style="border-color:'+hexToRgba(c.bias,0.25)+';background:'+hexToRgba(c.bias,0.06)+';">'
+              +'<svg class="bias-graphic" viewBox="0 0 204 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="'+prefix+i+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+c.bias+'" stop-opacity="0.35"/><stop offset="100%" stop-color="'+c.bias+'" stop-opacity="0"/></linearGradient></defs><polygon points="'+polyPts.split(' ').map(function(p,x){var parts=p.split(',');return Math.round(x*20.4)+','+parts[1];}).join(' ')+' 204,80 0,80" fill="url(#'+prefix+i+')"/><polyline points="'+polyPts.split(' ').map(function(p,x){var parts=p.split(',');return Math.round(x*20.4)+','+parts[1];}).join(' ')+'" fill="none" stroke="'+c.bias+'" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+              +'<div class="tc-bias-text-wrap"><div class="tc-bias-text" style="color:'+c.bias+';">'+c.biasText.toUpperCase()+'</div></div>'
             +'</div>'
+            // Narrative
+            +'<div class="tc-narrative">'+signalPrimary+'</div>'
+            // Detail lines
+            +'<div class="tc-detail-lines">'
+              +'<div class="tc-detail-line">Execution Window: <strong>'+winTxt+'</strong></div>'
+              +'<div class="tc-detail-line">Phase: <strong style="color:'+c.bias+';">'+c.phase+'</strong></div>'
+            +'</div>'
+            // Confidence arc
+            +'<div class="tc-conf-arc">'
+              +'<span class="tc-conf-arc-label">Confidence</span>'
+              +'<span class="tc-conf-arc-line"></span>'
+              +confArc
+              +'<span class="tc-conf-arc-val" style="color:'+c.bias+';">'+conf+'%</span>'
+            +'</div>'
+            // Signal block
+            +'<div class="tc-signal-block">'
+              +'<div class="tc-signal-line"><div class="tc-pip" style="background:'+c.bias+';"></div><span class="tc-signal-text">'+signalPrimary+'</span></div>'
+              +'<div class="tc-signal-line"><div class="tc-pip" style="background:'+c.bias+';opacity:.5;"></div><span class="tc-signal-text">'+signalSecondary+'</span></div>'
+              +'<div class="tc-signal-line"><div class="tc-pip" style="background:var(--mp-text-tertiary);"></div><span class="tc-signal-text risk"><strong>Risk:</strong> '+riskLine+'</span></div>'
+            +'</div>'
+            // State footer
+            +'<div class="tc-footer" style="border-color:'+hexToRgba(c.bias,0.18)+';">'
+              +'<div><span class="tc-state-label">State:</span><span class="tc-phase" style="color:'+c.bias+';">'+(c.narrative_state||c.phase)+'</span></div>'
+              +'<div class="tc-live-row"><div class="tc-pulse" style="background:'+c.bias+';"></div><span class="tc-live-lbl">Live</span></div>'
+            +'</div>'
+            // Action buttons
+            +actionsHTML
           +'</div>'
         +'</div>'
       +'</div>'
-    +'</div>';
-  }).join('');
-  // Colored glow array for hover effects
-  var glows = [
-    '0 12px 48px rgba(248,113,113,0.2), 0 0 0 1px rgba(248,113,113,0.14)',
-    '0 12px 48px rgba(52,211,153,0.18), 0 0 0 1px rgba(52,211,153,0.12)',
-    '0 12px 48px rgba(129,140,248,0.18), 0 0 0 1px rgba(129,140,248,0.12)',
-    '0 12px 48px rgba(251,191,36,0.18), 0 0 0 1px rgba(251,191,36,0.12)',
-    '0 12px 48px rgba(96,165,250,0.18), 0 0 0 1px rgba(96,165,250,0.12)',
-  ];
-  // Attach foil + tilt interactions
-  deck.querySelectorAll('.card-scene').forEach(function(scene,idx){
+      +'<div class="card-back" style="position:absolute;">'
+        +'<div style="position:relative;"><div class="foil-layer"></div><div class="foil-scan"></div>'
+          +'<div class="card-back-inner">'
+            +'<div class="back-graphic" style="background:var(--mp-deep);display:flex;align-items:center;justify-content:center;"><div style="font-family:var(--font-mono);font-size:32px;font-weight:500;color:'+c.bias+';opacity:0.15;letter-spacing:6px;">'+c.ticker+'</div></div>'
+            +'<div class="back-content">'
+              +'<div class="back-company-row">'
+                +'<div class="back-company-logo" style="background:var(--mp-deep);font-family:var(--font-mono);font-size:9px;font-weight:500;color:'+logoColor(c.ticker)[1]+';letter-spacing:.02em;">'+c.ticker+'</div>'
+                +'<div><div class="back-company-name">'+c.ticker+'</div><div class="back-company-sector">'+(c.sector_name||'\u2014')+'</div></div>'
+              +'</div>'
+              +'<div class="back-divider"></div>'
+              +'<div><div class="back-fact-label">Narrative</div><div class="back-fact">"\u200A'+esc(c.story_claim||c.primary_driver||'Under analysis')+'\u200A"</div></div>'
+              +'<div class="back-stats">'
+                +'<div class="back-stat"><div class="back-stat-label">Price</div><div class="back-stat-val" style="color:var(--mp-text-primary);">$'+fmtPrice(c.price)+'</div></div>'
+                +'<div class="back-stat"><div class="back-stat-label">P/E ratio</div><div class="back-stat-val" style="color:'+c.bias+';">'+(c.pe_ratio!=null?c.pe_ratio.toFixed(1)+'x':'\u2014')+'</div></div>'
+                +'<div class="back-stat"><div class="back-stat-label">Health</div><div class="back-stat-val" style="color:var(--mp-text-secondary);">'+energy+'</div></div>'
+                +'<div class="back-stat"><div class="back-stat-label">Trust</div><div class="back-stat-val" style="color:var(--mp-text-secondary);">'+trust+'</div></div>'
+              +'</div>'
+              +'<div class="back-footer"><span class="back-footer-label">State</span><span class="back-footer-val" style="color:'+c.bias+';">'+(c.narrative_state||'\u2014')+'</span></div>'
+            +'</div>'
+            +'<div class="flip-back-hint">tap to flip back \u21BA</div>'
+          +'</div>'
+        +'</div>'
+      +'</div>'
+    +'</div>'
+  +'</div>';
+}
+// Attach foil + tilt interactions to a container's cards
+function attachCardInteractions(container){
+  container.querySelectorAll('.card-scene').forEach(function(scene,idx){
     scene.addEventListener('mousemove',function(e){
       var rect=scene.getBoundingClientRect();
       var x=((e.clientX-rect.left)/rect.width)*100;
@@ -4212,21 +4247,46 @@ function renderTradingCards(){
         el.style.setProperty('--mx',x+'%');
         el.style.setProperty('--my',y+'%');
       });
-      var rotX=((y-50)/50)*-6;
-      var rotY=((x-50)/50)*6;
+      var rotX=((y-50)/50)*-5;
+      var rotY=((x-50)/50)*5;
       var isFlipped=scene.classList.contains('flipped');
       scene.querySelector('.card-flipper').style.transform=
         (isFlipped?'rotateY(180deg) ':'')+'rotateX('+rotX+'deg) rotateY('+(isFlipped?180+rotY:rotY)+'deg)';
-      if(!isFlipped){
-        scene.querySelector('.card-front').style.boxShadow = '0 20px 60px rgba(0,0,0,0.7), ' + glows[idx % glows.length];
-      }
     });
     scene.addEventListener('mouseleave',function(){
       var isFlipped=scene.classList.contains('flipped');
       scene.querySelector('.card-flipper').style.transform=isFlipped?'rotateY(180deg)':'rotateY(0deg)';
-      scene.querySelector('.card-front').style.boxShadow = '';
     });
   });
+}
+function renderTradingCards(){
+  var deck=document.getElementById('trading-deck');
+  if(!deck)return;
+  var cards=[];
+  if(DATA.length>0){
+    var breaking=DATA.filter(function(r){return r.narrative_state==='Breaking'||r.prism_verdict==='Narrative Trap';});
+    var surging=DATA.filter(function(r){return r.narrative_state==='Surging'||r.prism_verdict==='Structurally Supported';});
+    var fragile=DATA.filter(function(r){return r.narrative_state==='Fragile';});
+    if(breaking[0])cards.push(Object.assign({},breaking[0],TRADING_CARD_COLORS[0]));
+    if(surging[0])cards.push(Object.assign({},surging[0],TRADING_CARD_COLORS[1]));
+    if(fragile[0])cards.push(Object.assign({},fragile[0],TRADING_CARD_COLORS[2]));
+    if(breaking[1])cards.push(Object.assign({},breaking[1],TRADING_CARD_COLORS[3]));
+    if(surging[1])cards.push(Object.assign({},surging[1],TRADING_CARD_COLORS[4]));
+    var used=new Set(cards.map(function(c){return c.ticker;}));
+    DATA.forEach(function(r){if(cards.length<5&&!used.has(r.ticker)){cards.push(Object.assign({},r,TRADING_CARD_COLORS[cards.length%5]));used.add(r.ticker);}});
+  } else {
+    cards=[
+      {ticker:'NVDA',price:118.42,price_change_pct:-2.14,narrative_state:'Breaking',story_claim:'Narrative breaking while retail still buying strength',sector_name:'Semiconductors',pe_ratio:62,accent:'linear-gradient(90deg,#F87171,#818CF8)',bias:'#F87171',phase:'Decay Phase',biasText:'Fade Rallies'},
+      {ticker:'AAPL',price:212.80,price_change_pct:1.87,narrative_state:'Surging',story_claim:'Institutional accumulation confirming breakout above key resistance',sector_name:'Consumer Technology',pe_ratio:29,accent:'linear-gradient(90deg,#3B82F6,#34D399)',bias:'#34D399',phase:'Breakout Forming',biasText:'Ride the Trend'},
+      {ticker:'TSLA',price:247.15,price_change_pct:0.42,narrative_state:'Fragile',story_claim:'Coiling under resistance with elevated IV \u2014 a loaded spring',sector_name:'Electric Vehicles',pe_ratio:68,accent:'linear-gradient(90deg,#818CF8,#60A5FA)',bias:'#A5B4FC',phase:'Coil Compress',biasText:'Wait for Break'},
+    ];
+  }
+  cards=cards.slice(0,4);
+  var dateStr=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  deck.innerHTML=cards.map(function(c,i){
+    return buildCardFrontHTML(c,i,dateStr,'bf',false);
+  }).join('');
+  attachCardInteractions(deck);
 }
 // ══════════════════════════════════════════════════════════════════════════════
 // TRADING CARDS GALLERY
@@ -4235,15 +4295,6 @@ var TCG_RENDERED=false;
 function renderCardsGallery(){
   var grid=document.getElementById('tcg-grid');
   if(!grid)return;
-  // Build all cards from DATA (full set, not limited to 4)
-  var RARITY_MAP={
-    'Breaking':{label:'Rare',color:'#F87171',border:'rgba(248,113,113,0.3)'},
-    'Narrative Trap':{label:'Rare',color:'#F87171',border:'rgba(248,113,113,0.3)'},
-    'Surging':{label:'Epic',color:'#34D399',border:'rgba(52,211,153,0.3)'},
-    'Structurally Supported':{label:'Epic',color:'#34D399',border:'rgba(52,211,153,0.3)'},
-    'Fragile':{label:'Uncommon',color:'#A5B4FC',border:'rgba(129,140,248,0.3)'},
-    'Stable':{label:'Common',color:'#60A5FA',border:'rgba(96,165,250,0.3)'}
-  };
   var cards=[];
   if(DATA.length>0){
     DATA.forEach(function(r,i){
@@ -4258,108 +4309,11 @@ function renderCardsGallery(){
   if(countEl)countEl.textContent=cards.length+' cards';
   var dateStr=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
   grid.innerHTML=cards.map(function(c,i){
-    var delta=fmtDelta(c.price_change_pct);
-    var isBull=c.price_change_pct>0;
-    var chartColor=isBull?'#34D399':'#F87171';
-    var pts=[];for(var p=0;p<10;p++){pts.push(Math.round(10+Math.random()*35));}
-    if(isBull)pts.sort(function(a,b){return b-a;});else pts.sort(function(a,b){return a-b;});
-    var polyPts=pts.map(function(y,x){return Math.round(x*22)+','+y;}).join(' ');
-    var conf=Math.round(50+Math.random()*40);
-    var window=isBull?'1\u20133d':conf>70?'3\u20137d':'5\u201310d';
-    var energy=c.narrative_health||Math.round(40+Math.random()*50);
-    var trust=typeof computeTrust==='function'?computeTrust(c):50;
-    var rKey=c.prism_verdict||c.narrative_state||'Stable';
-    var rarity=RARITY_MAP[rKey]||RARITY_MAP['Stable'];
-    var companyName=c.sector_name||'\u2014';
-    var signalPrimary=esc(c.story_claim||c.primary_driver||'Signal under analysis');
-    var signalSecondary=c.narrative_state==='Breaking'||c.prism_verdict==='Narrative Trap'?'Elevated risk \u2014 monitor for reversal':'Momentum aligns with narrative trajectory';
     return '<div class="tcg-card-wrap" id="tcg-wrap-'+i+'">'
-      +'<div class="card-scene" onclick="this.classList.toggle(\'flipped\')">'
-      +'<div class="card-flipper">'
-        +'<div class="card-front" style="position:relative;">'
-          +'<div class="foil-layer"></div><div class="foil-scan"></div>'
-          +'<div class="tc">'
-            +'<div class="tc-accent" style="background:'+c.accent+';"></div>'
-            +'<div class="tc-body">'
-              +'<div class="tc-header"><div class="tc-header-left">'
-                +'<div class="tc-logo-wrap" style="background:'+logoColor(c.ticker)[0]+';color:'+logoColor(c.ticker)[1]+';border-radius:7px;font-family:var(--font-mono);font-size:10px;font-weight:500;letter-spacing:.02em;">'+c.ticker+'</div>'
-                +'<div class="tc-id"><div class="tc-ticker">'+c.ticker+'</div><div class="tc-name">'+esc(companyName)+'</div></div>'
-              +'</div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;"><span class="tc-rarity" style="color:'+rarity.color+';border-color:'+rarity.border+';background:'+hexToRgba(rarity.color,0.1)+';">'+rarity.label+'</span><span class="tc-date-badge">'+dateStr+'</span></div></div>'
-              +'<div class="tc-price-row">'
-                +'<span class="tc-price">$'+fmtPrice(c.price)+'</span>'
-                +'<span class="tc-change" style="color:'+chartColor+';">'+(isBull?'\u25B2':'\u25BC')+' '+Math.abs(c.price_change_pct||0).toFixed(2)+'%</span>'
-              +'</div>'
-              +'<div class="tc-bias-block" style="border-color:'+hexToRgba(c.bias,0.22)+';background:'+hexToRgba(c.bias,0.1)+';">'
-                +'<svg class="bias-graphic" viewBox="0 0 204 72" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="gf'+i+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+c.bias+'" stop-opacity="0.4"/><stop offset="100%" stop-color="'+c.bias+'" stop-opacity="0"/></linearGradient></defs><polygon points="'+polyPts.split(' ').map(function(p,x){var parts=p.split(',');return Math.round(x*20.4)+','+parts[1];}).join(' ')+' 204,72 0,72" fill="url(#gf'+i+')"/><polyline points="'+polyPts.split(' ').map(function(p,x){var parts=p.split(',');return Math.round(x*20.4)+','+parts[1];}).join(' ')+'" fill="none" stroke="'+c.bias+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
-                +'<div class="tc-bias-text-wrap"><div class="tc-bias-eyebrow">Signal bias</div><div class="tc-bias-text" style="color:'+c.bias+';">'+c.biasText.toUpperCase()+'</div></div>'
-              +'</div>'
-              +'<div class="tc-narrative">'+signalPrimary+'</div>'
-              +'<div class="tc-meta"><div class="tc-conf-wrap"><span class="tc-conf-lbl">Conf</span><div class="tc-conf-bar"><div class="tc-conf-fill" style="width:'+conf+'%;background:'+c.bias+';"></div></div><span class="tc-conf-val" style="color:'+c.bias+';">'+conf+'%</span></div><span class="tc-window-pill">'+window+'</span></div>'
-              +'<div class="tc-signal-block">'
-                +'<div class="tc-signal-line"><div class="tc-pip" style="background:'+c.bias+';"></div><span class="tc-signal-text">'+signalPrimary+'</span></div>'
-                +'<div class="tc-signal-line"><div class="tc-pip" style="background:var(--mp-text-tertiary);"></div><span class="tc-signal-text risk">'+signalSecondary+'</span></div>'
-              +'</div>'
-              +'<div class="tc-footer" style="border-color:'+hexToRgba(c.bias,0.18)+';"><span class="tc-phase" style="color:'+c.bias+';">'+c.phase+'</span><div class="tc-live-row"><div class="tc-pulse" style="background:'+c.bias+';"></div><span class="tc-live-lbl">Live</span></div></div>'
-            +'</div>'
-          +'</div>'
-        +'</div>'
-        +'<div class="card-back" style="position:absolute;">'
-          +'<div style="position:relative;"><div class="foil-layer"></div><div class="foil-scan"></div>'
-            +'<div class="card-back-inner">'
-              +'<div class="back-graphic" style="background:var(--mp-deep);display:flex;align-items:center;justify-content:center;"><div style="font-family:var(--font-mono);font-size:32px;font-weight:500;color:'+c.bias+';opacity:0.15;letter-spacing:6px;">'+c.ticker+'</div></div>'
-              +'<div class="back-content">'
-                +'<div class="back-company-row">'
-                  +'<div class="back-company-logo" style="background:var(--mp-deep);font-family:var(--font-mono);font-size:9px;font-weight:500;color:'+logoColor(c.ticker)[1]+';letter-spacing:.02em;">'+c.ticker+'</div>'
-                  +'<div><div class="back-company-name">'+c.ticker+'</div><div class="back-company-sector">'+(c.sector_name||'\u2014')+'</div></div>'
-                +'</div>'
-                +'<div class="back-divider"></div>'
-                +'<div><div class="back-fact-label">Narrative</div><div class="back-fact">"\u200A'+esc(c.story_claim||c.primary_driver||'Under analysis')+'\u200A"</div></div>'
-                +'<div class="back-stats">'
-                  +'<div class="back-stat"><div class="back-stat-label">Price</div><div class="back-stat-val" style="color:var(--mp-text-primary);">$'+fmtPrice(c.price)+'</div></div>'
-                  +'<div class="back-stat"><div class="back-stat-label">P/E ratio</div><div class="back-stat-val" style="color:'+c.bias+';">'+(c.pe_ratio!=null?c.pe_ratio.toFixed(1)+'x':'\u2014')+'</div></div>'
-                  +'<div class="back-stat"><div class="back-stat-label">Health</div><div class="back-stat-val" style="color:var(--mp-text-secondary);">'+energy+'</div></div>'
-                  +'<div class="back-stat"><div class="back-stat-label">Trust</div><div class="back-stat-val" style="color:var(--mp-text-secondary);">'+trust+'</div></div>'
-                +'</div>'
-                +'<div class="back-footer"><span class="back-footer-label">State</span><span class="back-footer-val" style="color:'+c.bias+';">'+(c.narrative_state||'\u2014')+'</span></div>'
-              +'</div>'
-              +'<div class="flip-back-hint">tap to flip back \u21BA</div>'
-            +'</div>'
-          +'</div>'
-        +'</div>'
-      +'</div>'
-      +'</div>'
-      +'<div class="tcg-actions">'
-        +'<button class="tcg-action-btn" onclick="event.stopPropagation();tcgSaveImage('+i+')">'
-          +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 10v6m0 0l-3-3m3 3l3-3"/><path d="M3 17v1a2 2 0 002 2h14a2 2 0 002-2v-1"/></svg>'
-          +'Save Image'
-        +'</button>'
-        +'<button class="tcg-action-btn" onclick="event.stopPropagation();tcgShareTwitter('+i+')">'
-          +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l11.733 16h4.267l-11.733 -16h-4.267z"/><path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772"/></svg>'
-          +'Share X'
-        +'</button>'
-        +'<button class="tcg-action-btn primary" onclick="event.stopPropagation();tcgCopyLink('+i+')">'
-          +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101"/><path d="M10.172 13.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>'
-          +'Copy Link'
-        +'</button>'
-      +'</div>'
+      +buildCardFrontHTML(c,i,dateStr,'gf',true)
     +'</div>';
   }).join('');
-  // Wire up foil interactions on gallery cards
-  grid.querySelectorAll('.card-scene').forEach(function(scene,idx){
-    scene.addEventListener('mousemove',function(e){
-      var rect=scene.getBoundingClientRect();
-      var x=((e.clientX-rect.left)/rect.width)*100;
-      var y=((e.clientY-rect.top)/rect.height)*100;
-      scene.querySelectorAll('.foil-layer').forEach(function(el){
-        el.style.setProperty('--mx',x+'%');
-        el.style.setProperty('--my',y+'%');
-      });
-    });
-    scene.addEventListener('mouseleave',function(){
-      var isFlipped=scene.classList.contains('flipped');
-      scene.querySelector('.card-flipper').style.transform=isFlipped?'rotateY(180deg)':'rotateY(0deg)';
-    });
-  });
+  attachCardInteractions(grid);
   TCG_RENDERED=true;
 }
 
