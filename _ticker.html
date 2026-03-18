@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ticker — Market Prism</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -150,9 +150,9 @@
   }
 
   .page-wrap {
-    max-width: 1000px;
+    max-width: 100%;
     margin: 0 auto;
-    padding: 24px 44px 80px;
+    padding: 24px 40px 80px;
     overflow-x: hidden;
   }
 
@@ -175,30 +175,7 @@
   .nav-sep { color: var(--mp-border-mid); }
   .nav-ticker { color: var(--mp-text-secondary); font-family: var(--mono); font-size: 12px; }
 
-  /* ── Hero ── */
-  .ticker-hero {
-    padding: 24px 0 28px;
-    border-bottom: 1px solid var(--mp-border);
-    margin-bottom: 32px;
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 24px;
-  }
-  .hero-left { flex: 1; min-width: 0; }
-  .hero-ticker-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 10px;
-    flex-wrap: wrap;
-  }
-  .hero-ticker {
-    font-size: 32px;
-    font-weight: 300;
-    font-family: var(--font-body);
-    letter-spacing: -0.03em;
-  }
+  /* ── Hero (overridden below) ── */
   .hero-state-badge {
     font-size: 10px;
     font-weight: 400;
@@ -229,21 +206,7 @@
   .verdict-supported  { background: rgba(255,255,255,0.06); color: var(--mp-text-primary); border-color: rgba(255,255,255,0.10); }
   .verdict-monitoring { background: rgba(255,255,255,0.03); color: var(--text-secondary); border-color: var(--border); }
 
-  .hero-claim {
-    font-size: 14px;
-    color: var(--text-secondary);
-    line-height: 1.7;
-    max-width: 520px;
-    font-weight: 300;
-  }
-  .hero-right { text-align: right; flex-shrink: 0; }
-  .hero-price {
-    font-size: 28px;
-    font-weight: 400;
-    font-family: var(--mono);
-    letter-spacing: -0.03em;
-  }
-  .hero-delta { font-size: 13px; font-family: var(--mono); margin-top: 4px; }
+  /* hero-claim, hero-right, hero-price, hero-delta overridden below */
   .delta-pos { color: var(--mp-text-secondary); }
   .delta-neg { color: var(--mp-text-secondary); }
   .delta-flat { color: var(--text-tertiary); }
@@ -1181,39 +1144,7 @@
   .inline-err { padding: 14px 18px; font-size: 13px; color: var(--accent-breaking); }
   .no-data    { padding: 16px 18px; font-size: 13px; color: var(--text-tertiary); }
 
-  /* ── Diagnosis Strip ── */
-  .diag-strip {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1px;
-    background: var(--mp-border);
-    border: 1px solid var(--mp-border);
-    border-radius: 16px;
-    overflow: hidden;
-    margin-bottom: 28px;
-  }
-  @media (max-width: 640px) { .diag-strip { grid-template-columns: repeat(2,1fr); } }
-  .diag-cell {
-    background: var(--mp-surface);
-    padding: 16px 18px;
-  }
-  .diag-label {
-    font-size: 9px;
-    text-transform: uppercase;
-    letter-spacing: .10em;
-    color: var(--text-tertiary);
-    margin-bottom: 6px;
-    font-family: var(--mono);
-  }
-  .diag-val {
-    font-size: 18px;
-    font-weight: 400;
-    font-family: var(--mono);
-    line-height: 1.1;
-    margin-bottom: 3px;
-    color: var(--mp-text-primary);
-  }
-  .diag-sub { font-size: 10px; color: var(--text-tertiary); }
+  /* ── Diagnosis Strip (overridden below) ── */
 
   /* ── Action bar (Export / Image) ── */
   .action-bar {
@@ -1407,6 +1338,245 @@
     .heatmap-head { display: none; }
     .heatmap-row  { grid-template-columns: 1fr; gap: 4px; }
   }
+  /* ── TAB BAR ── */
+  .tk-tab-bar {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    border-bottom: 1px solid var(--mp-border);
+    margin-bottom: 28px;
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: var(--mp-obsidian);
+    padding: 0;
+  }
+  .tk-tab {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--mp-text-tertiary);
+    padding: 14px 24px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all .2s;
+    white-space: nowrap;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+  }
+  .tk-tab:hover { color: var(--mp-text-secondary); }
+  .tk-tab.active {
+    color: #fff;
+    border-bottom-color: var(--mp-blue);
+  }
+  .tk-tab-panel { display: none; }
+  .tk-tab-panel.active { display: block; }
+
+  /* ── Full-width split layout ── */
+  .tk-main-split {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 28px;
+    align-items: start;
+  }
+  @media (max-width: 1100px) {
+    .tk-main-split { grid-template-columns: 1fr; }
+  }
+  .tk-content-col { min-width: 0; }
+
+  /* ── Stories Feed (right column) ── */
+  .tk-feed {
+    position: sticky;
+    top: 60px;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,.1) transparent;
+  }
+  .tk-feed-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 0 12px;
+    border-bottom: 1px solid var(--mp-border);
+    margin-bottom: 12px;
+  }
+  .tk-feed-ticker {
+    font-family: var(--font-mono);
+    font-size: 18px;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: .02em;
+  }
+  .tk-feed-title {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--mp-text-tertiary);
+  }
+  .tk-feed-list { display: flex; flex-direction: column; }
+  .tk-feed-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--mp-border);
+    transition: background .15s;
+    cursor: default;
+  }
+  .tk-feed-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 5px;
+  }
+  .tk-feed-dot.bull { background: var(--mp-teal); }
+  .tk-feed-dot.bear { background: var(--red); }
+  .tk-feed-dot.neutral { background: var(--mp-text-tertiary); }
+  .tk-feed-body { flex: 1; min-width: 0; }
+  .tk-feed-text {
+    font-size: 12px;
+    color: var(--mp-text-primary);
+    line-height: 1.5;
+    margin-bottom: 3px;
+  }
+  .tk-feed-meta {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--mp-text-tertiary);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .tk-feed-verdict {
+    font-size: 9px;
+    font-family: var(--font-mono);
+    padding: 1px 6px;
+    border-radius: 3px;
+    border: 1px solid;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  .tk-feed-empty {
+    padding: 24px 0;
+    text-align: center;
+    font-size: 12px;
+    color: var(--mp-text-tertiary);
+  }
+
+  /* ── Redesigned Hero ── */
+  .ticker-hero {
+    padding: 28px 0 24px;
+    border-bottom: 1px solid var(--mp-border);
+    margin-bottom: 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 32px;
+  }
+  .hero-left { flex: 1; min-width: 0; }
+  .hero-ticker-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .hero-ticker {
+    font-size: 36px;
+    font-weight: 300;
+    font-family: var(--font-body);
+    letter-spacing: -0.03em;
+  }
+  .hero-claim {
+    font-size: 18px;
+    color: var(--mp-text-primary);
+    line-height: 1.55;
+    max-width: 700px;
+    font-weight: 400;
+    margin-bottom: 8px;
+  }
+  .hero-bias-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--mp-text-tertiary);
+    margin-bottom: 4px;
+  }
+  .hero-bias {
+    font-family: 'Anton', var(--font-body), sans-serif;
+    font-size: 32px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    line-height: 1.1;
+    margin-bottom: 6px;
+  }
+  .hero-right { text-align: right; flex-shrink: 0; }
+  .hero-price {
+    font-size: 32px;
+    font-weight: 400;
+    font-family: var(--mono);
+    letter-spacing: -0.03em;
+  }
+  .hero-delta { font-size: 14px; font-family: var(--mono); margin-top: 4px; }
+
+  /* ── Diag strip fix ── */
+  .diag-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--mp-border);
+    border: 1px solid var(--mp-border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 24px;
+    margin-top: 24px;
+  }
+  @media (max-width: 900px) { .diag-strip { grid-template-columns: repeat(4, 1fr); } }
+  @media (max-width: 640px) { .diag-strip { grid-template-columns: repeat(2,1fr); } }
+  .diag-cell {
+    background: var(--mp-surface);
+    padding: 14px 16px;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .diag-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: .10em;
+    color: var(--text-tertiary);
+    margin-bottom: 5px;
+    font-family: var(--mono);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .diag-val {
+    font-size: 17px;
+    font-weight: 400;
+    font-family: var(--mono);
+    line-height: 1.1;
+    margin-bottom: 3px;
+    color: var(--mp-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .diag-sub {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   /* ── LIGHT THEME ── */
   [data-theme="light"] {
     --mp-obsidian: #F8F9FC;
@@ -1509,16 +1679,24 @@
   <div class="ticker-hero" id="hero">
     <div class="hero-left">
       <div class="hero-ticker-row">
-        <div class="skel" style="width:90px;height:30px;"></div>
+        <div class="skel" style="width:100px;height:34px;"></div>
         <div class="skel" style="width:70px;height:22px;border-radius:5px;"></div>
         <div class="skel" style="width:110px;height:22px;border-radius:99px;"></div>
       </div>
-      <div class="skel" style="width:340px;height:14px;margin-top:8px;"></div>
+      <div class="skel" style="width:500px;height:18px;margin-top:8px;"></div>
     </div>
     <div class="hero-right">
-      <div class="skel" style="width:90px;height:26px;margin-bottom:5px;"></div>
+      <div class="skel" style="width:100px;height:30px;margin-bottom:5px;"></div>
       <div class="skel" style="width:60px;height:13px;"></div>
     </div>
+  </div>
+
+  <!-- Tab Bar -->
+  <div class="tk-tab-bar" id="tk-tab-bar">
+    <button class="tk-tab active" data-tab="overview">Overview</button>
+    <button class="tk-tab" data-tab="narratives">Live Narratives</button>
+    <button class="tk-tab" data-tab="history">History</button>
+    <button class="tk-tab" data-tab="chart">Chart</button>
   </div>
 
   <!-- Action bar -->
@@ -1535,242 +1713,271 @@
   </div>
   <div class="capture-overlay" id="capture-overlay"><div class="capture-spinner"></div></div>
 
-  <!-- Diagnosis Strip -->
-  <div id="diag-strip" class="diag-strip">
-    <div class="diag-cell"><div class="diag-label">Phase</div><div class="diag-val"><div class="skel" style="width:70px;height:20px;border-radius:99px;"></div></div></div>
-    <div class="diag-cell"><div class="diag-label">Fragility</div><div class="diag-val"><div class="skel" style="width:50px;height:17px;"></div></div></div>
-    <div class="diag-cell"><div class="diag-label">Energy</div><div class="diag-val"><div class="skel" style="width:50px;height:17px;"></div></div></div>
-    <div class="diag-cell"><div class="diag-label">Exhaustion</div><div class="diag-val"><div class="skel" style="width:40px;height:17px;"></div></div></div>
-    <div class="diag-cell"><div class="diag-label">Net Pressure</div><div class="diag-val"><div class="skel" style="width:40px;height:17px;"></div></div></div>
-    <div class="diag-cell"><div class="diag-label">Health</div><div class="diag-val"><div class="skel" style="width:50px;height:17px;"></div></div></div>
-    <div class="diag-cell"><div class="diag-label">Direction</div><div class="diag-val"><div class="skel" style="width:60px;height:17px;"></div></div></div>
-    <div class="diag-cell"><div class="diag-label">Fair Value Gap</div><div class="diag-val"><div class="skel" style="width:50px;height:17px;"></div></div></div>
-  </div>
+  <!-- ═══ TAB: OVERVIEW ═══ -->
+  <div class="tk-tab-panel active" id="tab-overview">
+    <div class="tk-main-split">
+      <div class="tk-content-col">
 
-  <!-- Primary Claim + Warranted vs Hype -->
-  <div class="pulse-two">
-    <div class="section" style="margin-bottom:0;">
-      <div class="section-label">Primary Claim</div>
-      <div class="section-body" style="padding:14px 16px;" id="primary-claim-body">
-        <div class="skel" style="height:14px;width:90%;margin-bottom:8px;"></div>
-        <div class="skel" style="height:14px;width:70%;margin-bottom:12px;"></div>
-        <div class="skel" style="height:60px;border-radius:7px;"></div>
-      </div>
-    </div>
-    <div class="section" style="margin-bottom:0;">
-      <div class="section-label">Warranted vs Hype</div>
-      <div class="section-body" style="padding:14px 16px;" id="warranted-body">
-        <div class="skel" style="height:44px;margin-bottom:14px;"></div>
-        <div class="skel" style="height:5px;margin-bottom:10px;border-radius:99px;"></div>
-        <div class="skel" style="height:5px;margin-bottom:10px;border-radius:99px;"></div>
-        <div class="skel" style="height:5px;border-radius:99px;"></div>
-      </div>
-    </div>
-  </div>
+        <!-- Diagnosis Strip -->
+        <div id="diag-strip" class="diag-strip">
+          <div class="diag-cell"><div class="diag-label">Phase</div><div class="diag-val"><div class="skel" style="width:70px;height:20px;border-radius:99px;"></div></div></div>
+          <div class="diag-cell"><div class="diag-label">Fragility</div><div class="diag-val"><div class="skel" style="width:50px;height:17px;"></div></div></div>
+          <div class="diag-cell"><div class="diag-label">Energy</div><div class="diag-val"><div class="skel" style="width:50px;height:17px;"></div></div></div>
+          <div class="diag-cell"><div class="diag-label">Exhaustion</div><div class="diag-val"><div class="skel" style="width:40px;height:17px;"></div></div></div>
+          <div class="diag-cell"><div class="diag-label">Net Pressure</div><div class="diag-val"><div class="skel" style="width:40px;height:17px;"></div></div></div>
+          <div class="diag-cell"><div class="diag-label">Health</div><div class="diag-val"><div class="skel" style="width:50px;height:17px;"></div></div></div>
+          <div class="diag-cell"><div class="diag-label">Direction</div><div class="diag-val"><div class="skel" style="width:60px;height:17px;"></div></div></div>
+          <div class="diag-cell"><div class="diag-label">Fair Value Gap</div><div class="diag-val"><div class="skel" style="width:50px;height:17px;"></div></div></div>
+        </div>
 
-  <!-- Narrative Heatmap -->
-  <div class="section">
-    <div class="section-label">Narrative Heatmap</div>
-    <div class="section-body" id="heatmap-body">
-      <div style="padding:14px;"><div class="skel" style="height:80px;border-radius:7px;"></div></div>
-    </div>
-  </div>
-
-  <!-- Trending Narratives accordion -->
-  <div class="narr-section">
-    <div class="section-label">
-      Trending Narratives
-      <span class="section-label-sub">Top stories being cited in the market</span>
-    </div>
-    <div class="section-body">
-      <div id="narr-list" class="narr-list">
-        <div class="narr-header" style="cursor:default;">
-          <div style="flex:1;">
-            <div class="skel" style="height:13px;width:80%;margin-bottom:8px;"></div>
-            <div class="skel" style="height:11px;width:40%;"></div>
+        <!-- Primary Claim + Warranted vs Hype -->
+        <div class="pulse-two">
+          <div class="section" style="margin-bottom:0;">
+            <div class="section-label">Primary Claim</div>
+            <div class="section-body" style="padding:14px 16px;" id="primary-claim-body">
+              <div class="skel" style="height:14px;width:90%;margin-bottom:8px;"></div>
+              <div class="skel" style="height:14px;width:70%;margin-bottom:12px;"></div>
+              <div class="skel" style="height:60px;border-radius:7px;"></div>
+            </div>
+          </div>
+          <div class="section" style="margin-bottom:0;">
+            <div class="section-label">Warranted vs Hype</div>
+            <div class="section-body" style="padding:14px 16px;" id="warranted-body">
+              <div class="skel" style="height:44px;margin-bottom:14px;"></div>
+              <div class="skel" style="height:5px;margin-bottom:10px;border-radius:99px;"></div>
+              <div class="skel" style="height:5px;margin-bottom:10px;border-radius:99px;"></div>
+              <div class="skel" style="height:5px;border-radius:99px;"></div>
+            </div>
           </div>
         </div>
-        <div class="narr-header" style="cursor:default;">
-          <div style="flex:1;">
-            <div class="skel" style="height:13px;width:70%;margin-bottom:8px;"></div>
-            <div class="skel" style="height:11px;width:35%;"></div>
+
+        <!-- Narrative Heatmap -->
+        <div class="section">
+          <div class="section-label">Narrative Heatmap</div>
+          <div class="section-body" id="heatmap-body">
+            <div style="padding:14px;"><div class="skel" style="height:80px;border-radius:7px;"></div></div>
           </div>
         </div>
-        <div class="narr-header" style="cursor:default;">
-          <div style="flex:1;">
-            <div class="skel" style="height:13px;width:75%;margin-bottom:8px;"></div>
-            <div class="skel" style="height:11px;width:30%;"></div>
+
+        <!-- Forensic Analysis -->
+        <div class="section">
+          <div class="section-label">Forensic Analysis</div>
+          <div class="section-body">
+            <div class="forensic-pad">
+              <div id="forensic-text">
+                <div class="skel" style="height:13px;margin-bottom:7px;"></div>
+                <div class="skel" style="height:13px;width:92%;margin-bottom:7px;"></div>
+                <div class="skel" style="height:13px;width:78%;"></div>
+              </div>
+            </div>
+            <div class="metrics-strip" id="metrics-strip">
+              <div class="metric-cell"><div class="skel" style="height:10px;width:50%;margin-bottom:5px;"></div><div class="skel" style="height:16px;width:70%;"></div></div>
+              <div class="metric-cell"><div class="skel" style="height:10px;width:50%;margin-bottom:5px;"></div><div class="skel" style="height:16px;width:70%;"></div></div>
+              <div class="metric-cell"><div class="skel" style="height:10px;width:50%;margin-bottom:5px;"></div><div class="skel" style="height:16px;width:70%;"></div></div>
+              <div class="metric-cell"><div class="skel" style="height:10px;width:50%;margin-bottom:5px;"></div><div class="skel" style="height:16px;width:70%;"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sector Intelligence -->
+        <div class="section">
+          <div class="section-label">
+            Sector Intelligence
+            <span class="section-label-sub" id="sector-name-sub"></span>
+          </div>
+          <div class="section-body">
+            <div id="sector-body">
+              <div class="si-header">
+                <div class="skel" style="height:14px;width:200px;"></div>
+                <div class="skel" style="height:20px;width:80px;border-radius:99px;"></div>
+              </div>
+              <div class="si-grid">
+                <div class="si-block"><div class="skel" style="height:10px;width:60%;margin-bottom:6px;"></div><div class="skel" style="height:12px;"></div><div class="skel" style="height:12px;width:85%;margin-top:4px;"></div></div>
+                <div class="si-block"><div class="skel" style="height:10px;width:60%;margin-bottom:6px;"></div><div class="skel" style="height:12px;"></div><div class="skel" style="height:12px;width:85%;margin-top:4px;"></div></div>
+                <div class="si-block"><div class="skel" style="height:10px;width:60%;margin-bottom:6px;"></div><div class="skel" style="height:12px;"></div><div class="skel" style="height:12px;width:85%;margin-top:4px;"></div></div>
+                <div class="si-block"><div class="skel" style="height:10px;width:60%;margin-bottom:6px;"></div><div class="skel" style="height:12px;"></div><div class="skel" style="height:12px;width:85%;margin-top:4px;"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /tk-content-col -->
+
+      <!-- Stories Feed (right column) -->
+      <div class="tk-feed" id="tk-feed">
+        <div class="tk-feed-header">
+          <span class="tk-feed-ticker" id="tk-feed-ticker">&mdash;</span>
+          <span class="tk-feed-title">Story Feed</span>
+        </div>
+        <div class="tk-feed-list" id="tk-feed-list">
+          <div class="tk-feed-empty">Loading stories...</div>
+        </div>
+      </div>
+
+    </div><!-- /tk-main-split -->
+  </div><!-- /tab-overview -->
+
+  <!-- ═══ TAB: LIVE NARRATIVES ═══ -->
+  <div class="tk-tab-panel" id="tab-narratives">
+    <!-- Trending Narratives accordion -->
+    <div class="narr-section">
+      <div class="section-label">
+        Trending Narratives
+        <span class="section-label-sub">Top stories being cited in the market</span>
+      </div>
+      <div class="section-body">
+        <div id="narr-list" class="narr-list">
+          <div class="narr-header" style="cursor:default;">
+            <div style="flex:1;">
+              <div class="skel" style="height:13px;width:80%;margin-bottom:8px;"></div>
+              <div class="skel" style="height:11px;width:40%;"></div>
+            </div>
+          </div>
+          <div class="narr-header" style="cursor:default;">
+            <div style="flex:1;">
+              <div class="skel" style="height:13px;width:70%;margin-bottom:8px;"></div>
+              <div class="skel" style="height:11px;width:35%;"></div>
+            </div>
+          </div>
+          <div class="narr-header" style="cursor:default;">
+            <div style="flex:1;">
+              <div class="skel" style="height:13px;width:75%;margin-bottom:8px;"></div>
+              <div class="skel" style="height:11px;width:30%;"></div>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- 1. Price Chart -->
-  <div class="section">
-    <div class="section-label">Price &amp; Narratives</div>
-    <div class="section-body">
-      <div class="chart-controls">
-        <div class="chart-timeframes">
-          <button class="tf-btn" data-days="30">30D</button>
-          <button class="tf-btn active" data-days="90">90D</button>
-          <button class="tf-btn" data-days="180">6M</button>
-          <button class="tf-btn" data-days="365">1Y</button>
-          <button class="tf-btn" data-days="0">All</button>
-        </div>
-        <div class="chart-sort">
-          <span>Sort stories</span>
-          <select class="sort-select" id="story-sort">
-            <option value="date-desc">Newest first</option>
-            <option value="date-asc">Oldest first</option>
-            <option value="bear">Bearish only</option>
-            <option value="bull">Bullish only</option>
-          </select>
+    <!-- Story Lifecycle -->
+    <div class="section">
+      <div class="section-label">Story Lifecycle</div>
+      <div class="section-body">
+        <div class="lc-pad" id="lc-body">
+          <div class="skel" style="height:14px;width:40%;margin-bottom:14px;"></div>
+          <div class="skel" style="height:7px;margin-bottom:8px;"></div>
+          <div class="skel" style="height:10px;width:80%;"></div>
         </div>
       </div>
-      <div class="chart-outer" id="chart-outer">
-        <canvas id="price-canvas"></canvas>
-        <div class="chart-tip" id="chart-tip"></div>
-        <div class="story-popup" id="story-popup">
-          <button class="popup-close" id="popup-close">&#10005;</button>
-          <div class="popup-date" id="popup-date"></div>
-          <div class="popup-headline" id="popup-headline"></div>
-          <div class="popup-body" id="popup-body"></div>
-          <div id="popup-vms"></div>
+    </div>
+
+    <!-- Contagion Map -->
+    <div class="section">
+      <div class="section-label">Contagion Map</div>
+      <div class="section-body">
+        <div class="ct-pad" id="ct-body">
+          <div class="skel" style="height:13px;width:55%;margin-bottom:12px;"></div>
+          <div class="skel" style="height:50px;"></div>
         </div>
       </div>
-      <div class="chart-bottom-bar">
-        <div class="chart-legend">
-          <div class="legend-item"><div class="leg-line" style="background:var(--text-primary);"></div> Price</div>
-          <div class="legend-item"><div class="leg-dash"></div> Fair Value</div>
-          <div class="legend-item"><div class="leg-dot" style="background:var(--accent-surging);"></div> Bullish</div>
-          <div class="legend-item"><div class="leg-dot" style="background:var(--accent-breaking);"></div> Bearish</div>
-          <div class="legend-item"><div class="leg-line" style="background:var(--accent-stable);opacity:0.7;border-top:2px dashed var(--accent-stable);height:0;width:14px;"></div> Narrative energy</div>
-        </div>
-      </div>
-      <div class="bear-stories-wrap" id="bear-stories-wrap" style="display:none;">
-        <div class="bear-stories-header" id="bear-stories-header">
-          <div class="bear-stories-title">
-            Bear Stories
-            <span class="bear-count-badge" id="bear-count">0</span>
+    </div>
+
+    <!-- Prerequisite Check -->
+    <div class="section">
+      <div class="section-label">Prerequisite Check</div>
+      <div class="section-body">
+        <div id="pr-body">
+          <div class="pr-pad">
+            <div class="skel" style="height:13px;width:50%;margin-bottom:12px;"></div>
+            <div class="skel" style="height:13px;margin-bottom:8px;"></div>
+            <div class="skel" style="height:13px;width:85%;"></div>
           </div>
-          <span class="bear-toggle-icon" id="bear-toggle-icon">&#9662;</span>
-        </div>
-        <div class="bear-stories-list" id="bear-stories-list"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 2. Forensic Analysis -->
-  <div class="section">
-    <div class="section-label">Forensic Analysis</div>
-    <div class="section-body">
-      <div class="forensic-pad">
-        <div id="forensic-text">
-          <div class="skel" style="height:13px;margin-bottom:7px;"></div>
-          <div class="skel" style="height:13px;width:92%;margin-bottom:7px;"></div>
-          <div class="skel" style="height:13px;width:78%;"></div>
-        </div>
-      </div>
-      <div class="metrics-strip" id="metrics-strip">
-        <div class="metric-cell"><div class="skel" style="height:10px;width:50%;margin-bottom:5px;"></div><div class="skel" style="height:16px;width:70%;"></div></div>
-        <div class="metric-cell"><div class="skel" style="height:10px;width:50%;margin-bottom:5px;"></div><div class="skel" style="height:16px;width:70%;"></div></div>
-        <div class="metric-cell"><div class="skel" style="height:10px;width:50%;margin-bottom:5px;"></div><div class="skel" style="height:16px;width:70%;"></div></div>
-        <div class="metric-cell"><div class="skel" style="height:10px;width:50%;margin-bottom:5px;"></div><div class="skel" style="height:16px;width:70%;"></div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 3. Sector Intelligence -->
-  <div class="section">
-    <div class="section-label">
-      Sector Intelligence
-      <span class="section-label-sub" id="sector-name-sub"></span>
-    </div>
-    <div class="section-body">
-      <div id="sector-body">
-        <div class="si-header">
-          <div class="skel" style="height:14px;width:200px;"></div>
-          <div class="skel" style="height:20px;width:80px;border-radius:99px;"></div>
-        </div>
-        <div class="si-grid">
-          <div class="si-block"><div class="skel" style="height:10px;width:60%;margin-bottom:6px;"></div><div class="skel" style="height:12px;"></div><div class="skel" style="height:12px;width:85%;margin-top:4px;"></div></div>
-          <div class="si-block"><div class="skel" style="height:10px;width:60%;margin-bottom:6px;"></div><div class="skel" style="height:12px;"></div><div class="skel" style="height:12px;width:85%;margin-top:4px;"></div></div>
-          <div class="si-block"><div class="skel" style="height:10px;width:60%;margin-bottom:6px;"></div><div class="skel" style="height:12px;"></div><div class="skel" style="height:12px;width:85%;margin-top:4px;"></div></div>
-          <div class="si-block"><div class="skel" style="height:10px;width:60%;margin-bottom:6px;"></div><div class="skel" style="height:12px;"></div><div class="skel" style="height:12px;width:85%;margin-top:4px;"></div></div>
         </div>
       </div>
     </div>
-  </div>
+  </div><!-- /tab-narratives -->
 
-  <!-- 4. Story Lifecycle -->
-  <div class="section">
-    <div class="section-label">Story Lifecycle</div>
-    <div class="section-body">
-      <div class="lc-pad" id="lc-body">
-        <div class="skel" style="height:14px;width:40%;margin-bottom:14px;"></div>
-        <div class="skel" style="height:7px;margin-bottom:8px;"></div>
-        <div class="skel" style="height:10px;width:80%;"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 5. Contagion Map -->
-  <div class="section">
-    <div class="section-label">Contagion Map</div>
-    <div class="section-body">
-      <div class="ct-pad" id="ct-body">
-        <div class="skel" style="height:13px;width:55%;margin-bottom:12px;"></div>
-        <div class="skel" style="height:50px;"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 6. Prerequisite Check -->
-  <div class="section">
-    <div class="section-label">Prerequisite Check</div>
-    <div class="section-body">
-      <div id="pr-body">
-        <div class="pr-pad">
-          <div class="skel" style="height:13px;width:50%;margin-bottom:12px;"></div>
-          <div class="skel" style="height:13px;margin-bottom:8px;"></div>
-          <div class="skel" style="height:13px;width:85%;"></div>
+  <!-- ═══ TAB: HISTORY ═══ -->
+  <div class="tk-tab-panel" id="tab-history">
+    <!-- What's Moving It -->
+    <div class="section">
+      <div class="section-label">What's Moving It</div>
+      <div class="section-body">
+        <div class="drivers-pad" id="drivers-body">
+          <div class="skel" style="height:13px;width:60%;margin-bottom:6px;"></div>
+          <div class="skel" style="height:13px;width:80%;margin-bottom:6px;"></div>
+          <div class="skel" style="height:13px;width:50%;"></div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- 7. What's Moving It -->
-  <div class="section">
-    <div class="section-label">What's Moving It</div>
-    <div class="section-body">
-      <div class="drivers-pad" id="drivers-body">
-        <div class="skel" style="height:13px;width:60%;margin-bottom:6px;"></div>
-        <div class="skel" style="height:13px;width:80%;margin-bottom:6px;"></div>
-        <div class="skel" style="height:13px;width:50%;"></div>
+    <!-- What Happened Last Time -->
+    <div class="section">
+      <div class="section-label">
+        What Happened Last Time
+        <span class="section-label-sub">Historical analogs</span>
       </div>
-    </div>
-  </div>
-
-  <!-- 8. What Happened Last Time -->
-  <div class="section">
-    <div class="section-label">
-      What Happened Last Time
-      <span class="section-label-sub">Historical analogs</span>
-    </div>
-    <div class="section-body">
-      <div id="par-body">
-        <div class="par-item">
-          <div class="skel" style="height:12px;width:40%;margin-bottom:8px;"></div>
-          <div class="skel" style="height:13px;width:85%;"></div>
-        </div>
-        <div class="par-item">
-          <div class="skel" style="height:12px;width:40%;margin-bottom:8px;"></div>
-          <div class="skel" style="height:13px;width:75%;"></div>
+      <div class="section-body">
+        <div id="par-body">
+          <div class="par-item">
+            <div class="skel" style="height:12px;width:40%;margin-bottom:8px;"></div>
+            <div class="skel" style="height:13px;width:85%;"></div>
+          </div>
+          <div class="par-item">
+            <div class="skel" style="height:12px;width:40%;margin-bottom:8px;"></div>
+            <div class="skel" style="height:13px;width:75%;"></div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
+  </div><!-- /tab-history -->
+
+  <!-- ═══ TAB: CHART ═══ -->
+  <div class="tk-tab-panel" id="tab-chart">
+    <div class="section">
+      <div class="section-label">Price &amp; Narratives</div>
+      <div class="section-body">
+        <div class="chart-controls">
+          <div class="chart-timeframes">
+            <button class="tf-btn" data-days="30">30D</button>
+            <button class="tf-btn active" data-days="90">90D</button>
+            <button class="tf-btn" data-days="180">6M</button>
+            <button class="tf-btn" data-days="365">1Y</button>
+            <button class="tf-btn" data-days="0">All</button>
+          </div>
+          <div class="chart-sort">
+            <span>Sort stories</span>
+            <select class="sort-select" id="story-sort">
+              <option value="date-desc">Newest first</option>
+              <option value="date-asc">Oldest first</option>
+              <option value="bear">Bearish only</option>
+              <option value="bull">Bullish only</option>
+            </select>
+          </div>
+        </div>
+        <div class="chart-outer" id="chart-outer" style="height:400px;">
+          <canvas id="price-canvas"></canvas>
+          <div class="chart-tip" id="chart-tip"></div>
+          <div class="story-popup" id="story-popup">
+            <button class="popup-close" id="popup-close">&#10005;</button>
+            <div class="popup-date" id="popup-date"></div>
+            <div class="popup-headline" id="popup-headline"></div>
+            <div class="popup-body" id="popup-body"></div>
+            <div id="popup-vms"></div>
+          </div>
+        </div>
+        <div class="chart-bottom-bar">
+          <div class="chart-legend">
+            <div class="legend-item"><div class="leg-line" style="background:var(--text-primary);"></div> Price</div>
+            <div class="legend-item"><div class="leg-dash"></div> Fair Value</div>
+            <div class="legend-item"><div class="leg-dot" style="background:var(--accent-surging);"></div> Bullish</div>
+            <div class="legend-item"><div class="leg-dot" style="background:var(--accent-breaking);"></div> Bearish</div>
+            <div class="legend-item"><div class="leg-line" style="background:var(--accent-stable);opacity:0.7;border-top:2px dashed var(--accent-stable);height:0;width:14px;"></div> Narrative energy</div>
+          </div>
+        </div>
+        <div class="bear-stories-wrap" id="bear-stories-wrap" style="display:none;">
+          <div class="bear-stories-header" id="bear-stories-header">
+            <div class="bear-stories-title">
+              Bear Stories
+              <span class="bear-count-badge" id="bear-count">0</span>
+            </div>
+            <span class="bear-toggle-icon" id="bear-toggle-icon">&#9662;</span>
+          </div>
+          <div class="bear-stories-list" id="bear-stories-list"></div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /tab-chart -->
 
     </div>
   </main>
@@ -1814,6 +2021,8 @@ if (!TICKER) {
 
 document.title = TICKER ? `${TICKER} — Market Prism` : 'Market Prism';
 document.getElementById('nav-ticker').textContent = TICKER;
+var feedTickerEl = document.getElementById('tk-feed-ticker');
+if (feedTickerEl) feedTickerEl.textContent = TICKER;
 
 // ── Supabase helper ──────────────────────────────────────────────────────────
 async function sbFetch(table, params) {
@@ -1924,6 +2133,18 @@ async function loadHero() {
     const stockTypeBadge = r.stock_type
       ? `<span class="hero-stock-type">${esc(r.stock_type)}</span>` : '';
 
+    // Determine bias from verdict + trend
+    const biasText = verdict === 'Narrative Trap' ? 'FADE RALLIES'
+      : verdict === 'Structurally Supported' ? 'RIDE THE TREND'
+      : h.narrative_trend === 'Rising' ? 'BUY THE DIP'
+      : h.narrative_trend === 'Collapsing' ? 'WAIT FOR BREAK'
+      : 'HOLD STEADY';
+    const biasColor = verdict === 'Narrative Trap' ? 'var(--red)'
+      : verdict === 'Structurally Supported' ? 'var(--mp-teal)'
+      : h.narrative_trend === 'Rising' ? 'var(--mp-teal)'
+      : h.narrative_trend === 'Collapsing' ? 'var(--red)'
+      : 'var(--mp-text-secondary)';
+
     document.getElementById('hero').innerHTML = `
       <div class="hero-left">
         <div class="hero-ticker-row">
@@ -1934,6 +2155,8 @@ async function loadHero() {
           ${stockTypeBadge}
         </div>
         <div class="hero-claim">${esc(r.primary_driver || r.story_claim || '')}</div>
+        <div class="hero-bias-label">Signal Bias</div>
+        <div class="hero-bias" style="color:${biasColor};">${biasText}</div>
         ${r.sector_name ? `<div class="hero-sector">${esc(r.sector_name)}</div>` : ''}
       </div>
       <div class="hero-right">
@@ -1941,6 +2164,10 @@ async function loadHero() {
         <div class="hero-delta ${delta.cls}">${delta.txt}</div>
         ${r.fair_value != null ? `<div class="hero-fv">Fair value <span>${fmtPrice(r.fair_value)}</span></div>` : ''}
       </div>`;
+
+    // Update feed ticker
+    const feedTicker = document.getElementById('tk-feed-ticker');
+    if (feedTicker) feedTicker.textContent = r.ticker;
 
     // Forensic text — prefer mda_snippet if forensic_rebuttal is absent
     const forensicContent = r.forensic_rebuttal || r.mda_snippet;
@@ -3380,6 +3607,72 @@ async function createImage() {
   }
 }
 
+// ── Tab switching ─────────────────────────────────────────────────────────────
+(function() {
+  const tabs = document.querySelectorAll('.tk-tab');
+  const panels = document.querySelectorAll('.tk-tab-panel');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      panels.forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      const panel = document.getElementById('tab-' + tab.dataset.tab);
+      if (panel) panel.classList.add('active');
+      // Re-render chart when switching to chart tab
+      if (tab.dataset.tab === 'chart' && ALL_SNAPS.length) {
+        setTimeout(() => renderChart(), 50);
+      }
+    });
+  });
+})();
+
+// ── Stories Feed ──────────────────────────────────────────────────────────────
+async function loadStoriesFeed() {
+  if (!TICKER) return;
+  const feedList = document.getElementById('tk-feed-list');
+  if (!feedList) return;
+  try {
+    const rows = await sbFetch('narrative_analyses', {
+      select: 'narrative_text,verdict,sentiment_score,snapshot_date,source_outlet,narrative_type',
+      ticker: `eq.${TICKER}`,
+      order: 'snapshot_date.desc',
+      limit: '50'
+    }).catch(() => []);
+
+    if (!rows.length) {
+      feedList.innerHTML = '<div class="tk-feed-empty">No stories available for this ticker.</div>';
+      return;
+    }
+
+    feedList.innerHTML = rows.map(r => {
+      const score = r.sentiment_score ?? 0;
+      const dotCls = score > 0 ? 'bull' : score < 0 ? 'bear' : 'neutral';
+      const v = (r.verdict || '').toUpperCase();
+      const vLbl = v.includes('VERIF') ? 'Verified'
+        : v.includes('MISLEAD') || v.includes('FALSE') ? 'Misleading'
+        : v.includes('TRAP') ? 'Trap'
+        : 'Monitoring';
+      const vColor = v.includes('VERIF') ? 'color:var(--mp-teal);border-color:rgba(52,211,153,.3)'
+        : v.includes('MISLEAD') || v.includes('TRAP') || v.includes('FALSE') ? 'color:var(--red);border-color:rgba(248,113,113,.3)'
+        : 'color:var(--mp-text-tertiary);border-color:var(--mp-border)';
+      const dateStr = r.snapshot_date
+        ? new Date(r.snapshot_date).toLocaleDateString('en-US', { month:'short', day:'numeric' })
+        : '';
+      return '<div class="tk-feed-item">'
+        + '<div class="tk-feed-dot ' + dotCls + '"></div>'
+        + '<div class="tk-feed-body">'
+        + '<div class="tk-feed-text">' + esc(r.narrative_text || '') + '</div>'
+        + '<div class="tk-feed-meta">'
+        + (dateStr ? '<span>' + dateStr + '</span>' : '')
+        + (r.source_outlet ? '<span>' + esc(r.source_outlet) + '</span>' : '')
+        + '<span class="tk-feed-verdict" style="' + vColor + '">' + vLbl + '</span>'
+        + '</div></div></div>';
+    }).join('');
+  } catch (err) {
+    feedList.innerHTML = '<div class="tk-feed-empty">Failed to load stories.</div>';
+  }
+}
+
 // ── Boot ─────────────────────────────────────────────────────────────────────
 async function refreshAll() {
   if (!TICKER) return;
@@ -3402,7 +3695,8 @@ async function refreshAll() {
     loadPrerequisites(),
     loadParallels(),
     loadMoveDrivers(),
-    loadSectorIntelligence(heroData)
+    loadSectorIntelligence(heroData),
+    loadStoriesFeed()
   ]);
 }
 
