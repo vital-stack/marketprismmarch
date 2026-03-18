@@ -62,7 +62,7 @@
     --blue-bg: rgba(0,174,255,0.08);
   }
 
-  html { font-size: 16px; }
+  html { font-size: 17px; }
   body {
     font-family: var(--font);
     background: var(--mp-obsidian);
@@ -216,11 +216,11 @@
   /* ── Section ── */
   .section { margin-bottom: 28px; overflow: hidden; }
   .section-label {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 400;
     text-transform: uppercase;
     letter-spacing: 0.12em;
-    color: var(--mp-blue);
+    color: var(--mp-text-tertiary);
     margin-bottom: 12px;
     display: flex;
     align-items: center;
@@ -241,19 +241,9 @@
     overflow: hidden;
     width: 100%;
     transition: all 0.4s cubic-bezier(0.16,1,0.3,1);
-    position: relative;
-  }
-  .section-body::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--mp-teal), var(--mp-blue), transparent);
-    opacity: 0.5;
   }
   .section-body:hover {
-    border-color: rgba(0,174,255,0.12);
-    box-shadow: 0 4px 24px rgba(0,174,255,0.04);
+    border-color: rgba(255,255,255,0.10);
   }
 
   /* ── Skeleton ── */
@@ -1353,8 +1343,9 @@
     display: flex;
     align-items: center;
     gap: 0;
-    border-bottom: 1px solid var(--mp-border);
+    border-bottom: 2px solid var(--mp-border);
     margin-bottom: 28px;
+    margin-top: 28px;
     position: sticky;
     top: 0;
     z-index: 30;
@@ -1363,14 +1354,15 @@
   }
   .tk-tab {
     font-family: var(--font-mono);
-    font-size: 11px;
-    font-weight: 400;
-    letter-spacing: .08em;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: .06em;
     text-transform: uppercase;
     color: var(--mp-text-tertiary);
-    padding: 14px 24px;
+    padding: 16px 28px;
     cursor: pointer;
-    border-bottom: 2px solid transparent;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
     transition: all .2s;
     white-space: nowrap;
     background: none;
@@ -1378,12 +1370,14 @@
     border-left: none;
     border-right: none;
   }
-  .tk-tab:hover { color: var(--mp-text-secondary); }
+  .tk-tab:hover { color: var(--mp-text-secondary); background: rgba(255,255,255,0.02); }
   .tk-tab.active {
     color: #fff;
-    border-bottom-color: var(--mp-blue);
+    font-weight: 500;
+    border-bottom-color: #fff;
   }
-  .tk-tab-panel { display: block; }
+  .tk-tab-panel { display: none; }
+  .tk-tab-panel.active { display: block; }
 
   /* ── Full-width split layout ── */
   .tk-main-split {
@@ -1450,7 +1444,7 @@
   .tk-feed-dot.neutral { background: var(--mp-text-tertiary); }
   .tk-feed-body { flex: 1; min-width: 0; }
   .tk-feed-text {
-    font-size: 12px;
+    font-size: 13px;
     color: var(--mp-text-primary);
     line-height: 1.5;
     margin-bottom: 3px;
@@ -1479,123 +1473,92 @@
     color: var(--mp-text-tertiary);
   }
 
-  /* ── Redesigned Hero ── */
+  /* ── Hero Card ── */
+  .ticker-hero-card {
+    background: var(--mp-surface);
+    border: 1px solid var(--mp-border);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 0;
+  }
+  .ticker-hero-card:hover { border-color: rgba(255,255,255,0.10); }
   .ticker-hero {
-    padding: 36px 40px 32px;
-    margin: 0 -40px 0;
+    padding: 28px 28px 24px;
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: 32px;
-    position: relative;
-    overflow: hidden;
-    border-bottom: 1px solid var(--mp-border);
   }
-  .ticker-hero::before {
-    content: '';
-    position: absolute; inset: 0; z-index: 0;
-    background-image:
-      linear-gradient(var(--mp-border) 1px, transparent 1px),
-      linear-gradient(90deg, var(--mp-border) 1px, transparent 1px);
-    background-size: 72px 72px;
-    mask-image: radial-gradient(ellipse 80% 80% at 50% 40%, black 20%, transparent 80%);
-    pointer-events: none;
-  }
-  .ticker-hero::after {
-    content: '';
-    position: absolute;
-    width: 500px; height: 500px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(0,174,255,0.05) 0%, transparent 65%);
-    top: 50%; left: 30%;
-    transform: translate(-50%, -55%);
-    animation: heroGlow 8s ease-in-out infinite;
-    pointer-events: none;
-    z-index: 0;
-  }
-  @keyframes heroGlow { 0%,100%{opacity:.7;transform:translate(-50%,-55%) scale(1);} 50%{opacity:1;transform:translate(-50%,-55%) scale(1.08);} }
-  .hero-left { flex: 1; min-width: 0; position: relative; z-index: 1; }
+  .hero-left { flex: 1; min-width: 0; }
   .hero-ticker-row {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
     flex-wrap: wrap;
   }
   .hero-ticker {
-    font-size: 40px;
+    font-size: 38px;
     font-weight: 300;
     font-family: var(--font-body);
     letter-spacing: -0.03em;
   }
   .hero-claim {
-    font-size: 16px;
+    font-size: 15px;
     color: var(--mp-text-secondary);
     line-height: 1.6;
     max-width: 700px;
     font-weight: 300;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
   }
   .hero-bias-label {
     font-family: var(--font-mono);
     font-size: 9px;
     letter-spacing: .12em;
     text-transform: uppercase;
-    color: var(--mp-blue);
+    color: var(--mp-text-tertiary);
     margin-bottom: 4px;
   }
   .hero-bias {
     font-family: 'Anton', var(--font-body), sans-serif;
-    font-size: 34px;
+    font-size: 32px;
     letter-spacing: .04em;
     text-transform: uppercase;
     line-height: 1.1;
     margin-bottom: 6px;
   }
   .hero-sector { font-size: 12px; color: var(--mp-text-tertiary); margin-top: 4px; }
-  .hero-right { text-align: right; flex-shrink: 0; position: relative; z-index: 1; }
+  .hero-right { text-align: right; flex-shrink: 0; }
   .hero-price {
-    font-size: 36px;
+    font-size: 34px;
     font-weight: 400;
     font-family: var(--mono);
     letter-spacing: -0.03em;
   }
-  .hero-delta { font-size: 14px; font-family: var(--mono); margin-top: 4px; }
+  .hero-delta { font-size: 15px; font-family: var(--mono); margin-top: 4px; }
 
-  /* ── Diag strip fix ── */
+  /* ── Diag strip (inside hero card) ── */
   .diag-strip {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 1px;
-    background: var(--mp-border);
-    border: 1px solid var(--mp-border);
-    border-radius: 12px;
-    overflow: hidden;
-    margin-bottom: 24px;
-    margin-top: 24px;
-    position: relative;
-  }
-  .diag-strip::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--mp-blue), var(--mp-teal), transparent);
-    z-index: 1;
+    gap: 0;
+    border-top: 1px solid var(--mp-border);
+    margin: 0;
   }
   @media (max-width: 900px) { .diag-strip { grid-template-columns: repeat(4, 1fr); } }
   @media (max-width: 640px) { .diag-strip { grid-template-columns: repeat(2,1fr); } }
   .diag-cell {
-    background: var(--mp-surface);
-    padding: 16px 18px;
+    padding: 16px 24px;
     min-width: 0;
     overflow: hidden;
+    border-right: 1px solid var(--mp-border);
   }
+  .diag-cell:last-child { border-right: none; }
   .diag-label {
     font-size: 9px;
     text-transform: uppercase;
     letter-spacing: .10em;
-    color: var(--mp-blue);
+    color: var(--mp-text-tertiary);
     margin-bottom: 6px;
     font-family: var(--mono);
     white-space: nowrap;
@@ -1607,16 +1570,17 @@
     font-weight: 400;
     font-family: var(--mono);
     line-height: 1.1;
-    margin-bottom: 3px;
-    color: var(--mp-text-primary);
+    margin-bottom: 0;
+    color: var(--mp-teal);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .diag-val .acc { color: var(--mp-blue); font-size: 11px; }
+  .diag-val .acc { color: var(--mp-text-tertiary); font-size: 11px; }
   .diag-sub {
     font-size: 10px;
     color: var(--text-tertiary);
+    margin-top: 2px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1666,20 +1630,19 @@
   [data-theme="light"] .sidebar { background: #FFFFFF; border-color: rgba(0,0,0,0.08); }
   [data-theme="light"] .sidebar-logo span { color: var(--text-primary); }
   [data-theme="light"] .section-body { background: #FFFFFF; }
-  [data-theme="light"] .section-body:hover { border-color: rgba(0,174,255,0.15); }
-  [data-theme="light"] .ticker-hero::after { background: radial-gradient(circle, rgba(0,174,255,0.04) 0%, transparent 65%); }
+  [data-theme="light"] .ticker-hero-card { background: #FFFFFF; }
   [data-theme="light"] .chart-tip { background: #FFFFFF; color: var(--text-primary); }
-  [data-theme="light"] .diag-cell { background: #FFFFFF; }
 
   /* ── MOBILE RESPONSIVE ── */
   @media (max-width: 768px) {
     .page-wrap { padding: 16px 16px 60px; }
-    .ticker-hero { flex-direction: column; gap: 16px; padding: 24px 20px; margin: 0 -16px; }
+    .ticker-hero { flex-direction: column; gap: 16px; padding: 20px 16px; }
     .hero-right { text-align: left; }
     .hero-ticker { font-size: 28px; }
     .hero-claim { font-size: 14px; }
     .hero-bias { font-size: 24px; }
     .hero-price { font-size: 24px; }
+    .tk-tab { padding: 14px 16px; font-size: 11px; }
     .section-label { font-size: 9px; }
     .tk-main-split { grid-template-columns: 1fr; gap: 16px; }
     .tk-feed { position: static; max-height: none; }
@@ -1751,23 +1714,32 @@
     <span class="nav-ticker" id="nav-ticker">&mdash;</span>
   </nav>
 
-  <!-- Hero -->
-  <div class="ticker-hero" id="hero">
-    <div class="hero-left">
-      <div class="hero-ticker-row">
-        <div class="skel" style="width:100px;height:34px;"></div>
-        <div class="skel" style="width:70px;height:22px;border-radius:5px;"></div>
-        <div class="skel" style="width:110px;height:22px;border-radius:99px;"></div>
+  <!-- Hero Card (hero + diag strip) -->
+  <div class="ticker-hero-card">
+    <div class="ticker-hero" id="hero">
+      <div class="hero-left">
+        <div class="hero-ticker-row">
+          <div class="skel" style="width:100px;height:34px;"></div>
+          <div class="skel" style="width:70px;height:22px;border-radius:5px;"></div>
+          <div class="skel" style="width:110px;height:22px;border-radius:99px;"></div>
+        </div>
+        <div class="skel" style="width:500px;height:18px;margin-top:8px;"></div>
       </div>
-      <div class="skel" style="width:500px;height:18px;margin-top:8px;"></div>
+      <div class="hero-right">
+        <div class="skel" style="width:100px;height:30px;margin-bottom:5px;"></div>
+        <div class="skel" style="width:60px;height:13px;"></div>
+      </div>
     </div>
-    <div class="hero-right">
-      <div class="skel" style="width:100px;height:30px;margin-bottom:5px;"></div>
-      <div class="skel" style="width:60px;height:13px;"></div>
-    </div>
+    <div id="diag-strip-wrap"></div>
   </div>
 
-  <!-- Tab bar removed -->
+  <!-- Tab Bar -->
+  <div class="tk-tab-bar" id="tk-tab-bar">
+    <button class="tk-tab active" data-tab="overview">Overview</button>
+    <button class="tk-tab" data-tab="narratives">Live Narratives</button>
+    <button class="tk-tab" data-tab="history">History</button>
+    <button class="tk-tab" data-tab="chart">Chart</button>
+  </div>
 
   <!-- Action bar -->
   <div class="action-bar" id="action-bar" style="display:none;">
@@ -1787,18 +1759,6 @@
   <div class="tk-tab-panel active" id="tab-overview">
     <div class="tk-main-split">
       <div class="tk-content-col">
-
-        <!-- Diagnosis Strip -->
-        <div id="diag-strip" class="diag-strip">
-          <div class="diag-cell"><div class="diag-label">Phase</div><div class="diag-val"><div class="skel" style="width:70px;height:20px;border-radius:99px;"></div></div></div>
-          <div class="diag-cell"><div class="diag-label">Fragility</div><div class="diag-val"><div class="skel" style="width:50px;height:17px;"></div></div></div>
-          <div class="diag-cell"><div class="diag-label">Energy</div><div class="diag-val"><div class="skel" style="width:50px;height:17px;"></div></div></div>
-          <div class="diag-cell"><div class="diag-label">Exhaustion</div><div class="diag-val"><div class="skel" style="width:40px;height:17px;"></div></div></div>
-          <div class="diag-cell"><div class="diag-label">Net Pressure</div><div class="diag-val"><div class="skel" style="width:40px;height:17px;"></div></div></div>
-          <div class="diag-cell"><div class="diag-label">Health</div><div class="diag-val"><div class="skel" style="width:50px;height:17px;"></div></div></div>
-          <div class="diag-cell"><div class="diag-label">Direction</div><div class="diag-val"><div class="skel" style="width:60px;height:17px;"></div></div></div>
-          <div class="diag-cell"><div class="diag-label">Fair Value Gap</div><div class="diag-val"><div class="skel" style="width:50px;height:17px;"></div></div></div>
-        </div>
 
         <!-- Primary Claim + Warranted vs Hype -->
         <div class="pulse-two">
@@ -3313,9 +3273,12 @@ function statusFromScores(evidence, energy, coord) {
 
 // ── Render: Diagnosis Strip ───────────────────────────────────────────────────
 function renderDiagStrip(p) {
+  const wrap = document.getElementById('diag-strip-wrap');
+  if (!wrap) return;
+  if (!p) { wrap.innerHTML = '<div class="diag-strip"><div class="diag-cell" style="grid-column:1/-1;"><div class="no-data" style="padding:12px;">No pulse data available.</div></div></div>'; return; }
+  // Create the strip container
+  wrap.innerHTML = '<div id="diag-strip" class="diag-strip"></div>';
   const el = document.getElementById('diag-strip');
-  if (!el) return;
-  if (!p) { el.innerHTML = '<div class="diag-cell" style="grid-column:1/-1;"><div class="no-data" style="padding:12px;">No pulse data available.</div></div>'; return; }
 
   const phase  = phaseFromPulse(p);
   const frag   = fragility(p);
