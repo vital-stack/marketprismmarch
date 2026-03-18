@@ -1277,7 +1277,7 @@ body{
 .flip-back-hint{text-align:center;font-family:var(--font-mono);font-size:7px;letter-spacing:0.12em;text-transform:uppercase;color:var(--mp-text-tertiary);padding:6px 0 9px;opacity:0.5;}
 /* ── CARDS + STORIES SPLIT LAYOUT ── */
 .cards-stories-split{
-  display:grid;grid-template-columns:2fr 5fr;gap:20px;margin-bottom:28px;
+  display:grid;grid-template-columns:3fr 5fr;gap:20px;margin-bottom:28px;
   animation:slideUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.05s both;
   align-items:start;
 }
@@ -1596,6 +1596,48 @@ body{
   white-space:nowrap;pointer-events:none;
 }
 .tc-cal-ghost-dot{width:6px;height:6px;border-radius:50%;}
+/* Expanded signal card overlay */
+.tc-card-overlay{
+  position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.6);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:opacity .2s;pointer-events:none;
+}
+.tc-card-overlay.open{opacity:1;pointer-events:auto;}
+.tc-card-expanded{
+  background:var(--mp-surface);border:1px solid var(--mp-border-mid);
+  border-radius:12px;width:340px;max-width:90vw;overflow:hidden;
+  transform:scale(.9);transition:transform .25s cubic-bezier(.16,1,.3,1);
+  box-shadow:0 24px 80px rgba(0,0,0,.6);
+}
+.tc-card-overlay.open .tc-card-expanded{transform:scale(1);}
+.tc-card-exp-accent{height:2px;width:100%;}
+.tc-card-exp-body{padding:16px 20px 12px;}
+.tc-card-exp-top{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.tc-card-exp-logo{width:28px;height:28px;}
+.tc-card-exp-logo svg{width:100%;height:100%;}
+.tc-card-exp-ticker{font-family:var(--font-mono);font-size:16px;font-weight:600;color:#fff;}
+.tc-card-exp-name{font-family:var(--font-mono);font-size:10px;color:var(--mp-text-tertiary);flex:1;}
+.tc-card-exp-rarity{font-family:var(--font-mono);font-size:8px;text-transform:uppercase;letter-spacing:.1em;padding:2px 7px;border-radius:4px;border:1px solid;}
+.tc-card-exp-price-row{display:flex;align-items:baseline;gap:8px;margin-bottom:12px;}
+.tc-card-exp-price{font-family:var(--font-mono);font-size:20px;font-weight:500;color:#fff;}
+.tc-card-exp-change{font-family:var(--font-mono);font-size:12px;}
+.tc-card-exp-bias{padding:14px;border-radius:8px;text-align:center;margin-bottom:12px;background:rgba(255,255,255,.04);}
+.tc-card-exp-bias-eyebrow{font-family:var(--font-mono);font-size:7px;text-transform:uppercase;letter-spacing:.14em;color:rgba(255,255,255,.5);margin-bottom:4px;}
+.tc-card-exp-bias-text{font-family:'Anton',sans-serif;font-size:28px;letter-spacing:.04em;text-transform:uppercase;}
+.tc-card-exp-meta{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.tc-card-exp-conf{font-family:var(--font-mono);font-size:12px;color:var(--mp-text-secondary);}
+.tc-card-exp-window{font-family:var(--font-mono);font-size:9px;padding:3px 8px;border-radius:4px;background:rgba(255,255,255,.05);color:var(--mp-text-tertiary);text-transform:uppercase;letter-spacing:.06em;}
+.tc-card-exp-hint{font-family:var(--font-mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--mp-teal);text-align:center;padding:8px 0 4px;}
+.tc-card-exp-actions{display:flex;gap:8px;margin-top:8px;}
+.tc-card-exp-btn{
+  flex:1;padding:10px;border-radius:6px;border:1px solid var(--mp-border-mid);
+  background:rgba(255,255,255,.04);color:var(--mp-text-primary);
+  font-family:var(--font-mono);font-size:10px;text-transform:uppercase;
+  letter-spacing:.08em;cursor:pointer;text-align:center;transition:all .2s;
+}
+.tc-card-exp-btn:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.2);}
+.tc-card-exp-btn.primary{background:rgba(52,211,153,.12);border-color:rgba(52,211,153,.3);color:var(--mp-teal);}
+.tc-card-exp-btn.primary:hover{background:rgba(52,211,153,.2);}
 </style>
 </head>
 <body>
@@ -2298,6 +2340,10 @@ body{
           <span class="tc-cal-save-dot" id="tc-cal-save-dot"></span>
           <span>Saved locally</span>
         </div>
+      </div>
+      <!-- Expanded card overlay -->
+      <div class="tc-card-overlay" id="tc-card-overlay">
+        <div class="tc-card-expanded" id="tc-card-expanded"></div>
       </div>
     </div>
   </div>
@@ -4237,8 +4283,11 @@ function tcRenderCards(){
       this.classList.remove('dragging');
       tcDragData=null;
     });
-    card.addEventListener('click',function(){
+    card.addEventListener('click',function(e){
+      if(e.defaultPrevented)return;
       tcCarouselPause(3000);
+      var idx=parseInt(this.dataset.idx);
+      tcExpandCard(idx);
     });
   });
 
@@ -4495,6 +4544,81 @@ function tcUpdateSummary(){
   }
 }
 
+// ── Expand card overlay ──
+var tcExpandedIdx=null;
+function tcExpandCard(idx){
+  var s=TC_SIGNALS[idx];
+  if(!s)return;
+  tcExpandedIdx=idx;
+  var rc=TC_RARITY_COLORS[s.rarity]||'var(--mp-text-tertiary)';
+  var changeStyle=s.changeDir==='up'?'color:var(--mp-teal)':'color:var(--mp-red)';
+  var cs=getComputedStyle(document.documentElement);
+  var rawAc=s.ac.replace('var(','').replace(')','').trim();
+  var resolvedAc=cs.getPropertyValue(rawAc).trim()||rawAc;
+  var panel=document.getElementById('tc-card-expanded');
+  panel.innerHTML=
+    '<div class="tc-card-exp-accent" style="background:linear-gradient(90deg,'+resolvedAc+',transparent);"></div>'
+    +'<div class="tc-card-exp-body">'
+      +'<div class="tc-card-exp-top">'
+        +'<div class="tc-card-exp-logo">'+s.logo+'</div>'
+        +'<span class="tc-card-exp-ticker">'+s.ticker+'</span>'
+        +'<span class="tc-card-exp-name">'+s.name+'</span>'
+        +'<span class="tc-card-exp-rarity" style="color:'+rc+';border-color:'+rc+';">'+s.rarity+'</span>'
+      +'</div>'
+      +'<div class="tc-card-exp-price-row">'
+        +'<span class="tc-card-exp-price">'+s.price+'</span>'
+        +'<span class="tc-card-exp-change" style="'+changeStyle+'">'+s.change+'</span>'
+      +'</div>'
+      +'<div class="tc-card-exp-bias">'
+        +'<div class="tc-card-exp-bias-eyebrow">Signal Bias</div>'
+        +'<div class="tc-card-exp-bias-text" style="color:'+rc+';">'+s.bias+'</div>'
+      +'</div>'
+      +'<div class="tc-card-exp-meta">'
+        +'<span class="tc-card-exp-conf">Confidence: '+s.conf+'</span>'
+        +'<span class="tc-card-exp-window">'+s.window+'</span>'
+      +'</div>'
+      +'<div class="tc-card-exp-hint">Drag this card onto a calendar date to queue it</div>'
+      +'<div class="tc-card-exp-actions">'
+        +'<button class="tc-card-exp-btn" onclick="tcCloseExpand()">Close</button>'
+        +'<button class="tc-card-exp-btn primary" onclick="tcQueueToday('+idx+')">Queue for today</button>'
+      +'</div>'
+    +'</div>';
+  // Make expanded card draggable
+  panel.setAttribute('draggable','true');
+  panel.ondragstart=function(e){
+    tcDragData=s;
+    e.dataTransfer.effectAllowed='copy';
+    e.dataTransfer.setData('text/plain',s.id);
+    var ghost=document.getElementById('tc-cal-drag-ghost');
+    if(!ghost){ghost=document.createElement('div');ghost.id='tc-cal-drag-ghost';ghost.className='tc-cal-ghost';document.body.appendChild(ghost);}
+    ghost.innerHTML='<span class="tc-cal-ghost-dot" style="background:'+rc+';"></span>'+s.ticker+' — '+s.bias+' '+s.conf;
+    ghost.style.top='-999px';ghost.style.left='-999px';
+    e.dataTransfer.setDragImage(ghost,60,16);
+    setTimeout(tcCloseExpand,100);
+  };
+  panel.ondragend=function(){tcDragData=null;};
+  var overlay=document.getElementById('tc-card-overlay');
+  overlay.classList.add('open');
+}
+function tcCloseExpand(){
+  document.getElementById('tc-card-overlay').classList.remove('open');
+  tcExpandedIdx=null;
+}
+function tcQueueToday(idx){
+  var s=TC_SIGNALS[idx];
+  var now=new Date();
+  var ds=now.getFullYear()+'-'+tcPadDate(now.getMonth()+1)+'-'+tcPadDate(now.getDate());
+  if(!tcQueued[ds])tcQueued[ds]=[];
+  if(tcQueued[ds].some(function(q){return q.id===s.id;})){tcCloseExpand();return;}
+  tcQueued[ds].push({id:s.id,ticker:s.ticker,bias:s.bias,ac:s.ac,conf:s.conf});
+  tcSaveQueued();
+  var container=document.getElementById('tc-q-'+ds);
+  if(container)tcRenderChips(ds,container);
+  tcUpdateQueuedBadges();
+  tcUpdateSummary();
+  tcCloseExpand();
+}
+
 // ── Boot ──
 function calendarBoot(){
   if(tcCalBooted)return;
@@ -4533,6 +4657,10 @@ function calendarBoot(){
     tcRenderCalendar();
     tcUpdateQueuedBadges();
     tcUpdateSummary();
+  });
+  // Close expanded card on backdrop click
+  document.getElementById('tc-card-overlay').addEventListener('click',function(e){
+    if(e.target===this)tcCloseExpand();
   });
 }
 
