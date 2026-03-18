@@ -12,11 +12,9 @@ module.exports = (req, res) => {
     html = readFileSync(join(process.cwd(), '_template.html'), 'utf8');
   }
 
-  const scholarEnabled = process.env.ANTHROPIC_API_KEY ? 'true' : '';
-
   html = html.replace(
-    "window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '', SCHOLAR_ENABLED: '' };",
-    `window.__env = { SUPABASE_URL: '${supabaseUrl}', SUPABASE_ANON: '${supabaseAnon}', SCHOLAR_ENABLED: '${scholarEnabled}' };`
+    "window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '' };",
+    `window.__env = { SUPABASE_URL: '${supabaseUrl}', SUPABASE_ANON: '${supabaseAnon}' };`
   );
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
