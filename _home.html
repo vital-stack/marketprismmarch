@@ -7,22 +7,26 @@
 <script id="__env_script">window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '' };</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@400;500&family=Anton&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root {
-  --bg:        #FFFFFF;
-  --bg-alt:    #F7F9FB;
-  --surface:   #FFFFFF;
-  --border:    #E5E7EB;
-  --border-mid:#D1D5DB;
-  --blue:      #0066FF;
-  --blue-soft: #EBF2FF;
-  --teal:      #059669;
-  --red:       #DC2626;
-  --tx1:       #0A0A0A;
-  --tx2:       #6B7280;
-  --tx3:       #9CA3AF;
+  --bg:        #0B0F14;
+  --deep:      #0E1319;
+  --surface:   #131920;
+  --surface2:  #181f28;
+  --border:    rgba(255,255,255,0.06);
+  --border-mid:rgba(255,255,255,0.10);
+  --blue:      #00AEFF;
+  --blue-glow: rgba(0,174,255,0.10);
+  --cyan:      #00FFFF;
+  --teal:      #00DE94;
+  --violet:    #00FF52;
+  --red:       #38C8B8;
+  --amber:     #00DE94;
+  --tx1:       #F5F7FA;
+  --tx2:       #A0A8B0;
+  --tx3:       #4A5578;
   --font-d:    'DM Serif Display', Georgia, serif;
   --font-b:    'DM Sans', system-ui, sans-serif;
   --font-m:    'DM Mono', monospace;
@@ -33,34 +37,85 @@ body {
   background: var(--bg);
   color: var(--tx1);
   line-height: 1.6;
-  font-weight: 400;
+  font-weight: 300;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
+/* ── TICKER TAPE ── */
+.ticker-wrap {
+  background: var(--deep);
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+.ticker-live {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px 9px 20px;
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
+  background: var(--deep);
+  z-index: 2;
+}
+.live-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--teal);
+  animation: blink 2s ease infinite;
+}
+@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.2;} }
+.live-lbl {
+  font-family: var(--font-m);
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--tx3);
+}
+.ticker-scroll { flex: 1; overflow: hidden; }
+.ticker-inner {
+  display: flex;
+  animation: tickscroll 32s linear infinite;
+  width: max-content;
+}
+@keyframes tickscroll { 0%{transform:translateX(0);} 100%{transform:translateX(-50%);} }
+.tk {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 22px;
+  border-right: 1px solid var(--border);
+  white-space: nowrap;
+}
+.tk-s { font-family: var(--font-m); font-size: 11px; font-weight: 500; color: var(--tx1); }
+.tk-v { font-family: var(--font-m); font-size: 11px; color: var(--tx2); }
+.tk-u { font-family: var(--font-m); font-size: 10px; color: var(--teal); }
+.tk-d { font-family: var(--font-m); font-size: 10px; color: var(--red); }
 /* ── NAV ── */
 nav {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(255,255,255,0.95);
-  backdrop-filter: blur(12px);
+  background: rgba(10,14,26,0.92);
+  backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border);
-  height: 64px;
+  height: 56px;
   display: flex;
   align-items: center;
-  padding: 0 48px;
+  padding: 0 40px;
+  gap: 0;
 }
 .nav-logo {
   display: flex;
   align-items: center;
   gap: 10px;
   text-decoration: none;
-  margin-right: 40px;
+  margin-right: 32px;
   flex-shrink: 0;
 }
 .nav-logo-name {
   font-family: var(--font-d);
-  font-size: 18px;
+  font-size: 17px;
   color: var(--tx1);
   letter-spacing: -.01em;
 }
@@ -71,15 +126,14 @@ nav {
   flex: 1;
 }
 .nav-link {
-  font-size: 14px;
-  font-weight: 400;
-  color: var(--tx2);
+  font-size: 13px;
+  color: var(--tx3);
   text-decoration: none;
-  padding: 8px 14px;
+  padding: 6px 12px;
   border-radius: 6px;
   transition: color .15s, background .15s;
 }
-.nav-link:hover { color: var(--tx1); background: var(--bg-alt); }
+.nav-link:hover { color: var(--tx2); background: var(--surface); }
 .nav-right {
   margin-left: auto;
   display: flex;
@@ -87,29 +141,29 @@ nav {
   gap: 10px;
 }
 .btn-nav-ghost {
-  font-size: 14px;
-  font-weight: 400;
+  font-size: 13px;
   color: var(--tx2);
   background: transparent;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-mid);
   border-radius: 8px;
-  padding: 8px 18px;
+  padding: 7px 16px;
   cursor: pointer;
   transition: all .15s;
 }
-.btn-nav-ghost:hover { color: var(--tx1); border-color: var(--border-mid); }
+.btn-nav-ghost:hover { color: var(--tx1); border-color: rgba(255,255,255,.22); }
 .btn-nav-primary {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 400;
   color: #fff;
   background: var(--blue);
   border: none;
   border-radius: 8px;
-  padding: 8px 20px;
+  padding: 7px 18px;
   cursor: pointer;
   transition: background .15s;
 }
-.btn-nav-primary:hover { background: #0052CC; }
+.btn-nav-primary:hover { background: #33BFFF; }
+/* Hamburger (hidden by default, shown on mobile) */
 .nav-hamburger {
   display: none;
   align-items: center; justify-content: center;
@@ -117,9 +171,10 @@ nav {
   font-size: 22px; cursor: pointer; padding: 4px;
   margin-right: 4px;
 }
+/* Mobile nav overlay */
 .mobile-nav-overlay {
   display: none; position: fixed; inset: 0; z-index: 200;
-  background: rgba(255,255,255,0.98); backdrop-filter: blur(12px);
+  background: rgba(10,14,26,0.96); backdrop-filter: blur(12px);
   flex-direction: column; align-items: center; justify-content: center; gap: 16px;
 }
 .mobile-nav-overlay.open { display: flex; }
@@ -128,7 +183,7 @@ nav {
   text-decoration: none; padding: 12px 24px; border-radius: 8px;
   transition: color .15s, background .15s;
 }
-.mobile-nav-overlay a:hover { color: var(--tx1); background: var(--bg-alt); }
+.mobile-nav-overlay a:hover { color: var(--tx1); background: var(--surface); }
 .mobile-nav-close {
   position: absolute; top: 16px; right: 16px;
   background: none; border: none; color: var(--tx1);
@@ -136,404 +191,625 @@ nav {
 }
 /* ── HERO ── */
 .hero {
-  padding: 100px 0 80px;
-  text-align: center;
+  min-height: calc(100vh - 56px - 38px);
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
 }
+.hero-grid-bg {
+  position: absolute; inset: 0; z-index: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black 20%, transparent 80%);
+}
+.hero-glow {
+  position: absolute;
+  width: 640px; height: 640px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,174,255,0.05) 0%, transparent 65%);
+  top: 50%; left: 50%;
+  transform: translate(-50%, -58%);
+  animation: gp 8s ease-in-out infinite;
+  z-index: 0;
+}
+@keyframes gp { 0%,100%{opacity:.7;transform:translate(-50%,-58%) scale(1);} 50%{opacity:1;transform:translate(-50%,-58%) scale(1.08);} }
 .hero-inner {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 0 40px;
+  position: relative; z-index: 1;
+  max-width: 1080px; margin: 0 auto; width: 100%;
+  padding: 80px 40px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 64px;
+  align-items: center;
 }
 .hero-eyebrow {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   font-family: var(--font-m);
-  font-size: 12px;
+  font-size: 10px;
   color: var(--tx3);
-  letter-spacing: .04em;
-  text-transform: uppercase;
-  margin-bottom: 24px;
+  border: 1px solid var(--border-mid);
+  padding: 5px 12px;
+  border-radius: 4px;
+  margin-bottom: 28px;
+  letter-spacing: .06em;
 }
-.hero-eyebrow .live-dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--teal);
-  animation: blink 2s ease infinite;
-}
-@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.2;} }
 h1 {
   font-family: var(--font-d);
-  font-size: clamp(40px, 5.5vw, 64px);
+  font-size: clamp(38px, 5vw, 62px);
   font-weight: 400;
-  line-height: 1.08;
-  letter-spacing: -.02em;
-  color: var(--tx1);
-  margin-bottom: 24px;
+  line-height: 1.05;
+  letter-spacing: -.015em;
+  margin-bottom: 22px;
+}
+h1 em {
+  font-style: italic;
+  color: var(--blue);
 }
 .hero-lead {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 300;
   color: var(--tx2);
-  line-height: 1.7;
-  max-width: 560px;
-  margin: 0 auto 40px;
+  line-height: 1.8;
+  max-width: 420px;
+  margin-bottom: 36px;
 }
-.hero-btns {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-bottom: 48px;
+/* Ticker search */
+.ticker-search-wrap { margin-bottom: 24px; }
+.ticker-search-label {
+  font-family: var(--font-m);
+  font-size: 10px;
+  color: var(--tx3);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
 }
+.ticker-search-row { display: flex; gap: 8px; }
+.ticker-search-input {
+  flex: 1;
+  background: var(--deep);
+  border: 1px solid var(--border-mid);
+  border-radius: 8px;
+  padding: 11px 16px;
+  font-family: var(--font-m);
+  font-size: 13px;
+  color: var(--tx1);
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.ticker-search-input:focus {
+  border-color: rgba(0,174,255,.35);
+  box-shadow: 0 0 0 3px rgba(0,174,255,.08);
+}
+.ticker-search-input::placeholder { color: var(--tx3); }
 .btn-primary {
   background: var(--blue);
   color: #fff;
   border: none;
   border-radius: 8px;
-  padding: 14px 32px;
+  padding: 11px 22px;
   font-family: var(--font-b);
-  font-size: 15px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all .15s;
-}
-.btn-primary:hover { background: #0052CC; }
-.btn-outline {
-  background: transparent;
-  color: var(--tx1);
-  border: 1px solid var(--border-mid);
-  border-radius: 8px;
-  padding: 14px 32px;
-  font-family: var(--font-b);
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 400;
   cursor: pointer;
   transition: all .15s;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
-.btn-outline:hover { border-color: var(--tx1); }
-/* Social proof row */
+.btn-primary:hover { background: #33BFFF; transform: translateY(-1px); box-shadow: 0 0 0 4px rgba(0,174,255,.12); }
+/* quick tickers */
+.quick-tickers {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.quick-label {
+  font-family: var(--font-m);
+  font-size: 10px;
+  color: var(--tx3);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  margin-right: 4px;
+}
+.quick-chip {
+  font-family: var(--font-m);
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--tx2);
+  cursor: pointer;
+  transition: all .12s;
+  letter-spacing: .03em;
+}
+.quick-chip:hover {
+  background: var(--blue);
+  color: #fff;
+  border-color: var(--blue);
+}
+/* social proof */
 .social-row {
   display: flex;
   align-items: center;
-  gap: 32px;
-  justify-content: center;
+  gap: 20px;
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
   flex-wrap: wrap;
 }
-.social-stat { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.social-stat { display: flex; flex-direction: column; gap: 2px; }
 .social-num {
   font-family: var(--font-m);
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 500;
   color: var(--tx1);
 }
 .social-lbl {
-  font-size: 12px;
+  font-family: var(--font-m);
+  font-size: 10px;
   color: var(--tx3);
-  letter-spacing: .02em;
+  letter-spacing: .06em;
+  text-transform: uppercase;
 }
-.social-sep { width: 1px; height: 32px; background: var(--border); }
+.social-sep { width: 1px; height: 28px; background: var(--border-mid); }
+/* ── HERO RIGHT: DASHBOARD PREVIEW ── */
+.hero-right { position: relative; }
+.dash-preview {
+  background: var(--deep);
+  border: 1px solid var(--border-mid);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 24px 56px rgba(0,0,0,.5);
+}
+.dp-titlebar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dp-dot { width: 8px; height: 8px; border-radius: 50%; }
+.dp-dot-r { background: #ff5f57; }
+.dp-dot-y { background: #febc2e; }
+.dp-dot-g { background: #28c840; }
+.dp-titlebar-text {
+  flex: 1; text-align: center;
+  font-family: var(--font-m); font-size: 10px; color: var(--tx3);
+  letter-spacing: .06em;
+}
+/* Dashboard body layout */
+.dp-body { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+/* Stat row */
+.dp-stats { display: flex; gap: 6px; }
+.dp-stat {
+  flex: 1; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 10px; text-align: center;
+}
+.dp-stat-val { font-family: var(--font-m); font-size: 16px; font-weight: 500; color: var(--tx1); }
+.dp-stat-lbl { font-family: var(--font-m); font-size: 7px; color: var(--tx3); text-transform: uppercase; letter-spacing: .08em; margin-top: 1px; }
+/* Mini heatmap grid */
+.dp-heatmap { display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px; }
+.dp-hm-cell {
+  border-radius: 4px; padding: 4px 2px; text-align: center; min-height: 32px;
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+}
+.dp-hm-tk { font-family: var(--font-m); font-size: 7px; color: rgba(255,255,255,.85); font-weight: 500; }
+.dp-hm-sc { font-family: var(--font-m); font-size: 11px; color: #fff; font-weight: 500; }
+/* Cards + feed split */
+.dp-split { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+/* Mini trading card */
+.dp-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 11px; overflow: hidden; position: relative;
+}
+.dp-card-accent { position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+.dp-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.dp-card-ticker { font-family: var(--font-m); font-size: 12px; font-weight: 600; color: var(--tx1); letter-spacing: .03em; }
+.dp-card-rarity {
+  font-family: var(--font-m); font-size: 7px; font-weight: 500; letter-spacing: .08em;
+  text-transform: uppercase; padding: 2px 6px; border-radius: 99px; border: 1px solid;
+}
+.dp-card-price { font-family: var(--font-m); font-size: 14px; font-weight: 500; color: var(--tx1); margin-bottom: 4px; }
+.dp-card-change { font-family: var(--font-m); font-size: 10px; margin-bottom: 6px; }
+.dp-card-claim { font-size: 9px; color: var(--tx2); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.dp-card-bar { height: 3px; border-radius: 99px; margin-top: 8px; background: rgba(255,255,255,.06); overflow: hidden; }
+.dp-card-bar-fill { height: 100%; border-radius: 99px; }
+/* Mini feed column */
+.dp-feed {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; overflow: hidden;
+}
+.dp-feed-head {
+  padding: 7px 10px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.dp-feed-title { font-family: var(--font-m); font-size: 8px; color: var(--tx3); letter-spacing: .1em; text-transform: uppercase; display: flex; align-items: center; gap: 5px; }
+.dp-feed-live { font-family: var(--font-m); font-size: 7px; color: var(--teal); letter-spacing: .06em; }
+.dp-feed-item { padding: 7px 10px; border-bottom: 1px solid var(--border); }
+.dp-feed-item:last-child { border-bottom: none; }
+.dp-fi-top { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
+.dp-fi-badge {
+  font-family: var(--font-m); font-size: 8px; font-weight: 500; padding: 1px 5px;
+  border-radius: 3px; border: 1px solid; letter-spacing: .03em; flex-shrink: 0;
+}
+.dp-fi-claim { font-size: 9px; color: var(--tx2); line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.dp-fi-meta { display: flex; gap: 6px; align-items: center; margin-top: 2px; }
+.dp-fi-price { font-family: var(--font-m); font-size: 9px; color: var(--tx1); }
+.dp-fi-delta { font-family: var(--font-m); font-size: 8px; }
+.dp-fi-verdict {
+  font-family: var(--font-m); font-size: 7px; padding: 1px 5px; border-radius: 99px;
+  border: 1px solid; letter-spacing: .03em; margin-left: auto;
+}
+/* Float alert */
+.float-alert {
+  position: absolute;
+  bottom: -14px; right: -14px;
+  z-index: 10;
+  background: var(--surface);
+  border: 1px solid var(--border-mid);
+  border-radius: 10px;
+  padding: 11px 14px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.45);
+  animation: floatY 4s ease-in-out infinite;
+}
+@keyframes floatY { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-5px);} }
+.fa-row { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+.fa-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--red); animation: blink 1.5s ease infinite; }
+.fa-lbl { font-family: var(--font-m); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--red); }
+.fa-text { font-family: var(--font-m); font-size: 12px; color: var(--tx1); font-weight: 500; }
+.fa-sub  { font-family: var(--font-m); font-size: 10px; color: var(--tx3); margin-top: 1px; }
 /* ── SECTIONS ── */
-.sec { padding: 80px 0; }
-.sec-alt { background: var(--bg-alt); }
-.con { max-width: 1080px; margin: 0 auto; padding: 0 48px; }
+.sec-rule { border: none; border-top: 1px solid var(--border); }
+.sec { padding: 72px 0; position: relative; z-index: 1; }
+.sec-alt { background: var(--deep); }
+.con { max-width: 1080px; margin: 0 auto; padding: 0 40px; }
 .eyebrow {
   font-family: var(--font-m);
-  font-size: 12px;
-  letter-spacing: .08em;
+  font-size: 10px;
+  letter-spacing: .14em;
   text-transform: uppercase;
-  color: var(--tx3);
-  margin-bottom: 12px;
+  color: var(--blue);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
 }
+.eyebrow::before { content:''; display:block; width:18px; height:1px; background:var(--blue); opacity:.4; }
 h2 {
   font-family: var(--font-d);
-  font-size: clamp(28px, 3vw, 40px);
+  font-size: clamp(26px, 3vw, 40px);
   font-weight: 400;
   letter-spacing: -.01em;
-  line-height: 1.15;
-  color: var(--tx1);
-  margin-bottom: 12px;
+  line-height: 1.1;
+  margin-bottom: 14px;
 }
 .sec-lead {
-  font-size: 16px;
+  font-size: 15px;
   color: var(--tx2);
-  line-height: 1.7;
-  max-width: 560px;
-  margin-bottom: 48px;
+  line-height: 1.8;
+  max-width: 520px;
+  margin-bottom: 44px;
 }
-/* ── LIVE SIGNALS PREVIEW ── */
-.signals-grid {
+/* ── FEATURES GRID ── */
+.features-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  gap: 16px;
 }
-.signal-card {
+.feat {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 24px;
-  transition: box-shadow .2s;
+  border-radius: 14px;
+  padding: 32px 28px 36px;
+  transition: border-color .2s, box-shadow .2s;
+  position: relative;
 }
-.signal-card:hover { box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
-.signal-header {
+.feat:hover {
+  border-color: rgba(255,255,255,0.13);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.4);
+}
+.feat-head {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  align-items: flex-start;
+  margin-bottom: 24px;
 }
-.signal-ticker {
-  font-family: var(--font-m);
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--tx1);
-  letter-spacing: .03em;
-}
-.signal-verdict {
-  font-family: var(--font-m);
-  font-size: 11px;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-  padding: 4px 10px;
-  border-radius: 99px;
-  border: 1px solid;
-}
-.verdict-trap { color: var(--red); border-color: rgba(220,38,38,.2); background: rgba(220,38,38,.05); }
-.verdict-supported { color: var(--teal); border-color: rgba(5,150,105,.2); background: rgba(5,150,105,.05); }
-.verdict-monitoring { color: var(--tx3); border-color: var(--border); background: var(--bg-alt); }
-.signal-claim {
-  font-size: 15px;
-  color: var(--tx1);
-  line-height: 1.5;
-  margin-bottom: 16px;
-}
-.signal-meta {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  font-size: 13px;
-  color: var(--tx3);
-}
-.signal-meta strong { font-weight: 500; color: var(--tx2); }
-.signal-price {
-  font-family: var(--font-m);
-  font-size: 13px;
-  color: var(--tx1);
-}
-.signal-delta {
-  font-family: var(--font-m);
-  font-size: 12px;
-}
-.delta-pos { color: var(--teal); }
-.delta-neg { color: var(--red); }
-/* ── HOW IT WORKS ── */
-.steps {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 32px;
-}
-.step {
-  padding: 0;
-}
-.step-n {
-  font-family: var(--font-m);
-  font-size: 32px;
-  font-weight: 500;
-  color: var(--border);
-  margin-bottom: 16px;
+.feat-num {
+  font-family: var(--font-d);
+  font-size: 64px;
   line-height: 1;
+  color: var(--tx3);
+  opacity: 0.35;
+  letter-spacing: -0.03em;
 }
-.step-t {
+.feat-badge {
+  font-family: var(--font-m);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  color: var(--tx2);
+  background: rgba(255,255,255,0.03);
+}
+.feat-title {
   font-family: var(--font-b);
   font-size: 18px;
   font-weight: 600;
   color: var(--tx1);
-  margin-bottom: 8px;
-  letter-spacing: -.01em;
+  margin-bottom: 12px;
+  letter-spacing: -0.01em;
 }
-.step-d { font-size: 15px; color: var(--tx2); line-height: 1.7; }
-/* ── EXAMPLE OUTPUT ── */
-.example-card {
-  background: #0D1117;
-  border-radius: 16px;
-  overflow: hidden;
-  color: #F5F7FA;
+.feat-desc {
+  font-size: 14px;
+  color: var(--tx2);
+  line-height: 1.7;
 }
-.example-hero {
-  padding: 28px 28px 20px;
-}
-.example-hero-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 20px;
-  margin-bottom: 8px;
-}
-.example-ticker-row {
-  display: flex;
+.feat-tag {
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
-}
-.example-ticker {
-  font-family: var(--font-m);
-  font-size: 24px;
-  font-weight: 500;
-  color: #F5F7FA;
-  letter-spacing: -.02em;
-}
-.example-state {
-  font-size: 13px;
-  font-weight: 500;
-  color: #A0A8B0;
-}
-.example-badge {
-  font-family: var(--font-m);
-  font-size: 11px;
-  padding: 3px 10px;
-  border-radius: 99px;
-  border: 1px solid rgba(56,200,184,.25);
-  background: rgba(56,200,184,.08);
-  color: #38C8B8;
-}
-.example-claim {
-  font-size: 14px;
-  color: #A0A8B0;
-  line-height: 1.6;
-}
-.example-price {
-  font-family: var(--font-m);
-  font-size: 22px;
-  font-weight: 500;
-  color: #F5F7FA;
-  text-align: right;
-}
-.example-delta {
-  font-family: var(--font-m);
-  font-size: 14px;
-  color: #00DE94;
-  text-align: right;
-  margin-top: 2px;
-}
-.example-fv {
-  font-family: var(--font-m);
-  font-size: 11px;
-  color: #4A5578;
-  text-align: right;
-  margin-top: 4px;
-}
-.example-diag {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  border-top: 1px solid rgba(255,255,255,0.06);
-}
-.example-diag-cell {
-  padding: 14px 20px;
-  border-right: 1px solid rgba(255,255,255,0.06);
-}
-.example-diag-cell:last-child { border-right: none; }
-.example-diag-lbl {
   font-family: var(--font-m);
   font-size: 9px;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  color: #4A5578;
-  margin-bottom: 4px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  margin-top: 14px;
+  letter-spacing: .04em;
 }
-.example-diag-val {
-  font-family: var(--font-m);
-  font-size: 15px;
-  font-weight: 500;
-  color: #00DE94;
+.feat-accent { display: none; }
+/* ── HOW IT WORKS ── */
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
 }
-.example-sections { }
-.example-sec {
-  padding: 14px 28px;
-  border-top: 1px solid rgba(255,255,255,0.06);
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
+.step {
+  background: var(--bg);
+  padding: 28px 24px;
 }
-.example-sec-lbl {
+.step-n {
   font-family: var(--font-m);
   font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  color: #4A5578;
-  margin-bottom: 4px;
+  color: var(--tx3);
+  letter-spacing: .1em;
+  margin-bottom: 14px;
 }
-.example-sec-val {
-  font-size: 14px;
-  color: #A0A8B0;
-  line-height: 1.6;
-  flex: 1;
+.step-icon {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border-mid);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 16px;
 }
-.example-sec-tag {
-  font-family: var(--font-m);
-  font-size: 11px;
-  padding: 3px 10px;
-  border-radius: 99px;
-  border: 1px solid;
-  flex-shrink: 0;
+.step-t {
+  font-family: var(--font-d);
+  font-size: 16px;
+  font-weight: 400;
+  margin-bottom: 8px;
+  color: var(--tx1);
 }
+.step-d { font-size: 13px; color: var(--tx2); line-height: 1.7; }
 /* ── STATS ── */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 24px;
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
 }
 .stat-cell {
-  text-align: center;
-  padding: 24px 16px;
+  background: var(--bg);
+  padding: 28px 24px;
 }
 .stat-n {
-  font-family: var(--font-d);
-  font-size: 40px;
-  font-weight: 400;
+  font-family: var(--font-m);
+  font-size: 32px;
+  font-weight: 500;
   color: var(--tx1);
   letter-spacing: -.02em;
-  margin-bottom: 4px;
-  line-height: 1;
+  margin-bottom: 5px;
 }
 .stat-n .acc { color: var(--blue); }
 .stat-l {
-  font-size: 13px;
-  color: var(--tx2);
-  font-weight: 400;
+  font-family: var(--font-m);
+  font-size: 10px;
+  color: var(--tx3);
+  letter-spacing: .1em;
+  text-transform: uppercase;
   margin-bottom: 6px;
 }
-.stat-d { font-size: 13px; color: var(--tx3); line-height: 1.6; }
+.stat-d { font-size: 12px; color: var(--tx3); line-height: 1.6; }
+/* ── SAMPLE FEED ── */
+.sample-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.story-card {
+  background: var(--deep);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  transition: border-color .15s, transform .15s;
+  cursor: pointer;
+}
+.story-card:hover { border-color: var(--border-mid); transform: translateY(-1px); }
+.sc-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.sc-mid { flex: 1; min-width: 0; display: flex; align-items: flex-start; gap: 8px; }
+.sc-pip {
+  width: 7px; height: 7px; border-radius: 50%;
+  flex-shrink: 0; margin-top: 5px;
+}
+.pip-trap { background: #38C8B8; }
+.pip-ok   { background: var(--teal); }
+.pip-mon  { background: var(--tx3); }
+.sc-claim { font-size: 13px; color: var(--tx1); line-height: 1.45; flex: 1; }
+.sc-price { text-align: right; flex-shrink: 0; }
+.sc-price-main { font-family: var(--font-m); font-size: 13px; color: var(--tx1); }
+.sc-delta { font-family: var(--font-m); font-size: 11px; }
+.delta-pos { color: var(--teal); }
+.delta-neg { color: var(--red); }
+.sc-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.sc-mt { font-size: 11px; color: var(--tx3); }
+.sc-mt strong { font-weight: 500; color: var(--tx2); }
+.sc-verdict-trap { font-size: 10px; padding: 1px 7px; border-radius: 99px; border: 1px solid rgba(56,200,184,.25); background: rgba(56,200,184,.08); color: #38C8B8; }
+.sc-verdict-ok   { font-size: 10px; padding: 1px 7px; border-radius: 99px; border: 1px solid rgba(0,222,148,.25); background: rgba(0,222,148,.1); color: var(--teal); }
+/* ── TICKER DETAIL PREVIEW ── */
+.detail-preview {
+  background: var(--deep);
+  border: 1px solid var(--border-mid);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.dp-hero {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.dp-hero-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 6px;
+}
+.dp-ticker { font-family: var(--font-m); font-size: 24px; font-weight: 500; color: var(--tx1); letter-spacing: -.02em; }
+.dp-price { font-family: var(--font-m); font-size: 20px; font-weight: 500; color: var(--tx1); text-align: right; }
+.dp-claim { font-size: 13px; color: var(--tx2); line-height: 1.5; }
+.dp-diag {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border-top: 1px solid var(--border);
+}
+.dp-diag-cell { background: var(--surface); padding: 10px 14px; }
+.dp-diag-lbl { font-family: var(--font-m); font-size: 9px; text-transform: uppercase; letter-spacing: .07em; color: var(--tx3); margin-bottom: 3px; }
+.dp-diag-val { font-family: var(--font-m); font-size: 14px; font-weight: 500; color: var(--tx1); }
+.dp-sections { }
+.dp-sec {
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.dp-sec:last-child { border-bottom: none; }
+.dp-sec-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .07em; color: var(--tx3); font-weight: 500; margin-bottom: 4px; }
+.dp-sec-val { font-size: 13px; color: var(--tx2); line-height: 1.5; flex: 1; }
+.dp-sec-tag {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  border: 1px solid;
+  flex-shrink: 0;
+  font-family: var(--font-m);
+}
 /* ── CTA ── */
-.cta-sec {
-  padding: 80px 0;
-  background: var(--bg);
+.cta-sec { padding: 72px 0; background: var(--bg); }
+.cta-inner {
+  background: var(--deep);
+  border: 1px solid var(--border-mid);
+  border-radius: 16px;
+  padding: 60px 60px;
+  position: relative;
+  overflow: hidden;
   text-align: center;
+}
+.cta-glow {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 55% 50% at 50% 100%, rgba(0,174,255,.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+.cta-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-m);
+  font-size: 10px;
+  color: var(--tx3);
+  background: var(--surface);
+  border: 1px solid var(--border-mid);
+  padding: 4px 12px;
+  border-radius: 4px;
+  margin-bottom: 20px;
 }
 .cta-h2 {
   font-family: var(--font-d);
-  font-size: clamp(28px, 3.5vw, 44px);
+  font-size: clamp(26px, 3.5vw, 44px);
   font-weight: 400;
   letter-spacing: -.015em;
-  line-height: 1.15;
-  color: var(--tx1);
-  margin-bottom: 16px;
+  line-height: 1.1;
+  margin-bottom: 14px;
 }
+.cta-h2 em { font-style: italic; color: var(--blue); }
 .cta-lead {
-  font-size: 16px;
+  font-size: 15px;
   color: var(--tx2);
   margin-bottom: 32px;
-  max-width: 440px;
+  max-width: 400px;
   margin-left: auto;
   margin-right: auto;
-  line-height: 1.7;
+  line-height: 1.8;
 }
-.cta-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; }
-.cta-fine { font-size: 13px; color: var(--tx3); }
+.cta-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; }
+.btn-cta {
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 28px;
+  font-family: var(--font-b);
+  font-size: 14px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn-cta:hover { background: #33BFFF; transform: translateY(-1px); box-shadow: 0 0 0 4px rgba(0,174,255,.12); }
+.btn-cta-ghost {
+  background: transparent;
+  color: var(--tx2);
+  border: 1px solid var(--border-mid);
+  border-radius: 8px;
+  padding: 12px 28px;
+  font-family: var(--font-b);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn-cta-ghost:hover { color: var(--tx1); border-color: rgba(255,255,255,.22); }
+.cta-fine { font-family: var(--font-m); font-size: 10px; color: var(--tx3); }
 /* ── TRUST ── */
 .trust-sec {
   padding: 40px 0;
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
-  background: var(--bg-alt);
+  background: var(--deep);
 }
 .trust-row {
   display: flex;
@@ -544,13 +820,13 @@ h2 {
 }
 .trust-item {
   display: flex; align-items: center; gap: 9px;
-  opacity: .5; transition: opacity .2s;
+  opacity: .45; transition: opacity .2s;
 }
 .trust-item:hover { opacity: 1; }
 .trust-ico {
   width: 30px; height: 30px;
   border-radius: 7px;
-  background: var(--bg);
+  background: var(--surface);
   border: 1px solid var(--border);
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
@@ -559,11 +835,15 @@ h2 {
 .trust-s { font-family: var(--font-m); font-size: 9px; color: var(--tx3); }
 /* ── FOOTER ── */
 footer {
-  background: var(--bg-alt);
+  background: var(--deep);
   border-top: 1px solid var(--border);
-  padding: 56px 48px 28px;
+  padding: 52px 40px 28px;
+  max-width: none;
 }
-.footer-inner { max-width: 1080px; margin: 0 auto; }
+.footer-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+}
 .footer-grid {
   display: grid;
   grid-template-columns: 1.4fr 1fr 1fr 1fr;
@@ -572,47 +852,49 @@ footer {
 }
 .footer-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
 .footer-brand-name { font-family: var(--font-d); font-size: 16px; color: var(--tx1); }
-.footer-tagline { font-size: 14px; color: var(--tx3); line-height: 1.7; }
+.footer-tagline { font-size: 13px; color: var(--tx3); line-height: 1.7; }
 .footer-col-lbl {
   font-family: var(--font-m);
-  font-size: 11px;
-  letter-spacing: .08em;
+  font-size: 10px;
+  letter-spacing: .12em;
   text-transform: uppercase;
-  color: var(--tx3);
+  color: var(--blue);
   margin-bottom: 14px;
+  display: flex; align-items: center; gap: 8px;
 }
+.footer-col-lbl::before { content:''; display:block; width:12px; height:1px; background:var(--blue); opacity:.4; }
 .footer-links { display: flex; flex-direction: column; gap: 9px; }
-.footer-links a { font-size: 14px; color: var(--tx2); text-decoration: none; transition: color .15s; }
-.footer-links a:hover { color: var(--tx1); }
-.footer-newsletter-desc { font-size: 13px; color: var(--tx3); margin-bottom: 10px; line-height: 1.6; }
+.footer-links a { font-size: 13px; color: var(--tx3); text-decoration: none; transition: color .15s; }
+.footer-links a:hover { color: var(--tx2); }
+.footer-newsletter-desc { font-family: var(--font-m); font-size: 11px; color: var(--tx3); margin-bottom: 10px; line-height: 1.6; }
 .footer-email-row { display: flex; gap: 6px; }
 .footer-email-inp {
   flex: 1;
   background: var(--bg);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-mid);
   border-radius: 8px;
   padding: 8px 12px;
   font-family: var(--font-b);
-  font-size: 13px;
+  font-size: 12px;
   color: var(--tx1);
   outline: none;
   transition: border-color .15s;
 }
-.footer-email-inp:focus { border-color: var(--blue); }
+.footer-email-inp:focus { border-color: rgba(0,174,255,.35); }
 .footer-email-inp::placeholder { color: var(--tx3); }
 .footer-email-btn {
   background: var(--blue);
   color: #fff;
   border: none;
   border-radius: 8px;
-  padding: 8px 16px;
+  padding: 8px 14px;
   font-family: var(--font-m);
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 500;
   cursor: pointer;
   transition: background .15s;
 }
-.footer-email-btn:hover { background: #0052CC; }
+.footer-email-btn:hover { background: #33BFFF; }
 .footer-bottom {
   display: flex;
   justify-content: space-between;
@@ -622,48 +904,421 @@ footer {
   flex-wrap: wrap;
   gap: 10px;
 }
-.footer-copy, .footer-patent { font-size: 12px; color: var(--tx3); }
+.footer-copy, .footer-patent { font-family: var(--font-m); font-size: 10px; color: var(--tx3); }
 /* ── REVEAL ── */
-.reveal { opacity: 0; transform: translateY(12px); transition: opacity .5s ease, transform .5s ease; }
+.reveal { opacity: 0; transform: translateY(14px); transition: opacity .5s ease, transform .5s ease; }
 .reveal.in { opacity: 1; transform: translateY(0); }
 /* ── RESPONSIVE ── */
 @media (max-width: 900px) {
-  .signals-grid, .steps, .stats-grid, .footer-grid { grid-template-columns: 1fr; }
-  .con { padding: 0 24px; }
-  nav { padding: 0 20px; }
+  .hero-inner, .sample-grid, .footer-grid { grid-template-columns: 1fr; }
+  .hero-right { display: none; }
+  .features-grid, .steps, .stats-grid { grid-template-columns: 1fr; }
+  .con { padding: 0 20px; }
+  .hero-inner { padding: 64px 20px; }
+  .cta-inner { padding: 40px 20px; }
+  footer { padding: 44px 20px 24px; }
+  nav { padding: 0 16px; }
   .nav-links { display: none; }
+  .nav-right { gap: 8px; }
   .nav-hamburger { display: flex; }
-  .hero { padding: 64px 0 48px; }
-  .hero-inner { padding: 0 24px; }
-  .sec { padding: 56px 0; }
-  footer { padding: 44px 24px 24px; }
-  .example-diag { grid-template-columns: repeat(2, 1fr); }
+  .radar-grid { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 560px) {
-  h1 { font-size: 32px; }
-  .hero-lead { font-size: 16px; }
-  .social-row { gap: 16px; }
+  .radar-grid { grid-template-columns: 1fr; }
+  .hero-inner { padding: 48px 16px; gap: 24px; }
+  h1 { font-size: 28px; }
+  .hero-lead { font-size: 14px; }
+  .quick-tickers { gap: 6px; flex-wrap: wrap; }
+  .social-row { gap: 12px; }
   .trust-row { gap: 16px; }
-  .stats-grid { grid-template-columns: repeat(2, 1fr); }
-  .stat-n { font-size: 32px; }
+  .footer-grid { gap: 24px; }
+  .stats-grid { grid-template-columns: 1fr; }
+  .stat-n { font-size: 26px; }
+  .deck { gap: 14px; padding: 1rem 0; }
+  .card-peek { width: 180px; }
+  .card-peek-bias-text { font-size: 16px; }
+  .card-scene { width: 180px; }
   .btn-nav-ghost { display: none; }
-  nav { height: 52px; }
-  .example-hero { padding: 20px; }
-  .example-sec { padding: 12px 20px; }
-  .hero-btns { flex-direction: column; align-items: stretch; }
+  .btn-nav-primary { font-size: 12px; padding: 6px 14px; }
+  nav { height: 48px; }
 }
+@media (max-width: 380px) {
+  .card-peek { width: 160px; }
+  .card-scene { width: 160px; }
+  h1 { font-size: 24px; }
+}
+/* ── MARKET RADAR ── */
+.radar-sec { padding: 56px 0; background: var(--deep); }
+.radar-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.radar-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 18px 14px;
+  transition: border-color .15s;
+}
+.radar-card:hover { border-color: var(--border-mid); }
+.radar-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.radar-card-title {
+  font-family: var(--font-m);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--tx2);
+}
+.radar-card-count {
+  font-family: var(--font-m);
+  font-size: 9px;
+  color: var(--tx3);
+  padding: 2px 7px;
+  background: rgba(255,255,255,.04);
+  border-radius: 4px;
+}
+.radar-sparkline {
+  display: block;
+  width: 100%;
+  height: 36px;
+  margin-bottom: 12px;
+}
+.radar-items { list-style: none; }
+.radar-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-top: 1px solid rgba(255,255,255,.04);
+}
+.radar-item:first-child { border-top: none; }
+.radar-item-rank {
+  font-family: var(--font-m);
+  font-size: 9px;
+  color: var(--tx3);
+  width: 14px;
+  flex-shrink: 0;
+}
+.radar-ticker {
+  font-family: var(--font-m);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--tx1);
+  min-width: 42px;
+}
+.radar-bar-wrap {
+  flex: 1;
+  height: 4px;
+  background: rgba(255,255,255,.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.radar-bar {
+  height: 100%;
+  border-radius: 2px;
+  transition: width .5s ease;
+}
+.radar-score {
+  font-family: var(--font-m);
+  font-size: 11px;
+  font-weight: 500;
+  min-width: 28px;
+  text-align: right;
+}
+.radar-delta {
+  font-family: var(--font-m);
+  font-size: 9px;
+  min-width: 32px;
+  text-align: right;
+}
+.delta-up { color: var(--teal); }
+.delta-dn { color: var(--red); }
+.delta-flat { color: var(--amber); }
+/* ── TRADING CARD DECK ── */
+/* Drop-in animation — falls from above, lands with bounce */
+@keyframes cardDrop {
+  0% { opacity: 0; transform: translateY(-120px) rotateX(22deg) scale(0.92); }
+  55% { opacity: 1; transform: translateY(10px) rotateX(-4deg) scale(1.015); }
+  75% { transform: translateY(-5px) rotateX(2deg) scale(0.998); }
+  90% { transform: translateY(2px) rotateX(-1deg) scale(1.002); }
+  100% { opacity: 1; transform: translateY(0) rotateX(0deg) scale(1); }
+}
+.deck {
+  display: flex;
+  gap: 24px;
+  padding: 2rem 0;
+  justify-content: center;
+  flex-wrap: wrap;
+  -webkit-font-smoothing: antialiased;
+}
+.card-peek {
+  width: 220px;
+  border-radius: 14px;
+  overflow: hidden;
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border-mid);
+  cursor: pointer;
+  animation: cardDrop 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: transform .2s, box-shadow .2s;
+}
+.card-peek:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 48px rgba(0,0,0,.5);
+}
+.card-peek:nth-child(1) { animation-delay: 0.08s; }
+.card-peek:nth-child(2) { animation-delay: 0.22s; }
+.card-peek:nth-child(3) { animation-delay: 0.36s; }
+.card-peek-accent { height: 2px; width: 100%; }
+.card-peek-body { padding: 16px 16px 0; }
+.card-peek-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+.card-peek-left { display: flex; align-items: center; gap: 9px; }
+.card-peek-logo {
+  width: 32px; height: 32px; border-radius: 6px; display: flex;
+  align-items: center; justify-content: center; flex-shrink: 0;
+  font-family: var(--font-m); font-size: 8px; font-weight: 500; letter-spacing: .02em;
+}
+.card-peek-ticker { font-family: var(--font-m); font-size: 14px; font-weight: 600; color: var(--tx1); letter-spacing: .04em; line-height: 1; }
+.card-peek-name { font-size: 9px; font-weight: 300; color: var(--tx3); margin-top: 1px; }
+.card-peek-rarity {
+  font-family: var(--font-m); font-size: 7px; letter-spacing: .08em;
+  text-transform: uppercase; padding: 2px 7px; border-radius: 99px; border: 1px solid;
+}
+.card-peek-price { font-family: var(--font-d); font-size: 18px; color: var(--tx1); line-height: 1; margin-bottom: 4px; }
+.card-peek-change { font-family: var(--font-m); font-size: 10px; margin-bottom: 10px; }
+.card-peek-bias {
+  border-radius: 5px; padding: 8px 12px; border: 1px solid; text-align: center;
+  margin-bottom: 0; position: relative; overflow: hidden;
+}
+.card-peek-bias-eye { font-family: var(--font-m); font-size: 6px; letter-spacing: .14em; text-transform: uppercase; color: var(--tx3); margin-bottom: 2px; }
+.card-peek-bias-text {
+  font-family: 'Anton', 'Impact', sans-serif; font-size: 20px;
+  letter-spacing: .04em; text-transform: uppercase; line-height: 1; font-weight: 400;
+}
+/* Fade-out water shadow at bottom */
+.card-peek-fade {
+  height: 60px;
+  background: linear-gradient(to bottom, transparent 0%, var(--surface) 70%, var(--surface) 100%);
+  position: relative;
+  margin-top: -10px;
+  pointer-events: none;
+}
+.card-peek-cta {
+  text-align: center; padding: 0 16px 14px;
+  font-family: var(--font-m); font-size: 8px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--tx3);
+}
+.card-scene {
+  width: 232px;
+  perspective: 1400px;
+  cursor: pointer;
+  animation: cardDrop 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+  opacity: 0;
+}
+.card-scene:nth-child(1) { animation-delay: 0.08s; }
+.card-scene:nth-child(2) { animation-delay: 0.22s; }
+.card-scene:nth-child(3) { animation-delay: 0.36s; }
+.card-flipper {
+  position: relative;
+  width: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.8s cubic-bezier(0.35, 0.1, 0.15, 1);
+}
+.card-scene.flipped .card-flipper { transform: rotateY(180deg); }
+.card-front, .card-back {
+  width: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.card-back {
+  position: absolute;
+  top: 0; left: 0;
+  transform: rotateY(180deg);
+}
+.foil-layer {
+  position: absolute; inset: 0; border-radius: 12px; pointer-events: none;
+  opacity: 0; transition: opacity 0.3s; z-index: 10; mix-blend-mode: screen;
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%),
+    rgba(255,255,255,0.12) 0%, rgba(0,255,82,0.08) 20%,
+    rgba(0,222,148,0.06) 40%, rgba(0,174,255,0.05) 60%, transparent 75%);
+}
+.foil-rainbow {
+  position: absolute; inset: 0; border-radius: 12px; pointer-events: none;
+  opacity: 0; transition: opacity 0.3s; z-index: 9; mix-blend-mode: screen;
+  background: repeating-linear-gradient(calc(var(--angle, 105deg)),
+    rgba(255,0,128,0.04) 0px, rgba(255,100,0,0.04) 8px,
+    rgba(255,220,0,0.04) 16px, rgba(0,255,128,0.04) 24px,
+    rgba(0,200,255,0.04) 32px, rgba(120,0,255,0.04) 40px,
+    rgba(255,0,128,0.04) 48px);
+}
+.foil-scan {
+  position: absolute; inset: 0; border-radius: 12px; pointer-events: none;
+  opacity: 0; z-index: 11; overflow: hidden;
+}
+.foil-scan::after {
+  content: ''; position: absolute; top: -100%; left: -20%;
+  width: 140%; height: 60%;
+  background: linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.04) 40%,
+    rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.04) 60%, transparent 100%);
+  transform: skewX(-15deg);
+  animation: scanMove 3s ease-in-out infinite;
+}
+@keyframes scanMove { 0% { top: -100%; } 100% { top: 200%; } }
+.foil-border {
+  position: absolute; inset: 0; border-radius: 12px; pointer-events: none;
+  opacity: 0; transition: opacity 0.4s; z-index: 8;
+}
+.card-scene:not(.flipped):hover .foil-layer,
+.card-scene:not(.flipped):hover .foil-rainbow,
+.card-scene:not(.flipped):hover .foil-border { opacity: 1; }
+.card-scene:not(.flipped):hover .foil-scan { opacity: 1; }
+.card-scene.flipped:hover .foil-layer,
+.card-scene.flipped:hover .foil-rainbow,
+.card-scene.flipped:hover .foil-border { opacity: 1; }
+.card-scene.flipped:hover .foil-scan { opacity: 1; }
+.tc {
+  background: var(--deep); border: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  transition: border-color 0.25s, box-shadow 0.25s; position: relative;
+}
+.card-scene:hover .tc {
+  border-color: rgba(255,255,255,0.13);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+.tc-accent { height: 1px; width: 100%; flex-shrink: 0; }
+.tc-body { padding: 16px 16px 12px; display: flex; flex-direction: column; }
+.tc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+.tc-header-left { display: flex; align-items: center; gap: 11px; }
+.tc-logo-wrap, .tc-logo {
+  width: 42px; height: 42px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.tc-id { display: flex; flex-direction: column; gap: 1px; }
+.tc-ticker { font-family: var(--font-m); font-size: 15px; font-weight: 600; line-height: 1; letter-spacing: 0.04em; color: var(--tx1); }
+.tc-name { font-size: 10px; font-weight: 300; color: var(--tx3); letter-spacing: 0.01em; }
+.tc-date { font-family: var(--font-m); font-size: 8px; letter-spacing: 0.06em; color: var(--tx3); margin-top: 1px; text-transform: uppercase; }
+.tc-date-badge { font-family: var(--font-m); font-size: 8px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tx3); padding: 2px 7px; border-radius: 3px; border: 1px solid var(--border); background: var(--surface); white-space: nowrap; }
+.tc-rarity { font-family: var(--font-m); font-size: 8px; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 7px; border-radius: 99px; }
+.tc-price-row { display: flex; align-items: baseline; gap: 7px; }
+.tc-price { font-family: var(--font-d); font-size: 20px; letter-spacing: -0.02em; color: var(--tx1); line-height: 1; }
+.tc-change { font-family: var(--font-m); font-size: 11px; }
+.tc-chart { border-radius: 7px; overflow: hidden; height: 60px; background: var(--surface); border: 1px solid var(--border); }
+.tc-move { font-family: var(--font-d); font-size: 14px; letter-spacing: -0.01em; color: var(--tx1); line-height: 1.2; }
+.tc-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+.tc-tag { font-family: var(--font-m); font-size: 7px; letter-spacing: 0.07em; text-transform: uppercase; padding: 2px 7px; border-radius: 99px; }
+.tc-divider { height: 1px; background: var(--border); }
+.tc-conf-row { display: flex; align-items: center; gap: 7px; }
+.tc-conf-label { font-family: var(--font-m); font-size: 8px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--tx3); width: 68px; flex-shrink: 0; }
+.tc-conf-bar { flex: 1; height: 2px; border-radius: 2px; background: rgba(255,255,255,0.13); overflow: hidden; }
+.tc-conf-fill { height: 100%; border-radius: 2px; }
+.tc-conf-val { font-family: var(--font-m); font-size: 11px; font-weight: 500; width: 28px; text-align: right; flex-shrink: 0; }
+.tc-window { font-family: var(--font-m); font-size: 8px; color: var(--tx3); letter-spacing: 0.05em; text-transform: uppercase; margin-top: -5px; }
+.tc-signals { display: flex; flex-direction: column; gap: 6px; }
+.tc-signal-row { display: flex; gap: 7px; align-items: flex-start; }
+.tc-pip { width: 3px; height: 3px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+.tc-signal-label { font-family: var(--font-m); font-size: 7px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--tx3); }
+.tc-signal-text { font-size: 11px; font-weight: 300; line-height: 1.4; color: var(--tx2); margin-top: 1px; }
+.tc-bias { font-family: var(--font-m); font-size: 9px; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; padding: 5px 10px; border-radius: 6px; text-align: center; background: var(--surface); border: 1px solid rgba(255,255,255,0.13); }
+/* Bias block — large Anton text */
+.tc-bias-block { border-radius: 5px; padding: 10px 14px; margin-bottom: 13px; border: 1px solid; position: relative; overflow: hidden; text-align: center; }
+.tc-bias-eyebrow { font-family: var(--font-m); font-size: 7px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--tx3); margin-bottom: 3px; }
+.tc-bias-text { font-family: 'Anton', 'Franklin Gothic Heavy', 'Impact', sans-serif; font-size: 30px; letter-spacing: 0.04em; text-transform: uppercase; line-height: 0.92; font-weight: 400; display: block; width: 100%; }
+.tc-narrative { font-size: 11px; font-weight: 300; line-height: 1.55; color: var(--tx2); }
+.tc-meta { display: flex; align-items: center; gap: 10px; }
+.tc-conf-wrap { display: flex; align-items: center; gap: 7px; flex: 1; }
+.tc-conf-lbl { font-family: var(--font-m); font-size: 7px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--tx3); flex-shrink: 0; }
+.tc-window-pill { font-family: var(--font-m); font-size: 8px; letter-spacing: 0.06em; padding: 3px 8px; border-radius: 3px; background: var(--surface); border: 1px solid rgba(255,255,255,0.12); color: var(--tx2); white-space: nowrap; flex-shrink: 0; }
+.tc-signal-block { display: flex; flex-direction: column; gap: 5px; padding: 10px 11px; border-radius: 6px; background: var(--surface); border: 1px solid var(--border); }
+.tc-signal-line { display: flex; gap: 8px; align-items: flex-start; }
+.tc-signal-text-sm { font-size: 10.5px; font-weight: 300; line-height: 1.45; color: var(--tx2); }
+.tc-signal-text-sm.risk { color: var(--tx3); }
+.tc-footer-strip { display: flex; align-items: center; justify-content: space-between; padding: 7px 10px; border-radius: 5px; border: 1px solid var(--border); background: var(--surface); }
+.tc-phase { font-family: var(--font-m); font-size: 7.5px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; }
+.tc-live-row { display: flex; align-items: center; gap: 5px; }
+.tc-pulse { width: 4px; height: 4px; border-radius: 50%; animation: blink 2s ease infinite; }
+.tc-live-lbl { font-family: var(--font-m); font-size: 7.5px; color: var(--tx3); letter-spacing: 0.06em; text-transform: uppercase; }
+.tc-metrics { display: flex; gap: 7px; }
+.tc-metric { flex: 1; border-radius: 7px; padding: 7px 9px; background: var(--surface); border: 1px solid var(--border); }
+.tc-metric-label { font-family: var(--font-m); font-size: 7px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--tx3); margin-bottom: 3px; }
+.tc-metric-val { font-family: var(--font-d); font-size: 17px; line-height: 1; }
+.tc-footer { display: flex; justify-content: space-between; align-items: center; padding: 5px 9px; border-radius: 6px; background: var(--surface); border: 1px solid var(--border); }
+.tc-verdict { font-family: var(--font-m); font-size: 8px; letter-spacing: 0.09em; text-transform: uppercase; font-weight: 500; }
+.tc-horizon { font-family: var(--font-m); font-size: 8px; color: var(--tx3); }
+.flip-hint { text-align: center; font-family: var(--font-m); font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--tx3); padding: 6px 0 10px; }
+.pulse-dot { width: 5px; height: 5px; border-radius: 50%; animation: blink 2s ease infinite; flex-shrink: 0; }
+@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.2;} }
+.card-back-inner { width: 100%; display: flex; flex-direction: column; position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,0.13); border-radius: 12px; }
+.back-graphic { width: 100%; height: 180px; position: relative; overflow: hidden; flex-shrink: 0; }
+.back-graphic svg { width: 100%; height: 100%; }
+.back-content { padding: 14px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.back-company-row { display: flex; align-items: center; gap: 10px; }
+.back-company-logo { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.13); }
+.back-company-name { font-family: var(--font-d); font-size: 16px; letter-spacing: -0.01em; color: var(--tx1); line-height: 1.1; }
+.back-company-sector { font-family: var(--font-m); font-size: 8px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tx3); margin-top: 1px; }
+.back-divider { height: 1px; background: var(--border); }
+.back-fact-label { font-family: var(--font-m); font-size: 7px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--tx3); margin-bottom: 3px; }
+.back-fact { font-family: var(--font-d); font-size: 13px; line-height: 1.45; color: var(--tx1); font-style: italic; }
+.back-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.back-stat { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; }
+.back-stat-label { font-family: var(--font-m); font-size: 7px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--tx3); margin-bottom: 2px; }
+.back-stat-val { font-family: var(--font-m); font-size: 12px; font-weight: 500; }
+.back-footer { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); }
+.back-footer-label { font-family: var(--font-m); font-size: 8px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tx3); }
+.back-footer-val { font-family: var(--font-m); font-size: 9px; font-weight: 500; }
+.flip-back-hint { text-align: center; font-family: var(--font-m); font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--tx3); padding: 8px 0 10px; }
 </style>
 </head>
 <body>
+<!-- ── TICKER ── -->
+<div class="ticker-wrap">
+  <div class="ticker-live">
+    <span class="live-dot"></span>
+    <span class="live-lbl">Live</span>
+  </div>
+  <div class="ticker-scroll">
+    <div class="ticker-inner">
+      <div class="tk"><span class="tk-s">NVDA</span><span class="tk-v">$142.50</span><span class="tk-u">+1.32%</span></div>
+      <div class="tk"><span class="tk-s">TSLA</span><span class="tk-v">$378.20</span><span class="tk-d">−1.41%</span></div>
+      <div class="tk"><span class="tk-s">AAPL</span><span class="tk-v">$245.80</span><span class="tk-u">+0.50%</span></div>
+      <div class="tk"><span class="tk-s">MSFT</span><span class="tk-v">$468.35</span><span class="tk-u">+0.89%</span></div>
+      <div class="tk"><span class="tk-s">META</span><span class="tk-v">$635.40</span><span class="tk-d">−0.33%</span></div>
+      <div class="tk"><span class="tk-s">GOOGL</span><span class="tk-v">$198.75</span><span class="tk-u">+0.45%</span></div>
+      <div class="tk"><span class="tk-s">AMZN</span><span class="tk-v">$228.60</span><span class="tk-u">+1.03%</span></div>
+      <div class="tk"><span class="tk-s">PLTR</span><span class="tk-v">$98.45</span><span class="tk-u">+2.91%</span></div>
+      <div class="tk"><span class="tk-s">AMD</span><span class="tk-v">$178.90</span><span class="tk-d">−0.87%</span></div>
+      <div class="tk"><span class="tk-s">SPX</span><span class="tk-v">5,284.11</span><span class="tk-u">+1.42%</span></div>
+      <div class="tk"><span class="tk-s">US10Y</span><span class="tk-v">4.317%</span><span class="tk-d">−3.1bp</span></div>
+      <div class="tk"><span class="tk-s">NVDA</span><span class="tk-v">$142.50</span><span class="tk-u">+1.32%</span></div>
+      <div class="tk"><span class="tk-s">TSLA</span><span class="tk-v">$378.20</span><span class="tk-d">−1.41%</span></div>
+      <div class="tk"><span class="tk-s">AAPL</span><span class="tk-v">$245.80</span><span class="tk-u">+0.50%</span></div>
+      <div class="tk"><span class="tk-s">MSFT</span><span class="tk-v">$468.35</span><span class="tk-u">+0.89%</span></div>
+      <div class="tk"><span class="tk-s">META</span><span class="tk-v">$635.40</span><span class="tk-d">−0.33%</span></div>
+      <div class="tk"><span class="tk-s">GOOGL</span><span class="tk-v">$198.75</span><span class="tk-u">+0.45%</span></div>
+      <div class="tk"><span class="tk-s">AMZN</span><span class="tk-v">$228.60</span><span class="tk-u">+1.03%</span></div>
+      <div class="tk"><span class="tk-s">PLTR</span><span class="tk-v">$98.45</span><span class="tk-u">+2.91%</span></div>
+      <div class="tk"><span class="tk-s">AMD</span><span class="tk-v">$178.90</span><span class="tk-d">−0.87%</span></div>
+      <div class="tk"><span class="tk-s">SPX</span><span class="tk-v">5,284.11</span><span class="tk-u">+1.42%</span></div>
+      <div class="tk"><span class="tk-s">US10Y</span><span class="tk-v">4.317%</span><span class="tk-d">−3.1bp</span></div>
+    </div>
+  </div>
+</div>
 <!-- ── NAV ── -->
 <nav>
   <a href="/" class="nav-logo">
     <svg width="22" height="22" viewBox="0 0 40 40" fill="none">
       <polygon points="20,4 36,32 4,32" fill="none" stroke="url(#ng)" stroke-width="1.5" stroke-linejoin="round"/>
-      <line x1="4"  y1="32" x2="14" y2="32" stroke="#0066FF" stroke-width="2.8" stroke-linecap="round"/>
-      <line x1="14" y1="32" x2="26" y2="32" stroke="#0052CC" stroke-width="2.8" stroke-linecap="round"/>
-      <line x1="26" y1="32" x2="36" y2="32" stroke="#003D99" stroke-width="2.8" stroke-linecap="round"/>
-      <defs><linearGradient id="ng" x1="4" y1="32" x2="36" y2="4" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#0066FF"/><stop offset="100%" stop-color="#003D99"/></linearGradient></defs>
+      <line x1="4"  y1="32" x2="14" y2="32" stroke="#00FFFF" stroke-width="2.8" stroke-linecap="round"/>
+      <line x1="14" y1="32" x2="26" y2="32" stroke="#00AEFF" stroke-width="2.8" stroke-linecap="round"/>
+      <line x1="26" y1="32" x2="36" y2="32" stroke="#00DE94" stroke-width="2.8" stroke-linecap="round"/>
+      <defs><linearGradient id="ng" x1="4" y1="32" x2="36" y2="4" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#00FFFF"/><stop offset="50%" stop-color="#00AEFF"/><stop offset="100%" stop-color="#00DE94"/></linearGradient></defs>
     </svg>
     <span class="nav-logo-name">Market Prism</span>
   </a>
@@ -679,6 +1334,7 @@ footer {
     <button class="nav-hamburger" onclick="document.getElementById('mobile-nav').classList.add('open')" aria-label="Open menu">&#9776;</button>
   </div>
 </nav>
+<!-- Mobile nav overlay -->
 <div class="mobile-nav-overlay" id="mobile-nav">
   <button class="mobile-nav-close" onclick="this.parentElement.classList.remove('open')" aria-label="Close menu">&times;</button>
   <a href="/dashboard" onclick="this.parentElement.classList.remove('open')">Dashboard</a>
@@ -688,33 +1344,255 @@ footer {
   <a href="#" style="margin-top:16px;font-size:14px;color:var(--tx3);">Sign in</a>
   <a href="#" style="background:var(--blue);color:#fff;border-radius:8px;padding:10px 24px;">Get started</a>
 </div>
-
 <!-- ── HERO ── -->
 <div class="hero">
+  <div class="hero-grid-bg"></div>
+  <div class="hero-glow"></div>
   <div class="hero-inner">
-    <div class="hero-eyebrow">
-      <span class="live-dot"></span>
-      Narrative intelligence platform
+    <!-- Left -->
+    <div>
+      <div class="hero-eyebrow">
+        <span class="live-dot"></span>
+        narrative intelligence · live market coverage
+      </div>
+      <h1>
+        Trade like a hedge fund.<br>
+        <em>Every day.</em>
+      </h1>
+      <p class="hero-lead">
+        Every morning, Market Prism delivers the same forensic narrative analysis institutional desks pay $24,000 a year for. Verdict-driven. SEC-anchored. Statistically validated.
+      </p>
+      <div class="ticker-search-wrap">
+        <div class="ticker-search-label">Analyse a ticker</div>
+        <div class="ticker-search-row">
+          <input class="ticker-search-input" type="text" placeholder="NVDA, TSLA, AAPL, MSFT…">
+          <button class="btn-primary">Analyse →</button>
+        </div>
+      </div>
+      <div class="quick-tickers">
+        <span class="quick-label">Try</span>
+        <span class="quick-chip">NVDA</span>
+        <span class="quick-chip">TSLA</span>
+        <span class="quick-chip">PLTR</span>
+        <span class="quick-chip">META</span>
+        <span class="quick-chip">AMZN</span>
+      </div>
+      <div class="social-row">
+        <div class="social-stat"><span class="social-num">200,000+</span><span class="social-lbl">Stories analysed</span></div>
+        <div class="social-sep"></div>
+        <div class="social-stat"><span class="social-num">4,200+</span><span class="social-lbl">Active analysts</span></div>
+        <div class="social-sep"></div>
+        <div class="social-stat"><span class="social-num">3</span><span class="social-lbl">US Patents pending</span></div>
+      </div>
     </div>
-    <h1>Know what's really driving<br>the market. Before it moves.</h1>
-    <p class="hero-lead">
-      Market Prism delivers forensic narrative analysis on 100+ equities every morning &mdash; the same intelligence institutional desks pay six figures for.
-    </p>
-    <div class="hero-btns">
-      <button class="btn-primary" onclick="window.location.href='/dashboard'">Open the dashboard</button>
-      <button class="btn-outline" onclick="document.getElementById('example').scrollIntoView({behavior:'smooth'})">See a sample report</button>
-    </div>
-    <div class="social-row">
-      <div class="social-stat"><span class="social-num">200,000+</span><span class="social-lbl">Narratives analysed</span></div>
-      <div class="social-sep"></div>
-      <div class="social-stat"><span class="social-num">4,200+</span><span class="social-lbl">Active analysts</span></div>
-      <div class="social-sep"></div>
-      <div class="social-stat"><span class="social-num">3</span><span class="social-lbl">US Patents pending</span></div>
+    <!-- Right: dashboard preview -->
+    <div class="hero-right" style="position:relative;">
+      <div class="float-alert">
+        <div class="fa-row"><span class="fa-dot"></span><span class="fa-lbl">Narrative Trap</span></div>
+        <div class="fa-text">TSLA · Price/fundamentals</div>
+        <div class="fa-sub">Divergence flagged · +47% vs model</div>
+      </div>
+      <div class="dash-preview">
+        <div class="dp-titlebar">
+          <span class="dp-dot dp-dot-r"></span>
+          <span class="dp-dot dp-dot-y"></span>
+          <span class="dp-dot dp-dot-g"></span>
+          <span class="dp-titlebar-text">Market Prism — Discover</span>
+        </div>
+        <div class="dp-body">
+          <!-- Stat chips -->
+          <div class="dp-stats">
+            <div class="dp-stat"><div class="dp-stat-val" style="color:var(--blue);">171</div><div class="dp-stat-lbl">Tracked</div></div>
+            <div class="dp-stat"><div class="dp-stat-val" style="color:var(--blue);">12</div><div class="dp-stat-lbl">Breaking</div></div>
+            <div class="dp-stat"><div class="dp-stat-val" style="color:var(--amber);">8</div><div class="dp-stat-lbl">Traps</div></div>
+            <div class="dp-stat"><div class="dp-stat-val">64</div><div class="dp-stat-lbl">Avg Health</div></div>
+          </div>
+          <!-- Mini heatmap -->
+          <div class="dp-heatmap">
+            <div class="dp-hm-cell" style="background:linear-gradient(135deg,#0A3848,#062838);"><span class="dp-hm-tk">LOW</span><span class="dp-hm-sc">83</span></div>
+            <div class="dp-hm-cell" style="background:linear-gradient(135deg,#0A3848,#062838);"><span class="dp-hm-tk">TXN</span><span class="dp-hm-sc">81</span></div>
+            <div class="dp-hm-cell" style="background:linear-gradient(135deg,#0A3848,#062838);"><span class="dp-hm-tk">MOS</span><span class="dp-hm-sc">81</span></div>
+            <div class="dp-hm-cell" style="background:linear-gradient(135deg,#083040,#062838);"><span class="dp-hm-tk">IBRX</span><span class="dp-hm-sc">79</span></div>
+            <div class="dp-hm-cell" style="background:linear-gradient(135deg,#083040,#062838);"><span class="dp-hm-tk">NFLX</span><span class="dp-hm-sc">79</span></div>
+            <div class="dp-hm-cell" style="background:linear-gradient(135deg,#083040,#062838);"><span class="dp-hm-tk">JNJ</span><span class="dp-hm-sc">78</span></div>
+            <div class="dp-hm-cell" style="background:linear-gradient(135deg,#083040,#062838);"><span class="dp-hm-tk">CVX</span><span class="dp-hm-sc">78</span></div>
+            <div class="dp-hm-cell" style="background:linear-gradient(135deg,#083040,#062838);"><span class="dp-hm-tk">SNPS</span><span class="dp-hm-sc">78</span></div>
+            <div class="dp-hm-cell" style="background:linear-gradient(135deg,#083040,#062838);"><span class="dp-hm-tk">ADBE</span><span class="dp-hm-sc">78</span></div>
+            <div class="dp-hm-cell" style="background:linear-gradient(135deg,#083040,#062838);"><span class="dp-hm-tk">ACM</span><span class="dp-hm-sc">78</span></div>
+            <div class="dp-hm-cell" style="background:linear-gradient(135deg,#083040,#062838);"><span class="dp-hm-tk">XYL</span><span class="dp-hm-sc">77</span></div>
+            <div class="dp-hm-cell" style="background:linear-gradient(135deg,#083040,#062838);"><span class="dp-hm-tk">GIS</span><span class="dp-hm-sc">77</span></div>
+            <div class="dp-hm-cell" style="background:linear-gradient(135deg,#083040,#062838);"><span class="dp-hm-tk">HAL</span><span class="dp-hm-sc">77</span></div>
+            <div class="dp-hm-cell" style="background:linear-gradient(135deg,#083040,#062838);"><span class="dp-hm-tk">TMO</span><span class="dp-hm-sc">77</span></div>
+            <div class="dp-hm-cell" style="background:linear-gradient(135deg,#083040,#062838);"><span class="dp-hm-tk">MRK</span><span class="dp-hm-sc">77</span></div>
+            <div class="dp-hm-cell" style="background:linear-gradient(135deg,#083040,#062838);"><span class="dp-hm-tk">ABBV</span><span class="dp-hm-sc">77</span></div>
+          </div>
+          <!-- Cards + Feed split -->
+          <div class="dp-split">
+            <!-- Mini card 1 -->
+            <div class="dp-card">
+              <div class="dp-card-accent" style="background:linear-gradient(90deg,var(--teal),transparent);opacity:0.7;"></div>
+              <div class="dp-card-head">
+                <span class="dp-card-ticker">NVDA</span>
+                <span class="dp-card-rarity" style="color:var(--teal);border-color:rgba(0,222,148,.3);background:rgba(0,222,148,.08);">RARE</span>
+              </div>
+              <div class="dp-card-price">$142.50</div>
+              <div class="dp-card-change" style="color:var(--teal);">&#9650; 1.32%</div>
+              <div class="dp-card-claim">Blackwell demand exceeding supply — data center capex cycle accelerating through 2026</div>
+              <div class="dp-card-bar"><div class="dp-card-bar-fill" style="width:78%;background:var(--teal);opacity:0.7;"></div></div>
+            </div>
+            <!-- Mini feed -->
+            <div class="dp-feed">
+              <div class="dp-feed-head">
+                <span class="dp-feed-title"><span class="live-dot"></span>Live Narratives</span>
+                <span class="dp-feed-live">LIVE</span>
+              </div>
+              <div class="dp-feed-item">
+                <div class="dp-fi-top">
+                  <span class="dp-fi-badge" style="background:rgba(56,200,184,.08);color:#38C8B8;border-color:rgba(56,200,184,.2);">TSLA</span>
+                  <span class="dp-fi-claim">Robotaxi narrative re-emerging but delivery numbers still soft</span>
+                </div>
+                <div class="dp-fi-meta">
+                  <span class="dp-fi-price">$378.20</span>
+                  <span class="dp-fi-delta" style="color:#38C8B8;">-1.41%</span>
+                  <span class="dp-fi-verdict" style="background:rgba(56,200,184,.08);color:#38C8B8;border-color:rgba(56,200,184,.2);">Trap</span>
+                </div>
+              </div>
+              <div class="dp-feed-item">
+                <div class="dp-fi-top">
+                  <span class="dp-fi-badge" style="background:rgba(0,222,148,.08);color:var(--teal);border-color:rgba(0,222,148,.2);">PLTR</span>
+                  <span class="dp-fi-claim">AIP deployment accelerating across defense sector</span>
+                </div>
+                <div class="dp-fi-meta">
+                  <span class="dp-fi-price">$98.45</span>
+                  <span class="dp-fi-delta" style="color:var(--teal);">+2.91%</span>
+                  <span class="dp-fi-verdict" style="background:rgba(0,222,148,.08);color:var(--teal);border-color:rgba(0,222,148,.2);">Supported</span>
+                </div>
+              </div>
+              <div class="dp-feed-item">
+                <div class="dp-fi-top">
+                  <span class="dp-fi-badge" style="background:rgba(0,174,255,.08);color:var(--blue);border-color:rgba(0,174,255,.2);">MSFT</span>
+                  <span class="dp-fi-claim">Copilot attach rates beating consensus</span>
+                </div>
+                <div class="dp-fi-meta">
+                  <span class="dp-fi-price">$468.35</span>
+                  <span class="dp-fi-delta" style="color:var(--teal);">+0.89%</span>
+                  <span class="dp-fi-verdict" style="background:rgba(0,222,148,.08);color:var(--teal);border-color:rgba(0,222,148,.2);">Supported</span>
+                </div>
+              </div>
+              <div class="dp-feed-item">
+                <div class="dp-fi-top">
+                  <span class="dp-fi-badge" style="background:rgba(90,184,216,.08);color:#5AB8D8;border-color:rgba(90,184,216,.2);">META</span>
+                  <span class="dp-fi-claim">Reality Labs losses widening — AI pivot narrative under pressure</span>
+                </div>
+                <div class="dp-fi-meta">
+                  <span class="dp-fi-price">$612.80</span>
+                  <span class="dp-fi-delta" style="color:#5AB8D8;">-0.38%</span>
+                  <span class="dp-fi-verdict" style="background:rgba(90,184,216,.08);color:#5AB8D8;border-color:rgba(90,184,216,.2);">Fragile</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
-
-<!-- ── TRUST BAR ── -->
+<!-- ── LIVE NARRATIVE SIGNALS ── -->
+<div class="radar-sec">
+  <div class="con">
+    <div class="eyebrow reveal">Market Radar</div>
+    <h2 class="reveal" style="margin-bottom:8px;">Live narrative signals</h2>
+    <p class="sec-lead reveal" style="margin-bottom:28px;">Real-time narrative energy across the coverage universe — breakouts, exhaustion, coordination risk, and sector momentum.</p>
+    <div class="deck reveal">
+      <!-- NVDA peek -->
+      <div class="card-peek">
+        <div class="card-peek-accent" style="background:linear-gradient(90deg,#38C8B8,transparent);"></div>
+        <div class="card-peek-body">
+          <div class="card-peek-header">
+            <div class="card-peek-left">
+              <div class="card-peek-logo" style="background:rgba(118,185,0,.15);color:#76b900;">NVDA</div>
+              <div><div class="card-peek-ticker">NVDA</div><div class="card-peek-name">Nvidia Corporation</div></div>
+            </div>
+            <span class="card-peek-rarity" style="background:rgba(56,200,184,0.08);color:#38C8B8;border-color:rgba(56,200,184,0.22);">Rare</span>
+          </div>
+          <div class="card-peek-price">$118.42</div>
+          <div class="card-peek-change" style="color:#38C8B8;">&#9660; 2.14%</div>
+          <div class="card-peek-bias" style="border-color:rgba(56,200,184,0.2);background:rgba(56,200,184,0.07);">
+            <div class="card-peek-bias-eye">Signal bias</div>
+            <div class="card-peek-bias-text" style="color:#38C8B8;">FADE RALLIES</div>
+          </div>
+        </div>
+        <div class="card-peek-fade"></div>
+        <div class="card-peek-cta">See full signal &#8594;</div>
+      </div>
+      <!-- AAPL peek -->
+      <div class="card-peek">
+        <div class="card-peek-accent" style="background:linear-gradient(90deg,var(--teal),transparent);opacity:0.7;"></div>
+        <div class="card-peek-body">
+          <div class="card-peek-header">
+            <div class="card-peek-left">
+              <div class="card-peek-logo" style="background:rgba(0,222,148,.1);color:var(--teal);">AAPL</div>
+              <div><div class="card-peek-ticker">AAPL</div><div class="card-peek-name">Apple Inc.</div></div>
+            </div>
+            <span class="card-peek-rarity" style="background:rgba(0,222,148,0.06);color:var(--teal);border-color:rgba(0,222,148,0.15);">Epic</span>
+          </div>
+          <div class="card-peek-price">$212.80</div>
+          <div class="card-peek-change" style="color:var(--teal);">&#9650; 1.87%</div>
+          <div class="card-peek-bias" style="border-color:rgba(0,222,148,0.18);background:rgba(0,222,148,0.06);">
+            <div class="card-peek-bias-eye">Signal bias</div>
+            <div class="card-peek-bias-text" style="color:var(--teal);">RIDE THE TREND</div>
+          </div>
+        </div>
+        <div class="card-peek-fade"></div>
+        <div class="card-peek-cta">See full signal &#8594;</div>
+      </div>
+      <!-- TSLA peek -->
+      <div class="card-peek">
+        <div class="card-peek-accent" style="background:linear-gradient(90deg,#5AB8D8,transparent);opacity:0.6;"></div>
+        <div class="card-peek-body">
+          <div class="card-peek-header">
+            <div class="card-peek-left">
+              <div class="card-peek-logo" style="background:rgba(90,184,216,.1);color:#5AB8D8;">TSLA</div>
+              <div><div class="card-peek-ticker">TSLA</div><div class="card-peek-name">Tesla Inc.</div></div>
+            </div>
+            <span class="card-peek-rarity" style="background:rgba(90,184,216,0.06);color:#5AB8D8;border-color:rgba(90,184,216,0.18);">Uncommon</span>
+          </div>
+          <div class="card-peek-price">$247.15</div>
+          <div class="card-peek-change" style="color:#5AB8D8;">&#9650; 0.42%</div>
+          <div class="card-peek-bias" style="border-color:rgba(90,184,216,0.18);background:rgba(90,184,216,0.06);">
+            <div class="card-peek-bias-eye">Signal bias</div>
+            <div class="card-peek-bias-text" style="color:#5AB8D8;">WAIT FOR BREAK</div>
+          </div>
+        </div>
+        <div class="card-peek-fade"></div>
+        <div class="card-peek-cta">See full signal &#8594;</div>
+      </div>
+      <!-- PLTR peek -->
+      <div class="card-peek">
+        <div class="card-peek-accent" style="background:linear-gradient(90deg,var(--blue),transparent);opacity:0.6;"></div>
+        <div class="card-peek-body">
+          <div class="card-peek-header">
+            <div class="card-peek-left">
+              <div class="card-peek-logo" style="background:rgba(0,174,255,.08);color:var(--blue);">PLTR</div>
+              <div><div class="card-peek-ticker">PLTR</div><div class="card-peek-name">Palantir Technologies</div></div>
+            </div>
+            <span class="card-peek-rarity" style="background:rgba(0,174,255,0.06);color:var(--blue);border-color:rgba(0,174,255,0.15);">Rare</span>
+          </div>
+          <div class="card-peek-price">$98.45</div>
+          <div class="card-peek-change" style="color:var(--teal);">&#9650; 2.91%</div>
+          <div class="card-peek-bias" style="border-color:rgba(0,174,255,0.18);background:rgba(0,174,255,0.06);">
+            <div class="card-peek-bias-eye">Signal bias</div>
+            <div class="card-peek-bias-text" style="color:var(--blue);">BUY THE DIP</div>
+          </div>
+        </div>
+        <div class="card-peek-fade"></div>
+        <div class="card-peek-cta">See full signal &#8594;</div>
+      </div>
+    </div>
+  </div>
+</div>
+<hr class="sec-rule">
+<!-- ── TRUST ── -->
 <div class="trust-sec">
   <div class="con">
     <div class="trust-row">
@@ -726,163 +1604,197 @@ footer {
     </div>
   </div>
 </div>
-
-<!-- ── LIVE SIGNALS ── -->
-<section class="sec sec-alt" id="signals">
+<hr class="sec-rule">
+<!-- ── FEATURES ── -->
+<section class="sec" id="features">
   <div class="con">
-    <div class="eyebrow reveal">Live signals</div>
-    <h2 class="reveal">What the engine is seeing right now</h2>
-    <p class="sec-lead reveal">Real narratives from today's market. Each signal is forensically validated against fundamentals, filings, and lifecycle stage.</p>
-    <div class="signals-grid reveal">
-      <div class="signal-card">
-        <div class="signal-header">
-          <span class="signal-ticker">NVDA</span>
-          <span class="signal-verdict verdict-trap">Narrative Trap</span>
+    <div class="eyebrow reveal" style="display:flex;align-items:center;gap:10px;"><span style="display:inline-block;width:24px;height:2px;background:var(--blue);opacity:0.5;"></span> From ticker to trading brief</div>
+    <h2 class="reveal" style="font-size:clamp(28px,4vw,44px);line-height:1.15;margin-bottom:12px;">Seven forensic layers. One daily verdict.</h2>
+    <p class="sec-lead reveal" style="max-width:680px;">Every morning before the bell, the engine runs across 100 tickers &#8212; the same systematic analysis a quant desk runs manually, delivered in a 30-second read.</p>
+    <div class="features-grid reveal">
+      <div class="feat">
+        <div class="feat-head">
+          <div class="feat-num">01</div>
+          <span class="feat-badge">Input</span>
         </div>
-        <div class="signal-claim">China export controls creating 4&ndash;6 quarter revenue ceiling that sell-side isn't modelling</div>
-        <div class="signal-meta">
-          <span class="signal-price">$142.50</span>
-          <span class="signal-delta delta-pos">+1.32%</span>
-          <span>Driver: <strong>Geopolitical</strong></span>
-        </div>
+        <div class="feat-title">Any ticker, every morning</div>
+        <div class="feat-desc">Price history, SEC filings, analyst calls, narrative clusters, and source credibility scores &#8212; pulled, scored, and waiting before the bell.</div>
       </div>
-      <div class="signal-card">
-        <div class="signal-header">
-          <span class="signal-ticker">PLTR</span>
-          <span class="signal-verdict verdict-supported">Supported</span>
+      <div class="feat">
+        <div class="feat-head">
+          <div class="feat-num">02</div>
+          <span class="feat-badge">Engine</span>
         </div>
-        <div class="signal-claim">AIP government contracts accelerating with DoD budget expansion across 12 agencies</div>
-        <div class="signal-meta">
-          <span class="signal-price">$98.45</span>
-          <span class="signal-delta delta-pos">+2.91%</span>
-          <span>Driver: <strong>Government AI</strong></span>
-        </div>
+        <div class="feat-title">Seven forensic layers fire</div>
+        <div class="feat-desc">Narrative decay physics, SEC text-vs-table forensics, coordination detection, Bayesian analyst reliability, fair value stress testing, and exhaustion prediction &#8212; simultaneously.</div>
       </div>
-      <div class="signal-card">
-        <div class="signal-header">
-          <span class="signal-ticker">TSLA</span>
-          <span class="signal-verdict verdict-monitoring">Monitoring</span>
+      <div class="feat">
+        <div class="feat-head">
+          <div class="feat-num">03</div>
+          <span class="feat-badge">Output</span>
         </div>
-        <div class="signal-claim">Robotaxi narrative re-emerging but delivery numbers still soft &mdash; price/fundamentals divergence widening</div>
-        <div class="signal-meta">
-          <span class="signal-price">$378.20</span>
-          <span class="signal-delta delta-neg">&minus;1.41%</span>
-          <span>Driver: <strong>Autonomy</strong></span>
-        </div>
+        <div class="feat-title">A verdict, not a score</div>
+        <div class="feat-desc">Narrative Trap. Structurally Supported. Monitoring. Three verdicts that translate directly into trading decisions, with the full forensic evidence trail behind each one.</div>
       </div>
     </div>
   </div>
 </section>
-
+<hr class="sec-rule">
 <!-- ── HOW IT WORKS ── -->
-<section class="sec" id="features">
+<section class="sec sec-alt">
   <div class="con">
     <div class="eyebrow reveal">How it works</div>
-    <h2 class="reveal">From ticker to trading brief in seconds</h2>
-    <p class="sec-lead reveal">Enter any ticker. The engine does the rest.</p>
+    <h2 class="reveal">From ticker to full briefing in seconds</h2>
+    <p class="sec-lead reveal">Enter any ticker on the dashboard or search here. Market Prism pulls every relevant narrative, cross-references it against fundamentals, and delivers a structured forensic briefing.</p>
     <div class="steps reveal">
       <div class="step">
         <div class="step-n">01</div>
         <div class="step-t">Enter a ticker</div>
-        <div class="step-d">Type any US-listed equity into the dashboard. We cover 100+ tickers across AI, defense, fintech, healthcare, and energy.</div>
+        <div class="step-d">Type any US-listed ticker into the dashboard or the search bar above. We cover equities across all major sectors and market caps.</div>
       </div>
       <div class="step">
         <div class="step-n">02</div>
-        <div class="step-t">Seven forensic layers run</div>
-        <div class="step-d">Narrative decay, SEC filing forensics, coordination detection, Bayesian analyst scoring, fair value stress testing, and exhaustion prediction &mdash; simultaneously.</div>
+        <div class="step-t">Intelligence runs</div>
+        <div class="step-d">Our engine ingests the active narratives, maps the story lifecycle, runs the forensic check, and identifies upstream and downstream contagion.</div>
       </div>
       <div class="step">
         <div class="step-n">03</div>
-        <div class="step-t">Read the verdict</div>
-        <div class="step-d">Narrative Trap. Structurally Supported. Monitoring. Three verdicts that translate directly into trading decisions, with the full evidence trail.</div>
+        <div class="step-t">Read the briefing</div>
+        <div class="step-d">A complete ticker page: verdict, price chart with story markers, lifecycle stage, contagion map, prerequisite check, and historical parallels.</div>
       </div>
     </div>
   </div>
 </section>
-
-<!-- ── EXAMPLE OUTPUT ── -->
-<section class="sec sec-alt" id="example">
-  <div class="con">
-    <div class="eyebrow reveal">Example output</div>
-    <h2 class="reveal">What you see when you open a ticker</h2>
-    <p class="sec-lead reveal">Every ticker page shows you the full narrative picture &mdash; not just the headline, but the mechanics beneath it.</p>
-    <div class="example-card reveal">
-      <div class="example-hero">
-        <div class="example-hero-row">
-          <div>
-            <div class="example-ticker-row">
-              <span class="example-ticker">NVDA</span>
-              <span class="example-state">Breaking</span>
-              <span class="example-badge">Narrative Trap</span>
-            </div>
-            <div class="example-claim">Supply constraints + China ceiling creating structural disconnect between momentum narrative and near-term fundamentals</div>
-          </div>
-          <div style="flex-shrink:0;">
-            <div class="example-price">$142.50</div>
-            <div class="example-delta">+1.32%</div>
-            <div class="example-fv">Fair value gap</div>
-          </div>
-        </div>
-      </div>
-      <div class="example-diag">
-        <div class="example-diag-cell"><div class="example-diag-lbl">Phase</div><div class="example-diag-val">Growth</div></div>
-        <div class="example-diag-cell"><div class="example-diag-lbl">Fragility</div><div class="example-diag-val" style="color:#E5A100;">Medium</div></div>
-        <div class="example-diag-cell"><div class="example-diag-lbl">Narrative trend</div><div class="example-diag-val" style="color:#38C8B8;">&darr; Collapsing</div></div>
-        <div class="example-diag-cell"><div class="example-diag-lbl">Direction</div><div class="example-diag-val">Rising</div></div>
-      </div>
-      <div class="example-sections">
-        <div class="example-sec">
-          <div style="flex:1;">
-            <div class="example-sec-lbl">Primary driver</div>
-            <div class="example-sec-val">AI chip supercycle narrative &mdash; Blackwell demand exceeding supply but export controls creating a revenue ceiling not priced into consensus estimates</div>
-          </div>
-        </div>
-        <div class="example-sec">
-          <div style="flex:1;">
-            <div class="example-sec-lbl">Story lifecycle</div>
-            <div class="example-sec-val">Maturity stage &middot; High energy remaining &middot; Narrative half-life approximately 45 days post-earnings</div>
-          </div>
-          <span class="example-sec-tag" style="background:rgba(0,222,148,.08);color:#00DE94;border-color:rgba(0,222,148,.2);">Maturity</span>
-        </div>
-        <div class="example-sec">
-          <div style="flex:1;">
-            <div class="example-sec-lbl">Contagion risk</div>
-            <div class="example-sec-val">Upstream: TSM, AMAT, ASML &middot; Downstream: SMCI, AMD, data center REITs. Supply story propagates through the full AI infrastructure chain.</div>
-          </div>
-          <span class="example-sec-tag" style="background:rgba(56,200,184,.08);color:#38C8B8;border-color:rgba(56,200,184,.2);">High</span>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
+<hr class="sec-rule">
 <!-- ── STATS ── -->
 <section class="sec">
   <div class="con">
     <div class="eyebrow reveal">Coverage</div>
-    <h2 class="reveal" style="text-align:center;">Built for serious market participants</h2>
-    <div class="stats-grid reveal" style="margin-top:48px;">
-      <div class="stat-cell"><div class="stat-n">200K<span class="acc">+</span></div><div class="stat-l">Stories tracked</div><div class="stat-d">Active and historical narratives across equities, indexed and cross-referenced.</div></div>
+    <h2 class="reveal">Built for serious market participants</h2>
+    <div class="stats-grid reveal">
+      <div class="stat-cell"><div class="stat-n">200,000<span class="acc">+</span></div><div class="stat-l">Stories tracked</div><div class="stat-d">Active and historical narratives across equities, indexed and cross-referenced.</div></div>
       <div class="stat-cell"><div class="stat-n">100<span class="acc">+</span></div><div class="stat-l">Tickers covered</div><div class="stat-d">US-listed equities across AI, fintech, defense, healthcare, and more.</div></div>
       <div class="stat-cell"><div class="stat-n">24<span class="acc">/7</span></div><div class="stat-l">Live monitoring</div><div class="stat-d">Continuous ingestion of filings, earnings, and market-moving publications.</div></div>
       <div class="stat-cell"><div class="stat-n">3</div><div class="stat-l">Patents pending</div><div class="stat-d">Proprietary methodology for narrative state classification and lifecycle modelling.</div></div>
     </div>
   </div>
 </section>
-
+<hr class="sec-rule">
+<!-- ── SAMPLE OUTPUT ── -->
+<section class="sec sec-alt">
+  <div class="con">
+    <div class="eyebrow reveal">Sample output</div>
+    <h2 class="reveal">What you see when you open a ticker</h2>
+    <p class="sec-lead reveal">Every ticker page shows you the full narrative picture — not just the headline, but the mechanics beneath it.</p>
+    <div class="sample-grid reveal">
+      <div class="story-card">
+        <div class="sc-top">
+          <div class="sc-mid">
+            <span class="sc-pip pip-trap"></span>
+            <span class="sc-claim">China export controls creating 4–6 quarter revenue ceiling that sell-side isn't modelling</span>
+          </div>
+          <div class="sc-price">
+            <div class="sc-price-main">$142.50</div>
+            <div class="sc-delta delta-pos">+1.32%</div>
+          </div>
+        </div>
+        <div class="sc-meta">
+          <span class="sc-mt">Driver: <strong>Geopolitical</strong></span>
+          <span class="sc-mt">Phase: <strong>Growth</strong></span>
+          <span class="sc-verdict-trap">Narrative Trap</span>
+        </div>
+      </div>
+      <div class="story-card">
+        <div class="sc-top">
+          <div class="sc-mid">
+            <span class="sc-pip pip-ok"></span>
+            <span class="sc-claim">AIP government contracts accelerating with DoD budget expansion across 12 agencies</span>
+          </div>
+          <div class="sc-price">
+            <div class="sc-price-main">$98.45</div>
+            <div class="sc-delta delta-pos">+2.91%</div>
+          </div>
+        </div>
+        <div class="sc-meta">
+          <span class="sc-mt">Driver: <strong>Government AI</strong></span>
+          <span class="sc-mt">Earnings <strong>18d</strong></span>
+          <span class="sc-verdict-ok">Structurally Supported</span>
+        </div>
+      </div>
+    </div>
+    <!-- Ticker detail preview -->
+    <div class="detail-preview reveal">
+      <div class="dp-hero">
+        <div class="dp-hero-row">
+          <div>
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:6px;">
+              <div class="dp-ticker">NVDA</div>
+              <span class="fp-badge badge-breaking">Breaking</span>
+              <span style="font-size:11px;padding:3px 9px;border-radius:99px;border:1px solid rgba(56,200,184,.25);background:rgba(56,200,184,.08);color:#38C8B8;">Narrative Trap</span>
+            </div>
+            <div class="dp-claim">Supply constraints + China ceiling creating structural disconnect between momentum narrative and near-term fundamentals</div>
+          </div>
+          <div class="dp-price">
+            <div>$142.50</div>
+            <div class="fp-delta delta-pos" style="margin-top:3px;">+1.32%</div>
+            <div style="font-family:var(--font-m);font-size:11px;color:var(--tx3);margin-top:4px;">Fair value gap</div>
+          </div>
+        </div>
+      </div>
+      <div class="dp-diag">
+        <div class="dp-diag-cell"><div class="dp-diag-lbl">Phase</div><div class="dp-diag-val" style="color:var(--blue);">Growth</div></div>
+        <div class="dp-diag-cell"><div class="dp-diag-lbl">Fragility</div><div class="dp-diag-val" style="color:var(--amber);">Medium</div></div>
+        <div class="dp-diag-cell"><div class="dp-diag-lbl">Narrative trend</div><div class="dp-diag-val" style="color:#38C8B8;">↓ Collapsing</div></div>
+        <div class="dp-diag-cell"><div class="dp-diag-lbl">Direction</div><div class="dp-diag-val" style="color:var(--teal);">Rising</div></div>
+      </div>
+      <div class="dp-sections">
+        <div class="dp-sec">
+          <div style="flex:1;">
+            <div class="dp-sec-lbl">Primary driver</div>
+            <div class="dp-sec-val">AI chip supercycle narrative — Blackwell demand exceeding supply but export controls creating a revenue ceiling not priced into consensus estimates</div>
+          </div>
+        </div>
+        <div class="dp-sec">
+          <div style="flex:1;">
+            <div class="dp-sec-lbl">Story lifecycle</div>
+            <div class="dp-sec-val">Maturity stage · High energy remaining · Narrative half-life approximately 45 days post-earnings</div>
+          </div>
+          <span class="dp-sec-tag" style="background:rgba(0,222,148,.08);color:#00DE94;border-color:rgba(0,222,148,.2);">Maturity</span>
+        </div>
+        <div class="dp-sec">
+          <div style="flex:1;">
+            <div class="dp-sec-lbl">Contagion risk</div>
+            <div class="dp-sec-val">Upstream: TSM, AMAT, ASML · Downstream: SMCI, AMD, data center REITs. Supply story propagates through the full AI infrastructure chain.</div>
+          </div>
+          <span class="dp-sec-tag" style="background:rgba(56,200,184,.08);color:#38C8B8;border-color:rgba(56,200,184,.2);">High</span>
+        </div>
+        <div class="dp-sec">
+          <div style="flex:1;">
+            <div class="dp-sec-lbl">Sector intelligence</div>
+            <div class="dp-sec-val">AI Infrastructure · CAGR 42% · Regulatory risk rising with export controls as primary structural constraint on sector-wide narrative credibility</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<hr class="sec-rule">
 <!-- ── CTA ── -->
 <section class="cta-sec">
   <div class="con">
-    <div class="cta-h2">See what's really driving<br>your portfolio.</div>
-    <p class="cta-lead">Enter any ticker on the dashboard and get a complete narrative briefing in seconds. Free to start.</p>
-    <div class="cta-btns">
-      <button class="btn-primary" onclick="window.location.href='/dashboard'">Open the dashboard</button>
-      <button class="btn-outline" onclick="window.location.href='#pricing'">See pricing</button>
+    <div class="cta-inner">
+      <div class="cta-glow"></div>
+      <div class="cta-eyebrow"><span class="live-dot"></span>Free to start · no credit card</div>
+      <div class="cta-h2">See what's really<br><em>driving your portfolio.</em></div>
+      <p class="cta-lead">Enter any ticker on the dashboard and get a complete narrative briefing in seconds.</p>
+      <div class="cta-btns">
+        <button class="btn-cta">Open the dashboard →</button>
+        <button class="btn-cta-ghost">See pricing</button>
+      </div>
+      <div class="cta-fine">Used by 4,200+ analysts across 38 markets</div>
     </div>
-    <div class="cta-fine">No credit card required. Used by 4,200+ analysts.</div>
   </div>
 </section>
-
 <!-- ── FOOTER ── -->
 <footer>
   <div class="footer-inner">
@@ -891,10 +1803,10 @@ footer {
         <div class="footer-brand">
           <svg width="20" height="20" viewBox="0 0 40 40" fill="none">
             <polygon points="20,4 36,32 4,32" fill="none" stroke="url(#fg)" stroke-width="1.5" stroke-linejoin="round"/>
-            <line x1="4"  y1="32" x2="14" y2="32" stroke="#0066FF" stroke-width="2.8" stroke-linecap="round"/>
-            <line x1="14" y1="32" x2="26" y2="32" stroke="#0052CC" stroke-width="2.8" stroke-linecap="round"/>
-            <line x1="26" y1="32" x2="36" y2="32" stroke="#003D99" stroke-width="2.8" stroke-linecap="round"/>
-            <defs><linearGradient id="fg" x1="4" y1="32" x2="36" y2="4" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#0066FF"/><stop offset="100%" stop-color="#003D99"/></linearGradient></defs>
+            <line x1="4"  y1="32" x2="14" y2="32" stroke="#00FFFF" stroke-width="2.8" stroke-linecap="round"/>
+            <line x1="14" y1="32" x2="26" y2="32" stroke="#00AEFF" stroke-width="2.8" stroke-linecap="round"/>
+            <line x1="26" y1="32" x2="36" y2="32" stroke="#00DE94" stroke-width="2.8" stroke-linecap="round"/>
+            <defs><linearGradient id="fg" x1="4" y1="32" x2="36" y2="4" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#00FFFF"/><stop offset="50%" stop-color="#00AEFF"/><stop offset="100%" stop-color="#00DE94"/></linearGradient></defs>
           </svg>
           <span class="footer-brand-name">Market Prism</span>
         </div>
@@ -918,7 +1830,7 @@ footer {
       </div>
       <div>
         <div class="footer-col-lbl">Newsletter</div>
-        <div class="footer-newsletter-desc">Weekly narrative intelligence digest.</div>
+        <div class="footer-newsletter-desc">Weekly narrative intelligence digest — no noise.</div>
         <div class="footer-email-row">
           <input class="footer-email-inp" type="email" placeholder="Work email">
           <button class="footer-email-btn">Join</button>
@@ -926,18 +1838,108 @@ footer {
       </div>
     </div>
     <div class="footer-bottom">
-      <span class="footer-patent" style="font-size:12px;color:var(--tx3);">Patent Pending: 63/971,470 &amp; 63/971,478</span>
-      <span class="footer-copy">&copy; 2025 Market Prism. All rights reserved.</span>
+      <span class="footer-patent">Patent Pending: 63/971,470 &amp; 63/971,478</span>
+      <span class="footer-copy">© 2025 Market Prism. All rights reserved.</span>
     </div>
   </div>
 </footer>
-
 <script>
 // Scroll reveal
 const obs = new IntersectionObserver(e => e.forEach(x => { if(x.isIntersecting) x.target.classList.add('in'); }), {threshold:.07});
 document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
-document.querySelectorAll('.signals-grid,.steps,.stats-grid').forEach(g => {
-  [...g.children].forEach((c,i) => { c.style.transitionDelay = (i*60)+'ms'; });
+document.querySelectorAll('.features-grid,.steps,.stats-grid,.sample-grid,.radar-grid').forEach(g => {
+  [...g.children].forEach((c,i) => { c.style.transitionDelay = (i*55)+'ms'; });
+});
+// Ticker search navigation
+function navigateToTicker(){
+  var inp = document.querySelector('.ticker-search-input');
+  var v = inp.value.trim().toUpperCase();
+  if(v) window.location.href = '/ticker/' + encodeURIComponent(v);
+}
+document.querySelector('.ticker-search-input').addEventListener('keydown', function(e){
+  if(e.key === 'Enter') navigateToTicker();
+});
+document.querySelector('.btn-primary').addEventListener('click', navigateToTicker);
+// Quick chips fill the search input and navigate
+document.querySelectorAll('.quick-chip').forEach(c => {
+  c.addEventListener('click', () => {
+    document.querySelector('.ticker-search-input').value = c.textContent;
+    navigateToTicker();
+  });
+});
+// ── Market Radar Sparklines ──
+(function(){
+  function spark(id, points, color){
+    var cv = document.getElementById(id);
+    if(!cv) return;
+    var dpr = window.devicePixelRatio || 1;
+    var W = cv.clientWidth, H = cv.clientHeight;
+    cv.width = W * dpr; cv.height = H * dpr;
+    var ctx = cv.getContext('2d');
+    ctx.scale(dpr, dpr);
+    var mn = Math.min.apply(null, points), mx = Math.max.apply(null, points);
+    var range = mx - mn || 1;
+    var pad = 2;
+    ctx.beginPath();
+    points.forEach(function(v, i){
+      var x = pad + (i / (points.length - 1)) * (W - pad * 2);
+      var y = H - pad - ((v - mn) / range) * (H - pad * 2);
+      if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.stroke();
+    // fill gradient
+    var lastX = pad + (W - pad * 2);
+    var lastY = H - pad - ((points[points.length-1] - mn) / range) * (H - pad * 2);
+    ctx.lineTo(lastX, H);
+    ctx.lineTo(pad, H);
+    ctx.closePath();
+    var grd = ctx.createLinearGradient(0, 0, 0, H);
+    grd.addColorStop(0, color.replace('1)', '0.15)').replace('rgb', 'rgba'));
+    grd.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grd;
+    ctx.fill();
+  }
+})();
+// ── Trading card foil interaction ──
+var cardGlows = [
+  '0 12px 48px rgba(56,200,184,0.12), 0 0 0 1px rgba(56,200,184,0.08)',
+  '0 12px 48px rgba(0,222,148,0.1), 0 0 0 1px rgba(0,222,148,0.06)',
+  '0 12px 48px rgba(0,255,82,0.1), 0 0 0 1px rgba(0,255,82,0.06)'
+];
+document.querySelectorAll('.card-scene').forEach(function(scene, idx) {
+  var front = scene.querySelector('.card-front');
+  scene.addEventListener('mousemove', function(e) {
+    var rect = scene.getBoundingClientRect();
+    var x = ((e.clientX - rect.left) / rect.width) * 100;
+    var y = ((e.clientY - rect.top) / rect.height) * 100;
+    var angle = 105 + (x - 50) * 0.6;
+    scene.querySelectorAll('.foil-layer').forEach(function(el) {
+      el.style.setProperty('--mx', x + '%');
+      el.style.setProperty('--my', y + '%');
+    });
+    scene.querySelectorAll('.foil-rainbow').forEach(function(el) {
+      el.style.setProperty('--angle', angle + 'deg');
+    });
+    var rotX = ((y - 50) / 50) * -5;
+    var rotY = ((x - 50) / 50) * 5;
+    var isFlipped = scene.classList.contains('flipped');
+    scene.querySelector('.card-flipper').style.transform =
+      (isFlipped ? 'rotateY(180deg) ' : '') +
+      'rotateX(' + rotX + 'deg) rotateY(' + (isFlipped ? 180 + rotY : rotY) + 'deg)';
+    if(!isFlipped && front){
+      front.style.boxShadow = '0 20px 60px rgba(0,0,0,0.7), ' + (cardGlows[idx] || cardGlows[0]);
+    }
+  });
+  scene.addEventListener('mouseleave', function() {
+    var isFlipped = scene.classList.contains('flipped');
+    scene.querySelector('.card-flipper').style.transform =
+      isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)';
+    if(front) front.style.boxShadow = '';
+  });
 });
 </script>
 </body>
