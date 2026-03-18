@@ -581,18 +581,19 @@ body{
 .trap-chart-legend{display:none;}
 .trap-chart-legend-item{display:flex;align-items:center;gap:5px;font-size:10px;font-family:var(--font-mono);color:var(--mp-text-tertiary);}
 .trap-chart-legend-dot{width:10px;height:10px;border-radius:2px;}
-/* Vertical bar chart */
-.trap-bars-v{display:flex;align-items:flex-end;gap:0;height:220px;padding:0 8px;border-bottom:1px solid var(--mp-border);}
-.trap-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:0;height:100%;justify-content:flex-end;position:relative;min-width:0;}
-.trap-col:hover .trap-vbar{filter:brightness(1.3);}
-.trap-col:hover .trap-col-pct{opacity:1;}
-.trap-vbar{width:60%;max-width:48px;border-radius:4px 4px 0 0;min-height:2px;animation:barGrowV 0.8s cubic-bezier(0.16,1,0.3,1) both;transform-origin:bottom;}
+/* Dual-bar chart (reference design) */
+.trap-bars-v{display:grid;grid-template-columns:repeat(8,1fr);gap:0;padding:14px;align-items:flex-end;height:140px;}
+.trap-col{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:5px;min-width:0;}
+.trap-col:hover .trap-vbar-pair{filter:brightness(1.3);}
+.trap-col-pct{font-family:var(--font-mono);font-size:8px;font-weight:400;color:var(--mp-text-tertiary);text-align:center;}
+.trap-col-ticker{display:none;}
+.trap-vbar{display:none;}
+.trap-vbar-pair{display:flex;gap:4px;align-items:flex-end;width:100%;max-width:80px;justify-content:center;}
+.trap-vbar-a,.trap-vbar-b{width:38%;border-radius:3px 3px 0 0;min-height:4px;animation:barGrowV 0.8s cubic-bezier(0.16,1,0.3,1) both;transform-origin:bottom;}
 @keyframes barGrowV{0%{transform:scaleY(0);}100%{transform:scaleY(1);}}
-.trap-col-pct{font-family:var(--font-mono);font-size:10px;font-weight:500;color:var(--mp-text-primary);margin-bottom:4px;opacity:0.7;transition:opacity 0.2s;}
-.trap-col-ticker{font-family:var(--font-mono);font-size:8px;color:var(--mp-text-tertiary);margin-bottom:2px;}
-.trap-labels-row{display:flex;gap:0;padding:0 8px;}
-.trap-col-label{flex:1;text-align:center;padding:10px 2px 0;min-width:0;}
-.trap-col-label span{display:inline-block;writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);font-family:var(--font-body);font-size:10px;color:var(--mp-text-tertiary);max-height:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2;}
+.trap-labels-row{display:grid;grid-template-columns:repeat(8,1fr);gap:0;padding:0 14px;}
+.trap-col-label{text-align:center;padding:6px 2px 0;min-width:0;}
+.trap-col-label span{display:block;font-family:var(--font-mono);font-size:7px;letter-spacing:.06em;text-transform:uppercase;color:var(--mp-text-tertiary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2;}
 .sector-grid{
   display:grid;grid-template-columns:repeat(2,1fr);gap:12px;
 }
@@ -3534,22 +3535,32 @@ function renderTrapChart(){
   rows.sort(function(a,b){return b.pct-a.pct;});
   // Max pct for scaling bars
   var maxPct=Math.max.apply(null,rows.map(function(r){return r.pct;}).concat([1]));
-  // Color based on percentage tier
-  function barColor(p){
-    if(p>=30)return 'rgba(255,255,255,0.5)';
-    if(p>=20)return 'rgba(255,255,255,0.35)';
-    if(p>0)return 'rgba(255,255,255,0.2)';
-    return 'rgba(255,255,255,0.1)';
-  }
-  // Limit to top 8 sectors for clean vertical layout
+  // Dual-bar color pairs — matches reference design
+  var barPalettes=[
+    ['rgba(0,174,255,0.65)','rgba(0,222,148,0.55)'],
+    ['rgba(0,222,148,0.55)','rgba(56,200,184,0.45)'],
+    ['rgba(0,174,255,0.50)','rgba(56,200,184,0.50)'],
+    ['rgba(56,200,184,0.45)','rgba(0,174,255,0.40)'],
+    ['rgba(90,184,216,0.40)','rgba(56,200,184,0.35)'],
+    ['rgba(90,184,216,0.35)','rgba(56,200,184,0.30)'],
+    ['rgba(56,200,184,0.30)','rgba(90,184,216,0.32)'],
+    ['rgba(56,200,184,0.25)','rgba(0,222,148,0.28)']
+  ];
+  // Limit to top 8 sectors
   var top=rows.slice(0,8);
   var barsHTML='<div class="trap-bars-v">'+top.map(function(r,i){
     var h=maxPct>0?Math.round((r.pct/maxPct)*100):0;
-    if(r.pct>0&&h<4)h=4;
+    if(r.pct>0&&h<8)h=8;
+    if(h===0)h=5;
+    var hA=Math.round(h*0.9);
+    var hB=Math.round(h*0.75);
+    var pal=barPalettes[i%barPalettes.length];
     return '<div class="trap-col" style="animation-delay:'+(i*0.06)+'s">'
-      +'<span class="trap-col-pct">'+r.pct.toFixed(1)+'%</span>'
-      +'<span class="trap-col-ticker">'+esc(r.topTicker)+'</span>'
-      +'<div class="trap-vbar" style="height:'+h+'%;background:'+barColor(r.pct)+';animation-delay:'+(i*0.06)+'s"></div>'
+      +'<span class="trap-col-pct">'+r.pct.toFixed(0)+'%</span>'
+      +'<div class="trap-vbar-pair">'
+        +'<div class="trap-vbar-a" style="height:'+hA+'px;background:'+pal[0]+';animation-delay:'+(i*0.06)+'s"></div>'
+        +'<div class="trap-vbar-b" style="height:'+hB+'px;background:'+pal[1]+';animation-delay:'+(i*0.06+0.03)+'s"></div>'
+      +'</div>'
     +'</div>';
   }).join('')+'</div>';
   var labelsHTML='<div class="trap-labels-row">'+top.map(function(r){
