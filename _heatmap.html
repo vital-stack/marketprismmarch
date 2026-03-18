@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Heatmap — Market Prism</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/fonts/geist-sans/style.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/fonts/geist-mono/style.min.css" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --mp-obsidian: #080B10;
+    --mp-deep: #0C1018;
+    --mp-surface: #111520;
+    --mp-border: rgba(255,255,255,0.06);
+    --mp-border-mid: rgba(255,255,255,0.10);
+    --mp-blue: #00AEFF;
+    --mp-cyan: #00FFFF;
+    --mp-teal: #00DE94;
+    --mp-prism-4: #00FF52;
+    --mp-prism-5: #38C8B8;
+    --mp-text-primary: #E8EDF5;
+    --mp-text-secondary: #7A8499;
+    --mp-text-tertiary: #3D4558;
+    --mp-amber: #00DE94;
+    --font-display: 'Syne', system-ui, sans-serif;
+    --font-body: 'Geist', system-ui, sans-serif;
+    --font-mono: 'Geist Mono', monospace;
+  }
+
+  [data-theme="light"] {
+    --mp-obsidian: #F5F7FA;
+    --mp-deep: #FFFFFF;
+    --mp-surface: #EDF0F5;
+    --mp-border: rgba(0,0,0,0.08);
+    --mp-border-mid: rgba(0,0,0,0.14);
+    --mp-blue: #00AEFF;
+    --mp-cyan: #00FFFF;
+    --mp-teal: #00DE94;
+    --mp-prism-4: #00FF52;
+    --mp-prism-5: #38C8B8;
+    --mp-text-primary: #111827;
+    --mp-text-secondary: #4B5563;
+    --mp-text-tertiary: #9CA3AF;
+    --mp-amber: #00DE94;
+  }
+
+  html { font-size: 16px; }
+  body {
+    font-family: var(--font-body);
+    background: var(--mp-obsidian);
+    color: var(--mp-text-primary);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.01) 2px, rgba(255,255,255,0.01) 4px);
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* ── Side Nav ── */
+  .side-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 240px;
+    height: 100vh;
+    background: var(--mp-deep);
+    border-right: 1px solid var(--mp-border);
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+    padding: 28px 0 24px;
+  }
+  .side-nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 24px;
+    margin-bottom: 36px;
+    text-decoration: none;
+  }
+  .side-nav-logo svg { flex-shrink: 0; }
+  .side-nav-logo-text {
+    font-family: var(--font-display);
+    font-size: 18px;
+    color: var(--mp-text-primary);
+    letter-spacing: -0.01em;
+  }
+  .side-nav-items { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+  .side-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 24px;
+    font-size: 14px;
+    font-family: var(--font-body);
+    color: var(--mp-text-secondary);
+    text-decoration: none;
+    border-left: 3px solid transparent;
+    transition: all 0.15s;
+  }
+  .side-nav-item:hover {
+    color: var(--mp-text-primary);
+    background: rgba(255,255,255,0.03);
+  }
+  .side-nav-item.active {
+    color: var(--mp-cyan);
+    border-left-color: var(--mp-cyan);
+    background: rgba(0,222,148,0.1);
+    font-weight: 500;
+  }
+  .side-nav-item svg { flex-shrink: 0; opacity: 0.7; }
+  .side-nav-item.active svg { opacity: 1; }
+  .side-nav-bottom {
+    padding: 0 24px;
+    border-top: 1px solid var(--mp-border);
+    padding-top: 16px;
+  }
+  .side-nav-bottom a {
+    font-size: 13px;
+    color: var(--mp-text-tertiary);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.15s;
+  }
+  .side-nav-bottom a:hover { color: var(--mp-text-secondary); }
+
+  /* ── Main Content ── */
+  .main-content {
+    margin-left: 240px;
+    max-width: 1100px;
+    padding: 32px 40px 80px;
+  }
+
+  /* ── Top bar (refresh area) ── */
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  .top-bar-left { display: flex; align-items: center; gap: 12px; }
+  .last-updated { font-size: 11px; color: var(--mp-text-tertiary); font-family: var(--font-mono); }
+  .refresh-btn {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    padding: 6px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--mp-border);
+    background: var(--mp-surface);
+    color: var(--mp-text-secondary);
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .refresh-btn:hover { background: rgba(0,222,148,0.15); border-color: var(--mp-cyan); color: var(--mp-text-primary); }
+  .refresh-btn.spinning { color: var(--mp-text-tertiary); pointer-events: none; }
+
+  /* ── Page header ── */
+  .page-header { margin-bottom: 24px; }
+  .page-title {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    color: var(--mp-text-primary);
+    margin-bottom: 4px;
+  }
+  .page-sub { font-size: 13px; color: var(--mp-text-secondary); }
+
+  /* ── Summary strip ── */
+  .summary-strip {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1px;
+    background: var(--mp-border);
+    border: 1px solid var(--mp-border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 22px;
+  }
+  @media (max-width: 900px) { .summary-strip { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 540px) { .summary-strip { grid-template-columns: repeat(2, 1fr); } }
+  .sum-cell { background: var(--mp-surface); padding: 14px 18px; }
+  .sum-label { font-size: 9px; text-transform: uppercase; letter-spacing: .07em; color: var(--mp-text-tertiary); margin-bottom: 4px; }
+  .sum-val { font-size: 22px; font-weight: 500; font-family: var(--font-mono); line-height: 1; margin-bottom: 2px; }
+  .sum-sub { font-size: 10px; color: var(--mp-text-tertiary); }
+
+  /* ── Controls bar ── */
+  .controls-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .filter-group { display: flex; gap: 6px; flex-wrap: wrap; }
+  .filter-btn {
+    font-size: 11px;
+    padding: 6px 14px;
+    border-radius: 99px;
+    border: 1px solid var(--mp-border);
+    background: var(--mp-surface);
+    color: var(--mp-text-secondary);
+    cursor: pointer;
+    font-family: var(--font-body);
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .filter-btn:hover { background: rgba(255,255,255,0.06); border-color: var(--mp-border-mid); }
+  .filter-btn.on { background: var(--mp-cyan); color: #080B10; border-color: var(--mp-cyan); }
+  .filter-btn.on-red { background: var(--mp-prism-5); color: #fff; border-color: var(--mp-prism-5); }
+  .filter-btn.on-green { background: var(--mp-teal); color: #fff; border-color: var(--mp-teal); }
+
+  .sort-group { display: flex; align-items: center; gap: 6px; }
+  .sort-label { font-size: 11px; color: var(--mp-text-tertiary); white-space: nowrap; }
+  .sort-btn {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--mp-border);
+    background: var(--mp-surface);
+    color: var(--mp-text-secondary);
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .sort-btn:hover { background: rgba(255,255,255,0.06); border-color: var(--mp-border-mid); }
+  .sort-btn.on { background: var(--mp-cyan); color: #080B10; border-color: var(--mp-cyan); }
+
+  /* ── Color legend ── */
+  .legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+    font-size: 11px;
+    color: var(--mp-text-tertiary);
+  }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-swatch { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+  /* ── Count bar ── */
+  .count-bar {
+    font-size: 11px;
+    color: var(--mp-text-tertiary);
+    margin-bottom: 10px;
+    font-family: var(--font-mono);
+  }
+  .count-bar span { color: var(--mp-text-secondary); font-weight: 500; }
+
+  /* ── Heatmap grid ── */
+  .heatmap-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 5px;
+  }
+  @media (max-width: 640px) {
+    .heatmap-grid { grid-template-columns: repeat(auto-fill, minmax(66px, 1fr)); gap: 4px; }
+  }
+
+  /* ── Cell ── */
+  .hm-cell {
+    border-radius: 8px;
+    padding: 9px 8px 7px;
+    cursor: pointer;
+    min-height: 72px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform .1s, box-shadow .1s;
+    position: relative;
+    text-decoration: none;
+    color: #fff;
+  }
+  .hm-cell:hover {
+    transform: scale(1.05);
+    z-index: 5;
+    box-shadow: 0 6px 24px rgba(0,0,0,.4);
+  }
+  .cell-top { display: flex; align-items: flex-start; justify-content: space-between; }
+  .cell-ticker { font-size: 11px; font-weight: 500; font-family: var(--font-mono); line-height: 1; color: #fff; }
+  .cell-trap { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.45); flex-shrink: 0; margin-top: 1px; }
+  .cell-score { font-size: 20px; font-weight: 500; font-family: var(--font-mono); line-height: 1; margin: 4px 0 2px; color: #fff; }
+  .cell-bottom { display: flex; align-items: center; justify-content: space-between; }
+  .cell-dir { font-size: 9px; font-weight: 500; letter-spacing: .03em; opacity: .85; color: #fff; }
+  .cell-days { font-size: 9px; opacity: .7; font-family: var(--font-mono); color: #fff; }
+
+  /* Health bands — dark theme */
+  .hb-5 { background: #0D5A30; }  /* 80–100 */
+  .hb-4 { background: #1A7A43; }  /* 70–79  */
+  .hb-3 { background: #3D7A30; }  /* 60–69  */
+  .hb-2 { background: #7A6D0D; }  /* 50–59  */
+  .hb-1 { background: #8A4A0D; }  /* 40–49  */
+  .hb-0 { background: #7A1A1A; }  /* <40    */
+
+  /* Verdict outline overlay */
+  .hm-cell.supported { outline: 2px solid rgba(0,222,148,0.6); outline-offset: -2px; }
+  .hm-cell.trap { outline: 2px solid rgba(56,200,184,0.6); outline-offset: -2px; }
+
+  /* ── Skeleton ── */
+  .skel { background: var(--mp-surface); border-radius: 6px; animation: skel-pulse 1.4s ease-in-out infinite; }
+  @keyframes skel-pulse { 0%,100% { opacity:1; } 50% { opacity:.4; } }
+
+  /* ── Tooltip ── */
+  .tooltip {
+    position: fixed;
+    background: var(--mp-surface);
+    border: 1px solid var(--mp-border-mid);
+    border-radius: 10px;
+    padding: 14px 16px;
+    width: 280px;
+    max-width: calc(100vw - 32px);
+    z-index: 1000;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .1s;
+    box-shadow: 0 8px 32px rgba(0,0,0,.45);
+  }
+  .tooltip.visible { opacity: 1; }
+  .tt-ticker { font-size: 18px; font-weight: 500; font-family: var(--font-mono); margin-bottom: 3px; color: var(--mp-text-primary); }
+  .tt-verdict {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 99px;
+    border: 1px solid;
+    margin-bottom: 9px;
+  }
+  .tt-v-trap { background: rgba(56,200,184,0.15); color: var(--mp-prism-5); border-color: rgba(56,200,184,0.3); }
+  .tt-v-supported { background: rgba(0,222,148,0.12); color: var(--mp-teal); border-color: rgba(0,222,148,0.3); }
+  .tt-v-monitor { background: rgba(255,255,255,0.05); color: var(--mp-text-secondary); border-color: var(--mp-border); }
+  .tt-narrative { font-size: 12px; color: var(--mp-text-secondary); line-height: 1.6; margin-bottom: 10px; }
+  .tt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+  .tt-stat { background: var(--mp-deep); border-radius: 6px; padding: 6px 9px; }
+  .tt-stat-lbl { font-size: 9px; text-transform: uppercase; letter-spacing: .07em; color: var(--mp-text-tertiary); margin-bottom: 1px; }
+  .tt-stat-val { font-size: 13px; font-weight: 500; font-family: var(--font-mono); color: var(--mp-text-primary); }
+  .tt-dir-bull { color: var(--mp-teal); }
+  .tt-dir-bear { color: var(--mp-prism-5); }
+  .tt-dir-neutral { color: var(--mp-amber); }
+
+  /* ── Empty / error ── */
+  .no-results { padding: 40px; text-align: center; font-size: 13px; color: var(--mp-text-tertiary); }
+  .inline-err { padding: 16px; font-size: 13px; color: var(--mp-prism-5); }
+
+  /* ── Light mode scanline disable ── */
+  html[data-theme="light"] body::after {
+    display: none;
+  }
+
+  /* ── Light mode overrides ── */
+  [data-theme="light"] .side-nav-item.active {
+    background: rgba(0,222,148,0.1);
+    color: #00DE94;
+    border-left-color: #00DE94;
+  }
+  [data-theme="light"] .filter-btn.on { background: #00DE94; color: #fff; }
+  [data-theme="light"] .filter-btn.on-red { background: #38C8B8; color: #fff; }
+  [data-theme="light"] .filter-btn.on-green { background: #00DE94; color: #fff; }
+  [data-theme="light"] .sort-btn.on { background: #00DE94; color: #fff; }
+  [data-theme="light"] .refresh-btn:hover { background: rgba(0,222,148,0.1); border-color: #00DE94; }
+  [data-theme="light"] .hm-cell.supported { outline-color: rgba(0,222,148,0.6); }
+  [data-theme="light"] .hm-cell.trap { outline-color: rgba(56,200,184,0.6); }
+  [data-theme="light"] .hm-cell { color: #fff; }
+  [data-theme="light"] .tt-v-trap { background: rgba(56,200,184,0.1); color: #38C8B8; border-color: rgba(56,200,184,0.25); }
+  [data-theme="light"] .tt-v-supported { background: rgba(0,222,148,0.1); color: #00DE94; border-color: rgba(0,222,148,0.25); }
+  [data-theme="light"] .tt-v-monitor { background: rgba(0,0,0,0.04); color: #4B5563; border-color: rgba(0,0,0,0.1); }
+  [data-theme="light"] .tt-stat { background: #F3F4F6; }
+
+  /* ── Theme toggle ── */
+  .theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: 1px solid var(--mp-border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: var(--mp-text-secondary);
+    font-size: 11px;
+    font-family: var(--font-mono);
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+    margin-bottom: 8px;
+  }
+  .theme-toggle:hover {
+    background: var(--mp-surface);
+    color: var(--mp-text-primary);
+    border-color: var(--mp-border-mid);
+  }
+  [data-theme="light"] .icon-sun { display: none; }
+  [data-theme="dark"] .icon-moon,
+  html:not([data-theme="light"]) .icon-moon { display: none; }
+  [data-theme="light"] .icon-moon { display: block; }
+
+  /* ── Mobile: side nav becomes top bar ── */
+  @media (max-width: 768px) {
+    .side-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      height: auto;
+      flex-direction: row;
+      align-items: center;
+      padding: 12px 16px;
+      border-right: none;
+      border-bottom: 1px solid var(--mp-border);
+      gap: 16px;
+    }
+    .side-nav-logo { margin-bottom: 0; padding: 0; }
+    .side-nav-items { flex-direction: row; gap: 4px; flex: 0; }
+    .side-nav-item {
+      padding: 6px 12px;
+      border-left: none;
+      border-bottom: 2px solid transparent;
+      font-size: 13px;
+    }
+    .side-nav-item.active {
+      border-left-color: transparent;
+      border-bottom-color: var(--mp-cyan);
+    }
+    [data-theme="light"] .side-nav-item.active {
+      border-bottom-color: #00DE94;
+    }
+    .side-nav-bottom { display: none; }
+    .side-nav-items { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .side-nav-items::-webkit-scrollbar { display: none; }
+    .side-nav-item { white-space: nowrap; flex-shrink: 0; }
+    .main-content {
+      margin-left: 0;
+      padding: 80px 16px 60px;
+      max-width: 100%;
+    }
+    .top-bar { flex-wrap: wrap; gap: 8px; }
+    .controls-bar { gap: 8px; }
+    .page-title { font-size: 22px; }
+  }
+  @media (max-width: 480px) {
+    .main-content { padding: 72px 10px 40px; }
+    .side-nav { padding: 10px 12px; gap: 8px; }
+    .side-nav-item { padding: 5px 8px; font-size: 11px; }
+    .heatmap-grid { grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 3px; }
+    .hm-cell { border-radius: 5px; }
+    .filter-btn { font-size: 10px; padding: 5px 10px; }
+    .sort-btn { font-size: 10px; padding: 4px 8px; }
+    .summary-strip { grid-template-columns: 1fr; }
+    .sum-val { font-size: 18px; }
+    .page-title { font-size: 18px; }
+    .legend-bar { gap: 8px; font-size: 10px; }
+  }
+</style>
+
+  <!-- Env vars injected by Vercel -->
+  <script>
+window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadcom.com',QCOM:'qualcomm.com',TSM:'tsmc.com',MRVL:'marvell.com',AMAT:'appliedmaterials.com',LRCX:'lamresearch.com',TXN:'ti.com',SNPS:'synopsys.com',CDNS:'cadence.com',MU:'micron.com',ARM:'arm.com',SMCI:'supermicro.com',AAPL:'apple.com',MSFT:'microsoft.com',GOOGL:'google.com',META:'meta.com',AMZN:'amazon.com',ADBE:'adobe.com',CRM:'salesforce.com',ORCL:'oracle.com',NFLX:'netflix.com',INTU:'intuit.com',NOW:'servicenow.com',WDAY:'workday.com',PANW:'paloaltonetworks.com',CRWD:'crowdstrike.com',PLTR:'palantir.com',IBM:'ibm.com',HPQ:'hp.com',DELL:'dell.com',MSTR:'microstrategy.com',SHOP:'shopify.com',SNOW:'snowflake.com',SQ:'squareup.com',SPOT:'spotify.com',RDDT:'reddit.com',SNAP:'snap.com',RBLX:'roblox.com',TTWO:'take2games.com',COIN:'coinbase.com',HOOD:'robinhood.com',SOFI:'sofi.com',DASH:'doordash.com',UBER:'uber.com',ABNB:'airbnb.com',BKNG:'booking.com',OPEN:'opendoor.com',PTON:'onepeloton.com',GME:'gamestop.com',DJT:'tmtgcorp.com',JPM:'jpmorganchase.com',GS:'goldmansachs.com',V:'visa.com',MA:'mastercard.com',WFC:'wellsfargo.com',BAC:'bankofamerica.com',MS:'morganstanley.com',PYPL:'paypal.com',OWL:'blueowl.com',COST:'costco.com',WMT:'walmart.com',TGT:'target.com',HD:'homedepot.com',LOW:'lowes.com',MCD:'mcdonalds.com',SBUX:'starbucks.com',NKE:'nike.com',CMG:'chipotle.com',KO:'coca-cola.com',PEP:'pepsico.com',GIS:'generalmills.com',KHC:'kraftheinzcompany.com',MDLZ:'mondelezinternational.com',TSN:'tysonfoods.com',BUD:'ab-inbev.com',BYND:'beyondmeat.com',KVUE:'kenvue.com',JNJ:'jnj.com',LLY:'lilly.com',PFE:'pfizer.com',MRK:'merck.com',ABBV:'abbvie.com',UNH:'unitedhealthgroup.com',DHR:'danaher.com',TMO:'thermofisher.com',ABT:'abbott.com',NVO:'novonordisk.com',HIMS:'forhims.com',IBRX:'immunitybio.com',NBIS:'nebius.com',TSLA:'tesla.com',GM:'gm.com',F:'ford.com',RIVN:'rivian.com',NIO:'nio.com',LCID:'lucidmotors.com',TM:'toyota.com',HMC:'honda.com',RACE:'ferrari.com',UAL:'united.com',UPS:'ups.com',XOM:'exxonmobil.com',CVX:'chevron.com',COP:'conocophillips.com',EOG:'eogresources.com',OXY:'oxy.com',HAL:'halliburton.com',SLB:'slb.com',VST:'vistraenergy.com',CEG:'constellation.com',NEE:'nexteraenergy.com',DUK:'duke-energy.com',SO:'southerncompany.com',ENPH:'enphase.com',FSLR:'firstsolar.com',OKLO:'oklo.com',SMR:'nuscalepower.com',CCJ:'cameco.com',LEU:'centrusenergy.com',FCX:'fcx.com',NEM:'newmont.com',GOLD:'barrick.com',AA:'alcoa.com',CLF:'clevelandcliffs.com',MP:'mpcorp.com',SCCO:'southerncoppercorp.com',BHP:'bhp.com',RIO:'riotinto.com',VALE:'vale.com',MOS:'mosaicco.com',BG:'bunge.com',ADM:'adm.com',GE:'ge.com',CAT:'caterpillar.com',DE:'deere.com',EMR:'emerson.com',VRT:'vertiv.com',RTX:'rtx.com',LMT:'lockheedmartin.com',BA:'boeing.com',URI:'unitedrentals.com',PWR:'quanta.com',MLM:'martinmarietta.com',VMC:'vulcanmaterials.com',WM:'wm.com',ACM:'aecom.com',J:'jacobs.com',TTEK:'tetratech.com',STN:'stantec.com',AMT:'americantower.com',PLD:'prologis.com',DHI:'dhi.com',AWK:'amwater.com',WTRG:'essentialutilities.com',CWT:'californiawater.com',AWR:'gswater.com',XYL:'xylem.com',PNR:'pentair.com',ECL:'ecolab.com',APD:'airproducts.com',LIN:'linde.com',VEOEY:'veolia.com',DIS:'disney.com',CMCSA:'comcast.com',SONY:'sony.com',VZ:'verizon.com',TMUS:'t-mobile.com',STX:'seagate.com',WDC:'westerndigital.com',ASTS:'ast-science.com',SPY:'ssga.com'};
+</script>
+<script id="__env_script">window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '' };</script>
+  <script>
+    // Apply saved theme immediately to prevent flash
+    (function(){ var t=localStorage.getItem('mp-theme'); if(t==='light') document.documentElement.setAttribute('data-theme','light'); })();
+  </script>
+</head>
+<body>
+
+<!-- Side Navigation -->
+<nav class="side-nav">
+  <a class="side-nav-logo" href="/">
+    <svg width="28" height="28" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="40" height="40" rx="8" fill="#00DE94" fill-opacity="0.15"/>
+      <path d="M20 8L30 14V26L20 32L10 26V14L20 8Z" stroke="#00DE94" stroke-width="1.5" fill="none"/>
+      <path d="M20 8L30 14L20 20L10 14L20 8Z" fill="#00DE94" fill-opacity="0.3"/>
+      <path d="M20 20V32" stroke="#00DE94" stroke-width="1.5"/>
+      <path d="M10 14V26" stroke="#00DE94" stroke-width="1" opacity="0.4"/>
+      <path d="M30 14V26" stroke="#00DE94" stroke-width="1" opacity="0.4"/>
+    </svg>
+    <span class="side-nav-logo-text">Market Prism</span>
+  </a>
+  <div class="side-nav-items">
+    <a class="side-nav-item" href="/dashboard">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/></svg>
+      Dashboard
+    </a>
+    <a class="side-nav-item active" href="/heatmap">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="4" height="4" rx="1" fill="currentColor" opacity="0.9"/><rect x="6" y="1" width="4" height="4" rx="1" fill="currentColor" opacity="0.6"/><rect x="11" y="1" width="4" height="4" rx="1" fill="currentColor" opacity="0.3"/><rect x="1" y="6" width="4" height="4" rx="1" fill="currentColor" opacity="0.7"/><rect x="6" y="6" width="4" height="4" rx="1" fill="currentColor" opacity="0.4"/><rect x="11" y="6" width="4" height="4" rx="1" fill="currentColor" opacity="0.8"/><rect x="1" y="11" width="4" height="4" rx="1" fill="currentColor" opacity="0.5"/><rect x="6" y="11" width="4" height="4" rx="1" fill="currentColor" opacity="0.9"/><rect x="11" y="11" width="4" height="4" rx="1" fill="currentColor" opacity="0.6"/></svg>
+      Heatmap
+    </a>
+  </div>
+  <div class="side-nav-bottom">
+    <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+      <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <span class="theme-label">Light mode</span>
+    </button>
+    <a href="/" style="margin-top:12px;display:flex;">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M6 12L2 8l4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 8h12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      Back to Home
+    </a>
+  </div>
+</nav>
+
+<!-- Main Content -->
+<div class="main-content">
+
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <span class="last-updated" id="last-updated">&mdash;</span>
+    </div>
+    <button class="refresh-btn" id="refresh-btn" onclick="refreshData()">&#8635; Refresh</button>
+  </div>
+
+  <div class="page-header">
+    <div class="page-title">Narrative Heatmap</div>
+    <div class="page-sub">Every ticker's story health at a glance &mdash; scored by narrative coherence, not price change</div>
+  </div>
+
+  <div id="summary-strip" class="summary-strip">
+    <div class="sum-cell"><div class="skel" style="height:10px;width:60%;margin-bottom:6px;"></div><div class="skel" style="height:22px;width:50%;"></div></div>
+    <div class="sum-cell"><div class="skel" style="height:10px;width:60%;margin-bottom:6px;"></div><div class="skel" style="height:22px;width:50%;"></div></div>
+    <div class="sum-cell"><div class="skel" style="height:10px;width:60%;margin-bottom:6px;"></div><div class="skel" style="height:22px;width:50%;"></div></div>
+    <div class="sum-cell"><div class="skel" style="height:10px;width:60%;margin-bottom:6px;"></div><div class="skel" style="height:22px;width:50%;"></div></div>
+    <div class="sum-cell"><div class="skel" style="height:10px;width:60%;margin-bottom:6px;"></div><div class="skel" style="height:22px;width:50%;"></div></div>
+  </div>
+
+  <div class="controls-bar">
+    <div class="filter-group" id="filter-group">
+      <button class="filter-btn on" data-f="all">All</button>
+      <button class="filter-btn" data-f="strong">Strong 75+</button>
+      <button class="filter-btn" data-f="bull">Bullish</button>
+      <button class="filter-btn" data-f="bear">Bearish</button>
+      <button class="filter-btn" data-f="trap">Trap flags</button>
+      <button class="filter-btn" data-f="supported">Supported</button>
+      <button class="filter-btn" data-f="stress">Stressed</button>
+    </div>
+    <div class="sort-group">
+      <span class="sort-label">Sort</span>
+      <button class="sort-btn on" data-s="health">Health</button>
+      <button class="sort-btn" data-s="energy">Energy</button>
+      <button class="sort-btn" data-s="frag">Fragility</button>
+      <button class="sort-btn" data-s="exdays">Exhaustion</button>
+      <button class="sort-btn" data-s="az">A&ndash;Z</button>
+    </div>
+  </div>
+
+  <div class="legend-bar">
+    <div class="legend-item"><div class="legend-swatch" style="background:#0D5A30"></div>80&ndash;100 Strong</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#1A7A43"></div>70&ndash;79 Good</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#3D7A30"></div>60&ndash;69 Moderate</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#7A6D0D"></div>50&ndash;59 Fragile</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#8A4A0D"></div>40&ndash;49 Weak</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#7A1A1A"></div>&lt;40 Stressed</div>
+    <div class="legend-item" style="margin-left:8px;">
+      <div style="width:10px;height:10px;border-radius:3px;border:2px solid rgba(56,200,184,0.6);"></div>Trap flag
+    </div>
+    <div class="legend-item">
+      <div style="width:10px;height:10px;border-radius:3px;border:2px solid rgba(0,222,148,0.6);background:#1A7A43;"></div>Supported
+    </div>
+    <div class="legend-item">&uarr; Bullish &nbsp; &darr; Bearish &nbsp; &rarr; Neutral</div>
+  </div>
+
+  <div class="count-bar" id="count-bar">Loading&hellip;</div>
+  <div class="heatmap-grid" id="heatmap-grid">
+    <!-- skeleton -->
+    ${Array(60).fill(0).map(() => `<div class="skel" style="height:72px;border-radius:10px;"></div>`).join('')}
+  </div>
+
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+// ── Theme toggle ──
+(function() {
+  var saved = localStorage.getItem('mp-theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+  var btn = document.getElementById('theme-toggle');
+  var label = btn.querySelector('.theme-label');
+  function updateLabel() {
+    var current = document.documentElement.getAttribute('data-theme') || 'dark';
+    label.textContent = current === 'dark' ? 'Light mode' : 'Dark mode';
+  }
+  updateLabel();
+  btn.addEventListener('click', function() {
+    var current = document.documentElement.getAttribute('data-theme') || 'dark';
+    var next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('mp-theme', next);
+    updateLabel();
+  });
+})();
+
+const SUPABASE_URL  = window.__env?.SUPABASE_URL  || '';
+const SUPABASE_ANON = window.__env?.SUPABASE_ANON || '';
+
+if (!SUPABASE_URL || !SUPABASE_ANON) {
+  document.getElementById('heatmap-grid').innerHTML =
+    '<div class="inline-err">Config error: SUPABASE_URL or SUPABASE_ANON not set. Check Vercel environment variables.</div>';
+  throw new Error('Missing Supabase config');
+}
+
+async function sbFetch(table, params) {
+  const qs = Object.entries(params)
+    .filter(([,v]) => v !== undefined && v !== null && v !== '')
+    .map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+    .join('&');
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${qs}`, {
+    headers: {
+      'apikey': SUPABASE_ANON,
+      'Authorization': `Bearer ${SUPABASE_ANON}`,
+      'Accept': 'application/json'
+    }
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`[${table}] ${res.status}: ${body.slice(0,200)}`);
+  }
+  const text = await res.text();
+  try { return JSON.parse(text); }
+  catch(e) { throw new Error(`[${table}] JSON parse failed. Starts with: ${text.slice(0,120)}`); }
+}
+
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── State ──────────────────────────────────────────────────────────────────
+let ALL_TICKERS = [];
+let activeFilter = 'all';
+let activeSort   = 'health';
+
+// ── Derived helpers ────────────────────────────────────────────────────────
+function fragility(r) {
+  const coord  = r.worst_coordination ?? 0;
+  const invH   = 100 - (r.pulse_health_score ?? 50);
+  const drift  = Math.min(100, Math.abs(r.pulse_drift ?? 0));
+  return Math.round(coord * 0.35 + invH * 0.35 + drift * 0.30);
+}
+
+function healthBand(h) {
+  if (h >= 80) return 'hb-5';
+  if (h >= 70) return 'hb-4';
+  if (h >= 60) return 'hb-3';
+  if (h >= 50) return 'hb-2';
+  if (h >= 40) return 'hb-1';
+  return 'hb-0';
+}
+
+function dirArrow(d) {
+  if (!d) return '\u2192';
+  if (d.includes('BULL')) return '\u2191';
+  if (d.includes('BEAR')) return '\u2193';
+  return '\u2192';
+}
+
+function dirCls(d) {
+  if (!d) return 'tt-dir-neutral';
+  if (d.includes('BULL')) return 'tt-dir-bull';
+  if (d.includes('BEAR')) return 'tt-dir-bear';
+  return 'tt-dir-neutral';
+}
+
+function verdictCls(v) {
+  if (v === 'Narrative Trap')          return 'tt-v-trap';
+  if (v === 'Structurally Supported')  return 'tt-v-supported';
+  return 'tt-v-monitor';
+}
+
+function cellVerdictClass(v) {
+  if (v === 'Narrative Trap')         return 'trap';
+  if (v === 'Structurally Supported') return 'supported';
+  return '';
+}
+
+// ── Data fetch ─────────────────────────────────────────────────────────────
+async function fetchData() {
+  const rows = await sbFetch('ticker_pulse', {
+    select: [
+      'ticker','snapshot_date','pulse_health_score','pulse_label',
+      'direction_forecast','decay_status','prevailing_verdict',
+      'avg_energy_remaining','nearest_exhaustion_days','pulse_vms',
+      'worst_coordination','trap_count','fvd_pct','net_sentiment',
+      'prevailing_narrative','pulse_drift','active_narrative_count',
+      'pulse_nrs','pulse_coordination','pulse_summary','worst_nrs'
+    ].join(','),
+    order: 'pulse_health_score.desc',
+    limit: '500'
+  });
+
+  return rows.map(r => ({
+    t:         r.ticker,
+    date:      r.snapshot_date,
+    health:    Math.round(r.pulse_health_score ?? 50),
+    label:     r.pulse_label ?? 'STABLE',
+    dir:       r.direction_forecast ?? 'NEUTRAL',
+    verdict:   r.prevailing_verdict ?? 'Monitoring',
+    energy:    Math.round(r.avg_energy_remaining ?? 50),
+    exdays:    Math.round(r.nearest_exhaustion_days ?? 0),
+    frag:      fragility(r),
+    traps:     r.trap_count ?? 0,
+    coord:     Math.round(r.worst_coordination ?? 0),
+    fvd:       (r.fvd_pct != null && Math.abs(r.fvd_pct) < 400) ? +r.fvd_pct.toFixed(1) : null,
+    sentiment: Math.round(r.net_sentiment ?? 0),
+    narrative: (r.prevailing_narrative ?? '').slice(0, 120),
+    vms:       Math.round(r.pulse_vms ?? 50),
+    status:    r.decay_status ?? 'FRESH',
+    summary:   (r.pulse_summary ?? '').slice(0, 200),
+  }));
+}
+
+// ── Summary strip ──────────────────────────────────────────────────────────
+function renderSummary(data) {
+  if (!data.length) return;
+  const traps     = data.filter(d => d.verdict === 'Narrative Trap').length;
+  const supported = data.filter(d => d.verdict === 'Structurally Supported').length;
+  const strong    = data.filter(d => d.health >= 75).length;
+  const stressed  = data.filter(d => d.label  === 'STRESSED').length;
+  const avgHealth = Math.round(data.reduce((a,b) => a + b.health, 0) / data.length);
+  const avgEnergy = Math.round(data.reduce((a,b) => a + b.energy, 0) / data.length);
+  const hCol      = avgHealth >= 70 ? 'var(--mp-teal)' : avgHealth >= 55 ? 'var(--mp-amber)' : 'var(--mp-prism-5)';
+
+  const latestDate = data[0]?.date ?? '';
+  document.getElementById('last-updated').textContent = latestDate
+    ? `Snapshot: ${new Date(latestDate).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`
+    : '';
+
+  document.getElementById('summary-strip').innerHTML = `
+    <div class="sum-cell">
+      <div class="sum-label">Avg Narrative Health</div>
+      <div class="sum-val" style="color:${hCol}">${avgHealth}</div>
+      <div class="sum-sub">out of 100</div>
+    </div>
+    <div class="sum-cell">
+      <div class="sum-label">Avg Energy</div>
+      <div class="sum-val">${avgEnergy}</div>
+      <div class="sum-sub">avg remaining</div>
+    </div>
+    <div class="sum-cell">
+      <div class="sum-label">Strong Narratives</div>
+      <div class="sum-val" style="color:var(--mp-teal)">${strong}</div>
+      <div class="sum-sub">health \u2265 75</div>
+    </div>
+    <div class="sum-cell">
+      <div class="sum-label">Trap Flags</div>
+      <div class="sum-val" style="color:var(--mp-prism-5)">${traps}</div>
+      <div class="sum-sub">${supported} structurally supported</div>
+    </div>
+    <div class="sum-cell">
+      <div class="sum-label">Stressed</div>
+      <div class="sum-val" style="color:var(--mp-amber)">${stressed}</div>
+      <div class="sum-sub">label = STRESSED</div>
+    </div>`;
+}
+
+// ── Grid render ────────────────────────────────────────────────────────────
+function getFiltered() {
+  let data = [...ALL_TICKERS];
+  if (activeFilter === 'strong')    data = data.filter(d => d.health >= 75);
+  if (activeFilter === 'bull')      data = data.filter(d => d.dir.includes('BULL'));
+  if (activeFilter === 'bear')      data = data.filter(d => d.dir.includes('BEAR'));
+  if (activeFilter === 'trap')      data = data.filter(d => d.verdict === 'Narrative Trap');
+  if (activeFilter === 'supported') data = data.filter(d => d.verdict === 'Structurally Supported');
+  if (activeFilter === 'stress')    data = data.filter(d => d.label === 'STRESSED');
+
+  const sortFns = {
+    health:  (a,b) => b.health - a.health,
+    energy:  (a,b) => b.energy - a.energy,
+    frag:    (a,b) => b.frag   - a.frag,
+    exdays:  (a,b) => a.exdays - b.exdays,
+    az:      (a,b) => a.t.localeCompare(b.t),
+  };
+  data.sort(sortFns[activeSort] || sortFns.health);
+  return data;
+}
+
+function renderGrid() {
+  const data = getFiltered();
+  renderSummary(ALL_TICKERS);
+
+  document.getElementById('count-bar').innerHTML =
+    `Showing <span>${data.length}</span> of <span>${ALL_TICKERS.length}</span> tickers`;
+
+  if (!data.length) {
+    document.getElementById('heatmap-grid').innerHTML =
+      '<div class="no-results">No tickers match this filter.</div>';
+    return;
+  }
+
+  document.getElementById('heatmap-grid').innerHTML = data.map(d => {
+    const vCls = cellVerdictClass(d.verdict);
+    return `<a class="hm-cell ${healthBand(d.health)} ${vCls}"
+         href="/ticker/${encodeURIComponent(d.t)}"
+         data-t="${esc(d.t)}"
+         title="${esc(d.t)}">
+      <div class="cell-top">
+        <span class="cell-ticker">${esc(d.t)}</span>
+        ${d.traps > 0 ? `<span class="cell-trap"></span>` : ''}
+      </div>
+      <div class="cell-score">${d.health}</div>
+      <div class="cell-bottom">
+        <span class="cell-dir">${dirArrow(d.dir)}</span>
+        <span class="cell-days">${d.exdays}d</span>
+      </div>
+    </a>`;
+  }).join('');
+
+  // Attach tooltips (prevent navigation on hover)
+  document.querySelectorAll('.hm-cell').forEach(cell => {
+    cell.addEventListener('mouseenter', e => showTooltip(e, cell.dataset.t));
+    cell.addEventListener('mouseleave', () => {
+      document.getElementById('tooltip').classList.remove('visible');
+    });
+  });
+}
+
+// ── Tooltip ────────────────────────────────────────────────────────────────
+function showTooltip(e, ticker) {
+  const d = ALL_TICKERS.find(x => x.t === ticker);
+  if (!d) return;
+  const tt   = document.getElementById('tooltip');
+  const fvdStr = d.fvd != null ? (d.fvd > 0 ? '+' : '') + d.fvd + '% vs FV' : '\u2014';
+
+  tt.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+      ${(function(t){var d=window.MP_DOMAINS&&window.MP_DOMAINS[t];return d?'<img src="https://logo.clearbit.com/'+d+'?size=64" alt="'+t+'" style="width:28px;height:28px;border-radius:6px;object-fit:contain;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);padding:3px;flex-shrink:0;" onerror="this.style.display=\'none\'">':\'\';})( d.t )}
+      <div class="tt-ticker">${esc(d.t)}</div>
+    </div>
+    <span class="tt-verdict ${verdictCls(d.verdict)}">${esc(d.verdict)}</span>
+    <div class="tt-narrative">${esc(d.narrative || d.summary || 'No narrative summary available.')}</div>
+    <div class="tt-grid">
+      <div class="tt-stat">
+        <div class="tt-stat-lbl">Health</div>
+        <div class="tt-stat-val">${d.health}/100</div>
+      </div>
+      <div class="tt-stat">
+        <div class="tt-stat-lbl">Direction</div>
+        <div class="tt-stat-val ${dirCls(d.dir)}">${dirArrow(d.dir)} ${esc(d.dir.replace(/_/g,' '))}</div>
+      </div>
+      <div class="tt-stat">
+        <div class="tt-stat-lbl">Narrative Energy</div>
+        <div class="tt-stat-val">${d.energy}/100</div>
+      </div>
+      <div class="tt-stat">
+        <div class="tt-stat-lbl">Exhaustion</div>
+        <div class="tt-stat-val">${d.exdays}d</div>
+      </div>
+      <div class="tt-stat">
+        <div class="tt-stat-lbl">Fragility</div>
+        <div class="tt-stat-val">${d.frag}/100</div>
+      </div>
+      <div class="tt-stat">
+        <div class="tt-stat-lbl">FV Gap</div>
+        <div class="tt-stat-val">${fvdStr}</div>
+      </div>
+    </div>`;
+
+  tt.classList.add('visible');
+
+  const rect = e.currentTarget.getBoundingClientRect();
+  let left = rect.right + 10;
+  if (left + 290 > window.innerWidth) left = rect.left - 298;
+  let top  = rect.top;
+  if (top + 240 > window.innerHeight) top = window.innerHeight - 248;
+  tt.style.left = left + 'px';
+  tt.style.top  = top  + 'px';
+}
+
+// ── Controls ───────────────────────────────────────────────────────────────
+document.getElementById('filter-group').addEventListener('click', e => {
+  const btn = e.target.closest('.filter-btn');
+  if (!btn) return;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('on','on-red','on-green'));
+  btn.classList.add('on');
+  activeFilter = btn.dataset.f;
+  renderGrid();
+});
+
+document.querySelector('.sort-group').addEventListener('click', e => {
+  const btn = e.target.closest('.sort-btn');
+  if (!btn) return;
+  document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  activeSort = btn.dataset.s;
+  renderGrid();
+});
+
+// ── Refresh ────────────────────────────────────────────────────────────────
+async function refreshData() {
+  const btn = document.getElementById('refresh-btn');
+  btn.textContent = '\u21BB Loading\u2026';
+  btn.classList.add('spinning');
+  try {
+    ALL_TICKERS = await fetchData();
+    renderGrid();
+  } catch(err) {
+    document.getElementById('heatmap-grid').innerHTML =
+      `<div class="inline-err">Failed to load: ${esc(err.message)}</div>`;
+  } finally {
+    btn.textContent = '\u21BB Refresh';
+    btn.classList.remove('spinning');
+  }
+}
+
+// ── Auto-refresh every 5 minutes ──────────────────────────────────────────
+setInterval(() => refreshData(), 5 * 60 * 1000);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) refreshData();
+});
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+refreshData();
+</script>
+<script>
+/* ─────────────────────────────────────────────────────────────────────────────
+   MARKET PRISM — TICKER LOGO SYSTEM
+   Clearbit Logo API (free, no key needed).
+   Covers every ticker element across all four pages.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+var MP_DOMAINS = {
+  // Semiconductors
+  NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadcom.com',
+  QCOM:'qualcomm.com',TSM:'tsmc.com',MRVL:'marvell.com',AMAT:'appliedmaterials.com',
+  LRCX:'lamresearch.com',TXN:'ti.com',SNPS:'synopsys.com',CDNS:'cadence.com',
+  MU:'micron.com',ARM:'arm.com',SMCI:'supermicro.com',
+  // Software / Cloud
+  AAPL:'apple.com',MSFT:'microsoft.com',GOOGL:'google.com',META:'meta.com',
+  AMZN:'amazon.com',ADBE:'adobe.com',CRM:'salesforce.com',ORCL:'oracle.com',
+  NFLX:'netflix.com',INTU:'intuit.com',NOW:'servicenow.com',WDAY:'workday.com',
+  PANW:'paloaltonetworks.com',CRWD:'crowdstrike.com',PLTR:'palantir.com',
+  IBM:'ibm.com',HPQ:'hp.com',DELL:'dell.com',MSTR:'microstrategy.com',
+  SHOP:'shopify.com',SNOW:'snowflake.com',SQ:'squareup.com',
+  // Consumer Tech / Social
+  SPOT:'spotify.com',RDDT:'reddit.com',SNAP:'snap.com',RBLX:'roblox.com',
+  TTWO:'take2games.com',COIN:'coinbase.com',HOOD:'robinhood.com',SOFI:'sofi.com',
+  DASH:'doordash.com',UBER:'uber.com',ABNB:'airbnb.com',BKNG:'booking.com',
+  OPEN:'opendoor.com',PTON:'onepeloton.com',GME:'gamestop.com',DJT:'tmtgcorp.com',
+  // Finance
+  JPM:'jpmorganchase.com',GS:'goldmansachs.com',V:'visa.com',MA:'mastercard.com',
+  WFC:'wellsfargo.com',BAC:'bankofamerica.com',MS:'morganstanley.com',
+  PYPL:'paypal.com','BRK.B':'berkshirehathaway.com',OWL:'blueowl.com',
+  // Consumer / Retail
+  COST:'costco.com',WMT:'walmart.com',TGT:'target.com',HD:'homedepot.com',
+  LOW:'lowes.com',MCD:'mcdonalds.com',SBUX:'starbucks.com',NKE:'nike.com',
+  CMG:'chipotle.com',KO:'coca-cola.com',PEP:'pepsico.com',GIS:'generalmills.com',
+  KHC:'kraftheinzcompany.com',MDLZ:'mondelezinternational.com',TSN:'tysonfoods.com',
+  BUD:'ab-inbev.com',BYND:'beyondmeat.com',KVUE:'kenvue.com',
+  // Healthcare / Pharma
+  JNJ:'jnj.com',LLY:'lilly.com',PFE:'pfizer.com',MRK:'merck.com',
+  ABBV:'abbvie.com',UNH:'unitedhealthgroup.com',DHR:'danaher.com',
+  TMO:'thermofisher.com',ABT:'abbott.com',NVO:'novonordisk.com',
+  HIMS:'forhims.com',IBRX:'immunitybio.com',NBIS:'nebius.com',
+  // Auto / Transport
+  TSLA:'tesla.com',GM:'gm.com',F:'ford.com',RIVN:'rivian.com',NIO:'nio.com',
+  LCID:'lucidmotors.com',TM:'toyota.com',HMC:'honda.com',RACE:'ferrari.com',
+  UAL:'united.com',UPS:'ups.com',
+  // Energy
+  XOM:'exxonmobil.com',CVX:'chevron.com',COP:'conocophillips.com',
+  EOG:'eogresources.com',OXY:'oxy.com',HAL:'halliburton.com',SLB:'slb.com',
+  VST:'vistraenergy.com',CEG:'constellation.com',NEE:'nexteraenergy.com',
+  DUK:'duke-energy.com',SO:'southerncompany.com',ENPH:'enphase.com',
+  FSLR:'firstsolar.com',OKLO:'oklo.com',SMR:'nuscalepower.com',
+  CCJ:'cameco.com',LEU:'centrusenergy.com',
+  // Materials / Mining
+  FCX:'fcx.com',NEM:'newmont.com',GOLD:'barrick.com',AA:'alcoa.com',
+  CLF:'clevelandcliffs.com',MP:'mpcorp.com',SCCO:'southerncoppercorp.com',
+  BHP:'bhp.com',RIO:'riotinto.com',VALE:'vale.com',MOS:'mosaicco.com',
+  BG:'bunge.com',ADM:'adm.com',
+  // Industrials
+  GE:'ge.com',CAT:'caterpillar.com',DE:'deere.com',EMR:'emerson.com',
+  VRT:'vertiv.com',RTX:'rtx.com',LMT:'lockheedmartin.com',BA:'boeing.com',
+  URI:'unitedrentals.com',PWR:'quanta.com',MLM:'martinmarietta.com',
+  VMC:'vulcanmaterials.com',WM:'wm.com',ACM:'aecom.com',
+  J:'jacobs.com',TTEK:'tetratech.com',STN:'stantec.com',
+  // Real Estate
+  AMT:'americantower.com',PLD:'prologis.com',DHI:'dhi.com',
+  // Utilities / Water / Chemicals
+  AWK:'amwater.com',WTRG:'essentialutilities.com',CWT:'californiawater.com',
+  AWR:'gswater.com',XYL:'xylem.com',PNR:'pentair.com',ECL:'ecolab.com',
+  APD:'airproducts.com',LIN:'linde.com',VEOEY:'veolia.com',
+  // Media
+  DIS:'disney.com',CMCSA:'comcast.com',SONY:'sony.com',
+  // Telecom
+  VZ:'verizon.com',TMUS:'t-mobile.com',
+  // Storage / Hardware
+  STX:'seagate.com',WDC:'westerndigital.com',
+  // Misc
+  ASTS:'ast-science.com',
+  // ETF
+  SPY:'ssga.com',
+};
+
+/* Returns a clearbit URL or null */
+function mpLogoUrl(ticker, size) {
+  var d = MP_DOMAINS[ticker];
+  return d ? 'https://logo.clearbit.com/' + d + '?size=' + (size || 64) : null;
+}
+
+/* Builds an <img> element, returns null if no domain */
+function mpLogoImg(ticker, px) {
+  var url = mpLogoUrl(ticker, Math.max((px || 20) * 2, 64)); // 2x for retina
+  if (!url) return null;
+  var img = document.createElement('img');
+  img.src = url;
+  img.alt = ticker;
+  img.className = 'mp-logo-img';
+  img.style.cssText = 'width:' + (px||20) + 'px;height:' + (px||20) + 'px;object-fit:contain;flex-shrink:0;border-radius:3px;display:block;';
+  img.onerror = function() { this.style.display = 'none'; };
+  return img;
+}
+
+/* Wraps an element's content with logo + text in a flex row.
+   Skips if already has a logo or ticker looks invalid. */
+function injectLogo(el, px) {
+  if (!el || el.querySelector('.mp-logo-img')) return;
+  var ticker = (el.dataset.ticker || el.textContent || '').trim().replace(/[^A-Z0-9\.]/g,'');
+  if (!ticker || ticker.length > 6) return;
+  var logo = mpLogoImg(ticker, px || 16);
+  if (!logo) return;
+  el.style.display = 'inline-flex';
+  el.style.alignItems = 'center';
+  el.style.gap = '5px';
+  el.insertBefore(logo, el.firstChild);
+}
+
+/* ─── PAGE-SPECIFIC INJECTION MAPS ──────────────────────────────────────────
+   Each entry: [CSS selector, logo size in px]
+   ─────────────────────────────────────────────────────────────────────────── */
+var INJECT_MAP = [
+  // _home.html
+  ['.tk-s',            14],  // ticker tape
+  ['.dp-card-ticker',  16],  // dashboard mini cards
+  ['.dp-ticker',       24],  // ticker detail preview hero
+
+  // _home.html + _template.html
+  ['.tc-ticker',       16],  // trading card ticker label
+
+  // _template.html (daily briefing)
+  ['.dpi-tk',          14],  // instrument strip (SPY, QQQ, VIX etc)
+  ['.daily-otk',       14],  // options table tickers
+  ['.daily-ntk',       14],  // news feed tickers
+  ['.snap-sym',        14],  // snapshot table tickers
+  ['.lh-ticker',       14],  // love/hate ticker badges
+  ['.slot-ticker',     14],  // video slot tickers
+  ['.tc-card-exp-ticker', 18], // expanded trading card ticker
+
+  // _ticker.html
+  ['.hero-ticker',     28],  // main ticker hero heading
+  ['.nav-ticker',      14],  // sidebar/nav ticker breadcrumb
+  ['.par-ticker',      14],  // peer comparisons
+  ['.tk-feed-ticker',  14],  // story feed ticker header
+
+  // _heatmap.html
+  ['.cell-ticker',     12],  // heatmap cell ticker
+  ['.tt-ticker',       18],  // heatmap tooltip ticker
+
+  // Universal catch-all
+  ['[data-ticker]',    16],
+];
+
+function mpInjectAll() {
+  var seen = new WeakSet();
+  INJECT_MAP.forEach(function(entry) {
+    var sel = entry[0], px = entry[1];
+    document.querySelectorAll(sel).forEach(function(el) {
+      if (seen.has(el)) return;
+      seen.add(el);
+      injectLogo(el, px);
+    });
+  });
+}
+
+/* ─── MUTATION OBSERVER — catches dynamically rendered tickers ───────────── */
+var _observer = new MutationObserver(function(mutations) {
+  var dirty = false;
+  mutations.forEach(function(m) {
+    if (m.addedNodes.length) dirty = true;
+  });
+  if (dirty) mpInjectAll();
+});
+
+function mpStart() {
+  mpInjectAll();
+  _observer.observe(document.body, { childList: true, subtree: true });
+}
+
+/* ─── BOOT ───────────────────────────────────────────────────────────────── */
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', mpStart);
+} else {
+  mpStart();
+}
+
+/* Expose globally for manual calls after dynamic renders */
+window.mpInjectAll  = mpInjectAll;
+window.mpLogoUrl    = mpLogoUrl;
+window.mpLogoImg    = mpLogoImg;
+window.MP_DOMAINS   = MP_DOMAINS;
+</script>
+</body>
+</html>
