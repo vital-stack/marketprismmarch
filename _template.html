@@ -1639,6 +1639,63 @@ body{
   white-space:nowrap;pointer-events:none;
 }
 .tc-cal-ghost-dot{width:6px;height:6px;border-radius:50%;}
+
+/* ── Trading Cards Gallery ── */
+.tcg-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:24px;flex-wrap:wrap;gap:12px;
+}
+.tcg-header h1{font-family:var(--font-display);font-size:24px;font-weight:400;color:var(--mp-text-primary);}
+.tcg-header p{font-size:13px;color:var(--mp-text-tertiary);margin-top:2px;}
+.tcg-count{font-family:var(--font-mono);font-size:12px;color:var(--mp-text-tertiary);}
+.tcg-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+  gap:24px;
+  padding-bottom:40px;
+}
+.tcg-card-wrap{
+  position:relative;
+}
+.tcg-card-wrap .card-scene{
+  width:100%;cursor:pointer;
+}
+.tcg-card-wrap .card-front,.tcg-card-wrap .card-back{
+  width:100%;
+}
+/* Card actions bar */
+.tcg-actions{
+  display:flex;gap:6px;margin-top:10px;justify-content:center;
+}
+.tcg-action-btn{
+  display:inline-flex;align-items:center;gap:5px;
+  font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--mp-text-tertiary);
+  padding:7px 14px;border-radius:6px;
+  border:1px solid var(--mp-border);background:rgba(255,255,255,.02);
+  cursor:pointer;transition:all .2s;white-space:nowrap;
+}
+.tcg-action-btn:hover{
+  color:var(--mp-text-primary);border-color:var(--mp-border-mid);
+  background:rgba(255,255,255,.05);
+}
+.tcg-action-btn svg{width:13px;height:13px;flex-shrink:0;}
+.tcg-action-btn.primary{
+  background:rgba(52,211,153,.08);border-color:rgba(52,211,153,.2);
+  color:var(--mp-teal);
+}
+.tcg-action-btn.primary:hover{background:rgba(52,211,153,.15);}
+/* Share toast */
+.tcg-toast{
+  position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--mp-surface);border:1px solid var(--mp-border-mid);
+  border-radius:8px;padding:10px 20px;
+  font-family:var(--font-mono);font-size:11px;color:var(--mp-teal);
+  box-shadow:0 12px 40px rgba(0,0,0,.4);
+  opacity:0;transition:opacity .25s,transform .25s;z-index:999;pointer-events:none;
+}
+.tcg-toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto;}
+
 /* Expanded signal card overlay */
 .tc-card-overlay{
   position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.6);
@@ -1733,6 +1790,11 @@ body{
       Market Sharing
       <span class="nav-item-badge teal" id="nav-badge-memes">New</span>
     </button>
+    <button class="nav-item" data-tab="cards" onclick="switchTab('cards',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="8" height="13" rx="2"/><rect x="14" y="3" width="8" height="13" rx="2"/><path d="M6 19h12"/><path d="M10 21h4"/></svg>
+      Trading Cards
+      <span class="nav-item-badge teal" id="nav-badge-cards">New</span>
+    </button>
     <button class="nav-item" data-tab="calendar" onclick="switchTab('calendar',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/><path d="M8.25 15h.008v.008H8.25V15zm0 2.25h.008v.008H8.25V17.25zm2.25-2.25h.008v.008H10.5V15zm0 2.25h.008v.008H10.5V17.25zm2.25-2.25h.008v.008H12.75V15zm0 2.25h.008v.008H12.75V17.25zm2.25-2.25h.008v.008H15V15zm0 2.25h.008v.008H15V17.25z"/></svg>
       Trading Calendar
@@ -1801,7 +1863,13 @@ body{
         <div class="trading-cards-section">
           <div class="trading-cards-header">
             <h3>Live Signal Cards</h3>
-            <span>Click to flip</span>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <button class="tcg-action-btn" onclick="switchTab('cards',document.querySelector('[data-tab=cards]'))" style="font-size:9px;padding:5px 10px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15"/></svg>
+                View Full Size
+              </button>
+              <span>Click to flip</span>
+            </div>
           </div>
           <div class="deck" id="trading-deck">
             <!-- Cards populated by JS from live data -->
@@ -2328,6 +2396,23 @@ body{
       </div>
     </div>
     <!-- ══════════════════════════════════════
+         TAB: TRADING CARDS GALLERY
+    ═══════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-cards">
+      <div class="tcg-header">
+        <div>
+          <h1>Trading Cards</h1>
+          <p>Full-size signal cards — save as image or share to social media</p>
+        </div>
+        <span class="tcg-count" id="tcg-count"></span>
+      </div>
+      <div class="tcg-grid" id="tcg-grid">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+    <div class="tcg-toast" id="tcg-toast"></div>
+
+    <!-- ══════════════════════════════════════
          TAB: TRADING CALENDAR
     ═══════════════════════════════════════ -->
     <div class="tab-panel" id="tab-calendar">
@@ -2444,8 +2529,8 @@ document.querySelectorAll('.page-header p').forEach(function(p,i){
   if(i===0) return;
 });
 // ── Tab switching ─────────────────────────────────────────────────────────────
-var TABS = ['discover','sector','snapshots','memes','narrative','calendar'];
-var TAB_TITLES = {discover:'Discover',sector:'Sector Pulse',snapshots:'Ticker Snapshots',memes:'Market Sharing',narrative:'Narrative History',calendar:'Trading Calendar'};
+var TABS = ['discover','sector','snapshots','memes','narrative','cards','calendar'];
+var TAB_TITLES = {discover:'Discover',sector:'Sector Pulse',snapshots:'Ticker Snapshots',memes:'Market Sharing',narrative:'Narrative History',cards:'Trading Cards',calendar:'Trading Calendar'};
 function switchTab(id, btn){
   TABS.forEach(function(t){
     document.getElementById('tab-'+t).classList.toggle('active', t===id);
@@ -2456,6 +2541,7 @@ function switchTab(id, btn){
   var tt = document.getElementById('topbar-title');
   if(tt) tt.textContent = TAB_TITLES[id]||id;
   if(id==='narrative'&&typeof renderNHT==='function')setTimeout(renderNHT,50);
+  if(id==='cards'&&typeof renderCardsGallery==='function')setTimeout(renderCardsGallery,50);
   if(id==='calendar'&&typeof calendarBoot==='function')setTimeout(calendarBoot,50);
 }
 // ── Supabase config ───────────────────────────────────────────────────────────
@@ -4142,6 +4228,216 @@ function renderTradingCards(){
     });
   });
 }
+// ══════════════════════════════════════════════════════════════════════════════
+// TRADING CARDS GALLERY
+// ══════════════════════════════════════════════════════════════════════════════
+var TCG_RENDERED=false;
+function renderCardsGallery(){
+  var grid=document.getElementById('tcg-grid');
+  if(!grid)return;
+  // Build all cards from DATA (full set, not limited to 4)
+  var RARITY_MAP={
+    'Breaking':{label:'Rare',color:'#F87171',border:'rgba(248,113,113,0.3)'},
+    'Narrative Trap':{label:'Rare',color:'#F87171',border:'rgba(248,113,113,0.3)'},
+    'Surging':{label:'Epic',color:'#34D399',border:'rgba(52,211,153,0.3)'},
+    'Structurally Supported':{label:'Epic',color:'#34D399',border:'rgba(52,211,153,0.3)'},
+    'Fragile':{label:'Uncommon',color:'#A5B4FC',border:'rgba(129,140,248,0.3)'},
+    'Stable':{label:'Common',color:'#60A5FA',border:'rgba(96,165,250,0.3)'}
+  };
+  var cards=[];
+  if(DATA.length>0){
+    DATA.forEach(function(r,i){
+      cards.push(Object.assign({},r,TRADING_CARD_COLORS[i%TRADING_CARD_COLORS.length]));
+    });
+  }
+  if(!cards.length){
+    grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--mp-text-tertiary);padding:40px;">No signal data available. Cards appear after data loads.</div>';
+    return;
+  }
+  var countEl=document.getElementById('tcg-count');
+  if(countEl)countEl.textContent=cards.length+' cards';
+  var dateStr=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  grid.innerHTML=cards.map(function(c,i){
+    var delta=fmtDelta(c.price_change_pct);
+    var isBull=c.price_change_pct>0;
+    var chartColor=isBull?'#34D399':'#F87171';
+    var pts=[];for(var p=0;p<10;p++){pts.push(Math.round(10+Math.random()*35));}
+    if(isBull)pts.sort(function(a,b){return b-a;});else pts.sort(function(a,b){return a-b;});
+    var polyPts=pts.map(function(y,x){return Math.round(x*22)+','+y;}).join(' ');
+    var conf=Math.round(50+Math.random()*40);
+    var window=isBull?'1\u20133d':conf>70?'3\u20137d':'5\u201310d';
+    var energy=c.narrative_health||Math.round(40+Math.random()*50);
+    var trust=typeof computeTrust==='function'?computeTrust(c):50;
+    var rKey=c.prism_verdict||c.narrative_state||'Stable';
+    var rarity=RARITY_MAP[rKey]||RARITY_MAP['Stable'];
+    var companyName=c.sector_name||'\u2014';
+    var signalPrimary=esc(c.story_claim||c.primary_driver||'Signal under analysis');
+    var signalSecondary=c.narrative_state==='Breaking'||c.prism_verdict==='Narrative Trap'?'Elevated risk \u2014 monitor for reversal':'Momentum aligns with narrative trajectory';
+    return '<div class="tcg-card-wrap" id="tcg-wrap-'+i+'">'
+      +'<div class="card-scene" onclick="this.classList.toggle(\'flipped\')">'
+      +'<div class="card-flipper">'
+        +'<div class="card-front" style="position:relative;">'
+          +'<div class="foil-layer"></div><div class="foil-scan"></div>'
+          +'<div class="tc">'
+            +'<div class="tc-accent" style="background:'+c.accent+';"></div>'
+            +'<div class="tc-body">'
+              +'<div class="tc-header"><div class="tc-header-left">'
+                +'<div class="tc-logo-wrap" style="background:'+logoColor(c.ticker)[0]+';color:'+logoColor(c.ticker)[1]+';border-radius:7px;font-family:var(--font-mono);font-size:10px;font-weight:500;letter-spacing:.02em;">'+c.ticker+'</div>'
+                +'<div class="tc-id"><div class="tc-ticker">'+c.ticker+'</div><div class="tc-name">'+esc(companyName)+'</div></div>'
+              +'</div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;"><span class="tc-rarity" style="color:'+rarity.color+';border-color:'+rarity.border+';background:'+hexToRgba(rarity.color,0.1)+';">'+rarity.label+'</span><span class="tc-date-badge">'+dateStr+'</span></div></div>'
+              +'<div class="tc-price-row">'
+                +'<span class="tc-price">$'+fmtPrice(c.price)+'</span>'
+                +'<span class="tc-change" style="color:'+chartColor+';">'+(isBull?'\u25B2':'\u25BC')+' '+Math.abs(c.price_change_pct||0).toFixed(2)+'%</span>'
+              +'</div>'
+              +'<div class="tc-bias-block" style="border-color:'+hexToRgba(c.bias,0.22)+';background:'+hexToRgba(c.bias,0.1)+';">'
+                +'<svg class="bias-graphic" viewBox="0 0 204 72" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="gf'+i+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+c.bias+'" stop-opacity="0.4"/><stop offset="100%" stop-color="'+c.bias+'" stop-opacity="0"/></linearGradient></defs><polygon points="'+polyPts.split(' ').map(function(p,x){var parts=p.split(',');return Math.round(x*20.4)+','+parts[1];}).join(' ')+' 204,72 0,72" fill="url(#gf'+i+')"/><polyline points="'+polyPts.split(' ').map(function(p,x){var parts=p.split(',');return Math.round(x*20.4)+','+parts[1];}).join(' ')+'" fill="none" stroke="'+c.bias+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+                +'<div class="tc-bias-text-wrap"><div class="tc-bias-eyebrow">Signal bias</div><div class="tc-bias-text" style="color:'+c.bias+';">'+c.biasText.toUpperCase()+'</div></div>'
+              +'</div>'
+              +'<div class="tc-narrative">'+signalPrimary+'</div>'
+              +'<div class="tc-meta"><div class="tc-conf-wrap"><span class="tc-conf-lbl">Conf</span><div class="tc-conf-bar"><div class="tc-conf-fill" style="width:'+conf+'%;background:'+c.bias+';"></div></div><span class="tc-conf-val" style="color:'+c.bias+';">'+conf+'%</span></div><span class="tc-window-pill">'+window+'</span></div>'
+              +'<div class="tc-signal-block">'
+                +'<div class="tc-signal-line"><div class="tc-pip" style="background:'+c.bias+';"></div><span class="tc-signal-text">'+signalPrimary+'</span></div>'
+                +'<div class="tc-signal-line"><div class="tc-pip" style="background:var(--mp-text-tertiary);"></div><span class="tc-signal-text risk">'+signalSecondary+'</span></div>'
+              +'</div>'
+              +'<div class="tc-footer" style="border-color:'+hexToRgba(c.bias,0.18)+';"><span class="tc-phase" style="color:'+c.bias+';">'+c.phase+'</span><div class="tc-live-row"><div class="tc-pulse" style="background:'+c.bias+';"></div><span class="tc-live-lbl">Live</span></div></div>'
+            +'</div>'
+          +'</div>'
+        +'</div>'
+        +'<div class="card-back" style="position:absolute;">'
+          +'<div style="position:relative;"><div class="foil-layer"></div><div class="foil-scan"></div>'
+            +'<div class="card-back-inner">'
+              +'<div class="back-graphic" style="background:var(--mp-deep);display:flex;align-items:center;justify-content:center;"><div style="font-family:var(--font-mono);font-size:32px;font-weight:500;color:'+c.bias+';opacity:0.15;letter-spacing:6px;">'+c.ticker+'</div></div>'
+              +'<div class="back-content">'
+                +'<div class="back-company-row">'
+                  +'<div class="back-company-logo" style="background:var(--mp-deep);font-family:var(--font-mono);font-size:9px;font-weight:500;color:'+logoColor(c.ticker)[1]+';letter-spacing:.02em;">'+c.ticker+'</div>'
+                  +'<div><div class="back-company-name">'+c.ticker+'</div><div class="back-company-sector">'+(c.sector_name||'\u2014')+'</div></div>'
+                +'</div>'
+                +'<div class="back-divider"></div>'
+                +'<div><div class="back-fact-label">Narrative</div><div class="back-fact">"\u200A'+esc(c.story_claim||c.primary_driver||'Under analysis')+'\u200A"</div></div>'
+                +'<div class="back-stats">'
+                  +'<div class="back-stat"><div class="back-stat-label">Price</div><div class="back-stat-val" style="color:var(--mp-text-primary);">$'+fmtPrice(c.price)+'</div></div>'
+                  +'<div class="back-stat"><div class="back-stat-label">P/E ratio</div><div class="back-stat-val" style="color:'+c.bias+';">'+(c.pe_ratio!=null?c.pe_ratio.toFixed(1)+'x':'\u2014')+'</div></div>'
+                  +'<div class="back-stat"><div class="back-stat-label">Health</div><div class="back-stat-val" style="color:var(--mp-text-secondary);">'+energy+'</div></div>'
+                  +'<div class="back-stat"><div class="back-stat-label">Trust</div><div class="back-stat-val" style="color:var(--mp-text-secondary);">'+trust+'</div></div>'
+                +'</div>'
+                +'<div class="back-footer"><span class="back-footer-label">State</span><span class="back-footer-val" style="color:'+c.bias+';">'+(c.narrative_state||'\u2014')+'</span></div>'
+              +'</div>'
+              +'<div class="flip-back-hint">tap to flip back \u21BA</div>'
+            +'</div>'
+          +'</div>'
+        +'</div>'
+      +'</div>'
+      +'</div>'
+      +'<div class="tcg-actions">'
+        +'<button class="tcg-action-btn" onclick="event.stopPropagation();tcgSaveImage('+i+')">'
+          +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 10v6m0 0l-3-3m3 3l3-3"/><path d="M3 17v1a2 2 0 002 2h14a2 2 0 002-2v-1"/></svg>'
+          +'Save Image'
+        +'</button>'
+        +'<button class="tcg-action-btn" onclick="event.stopPropagation();tcgShareTwitter('+i+')">'
+          +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l11.733 16h4.267l-11.733 -16h-4.267z"/><path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772"/></svg>'
+          +'Share X'
+        +'</button>'
+        +'<button class="tcg-action-btn primary" onclick="event.stopPropagation();tcgCopyLink('+i+')">'
+          +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101"/><path d="M10.172 13.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>'
+          +'Copy Link'
+        +'</button>'
+      +'</div>'
+    +'</div>';
+  }).join('');
+  // Wire up foil interactions on gallery cards
+  grid.querySelectorAll('.card-scene').forEach(function(scene,idx){
+    scene.addEventListener('mousemove',function(e){
+      var rect=scene.getBoundingClientRect();
+      var x=((e.clientX-rect.left)/rect.width)*100;
+      var y=((e.clientY-rect.top)/rect.height)*100;
+      scene.querySelectorAll('.foil-layer').forEach(function(el){
+        el.style.setProperty('--mx',x+'%');
+        el.style.setProperty('--my',y+'%');
+      });
+    });
+    scene.addEventListener('mouseleave',function(){
+      var isFlipped=scene.classList.contains('flipped');
+      scene.querySelector('.card-flipper').style.transform=isFlipped?'rotateY(180deg)':'rotateY(0deg)';
+    });
+  });
+  TCG_RENDERED=true;
+}
+
+// Save card as PNG image
+function tcgSaveImage(idx){
+  var wrap=document.getElementById('tcg-wrap-'+idx);
+  if(!wrap)return;
+  var card=wrap.querySelector('.card-scene');
+  if(!card)return;
+  // Dynamically load html2canvas
+  function doCapture(){
+    html2canvas(card,{
+      backgroundColor:'#08090F',
+      scale:2,useCORS:true,logging:false,
+      width:card.offsetWidth,
+      height:card.offsetHeight
+    }).then(function(canvas){
+      canvas.toBlob(function(blob){
+        var url=URL.createObjectURL(blob);
+        var a=document.createElement('a');
+        var ticker=DATA[idx]?DATA[idx].ticker:'card';
+        a.href=url;
+        a.download=ticker+'-signal-card-'+new Date().toISOString().slice(0,10)+'.png';
+        a.click();
+        URL.revokeObjectURL(url);
+        tcgShowToast('Card saved as image');
+      },'image/png');
+    });
+  }
+  if(typeof html2canvas==='undefined'){
+    var s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    s.onload=doCapture;
+    document.head.appendChild(s);
+  } else {
+    doCapture();
+  }
+}
+
+// Share to X/Twitter
+function tcgShareTwitter(idx){
+  var c=DATA[idx];
+  if(!c)return;
+  var text='Signal Card: $'+c.ticker+' — '+(c.biasText||c.narrative_state||'')+'\n'
+    +'Price: $'+fmtPrice(c.price)+' ('+(c.price_change_pct>0?'+':'')+c.price_change_pct.toFixed(2)+'%)\n'
+    +(c.story_claim?'"'+c.story_claim.slice(0,100)+'"\n':'')
+    +'via @MarketPrism';
+  var url='https://twitter.com/intent/tweet?text='+encodeURIComponent(text);
+  window.open(url,'_blank','width=600,height=400');
+  tcgShowToast('Opening X/Twitter...');
+}
+
+// Copy shareable link
+function tcgCopyLink(idx){
+  var c=DATA[idx];
+  if(!c)return;
+  var link=window.location.origin+'/ticker/'+encodeURIComponent(c.ticker);
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(link).then(function(){
+      tcgShowToast('Link copied to clipboard');
+    });
+  } else {
+    var ta=document.createElement('textarea');
+    ta.value=link;document.body.appendChild(ta);
+    ta.select();document.execCommand('copy');
+    document.body.removeChild(ta);
+    tcgShowToast('Link copied to clipboard');
+  }
+}
+
+function tcgShowToast(msg){
+  var t=document.getElementById('tcg-toast');
+  if(!t)return;
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},2500);
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // TRADING CALENDAR
 // ══════════════════════════════════════════════════════════════════════════════
