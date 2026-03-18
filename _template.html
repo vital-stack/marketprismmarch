@@ -1577,19 +1577,16 @@ body{
 .stories-stream-col .count-bar{padding:6px 20px 0;flex-shrink:0;}
 /* Scrolling viewport */
 .stories-stream-viewport{
-  flex:1;overflow:hidden;position:relative;min-height:400px;
-  mask-image:linear-gradient(to bottom,transparent 0%,black 3%,black 92%,transparent 100%);
-  -webkit-mask-image:linear-gradient(to bottom,transparent 0%,black 3%,black 92%,transparent 100%);
+  flex:1;overflow-y:auto;position:relative;min-height:400px;
+  mask-image:linear-gradient(to bottom,transparent 0%,black 2%,black 95%,transparent 100%);
+  -webkit-mask-image:linear-gradient(to bottom,transparent 0%,black 2%,black 95%,transparent 100%);
 }
+.stories-stream-viewport::-webkit-scrollbar{width:4px;}
+.stories-stream-viewport::-webkit-scrollbar-track{background:transparent;}
+.stories-stream-viewport::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px;}
 .stories-stream-inner{
-  will-change:transform;
+  padding:8px 0;
 }
-.stories-stream-viewport:hover .stories-stream-inner{
-  animation-play-state:paused;
-}
-@keyframes streamScroll{
-  0%{transform:translateY(0);}
-  100%{transform:translateY(-50%);}
 }
 /* ══════════════════════════════════════════════════════════════════════════════
    TRADING CALENDAR
@@ -3384,29 +3381,8 @@ function renderDiscover(){
 }
 function initStoryStream(){
   var feed=document.getElementById('discover-feed');
-  var viewport=feed?feed.parentElement:null;
-  if(!feed||!viewport||!viewport.classList.contains('stories-stream-viewport'))return;
-  // Remove old clones
-  var old=feed.querySelectorAll('.stream-clone');
-  old.forEach(function(el){el.remove();});
-  // Clone all story cards for seamless loop
-  var cards=feed.querySelectorAll('.story-card:not(.stream-clone)');
-  if(cards.length===0)return;
-  cards.forEach(function(card){
-    var clone=card.cloneNode(true);
-    clone.classList.add('stream-clone');
-    clone.removeAttribute('style');
-    feed.appendChild(clone);
-  });
-  // Measure original content height and set animation
-  requestAnimationFrame(function(){
-    var totalH=0;
-    cards.forEach(function(c){totalH+=c.offsetHeight;});
-    if(totalH<10)return;
-    var dur=Math.max(25,totalH/0.8);
-    feed.style.animation='streamScroll '+dur+'s linear infinite';
-  });
-  // Update count
+  if(!feed)return;
+  var cards=feed.querySelectorAll('.story-card');
   var cnt=document.getElementById('stream-count');
   if(cnt)cnt.textContent=cards.length+' stories';
 }
