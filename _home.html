@@ -1892,6 +1892,168 @@ document.querySelectorAll('.quick-chip').forEach(c => {
   }
 })();
 // Trading card foil effects removed
+
+// ── LIVE DATA OVERLAY — replaces static placeholders with Supabase data ─────
+(function(){
+  var SB_URL  = (window.__env||{}).SUPABASE_URL  || '';
+  var SB_ANON = (window.__env||{}).SUPABASE_ANON || '';
+  if (!SB_URL || !SB_ANON) return; // No credentials — keep static fallback
+
+  var hdrs = {'apikey':SB_ANON,'Authorization':'Bearer '+SB_ANON,'Accept':'application/json'};
+  function esc(s){return s?(s+'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):'';  }
+
+  function sbGet(table,qs){
+    return fetch(SB_URL+'/rest/v1/'+table+'?'+qs,{headers:hdrs}).then(function(r){return r.ok?r.json():[];}).catch(function(){return [];});
+  }
+
+  Promise.all([
+    sbGet('v_dash_daily_story','select=ticker,price,price_change_pct,narrative_state,primary_driver,prism_verdict,story_claim,pe_ratio,days_to_earnings,fair_value,sector_name,institutional_positioning,guidance_direction&story_claim=not.is.null&order=snapshot_date.desc,ticker.asc'),
+    sbGet('ticker_pulse','select=ticker,pulse_health_score,direction_forecast,prevailing_verdict,decay_status&order=pulse_health_score.desc&limit=200')
+  ]).then(function(results){
+    var storyRows = results[0], pulseRows = results[1];
+
+    // Dedup stories by ticker (keep latest)
+    var seen = {};
+    var DATA = storyRows.filter(function(r){if(seen[r.ticker])return false;seen[r.ticker]=true;return true;});
+    // Build pulse lookup
+    var pulseLookup = {};
+    pulseRows.forEach(function(r){if(!pulseLookup[r.ticker])pulseLookup[r.ticker]=r;});
+
+    if (!DATA.length) return; // Keep static fallback if no data
+
+    // ── 1. Ticker Tape ──────────────────────────────────────────────────────
+    var tapeEl = document.querySelector('.ticker-inner');
+    if (tapeEl) {
+      var top = DATA.slice(0,11);
+      var html = top.map(function(r){
+        var pct = r.price_change_pct||0;
+        var cls = pct>0?'tk-u':pct<0?'tk-d':'tk-v';
+        var px = r.price!=null?'$'+r.price.toFixed(2):'—';
+        var chg = pct>0?'+'+pct.toFixed(2)+'%':pct.toFixed(2)+'%';
+        return '<div class="tk"><span class="tk-s">'+esc(r.ticker)+'</span><span class="tk-v">'+px+'</span><span class="'+cls+'">'+chg+'</span></div>';
+      }).join('');
+      tapeEl.innerHTML = html + html; // duplicate for infinite scroll
+      if(window.mpInjectAll) setTimeout(window.mpInjectAll, 50);
+    }
+
+    // ── 2. Dashboard Stats ──────────────────────────────────────────────────
+    var statEls = document.querySelectorAll('.dp-stat-val');
+    if (statEls.length >= 4) {
+      statEls[0].textContent = DATA.length;
+      statEls[1].textContent = DATA.filter(function(r){return r.narrative_state==='Breaking';}).length;
+      statEls[2].textContent = DATA.filter(function(r){return r.prism_verdict==='Narrative Trap';}).length;
+      var avgHealth = pulseRows.length ? Math.round(pulseRows.reduce(function(a,r){return a+(r.pulse_health_score||0);},0)/pulseRows.length) : '—';
+      statEls[3].textContent = avgHealth;
+    }
+
+    // ── 3. Mini Heatmap ─────────────────────────────────────────────────────
+    var hmEl = document.querySelector('.dp-heatmap');
+    if (hmEl && pulseRows.length) {
+      hmEl.innerHTML = pulseRows.slice(0,16).map(function(r){
+        var h = Math.round(r.pulse_health_score||0);
+        var intensity = Math.max(6,Math.round(h*0.12));
+        return '<div class="dp-hm-cell" style="background:linear-gradient(135deg,rgba(10,56,72,0.'+intensity+'),#062838);">'
+          +'<span class="dp-hm-tk">'+esc(r.ticker)+'</span><span class="dp-hm-sc">'+h+'</span></div>';
+      }).join('');
+    }
+
+    // ── 4. Featured Card ────────────────────────────────────────────────────
+    var cardEl = document.querySelector('.dp-card');
+    if (cardEl && DATA[0]) {
+      var r = DATA[0];
+      var pct = r.price_change_pct||0;
+      var isUp = pct > 0;
+      var rarity = r.prism_verdict==='Narrative Trap'?'Trap':r.prism_verdict==='Structurally Supported'?'Supported':'Signal';
+      var rarityColor = r.prism_verdict==='Narrative Trap'?'#38C8B8':'var(--teal)';
+      var p = pulseLookup[r.ticker];
+      var health = p ? Math.round(p.pulse_health_score||50) : 50;
+      cardEl.innerHTML =
+        '<div class="dp-card-accent" style="background:linear-gradient(90deg,'+rarityColor+',transparent);opacity:0.7;"></div>'
+        +'<div class="dp-card-head"><span class="dp-card-ticker">'+esc(r.ticker)+'</span>'
+        +'<span class="dp-card-rarity" style="color:'+rarityColor+';border-color:'+rarityColor.replace(')',',0.3)').replace('var(--teal)','rgba(0,222,148,0.3)')+';background:'+rarityColor.replace(')',',0.08)').replace('var(--teal)','rgba(0,222,148,0.08)')+';">'+rarity+'</span></div>'
+        +'<div class="dp-card-price">$'+(r.price!=null?r.price.toFixed(2):'—')+'</div>'
+        +'<div class="dp-card-change" style="color:'+(isUp?'var(--teal)':'#38C8B8')+';">'+(isUp?'&#9650;':'&#9660;')+' '+Math.abs(pct).toFixed(2)+'%</div>'
+        +'<div class="dp-card-claim">'+esc(r.story_claim||r.primary_driver||'')+'</div>'
+        +'<div class="dp-card-bar"><div class="dp-card-bar-fill" style="width:'+health+'%;background:var(--teal);opacity:0.7;"></div></div>';
+    }
+
+    // ── 5. Mini Feed (Live Narratives) ──────────────────────────────────────
+    var feedEl = document.querySelector('.dp-feed');
+    if (feedEl && DATA.length > 1) {
+      var feedItems = DATA.slice(1,5);
+      var feedHTML = '<div class="dp-feed-head"><span class="dp-feed-title"><span class="live-dot"></span>Live Narratives</span><span class="dp-feed-live">LIVE</span></div>';
+      feedItems.forEach(function(r){
+        var pct = r.price_change_pct||0;
+        var isUp = pct > 0;
+        var vLabel = r.prism_verdict==='Narrative Trap'?'Trap':r.prism_verdict==='Structurally Supported'?'Supported':r.narrative_state||'Signal';
+        var stateColor = r.prism_verdict==='Narrative Trap'?'#38C8B8':r.prism_verdict==='Structurally Supported'?'var(--teal)':'#00AEFF';
+        feedHTML += '<div class="dp-feed-item"><div class="dp-fi-top">'
+          +'<span class="dp-fi-badge" style="background:rgba(0,174,255,.08);color:'+stateColor+';border-color:rgba(0,174,255,.2);">'+esc(r.ticker)+'</span>'
+          +'<span class="dp-fi-claim">'+esc(r.story_claim||r.primary_driver||'')+'</span></div>'
+          +'<div class="dp-fi-meta"><span class="dp-fi-price">$'+(r.price!=null?r.price.toFixed(2):'—')+'</span>'
+          +'<span class="dp-fi-delta" style="color:'+(isUp?'var(--teal)':'#38C8B8')+';">'+(isUp?'+':'')+pct.toFixed(2)+'%</span>'
+          +'<span class="dp-fi-verdict" style="background:rgba(0,174,255,.08);color:'+stateColor+';border-color:rgba(0,174,255,.2);">'+vLabel+'</span></div></div>';
+      });
+      feedEl.innerHTML = feedHTML;
+    }
+
+    // ── 6. Trading Cards ────────────────────────────────────────────────────
+    var deckEl = document.querySelector('.deck');
+    if (deckEl && DATA.length) {
+      var CARD_COLORS = [
+        {accent:'#38C8B8',bar:'#38C8B8'},{accent:'#00DE94',bar:'#00DE94'},
+        {accent:'#00AEFF',bar:'#00AEFF'},{accent:'#9F87FF',bar:'#9F87FF'}
+      ];
+      var top4 = DATA.slice(0,4);
+      deckEl.innerHTML = top4.map(function(r,i){
+        var cc = CARD_COLORS[i%CARD_COLORS.length];
+        var pct = r.price_change_pct||0;
+        var isUp = pct > 0;
+        var p = pulseLookup[r.ticker];
+        var health = p ? Math.round(p.pulse_health_score||50) : 50;
+        var state = (r.narrative_state||'Stable').toUpperCase();
+        var domain = (window.MP_DOMAINS||{})[r.ticker];
+        var logoImg = domain ? '<img src="https://www.google.com/s2/favicons?domain='+domain+'&sz=64" alt="'+esc(r.ticker)+'" style="width:22px;height:22px;object-fit:contain;display:block;" onerror="this.style.display=\'none\';this.parentNode.textContent=\''+esc(r.ticker)+'\'">' : esc(r.ticker);
+        return '<div class="card-scene" style="width:232px;"><div class="tc">'
+          +'<div class="tc-sentiment-bar" style="background:'+cc.accent+';"></div>'
+          +'<div class="tc-body"><div class="tc-header"><div class="tc-header-left">'
+          +'<div class="tc-logo-wrap" style="background:rgba(0,174,255,0.08);color:#00AEFF;border-color:rgba(0,174,255,0.12);">'+logoImg+'</div>'
+          +'<div class="tc-id"><span class="tc-ticker">'+esc(r.ticker)+'</span></div></div></div>'
+          +'<div class="tc-price-row"><span class="tc-price">$'+(r.price!=null?r.price.toFixed(2):'—')+'</span>'
+          +'<span class="tc-change" style="color:'+(isUp?'#00DE94':'#FF4D4D')+';">'+(isUp?'&#9650;':'&#9660;')+' '+Math.abs(pct).toFixed(2)+'%</span></div>'
+          +'<div class="tc-meta-line">'+health+'% &bull; ACTIVE</div>'
+          +'<div class="tc-context">'+esc(r.story_claim||r.primary_driver||'')+'</div>'
+          +'<div class="tc-sector-date">'+esc(r.sector_name||'')+'</div>'
+          +'<div class="tc-foot"><span class="tc-state-tag"><span class="tc-pulse" style="background:'+cc.accent+';"></span>'+state+' &bull; LIVE</span>'
+          +'<a href="/ticker/'+encodeURIComponent(r.ticker)+'" class="tc-view-btn">View</a></div>'
+          +'</div></div></div>';
+      }).join('');
+      if(window.mpInjectAll) setTimeout(window.mpInjectAll, 50);
+    }
+
+    // ── 7. Detail Preview ───────────────────────────────────────────────────
+    var dpHero = document.querySelector('.dp-hero');
+    if (dpHero && DATA[0]) {
+      var r = DATA[0];
+      var pct = r.price_change_pct||0;
+      var p = pulseLookup[r.ticker];
+      var stateLabel = r.narrative_state||'Stable';
+      var verdictLabel = r.prism_verdict||'Monitoring';
+      dpHero.innerHTML = '<div class="dp-hero-row"><div>'
+        +'<div style="display:flex;align-items:center;gap:9px;margin-bottom:6px;">'
+        +'<div class="dp-ticker">'+esc(r.ticker)+'</div>'
+        +'<span class="fp-badge badge-'+stateLabel.toLowerCase()+'">'+esc(stateLabel)+'</span>'
+        +(verdictLabel==='Narrative Trap'?'<span style="font-size:11px;padding:3px 9px;border-radius:99px;border:1px solid rgba(56,200,184,.25);background:rgba(56,200,184,.08);color:#38C8B8;">Narrative Trap</span>':'')
+        +'</div>'
+        +'<div class="dp-claim">'+esc(r.story_claim||r.primary_driver||'')+'</div></div>'
+        +'<div class="dp-price"><div>$'+(r.price!=null?r.price.toFixed(2):'—')+'</div>'
+        +'<div class="fp-delta '+(pct>0?'delta-pos':'delta-neg')+'" style="margin-top:3px;">'+(pct>0?'+':'')+pct.toFixed(2)+'%</div></div></div>';
+    }
+
+    // Trigger logo injection after dynamic content loads
+    if(window.mpInjectAll) setTimeout(window.mpInjectAll, 100);
+  });
+})();
 </script>
 <script>
 /* ─────────────────────────────────────────────────────────────────────────────
