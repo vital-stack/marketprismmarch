@@ -937,14 +937,12 @@ footer {
   .deck { gap: 14px; padding: 1rem 0; }
   .card-peek { width: 180px; }
   .card-peek-bias-text { font-size: 16px; }
-  .card-scene { width: 180px; }
   .btn-nav-ghost { display: none; }
   .btn-nav-primary { font-size: 12px; padding: 6px 14px; }
   nav { height: 48px; }
 }
 @media (max-width: 380px) {
   .card-peek { width: 160px; }
-  .card-scene { width: 160px; }
   h1 { font-size: 24px; }
 }
 /* ── MARKET RADAR ── */
@@ -1041,159 +1039,108 @@ footer {
 .delta-dn { color: var(--red); }
 .delta-flat { color: var(--amber); }
 /* ── TRADING CARD DECK ── */
-/* Drop-in animation — falls from above, lands with bounce */
 @keyframes cardDrop {
-  0% { opacity: 0; transform: translateY(-120px) rotateX(22deg) scale(0.92); }
-  55% { opacity: 1; transform: translateY(10px) rotateX(-4deg) scale(1.015); }
-  75% { transform: translateY(-5px) rotateX(2deg) scale(0.998); }
-  90% { transform: translateY(2px) rotateX(-1deg) scale(1.002); }
-  100% { opacity: 1; transform: translateY(0) rotateX(0deg) scale(1); }
+  0% { opacity: 0; transform: translateY(-40px) scale(0.96); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 .deck {
   display: flex;
-  gap: 24px;
+  gap: 20px;
   padding: 2rem 0;
   justify-content: center;
   flex-wrap: wrap;
   -webkit-font-smoothing: antialiased;
+  perspective: 1200px;
 }
 .card-peek {
-  width: 220px;
+  --card-navy: #0C1018;
+  --card-grid: rgba(255,255,255,0.03);
+  --card-accent: #3DA5F5;
+  --card-accent2: #E8EAED;
+  width: 232px;
   border-radius: 14px;
   overflow: hidden;
   position: relative;
-  background: var(--surface);
-  border: 1px solid var(--border-mid);
+  background: var(--card-navy);
+  border: 1px solid rgba(255,255,255,0.06);
   cursor: pointer;
-  animation: cardDrop 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
-  transition: transform .2s, box-shadow .2s;
+  animation: cardDrop 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: transform .35s cubic-bezier(0.22,1,0.36,1), box-shadow .35s;
+  transform-style: preserve-3d;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3), 0 1px 4px rgba(0,0,0,0.2);
 }
-.card-peek:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 16px 48px rgba(0,0,0,.5);
-}
-.card-peek:nth-child(1) { animation-delay: 0.08s; }
-.card-peek:nth-child(2) { animation-delay: 0.22s; }
-.card-peek:nth-child(3) { animation-delay: 0.36s; }
-.card-peek-accent { height: 2px; width: 100%; }
-.card-peek-body { padding: 16px 16px 0; }
-.card-peek-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-.card-peek-left { display: flex; align-items: center; gap: 9px; }
-.card-peek-logo {
-  width: 32px; height: 32px; border-radius: 6px; display: flex;
-  align-items: center; justify-content: center; flex-shrink: 0;
-  font-family: var(--font-m); font-size: 8px; font-weight: 500; letter-spacing: .02em;
-}
-.card-peek-ticker { font-family: var(--font-m); font-size: 14px; font-weight: 600; color: var(--tx1); letter-spacing: .04em; line-height: 1; }
-.card-peek-name { font-size: 9px; font-weight: 300; color: var(--tx3); margin-top: 1px; }
-.card-peek-rarity {
-  font-family: var(--font-m); font-size: 7px; letter-spacing: .08em;
-  text-transform: uppercase; padding: 2px 7px; border-radius: 99px; border: 1px solid;
-}
-.card-peek-price { font-family: var(--font-d); font-size: 18px; color: var(--tx1); line-height: 1; margin-bottom: 4px; }
-.card-peek-change { font-family: var(--font-m); font-size: 10px; margin-bottom: 10px; }
-.card-peek-bias {
-  border-radius: 5px; padding: 8px 12px; border: 1px solid; text-align: center;
-  margin-bottom: 0; position: relative; overflow: hidden;
-}
-.card-peek-bias-eye { font-family: var(--font-m); font-size: 6px; letter-spacing: .14em; text-transform: uppercase; color: var(--tx3); margin-bottom: 2px; }
-.card-peek-bias-text {
-  font-family: 'Anton', 'Impact', sans-serif; font-size: 20px;
-  letter-spacing: .04em; text-transform: uppercase; line-height: 1; font-weight: 400;
-}
-/* Fade-out water shadow at bottom */
-.card-peek-fade {
-  height: 60px;
-  background: linear-gradient(to bottom, transparent 0%, var(--surface) 70%, var(--surface) 100%);
-  position: relative;
-  margin-top: -10px;
+.card-peek::before {
+  content: '';
+  position: absolute; inset: 0; z-index: 0;
+  background-image:
+    linear-gradient(var(--card-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--card-grid) 1px, transparent 1px);
+  background-size: 48px 48px;
   pointer-events: none;
 }
+.card-peek:hover {
+  transform: translateY(-8px) rotateX(2deg);
+  box-shadow: 0 24px 48px rgba(0,0,0,0.5), 0 8px 16px rgba(0,0,0,0.3);
+}
+.card-peek:nth-child(1) { animation-delay: 0.06s; }
+.card-peek:nth-child(2) { animation-delay: 0.14s; }
+.card-peek:nth-child(3) { animation-delay: 0.22s; }
+.card-peek:nth-child(4) { animation-delay: 0.30s; }
+.card-peek-accent { display: none; }
+.card-peek-body { padding: 20px 18px 0; position: relative; z-index: 1; }
+.card-peek-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+.card-peek-left { display: flex; align-items: center; gap: 10px; }
+.card-peek-logo {
+  width: 34px; height: 34px; border-radius: 7px; display: flex;
+  align-items: center; justify-content: center; flex-shrink: 0;
+  font-family: var(--font-m); font-size: 9px; font-weight: 600; letter-spacing: .02em;
+  background: rgba(61,165,245,0.08); color: var(--card-accent); border: 1px solid rgba(61,165,245,0.12);
+}
+.card-peek-ticker { font-family: var(--font-m); font-size: 15px; font-weight: 600; color: #fff; letter-spacing: .04em; line-height: 1; }
+.card-peek-name { font-size: 10px; font-weight: 300; color: rgba(255,255,255,0.4); margin-top: 2px; }
+.card-peek-rarity {
+  font-family: var(--font-m); font-size: 8px; letter-spacing: .06em;
+  text-transform: uppercase; padding: 3px 9px; border-radius: 4px;
+  border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5);
+}
+.card-peek-price { font-family: var(--font-d); font-size: 22px; color: #fff; line-height: 1; margin-bottom: 4px; }
+.card-peek-change { font-family: var(--font-m); font-size: 11px; margin-bottom: 14px; }
+.card-peek-bias {
+  border-radius: 6px; padding: 10px 14px; text-align: center;
+  margin-bottom: 0; position: relative; overflow: hidden;
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+}
+.card-peek-bias-eye { font-family: var(--font-m); font-size: 7px; letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,0.35); margin-bottom: 3px; }
+.card-peek-bias-text {
+  font-family: 'Anton', 'Impact', sans-serif; font-size: 22px;
+  letter-spacing: .04em; text-transform: uppercase; line-height: 1; font-weight: 400;
+  color: var(--card-accent);
+}
+.card-peek-fade { display: none; }
 .card-peek-cta {
-  text-align: center; padding: 0 16px 14px;
-  font-family: var(--font-m); font-size: 8px; letter-spacing: .1em;
-  text-transform: uppercase; color: var(--tx3);
+  text-align: center; padding: 14px 16px;
+  font-family: var(--font-m); font-size: 9px; letter-spacing: .08em;
+  text-transform: uppercase; color: rgba(255,255,255,0.3);
+  position: relative; z-index: 1;
+  border-top: 1px solid rgba(255,255,255,0.04);
+  margin-top: 16px;
 }
-.card-scene {
-  width: 232px;
-  perspective: 1400px;
-  cursor: pointer;
-  animation: cardDrop 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
-  opacity: 0;
-}
-.card-scene:nth-child(1) { animation-delay: 0.08s; }
-.card-scene:nth-child(2) { animation-delay: 0.22s; }
-.card-scene:nth-child(3) { animation-delay: 0.36s; }
-.card-flipper {
-  position: relative;
-  width: 100%;
-  transform-style: preserve-3d;
-  transition: transform 0.8s cubic-bezier(0.35, 0.1, 0.15, 1);
-}
-.card-scene.flipped .card-flipper { transform: rotateY(180deg); }
-.card-front, .card-back {
-  width: 100%;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  border-radius: 12px;
-  overflow: hidden;
-}
-.card-back {
-  position: absolute;
-  top: 0; left: 0;
-  transform: rotateY(180deg);
-}
-.foil-layer {
-  position: absolute; inset: 0; border-radius: 12px; pointer-events: none;
-  opacity: 0; transition: opacity 0.3s; z-index: 10; mix-blend-mode: screen;
-  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%),
-    rgba(255,255,255,0.12) 0%, rgba(0,255,82,0.08) 20%,
-    rgba(0,222,148,0.06) 40%, rgba(0,174,255,0.05) 60%, transparent 75%);
-}
-.foil-rainbow {
-  position: absolute; inset: 0; border-radius: 12px; pointer-events: none;
-  opacity: 0; transition: opacity 0.3s; z-index: 9; mix-blend-mode: screen;
-  background: repeating-linear-gradient(calc(var(--angle, 105deg)),
-    rgba(255,0,128,0.04) 0px, rgba(255,100,0,0.04) 8px,
-    rgba(255,220,0,0.04) 16px, rgba(0,255,128,0.04) 24px,
-    rgba(0,200,255,0.04) 32px, rgba(120,0,255,0.04) 40px,
-    rgba(255,0,128,0.04) 48px);
-}
-.foil-scan {
-  position: absolute; inset: 0; border-radius: 12px; pointer-events: none;
-  opacity: 0; z-index: 11; overflow: hidden;
-}
-.foil-scan::after {
-  content: ''; position: absolute; top: -100%; left: -20%;
-  width: 140%; height: 60%;
-  background: linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.04) 40%,
-    rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.04) 60%, transparent 100%);
-  transform: skewX(-15deg);
-  animation: scanMove 3s ease-in-out infinite;
-}
-@keyframes scanMove { 0% { top: -100%; } 100% { top: 200%; } }
-.foil-border {
-  position: absolute; inset: 0; border-radius: 12px; pointer-events: none;
-  opacity: 0; transition: opacity 0.4s; z-index: 8;
-}
-.card-scene:not(.flipped):hover .foil-layer,
-.card-scene:not(.flipped):hover .foil-rainbow,
-.card-scene:not(.flipped):hover .foil-border { opacity: 1; }
-.card-scene:not(.flipped):hover .foil-scan { opacity: 1; }
-.card-scene.flipped:hover .foil-layer,
-.card-scene.flipped:hover .foil-rainbow,
-.card-scene.flipped:hover .foil-border { opacity: 1; }
-.card-scene.flipped:hover .foil-scan { opacity: 1; }
+.card-peek-cta:hover { color: var(--card-accent); }
+/* card-scene / foil effects removed — unified card-peek design */
 .tc {
-  background: var(--deep); border: 1px solid var(--border);
+  background: #0C1018; border: 1px solid rgba(255,255,255,0.06);
   display: flex; flex-direction: column;
-  transition: border-color 0.25s, box-shadow 0.25s; position: relative;
+  transition: box-shadow 0.25s; position: relative;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
 }
 .card-scene:hover .tc {
-  border-color: rgba(255,255,255,0.13);
   box-shadow: 0 20px 60px rgba(0,0,0,0.6);
 }
-.tc-accent { height: 1px; width: 100%; flex-shrink: 0; }
+.tc-accent { display: none; }
 .tc-body { padding: 16px 16px 12px; display: flex; flex-direction: column; }
 .tc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
 .tc-header-left { display: flex; align-items: center; gap: 11px; }
@@ -1206,7 +1153,7 @@ footer {
 .tc-name { font-size: 10px; font-weight: 300; color: var(--tx3); letter-spacing: 0.01em; }
 .tc-date { font-family: var(--font-m); font-size: 8px; letter-spacing: 0.06em; color: var(--tx3); margin-top: 1px; text-transform: uppercase; }
 .tc-date-badge { font-family: var(--font-m); font-size: 8px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tx3); padding: 2px 7px; border-radius: 3px; border: 1px solid var(--border); background: var(--surface); white-space: nowrap; }
-.tc-rarity { font-family: var(--font-m); font-size: 8px; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 7px; border-radius: 99px; }
+.tc-rarity { font-family: var(--font-m); font-size: 8px; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 9px; border-radius: 4px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); }
 .tc-price-row { display: flex; align-items: baseline; gap: 7px; }
 .tc-price { font-family: var(--font-d); font-size: 20px; letter-spacing: -0.02em; color: var(--tx1); line-height: 1; }
 .tc-change { font-family: var(--font-m); font-size: 11px; }
@@ -1228,9 +1175,9 @@ footer {
 .tc-signal-text { font-size: 11px; font-weight: 300; line-height: 1.4; color: var(--tx2); margin-top: 1px; }
 .tc-bias { font-family: var(--font-m); font-size: 9px; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; padding: 5px 10px; border-radius: 6px; text-align: center; background: var(--surface); border: 1px solid rgba(255,255,255,0.13); }
 /* Bias block — large Anton text */
-.tc-bias-block { border-radius: 5px; padding: 10px 14px; margin-bottom: 13px; border: 1px solid; position: relative; overflow: hidden; text-align: center; }
+.tc-bias-block { border-radius: 6px; padding: 10px 14px; margin-bottom: 13px; border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.03); position: relative; overflow: hidden; text-align: center; }
 .tc-bias-eyebrow { font-family: var(--font-m); font-size: 7px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--tx3); margin-bottom: 3px; }
-.tc-bias-text { font-family: 'Anton', 'Franklin Gothic Heavy', 'Impact', sans-serif; font-size: 30px; letter-spacing: 0.04em; text-transform: uppercase; line-height: 0.92; font-weight: 400; display: block; width: 100%; }
+.tc-bias-text { font-family: 'Anton', 'Franklin Gothic Heavy', 'Impact', sans-serif; font-size: 30px; letter-spacing: 0.04em; text-transform: uppercase; line-height: 0.92; font-weight: 400; display: block; width: 100%; color: #3DA5F5; }
 .tc-narrative { font-size: 11px; font-weight: 300; line-height: 1.55; color: var(--tx2); }
 .tc-meta { display: flex; align-items: center; gap: 10px; }
 .tc-conf-wrap { display: flex; align-items: center; gap: 7px; flex: 1; }
@@ -1255,12 +1202,12 @@ footer {
 .flip-hint { text-align: center; font-family: var(--font-m); font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--tx3); padding: 6px 0 10px; }
 .pulse-dot { width: 5px; height: 5px; border-radius: 50%; animation: blink 2s ease infinite; flex-shrink: 0; }
 @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.2;} }
-.card-back-inner { width: 100%; display: flex; flex-direction: column; position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,0.13); border-radius: 12px; }
+.card-back-inner { width: 100%; display: flex; flex-direction: column; position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; background: #0C1018; }
 .back-graphic { width: 100%; height: 180px; position: relative; overflow: hidden; flex-shrink: 0; }
 .back-graphic svg { width: 100%; height: 100%; }
 .back-content { padding: 14px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
 .back-company-row { display: flex; align-items: center; gap: 10px; }
-.back-company-logo { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.13); }
+.back-company-logo { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.06); background: rgba(61,165,245,0.08); color: #3DA5F5; }
 .back-company-name { font-family: var(--font-d); font-size: 16px; letter-spacing: -0.01em; color: var(--tx1); line-height: 1.1; }
 .back-company-sector { font-family: var(--font-m); font-size: 8px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tx3); margin-top: 1px; }
 .back-divider { height: 1px; background: var(--border); }
@@ -1504,88 +1451,80 @@ footer {
     <h2 class="reveal" style="margin-bottom:8px;">Live narrative signals</h2>
     <p class="sec-lead reveal" style="margin-bottom:28px;">Real-time narrative energy across the coverage universe — breakouts, exhaustion, coordination risk, and sector momentum.</p>
     <div class="deck reveal">
-      <!-- NVDA peek -->
+      <!-- NVDA -->
       <div class="card-peek">
-        <div class="card-peek-accent" style="background:linear-gradient(90deg,#38C8B8,transparent);"></div>
         <div class="card-peek-body">
           <div class="card-peek-header">
             <div class="card-peek-left">
-              <div class="card-peek-logo" style="background:rgba(118,185,0,.15);color:#76b900;">NVDA</div>
+              <div class="card-peek-logo">NVDA</div>
               <div><div class="card-peek-ticker">NVDA</div><div class="card-peek-name">Nvidia Corporation</div></div>
             </div>
-            <span class="card-peek-rarity" style="background:rgba(56,200,184,0.08);color:#38C8B8;border-color:rgba(56,200,184,0.22);">Rare</span>
+            <span class="card-peek-rarity">Breaking</span>
           </div>
           <div class="card-peek-price">$118.42</div>
-          <div class="card-peek-change" style="color:#38C8B8;">&#9660; 2.14%</div>
-          <div class="card-peek-bias" style="border-color:rgba(56,200,184,0.2);background:rgba(56,200,184,0.07);">
+          <div class="card-peek-change" style="color:#3DA5F5;">&#9660; 2.14%</div>
+          <div class="card-peek-bias">
             <div class="card-peek-bias-eye">Signal bias</div>
-            <div class="card-peek-bias-text" style="color:#38C8B8;">FADE RALLIES</div>
+            <div class="card-peek-bias-text">FADE RALLIES</div>
           </div>
         </div>
-        <div class="card-peek-fade"></div>
         <div class="card-peek-cta">See full signal &#8594;</div>
       </div>
-      <!-- AAPL peek -->
+      <!-- AAPL -->
       <div class="card-peek">
-        <div class="card-peek-accent" style="background:linear-gradient(90deg,var(--teal),transparent);opacity:0.7;"></div>
         <div class="card-peek-body">
           <div class="card-peek-header">
             <div class="card-peek-left">
-              <div class="card-peek-logo" style="background:rgba(0,222,148,.1);color:var(--teal);">AAPL</div>
+              <div class="card-peek-logo">AAPL</div>
               <div><div class="card-peek-ticker">AAPL</div><div class="card-peek-name">Apple Inc.</div></div>
             </div>
-            <span class="card-peek-rarity" style="background:rgba(0,222,148,0.06);color:var(--teal);border-color:rgba(0,222,148,0.15);">Epic</span>
+            <span class="card-peek-rarity">Surging</span>
           </div>
           <div class="card-peek-price">$212.80</div>
-          <div class="card-peek-change" style="color:var(--teal);">&#9650; 1.87%</div>
-          <div class="card-peek-bias" style="border-color:rgba(0,222,148,0.18);background:rgba(0,222,148,0.06);">
+          <div class="card-peek-change" style="color:#3DA5F5;">&#9650; 1.87%</div>
+          <div class="card-peek-bias">
             <div class="card-peek-bias-eye">Signal bias</div>
-            <div class="card-peek-bias-text" style="color:var(--teal);">RIDE THE TREND</div>
+            <div class="card-peek-bias-text">RIDE THE TREND</div>
           </div>
         </div>
-        <div class="card-peek-fade"></div>
         <div class="card-peek-cta">See full signal &#8594;</div>
       </div>
-      <!-- TSLA peek -->
+      <!-- TSLA -->
       <div class="card-peek">
-        <div class="card-peek-accent" style="background:linear-gradient(90deg,#5AB8D8,transparent);opacity:0.6;"></div>
         <div class="card-peek-body">
           <div class="card-peek-header">
             <div class="card-peek-left">
-              <div class="card-peek-logo" style="background:rgba(90,184,216,.1);color:#5AB8D8;">TSLA</div>
+              <div class="card-peek-logo">TSLA</div>
               <div><div class="card-peek-ticker">TSLA</div><div class="card-peek-name">Tesla Inc.</div></div>
             </div>
-            <span class="card-peek-rarity" style="background:rgba(90,184,216,0.06);color:#5AB8D8;border-color:rgba(90,184,216,0.18);">Uncommon</span>
+            <span class="card-peek-rarity">Fragile</span>
           </div>
           <div class="card-peek-price">$247.15</div>
-          <div class="card-peek-change" style="color:#5AB8D8;">&#9650; 0.42%</div>
-          <div class="card-peek-bias" style="border-color:rgba(90,184,216,0.18);background:rgba(90,184,216,0.06);">
+          <div class="card-peek-change" style="color:rgba(255,255,255,0.5);">&#9650; 0.42%</div>
+          <div class="card-peek-bias">
             <div class="card-peek-bias-eye">Signal bias</div>
-            <div class="card-peek-bias-text" style="color:#5AB8D8;">WAIT FOR BREAK</div>
+            <div class="card-peek-bias-text">WAIT FOR BREAK</div>
           </div>
         </div>
-        <div class="card-peek-fade"></div>
         <div class="card-peek-cta">See full signal &#8594;</div>
       </div>
-      <!-- PLTR peek -->
+      <!-- PLTR -->
       <div class="card-peek">
-        <div class="card-peek-accent" style="background:linear-gradient(90deg,var(--blue),transparent);opacity:0.6;"></div>
         <div class="card-peek-body">
           <div class="card-peek-header">
             <div class="card-peek-left">
-              <div class="card-peek-logo" style="background:rgba(0,174,255,.08);color:var(--blue);">PLTR</div>
+              <div class="card-peek-logo">PLTR</div>
               <div><div class="card-peek-ticker">PLTR</div><div class="card-peek-name">Palantir Technologies</div></div>
             </div>
-            <span class="card-peek-rarity" style="background:rgba(0,174,255,0.06);color:var(--blue);border-color:rgba(0,174,255,0.15);">Rare</span>
+            <span class="card-peek-rarity">Surging</span>
           </div>
           <div class="card-peek-price">$98.45</div>
-          <div class="card-peek-change" style="color:var(--teal);">&#9650; 2.91%</div>
-          <div class="card-peek-bias" style="border-color:rgba(0,174,255,0.18);background:rgba(0,174,255,0.06);">
+          <div class="card-peek-change" style="color:#3DA5F5;">&#9650; 2.91%</div>
+          <div class="card-peek-bias">
             <div class="card-peek-bias-eye">Signal bias</div>
-            <div class="card-peek-bias-text" style="color:var(--blue);">BUY THE DIP</div>
+            <div class="card-peek-bias-text">BUY THE DIP</div>
           </div>
         </div>
-        <div class="card-peek-fade"></div>
         <div class="card-peek-cta">See full signal &#8594;</div>
       </div>
     </div>
@@ -1904,43 +1843,7 @@ document.querySelectorAll('.quick-chip').forEach(c => {
     ctx.fill();
   }
 })();
-// ── Trading card foil interaction ──
-var cardGlows = [
-  '0 12px 48px rgba(56,200,184,0.12), 0 0 0 1px rgba(56,200,184,0.08)',
-  '0 12px 48px rgba(0,222,148,0.1), 0 0 0 1px rgba(0,222,148,0.06)',
-  '0 12px 48px rgba(0,255,82,0.1), 0 0 0 1px rgba(0,255,82,0.06)'
-];
-document.querySelectorAll('.card-scene').forEach(function(scene, idx) {
-  var front = scene.querySelector('.card-front');
-  scene.addEventListener('mousemove', function(e) {
-    var rect = scene.getBoundingClientRect();
-    var x = ((e.clientX - rect.left) / rect.width) * 100;
-    var y = ((e.clientY - rect.top) / rect.height) * 100;
-    var angle = 105 + (x - 50) * 0.6;
-    scene.querySelectorAll('.foil-layer').forEach(function(el) {
-      el.style.setProperty('--mx', x + '%');
-      el.style.setProperty('--my', y + '%');
-    });
-    scene.querySelectorAll('.foil-rainbow').forEach(function(el) {
-      el.style.setProperty('--angle', angle + 'deg');
-    });
-    var rotX = ((y - 50) / 50) * -5;
-    var rotY = ((x - 50) / 50) * 5;
-    var isFlipped = scene.classList.contains('flipped');
-    scene.querySelector('.card-flipper').style.transform =
-      (isFlipped ? 'rotateY(180deg) ' : '') +
-      'rotateX(' + rotX + 'deg) rotateY(' + (isFlipped ? 180 + rotY : rotY) + 'deg)';
-    if(!isFlipped && front){
-      front.style.boxShadow = '0 20px 60px rgba(0,0,0,0.7), ' + (cardGlows[idx] || cardGlows[0]);
-    }
-  });
-  scene.addEventListener('mouseleave', function() {
-    var isFlipped = scene.classList.contains('flipped');
-    scene.querySelector('.card-flipper').style.transform =
-      isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)';
-    if(front) front.style.boxShadow = '';
-  });
-});
+// Trading card foil effects removed
 </script>
 </body>
 </html>
