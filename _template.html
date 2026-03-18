@@ -3441,13 +3441,19 @@ async function loadData(){
       var hr=await fetch(SUPABASE_URL+'/rest/v1/v_dash_narrative_health?select=ticker,narrative_health,narrative_trend,attention_trend&order=snapshot_date.desc',{headers:hdrs});
       if(hr.ok)(await hr.json()).forEach(function(h){if(!healthMap[h.ticker])healthMap[h.ticker]=h;});
     }catch(_){}
+    // pulse overlay (for direction_forecast used in bull/bear counts)
+    var pulseMap={};
+    try{
+      var pr=await fetch(SUPABASE_URL+'/rest/v1/ticker_pulse?select=ticker,direction_forecast&order=snapshot_date.desc',{headers:hdrs});
+      if(pr.ok)(await pr.json()).forEach(function(p){if(!pulseMap[p.ticker])pulseMap[p.ticker]=p;});
+    }catch(_){}
     // dedup + merge
     var seen=new Set();
     DATA = rows.filter(function(r){
       if(seen.has(r.ticker))return false;
       seen.add(r.ticker);return true;
     }).map(function(r){
-      var m=Object.assign({},r,healthMap[r.ticker]||{});
+      var m=Object.assign({},r,healthMap[r.ticker]||{},pulseMap[r.ticker]||{});
       if(!m.sector_name&&SECTOR_MAP[m.ticker])m.sector_name=SECTOR_MAP[m.ticker][0];
       return m;
     });
@@ -4520,7 +4526,7 @@ async function loadDiscoverHeatmap(){
     var traps=rows.filter(function(r){return r.prevailing_verdict==='Narrative Trap';}).length;
     var supported=rows.filter(function(r){return r.prevailing_verdict==='Structurally Supported';}).length;
     var strong=rows.filter(function(r){return(r.pulse_health_score||0)>=75;}).length;
-    var stressed=rows.filter(function(r){return r.narrative_state==='STRESSED'||(r.pulse_health_score||0)<40;}).length;
+    var stressed=rows.filter(function(r){return(r.pulse_health_score||0)<40;}).length;
     var avg=Math.round(rows.reduce(function(a,r){return a+(r.pulse_health_score||0);},0)/rows.length);
     var avgCol=avg>=70?'var(--mp-teal)':avg>=55?'var(--mp-amber)':'var(--mp-red)';
     document.getElementById('dhm-summary').innerHTML=
