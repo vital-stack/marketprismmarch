@@ -43,9 +43,13 @@ module.exports = (req, res) => {
 
   let html;
   try {
-    html = readFileSync(join(__dirname, '_ticker.html'), 'utf8');
+    html = readFileSync(join(__dirname, '..', '_ticker.html'), 'utf8');
   } catch {
-    html = readFileSync(join(process.cwd(), '_ticker.html'), 'utf8');
+    try {
+      html = readFileSync(join(__dirname, '_ticker.html'), 'utf8');
+    } catch {
+      html = readFileSync(join(process.cwd(), '_ticker.html'), 'utf8');
+    }
   }
 
   html = html.replace(
