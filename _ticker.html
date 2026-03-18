@@ -19,7 +19,7 @@
     --mp-cyan: #00FFFF;
     --mp-teal: #00DE94;
     --mp-prism-4: #00FF52;
-    --mp-prism-5: #F87171;
+    --mp-prism-5: #38C8B8;
     --mp-text-primary: #E8ECF4;
     --mp-text-secondary: #6B7394;
     --mp-text-tertiary: #3D4466;
@@ -52,12 +52,12 @@
     --green-mid: #00DE94;
     --green-bg: rgba(0,222,148,0.08);
     --green-bd: rgba(0,222,148,0.18);
-    --red: #F87171;
-    --red-bg: rgba(248,113,113,0.08);
-    --red-bd: rgba(248,113,113,0.18);
-    --amber: #FBBF24;
-    --amber-bg: rgba(251,191,36,0.08);
-    --amber-bd: rgba(251,191,36,0.18);
+    --red: #38C8B8;
+    --red-bg: rgba(56,200,184,0.08);
+    --red-bd: rgba(56,200,184,0.18);
+    --amber: #00DE94;
+    --amber-bg: rgba(0,222,148,0.08);
+    --amber-bd: rgba(0,222,148,0.18);
     --blue: #00AEFF;
     --blue-bg: rgba(0,174,255,0.08);
   }
@@ -1326,8 +1326,8 @@
     margin: 0 3px;
   }
   .hc-green { background: rgba(0,222,148,0.12); color: #00DE94; }
-  .hc-amber { background: rgba(251,191,36,0.10); color: #FBBF24; }
-  .hc-red   { background: rgba(248,113,113,0.10); color: #F87171; }
+  .hc-amber { background: rgba(0,222,148,0.10); color: #00DE94; }
+  .hc-red   { background: rgba(56,200,184,0.10); color: #38C8B8; }
   .heatmap-foot {
     padding: 9px 14px;
     font-size: 11px;
@@ -1589,7 +1589,7 @@
     --mp-cyan: #00FFFF;
     --mp-teal: #00DE94;
     --mp-prism-4: #00FF52;
-    --mp-prism-5: #EF4444;
+    --mp-prism-5: #38C8B8;
     --mp-text-primary: #111827;
     --mp-text-secondary: #6B7280;
     --mp-text-tertiary: #9CA3AF;
@@ -1608,14 +1608,14 @@
     --accent-surging-bg: rgba(0,168,122,0.08);
     --accent-fragile: #C97F00;
     --accent-fragile-bg: rgba(201,127,0,0.08);
-    --accent-stable: #1A6EFF;
+    --accent-stable: #00AEFF;
     --accent-stable-bg: rgba(26,110,255,0.08);
     --accent-trap: #DC4444;
     --accent-supported: #00A87A;
     --green: #00A87A;
     --red: #DC4444;
     --amber: #C97F00;
-    --blue: #1A6EFF;
+    --blue: #00AEFF;
   }
   [data-theme="light"] body { background: var(--bg); color: var(--text-primary); }
   [data-theme="light"] .sidebar { background: #FFFFFF; border-color: rgba(0,0,0,0.08); }
@@ -2574,7 +2574,7 @@ function drawChart(snaps, narrs, fairValue) {
   // Price line
   ctx.beginPath(); ctx.setLineDash([]);
   snaps.forEach((s,i) => { if (s.price_close==null) return; i===0 ? ctx.moveTo(xOf(i),yOf(s.price_close)) : ctx.lineTo(xOf(i),yOf(s.price_close)); });
-  ctx.strokeStyle = isLight() ? '#1A6EFF' : '#F0F4FF'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.strokeStyle = isLight() ? '#00AEFF' : '#F0F4FF'; ctx.lineWidth = 1.5; ctx.stroke();
 
   // Narrative energy overlay (blue dashed, right axis 0-100)
   const lo = snaps[0]?.snapshot_date?.slice(0,10) || '';
@@ -2622,7 +2622,7 @@ function drawChart(snaps, narrs, fairValue) {
     const isBull = (n.sentiment_score ?? 0) > 0;
     ctx.beginPath();
     ctx.arc(cx, cy, 5, 0, Math.PI*2);
-    ctx.fillStyle   = isBull ? '#00E5B4' : '#FF6B6B';
+    ctx.fillStyle   = isBull ? '#00AEFF' : '#38C8B8';
     ctx.fill();
     ctx.strokeStyle = isLight() ? '#FFFFFF' : '#0A0E1A'; ctx.lineWidth = 1.5; ctx.stroke();
     dotHits.push({ cx, cy, n });
@@ -3684,7 +3684,7 @@ async function loadStoriesFeed() {
         : v.includes('TRAP') ? 'Trap'
         : 'Monitoring';
       const vColor = v.includes('VERIF') ? 'color:var(--mp-teal);border-color:rgba(0,222,148,.3)'
-        : v.includes('MISLEAD') || v.includes('TRAP') || v.includes('FALSE') ? 'color:var(--red);border-color:rgba(248,113,113,.3)'
+        : v.includes('MISLEAD') || v.includes('TRAP') || v.includes('FALSE') ? 'color:var(--red);border-color:rgba(56,200,184,.3)'
         : 'color:var(--mp-text-tertiary);border-color:var(--mp-border)';
       const dateStr = r.snapshot_date
         ? new Date(r.snapshot_date).toLocaleDateString('en-US', { month:'short', day:'numeric' })
