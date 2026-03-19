@@ -242,7 +242,7 @@ body{
 .daily-sent-val{font-family:var(--font-mono);font-size:11px;font-weight:500;color:#00AEFF;white-space:nowrap;}
 /* Daily pulse strip */
 .daily-pulse-strip{display:grid;grid-template-columns:repeat(8,1fr);gap:0;background:var(--mp-surface);border:1px solid var(--mp-border);margin-bottom:28px;}
-.dpi{padding:14px 14px;border-right:1px solid var(--mp-border);position:relative;transition:background 0.12s;cursor:default;}
+.dpi{padding:14px 14px;border-right:1px solid var(--mp-border);position:relative;transition:background 0.12s;cursor:pointer;}
 .dpi:last-child{border-right:none;}
 .dpi:hover{background:var(--mp-surface2);}
 .dpi-tk{font-family:var(--font-mono);font-size:11px;font-weight:500;letter-spacing:0.08em;color:var(--mp-text-tertiary);text-transform:uppercase;margin-bottom:5px;}
@@ -3457,11 +3457,11 @@ function renderDailyOpportunityMatrix(){
     var pct=Math.round(r.gap);
     var barW=Math.min(100,Math.round(r.gap*2));
     var col=pct>=30?'#00AEFF':pct>=20?'#00DE94':'#38C8B8';
-    return '<div class="daily-orow"><div><div class="daily-otk">'+esc(r.ticker)+'</div><div class="daily-ots">'+esc(r.sector_name||'')+'</div></div>'
+    return '<a class="daily-orow" href="/ticker/'+encodeURIComponent(r.ticker)+'" style="text-decoration:none;color:inherit;cursor:pointer;"><div><div class="daily-otk">'+esc(r.ticker)+'</div><div class="daily-ots">'+esc(r.sector_name||'')+'</div></div>'
       +'<div class="daily-ors"><strong>'+esc(r.story_claim||r.primary_driver||'Signal active')+'</strong></div>'
       +'<div class="daily-oval"><div class="daily-opx">$'+fmtPrice(r.price)+'</div>'
       +'<div class="daily-odl u">&#8593; '+pct+'% to fair</div>'
-      +'<div class="daily-obar"><div class="daily-ofill" style="width:'+barW+'%;background:'+col+'"></div></div></div></div>';
+      +'<div class="daily-obar"><div class="daily-ofill" style="width:'+barW+'%;background:'+col+'"></div></div></div></a>';
   }).join('');
   el.innerHTML=(header?header.outerHTML:'')+rowsHTML;
 }
@@ -3480,11 +3480,11 @@ function renderDailyLiveNarratives(){
     var pct=r.price_change_pct||0;
     var isUp=pct>0;
     var barCol=isUp?'#00AEFF':'#38C8B8';
-    return '<div class="daily-nrow"><div class="daily-nbb" style="background:'+barCol+'"></div><div class="daily-nm">'
+    return '<a class="daily-nrow" href="/ticker/'+encodeURIComponent(r.ticker)+'" style="text-decoration:none;color:inherit;cursor:pointer;"><div class="daily-nbb" style="background:'+barCol+'"></div><div class="daily-nm">'
       +'<div class="daily-ntr"><span class="daily-ntk">'+esc(r.ticker)+'</span><span class="daily-npx">$'+fmtPrice(r.price)+'</span>'
       +'<span class="daily-nch '+(isUp?'up':'dn')+'">'+(isUp?'&#9650;':'&#9660;')+' '+Math.abs(pct).toFixed(2)+'%</span>'
       +'<span class="daily-nsc">'+esc(r.sector_name||'')+'</span></div>'
-      +'<div class="daily-ntx">'+esc(r.story_claim)+'</div></div><div class="daily-nag">Live</div></div>';
+      +'<div class="daily-ntx">'+esc(r.story_claim)+'</div></div><div class="daily-nag">Live</div></a>';
   }).join('');
   el.innerHTML=(header?header.outerHTML:'')+rowsHTML;
 }
@@ -3511,8 +3511,8 @@ function renderDailyMarketPulse(){
     var cls=isUp?'up':'dn';
     var arrow=isUp?'&#9650;':'&#9660;';
     var px=r.price!=null?(r.price>=1000?r.price.toFixed(0):r.price.toFixed(2)):'—';
-    return '<div class="dpi"><div class="dpi-tk">'+esc(r.ticker)+'</div><div class="dpi-px">'+px+'</div>'
-      +'<div class="dpi-ch '+cls+'">'+arrow+' '+Math.abs(pct).toFixed(2)+'%</div></div>';
+    return '<a class="dpi" href="/ticker/'+encodeURIComponent(r.ticker)+'" style="text-decoration:none;color:inherit;cursor:pointer;"><div class="dpi-tk">'+esc(r.ticker)+'</div><div class="dpi-px">'+px+'</div>'
+      +'<div class="dpi-ch '+cls+'">'+arrow+' '+Math.abs(pct).toFixed(2)+'%</div></a>';
   }).join('');
   if(window.mpInjectAll)setTimeout(window.mpInjectAll,50);
 }
