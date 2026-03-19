@@ -1353,7 +1353,7 @@
     display: flex;
     align-items: center;
     gap: 0;
-    border-bottom: 1px solid var(--mp-border);
+    border-bottom: 2px solid var(--mp-border-mid);
     margin-bottom: 28px;
     position: sticky;
     top: 0;
@@ -1362,28 +1362,40 @@
     padding: 0;
   }
   .tk-tab {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    font-weight: 400;
-    letter-spacing: .08em;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: .03em;
     text-transform: uppercase;
-    color: var(--mp-text-tertiary);
-    padding: 14px 24px;
+    color: var(--mp-text-secondary);
+    padding: 16px 28px;
     cursor: pointer;
-    border-bottom: 2px solid transparent;
+    border-bottom: 3px solid transparent;
     transition: all .2s;
     white-space: nowrap;
     background: none;
     border-top: none;
     border-left: none;
     border-right: none;
+    position: relative;
   }
-  .tk-tab:hover { color: var(--mp-text-secondary); }
+  .tk-tab:hover {
+    color: var(--mp-text-primary);
+    background: rgba(255,255,255,0.03);
+  }
   .tk-tab.active {
     color: #fff;
-    border-bottom-color: var(--mp-blue);
+    font-weight: 600;
+    border-bottom-color: var(--mp-cyan);
+    text-shadow: 0 0 12px rgba(0,255,255,0.3);
   }
-  .tk-tab-panel { display: block; }
+  .tk-tab-panel { display: none; }
+  .tk-tab-panel.active { display: block; }
+
+  @media (max-width: 768px) {
+    .tk-tab-bar { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .tk-tab { padding: 14px 18px; font-size: 12px; }
+  }
 
   /* ── Full-width split layout ── */
   .tk-main-split {
@@ -1780,7 +1792,13 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
     </div>
   </div>
 
-  <!-- Tab bar removed -->
+  <!-- ═══ TAB BAR ═══ -->
+  <div class="tk-tab-bar">
+    <button class="tk-tab active" data-tab="overview">Overview</button>
+    <button class="tk-tab" data-tab="narratives">Narratives</button>
+    <button class="tk-tab" data-tab="history">History</button>
+    <button class="tk-tab" data-tab="chart">Chart</button>
+  </div>
 
   <!-- Action bar -->
   <div class="action-bar" id="action-bar" style="display:none;">
