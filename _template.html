@@ -74,9 +74,9 @@
   --mp-text-primary:#E8ECF4;
   --mp-text-secondary:#6B7394;
   --mp-text-tertiary:#3D4466;
-  --font-display:'DM Serif Display',Georgia,serif;
-  --font-body:'DM Sans',system-ui,sans-serif;
-  --font-mono:'DM Mono',monospace;
+  --font-display:'Instrument Serif','DM Serif Display',Georgia,serif;
+  --font-body:'Inter','DM Sans',system-ui,sans-serif;
+  --font-mono:'Geist Mono','DM Mono',monospace;
 }
 html{font-size:16px;}
 body{
@@ -169,6 +169,12 @@ body{
 }
 .nav-bottom a{font-size:11px;color:var(--mp-text-tertiary);text-decoration:none;transition:color .12s;padding:2px 6px;}
 .nav-bottom a:hover{color:var(--mp-text-secondary);}
+.nav-data-sources{
+  padding:6px 8px;margin:4px 0;
+  font-family:var(--font-mono);font-size:9px;letter-spacing:.06em;
+  color:var(--mp-text-tertiary);line-height:1.6;
+  border-top:1px solid var(--mp-border);padding-top:10px;
+}
 .nav-upgrade{
   display:flex;align-items:center;gap:8px;
   padding:10px 14px;border-radius:10px;margin:0 0 6px;
@@ -1187,7 +1193,7 @@ body{
 .lh-price{font-family:var(--font-mono);font-size:13px;font-weight:500;color:var(--mp-text-primary);}
 .lh-delta{font-family:var(--font-mono);font-size:11px;}
 /* ── EMPTY + LOAD ── */
-.empty-state{padding:52px 0;text-align:center;color:var(--mp-text-tertiary);font-size:13px;}
+.empty-state{padding:52px 0;text-align:center;color:var(--mp-text-tertiary);font-size:13px;font-family:var(--font-mono);letter-spacing:.02em;}
 .load-more{text-align:center;margin-top:28px;}
 .load-more-btn{
   font-size:11px;font-family:var(--font-mono);padding:12px 32px;border-radius:8px;
@@ -1215,6 +1221,27 @@ body{
   animation:skelShimmer 1.8s ease-in-out infinite;
 }
 @keyframes skelShimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+/* Skeleton block helpers */
+.skel-row{display:flex;gap:12px;align-items:center;padding:14px 0;border-bottom:1px solid var(--mp-border);}
+.skel-row:last-child{border-bottom:none;}
+.skel-avatar{width:36px;height:36px;border-radius:8px;flex-shrink:0;}
+.skel-lines{flex:1;display:flex;flex-direction:column;gap:8px;}
+.skel-line{height:12px;border-radius:4px;}
+.skel-line.w60{width:60%;}
+.skel-line.w80{width:80%;}
+.skel-line.w40{width:40%;}
+.skel-line.w100{width:100%;}
+.skel-card{background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:12px;padding:18px;margin-bottom:10px;}
+.skel-card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.skel-pill{width:52px;height:20px;border-radius:10px;}
+.skel-stat{display:flex;flex-direction:column;gap:6px;align-items:center;padding:16px;}
+.skel-num{width:48px;height:28px;border-radius:4px;}
+.skel-label{width:64px;height:10px;border-radius:3px;}
+/* Skeleton grid for heatmap */
+.skel-hm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:3px;}
+.skel-hm-cell{height:48px;border-radius:4px;}
+/* Loading state wrapper */
+.loading-skeleton{animation:fadeInUp 0.4s ease both;}
 /* ── TABLET ── */
 @media(max-width:1100px){
   .page-content{padding:24px 24px 60px;}
@@ -2646,6 +2673,7 @@ body{
       <span id="theme-label">Light mode</span>
     </button>
     <a href="/">← Back to home</a>
+    <div class="nav-data-sources">Data: SEC EDGAR · Market feeds · Proprietary AI<br>Patent Pending: 63/971,470</div>
   </div>
 </nav>
 <!-- ── MAIN CONTENT ── -->
@@ -2925,7 +2953,12 @@ body{
             <a href="/heatmap">Full heatmap →</a>
           </div>
           <div class="dhm-grid" id="dhm-grid">
-            <div class="empty-state" style="grid-column:1/-1;padding:32px 0;">Loading heatmap…</div>
+            <div class="loading-skeleton skel-hm-grid" style="grid-column:1/-1;padding:8px 0;">
+              <div class="skel skel-hm-cell"></div><div class="skel skel-hm-cell"></div><div class="skel skel-hm-cell"></div><div class="skel skel-hm-cell"></div>
+              <div class="skel skel-hm-cell"></div><div class="skel skel-hm-cell"></div><div class="skel skel-hm-cell"></div><div class="skel skel-hm-cell"></div>
+              <div class="skel skel-hm-cell"></div><div class="skel skel-hm-cell"></div><div class="skel skel-hm-cell"></div><div class="skel skel-hm-cell"></div>
+              <div class="skel skel-hm-cell"></div><div class="skel skel-hm-cell"></div><div class="skel skel-hm-cell"></div><div class="skel skel-hm-cell"></div>
+            </div>
           </div>
           <div class="dhm-summary" id="dhm-summary"></div>
         </div>
@@ -3489,7 +3522,11 @@ var SECTOR_MAP = {"PLTR":["Agentic AI / Autonomous Systems","Cybersecurity","Def
 // ── Load data ─────────────────────────────────────────────────────────────────
 async function loadData(){
   var feed = document.getElementById('discover-feed');
-  feed.innerHTML = '<div class="empty-state">Loading stories…</div>';
+  feed.innerHTML = '<div class="loading-skeleton">'
+    +'<div class="skel-card"><div class="skel-card-head"><div class="skel skel-pill"></div><div class="skel skel-pill" style="width:40px;"></div></div><div class="skel skel-line w80"></div><div class="skel skel-line w60" style="margin-top:8px;"></div></div>'
+    +'<div class="skel-card"><div class="skel-card-head"><div class="skel skel-pill"></div><div class="skel skel-pill" style="width:40px;"></div></div><div class="skel skel-line w100"></div><div class="skel skel-line w40" style="margin-top:8px;"></div></div>'
+    +'<div class="skel-card"><div class="skel-card-head"><div class="skel skel-pill"></div><div class="skel skel-pill" style="width:40px;"></div></div><div class="skel skel-line w80"></div><div class="skel skel-line w60" style="margin-top:8px;"></div></div>'
+    +'</div>';
   try {
     if(!SUPABASE_URL || !SUPABASE_ANON) throw new Error('Supabase credentials not configured');
     var COLS = 'ticker,price,price_change_pct,narrative_state,primary_driver,prism_verdict,story_claim,pe_ratio,days_to_earnings,guidance_direction,institutional_positioning,fair_value,snapshot_date,sector_name,recovery_probability';
