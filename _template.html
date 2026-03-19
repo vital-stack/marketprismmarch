@@ -3454,16 +3454,23 @@ var LOGO_COLORS = [
 function logoColor(t){var i=(t.charCodeAt(0)+t.charCodeAt(t.length-1))%LOGO_COLORS.length;return LOGO_COLORS[i];}
 function logoHTML(ticker,sizeClass){
   sizeClass=sizeClass||'';
+  var cacheKey=ticker+'|'+sizeClass;
+  if(!logoHTML._cache)logoHTML._cache={};
+  if(logoHTML._cache[cacheKey])return logoHTML._cache[cacheKey];
   var domain=DOMAIN_MAP[ticker];
   var lc=logoColor(ticker);
   var initials=ticker.length<=4?ticker:ticker.slice(0,3);
+  var html;
   if(domain){
-    return '<div class="t-logo '+sizeClass+'">'
+    html='<div class="t-logo '+sizeClass+'">'
       +'<img src="https://www.google.com/s2/favicons?domain='+domain+'&sz=64" alt="'+ticker+'" '
       +'onerror="this.parentNode.style.background=\''+lc[0]+'\';this.parentNode.style.color=\''+lc[1]+'\';this.parentNode.textContent=\''+initials+'\'">'
       +'</div>';
+  } else {
+    html='<div class="t-logo '+sizeClass+'" style="background:'+lc[0]+';color:'+lc[1]+';">'+initials+'</div>';
   }
-  return '<div class="t-logo '+sizeClass+'" style="background:'+lc[0]+';color:'+lc[1]+';">'+initials+'</div>';
+  logoHTML._cache[cacheKey]=html;
+  return html;
 }
 var SECTOR_MAP = {"PLTR":["Agentic AI / Autonomous Systems","Cybersecurity","Defense Technology","Predictive Analytics"],"TSLA":["Agentic AI / Autonomous Systems","Electric Vehicles & Autonomous Transport"],"GOOGL":["Agentic AI / Autonomous Systems","Cloud Computing","Quantum Computing"],"MSFT":["Agentic AI / Autonomous Systems","Cloud Computing","Quantum Computing"],"AMZN":["Agentic AI / Autonomous Systems","Cloud Computing"],"NVDA":["AI Infrastructure","Semiconductors"],"AMD":["AI Infrastructure","Semiconductors"],"SMCI":["AI Infrastructure","Semiconductors"],"ARM":["AI Infrastructure","Semiconductors"],"AVGO":["AI Infrastructure","Semiconductors"],"TSM":["AI Infrastructure","Semiconductors"],"AMAT":["AI Infrastructure","Semiconductors"],"LRCX":["AI Infrastructure","Semiconductors"],"MU":["AI Infrastructure","Semiconductors"],"ORCL":["Cloud Computing"],"CRM":["Cloud Computing","Predictive Analytics"],"NOW":["Cloud Computing"],"WDAY":["Cloud Computing"],"INTU":["Cloud Computing","Predictive Analytics"],"PANW":["Cybersecurity"],"CRWD":["Cybersecurity"],"RDDT":["Data Licensing & AI Training Data","Social Media"],"SPOT":["Data Licensing & AI Training Data","Social Media"],"SNAP":["Data Licensing & AI Training Data","Social Media"],"LMT":["Defense Technology"],"RTX":["Defense Technology"],"BA":["Defense Technology"],"RIVN":["Electric Vehicles"],"LCID":["Electric Vehicles"],"NIO":["Electric Vehicles"],"GM":["Electric Vehicles"],"F":["Electric Vehicles"],"DUK":["Energy Infrastructure"],"NEE":["Energy Infrastructure"],"VST":["Energy Infrastructure"],"CEG":["Energy Infrastructure"],"V":["Fintech & Digital Payments"],"MA":["Fintech & Digital Payments"],"PYPL":["Fintech & Digital Payments"],"HOOD":["Fintech & Digital Payments"],"SOFI":["Fintech & Digital Payments"],"COIN":["Fintech & Digital Payments"],"JPM":["Fintech & Digital Payments"],"GS":["Fintech & Digital Payments"],"LLY":["Healthcare Technology"],"JNJ":["Healthcare Technology"],"MRK":["Healthcare Technology"],"PFE":["Healthcare Technology"],"META":["Social Media & Digital Advertising"],"AAPL":["Consumer Technology"],"INTC":["Semiconductors"],"QCOM":["Semiconductors"],"MRVL":["Semiconductors"],"TXN":["Semiconductors"]};
 // ── Load data ─────────────────────────────────────────────────────────────────
@@ -3777,78 +3784,103 @@ function getFilteredDiscover(){
     return true;
   });
 }
+function buildStoryCardHTML(r,idx){
+  var delta=fmtDelta(r.price_change_pct);
+  var isBull=r.narrative_state==='Surging'||r.prism_verdict==='Structurally Supported'||(r.price_change_pct&&r.price_change_pct>0);
+  var isBear=r.narrative_state==='Breaking'||r.prism_verdict==='Narrative Trap';
+  var sentClass=isBear?'bear':isBull?'bull':'neutral';
+  var updated=r.snapshot_date?timeAgo(r.snapshot_date):'';
+  var cardId='story-'+idx;
+  var stateLabel=r.narrative_state||'Stable';
+  var stateColor=isBear?'#38C8B8':isBull?'#00AEFF':'#5AB8D8';
+  var verdictLabel=r.prism_verdict||'';
+  var verdictColor=verdictLabel==='Narrative Trap'?'#38C8B8':verdictLabel==='Structurally Supported'?'#00DE94':'';
+  // Lightweight card — forensic panel is injected lazily on first click
+  return '<div class="story-card sent-'+sentClass+'" onclick="toggleForensic(\''+cardId+'\',event,'+idx+')" style="--i:'+idx+'">'
+    +'<div class="card-top">'
+      +'<div class="card-left" style="gap:12px;">'
+        +'<div class="story-logo-wrap">'+logoHTML(r.ticker,'sm')+'</div>'
+        +'<div style="flex:1;min-width:0;">'
+          +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap;">'
+            +'<span style="font-family:var(--font-mono);font-size:14px;font-weight:600;color:var(--mp-text-primary);">'+r.ticker+'</span>'
+            +'<span style="font-family:var(--font-mono);font-size:11px;letter-spacing:0.08em;text-transform:uppercase;padding:2px 7px;border-radius:3px;border:1px solid '+stateColor+';color:'+stateColor+';background:rgba(0,0,0,0.2);">'+stateLabel+'</span>'
+            +(verdictLabel&&verdictColor?'<span style="font-family:var(--font-mono);font-size:11px;letter-spacing:0.06em;padding:2px 7px;border-radius:3px;border:1px solid '+verdictColor+';color:'+verdictColor+';background:rgba(0,0,0,0.2);">'+esc(verdictLabel)+'</span>':'')
+            +'<span style="font-size:13px;color:#9BA8C0;font-weight:300;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:100%;display:inline-block;">'+esc(r.story_claim||r.primary_driver||'')+'</span>'
+          +'</div>'
+          +'<div style="display:flex;align-items:center;gap:12px;font-size:13px;">'
+            +'<span style="font-family:var(--font-mono);color:var(--mp-text-secondary);font-weight:400;font-size:12px;">$'+fmtPrice(r.price)+'</span>'
+            +'<span style="font-family:var(--font-mono);font-size:11px;" class="'+delta.cls+'">'+delta.txt+'</span>'
+            +(r.sector_name?'<span style="color:var(--mp-text-tertiary);font-size:11px;">'+esc(r.sector_name)+'</span>':'')
+            +(updated?'<span style="color:var(--mp-text-tertiary);margin-left:auto;font-family:var(--font-mono);font-size:10px;">'+updated+'</span>':'')
+          +'</div>'
+        +'</div>'
+      +'</div>'
+      +'<span class="card-arrow">→</span>'
+    +'</div>'
+    +'<div class="forensic-panel" id="'+cardId+'"></div>'
+  +'</div>';
+}
+// Build forensic panel HTML on demand (lazy)
+function buildForensicHTML(r){
+  var delta=fmtDelta(r.price_change_pct);
+  var energy=r.narrative_health!=null?r.narrative_health:Math.round(40+Math.random()*50);
+  var trust=computeTrust(r);
+  var fvd=fvdPct(r);
+  return '<div class="forensic-inner">'
+    +'<div class="forensic-detail">'
+      +'<div class="forensic-detail-title">Narrative Analysis</div>'
+      +'<div class="forensic-claim">'+esc(r.story_claim||'')+'</div>'
+      +'<div class="forensic-row"><span class="forensic-row-label">State</span><span class="forensic-row-val">'+esc(r.narrative_state||'—')+'</span></div>'
+      +'<div class="forensic-row"><span class="forensic-row-label">Verdict</span><span class="forensic-row-val">'+esc(r.prism_verdict||'—')+'</span></div>'
+      +'<div class="forensic-row"><span class="forensic-row-label">Driver</span><span class="forensic-row-val">'+esc(r.primary_driver||'—')+'</span></div>'
+      +'<div class="forensic-row"><span class="forensic-row-label">Narrative Health</span><span class="forensic-row-val">'+energy+'</span></div>'
+      +'<div class="forensic-row"><span class="forensic-row-label">Trust Score</span><span class="forensic-row-val">'+trust+'</span></div>'
+    +'</div>'
+    +'<div class="forensic-detail">'
+      +'<div class="forensic-detail-title">Fundamentals</div>'
+      +'<div class="forensic-row"><span class="forensic-row-label">Price</span><span class="forensic-row-val">$'+fmtPrice(r.price)+'</span></div>'
+      +'<div class="forensic-row"><span class="forensic-row-label">Change</span><span class="forensic-row-val">'+delta.txt+'</span></div>'
+      +(r.pe_ratio!=null?'<div class="forensic-row"><span class="forensic-row-label">P/E Ratio</span><span class="forensic-row-val">'+r.pe_ratio.toFixed(1)+'x</span></div>':'')
+      +(r.fair_value!=null?'<div class="forensic-row"><span class="forensic-row-label">Fair Value</span><span class="forensic-row-val">$'+r.fair_value.toFixed(2)+'</span></div>':'')
+      +(fvd!=null?'<div class="forensic-row"><span class="forensic-row-label">Valuation</span><span class="forensic-row-val">'+Math.abs(fvd).toFixed(0)+'% '+(fvd<0?'undervalued':'overvalued')+'</span></div>':'')
+      +(r.days_to_earnings!=null?'<div class="forensic-row"><span class="forensic-row-label">Earnings</span><span class="forensic-row-val">'+r.days_to_earnings+'d</span></div>':'')
+      +(r.guidance_direction&&r.guidance_direction!=='Neutral'?'<div class="forensic-row"><span class="forensic-row-label">Guidance</span><span class="forensic-row-val">'+esc(r.guidance_direction)+'</span></div>':'')
+      +'<div style="margin-top:12px;"><a href="/ticker/'+encodeURIComponent(r.ticker)+'" style="font-family:var(--font-mono);font-size:10px;color:var(--mp-text-secondary);text-decoration:none;letter-spacing:.06em;text-transform:uppercase;transition:color .2s;" onmouseover="this.style.color=\'var(--mp-text-primary)\'" onmouseout="this.style.color=\'var(--mp-text-secondary)\'">Full analysis →</a></div>'
+    +'</div>'
+  +'</div>';
+}
+// Store filtered results for lazy forensic lookup
+var _discoverSlice=[];
 function renderDiscover(){
   var filtered=getFilteredDiscover();
   var slice=filtered.slice(0,discoverShowing);
+  _discoverSlice=slice;
   var feed=document.getElementById('discover-feed');
   var cl=document.getElementById('count-line');
   var lm=document.getElementById('discover-load-more');
   cl.textContent=filtered.length+' ticker'+(filtered.length===1?'':'s');
   if(filtered.length===0){feed.innerHTML='<div class="empty-state">No stories match current filters.</div>';lm.style.display='none';return;}
-  feed.innerHTML=slice.map(function(r,idx){
-    var delta=fmtDelta(r.price_change_pct);
-    var isBull=r.narrative_state==='Surging'||r.prism_verdict==='Structurally Supported'||(r.price_change_pct&&r.price_change_pct>0);
-    var isBear=r.narrative_state==='Breaking'||r.prism_verdict==='Narrative Trap';
-    var sentClass=isBear?'bear':isBull?'bull':'neutral';
-    var sentArrow=isBear?'↓':isBull?'↑':'→';
-    var energy=r.narrative_health!=null?r.narrative_health:Math.round(40+Math.random()*50);
-    var trust=computeTrust(r);
-    var fvd=fvdPct(r);
-    var updated=r.snapshot_date?timeAgo(r.snapshot_date):'';
-    var cardId='story-'+idx;
-    var stateLabel=r.narrative_state||'Stable';
-    var stateColor=isBear?'#38C8B8':isBull?'#00AEFF':'#5AB8D8';
-    var verdictLabel=r.prism_verdict||'';
-    var verdictColor=verdictLabel==='Narrative Trap'?'#38C8B8':verdictLabel==='Structurally Supported'?'#00DE94':'';
-    return '<div class="story-card sent-'+sentClass+'" onclick="toggleForensic(\''+cardId+'\',event)" style="--i:'+idx+'">'
-      +'<div class="card-top">'
-        +'<div class="card-left" style="gap:12px;">'
-          +'<div class="story-logo-wrap">'+logoHTML(r.ticker,'sm')+'</div>'
-          +'<div style="flex:1;min-width:0;">'
-            +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap;">'
-              +'<span style="font-family:var(--font-mono);font-size:14px;font-weight:600;color:var(--mp-text-primary);">'+r.ticker+'</span>'
-              +'<span style="font-family:var(--font-mono);font-size:11px;letter-spacing:0.08em;text-transform:uppercase;padding:2px 7px;border-radius:3px;border:1px solid '+stateColor+';color:'+stateColor+';background:rgba(0,0,0,0.2);">'+stateLabel+'</span>'
-              +(verdictLabel&&verdictColor?'<span style="font-family:var(--font-mono);font-size:11px;letter-spacing:0.06em;padding:2px 7px;border-radius:3px;border:1px solid '+verdictColor+';color:'+verdictColor+';background:rgba(0,0,0,0.2);">'+esc(verdictLabel)+'</span>':'')
-              +'<span class="story-typewriter" style="font-size:13px;color:#9BA8C0;font-weight:300;animation-delay:'+(idx*0.15)+'s;">'+esc(r.story_claim||r.primary_driver||'')+'</span>'
-            +'</div>'
-            +'<div style="display:flex;align-items:center;gap:12px;font-size:13px;">'
-              +'<span style="font-family:var(--font-mono);color:var(--mp-text-secondary);font-weight:400;font-size:12px;">$'+fmtPrice(r.price)+'</span>'
-              +'<span style="font-family:var(--font-mono);font-size:11px;" class="'+delta.cls+'">'+delta.txt+'</span>'
-              +(r.sector_name?'<span style="color:var(--mp-text-tertiary);font-size:11px;">'+esc(r.sector_name)+'</span>':'')
-              +(updated?'<span style="color:var(--mp-text-tertiary);margin-left:auto;font-family:var(--font-mono);font-size:10px;">'+updated+'</span>':'')
-            +'</div>'
-          +'</div>'
-        +'</div>'
-        +'<span class="card-arrow">→</span>'
-      +'</div>'
-      +'<div class="forensic-panel" id="'+cardId+'">'
-        +'<div class="forensic-inner">'
-          +'<div class="forensic-detail">'
-            +'<div class="forensic-detail-title">Narrative Analysis</div>'
-            +'<div class="forensic-claim">'+esc(r.story_claim||'')+'</div>'
-            +'<div class="forensic-row"><span class="forensic-row-label">State</span><span class="forensic-row-val">'+esc(r.narrative_state||'—')+'</span></div>'
-            +'<div class="forensic-row"><span class="forensic-row-label">Verdict</span><span class="forensic-row-val">'+esc(r.prism_verdict||'—')+'</span></div>'
-            +'<div class="forensic-row"><span class="forensic-row-label">Driver</span><span class="forensic-row-val">'+esc(r.primary_driver||'—')+'</span></div>'
-            +'<div class="forensic-row"><span class="forensic-row-label">Narrative Health</span><span class="forensic-row-val">'+energy+'</span></div>'
-            +'<div class="forensic-row"><span class="forensic-row-label">Trust Score</span><span class="forensic-row-val">'+trust+'</span></div>'
-          +'</div>'
-          +'<div class="forensic-detail">'
-            +'<div class="forensic-detail-title">Fundamentals</div>'
-            +'<div class="forensic-row"><span class="forensic-row-label">Price</span><span class="forensic-row-val">$'+fmtPrice(r.price)+'</span></div>'
-            +'<div class="forensic-row"><span class="forensic-row-label">Change</span><span class="forensic-row-val">'+delta.txt+'</span></div>'
-            +(r.pe_ratio!=null?'<div class="forensic-row"><span class="forensic-row-label">P/E Ratio</span><span class="forensic-row-val">'+r.pe_ratio.toFixed(1)+'x</span></div>':'')
-            +(r.fair_value!=null?'<div class="forensic-row"><span class="forensic-row-label">Fair Value</span><span class="forensic-row-val">$'+r.fair_value.toFixed(2)+'</span></div>':'')
-            +(fvd!=null?'<div class="forensic-row"><span class="forensic-row-label">Valuation</span><span class="forensic-row-val">'+Math.abs(fvd).toFixed(0)+'% '+(fvd<0?'undervalued':'overvalued')+'</span></div>':'')
-            +(r.days_to_earnings!=null?'<div class="forensic-row"><span class="forensic-row-label">Earnings</span><span class="forensic-row-val">'+r.days_to_earnings+'d</span></div>':'')
-            +(r.guidance_direction&&r.guidance_direction!=='Neutral'?'<div class="forensic-row"><span class="forensic-row-label">Guidance</span><span class="forensic-row-val">'+esc(r.guidance_direction)+'</span></div>':'')
-            +'<div style="margin-top:12px;"><a href="/ticker/'+encodeURIComponent(r.ticker)+'" style="font-family:var(--font-mono);font-size:10px;color:var(--mp-text-secondary);text-decoration:none;letter-spacing:.06em;text-transform:uppercase;transition:color .2s;" onmouseover="this.style.color=\'var(--mp-text-primary)\'" onmouseout="this.style.color=\'var(--mp-text-secondary)\'">Full analysis →</a></div>'
-          +'</div>'
-        +'</div>'
-      +'</div>'
-    +'</div>';
-  }).join('');
+  // Chunked rendering: first 10 cards immediately, rest in batches via rAF
+  var FIRST_BATCH=10;
+  var CHUNK_SIZE=15;
+  var first=slice.slice(0,FIRST_BATCH);
+  feed.innerHTML=first.map(function(r,i){return buildStoryCardHTML(r,i);}).join('');
+  if(slice.length>FIRST_BATCH){
+    var pos=FIRST_BATCH;
+    function renderChunk(){
+      var chunk=slice.slice(pos,pos+CHUNK_SIZE);
+      if(!chunk.length)return;
+      var frag=document.createDocumentFragment();
+      var tmp=document.createElement('div');
+      tmp.innerHTML=chunk.map(function(r,i){return buildStoryCardHTML(r,pos+i);}).join('');
+      while(tmp.firstChild)frag.appendChild(tmp.firstChild);
+      feed.appendChild(frag);
+      pos+=CHUNK_SIZE;
+      if(pos<slice.length)requestAnimationFrame(renderChunk);
+    }
+    requestAnimationFrame(renderChunk);
+  }
   lm.style.display=discoverShowing<filtered.length?'block':'none';
-  // Stream duplication for seamless scroll
   initStoryStream();
 }
 function initStoryStream(){
@@ -3858,8 +3890,8 @@ function initStoryStream(){
   var cnt=document.getElementById('stream-count');
   if(cnt)cnt.textContent=cards.length+' stories';
 }
-// ── Forensic panel toggle ──
-function toggleForensic(id,e){
+// ── Forensic panel toggle (lazy-loads content on first open) ──
+function toggleForensic(id,e,dataIdx){
   if(e&&e.target.closest('a[href]'))return; // allow link clicks through
   var panel=document.getElementById(id);
   if(!panel)return;
@@ -3867,6 +3899,11 @@ function toggleForensic(id,e){
   document.querySelectorAll('.forensic-panel.open').forEach(function(p){
     if(p.id!==id)p.classList.remove('open');
   });
+  // Lazy-inject forensic content on first open
+  if(!panel.dataset.loaded&&dataIdx!=null){
+    var r=_discoverSlice[dataIdx];
+    if(r){panel.innerHTML=buildForensicHTML(r);panel.dataset.loaded='1';}
+  }
   panel.classList.toggle('open');
 }
 document.querySelectorAll('.chip[data-filter]').forEach(function(chip){
@@ -3886,7 +3923,12 @@ document.querySelectorAll('.chip[data-filter]').forEach(function(chip){
   });
 });
 document.getElementById('sector-select').addEventListener('change',function(e){discoverSector=e.target.value;discoverShowing=25;renderDiscover();});
-document.getElementById('ticker-search').addEventListener('input',function(e){discoverSearch=e.target.value;discoverShowing=25;renderDiscover();});
+var _discoverSearchTimer;
+document.getElementById('ticker-search').addEventListener('input',function(e){
+  clearTimeout(_discoverSearchTimer);
+  var val=e.target.value;
+  _discoverSearchTimer=setTimeout(function(){discoverSearch=val;discoverShowing=25;renderDiscover();},200);
+});
 document.getElementById('discover-load-more-btn').addEventListener('click',function(){discoverShowing+=25;renderDiscover();});
 document.getElementById('topbar-search').addEventListener('input',function(e){
   var id=document.querySelector('.tab-panel.active').id;
