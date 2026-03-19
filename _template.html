@@ -110,43 +110,76 @@ body{
 }
 .nav-section-lbl{
   font-family:var(--font-mono);
-  font-size:11px;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--mp-text-tertiary);
-  padding:18px 18px 6px;
+  font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--mp-text-muted);
+  padding:20px 18px 8px;
+  display:flex;align-items:center;gap:8px;
 }
-.nav-items{padding:4px 10px;flex:1;}
+.nav-section-lbl::after{
+  content:'';flex:1;height:1px;background:var(--mp-border);
+}
+.nav-items{padding:4px 10px;flex:1;display:flex;flex-direction:column;gap:1px;}
 .nav-item{
   display:flex;align-items:center;gap:10px;
-  padding:10px 14px;border-radius:8px;
-  font-size:13px;font-family:var(--font-body);font-weight:300;
+  padding:9px 14px;border-radius:10px;
+  font-size:13px;font-family:var(--font-body);font-weight:400;
   color:var(--mp-text-secondary);text-decoration:none;
-  transition:all .25s cubic-bezier(0.16,1,0.3,1);
-  margin-bottom:2px;border-left:2px solid transparent;
+  transition:all .2s cubic-bezier(0.16,1,0.3,1);
+  border-left:2px solid transparent;
   cursor:pointer;border:none;background:none;width:100%;text-align:left;
+  position:relative;
 }
-.nav-item:hover{background:rgba(255,255,255,0.04);color:var(--mp-text-primary);}
+.nav-item:hover{background:rgba(255,255,255,0.05);color:var(--mp-text-primary);}
 .nav-item.active{
-  background:rgba(255,255,255,0.06);
-  color:#fff;
-  border-left:2px solid rgba(255,255,255,0.4);
+  background:rgba(0,174,255,0.08);
+  color:#fff;font-weight:500;
+  border-left:2px solid #00AEFF;
 }
-.nav-item svg{width:15px;height:15px;flex-shrink:0;opacity:.65;}
-.nav-item.active svg{opacity:1;}
+.nav-item.active::before{
+  content:'';position:absolute;inset:0;border-radius:10px;
+  box-shadow:inset 0 0 12px rgba(0,174,255,0.06);
+  pointer-events:none;
+}
+.nav-item svg{width:16px;height:16px;flex-shrink:0;opacity:.5;transition:opacity .2s;}
+.nav-item:hover svg{opacity:.8;}
+.nav-item.active svg{opacity:1;filter:drop-shadow(0 0 3px rgba(0,174,255,0.3));}
 .nav-item-badge{
-  margin-left:auto;font-family:var(--font-mono);font-size:11px;
-  padding:2px 7px;border-radius:4px;
+  margin-left:auto;font-family:var(--font-mono);font-size:10px;font-weight:500;
+  padding:2px 8px;border-radius:10px;
   background:rgba(255,255,255,.06);color:var(--mp-text-tertiary);
   border:1px solid rgba(255,255,255,.06);
 }
-.nav-item-badge.blue{background:rgba(255,255,255,.06);color:var(--mp-text-tertiary);border-color:rgba(255,255,255,.06);}
-.nav-item-badge.teal{background:rgba(255,255,255,.06);color:var(--mp-text-tertiary);border-color:rgba(255,255,255,.06);}
+.nav-item-badge.blue{background:rgba(0,174,255,0.1);color:#00AEFF;border-color:rgba(0,174,255,0.2);}
+.nav-item-badge.teal{background:rgba(56,200,184,0.1);color:#38C8B8;border-color:rgba(56,200,184,0.2);font-size:9px;letter-spacing:.04em;}
+.nav-section-gap{height:4px;}
+.nav-promo{
+  margin:12px 12px 6px;padding:14px;border-radius:12px;
+  background:linear-gradient(135deg,rgba(0,174,255,0.08),rgba(56,200,184,0.06));
+  border:1px solid rgba(0,174,255,0.15);
+  cursor:pointer;transition:all .2s;
+}
+.nav-promo:hover{border-color:rgba(0,174,255,0.3);background:linear-gradient(135deg,rgba(0,174,255,0.12),rgba(56,200,184,0.08));}
+.nav-promo-title{font-family:var(--font-body);font-size:12px;font-weight:600;color:var(--mp-text-primary);margin-bottom:4px;display:flex;align-items:center;gap:6px;}
+.nav-promo-desc{font-family:var(--font-body);font-size:11px;color:var(--mp-text-tertiary);line-height:1.4;}
+.nav-promo-icon{font-size:14px;line-height:1;}
 .nav-divider{height:1px;background:var(--mp-border);margin:10px 14px;}
 .nav-bottom{
-  padding:14px 18px;border-top:1px solid var(--mp-border);
-  display:flex;flex-direction:column;gap:8px;
+  padding:10px 12px 14px;border-top:1px solid var(--mp-border);
+  display:flex;flex-direction:column;gap:6px;
 }
-.nav-bottom a{font-size:11px;color:var(--mp-text-tertiary);text-decoration:none;transition:color .12s;}
+.nav-bottom a{font-size:11px;color:var(--mp-text-tertiary);text-decoration:none;transition:color .12s;padding:2px 6px;}
 .nav-bottom a:hover{color:var(--mp-text-secondary);}
+.nav-upgrade{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 14px;border-radius:10px;margin:0 0 6px;
+  background:linear-gradient(135deg,rgba(123,97,255,0.1),rgba(0,174,255,0.08));
+  border:1px solid rgba(123,97,255,0.2);
+  font-family:var(--font-body);font-size:12px;font-weight:500;
+  color:rgba(255,255,255,0.85);text-decoration:none;
+  transition:all .2s;cursor:pointer;
+}
+.nav-upgrade:hover{border-color:rgba(123,97,255,0.4);background:linear-gradient(135deg,rgba(123,97,255,0.15),rgba(0,174,255,0.12));color:#fff;}
+.nav-upgrade svg{width:14px;height:14px;opacity:.7;}
 /* live dot */
 .live-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.4);animation:blink 3s ease infinite;flex-shrink:0;}
 @keyframes blink{0%,100%{opacity:1;}50%{opacity:.2;}}
@@ -1387,10 +1420,13 @@ body{
 [data-theme="light"] .nav-logo span{color:var(--mp-text-primary);}
 /* Nav */
 [data-theme="light"] .nav-item:hover{background:rgba(0,0,0,0.04);color:var(--mp-text-primary);}
-[data-theme="light"] .nav-item.active{background:rgba(0,0,0,0.06);color:var(--mp-text-primary);border-left-color:rgba(0,0,0,0.3);}
-[data-theme="light"] .nav-item-badge,
-[data-theme="light"] .nav-item-badge.blue,
-[data-theme="light"] .nav-item-badge.teal{background:rgba(0,0,0,0.05);border-color:rgba(0,0,0,0.08);}
+[data-theme="light"] .nav-item.active{background:rgba(0,110,220,0.07);color:var(--mp-text-primary);border-left-color:#0070E0;}
+[data-theme="light"] .nav-item.active::before{box-shadow:inset 0 0 12px rgba(0,110,220,0.04);}
+[data-theme="light"] .nav-item-badge{background:rgba(0,0,0,0.05);border-color:rgba(0,0,0,0.08);}
+[data-theme="light"] .nav-item-badge.blue{background:rgba(0,110,220,0.08);color:#0070E0;border-color:rgba(0,110,220,0.15);}
+[data-theme="light"] .nav-item-badge.teal{background:rgba(0,160,140,0.08);color:#00A08C;border-color:rgba(0,160,140,0.15);}
+[data-theme="light"] .nav-promo{background:linear-gradient(135deg,rgba(0,110,220,0.06),rgba(0,160,140,0.04));border-color:rgba(0,110,220,0.12);}
+[data-theme="light"] .nav-upgrade{background:linear-gradient(135deg,rgba(100,70,220,0.07),rgba(0,110,220,0.05));border-color:rgba(100,70,220,0.15);color:var(--mp-text-primary);}
 [data-theme="light"] .live-dot{background:rgba(0,0,0,0.3);}
 /* Page header */
 [data-theme="light"] .page-header h1{color:var(--mp-text-primary);}
@@ -2424,7 +2460,7 @@ body{
     <span>Market Prism</span>
   </a>
   <div class="nav-items">
-    <div class="nav-section-lbl">Intelligence</div>
+    <div class="nav-section-lbl">Analysis</div>
     <button class="nav-item active" data-tab="daily" onclick="switchTab('daily',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6v-3z"/></svg>
       Daily Brief
@@ -2441,12 +2477,14 @@ body{
     <button class="nav-item" data-tab="snapshots" onclick="switchTab('snapshots',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6"/></svg>
       Ticker Snapshots
-      <span class="nav-item-badge" id="nav-badge-snapshots">—</span>
+      <span class="nav-item-badge blue" id="nav-badge-snapshots">—</span>
     </button>
     <button class="nav-item" data-tab="narrative" onclick="switchTab('narrative',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5"/><circle cx="8" cy="10" r="1.5"/><circle cx="12" cy="7" r="1.5"/><circle cx="16" cy="9" r="1.5"/></svg>
       Narrative History
     </button>
+
+    <div class="nav-section-lbl">Toolkit</div>
     <button class="nav-item" data-tab="memes" onclick="switchTab('memes',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z"/></svg>
       Market Sharing
@@ -2462,16 +2500,27 @@ body{
       Trading Calendar
       <span class="nav-item-badge teal" id="nav-badge-calendar">New</span>
     </button>
+
+    <!-- Promo card -->
+    <div class="nav-promo" onclick="switchTab('cards',document.querySelector('.nav-item[data-tab=cards]'))">
+      <div class="nav-promo-title">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#38C8B8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z"/></svg>
+        Try Trading Cards
+      </div>
+      <div class="nav-promo-desc">Collect AI-generated cards for every signal in your portfolio.</div>
+    </div>
   </div>
-  <div class="nav-divider"></div>
   <div class="nav-bottom">
+    <a href="/pricing" class="nav-upgrade">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
+      Upgrade plan
+    </a>
     <button class="theme-toggle-btn" id="theme-toggle" onclick="toggleTheme()">
       <svg id="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"/></svg>
       <svg id="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.25v1.5m0 16.5v1.5M4.219 4.219l1.061 1.061m13.44 13.44l1.061 1.061M2.25 12h1.5m16.5 0h1.5M4.219 19.781l1.061-1.061M18.72 5.28l1.061-1.061"/></svg>
       <span id="theme-label">Light mode</span>
     </button>
     <a href="/">← Back to home</a>
-    <a href="/pricing">Upgrade plan</a>
   </div>
 </nav>
 <!-- ── MAIN CONTENT ── -->
