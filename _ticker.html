@@ -3396,7 +3396,11 @@ function renderDiagStrip(p) {
     </div>
     <div class="diag-cell">
       <div class="diag-label">Direction</div>
-      <div class="diag-val" style="font-size:14px;padding-top:2px;${(p.direction_forecast||'').includes('BULL') ? 'color:var(--mp-teal)' : (p.direction_forecast||'').includes('BEAR') ? 'color:#38C8B8' : ''}">${esc(p.direction_forecast || '—')}</div>
+      <div class="diag-val" style="font-size:13px;padding-top:2px;">
+        ${p.direction_forecast
+          ? `<span class="hero-state-badge ${(p.direction_forecast).includes('BULL') ? 'badge-surging' : (p.direction_forecast).includes('BEAR') ? 'badge-breaking' : 'badge-stable'}">${esc(p.direction_forecast)}</span>`
+          : '—'}
+      </div>
       <div class="diag-sub">${esc(p.sentiment_momentum || 'Momentum')}</div>
     </div>
     <div class="diag-cell">
