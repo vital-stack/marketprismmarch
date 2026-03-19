@@ -699,18 +699,18 @@ body{
 .snap-chg{font-family:var(--font-mono);font-size:12px;}
 .snap-state{font-family:var(--font-mono);font-size:10px;padding:3px 10px;border-radius:4px;border:1px solid rgba(255,255,255,0.08);letter-spacing:.04em;white-space:nowrap;background:rgba(255,255,255,0.04);color:var(--mp-text-secondary);}
 .snap-verdict{font-size:10px;padding:3px 10px;border-radius:4px;border:1px solid rgba(255,255,255,0.08);white-space:nowrap;font-family:var(--font-mono);background:rgba(255,255,255,0.04);color:var(--mp-text-secondary);}
-.snap-driver{font-size:11px;color:var(--mp-text-secondary);max-width:180px;}
+.snap-driver{font-size:13px;color:var(--mp-text-primary);max-width:280px;line-height:1.5;}
 .snap-sector{font-size:11px;color:var(--mp-text-tertiary);font-style:italic;max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .snap-date{font-family:var(--font-mono);font-size:10px;color:var(--mp-text-tertiary);}
 .pe-val{font-family:var(--font-mono);font-size:12px;}
 .snap-table .earnings-soon{color:var(--mp-amber);}
 .snap-cta{
   font-family:var(--font-mono);font-size:11px;text-transform:uppercase;
-  letter-spacing:.08em;color:var(--mp-cyan);text-decoration:none;
-  padding:4px 10px;border:1px solid rgba(96,165,250,.25);border-radius:4px;
-  white-space:nowrap;transition:all .2s;
+  letter-spacing:.08em;color:#fff;text-decoration:none;
+  padding:6px 14px;background:var(--mp-cyan);border:none;border-radius:6px;
+  white-space:nowrap;transition:all .2s;display:inline-flex;align-items:center;gap:6px;
 }
-.snap-cta:hover{background:rgba(96,165,250,.1);border-color:var(--mp-cyan);}
+.snap-cta:hover{background:#0095dd;box-shadow:0 2px 8px rgba(0,174,255,0.3);}
 /* Snapshot filter row */
 .snap-filter-row{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
 /* ── MARKET SHARING (MEMES) ── */
@@ -4014,13 +4014,13 @@ function renderSnap(){
       +'<td class="r"><div class="snap-price">$'+fmtPrice(r.price)+'</div></td>'
       +'<td class="r"><div class="snap-chg '+delta.cls+'">'+delta.txt+'</div></td>'
       +'<td><span class="snap-state '+sc+'">'+esc(r.narrative_state)+'</span></td>'
-      +'<td><div class="snap-driver" style="max-width:220px;">'+esc(r.story_claim||r.primary_driver||'—')+'</div></td>'
+      +'<td><div class="snap-driver">'+esc(r.story_claim||r.primary_driver||'—')+'</div></td>'
       +'<td><span class="snap-state" style="font-size:11px;">'+tradeType+'</span></td>'
       +'<td>'+(vc?'<span class="snap-verdict '+vc+'">'+esc(vl)+'</span>':'<span style="color:var(--mp-text-tertiary);font-size:11px;">'+esc(r.prism_verdict||'—')+'</span>')+'</td>'
       +'<td><div class="snap-sector">'+esc(r.sector_name||'—')+'</div></td>'
       +'<td class="r"><span class="pe-val">'+( r.pe_ratio!=null?r.pe_ratio.toFixed(1)+'x':'—')+'</span></td>'
       +'<td class="r"><span class="snap-date'+ec+'">'+( r.days_to_earnings!=null?r.days_to_earnings+'d':'—')+'</span></td>'
-      +'<td class="r"><a href="/ticker/'+encodeURIComponent(r.ticker)+'" class="snap-cta" onclick="event.stopPropagation();">View Card</a></td>'
+      +'<td class="r"><a href="/ticker/'+encodeURIComponent(r.ticker)+'" class="snap-cta" onclick="event.stopPropagation();">View Card <span style="font-size:13px;">→</span></a></td>'
     +'</tr>';
   }).join('');
   lm.style.display=snapShowing<arr.length?'block':'none';
