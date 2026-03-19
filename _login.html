@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Market Prism — Sign In</title>
+<meta name="description" content="Sign in to Market Prism intelligence dashboard">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --mp-obsidian:#08090F;
+  --mp-deep:#0A0E1A;
+  --mp-surface:rgba(14,18,32,0.55);
+  --mp-surface2:rgba(20,29,53,0.6);
+  --mp-border:rgba(255,255,255,0.06);
+  --mp-border-mid:rgba(255,255,255,0.10);
+  --mp-text-primary:#F0F4FF;
+  --mp-text-secondary:#8B97B8;
+  --mp-text-tertiary:#4A5578;
+  --mp-teal:#00DE94;
+  --mp-blue:#00AEFF;
+  --mp-red:#E05252;
+  --font-display:'Instrument Serif','Georgia',serif;
+  --font-body:'DM Sans','Helvetica Neue',sans-serif;
+  --font-mono:'DM Mono','Fira Code',monospace;
+}
+html,body{
+  height:100%;font-family:var(--font-body);
+  background:var(--mp-obsidian);color:var(--mp-text-primary);
+  overflow:hidden;
+}
+body{
+  display:flex;align-items:center;justify-content:center;
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 30%, rgba(0,174,255,0.04) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 30% 70%, rgba(0,222,148,0.03) 0%, transparent 70%),
+    var(--mp-obsidian);
+}
+/* Grid background */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+  background-size:60px 60px;
+  mask-image:radial-gradient(ellipse 70% 50% at 50% 50%, black, transparent);
+  -webkit-mask-image:radial-gradient(ellipse 70% 50% at 50% 50%, black, transparent);
+}
+/* Login container */
+.login-container{
+  position:relative;z-index:1;width:100%;max-width:420px;padding:0 20px;
+  animation:fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) both;
+}
+@keyframes fadeUp{
+  0%{opacity:0;transform:translateY(20px);}
+  100%{opacity:1;transform:translateY(0);}
+}
+/* Logo */
+.login-logo{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  margin-bottom:32px;
+}
+.login-logo svg{width:28px;height:28px;}
+.login-logo span{
+  font-family:var(--font-display);font-size:22px;font-weight:400;
+  color:var(--mp-text-primary);letter-spacing:-0.01em;
+}
+/* Card */
+.login-card{
+  background:rgba(14,18,32,0.75);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border:1px solid var(--mp-border-mid);
+  border-radius:20px;
+  padding:36px 32px 32px;
+  box-shadow:
+    0 24px 80px rgba(0,0,0,0.4),
+    0 0 1px rgba(255,255,255,0.05),
+    inset 0 1px 0 rgba(255,255,255,0.03);
+  transition:border-color 0.3s;
+}
+.login-card:hover{border-color:rgba(255,255,255,0.14);}
+/* Tabs */
+.auth-tabs{
+  display:flex;gap:0;margin-bottom:28px;
+  border-bottom:1px solid var(--mp-border);
+}
+.auth-tab{
+  flex:1;padding:10px 0;border:none;background:none;cursor:pointer;
+  font-family:var(--font-mono);font-size:11px;font-weight:500;
+  letter-spacing:0.08em;text-transform:uppercase;
+  color:var(--mp-text-tertiary);
+  border-bottom:2px solid transparent;
+  transition:color 0.2s,border-color 0.2s;
+}
+.auth-tab:hover{color:var(--mp-text-secondary);}
+.auth-tab.active{
+  color:var(--mp-text-primary);
+  border-bottom-color:var(--mp-blue);
+}
+/* Form */
+.auth-form{display:none;flex-direction:column;gap:18px;}
+.auth-form.active{display:flex;}
+.form-group{display:flex;flex-direction:column;gap:6px;}
+.form-label{
+  font-family:var(--font-mono);font-size:10px;font-weight:500;
+  letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--mp-text-secondary);
+}
+.form-input{
+  width:100%;padding:12px 16px;
+  background:rgba(255,255,255,0.03);
+  border:1px solid var(--mp-border-mid);
+  border-radius:10px;
+  font-family:var(--font-body);font-size:14px;
+  color:var(--mp-text-primary);
+  outline:none;
+  transition:border-color 0.2s,box-shadow 0.2s,background 0.2s;
+}
+.form-input::placeholder{color:var(--mp-text-tertiary);}
+.form-input:focus{
+  border-color:rgba(0,174,255,0.4);
+  box-shadow:0 0 0 3px rgba(0,174,255,0.08);
+  background:rgba(255,255,255,0.04);
+}
+.form-input:hover:not(:focus){
+  border-color:rgba(255,255,255,0.16);
+}
+/* Submit button */
+.btn-submit{
+  width:100%;padding:13px 20px;
+  border:none;border-radius:10px;cursor:pointer;
+  font-family:var(--font-mono);font-size:12px;font-weight:500;
+  letter-spacing:0.06em;text-transform:uppercase;
+  color:#fff;
+  background:linear-gradient(135deg,rgba(0,174,255,0.85),rgba(0,174,255,0.65));
+  box-shadow:0 4px 16px rgba(0,174,255,0.2),inset 0 1px 0 rgba(255,255,255,0.1);
+  transition:all 0.25s;
+  margin-top:4px;
+}
+.btn-submit:hover{
+  background:linear-gradient(135deg,rgba(0,174,255,0.95),rgba(0,174,255,0.75));
+  box-shadow:0 8px 24px rgba(0,174,255,0.3),inset 0 1px 0 rgba(255,255,255,0.12);
+  transform:translateY(-1px);
+}
+.btn-submit:active{transform:translateY(0);}
+.btn-submit:disabled{
+  opacity:0.4;cursor:not-allowed;transform:none;
+  box-shadow:none;
+}
+.btn-submit.success{
+  background:linear-gradient(135deg,rgba(0,222,148,0.85),rgba(0,222,148,0.65));
+  box-shadow:0 4px 16px rgba(0,222,148,0.2);
+}
+.legacy-access{
+  margin-top:8px;padding-top:2px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+.legacy-note{
+  font-family:var(--font-mono);font-size:10px;letter-spacing:0.04em;
+  color:var(--mp-text-tertiary);line-height:1.5;
+}
+.legacy-btn{
+  border:1px solid var(--mp-border-mid);
+  background:rgba(255,255,255,0.03);
+  color:var(--mp-text-secondary);
+  border-radius:9px;padding:8px 12px;cursor:pointer;
+  font-family:var(--font-mono);font-size:10px;text-transform:uppercase;
+  letter-spacing:0.08em;transition:border-color 0.2s,color 0.2s,background 0.2s;
+  white-space:nowrap;
+}
+.legacy-btn:hover{
+  color:var(--mp-text-primary);
+  border-color:rgba(255,255,255,0.18);
+  background:rgba(255,255,255,0.05);
+}
+/* Message */
+.auth-message{
+  padding:10px 14px;border-radius:8px;
+  font-family:var(--font-mono);font-size:11px;
+  letter-spacing:0.02em;line-height:1.5;
+  display:none;
+  animation:fadeIn 0.2s ease-out;
+}
+@keyframes fadeIn{0%{opacity:0;transform:translateY(-4px);}100%{opacity:1;transform:translateY(0);}}
+.auth-message.error{
+  display:block;
+  background:rgba(224,82,82,0.08);
+  border:1px solid rgba(224,82,82,0.2);
+  color:#FF7070;
+}
+.auth-message.success{
+  display:block;
+  background:rgba(0,222,148,0.08);
+  border:1px solid rgba(0,222,148,0.2);
+  color:var(--mp-teal);
+}
+.auth-message.info{
+  display:block;
+  background:rgba(0,174,255,0.06);
+  border:1px solid rgba(0,174,255,0.15);
+  color:var(--mp-blue);
+}
+/* Footer */
+.login-footer{
+  text-align:center;margin-top:20px;
+  font-family:var(--font-mono);font-size:9px;
+  color:var(--mp-text-tertiary);letter-spacing:0.08em;
+  text-transform:uppercase;
+}
+.login-footer a{
+  color:var(--mp-text-secondary);text-decoration:none;
+  transition:color 0.2s;
+}
+.login-footer a:hover{color:var(--mp-text-primary);}
+/* Responsive */
+@media(max-width:480px){
+  .login-card{padding:28px 22px 24px;border-radius:16px;}
+  .auth-tab{font-size:10px;padding:8px 0;}
+}
+/* Spinner */
+.spinner{
+  display:inline-block;width:14px;height:14px;
+  border:2px solid rgba(255,255,255,0.3);
+  border-top-color:#fff;border-radius:50%;
+  animation:spin 0.6s linear infinite;
+  vertical-align:middle;margin-right:6px;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+
+<div class="login-container">
+  <!-- Logo -->
+  <div class="login-logo">
+    <svg viewBox="0 0 40 52" fill="none">
+      <defs><linearGradient id="lg" x1="20" y1="0" x2="20" y2="52" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#7DD3FC"/><stop offset="50%" stop-color="#60A5FA"/><stop offset="100%" stop-color="#4A80C7"/></linearGradient></defs>
+      <polygon points="20,2 26,13 14,13" fill="url(#lg)"/>
+      <path d="M14,16 L4,28 L10,28 L20,20 L30,28 L36,28 L26,16 Z" fill="url(#lg)" opacity="0.85"/>
+      <path d="M9,31 L2,41 L8,41 L20,33 L32,41 L38,41 L31,31 Z" fill="url(#lg)" opacity="0.7"/>
+      <polygon points="20,38 25,44 20,50 15,44" fill="url(#lg)"/>
+    </svg>
+    <span>Market Prism</span>
+  </div>
+
+  <!-- Card -->
+  <div class="login-card">
+    <!-- Tabs -->
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('signin')">Sign In</button>
+      <button class="auth-tab" onclick="switchAuthTab('register')">Register</button>
+      <button class="auth-tab" onclick="switchAuthTab('reset')">Reset Password</button>
+    </div>
+
+    <!-- Message area -->
+    <div class="auth-message" id="auth-message"></div>
+
+    <!-- Sign In Form -->
+    <form class="auth-form active" id="form-signin" onsubmit="handleSignIn(event)">
+      <div class="form-group">
+        <label class="form-label" for="signin-email">Email</label>
+        <input class="form-input" id="signin-email" type="email" placeholder="you@example.com" required autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="signin-password">Password</label>
+        <input class="form-input" id="signin-password" type="password" placeholder="Enter your password" required autocomplete="current-password">
+      </div>
+      <button class="btn-submit" type="submit" id="btn-signin">Sign In</button>
+      <div class="legacy-access">
+        <div class="legacy-note">Legacy access available for the original admin account.</div>
+        <button class="legacy-btn" type="button" onclick="fillLegacyAccess()">Use Legacy Access</button>
+      </div>
+    </form>
+
+    <!-- Register Form -->
+    <form class="auth-form" id="form-register" onsubmit="handleRegister(event)">
+      <div class="form-group">
+        <label class="form-label" for="register-email">Email</label>
+        <input class="form-input" id="register-email" type="email" placeholder="your@email.com" required autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="register-password">Password</label>
+        <input class="form-input" id="register-password" type="password" placeholder="Min 6 characters" required minlength="6" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="register-confirm">Confirm Password</label>
+        <input class="form-input" id="register-confirm" type="password" placeholder="Repeat password" required minlength="6" autocomplete="new-password">
+      </div>
+      <button class="btn-submit" type="submit" id="btn-register">Create Account</button>
+    </form>
+
+    <!-- Reset Password Form -->
+    <form class="auth-form" id="form-reset" onsubmit="handleReset(event)">
+      <div class="form-group">
+        <label class="form-label" for="reset-email">Email</label>
+        <input class="form-input" id="reset-email" type="email" placeholder="you@example.com" required autocomplete="email">
+      </div>
+      <button class="btn-submit" type="submit" id="btn-reset">Send Reset Link</button>
+    </form>
+  </div>
+
+  <div class="login-footer">
+    Market Prism &middot; Polymathic Intelligence &middot; <a href="/">Home</a>
+  </div>
+</div>
+
+<!-- Supabase JS -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<!-- Env vars injected by server -->
+<script id="__env_script">window.__login_env = { SUPABASE_URL: '', SUPABASE_ANON: '' };</script>
+<script>
+(function(){
+  var env = window.__login_env || {};
+  var SUPABASE_URL  = env.SUPABASE_URL  || '';
+  var SUPABASE_ANON = env.SUPABASE_ANON || '';
+
+  if(!SUPABASE_URL || !SUPABASE_ANON){
+    showMsg('error','Supabase not configured. Contact administrator.');
+    return;
+  }
+
+  var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+  // Check if already logged in
+  supabase.auth.getSession().then(function(result){
+    if(result.data.session){
+      window.location.href = '/dashboard';
+    }
+  });
+
+  // ── Tab switching ──
+  window.switchAuthTab = function(tab){
+    ['signin','register','reset'].forEach(function(t){
+      var form = document.getElementById('form-'+t);
+      var btn = document.querySelector('.auth-tab[onclick*="'+t+'"]');
+      if(form) form.classList.toggle('active', t===tab);
+      if(btn)  btn.classList.toggle('active', t===tab);
+    });
+    clearMsg();
+  };
+
+  // ── Message helpers ──
+  function showMsg(type, text){
+    var el = document.getElementById('auth-message');
+    el.className = 'auth-message ' + type;
+    el.textContent = text;
+  }
+  function clearMsg(){
+    var el = document.getElementById('auth-message');
+    el.className = 'auth-message';
+    el.textContent = '';
+  }
+  function setLoading(btnId, loading){
+    var btn = document.getElementById(btnId);
+    if(!btn) return;
+    btn.disabled = loading;
+    if(loading){
+      btn.dataset.origText = btn.textContent;
+      btn.innerHTML = '<span class="spinner"></span>Please wait…';
+    } else {
+      btn.textContent = btn.dataset.origText || 'Submit';
+    }
+  }
+
+  // ── Sign In ──
+  window.handleSignIn = async function(e){
+    e.preventDefault();
+    clearMsg();
+    var email = document.getElementById('signin-email').value.trim();
+    var password = document.getElementById('signin-password').value;
+    if(!email || !password){ showMsg('error','Please fill in all fields.'); return; }
+
+    setLoading('btn-signin', true);
+    try {
+      var result = await supabase.auth.signInWithPassword({ email: email, password: password });
+      if(result.error) throw result.error;
+      showMsg('success','Signed in successfully. Redirecting…');
+      document.getElementById('btn-signin').classList.add('success');
+      setTimeout(function(){ window.location.href = '/dashboard'; }, 800);
+    } catch(err){
+      showMsg('error', err.message || 'Sign in failed. Check your credentials.');
+      setLoading('btn-signin', false);
+    }
+  };
+
+  window.fillLegacyAccess = function(){
+    document.getElementById('signin-email').value = 'admin@admin.com';
+    document.getElementById('signin-password').value = 'KARMA';
+    showMsg('info','Legacy credentials loaded. Sign in to continue.');
+    document.getElementById('signin-password').focus();
+  };
+
+  // ── Register ──
+  window.handleRegister = async function(e){
+    e.preventDefault();
+    clearMsg();
+    var email = document.getElementById('register-email').value.trim();
+    var password = document.getElementById('register-password').value;
+    var confirm = document.getElementById('register-confirm').value;
+
+    if(!email || !password || !confirm){ showMsg('error','Please fill in all fields.'); return; }
+    if(password !== confirm){ showMsg('error','Passwords do not match.'); return; }
+    if(password.length < 6){ showMsg('error','Password must be at least 6 characters.'); return; }
+
+    setLoading('btn-register', true);
+    try {
+      var result = await supabase.auth.signUp({ email: email, password: password });
+      if(result.error) throw result.error;
+      // Check if confirmation is required
+      if(result.data.user && !result.data.session){
+        showMsg('success','Account created! Check your email to confirm your account.');
+      } else if(result.data.session){
+        showMsg('success','Account created! Redirecting to dashboard…');
+        setTimeout(function(){ window.location.href = '/dashboard'; }, 800);
+      } else {
+        showMsg('success','Account created! Check your email to confirm your account.');
+      }
+    } catch(err){
+      showMsg('error', err.message || 'Registration failed.');
+    } finally {
+      setLoading('btn-register', false);
+    }
+  };
+
+  // ── Reset Password ──
+  window.handleReset = async function(e){
+    e.preventDefault();
+    clearMsg();
+    var email = document.getElementById('reset-email').value.trim();
+    if(!email){ showMsg('error','Please enter your email.'); return; }
+
+    setLoading('btn-reset', true);
+    try {
+      var result = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + '/dashboard'
+      });
+      if(result.error) throw result.error;
+      showMsg('success','Password reset link sent! Check your email inbox.');
+    } catch(err){
+      showMsg('error', err.message || 'Failed to send reset email.');
+    } finally {
+      setLoading('btn-reset', false);
+    }
+  };
+
+})();
+</script>
+</body>
+</html>

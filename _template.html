@@ -2468,6 +2468,8 @@ body{
     <div class="topbar-title" id="topbar-title">Daily Brief</div>
     <div class="topbar-right">
       <span class="topbar-date" id="topbar-date"></span>
+      <span class="topbar-date" id="topbar-user" style="display:none;"></span>
+      <button class="chip" id="logout-btn" style="display:none;">Logout</button>
       <input class="topbar-search" id="topbar-search" placeholder="Search ticker…">
     </div>
   </div>
@@ -3275,6 +3277,7 @@ body{
 </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Env vars injected by Vercel API handler — do not edit this line -->
 <script id="__env_script">window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '', SCHOLAR_ENABLED: '' };</script>
 <script>
@@ -3347,6 +3350,83 @@ function switchTab(id, btn){
 // ── Supabase config ───────────────────────────────────────────────────────────
 var SUPABASE_URL  = (window.__env||{}).SUPABASE_URL  || '';
 var SUPABASE_ANON = (window.__env||{}).SUPABASE_ANON || '';
+var SUPA = (window.supabase && SUPABASE_URL && SUPABASE_ANON)
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON)
+  : null;
+var CURRENT_USER = null;
+var AUTH_READY = null;
+var LIVE_NHT_CACHE = {};
+var LIVE_EARNINGS_ROWS = [];
+var LIVE_EARNINGS_BY_DATE = {};
+var TC_REMOTE_SAVE_TIMER = null;
+
+function getCurrentSessionUser(){
+  if(!SUPA || !SUPA.auth || !SUPA.auth.getSession) return Promise.resolve(null);
+  return SUPA.auth.getSession().then(function(result){
+    return result && result.data && result.data.session ? result.data.session.user : null;
+  }).catch(function(){
+    return null;
+  });
+}
+
+function applyAuthenticatedUser(user){
+  CURRENT_USER = user || null;
+  var userEl = document.getElementById('topbar-user');
+  var logoutBtn = document.getElementById('logout-btn');
+  if(userEl){
+    userEl.style.display = user && user.email ? '' : 'none';
+    userEl.textContent = user && user.email ? user.email : '';
+  }
+  if(logoutBtn){
+    logoutBtn.style.display = user ? '' : 'none';
+  }
+}
+
+function redirectToLogin(){
+  if(window.location.pathname !== '/login'){
+    window.location.href = '/login';
+  }
+}
+
+function ensureDashboardAuth(){
+  if(AUTH_READY) return AUTH_READY;
+  AUTH_READY = (async function(){
+    if(!SUPA){
+      redirectToLogin();
+      return null;
+    }
+    var user = await getCurrentSessionUser();
+    if(!user){
+      redirectToLogin();
+      return null;
+    }
+    applyAuthenticatedUser(user);
+    var logoutBtn = document.getElementById('logout-btn');
+    if(logoutBtn && !logoutBtn.dataset.bound){
+      logoutBtn.dataset.bound = 'true';
+      logoutBtn.addEventListener('click', async function(){
+        try { await SUPA.auth.signOut(); } catch(_) {}
+        redirectToLogin();
+      });
+    }
+    if(SUPA.auth && SUPA.auth.onAuthStateChange && !window.__mpAuthBound){
+      window.__mpAuthBound = true;
+      SUPA.auth.onAuthStateChange(function(event, session){
+        var nextUser = session ? session.user : null;
+        applyAuthenticatedUser(nextUser);
+        if(!nextUser){
+          redirectToLogin();
+          return;
+        }
+        if(event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED'){
+          tcLoadQueued();
+        }
+      });
+    }
+    return user;
+  })();
+  return AUTH_READY;
+}
 // ── Shared data store ─────────────────────────────────────────────────────────
 var DATA = [];
 var DOMAIN_MAP = {
@@ -3428,6 +3508,8 @@ async function loadData(){
   var feed = document.getElementById('discover-feed');
   feed.innerHTML = '<div class="empty-state">Loading stories…</div>';
   try {
+    var user = await ensureDashboardAuth();
+    if(!user) return;
     if(!SUPABASE_URL || !SUPABASE_ANON) throw new Error('Supabase credentials not configured');
     var COLS = 'ticker,price,price_change_pct,narrative_state,primary_driver,prism_verdict,story_claim,pe_ratio,days_to_earnings,guidance_direction,institutional_positioning,fair_value,snapshot_date,sector_name,recovery_probability';
     var url = SUPABASE_URL+'/rest/v1/v_dash_daily_story?select='+COLS+'&story_claim=not.is.null&order=snapshot_date.desc,ticker.asc';
@@ -3527,6 +3609,9 @@ async function loadData(){
     renderDailyOpportunityMatrix();
     renderDailyLiveNarratives();
     renderDailyMarketPulse();
+    populateNHTTickerSelect();
+    loadTradingCalendarLive();
+    loadNHT(nhtTicker);
   } catch(err){
     feed.innerHTML='<div class="empty-state" style="color:var(--mp-red);">Failed to load: '+esc(err.message)+'<br><small style="font-size:11px;opacity:.6;">Check Supabase credentials in environment variables.</small></div>';
     // Still render static demos
@@ -5765,6 +5850,530 @@ function calendarBoot(){
   });
 }
 
+// Live overrides for auth, narrative history, and trading calendar
+function restFetch(table, params){
+  var qs = Object.keys(params || {}).filter(function(key){
+    var value = params[key];
+    return value !== undefined && value !== null && value !== '';
+  }).map(function(key){
+    return encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
+  }).join('&');
+  return fetch(SUPABASE_URL + '/rest/v1/' + table + (qs ? '?' + qs : ''), {
+    headers: {
+      'apikey': SUPABASE_ANON,
+      'Authorization': 'Bearer ' + SUPABASE_ANON,
+      'Accept': 'application/json'
+    }
+  }).then(async function(res){
+    if(!res.ok){
+      var body = await res.text().catch(function(){ return ''; });
+      throw new Error('[' + table + '] ' + res.status + ' ' + body.slice(0, 160));
+    }
+    return res.json();
+  });
+}
+
+function fmtShortDate(dateStr){
+  var d = new Date(dateStr + 'T00:00:00');
+  if(isNaN(d.getTime())) return dateStr || '—';
+  return d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+}
+
+function fmtChartDate(dateStr){
+  var d = new Date(dateStr + 'T00:00:00');
+  if(isNaN(d.getTime())) return dateStr || '—';
+  return d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+}
+
+function isoDate(date){
+  return date.getFullYear() + '-' + tcPadDate(date.getMonth() + 1) + '-' + tcPadDate(date.getDate());
+}
+
+function daysAgoISO(days){
+  var d = new Date();
+  d.setDate(d.getDate() - days);
+  return isoDate(d);
+}
+
+function addDaysISO(dateStr, days){
+  var d = new Date(dateStr + 'T00:00:00');
+  if(isNaN(d.getTime())) return dateStr;
+  d.setDate(d.getDate() + (days || 0));
+  return isoDate(d);
+}
+
+function startOfYearPrice(series){
+  var year = String(new Date().getFullYear());
+  for(var i = 0; i < (series || []).length; i++){
+    if((series[i].snapshot_date || '').slice(0, 4) === year) return series[i].price_close;
+  }
+  return null;
+}
+
+function nearestPriceIndex(series, dateStr){
+  if(!series || !series.length) return 0;
+  var target = new Date(dateStr + 'T00:00:00').getTime();
+  var bestIdx = 0;
+  var bestDiff = Math.abs(new Date(series[0].snapshot_date + 'T00:00:00').getTime() - target);
+  for(var i = 1; i < series.length; i++){
+    var diff = Math.abs(new Date(series[i].snapshot_date + 'T00:00:00').getTime() - target);
+    if(diff < bestDiff){
+      bestDiff = diff;
+      bestIdx = i;
+    }
+  }
+  return bestIdx;
+}
+
+function nearestPricePoint(series, dateStr){
+  if(!series || !series.length) return null;
+  return series[nearestPriceIndex(series, dateStr)] || null;
+}
+
+async function fetchPriceHistory(ticker, days){
+  var res = await fetch('/api/price-history?ticker=' + encodeURIComponent(ticker) + '&days=' + (days || 730));
+  if(!res.ok){
+    var body = await res.text().catch(function(){ return ''; });
+    throw new Error('Price API ' + res.status + ' ' + body.slice(0, 120));
+  }
+  var json = await res.json();
+  return Array.isArray(json.series) ? json.series : [];
+}
+
+function getStoryForTicker(ticker){
+  return DATA.find(function(row){ return row.ticker === ticker; }) || null;
+}
+
+function getTickerDisplayName(ticker){
+  var story = getStoryForTicker(ticker);
+  return story && story.company_name ? story.company_name : ticker;
+}
+
+function classifyNarrativeEvent(row){
+  var verdict = (row.verdict || '').toLowerCase();
+  var sentiment = row.sentiment_score;
+  if(verdict.indexOf('trap') !== -1 || verdict.indexOf('mislead') !== -1 || (sentiment != null && sentiment < 45)) return 'bear';
+  if(verdict.indexOf('support') !== -1 || verdict.indexOf('verified') !== -1 || (sentiment != null && sentiment >= 60)) return 'bull';
+  return 'neutral';
+}
+
+function dedupeEvents(events){
+  var seen = {};
+  return (events || []).filter(function(ev){
+    var key = [ev.date_iso, ev.type, ev.label].join('|');
+    if(seen[key]) return false;
+    seen[key] = true;
+    return true;
+  });
+}
+
+function generateOpexEvents(series){
+  if(!series || !series.length) return [];
+  var start = new Date(series[0].snapshot_date + 'T00:00:00');
+  var end = new Date(series[series.length - 1].snapshot_date + 'T00:00:00');
+  var current = new Date(start.getFullYear(), start.getMonth(), 1);
+  var events = [];
+  while(current <= end){
+    var firstDay = new Date(current.getFullYear(), current.getMonth(), 1);
+    var firstFridayOffset = (5 - firstDay.getDay() + 7) % 7;
+    var thirdFriday = 1 + firstFridayOffset + 14;
+    var ds = isoDate(new Date(current.getFullYear(), current.getMonth(), thirdFriday));
+    if(ds >= series[0].snapshot_date && ds <= series[series.length - 1].snapshot_date){
+      var pt = nearestPricePoint(series, ds);
+      events.push({
+        date_iso: ds,
+        date: fmtShortDate(ds),
+        type: 'opex',
+        label: 'Monthly options expiration (OPEX)',
+        price: pt ? pt.price_close : null
+      });
+    }
+    current = new Date(current.getFullYear(), current.getMonth() + 1, 1);
+  }
+  return events;
+}
+
+function buildNarrativeRanges(model){
+  var ranges = {};
+  [['3m',95],['6m',190],['1y',370],['all',5000]].forEach(function(entry){
+    var range = entry[0];
+    var days = entry[1];
+    var cutoff = range === 'all' ? null : daysAgoISO(days);
+    var subset = cutoff ? model.series.filter(function(pt){ return pt.snapshot_date >= cutoff; }) : model.series.slice();
+    if(!subset.length) subset = model.series.slice();
+    var start = subset.length ? subset[0].snapshot_date : null;
+    var end = subset.length ? subset[subset.length - 1].snapshot_date : null;
+    var events = dedupeEvents((model.events || []).concat(generateOpexEvents(subset)).filter(function(ev){
+      return (!start || ev.date_iso >= start) && (!end || ev.date_iso <= end);
+    })).map(function(ev){
+      return Object.assign({}, ev, { idx: nearestPriceIndex(subset, ev.date_iso) });
+    }).sort(function(a,b){ return (a.date_iso || '').localeCompare(b.date_iso || ''); });
+    ranges[range] = {
+      labels: subset.map(function(pt){ return fmtChartDate(pt.snapshot_date); }),
+      prices: subset.map(function(pt){ return pt.price_close; }),
+      events: events
+    };
+  });
+  return ranges;
+}
+
+async function ensureLiveNarrativeHistory(ticker){
+  ticker = (ticker || '').toUpperCase();
+  if(!ticker) throw new Error('Ticker required');
+  if(LIVE_NHT_CACHE[ticker]) return LIVE_NHT_CACHE[ticker];
+
+  var prices = await fetchPriceHistory(ticker, 730).catch(function(){ return []; });
+  if(!prices.length){
+    prices = await restFetch('ticker_snapshots', {
+      select:'snapshot_date,price_close',
+      ticker:'eq.' + ticker,
+      order:'snapshot_date.asc',
+      limit:'730'
+    }).catch(function(){ return []; });
+  }
+  prices = (prices || []).filter(function(row){ return row && row.snapshot_date && row.price_close != null; });
+
+  var narratives = await restFetch('narrative_analyses', {
+    select:'ticker,snapshot_date,narrative_text,verdict,sentiment_score,narrative_type',
+    ticker:'eq.' + ticker,
+    order:'snapshot_date.asc',
+    limit:'250'
+  }).catch(function(){ return []; });
+
+  var earningsRows = await restFetch('earnings_window_active', {
+    select:'ticker,days_to_earnings,earnings_position,earnings_window_flag,narrative_earnings_alignment,snapshot_date',
+    ticker:'eq.' + ticker,
+    order:'snapshot_date.desc',
+    limit:'5'
+  }).catch(function(){ return []; });
+
+  var events = (narratives || []).map(function(row){
+    var pt = nearestPricePoint(prices, row.snapshot_date);
+    return {
+      date_iso: row.snapshot_date,
+      date: fmtShortDate(row.snapshot_date),
+      type: classifyNarrativeEvent(row),
+      label: row.narrative_text || 'Narrative update',
+      verdict: row.verdict || '',
+      price: pt ? pt.price_close : null
+    };
+  });
+
+  var nearestEarnings = (earningsRows || []).slice().sort(function(a,b){
+    return (a.days_to_earnings || 9999) - (b.days_to_earnings || 9999);
+  })[0];
+  if(nearestEarnings && nearestEarnings.snapshot_date){
+    var earningsDate = addDaysISO(nearestEarnings.snapshot_date, nearestEarnings.days_to_earnings || 0);
+    var earningsPrice = nearestPricePoint(prices, earningsDate);
+    events.push({
+      date_iso: earningsDate,
+      date: fmtShortDate(earningsDate),
+      type: 'earnings',
+      label: 'Earnings window active' + (nearestEarnings.narrative_earnings_alignment ? ' · ' + nearestEarnings.narrative_earnings_alignment : ''),
+      verdict: nearestEarnings.earnings_position || '',
+      price: earningsPrice ? earningsPrice.price_close : null
+    });
+  }
+
+  var currentPrice = prices.length ? prices[prices.length - 1].price_close : 0;
+  var yearOpen = startOfYearPrice(prices);
+  var ytd = currentPrice && yearOpen ? ((currentPrice - yearOpen) / yearOpen) * 100 : 0;
+  var model = {
+    ticker: ticker,
+    name: getTickerDisplayName(ticker),
+    price: currentPrice || 0,
+    ytd: ytd || 0,
+    series: prices,
+    events: events
+  };
+  model.ranges = buildNarrativeRanges(model);
+  LIVE_NHT_CACHE[ticker] = model;
+  return model;
+}
+
+function populateNHTTickerSelect(){
+  var select = document.getElementById('nht-ticker-select');
+  if(!select || !DATA.length) return;
+  var current = (nhtTicker || 'NVDA').toUpperCase();
+  var tickers = DATA.map(function(row){ return row.ticker; }).slice(0, 50);
+  if(tickers.indexOf(current) === -1) tickers.unshift(current);
+  select.innerHTML = tickers.map(function(ticker){
+    return '<option value="' + ticker + '"' + (ticker === current ? ' selected' : '') + '>' + ticker + ' — ' + getTickerDisplayName(ticker) + '</option>';
+  }).join('');
+}
+
+function syncMiniNarrativeChart(model){
+  ['3m','6m','1y'].forEach(function(range){
+    var rd = model.ranges[range] || { labels:[], prices:[], events:[] };
+    NH_DATA[range] = {
+      labels: rd.labels,
+      prices: rd.prices,
+      dots: (rd.events || []).filter(function(ev){
+        return ev.type === 'bull' || ev.type === 'bear' || ev.type === 'neutral';
+      }).map(function(ev){
+        return { idx:ev.idx, type:ev.type === 'neutral' ? 'watch' : ev.type, label:ev.label, date:ev.date };
+      }).slice(-10)
+    };
+  });
+}
+
+renderNHChart = function(){
+  var d = NH_DATA[nhRange];
+  var ctx = document.getElementById('nh-chart');
+  if(!ctx) return;
+  if(nhChart) nhChart.destroy();
+  if(!d || !d.labels || !d.labels.length){
+    var evWrap = document.getElementById('nh-events');
+    if(evWrap) evWrap.innerHTML = '<div class="empty-state">Loading live narrative timeline…</div>';
+    return;
+  }
+  var pointBg = d.prices.map(function(_, i){
+    var dot = d.dots.find(function(dd){ return dd.idx === i; });
+    if(!dot) return 'transparent';
+    return dot.type === 'bull' ? 'rgba(0,229,180,1)' : dot.type === 'bear' ? 'rgba(255,107,107,1)' : 'rgba(239,159,39,1)';
+  });
+  var pointR = d.prices.map(function(_, i){ return d.dots.find(function(dd){ return dd.idx === i; }) ? 6 : 0; });
+  var pointBorder = d.prices.map(function(_, i){
+    var dot = d.dots.find(function(dd){ return dd.idx === i; });
+    if(!dot) return 'transparent';
+    return dot.type === 'bull' ? 'rgba(0,229,180,.3)' : dot.type === 'bear' ? 'rgba(255,107,107,.3)' : 'rgba(239,159,39,.3)';
+  });
+  var pointBorderW = d.prices.map(function(_, i){ return d.dots.find(function(dd){ return dd.idx === i; }) ? 4 : 0; });
+  var isLt = document.documentElement.getAttribute('data-theme') === 'light';
+  nhChart = new Chart(ctx, {
+    type:'line',
+    data:{ labels:d.labels, datasets:[{ data:d.prices, borderColor:isLt ? '#1A6EFF' : '#F0F4FF', borderWidth:2, fill:true, backgroundColor:isLt ? 'rgba(26,110,255,0.06)' : 'rgba(26,110,255,0.08)', tension:.3, pointBackgroundColor:pointBg, pointRadius:pointR, pointBorderColor:pointBorder, pointBorderWidth:pointBorderW, pointHoverRadius:8 }] },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label:function(ctx){ var dot = d.dots.find(function(dd){ return dd.idx === ctx.dataIndex; }); return dot ? '$' + ctx.raw.toFixed(2) + ' — ' + dot.label : '$' + ctx.raw.toFixed(2); } }, backgroundColor:isLt ? '#fff' : '#141D35', titleColor:isLt ? '#1A1D2B' : '#F0F4FF', bodyColor:isLt ? '#5A6072' : '#8B97B8', borderColor:isLt ? 'rgba(0,0,0,.1)' : 'rgba(255,255,255,.1)', borderWidth:1, padding:10, cornerRadius:8 } },
+      scales:{ x:{ grid:{ color:isLt ? 'rgba(0,0,0,.05)' : 'rgba(255,255,255,.04)' }, ticks:{ color:isLt ? '#8B90A0' : '#4A5578', font:{ family:'DM Mono', size:10 } } }, y:{ grid:{ color:isLt ? 'rgba(0,0,0,.05)' : 'rgba(255,255,255,.04)' }, ticks:{ color:isLt ? '#8B90A0' : '#4A5578', font:{ family:'DM Mono', size:10 }, callback:function(v){ return '$' + v; } } } }
+    }
+  });
+  document.getElementById('nh-events').innerHTML = d.dots.map(function(dot){
+    var cls = dot.type === 'bull' ? 'nh-event-bull' : dot.type === 'bear' ? 'nh-event-bear' : 'nh-event-watch';
+    var lbl = dot.type === 'bull' ? 'Bullish' : dot.type === 'bear' ? 'Bearish' : 'Monitoring';
+    return '<div class="nh-event"><div class="nh-event-date">' + dot.date + '</div><div class="nh-event-title">' + esc(dot.label) + '</div><span class="nh-event-type ' + cls + '">' + lbl + '</span></div>';
+  }).join('');
+};
+
+loadNHT = async function(ticker){
+  nhtTicker = (ticker || '').toUpperCase();
+  if(!nhtTicker) return;
+  nhtRange = '3m';
+  document.querySelectorAll('.nht-range-tab').forEach(function(btn){ btn.classList.toggle('active', btn.textContent === '3M'); });
+  nhtSentFilter = 'all';
+  document.querySelectorAll('.nht-sent-btn').forEach(function(btn, index){ btn.classList.toggle('active', index === 0); });
+  document.getElementById('nht-title').textContent = nhtTicker;
+  document.getElementById('nht-price').textContent = 'Loading…';
+  document.getElementById('nht-ytd').textContent = 'Fetching live data';
+  document.getElementById('nht-events-grid').innerHTML = '<div class="empty-state">Loading live narrative history…</div>';
+  document.getElementById('nht-event-list').innerHTML = '';
+  document.getElementById('nht-event-count').textContent = '0';
+  var model = await ensureLiveNarrativeHistory(nhtTicker);
+  syncMiniNarrativeChart(model);
+  renderNHChart();
+  renderNHT();
+};
+
+renderNHT = function(){
+  var model = LIVE_NHT_CACHE[nhtTicker];
+  if(!model) return;
+  var rd = model.ranges[nhtRange] || model.ranges['3m'];
+  document.getElementById('nht-title').textContent = nhtTicker;
+  document.getElementById('nht-price').textContent = '$' + model.price.toFixed(2);
+  var ytdEl = document.getElementById('nht-ytd');
+  ytdEl.textContent = (model.ytd >= 0 ? '▲ +' : '▼ ') + model.ytd.toFixed(1) + '% YTD';
+  ytdEl.className = 'nht-ytd ' + (model.ytd >= 0 ? 'delta-pos' : 'delta-neg');
+  var filtered = (rd.events || []).filter(function(ev){
+    if(ev.type === 'earnings' && !nhtLayers.earnings) return false;
+    if(ev.type === 'opex' && !nhtLayers.opex) return false;
+    if((ev.type === 'bull' || ev.type === 'bear' || ev.type === 'neutral') && !nhtLayers.stories) return false;
+    if(nhtSentFilter !== 'all'){
+      if(nhtSentFilter === 'bull' && ev.type !== 'bull') return false;
+      if(nhtSentFilter === 'bear' && ev.type !== 'bear') return false;
+      if(nhtSentFilter === 'neutral' && ev.type !== 'neutral' && ev.type !== 'earnings' && ev.type !== 'opex') return false;
+    }
+    return true;
+  });
+  var ctx = document.getElementById('nht-chart');
+  if(!ctx) return;
+  if(nhtChart) nhtChart.destroy();
+  var isLt = document.documentElement.getAttribute('data-theme') === 'light';
+  function evColor(type){
+    if(type === 'bull') return 'rgba(0,229,180,1)';
+    if(type === 'bear') return 'rgba(255,107,107,1)';
+    if(type === 'earnings') return 'rgba(123,97,255,1)';
+    if(type === 'opex') return 'rgba(239,159,39,1)';
+    return 'rgba(139,151,184,1)';
+  }
+  var pointBg = rd.prices.map(function(_, i){ var ev = filtered.find(function(item){ return item.idx === i; }); return ev ? evColor(ev.type) : 'transparent'; });
+  var pointR = rd.prices.map(function(_, i){ var ev = filtered.find(function(item){ return item.idx === i; }); return !ev ? 0 : (ev.type === 'earnings' ? 10 : 6); });
+  var pointBorder = rd.prices.map(function(_, i){ var ev = filtered.find(function(item){ return item.idx === i; }); return !ev ? 'transparent' : evColor(ev.type).replace(',1)', ',0.3)'); });
+  var pointBorderW = rd.prices.map(function(_, i){ var ev = filtered.find(function(item){ return item.idx === i; }); return ev ? (ev.type === 'earnings' ? 3 : 4) : 0; });
+  var pointStyle = rd.prices.map(function(_, i){ var ev = filtered.find(function(item){ return item.idx === i; }); return !ev ? 'circle' : (ev.type === 'opex' ? 'diamond' : 'circle'); });
+  var earningsLabelPlugin = { id:'earningsLabels', afterDatasetsDraw:function(chart){ var meta = chart.getDatasetMeta(0); var cx = chart.ctx; filtered.forEach(function(ev){ if(ev.type !== 'earnings') return; var pt = meta.data[ev.idx]; if(!pt) return; cx.save(); cx.font = 'bold 9px DM Mono'; cx.fillStyle = '#fff'; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText('E', pt.x, pt.y); cx.restore(); }); } };
+  nhtChart = new Chart(ctx, { type:'line', data:{ labels:rd.labels, datasets:[{ data:rd.prices, borderColor:'#FF6B4A', borderWidth:2.5, fill:false, tension:.3, pointBackgroundColor:pointBg, pointRadius:pointR, pointBorderColor:pointBorder, pointBorderWidth:pointBorderW, pointStyle:pointStyle, pointHoverRadius:10 }] }, plugins:[earningsLabelPlugin], options:{ responsive:true, maintainAspectRatio:false, onClick:function(evt, elements){ if(!elements.length) return; var idx = elements[0].index; var ev = filtered.find(function(item){ return item.idx === idx; }); if(ev) highlightNHTEvent(ev); }, plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ title:function(ctx){ var ev = filtered.find(function(item){ return item.idx === ctx[0].dataIndex; }); return ev ? ev.date : ''; }, label:function(ctx){ var ev = filtered.find(function(item){ return item.idx === ctx.dataIndex; }); var lines = ['$' + ctx.raw.toFixed(2)]; if(ev) lines.push(ev.label); return lines; } }, backgroundColor:isLt ? '#fff' : '#141D35', titleColor:isLt ? '#1A1D2B' : '#F0F4FF', bodyColor:isLt ? '#5A6072' : '#8B97B8', borderColor:isLt ? 'rgba(0,0,0,.1)' : 'rgba(255,255,255,.1)', borderWidth:1, padding:12, cornerRadius:8, maxWidth:300, bodyFont:{ size:11 } } }, scales:{ x:{ grid:{ color:isLt ? 'rgba(0,0,0,.05)' : 'rgba(255,255,255,.04)', drawBorder:false }, ticks:{ color:isLt ? '#8B90A0' : '#4A5578', font:{ family:'DM Mono', size:10 } } }, y:{ grid:{ color:isLt ? 'rgba(0,0,0,.05)' : 'rgba(255,255,255,.04)', drawBorder:false }, ticks:{ color:isLt ? '#8B90A0' : '#4A5578', font:{ family:'DM Mono', size:10 }, callback:function(v){ return '$' + v; } } } } } });
+  var storyEvents = filtered.filter(function(ev){ return ev.type === 'bull' || ev.type === 'bear' || ev.type === 'neutral'; }).slice(-8).reverse();
+  document.getElementById('nht-events-grid').innerHTML = storyEvents.map(function(ev){
+    var dotColor = ev.type === 'bull' ? 'var(--mp-teal)' : ev.type === 'bear' ? 'var(--mp-red)' : '#8B97B8';
+    return '<div class="nht-event-card" data-nht-idx="' + ev.idx + '" onclick="highlightNHTEvent((LIVE_NHT_CACHE[nhtTicker] && LIVE_NHT_CACHE[nhtTicker].ranges[nhtRange] ? LIVE_NHT_CACHE[nhtTicker].ranges[nhtRange].events : []).find(function(item){ return item.idx===' + ev.idx + '; }))"><span class="dot" style="background:' + dotColor + ';"></span><span class="title">' + esc(ev.label) + '</span><div class="meta">' + ev.date + (ev.verdict ? ' · ' + ev.verdict : '') + '</div></div>';
+  }).join('');
+  var sortedEvents = filtered.slice().sort(function(a,b){ return (b.date_iso || '').localeCompare(a.date_iso || ''); });
+  document.getElementById('nht-event-count').textContent = sortedEvents.length;
+  document.getElementById('nht-event-list').innerHTML = sortedEvents.map(function(ev){
+    return '<div class="nht-event-row"><span class="ev-date">' + ev.date + '</span><span class="ev-dot" style="background:' + evColor(ev.type) + ';"></span><span class="ev-text">' + esc(ev.label) + '</span><span class="ev-price">' + (ev.price != null ? '$' + ev.price.toFixed(2) : '—') + '</span></div>';
+  }).join('');
+};
+
+highlightNHTEvent = function(ev){
+  if(!ev) return;
+  document.querySelectorAll('.nht-event-card').forEach(function(card){
+    card.classList.toggle('active', parseInt(card.dataset.nhtIdx, 10) === ev.idx);
+  });
+  if(nhtChart){
+    nhtChart.setActiveElements([{ datasetIndex:0, index:ev.idx }]);
+    nhtChart.tooltip.setActiveElements([{ datasetIndex:0, index:ev.idx }], { x:0, y:0 });
+    nhtChart.update();
+  }
+};
+
+tcLoadQueued = function(){
+  try {
+    var localKey = CURRENT_USER ? TC_STORAGE_KEY + ':' + CURRENT_USER.id : TC_STORAGE_KEY;
+    var local = JSON.parse(localStorage.getItem(localKey) || localStorage.getItem(TC_STORAGE_KEY));
+    if(local && typeof local === 'object') tcQueued = local;
+  } catch(_) {}
+  if(SUPA && CURRENT_USER){
+    SUPA.from('user_calendar_state')
+      .select('calendar_data')
+      .eq('user_id', CURRENT_USER.id)
+      .maybeSingle()
+      .then(function(result){
+        if(result && result.data && result.data.calendar_data && typeof result.data.calendar_data === 'object'){
+          tcQueued = result.data.calendar_data;
+          if(tcCalBooted){
+            tcRenderCalendar();
+            tcUpdateQueuedBadges();
+            tcUpdateSummary();
+          }
+        }
+      })
+      .catch(function(err){
+        console.warn('Calendar state load failed', err && err.message ? err.message : err);
+      });
+  }
+};
+
+tcSaveQueued = function(){
+  try {
+    var localKey = CURRENT_USER ? TC_STORAGE_KEY + ':' + CURRENT_USER.id : TC_STORAGE_KEY;
+    localStorage.setItem(localKey, JSON.stringify(tcQueued));
+  } catch(_) {}
+  var dot = document.getElementById('tc-cal-save-dot');
+  if(dot){ dot.classList.remove('pulse'); void dot.offsetWidth; dot.classList.add('pulse'); }
+  if(!SUPA || !CURRENT_USER) return;
+  clearTimeout(TC_REMOTE_SAVE_TIMER);
+  TC_REMOTE_SAVE_TIMER = setTimeout(function(){
+    SUPA.from('user_calendar_state').upsert({
+      user_id: CURRENT_USER.id,
+      calendar_data: tcQueued
+    }, { onConflict: 'user_id' }).then(function(result){
+      if(result && result.error) throw result.error;
+    }).catch(function(err){
+      console.warn('Calendar state save failed', err && err.message ? err.message : err);
+    });
+  }, 350);
+};
+
+function getLiveSignalBias(row, story){
+  if((story && story.prism_verdict === 'Narrative Trap') || row.narrative_earnings_alignment === 'CONTRADICTED'){
+    return { text:'FADE RALLIES', rarity:'Rare', color:'var(--mp-red)' };
+  }
+  if((story && story.prism_verdict === 'Structurally Supported') || row.narrative_earnings_alignment === 'ALIGNED'){
+    return { text:'RIDE THE TREND', rarity:'Epic', color:'var(--mp-teal)' };
+  }
+  if((row.days_to_earnings || 0) <= 7){
+    return { text:'WATCH EARNINGS', rarity:'Uncommon', color:'var(--mp-blue)' };
+  }
+  return { text:'HOLD STEADY', rarity:'Common', color:'var(--mp-text-secondary)' };
+}
+
+async function loadTradingCalendarLive(){
+  if(!SUPABASE_URL || !SUPABASE_ANON) return;
+  var rows = await restFetch('earnings_window_active', {
+    select:'ticker,days_to_earnings,earnings_position,earnings_window_flag,narrative_earnings_alignment,eps_actual,revenue_actual,earnings_surprise_pct,data_source,snapshot_date',
+    order:'days_to_earnings.asc,ticker.asc',
+    limit:'120'
+  }).catch(function(){ return []; });
+  LIVE_EARNINGS_ROWS = (rows || []).filter(function(row){
+    return row && row.ticker && row.snapshot_date && row.days_to_earnings != null && row.days_to_earnings >= 0;
+  });
+  LIVE_EARNINGS_BY_DATE = {};
+  LIVE_EARNINGS_ROWS.forEach(function(row){
+    var eventDate = addDaysISO(row.snapshot_date, row.days_to_earnings || 0);
+    if(!LIVE_EARNINGS_BY_DATE[eventDate]) LIVE_EARNINGS_BY_DATE[eventDate] = [];
+    LIVE_EARNINGS_BY_DATE[eventDate].push(row);
+  });
+
+  var topRows = LIVE_EARNINGS_ROWS.slice(0, 5);
+  var priceSeries = await Promise.all(topRows.map(function(row){
+    return fetchPriceHistory(row.ticker, 30).catch(function(){ return []; });
+  }));
+  TC_SIGNALS = topRows.map(function(row, index){
+    var story = getStoryForTicker(row.ticker) || {};
+    var series = priceSeries[index] || [];
+    var latest = series.length ? series[series.length - 1] : null;
+    var prev = series.length > 1 ? series[series.length - 2] : null;
+    var livePrice = latest && latest.price_close != null ? latest.price_close : story.price;
+    var liveChangePct = latest && prev && prev.price_close ? ((latest.price_close - prev.price_close) / prev.price_close) * 100 : story.price_change_pct;
+    var delta = fmtDelta(liveChangePct);
+    var bias = getLiveSignalBias(row, story);
+    var confidence = story.narrative_health != null ? Math.round(story.narrative_health) : 55;
+    return {
+      id: row.ticker.toLowerCase(),
+      ticker: row.ticker,
+      name: getTickerDisplayName(row.ticker),
+      price: livePrice != null ? '$' + fmtPrice(livePrice) : '—',
+      change: delta.txt,
+      changeDir: liveChangePct > 0 ? 'up' : liveChangePct < 0 ? 'down' : 'flat',
+      rarity: bias.rarity,
+      ac: bias.color,
+      bias: bias.text,
+      conf: Math.max(40, Math.min(95, confidence)) + '%',
+      window: (row.days_to_earnings || 0) + 'd to earnings',
+      logo: '',
+      eventDate: addDaysISO(row.snapshot_date, row.days_to_earnings || 0)
+    };
+  });
+  if(tcCalBooted){
+    tcRenderCards();
+    tcRenderCalendar();
+    tcUpdateQueuedBadges();
+    tcUpdateSummary();
+    tcCarouselGo(0);
+  }
+}
+
+tcGetEventsForDate = function(dateStr){
+  var evts = [];
+  if(TC_HOLIDAYS_2026[dateStr]) evts.push({type:'holiday',color:'var(--mp-red)',label:TC_HOLIDAYS_2026[dateStr],detail:'NYSE Closed'});
+  TC_FOMC_2026.forEach(function(f){
+    if(dateStr === f.d1) evts.push({type:'fomc',color:'var(--mp-amber)',label:'FOMC Day 1' + (f.sep ? ' ★' : ''),detail:'Federal Open Market Committee meeting begins'});
+    if(dateStr === f.d2) evts.push({type:'fomc',color:'var(--mp-amber)',label:'FOMC Decision' + (f.sep ? ' ★' : ''),detail:'Rate decision at 2:00 PM ET' + (f.sep ? ' — SEP & dot-plot release' : '')});
+  });
+  if(TC_OPEX_2026[dateStr]) evts.push({type:'opex',color:'var(--mp-violet)',label:TC_OPEX_2026[dateStr],detail:'Monthly options expiration'});
+  if(TC_QUAD_2026[dateStr]) evts.push({type:'quad',color:'#FF6B9D',label:'Quad Witching',detail:'Stock index futures, options, and stock options expire'});
+  (LIVE_EARNINGS_BY_DATE[dateStr] || []).forEach(function(row){
+    evts.push({
+      type:'earn',
+      color:'var(--mp-teal)',
+      label:row.ticker + ' Earnings',
+      detail:(row.earnings_position || 'NEUTRAL') + (row.narrative_earnings_alignment ? ' · ' + row.narrative_earnings_alignment : '')
+    });
+  });
+  return evts;
+};
+
 // ── Sync stories col height to cards col ──
 function syncStoriesHeight(){
   var section=document.querySelector('.trading-cards-section');
@@ -5778,11 +6387,23 @@ var _deck=document.getElementById('trading-deck');
 if(_deck)_syncObs.observe(_deck,{childList:true,subtree:true});
 window.addEventListener('resize',syncStoriesHeight);
 // ── Boot ──────────────────────────────────────────────────────────────────────
-loadData();
-renderNHChart();
-renderNHT();
-setInterval(loadData,5*60*1000);
-document.addEventListener('visibilitychange',function(){if(!document.hidden)loadData();});
+ensureDashboardAuth().then(function(user){
+  if(!user) return;
+  loadData();
+});
+setInterval(function(){
+  ensureDashboardAuth().then(function(user){
+    if(!user) return;
+    loadData();
+  });
+},5*60*1000);
+document.addEventListener('visibilitychange',function(){
+  if(document.hidden) return;
+  ensureDashboardAuth().then(function(user){
+    if(!user) return;
+    loadData();
+  });
+});
 
 // ── Market Scholar AI ────────────────────────────────────────────────────────
 (function(){
@@ -6294,3 +6915,4 @@ window.MP_DOMAINS   = MP_DOMAINS;
 </script>
 </body>
 </html>
+
