@@ -161,7 +161,7 @@ body{
 .nav-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:150;}
 .nav-overlay.open{display:block;}
 /* ── MAIN ── */
-.main{margin-left:224px;flex:1;display:flex;flex-direction:column;min-height:100vh;}
+.main{margin-left:224px;flex:1;display:flex;flex-direction:column;min-height:100vh;overflow-x:hidden;}
 /* topbar */
 .topbar{
   position:sticky;top:0;z-index:50;
@@ -189,7 +189,7 @@ body{
 }
 .topbar-search::placeholder{color:var(--mp-text-tertiary);}
 /* ── PAGE CONTENT ── */
-.page-content{padding:24px 28px 64px;flex:1;}
+.page-content{padding:24px 28px 64px;flex:1;overflow-x:hidden;max-width:100%;}
 .tab-panel{display:none;}
 .tab-panel.active{display:block;}
 /* ── DAILY BRIEF ── */
@@ -201,7 +201,7 @@ body{
 .daily-desc{font-family:var(--font-body);font-size:13.5px;font-weight:300;color:#fff;line-height:1.7;margin-bottom:24px;max-width:420px;}
 .daily-desc strong{font-weight:500;color:#fff;}
 .debrief-prose{display:flex;flex-direction:column;gap:14px;}
-.dp-block{padding:16px 18px;background:var(--mp-surface);border:1px solid var(--mp-border);}
+.dp-block{padding:16px 18px;background:var(--mp-surface);border:1px solid var(--mp-border);overflow-wrap:break-word;word-wrap:break-word;min-width:0;}
 .dp-block.overnight{}
 .dp-block.narrative{}
 .dp-block.setup{}
@@ -222,7 +222,7 @@ body{
 .daily-stat-lbl{font-family:var(--font-mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#fff;}
 /* Daily watch list */
 .daily-watch-list{display:flex;flex-direction:column;gap:8px;}
-.daily-watch-item{display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:flex-start;padding:11px 14px;background:var(--mp-surface);border:1px solid var(--mp-border);border-left:2px solid;}
+.daily-watch-item{display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:flex-start;padding:11px 14px;background:var(--mp-surface);border:1px solid var(--mp-border);border-left:2px solid;min-width:0;overflow:hidden;}
 .dwi-fed{border-left-color:#00DE94;}
 .dwi-data{border-left-color:#38C8B8;}
 .dwi-earn{border-left-color:#00AEFF;}
@@ -264,7 +264,7 @@ body{
 .daily-panel-title{font-family:'Instrument Serif',var(--font-display),Georgia,serif;font-size:18px;font-weight:400;color:var(--mp-text-primary);letter-spacing:-0.01em;}
 .daily-panel-sub{font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#fff;margin-top:3px;}
 /* Opp rows */
-.daily-orow{display:grid;grid-template-columns:48px 1fr auto;gap:12px;align-items:flex-start;padding:12px 18px;border-bottom:1px solid var(--mp-border);cursor:pointer;transition:background 0.1s;}
+.daily-orow{display:grid;grid-template-columns:48px 1fr auto;gap:12px;align-items:flex-start;padding:12px 18px;border-bottom:1px solid var(--mp-border);cursor:pointer;transition:background 0.1s;min-width:0;overflow:hidden;}
 .daily-orow:last-child{border-bottom:none;}
 .daily-orow:hover{background:var(--mp-surface2);}
 .daily-otk{font-family:var(--font-mono);font-size:12px;font-weight:500;letter-spacing:.04em;color:var(--mp-text-primary);}
@@ -1305,6 +1305,21 @@ body{
   .daily-intel-grid{grid-template-columns:1fr;}
   .debrief-prose{gap:10px;}
   .dp-block{padding:12px 14px;}
+  /* Mobile overflow fixes */
+  .tab-panel{overflow-x:hidden;max-width:100%;}
+  .daily-watch-item{grid-template-columns:48px 1fr;gap:8px;}
+  .daily-watch-item>*:nth-child(3){grid-column:1/-1;}
+  .daily-orow{grid-template-columns:40px 1fr;gap:8px;}
+  .daily-oval{grid-column:1/-1;}
+  .daily-nrow{flex-wrap:wrap;}
+  .daily-nm{min-width:0;flex:1;}
+  .daily-ntx{overflow-wrap:break-word;word-wrap:break-word;}
+  .daily-ors{min-width:0;overflow-wrap:break-word;word-wrap:break-word;}
+  .daily-ors strong{font-size:12px;}
+  .daily-sent-row{flex-wrap:wrap;gap:8px;}
+  .daily-mover-claim{white-space:normal;-webkit-line-clamp:2;display:-webkit-box;-webkit-box-orient:vertical;}
+  .snap-filter-row{flex-wrap:wrap;gap:6px;}
+  .snapshots-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
 }
 /* ── SMALL MOBILE ── */
 @media(max-width:480px){
