@@ -1098,6 +1098,14 @@ body{
 .nht-legend-item{display:flex;align-items:center;gap:5px;font-size:10px;font-family:var(--font-mono);color:var(--mp-text-tertiary);}
 .nht-legend-dot{width:8px;height:8px;border-radius:50%;}
 .nht-legend-sq{width:10px;height:10px;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;}
+.nht-dl-btn{
+  width:30px;height:30px;border-radius:8px;border:1px solid var(--mp-border);
+  background:transparent;color:var(--mp-text-tertiary);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .2s,color .2s,border-color .2s;
+}
+.nht-dl-btn:hover{background:rgba(0,174,255,0.1);color:var(--mp-cyan);border-color:rgba(0,174,255,0.3);}
+.nht-dl-btn svg{width:14px;height:14px;}
 .nht-chart-wrap{padding:0 20px 12px;position:relative;height:320px;}
 .nht-events-grid{
   display:grid;grid-template-columns:repeat(2,1fr);gap:8px;
@@ -3180,11 +3188,16 @@ body{
             <span class="nht-price" id="nht-price">$142.50</span>
             <span class="nht-ytd delta-pos" id="nht-ytd">&#9650; +38.4% YTD</span>
           </div>
-          <div class="nht-range-tabs">
-            <button class="nht-range-tab" onclick="switchNHTRange('2y',this)">2Y</button>
-            <button class="nht-range-tab" onclick="switchNHTRange('1y',this)">1Y</button>
-            <button class="nht-range-tab" onclick="switchNHTRange('6m',this)">6M</button>
-            <button class="nht-range-tab active" onclick="switchNHTRange('3m',this)">3M</button>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="nht-range-tabs">
+              <button class="nht-range-tab" onclick="switchNHTRange('2y',this)">2Y</button>
+              <button class="nht-range-tab" onclick="switchNHTRange('1y',this)">1Y</button>
+              <button class="nht-range-tab" onclick="switchNHTRange('6m',this)">6M</button>
+              <button class="nht-range-tab active" onclick="switchNHTRange('3m',this)">3M</button>
+            </div>
+            <button class="nht-dl-btn" onclick="downloadNHTChart()" title="Download chart as image">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </button>
           </div>
         </div>
         <div class="nht-controls" style="padding:0 20px;">
@@ -4891,6 +4904,61 @@ function highlightNHTEvent(ev){
     nhtChart.tooltip.setActiveElements([{datasetIndex:0,index:ev.idx}],{x:0,y:0});
     nhtChart.update();
   }
+}
+// ── Download NHT chart as PNG ────────────────────────────────────────────────
+function downloadNHTChart(){
+  var canvas=document.getElementById('nht-chart');
+  if(!canvas||!nhtChart)return;
+  // Create a new canvas with background + header info baked in
+  var ticker=document.getElementById('nht-title').textContent||'chart';
+  var price=document.getElementById('nht-price').textContent||'';
+  var ytd=document.getElementById('nht-ytd').textContent||'';
+  var pad=24,headerH=56;
+  var w=canvas.width, h=canvas.height;
+  var exp=document.createElement('canvas');
+  exp.width=w+pad*2;
+  exp.height=h+headerH+pad*2;
+  var ctx=exp.getContext('2d');
+  // Background
+  ctx.fillStyle='#080B11';
+  ctx.fillRect(0,0,exp.width,exp.height);
+  // Header text
+  ctx.fillStyle='#FFFFFF';
+  ctx.font='bold 22px Inter, system-ui, sans-serif';
+  ctx.fillText(ticker,pad,pad+24);
+  var tickerW=ctx.measureText(ticker).width;
+  ctx.fillStyle='rgba(255,255,255,0.7)';
+  ctx.font='16px "Geist Mono", monospace';
+  ctx.fillText(price,pad+tickerW+14,pad+24);
+  var priceW=ctx.measureText(price).width;
+  ctx.fillStyle=ytd.includes('▲')||ytd.includes('+')?'#00DE94':'#FF4D4D';
+  ctx.font='13px "Geist Mono", monospace';
+  ctx.fillText(ytd,pad+tickerW+14+priceW+14,pad+24);
+  // Branding
+  ctx.fillStyle='rgba(255,255,255,0.25)';
+  ctx.font='10px Inter, system-ui, sans-serif';
+  ctx.textAlign='right';
+  ctx.fillText('Market Prism · Narrative History',exp.width-pad,pad+24);
+  ctx.textAlign='left';
+  // Chart image
+  ctx.drawImage(canvas,pad,headerH+pad,w,h);
+  // Bottom border line
+  ctx.strokeStyle='rgba(255,255,255,0.06)';
+  ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.moveTo(pad,headerH+pad-1);
+  ctx.lineTo(exp.width-pad,headerH+pad-1);
+  ctx.stroke();
+  // Download
+  exp.toBlob(function(blob){
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');
+    a.href=url;
+    a.download=ticker+'-narrative-history-'+new Date().toISOString().slice(0,10)+'.png';
+    a.click();
+    URL.revokeObjectURL(url);
+    tcgShowToast(ticker+' chart saved as image');
+  },'image/png');
 }
 // ── Discover heatmap ─────────────────────────────────────────────────────────
 async function loadDiscoverHeatmap(){
