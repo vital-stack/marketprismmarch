@@ -3228,6 +3228,7 @@ var DATA = [];
 var TRADE_CLASS_MAP = {};
 var PREDICTION_MAP  = {};
 var snapshotMap     = {};
+var LOVE_HATE_DATA  = [];
 var DOMAIN_MAP = {
   NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadcom.com',
   QCOM:'qualcomm.com',TSM:'tsmc.com',MRVL:'marvell.com',AMAT:'appliedmaterials.com',
@@ -3341,6 +3342,15 @@ async function loadData(){
     try{
       var ps=await fetch(SUPABASE_URL+'/rest/v1/prediction_scores?select=ticker,predicted_value&order=prediction_date.desc',{headers:hdrs});
       if(ps.ok)(await ps.json()).forEach(function(p){if(!PREDICTION_MAP[p.ticker])PREDICTION_MAP[p.ticker]=p;});
+    }catch(_){}
+    // daily trade labels (love/hate/trap)
+    try{
+      var lh=await fetch(SUPABASE_URL+'/rest/v1/daily_trade_labels?select=ticker,label,signal_strength,price,price_change_pct,primary_narrative,story_claim,prism_verdict&order=signal_strength.desc',{headers:hdrs});
+      if(lh.ok){
+        var lhRows=await lh.json();
+        var lhSeen=new Set();
+        LOVE_HATE_DATA=lhRows.filter(function(r){if(lhSeen.has(r.ticker))return false;lhSeen.add(r.ticker);return true;});
+      }
     }catch(_){}
     // dedup + merge
     var seen=new Set();
@@ -3873,26 +3883,40 @@ function renderSectors(){
 }
 // ── STOCKS WE LOVE / HATE (dynamic) ──────────────────────────────────────────
 function renderLoveHate(){
-  // Love = Structurally Supported, sorted by highest price_change_pct
-  var loved=DATA.filter(function(r){return r.prism_verdict==='Structurally Supported';})
-    .slice().sort(function(a,b){return(b.price_change_pct||0)-(a.price_change_pct||0);}).slice(0,3);
-  // Hate = Narrative Trap, sorted by worst price_change_pct
-  var hated=DATA.filter(function(r){return r.prism_verdict==='Narrative Trap';})
-    .slice().sort(function(a,b){return(a.price_change_pct||0)-(b.price_change_pct||0);}).slice(0,3);
+  var loved, hated;
+  if(LOVE_HATE_DATA.length){
+    // Use DB view — already sorted by signal_strength desc
+    loved=LOVE_HATE_DATA.filter(function(r){return r.label==='LOVE';}).slice(0,3);
+    hated=LOVE_HATE_DATA.filter(function(r){return r.label==='HATE'||r.label==='TRAP';}).slice(0,3);
+  }else{
+    // Fallback to prism_verdict from DATA
+    loved=DATA.filter(function(r){return r.prism_verdict==='Structurally Supported';})
+      .slice().sort(function(a,b){return(b.price_change_pct||0)-(a.price_change_pct||0);}).slice(0,3);
+    hated=DATA.filter(function(r){return r.prism_verdict==='Narrative Trap';})
+      .slice().sort(function(a,b){return(a.price_change_pct||0)-(b.price_change_pct||0);}).slice(0,3);
+  }
+  function labelText(r,type){
+    if(r.label==='TRAP') return 'Narrative Trap';
+    if(r.label==='HATE') return 'High Risk';
+    if(r.label==='LOVE') return 'Strong Signal';
+    return type==='love'?'Structurally Supported':'Narrative Trap';
+  }
   function buildRow(r,type){
     var cls=type==='love'?'lh-ticker-love':'lh-ticker-hate';
     var vcls=type==='love'?'lh-verdict-supported':'lh-verdict-trap';
-    var vlbl=type==='love'?'Structurally Supported':'Narrative Trap';
+    var vlbl=labelText(r,type);
     var delta=fmtDelta(r.price_change_pct);
     var domain=DOMAIN_MAP[r.ticker];
     var iconHTML=domain
       ?'<img src="https://www.google.com/s2/favicons?domain='+domain+'&sz=44" alt="'+esc(r.ticker)+'" style="width:16px;height:16px;object-fit:contain;border-radius:3px;display:inline-block;vertical-align:middle;margin-right:4px;" onerror="this.style.display=\'none\'">'
       :'';
+    var reason=r.story_claim||r.primary_narrative||r.primary_driver||'Signal under analysis';
+    var sigBadge=r.signal_strength!=null?'<span style="margin-left:6px;font-size:10px;color:var(--mp-text-muted);font-family:var(--font-mono);">'+r.signal_strength+'</span>':'';
     return '<a class="lh-row" href="/ticker/'+encodeURIComponent(r.ticker)+'" style="text-decoration:none;color:inherit;">'
       +'<div class="lh-row-body">'
-      +'<div class="lh-row-top"><span class="'+cls+'" style="display:inline-flex;align-items:center;gap:4px;">'+iconHTML+esc(r.ticker)+'</span></div>'
-      +'<div class="lh-reason">'+esc(r.synopsis||r.story_claim||r.primary_driver||'Signal under analysis')+'</div>'
-      +'<span class="lh-verdict '+vcls+'">'+vlbl+'</span>'
+      +'<div class="lh-row-top"><span class="'+cls+'" style="display:inline-flex;align-items:center;gap:4px;">'+iconHTML+esc(r.ticker)+sigBadge+'</span></div>'
+      +'<div class="lh-reason">'+esc(reason)+'</div>'
+      +'<span class="lh-verdict '+vcls+'">'+esc(vlbl)+'</span>'
       +'</div>'
       +'<div class="lh-price-col">'
       +'<div class="lh-price">$'+fmtPrice(r.price)+'</div>'
