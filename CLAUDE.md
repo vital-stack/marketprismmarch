@@ -20,8 +20,15 @@ These rules apply to ALL UI work. Never deviate without explicit user approval.
 |------|------|----------|
 | Display / Hero | `Instrument Serif` | `DM Serif Display`, Georgia, serif |
 | Body / UI | `Inter` | `DM Sans`, system-ui, sans-serif |
-| Mono / Data | `Geist Mono` | `DM Mono`, monospace |
+| ~~Mono / Data~~ | **BANNED** — do not use `Geist Mono`, `DM Mono`, or any monospace font. Use `Inter` for all data/numbers. |
 | Card Commands | `Anton` | Impact, sans-serif |
+
+### Banned Fonts — NEVER USE
+- `Geist Mono` — removed from codebase, do not reintroduce
+- `DM Mono` — removed from codebase, do not reintroduce
+- Any `monospace` font-family — all data, labels, badges, chart axes, and canvas text must use `Inter` or `var(--font-body)`
+- Do not add monospace to Google Fonts imports
+- Do not use `var(--font-mono)`, `var(--mono)`, or `var(--font-m)` CSS variables
 
 ### Font Size Minimums — NO EXCEPTIONS
 - Body text / descriptions: minimum **13px**
