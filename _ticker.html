@@ -1577,6 +1577,71 @@
     line-height: 1.1;
     margin-bottom: 6px;
   }
+  /* ── Mini Signal Card (hero area) ── */
+  .hero-signal-card {
+    display: inline-flex;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--mp-surface);
+    margin-top: 12px;
+    margin-bottom: 6px;
+    max-width: 420px;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  .hsc-accent {
+    width: 3px;
+    flex-shrink: 0;
+  }
+  .hsc-body {
+    padding: 12px 18px 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .hsc-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .hsc-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .10em;
+    text-transform: uppercase;
+    color: var(--mp-text-tertiary);
+  }
+  .hsc-conf {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .02em;
+  }
+  .hsc-bias {
+    font-family: 'Anton', var(--font-body), sans-serif;
+    font-size: 26px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    line-height: 1.15;
+  }
+  .hsc-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 2px;
+  }
+  .hsc-chip {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .04em;
+    color: var(--mp-text-tertiary);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
   .hero-sector { font-size: 12px; color: var(--mp-text-tertiary); margin-top: 4px; }
   .hero-right { text-align: right; flex-shrink: 0; position: relative; z-index: 1; }
   .hero-price {
@@ -1692,6 +1757,8 @@
   [data-theme="light"] .sidebar-logo span { color: var(--text-primary); }
   [data-theme="light"] .section-body { background: #FFFFFF; }
   [data-theme="light"] .section-body:hover { border-color: rgba(0,174,255,0.15); }
+  [data-theme="light"] .hero-signal-card { background: #FFFFFF; border-color: rgba(0,0,0,0.10); }
+  [data-theme="light"] .hsc-chip { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.08); color: var(--text-secondary); }
   [data-theme="light"] .ticker-hero::after { background: radial-gradient(circle, rgba(0,174,255,0.04) 0%, transparent 65%); }
   [data-theme="light"] .chart-tip { background: #FFFFFF; color: var(--text-primary); }
   [data-theme="light"] .diag-cell { background: #FFFFFF; }
@@ -1704,6 +1771,8 @@
     .hero-ticker { font-size: 28px; }
     .hero-claim { font-size: 14px; }
     .hero-bias { font-size: 24px; }
+    .hsc-bias { font-size: 22px; }
+    .hero-signal-card { max-width: 100%; }
     .hero-price { font-size: 24px; }
     .section-label { font-size:11px; }
     .tk-main-split { grid-template-columns: 1fr; gap: 16px; }
@@ -1714,6 +1783,7 @@
     .hero-ticker { font-size: 24px; }
     .hero-claim { font-size: 14px; }
     .hero-bias { font-size: 20px; }
+    .hsc-bias { font-size: 18px; }
     .hero-price { font-size: 20px; }
     .tk-tab { padding: 10px 10px; font-size:11px; }
     .si-grid { grid-template-columns: 1fr; }
@@ -2195,7 +2265,7 @@ async function loadHero() {
       'sector_trap_flag','sector_trap_name','days_to_options_expiry','next_options_expiry'
     ].join(',');
 
-    const [rows, healthRows, snapRows] = await Promise.all([
+    const [rows, healthRows, snapRows, tradeRows] = await Promise.all([
       sbFetch('v_dash_daily_story', { select: cols, ticker: `eq.${TICKER}`, order: 'snapshot_date.desc', limit: '1' }),
       sbFetch('v_dash_narrative_health', {
         select: 'narrative_health,narrative_trend,attention_trend',
@@ -2205,6 +2275,12 @@ async function loadHero() {
       }).catch(() => []),
       sbFetch('ticker_snapshots', {
         select: 'snapshot_date,price_close,price_change_pct',
+        ticker: `eq.${TICKER}`,
+        order:  'snapshot_date.desc',
+        limit:  '1'
+      }).catch(() => []),
+      sbFetch('trade_classifications', {
+        select: 'primary_label,primary_confidence,shortest_timeframe,longest_timeframe',
         ticker: `eq.${TICKER}`,
         order:  'snapshot_date.desc',
         limit:  '1'
@@ -2240,17 +2316,35 @@ async function loadHero() {
     const stockTypeBadge = r.stock_type
       ? `<span class="hero-stock-type">${esc(r.stock_type)}</span>` : '';
 
-    // Determine bias from verdict + trend
-    const biasText = verdict === 'Narrative Trap' ? 'FADE RALLIES'
+    // Determine bias from trade_classifications (same logic as trading cards)
+    const LABEL_TO_BIAS = {
+      'MOMENTUM_RIDE':           'Ride the Trend',
+      'SPECULATIVE':             'Wait for Break',
+      'FADE_THE_HYPE':           'Fade Rallies',
+      'NARRATIVE_TRAP':          'Fade Rallies',
+      'FUNDAMENTAL_DISCONNECT':  'Hedge Exposure',
+      'CATALYST_PENDING':        'Wait for Break',
+      'ACCUMULATE':              'Add on Dips',
+      'FOREIGN_OPAQUE':          'Hold Steady'
+    };
+    const tc = (tradeRows || [])[0] || {};
+    let biasText = tc.primary_label && LABEL_TO_BIAS[tc.primary_label]
+      ? LABEL_TO_BIAS[tc.primary_label].toUpperCase()
+      : verdict === 'Narrative Trap' ? 'FADE RALLIES'
       : verdict === 'Structurally Supported' ? 'RIDE THE TREND'
       : h.narrative_trend === 'Rising' ? 'BUY THE DIP'
       : h.narrative_trend === 'Collapsing' ? 'WAIT FOR BREAK'
       : 'HOLD STEADY';
-    const biasColor = verdict === 'Narrative Trap' ? 'var(--red)'
-      : verdict === 'Structurally Supported' ? 'var(--mp-teal)'
-      : h.narrative_trend === 'Rising' ? 'var(--mp-teal)'
-      : h.narrative_trend === 'Collapsing' ? 'var(--red)'
-      : 'var(--mp-text-secondary)';
+    const isBull = r.price_change_pct > 0 || verdict === 'Structurally Supported' || h.narrative_trend === 'Rising';
+    const isBear = verdict === 'Narrative Trap' || h.narrative_trend === 'Collapsing';
+    const biasColor = isBear ? 'var(--red)' : isBull ? 'var(--mp-teal)' : 'var(--mp-text-secondary)';
+    const sentBorder = isBear ? '#FF4D4D' : isBull ? '#00DE94' : '#00AEFF';
+    const sentGlow = isBear ? 'rgba(255,77,77,0.10)' : isBull ? 'rgba(0,222,148,0.10)' : 'rgba(0,174,255,0.10)';
+    const conf = tc.primary_confidence != null ? Math.round(tc.primary_confidence) : null;
+    const shortTf = tc.shortest_timeframe || '';
+    const longTf = tc.longest_timeframe || '';
+    const winTxt = shortTf && longTf && shortTf !== longTf ? (shortTf + '–' + longTf) : (shortTf || longTf || '');
+    const energy = h.narrative_health != null ? h.narrative_health : null;
 
     document.getElementById('hero').innerHTML = `
       <div class="hero-left">
@@ -2263,8 +2357,22 @@ async function loadHero() {
           ${stockTypeBadge}
         </div>
         <div class="hero-claim">${esc(r.primary_driver || r.story_claim || '')}</div>
-        <div class="hero-bias-label">Signal Bias</div>
-        <div class="hero-bias" style="color:${biasColor};">${biasText}</div>
+        <div class="hero-signal-card" style="border-color:${sentBorder};box-shadow:0 0 20px ${sentGlow};">
+          <div class="hsc-accent" style="background:${sentBorder};"></div>
+          <div class="hsc-body">
+            <div class="hsc-top">
+              <span class="hsc-label">Signal Bias</span>
+              ${conf != null ? `<span class="hsc-conf" style="color:${sentBorder};">${conf}%</span>` : ''}
+            </div>
+            <div class="hsc-bias" style="color:${biasColor};">${biasText}</div>
+            <div class="hsc-meta">
+              ${winTxt ? `<span class="hsc-chip">${winTxt}</span>` : ''}
+              ${energy != null ? `<span class="hsc-chip">Energy ${energy}</span>` : ''}
+              <span class="hsc-chip">${isBear ? '↓ Bearish' : isBull ? '↑ Bullish' : '→ Neutral'}</span>
+              <span class="hsc-chip">${esc(r.narrative_state || 'Active')}</span>
+            </div>
+          </div>
+        </div>
         ${r.sector_name ? `<div class="hero-sector">${esc(r.sector_name)}</div>` : ''}
       </div>
       <div class="hero-right">
