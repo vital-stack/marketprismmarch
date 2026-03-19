@@ -3353,6 +3353,9 @@ var SUPABASE_ANON = (window.__env||{}).SUPABASE_ANON || '';
 var MASSIVE_API   = (window.__env||{}).MASSIVE_API   || '';
 // ── Shared data store ─────────────────────────────────────────────────────────
 var DATA = [];
+var TRADE_CLASS_MAP = {};
+var PREDICTION_MAP  = {};
+var snapshotMap     = {};
 var DOMAIN_MAP = {
   NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadcom.com',
   QCOM:'qualcomm.com',TSM:'tsmc.com',MRVL:'marvell.com',AMAT:'appliedmaterials.com',
@@ -3450,6 +3453,22 @@ async function loadData(){
     try{
       var pr=await fetch(SUPABASE_URL+'/rest/v1/ticker_pulse?select=ticker,direction_forecast&order=snapshot_date.desc',{headers:hdrs});
       if(pr.ok)(await pr.json()).forEach(function(p){if(!pulseMap[p.ticker])pulseMap[p.ticker]=p;});
+    }catch(_){}
+    // ticker snapshots overlay — drawdown, volume, sector
+    snapshotMap={};
+    try{
+      var sn=await fetch(SUPABASE_URL+'/rest/v1/ticker_snapshots?select=ticker,drawdown_from_peak,volume_day,volume_7d_avg,sector,industry,fcf_per_share&order=snapshot_date.desc',{headers:hdrs});
+      if(sn.ok)(await sn.json()).forEach(function(s){if(!snapshotMap[s.ticker])snapshotMap[s.ticker]=s;});
+    }catch(_){}
+    // trade classifications overlay
+    try{
+      var tr=await fetch(SUPABASE_URL+'/rest/v1/trade_classifications?select=ticker,primary_label,primary_confidence,shortest_timeframe,longest_timeframe&order=snapshot_date.desc',{headers:hdrs});
+      if(tr.ok)(await tr.json()).forEach(function(t){if(!TRADE_CLASS_MAP[t.ticker])TRADE_CLASS_MAP[t.ticker]=t;});
+    }catch(_){}
+    // prediction scores overlay — exhaustion days per ticker
+    try{
+      var ps=await fetch(SUPABASE_URL+'/rest/v1/prediction_scores?select=ticker,predicted_value&order=prediction_date.desc',{headers:hdrs});
+      if(ps.ok)(await ps.json()).forEach(function(p){if(!PREDICTION_MAP[p.ticker])PREDICTION_MAP[p.ticker]=p;});
     }catch(_){}
     // dedup + merge
     var seen=new Set();
@@ -5011,6 +5030,16 @@ function hexToRgba(hex,a){
   return 'rgba('+r+','+g+','+b+','+a+')';
 }
 /* ── Signal Card Color System ── */
+var LABEL_TO_BIAS = {
+  'MOMENTUM_RIDE':           'Ride the Trend',
+  'SPECULATIVE':             'Wait for Break',
+  'FADE_THE_HYPE':           'Fade Rallies',
+  'NARRATIVE_TRAP':          'Fade Rallies',
+  'FUNDAMENTAL_DISCONNECT':  'Hedge Exposure',
+  'CATALYST_PENDING':        'Wait for Break',
+  'ACCUMULATE':              'Add on Dips',
+  'FOREIGN_OPAQUE':          'Hold Steady'
+};
 var TRADING_CARD_COLORS = [
   {accent:'#00FFFF',bias:'#00FFFF',phase:'Decay Phase',biasText:'Fade Rallies'},
   {accent:'#00DE94',bias:'#00DE94',phase:'Breakout Forming',biasText:'Ride the Trend'},
@@ -5067,20 +5096,49 @@ var SENTIMENT_STYLES={
 function buildCardFrontHTML(c,i,dateStr,prefix,showActions){
   var isBull=c.price_change_pct>0;
   var deltaColor=isBull?'#00DE94':'#FF4D4D';
-  var conf=Math.round(50+Math.random()*40);
-  var winTxt=isBull?'1\u20133d':conf>70?'3\u20135d':'5\u20137d';
+
+  // ── REAL DATA from trade_classifications ──────────────────────────────────
+  var tc=TRADE_CLASS_MAP[c.ticker]||{};
+  var conf=tc.primary_confidence!=null?Math.round(tc.primary_confidence):Math.round(50+Math.random()*40);
+  var shortTf=tc.shortest_timeframe||'';
+  var longTf=tc.longest_timeframe||'';
+  var winTxt=shortTf&&longTf&&shortTf!==longTf
+    ?(shortTf+'\u2013'+longTf)
+    :(shortTf||longTf||( isBull?'1\u20133d':conf>70?'3\u20135d':'5\u20137d'));
+  // biasText: from classification label, fall back to existing TRADING_CARD_COLORS value
+  if(tc.primary_label&&LABEL_TO_BIAS[tc.primary_label]){
+    c=Object.assign({},c,{biasText:LABEL_TO_BIAS[tc.primary_label]});
+  }
+
+  // ── REAL DATA from prediction_scores ─────────────────────────────────────
+  var pred=PREDICTION_MAP[c.ticker]||{};
+  var rawDays=pred.predicted_value!=null?Math.round(pred.predicted_value):null;
+  var moveDateStr, moveWindow;
+  if(rawDays!=null){
+    if(rawDays<=14){
+      moveDateStr=new Date(Date.now()+rawDays*86400000).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    }else if(rawDays<=60){
+      moveDateStr=new Date(Date.now()+rawDays*86400000).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    }else{
+      moveDateStr='30d+';
+    }
+  }else{
+    // fallback: keep existing random logic
+    var moveDate=new Date();moveDate.setDate(moveDate.getDate()+Math.floor(5+Math.random()*6));
+    moveDateStr=moveDate.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  }
+
+  // ── Unchanged from here down ───────────────────────────────────────────────
   var energy=c.narrative_health||Math.round(40+Math.random()*50);
   var rKey=c.prism_verdict||c.narrative_state||'Stable';
   var rarity=RARITY_MAP[rKey]||RARITY_MAP['Stable'];
-  var companyName=c.sector_name||'\u2014';
-  var signalPrimary=esc(c.story_claim||c.primary_driver||'Signal under analysis');
+  var snap=snapshotMap&&snapshotMap[c.ticker]||{};
+  var companyName=c.sector_name||snap.sector||'\u2014';
+  var signalPrimary=esc(c.synopsis||c.story_claim||c.primary_driver||'Signal under analysis');
   var sentiment=cardSentiment(c);
   var ss=SENTIMENT_STYLES[sentiment];
   var borderColor=ss.border1;
   var styleVars='--card-bg:'+ss.bg+';--card-line-pattern:'+ss.linePattern+';';
-  // Move date (next weekday +5-10 days)
-  var moveDate=new Date();moveDate.setDate(moveDate.getDate()+Math.floor(5+Math.random()*6));
-  var moveDateStr=moveDate.toLocaleDateString('en-US',{month:'short',day:'numeric'});
   // Action buttons HTML (gallery mode)
   var actionsHTML='';
   if(showActions){
@@ -5160,7 +5218,7 @@ function buildCardFrontHTML(c,i,dateStr,prefix,showActions){
               +'<div class="back-stats-row">'
                 +'<div class="back-stat-chip"><span class="back-stat-lbl">Price</span><span class="back-stat-val" style="color:#fff;">$'+fmtPrice(c.price)+'</span></div>'
                 +'<div class="back-stat-chip"><span class="back-stat-lbl">P/E</span><span class="back-stat-val" style="color:'+borderColor+';">'+(c.pe_ratio!=null?c.pe_ratio.toFixed(1)+'x':'\u2014')+'</span></div>'
-                +'<div class="back-stat-chip"><span class="back-stat-lbl">Health</span><span class="back-stat-val" style="color:#A0A8B0;">'+energy+'</span></div>'
+                +'<div class="back-stat-chip"><span class="back-stat-lbl">Conf</span><span class="back-stat-val" style="color:#A0A8B0;">'+conf+'%</span></div>'
               +'</div>'
               // Footer
               +'<div class="back-footer-row">Generated by MarketPrism \u2022 Updated just now</div>'
