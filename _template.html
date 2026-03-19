@@ -5218,7 +5218,6 @@ function renderDailySignalCards(){
       {ticker:'TSLA',price:247.15,price_change_pct:0.42,narrative_state:'Fragile',story_claim:'Coiling under resistance with elevated IV — a loaded spring',sector_name:'Electric Vehicles',pe_ratio:68,accent:'#00AEFF',bias:'#00AEFF',phase:'Coil Compress',biasText:'Wait for Break'},
     ];
   }
-  cards=cards.slice(0,7);
   var dateStr=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
   deck.innerHTML=cards.map(function(c,i){
     return buildCardFrontHTML(c,i,dateStr,'ds',false);
@@ -5847,10 +5846,42 @@ function tcQueueToday(idx){
 }
 
 // ── Boot ──
+function tcBuildFromData(){
+  if(!DATA.length)return;
+  var rMap={
+    'Breaking':'Rare','Narrative Trap':'Rare',
+    'Surging':'Epic','Structurally Supported':'Epic',
+    'Fragile':'Uncommon','Stable':'Common'
+  };
+  TC_SIGNALS=DATA.map(function(r,i){
+    var pct=r.price_change_pct||0;
+    var isUp=pct>0;
+    var tc=TRADE_CLASS_MAP[r.ticker]||{};
+    var conf=tc.primary_confidence!=null?Math.round(tc.primary_confidence)+'%':Math.round(50+Math.random()*40)+'%';
+    var shortTf=tc.shortest_timeframe||'';
+    var longTf=tc.longest_timeframe||'';
+    var win=shortTf&&longTf&&shortTf!==longTf?(shortTf+'\u2013'+longTf):(shortTf||longTf||(isUp?'1\u20133d':'3\u20137d'));
+    var biasText='HOLD STEADY';
+    if(tc.primary_label&&LABEL_TO_BIAS[tc.primary_label])biasText=LABEL_TO_BIAS[tc.primary_label].toUpperCase();
+    else if(r.biasText)biasText=r.biasText.toUpperCase();
+    var rKey=r.prism_verdict||r.narrative_state||'Stable';
+    var rarity=rMap[rKey]||'Common';
+    return{
+      id:r.ticker.toLowerCase(),ticker:r.ticker,
+      name:r.sector_name||'\u2014',
+      price:'$'+fmtPrice(r.price),
+      change:(isUp?'\u25B2':'\u25BC')+' '+Math.abs(pct).toFixed(2)+'%',
+      changeDir:isUp?'up':'down',
+      rarity:rarity,ac:'var(--mp-text-tertiary)',
+      bias:biasText,conf:conf,window:win,logo:''
+    };
+  });
+}
 function calendarBoot(){
   if(tcCalBooted)return;
   tcCalBooted=true;
   tcLoadQueued();
+  tcBuildFromData();
   tcRenderCards();
   tcRenderCalendar();
   tcUpdateSummary();
