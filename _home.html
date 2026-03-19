@@ -334,6 +334,54 @@ h1 em {
   color: #fff;
   border-color: var(--blue);
 }
+/* ── Ask Scholar prompt ── */
+.hero-scholar {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+.hero-scholar-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(0,174,255,0.03);
+  max-width: 420px;
+  cursor: text;
+  transition: all .3s cubic-bezier(0.16,1,0.3,1);
+}
+.hero-scholar-bar:hover {
+  border-color: rgba(0,174,255,0.2);
+  background: rgba(0,174,255,0.05);
+  box-shadow: 0 0 0 3px rgba(0,174,255,0.04);
+}
+.hero-scholar-bar:focus-within {
+  border-color: rgba(0,174,255,0.3);
+  box-shadow: 0 0 0 4px rgba(0,174,255,0.06);
+}
+.hero-scholar-icon {
+  width: 18px; height: 18px; flex-shrink: 0; opacity: 0.6;
+}
+.hero-scholar-input {
+  flex: 1; background: transparent; border: none; outline: none;
+  font-family: var(--font-b); font-size: 13px; color: var(--tx1);
+  letter-spacing: 0.01em;
+}
+.hero-scholar-input::placeholder { color: var(--tx3); font-weight: 300; }
+.hero-scholar-label {
+  font-family: var(--font-m);
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--blue);
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(0,174,255,0.2);
+  background: rgba(0,174,255,0.06);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
 /* social proof */
 .social-row {
   display: flex;
@@ -1396,6 +1444,13 @@ footer {
         <span class="quick-chip">META</span>
         <span class="quick-chip">AMZN</span>
       </div>
+      <div class="hero-scholar">
+        <div class="hero-scholar-bar" id="hero-scholar-bar">
+          <svg class="hero-scholar-icon" viewBox="0 0 32 32" fill="none"><path d="M16 28c-6 0-10-4.5-10-10C6 12 10 6 16 6s10 6 10 12c0 5.5-4 10-10 10z" fill="none" stroke="var(--blue)" stroke-width="1.5" opacity="0.6"/><circle cx="12" cy="15" r="2" fill="var(--blue)" opacity="0.7"/><circle cx="20" cy="15" r="2" fill="var(--blue)" opacity="0.7"/></svg>
+          <input class="hero-scholar-input" id="hero-scholar-input" placeholder="Ask Market Scholar: &quot;Why is NVDA breaking out?&quot;" autocomplete="off">
+          <span class="hero-scholar-label">AI</span>
+        </div>
+      </div>
       <div class="social-row">
         <div class="social-stat"><span class="social-num">200,000+</span><span class="social-lbl">Stories analysed</span></div>
         <div class="social-sep"></div>
@@ -1939,6 +1994,23 @@ document.querySelectorAll('.quick-chip').forEach(c => {
     navigateToTicker();
   });
 });
+// ── Hero Scholar bar → navigate to dashboard with query ──
+(function(){
+  var heroScholarInput = document.getElementById('hero-scholar-input');
+  if(heroScholarInput){
+    heroScholarInput.addEventListener('keydown', function(e){
+      if(e.key === 'Enter' && this.value.trim()){
+        e.preventDefault();
+        var q = encodeURIComponent(this.value.trim());
+        window.location.href = '/dashboard?scholar=' + q;
+      }
+    });
+    var heroScholarBar = document.getElementById('hero-scholar-bar');
+    if(heroScholarBar){
+      heroScholarBar.addEventListener('click', function(){ heroScholarInput.focus(); });
+    }
+  }
+})();
 // ── Market Radar Sparklines ──
 (function(){
   function spark(id, points, color){
