@@ -1618,73 +1618,6 @@
     line-height: 1.1;
     margin-bottom: 6px;
   }
-  /* ── Mini Signal Card (hero area) ── */
-  .hero-signal-card {
-    display: inline-flex;
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 12px;
-    overflow: hidden;
-    background: var(--mp-surface);
-    margin-top: 12px;
-    margin-bottom: 6px;
-    max-width: 420px;
-    transition: border-color 0.3s, box-shadow 0.3s;
-  }
-  .hsc-accent {
-    width: 3px;
-    flex-shrink: 0;
-  }
-  .hsc-body {
-    padding: 12px 18px 12px 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  .hsc-top {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .hsc-label {
-    font-family: var(--font-body);
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.4);
-  }
-  .hsc-conf {
-    font-family: var(--mono);
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: .02em;
-  }
-  .hsc-bias {
-    font-family: 'Anton', var(--font-body), sans-serif;
-    font-size: 26px;
-    letter-spacing: .04em;
-    text-transform: uppercase;
-    line-height: 1.15;
-  }
-  .hsc-meta {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
-    margin-top: 2px;
-  }
-  .hsc-chip {
-    font-family: var(--font-body);
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: .04em;
-    color: var(--mp-text-tertiary);
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.06);
-    padding: 2px 8px;
-    border-radius: 4px;
-    white-space: nowrap;
-  }
   .hero-sector { font-size: 12px; color: var(--mp-text-tertiary); margin-top: 4px; }
   .hero-right { text-align: right; flex-shrink: 0; position: relative; z-index: 1; }
   .hero-price {
@@ -1801,8 +1734,6 @@
   [data-theme="light"] .sidebar-logo span { color: var(--text-primary); }
   [data-theme="light"] .section-body { background: #FFFFFF; }
   [data-theme="light"] .section-body:hover { border-color: rgba(0,174,255,0.15); }
-  [data-theme="light"] .hero-signal-card { background: #FFFFFF; border-color: rgba(0,0,0,0.10); }
-  [data-theme="light"] .hsc-chip { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.08); color: var(--text-secondary); }
   [data-theme="light"] .ticker-hero::after { background: radial-gradient(circle, rgba(0,174,255,0.04) 0%, transparent 65%); }
   [data-theme="light"] .chart-tip { background: #FFFFFF; color: var(--text-primary); }
   [data-theme="light"] .diag-cell { background: #FFFFFF; }
@@ -1815,8 +1746,6 @@
     .hero-ticker { font-size: 28px; }
     .hero-claim { font-size: 14px; }
     .hero-bias { font-size: 24px; }
-    .hsc-bias { font-size: 22px; }
-    .hero-signal-card { max-width: 100%; }
     .hero-price { font-size: 24px; }
     .section-label { font-size:11px; }
     .tk-main-split { grid-template-columns: 1fr; gap: 16px; }
@@ -1827,7 +1756,6 @@
     .hero-ticker { font-size: 24px; }
     .hero-claim { font-size: 14px; }
     .hero-bias { font-size: 20px; }
-    .hsc-bias { font-size: 18px; }
     .hero-price { font-size: 20px; }
     .tk-tab { padding: 10px 10px; font-size:11px; }
     .si-grid { grid-template-columns: 1fr; }
@@ -2409,22 +2337,6 @@ async function loadHero() {
           ${stockTypeBadge}
         </div>
         <div class="hero-claim">${esc(r.primary_driver || r.story_claim || '')}</div>
-        <div class="hero-signal-card" style="border-color:${sentBorder};box-shadow:0 0 20px ${sentGlow};">
-          <div class="hsc-accent" style="background:${sentBorder};"></div>
-          <div class="hsc-body">
-            <div class="hsc-top">
-              <span class="hsc-label">Signal Bias</span>
-              ${conf != null ? `<span class="hsc-conf" style="color:${sentBorder};">${conf}%</span>` : ''}
-            </div>
-            <div class="hsc-bias" style="color:${biasColor};">${biasText}</div>
-            <div class="hsc-meta">
-              ${winTxt ? `<span class="hsc-chip">${winTxt}</span>` : ''}
-              ${energy != null ? `<span class="hsc-chip">Energy ${energy}</span>` : ''}
-              <span class="hsc-chip">${isBear ? '↓ Bearish' : isBull ? '↑ Bullish' : '→ Neutral'}</span>
-              <span class="hsc-chip">${esc(r.narrative_state || 'Active')}</span>
-            </div>
-          </div>
-        </div>
         ${r.sector_name ? `<div class="hero-sector">${esc(r.sector_name)}</div>` : ''}
       </div>
       <div class="hero-right">
