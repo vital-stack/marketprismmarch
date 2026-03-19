@@ -371,6 +371,11 @@ nav {
   position: relative;
   overflow: hidden;
 }
+/* ── Particle constellation canvas ── */
+.hero-particles {
+  position: absolute; inset: 0; z-index: 0;
+  pointer-events: none;
+}
 .hero-grid-bg {
   position: absolute; inset: 0; z-index: 0;
   background-image:
@@ -383,13 +388,25 @@ nav {
   position: absolute;
   width: 640px; height: 640px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(0,174,255,0.05) 0%, transparent 65%);
+  background: radial-gradient(circle, rgba(0,174,255,0.06) 0%, rgba(0,222,148,0.02) 40%, transparent 65%);
   top: 50%; left: 50%;
   transform: translate(-50%, -58%);
   animation: gp 8s ease-in-out infinite;
   z-index: 0;
 }
+/* Secondary glow — warm accent */
+.hero-glow-2 {
+  position: absolute;
+  width: 500px; height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,174,255,0.03) 0%, transparent 60%);
+  top: 30%; left: 25%;
+  transform: translate(-50%, -50%);
+  animation: gp2 12s ease-in-out infinite;
+  z-index: 0;
+}
 @keyframes gp { 0%,100%{opacity:.7;transform:translate(-50%,-58%) scale(1);} 50%{opacity:1;transform:translate(-50%,-58%) scale(1.08);} }
+@keyframes gp2 { 0%,100%{opacity:.4;transform:translate(-50%,-50%) scale(1);} 50%{opacity:.7;transform:translate(-40%,-55%) scale(1.12);} }
 .hero-inner {
   position: relative; z-index: 1;
   max-width: 1080px; margin: 0 auto; width: 100%;
@@ -1679,8 +1696,10 @@ footer {
 </div>
 <!-- ── HERO ── -->
 <div class="hero">
+  <canvas class="hero-particles" id="hero-particles"></canvas>
   <div class="hero-grid-bg"></div>
   <div class="hero-glow"></div>
+  <div class="hero-glow-2"></div>
   <div class="hero-inner">
     <!-- Left -->
     <div>
@@ -2737,6 +2756,141 @@ window.mpInjectAll  = mpInjectAll;
 window.mpLogoUrl    = mpLogoUrl;
 window.mpLogoImg    = mpLogoImg;
 window.MP_DOMAINS   = MP_DOMAINS;
+</script>
+<script>
+// ── Hero Particle Constellation ──
+// Subtle floating dots connected by faint lines — drifting slowly
+(function(){
+  var canvas = document.getElementById('hero-particles');
+  if(!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var dpr = window.devicePixelRatio || 1;
+  var W, H, particles = [];
+  var PARTICLE_COUNT = 60;
+  var CONNECTION_DIST = 140;
+  var MOUSE = { x: -1000, y: -1000 };
+  var MOUSE_RADIUS = 180;
+  var raf;
+
+  function resize(){
+    var rect = canvas.parentElement.getBoundingClientRect();
+    W = rect.width;
+    H = rect.height;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function init(){
+    resize();
+    particles = [];
+    for(var i = 0; i < PARTICLE_COUNT; i++){
+      particles.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: (Math.random() - 0.5) * 0.3,
+        r: Math.random() * 1.5 + 0.5,
+        opacity: Math.random() * 0.4 + 0.1
+      });
+    }
+  }
+
+  function draw(){
+    ctx.clearRect(0, 0, W, H);
+
+    // Draw connections
+    for(var i = 0; i < particles.length; i++){
+      for(var j = i + 1; j < particles.length; j++){
+        var dx = particles[i].x - particles[j].x;
+        var dy = particles[i].y - particles[j].y;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        if(dist < CONNECTION_DIST){
+          var alpha = (1 - dist / CONNECTION_DIST) * 0.08;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.strokeStyle = 'rgba(0,174,255,' + alpha + ')';
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+      }
+
+      // Mouse proximity — brighten nearby connections
+      var mdx = particles[i].x - MOUSE.x;
+      var mdy = particles[i].y - MOUSE.y;
+      var mDist = Math.sqrt(mdx * mdx + mdy * mdy);
+      if(mDist < MOUSE_RADIUS){
+        var mAlpha = (1 - mDist / MOUSE_RADIUS) * 0.15;
+        ctx.beginPath();
+        ctx.arc(particles[i].x, particles[i].y, particles[i].r + 1, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0,174,255,' + mAlpha + ')';
+        ctx.fill();
+      }
+    }
+
+    // Draw particles
+    for(var k = 0; k < particles.length; k++){
+      var p = particles[k];
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(160,190,220,' + p.opacity + ')';
+      ctx.fill();
+    }
+  }
+
+  function update(){
+    for(var i = 0; i < particles.length; i++){
+      var p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+
+      // Wrap around edges
+      if(p.x < -10) p.x = W + 10;
+      if(p.x > W + 10) p.x = -10;
+      if(p.y < -10) p.y = H + 10;
+      if(p.y > H + 10) p.y = -10;
+    }
+  }
+
+  function loop(){
+    update();
+    draw();
+    raf = requestAnimationFrame(loop);
+  }
+
+  // Mouse tracking (relative to hero)
+  canvas.parentElement.addEventListener('mousemove', function(e){
+    var rect = canvas.parentElement.getBoundingClientRect();
+    MOUSE.x = e.clientX - rect.left;
+    MOUSE.y = e.clientY - rect.top;
+  });
+  canvas.parentElement.addEventListener('mouseleave', function(){
+    MOUSE.x = -1000;
+    MOUSE.y = -1000;
+  });
+
+  // Reduce particle count on mobile
+  if(window.innerWidth < 768) PARTICLE_COUNT = 30;
+
+  window.addEventListener('resize', function(){
+    resize();
+  });
+
+  // Pause when not visible
+  document.addEventListener('visibilitychange', function(){
+    if(document.hidden){
+      if(raf) cancelAnimationFrame(raf);
+    } else {
+      loop();
+    }
+  });
+
+  init();
+  loop();
+})();
 </script>
 </body>
 </html>
