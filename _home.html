@@ -467,8 +467,8 @@ h1 em {
 .fa-text { font-family: var(--font-m); font-size: 12px; color: var(--tx1); font-weight: 500; }
 .fa-sub  { font-family: var(--font-m); font-size: 10px; color: var(--tx3); margin-top: 1px; }
 /* ── SECTIONS ── */
-.sec-rule { border: none; border-top: 1px solid var(--border); }
-.sec { padding: 72px 0; position: relative; z-index: 1; }
+.sec-rule { border: none; border-top: 1px solid var(--border); margin: 0 auto; max-width: 1080px; }
+.sec { padding: 80px 0; position: relative; z-index: 1; }
 .sec-alt { background: var(--deep); }
 .con { max-width: 1080px; margin: 0 auto; padding: 0 40px; }
 .eyebrow {
@@ -509,13 +509,27 @@ h2 {
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 32px 28px 36px;
-  transition: border-color .2s, box-shadow .2s;
+  transition: border-color .3s, box-shadow .3s, transform .3s;
   position: relative;
+  overflow: hidden;
+}
+.feat::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--blue), transparent);
+  opacity: 0;
+  transition: opacity .3s;
 }
 .feat:hover {
   border-color: rgba(255,255,255,0.13);
   box-shadow: 0 16px 48px rgba(0,0,0,0.4);
+  transform: translateY(-2px);
 }
+.feat:hover::before { opacity: 1; }
+.feat:nth-child(2)::before { background: linear-gradient(90deg, var(--teal), transparent); }
+.feat:nth-child(3)::before { background: linear-gradient(90deg, #00DE94, transparent); }
 .feat-head {
   display: flex;
   justify-content: space-between;
@@ -526,8 +540,8 @@ h2 {
   font-family: var(--font-d);
   font-size: 64px;
   line-height: 1;
-  color: var(--tx3);
-  opacity: 0.35;
+  color: var(--blue);
+  opacity: 0.15;
   letter-spacing: -0.03em;
 }
 .feat-badge {
@@ -587,12 +601,17 @@ h2 {
   margin-bottom: 14px;
 }
 .step-icon {
-  width: 36px; height: 36px;
-  border-radius: 8px;
-  background: var(--surface);
-  border: 1px solid var(--border-mid);
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  background: rgba(0,174,255,0.06);
+  border: 1px solid rgba(0,174,255,0.12);
   display: flex; align-items: center; justify-content: center;
   margin-bottom: 16px;
+  transition: background .2s, border-color .2s;
+}
+.step:hover .step-icon {
+  background: rgba(0,174,255,0.10);
+  border-color: rgba(0,174,255,0.20);
 }
 .step-t {
   font-family: var(--font-d);
@@ -618,7 +637,7 @@ h2 {
 }
 .stat-n {
   font-family: var(--font-m);
-  font-size: 32px;
+  font-size: 36px;
   font-weight: 500;
   color: var(--tx1);
   letter-spacing: -.02em;
@@ -737,10 +756,17 @@ h2 {
   background: var(--deep);
   border: 1px solid var(--border-mid);
   border-radius: 16px;
-  padding: 60px 60px;
+  padding: 72px 60px;
   position: relative;
   overflow: hidden;
   text-align: center;
+}
+.cta-inner::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 50%; transform: translateX(-50%);
+  width: 200px; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--blue), transparent);
 }
 .cta-glow {
   position: absolute; inset: 0;
@@ -807,33 +833,64 @@ h2 {
 .cta-fine { font-family: var(--font-m); font-size: 10px; color: var(--tx3); }
 /* ── TRUST ── */
 .trust-sec {
-  padding: 40px 0;
+  padding: 48px 0;
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
   background: var(--deep);
 }
+.trust-heading {
+  text-align: center;
+  margin-bottom: 28px;
+}
+.trust-heading-label {
+  font-family: var(--font-m);
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--tx3);
+  margin-bottom: 6px;
+}
+.trust-heading-title {
+  font-family: var(--font-d);
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--tx1);
+  letter-spacing: -0.015em;
+}
 .trust-row {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
-  gap: 36px;
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
   flex-wrap: wrap;
 }
 .trust-item {
-  display: flex; align-items: center; gap: 9px;
-  opacity: .45; transition: opacity .2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 28px;
+  background: var(--bg);
+  flex: 1;
+  min-width: 140px;
+  text-align: center;
+  transition: background .2s;
 }
-.trust-item:hover { opacity: 1; }
+.trust-item:hover { background: var(--surface); }
 .trust-ico {
-  width: 30px; height: 30px;
-  border-radius: 7px;
+  width: 36px; height: 36px;
+  border-radius: 8px;
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-mid);
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
 .trust-t { font-family: var(--font-m); font-size: 11px; color: var(--tx1); font-weight: 500; }
-.trust-s { font-family: var(--font-m); font-size: 9px; color: var(--tx3); }
+.trust-s { font-family: var(--font-m); font-size: 9px; color: var(--tx3); line-height: 1.5; max-width: 120px; }
 /* ── FOOTER ── */
 footer {
   background: var(--deep);
@@ -907,7 +964,7 @@ footer {
 }
 .footer-copy, .footer-patent { font-family: var(--font-m); font-size: 10px; color: var(--tx3); }
 /* ── REVEAL ── */
-.reveal { opacity: 0; transform: translateY(14px); transition: opacity .5s ease, transform .5s ease; }
+.reveal { opacity: 0; transform: translateY(18px); transition: opacity .6s cubic-bezier(0.16,1,0.3,1), transform .6s cubic-bezier(0.16,1,0.3,1); }
 .reveal.in { opacity: 1; transform: translateY(0); }
 /* ── RESPONSIVE ── */
 @media (max-width: 900px) {
@@ -931,7 +988,7 @@ footer {
   .hero-lead { font-size: 14px; }
   .quick-tickers { gap: 6px; flex-wrap: wrap; }
   .social-row { gap: 12px; }
-  .trust-row { gap: 16px; }
+  .trust-item { min-width: 100px; padding: 16px 12px; }
   .footer-grid { gap: 24px; }
   .stats-grid { grid-template-columns: 1fr; }
   .stat-n { font-size: 26px; }
@@ -1581,12 +1638,41 @@ footer {
 <!-- ── TRUST ── -->
 <div class="trust-sec">
   <div class="con">
+    <div class="trust-heading">
+      <div class="trust-heading-label">Trusted infrastructure</div>
+      <div class="trust-heading-title">Built on institutional-grade data sources</div>
+    </div>
     <div class="trust-row">
-      <div class="trust-item"><div class="trust-ico"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color:var(--tx2);"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg></div><div><div class="trust-t">USPTO</div><div class="trust-s">3 Patents Pending</div></div></div>
-      <div class="trust-item"><div class="trust-ico"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color:var(--tx2);"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z"/></svg></div><div><div class="trust-t">SEC EDGAR</div><div class="trust-s">Data Integrated</div></div></div>
-      <div class="trust-item"><div class="trust-ico"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color:var(--tx2);"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0H3"/></svg></div><div><div class="trust-t">Proprietary AI</div><div class="trust-s">Multi-Model Engine</div></div></div>
-      <div class="trust-item"><div class="trust-ico"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color:var(--tx2);"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg></div><div><div class="trust-t">256-bit</div><div class="trust-s">Encrypted</div></div></div>
-      <div class="trust-item"><div class="trust-ico"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color:var(--tx2);"><path stroke-linecap="round" stroke-linejoin="round" d="M11.35 3.836c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m8.9-4.414c.376.023.75.05 1.124.08 1.131.094 1.976 1.057 1.976 2.192V16.5A2.25 2.25 0 0118 18.75h-2.25m-7.5-10.5H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V18.75m-7.5-10.5h6.375c.621 0 1.125.504 1.125 1.125v9.375m-8.25-3l1.5 1.5 3-3.75"/></svg></div><div><div class="trust-t">SOC 2</div><div class="trust-s">Compliant</div></div></div>
+      <div class="trust-item">
+        <div class="trust-ico"><svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color:var(--blue);"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z"/></svg></div>
+        <div class="trust-t">SEC EDGAR</div>
+        <div class="trust-s">Real-time filing ingestion</div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-ico"><svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color:var(--blue);"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg></div>
+        <div class="trust-t">3 USPTO Patents</div>
+        <div class="trust-s">Pending review</div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-ico"><svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color:var(--blue);"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0H3"/></svg></div>
+        <div class="trust-t">Multi-Model AI</div>
+        <div class="trust-s">Proprietary ensemble engine</div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-ico"><svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color:var(--blue);"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg></div>
+        <div class="trust-t">256-bit TLS</div>
+        <div class="trust-s">End-to-end encrypted</div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-ico"><svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color:var(--blue);"><path stroke-linecap="round" stroke-linejoin="round" d="M11.35 3.836c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m8.9-4.414c.376.023.75.05 1.124.08 1.131.094 1.976 1.057 1.976 2.192V16.5A2.25 2.25 0 0118 18.75h-2.25m-7.5-10.5H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V18.75m-7.5-10.5h6.375c.621 0 1.125.504 1.125 1.125v9.375m-8.25-3l1.5 1.5 3-3.75"/></svg></div>
+        <div class="trust-t">SOC 2</div>
+        <div class="trust-s">Audit-ready compliance</div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-ico"><svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color:var(--blue);"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5m.75-9l3-3 2.148 2.148A12.061 12.061 0 0116.5 7.605"/></svg></div>
+        <div class="trust-t">99.9% Uptime</div>
+        <div class="trust-s">Enterprise SLA</div>
+      </div>
     </div>
   </div>
 </div>
@@ -1825,7 +1911,7 @@ footer {
     </div>
     <div class="footer-bottom">
       <span class="footer-patent">Patent Pending: 63/971,470 &amp; 63/971,478</span>
-      <span class="footer-copy">© 2025 Market Prism. All rights reserved.</span>
+      <span class="footer-copy">© 2025–2026 Market Prism. All rights reserved.</span>
     </div>
   </div>
 </footer>
