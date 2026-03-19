@@ -3482,46 +3482,43 @@ async function loadData(){
     var COLS = 'ticker,price,price_change_pct,narrative_state,primary_driver,prism_verdict,story_claim,pe_ratio,days_to_earnings,guidance_direction,institutional_positioning,fair_value,snapshot_date,sector_name,recovery_probability';
     var url = SUPABASE_URL+'/rest/v1/v_dash_daily_story?select='+COLS+'&story_claim=not.is.null&order=snapshot_date.desc,ticker.asc';
     var hdrs = {'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Accept':'application/json'};
-    var res = await fetch(url,{headers:hdrs});
+    // Fetch main data + all overlays in parallel
+    var mainP = fetch(url,{headers:hdrs});
+    var healthP = fetch(SUPABASE_URL+'/rest/v1/v_dash_narrative_health?select=ticker,narrative_health,narrative_trend,attention_trend&order=snapshot_date.desc',{headers:hdrs}).catch(function(){return null;});
+    var pulseP = fetch(SUPABASE_URL+'/rest/v1/ticker_pulse?select=ticker,direction_forecast&order=snapshot_date.desc',{headers:hdrs}).catch(function(){return null;});
+    var snapP = fetch(SUPABASE_URL+'/rest/v1/ticker_snapshots?select=ticker,drawdown_from_peak,volume_day,volume_7d_avg,sector,industry,fcf_per_share&order=snapshot_date.desc',{headers:hdrs}).catch(function(){return null;});
+    var tradeP = fetch(SUPABASE_URL+'/rest/v1/trade_classifications?select=ticker,primary_label,primary_confidence,shortest_timeframe,longest_timeframe&order=snapshot_date.desc',{headers:hdrs}).catch(function(){return null;});
+    var predP = fetch(SUPABASE_URL+'/rest/v1/prediction_scores?select=ticker,predicted_value&order=prediction_date.desc',{headers:hdrs}).catch(function(){return null;});
+    var lhP = fetch(SUPABASE_URL+'/rest/v1/daily_trade_labels?select=ticker,label,signal_strength,price,price_change_pct,primary_narrative,story_claim,prism_verdict&order=signal_strength.desc',{headers:hdrs}).catch(function(){return null;});
+
+    var res = await mainP;
     if(!res.ok) throw new Error('Supabase '+res.status);
     var rows = await res.json();
-    // health overlay
+
+    // Parse overlay responses in parallel
+    var results = await Promise.all([healthP, pulseP, snapP, tradeP, predP, lhP]);
+
     var healthMap={};
-    try{
-      var hr=await fetch(SUPABASE_URL+'/rest/v1/v_dash_narrative_health?select=ticker,narrative_health,narrative_trend,attention_trend&order=snapshot_date.desc',{headers:hdrs});
-      if(hr.ok)(await hr.json()).forEach(function(h){if(!healthMap[h.ticker])healthMap[h.ticker]=h;});
-    }catch(_){}
-    // pulse overlay (for direction_forecast used in bull/bear counts)
+    try{ if(results[0]&&results[0].ok)(await results[0].json()).forEach(function(h){if(!healthMap[h.ticker])healthMap[h.ticker]=h;}); }catch(_){}
+
     var pulseMap={};
-    try{
-      var pr=await fetch(SUPABASE_URL+'/rest/v1/ticker_pulse?select=ticker,direction_forecast&order=snapshot_date.desc',{headers:hdrs});
-      if(pr.ok)(await pr.json()).forEach(function(p){if(!pulseMap[p.ticker])pulseMap[p.ticker]=p;});
-    }catch(_){}
-    // ticker snapshots overlay — drawdown, volume, sector
+    try{ if(results[1]&&results[1].ok)(await results[1].json()).forEach(function(p){if(!pulseMap[p.ticker])pulseMap[p.ticker]=p;}); }catch(_){}
+
     snapshotMap={};
+    try{ if(results[2]&&results[2].ok)(await results[2].json()).forEach(function(s){if(!snapshotMap[s.ticker])snapshotMap[s.ticker]=s;}); }catch(_){}
+
+    try{ if(results[3]&&results[3].ok)(await results[3].json()).forEach(function(t){if(!TRADE_CLASS_MAP[t.ticker])TRADE_CLASS_MAP[t.ticker]=t;}); }catch(_){}
+
+    try{ if(results[4]&&results[4].ok)(await results[4].json()).forEach(function(p){if(!PREDICTION_MAP[p.ticker])PREDICTION_MAP[p.ticker]=p;}); }catch(_){}
+
     try{
-      var sn=await fetch(SUPABASE_URL+'/rest/v1/ticker_snapshots?select=ticker,drawdown_from_peak,volume_day,volume_7d_avg,sector,industry,fcf_per_share&order=snapshot_date.desc',{headers:hdrs});
-      if(sn.ok)(await sn.json()).forEach(function(s){if(!snapshotMap[s.ticker])snapshotMap[s.ticker]=s;});
-    }catch(_){}
-    // trade classifications overlay
-    try{
-      var tr=await fetch(SUPABASE_URL+'/rest/v1/trade_classifications?select=ticker,primary_label,primary_confidence,shortest_timeframe,longest_timeframe&order=snapshot_date.desc',{headers:hdrs});
-      if(tr.ok)(await tr.json()).forEach(function(t){if(!TRADE_CLASS_MAP[t.ticker])TRADE_CLASS_MAP[t.ticker]=t;});
-    }catch(_){}
-    // prediction scores overlay — exhaustion days per ticker
-    try{
-      var ps=await fetch(SUPABASE_URL+'/rest/v1/prediction_scores?select=ticker,predicted_value&order=prediction_date.desc',{headers:hdrs});
-      if(ps.ok)(await ps.json()).forEach(function(p){if(!PREDICTION_MAP[p.ticker])PREDICTION_MAP[p.ticker]=p;});
-    }catch(_){}
-    // daily trade labels (love/hate/trap)
-    try{
-      var lh=await fetch(SUPABASE_URL+'/rest/v1/daily_trade_labels?select=ticker,label,signal_strength,price,price_change_pct,primary_narrative,story_claim,prism_verdict&order=signal_strength.desc',{headers:hdrs});
-      if(lh.ok){
-        var lhRows=await lh.json();
+      if(results[5]&&results[5].ok){
+        var lhRows=await results[5].json();
         var lhSeen=new Set();
         LOVE_HATE_DATA=lhRows.filter(function(r){if(lhSeen.has(r.ticker))return false;lhSeen.add(r.ticker);return true;});
       }
     }catch(_){}
+
     // dedup + merge
     var seen=new Set();
     DATA = rows.filter(function(r){
