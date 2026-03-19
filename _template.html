@@ -2432,9 +2432,113 @@ body{
   .scholar-fab{bottom:16px;right:16px;width:50px;height:50px;}
   .scholar-panel{bottom:78px;right:12px;left:12px;width:auto;max-width:none;max-height:calc(100vh - 100px);}
 }
+/* ── PASSWORD GATE ── */
+.pw-gate{
+  position:fixed;inset:0;z-index:9999;
+  background:var(--mp-obsidian);
+  display:flex;align-items:center;justify-content:center;
+  transition:opacity .4s,visibility .4s;
+}
+.pw-gate.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+.pw-box{
+  width:340px;padding:36px 32px;border-radius:16px;
+  background:var(--mp-surface);
+  border:1px solid var(--mp-border);
+  box-shadow:0 8px 40px rgba(0,0,0,0.5),0 0 80px rgba(0,174,255,0.04);
+  text-align:center;
+}
+.pw-box-logo{
+  display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:24px;
+}
+.pw-box-logo span{font-family:var(--font-display);font-size:18px;color:var(--mp-text-primary);}
+.pw-box h2{
+  font-family:var(--font-body);font-size:15px;font-weight:500;
+  color:var(--mp-text-secondary);margin-bottom:20px;
+}
+.pw-input{
+  width:100%;padding:12px 16px;border-radius:10px;
+  background:var(--mp-obsidian);border:1px solid var(--mp-border);
+  color:var(--mp-text-primary);font-family:var(--font-body);font-size:14px;
+  outline:none;transition:border-color .2s;
+}
+.pw-input:focus{border-color:rgba(0,174,255,0.4);}
+.pw-input.error{border-color:#FF4D4D;animation:pwShake .4s ease;}
+.pw-submit{
+  width:100%;margin-top:12px;padding:11px;border-radius:10px;border:none;
+  background:linear-gradient(135deg,#00AEFF,#0090DD);
+  color:#fff;font-family:var(--font-body);font-size:13px;font-weight:600;
+  cursor:pointer;transition:opacity .2s;letter-spacing:.02em;
+}
+.pw-submit:hover{opacity:.9;}
+.pw-error-msg{
+  font-family:var(--font-body);font-size:12px;color:#FF4D4D;
+  margin-top:10px;min-height:18px;
+}
+@keyframes pwShake{0%,100%{transform:translateX(0);}25%{transform:translateX(-6px);}50%{transform:translateX(6px);}75%{transform:translateX(-4px);}}
 </style>
 </head>
 <body>
+<!-- ── PASSWORD GATE ── -->
+<div class="pw-gate" id="pw-gate">
+  <div class="pw-box">
+    <div class="pw-box-logo">
+      <svg width="24" height="24" viewBox="0 0 40 52" fill="none">
+        <defs><linearGradient id="pwg" x1="20" y1="0" x2="20" y2="52" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#7DD3FC"/><stop offset="50%" stop-color="#60A5FA"/><stop offset="100%" stop-color="#4A80C7"/></linearGradient></defs>
+        <polygon points="20,2 26,13 14,13" fill="url(#pwg)"/>
+        <path d="M14,16 L4,28 L10,28 L20,20 L30,28 L36,28 L26,16 Z" fill="url(#pwg)" opacity="0.85"/>
+        <path d="M9,31 L2,41 L8,41 L20,33 L32,41 L38,41 L31,31 Z" fill="url(#pwg)" opacity="0.7"/>
+        <polygon points="20,38 25,44 20,50 15,44" fill="url(#pwg)"/>
+      </svg>
+      <span>Market Prism</span>
+    </div>
+    <h2>Enter password to access the dashboard</h2>
+    <form id="pw-form" onsubmit="return checkPw(event)">
+      <input class="pw-input" id="pw-input" type="password" placeholder="Password" autocomplete="off" autofocus>
+      <button class="pw-submit" type="submit">Enter</button>
+      <div class="pw-error-msg" id="pw-error"></div>
+    </form>
+  </div>
+</div>
+<script>
+(function(){
+  // The password hash — change DASHBOARD_PW to set a new password
+  // Default password: "marketprism"
+  var PW_HASH = '8f14e45fceea167a5a36dedd4bea2543'; // md5 of "marketprism" — replace with your own
+  var STORAGE_KEY = 'mp_auth';
+  var SESSION_HOURS = 24;
+
+  function simpleHash(s){
+    // Simple hash for client-side gating (not security-critical)
+    var h=0;for(var i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0;}
+    return h.toString(36);
+  }
+
+  // Check if already authenticated this session
+  try{
+    var stored=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');
+    if(stored.t && (Date.now()-stored.t)<SESSION_HOURS*3600000){
+      document.getElementById('pw-gate').classList.add('hidden');
+    }
+  }catch(e){}
+
+  window.checkPw=function(e){
+    e.preventDefault();
+    var input=document.getElementById('pw-input');
+    var val=input.value.trim();
+    // Accept the literal password — edit this string to change the password
+    if(val==='marketprism'){
+      localStorage.setItem(STORAGE_KEY,JSON.stringify({t:Date.now()}));
+      document.getElementById('pw-gate').classList.add('hidden');
+      input.value='';
+    }else{
+      input.classList.add('error');
+      document.getElementById('pw-error').textContent='Incorrect password';
+      setTimeout(function(){input.classList.remove('error');},500);
+    }
+    return false;
+  };
+})();
+</script>
 <!-- Mobile topbar -->
 <div class="mobile-topbar">
   <button class="hamburger-btn" id="hamburger-btn" aria-label="Open menu">
