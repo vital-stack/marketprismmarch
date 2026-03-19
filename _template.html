@@ -1784,6 +1784,19 @@ body{
 }
 .tc-view-btn:hover{border-color:rgba(255,255,255,0.25);color:#fff;background:rgba(255,255,255,0.04);}
 /* Gallery action bar */
+/* ── Card Download Button (all cards) ── */
+.tc-dl-btn{
+  position:absolute;top:10px;right:10px;z-index:6;
+  width:30px;height:30px;border-radius:8px;border:none;
+  background:rgba(0,0,0,0.55);backdrop-filter:blur(6px);
+  color:rgba(255,255,255,0.6);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:opacity .2s,background .2s,color .2s;
+  pointer-events:auto;
+}
+.card-scene:hover .tc-dl-btn,.card-scene:focus-within .tc-dl-btn{opacity:1;}
+.tc-dl-btn:hover{background:rgba(0,174,255,0.25);color:#fff;}
+.tc-dl-btn svg{width:14px;height:14px;}
 .tc-card-actions{display:flex;gap:1px;border-top:1px solid rgba(255,255,255,0.06);margin:0 -20px -16px;background:rgba(255,255,255,0.06);}
 .tc-card-action{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;
   font-family:'Inter',var(--font-mono),monospace;font-size:11px;letter-spacing:.04em;
@@ -5245,8 +5258,11 @@ function buildCardFrontHTML(c,i,dateStr,prefix,showActions){
   return '<div class="card-scene" style="'+styleVars+'" onclick="this.classList.toggle(\'flipped\')">'
     +'<div class="card-flipper">'
       // ── CARD FRONT ──
-      +'<div class="card-front">'
+      +'<div class="card-front" style="position:relative;">'
         +'<div class="foil-layer"></div><div class="foil-scan"></div>'
+        +'<button class="tc-dl-btn" title="Download card as image" onclick="event.stopPropagation();downloadCard(this)">'
+          +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'
+        +'</button>'
         +'<div class="tc">'
           +'<div class="tc-sentiment-bar" style="background:'+rarity.color+';"></div>'
           +'<div class="tc-body">'
@@ -5422,6 +5438,44 @@ function renderCardsGallery(){
   TCG_RENDERED=true;
 }
 
+// Universal card download — works from any card's download button
+function downloadCard(btn){
+  var scene=btn.closest('.card-scene');
+  if(!scene)return;
+  // Find ticker text for filename
+  var tickerEl=scene.querySelector('.tc-ticker');
+  var ticker=tickerEl?tickerEl.textContent.trim():'card';
+  function doCapture(){
+    // Hide the download button during capture
+    btn.style.display='none';
+    html2canvas(scene,{
+      backgroundColor:'#08090F',
+      scale:2,useCORS:true,logging:false,
+      width:scene.offsetWidth,
+      height:scene.offsetHeight
+    }).then(function(canvas){
+      btn.style.display='';
+      canvas.toBlob(function(blob){
+        var url=URL.createObjectURL(blob);
+        var a=document.createElement('a');
+        a.href=url;
+        a.download=ticker+'-signal-card-'+new Date().toISOString().slice(0,10)+'.png';
+        a.click();
+        URL.revokeObjectURL(url);
+        tcgShowToast(ticker+' card saved as image');
+      },'image/png');
+    }).catch(function(){btn.style.display='';});
+  }
+  if(typeof html2canvas==='undefined'){
+    var s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    s.onload=doCapture;
+    document.head.appendChild(s);
+  } else {
+    doCapture();
+  }
+}
+
 // Save card as PNG image
 function tcgSaveImage(idx){
   var wrap=document.getElementById('tcg-wrap-'+idx);
@@ -5491,7 +5545,11 @@ function tcgCopyLink(idx){
 
 function tcgShowToast(msg){
   var t=document.getElementById('tcg-toast');
-  if(!t)return;
+  if(!t){
+    t=document.createElement('div');
+    t.className='tcg-toast';t.id='tcg-toast';
+    document.body.appendChild(t);
+  }
   t.textContent=msg;
   t.classList.add('show');
   setTimeout(function(){t.classList.remove('show');},2500);
