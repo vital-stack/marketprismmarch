@@ -63,6 +63,26 @@
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+@keyframes prism-sweep {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+@keyframes prism-glow {
+  0%,100% { opacity: 0.4; filter: blur(8px); }
+  50% { opacity: 0.8; filter: blur(12px); }
+}
+@keyframes section-enter-left {
+  from { opacity: 0; transform: translateX(-40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes section-enter-right {
+  from { opacity: 0; transform: translateX(40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes section-enter-scale {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
 html { font-size: 16px; scroll-behavior: smooth; }
 body {
   font-family: var(--font-b);
@@ -795,10 +815,95 @@ h1 em {
 .fa-lbl { font-family: var(--font-m); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--red); }
 .fa-text { font-family: var(--font-m); font-size: 12px; color: var(--tx1); font-weight: 500; }
 .fa-sub  { font-family: var(--font-m); font-size: 10px; color: var(--tx3); margin-top: 1px; }
-/* ── SECTIONS ── */
+/* ── PRISM DIVIDERS ── */
+.prism-divider {
+  position: relative;
+  height: 3px;
+  border: none;
+  margin: 0;
+  overflow: visible;
+}
+.prism-divider::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    #FF4D4D 8%,
+    #FFB800 18%,
+    #00DE94 30%,
+    #00AEFF 45%,
+    #7B61FF 60%,
+    #FF4D4D 75%,
+    #FFB800 88%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: prism-sweep 4s linear infinite;
+}
+.prism-divider::after {
+  content: '';
+  position: absolute;
+  top: -4px; left: 10%; right: 10%; bottom: -4px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255,77,77,0.15) 8%,
+    rgba(255,184,0,0.15) 18%,
+    rgba(0,222,148,0.15) 30%,
+    rgba(0,174,255,0.2) 45%,
+    rgba(123,97,255,0.15) 60%,
+    rgba(255,77,77,0.1) 75%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: prism-sweep 4s linear infinite, prism-glow 3s ease-in-out infinite;
+  filter: blur(8px);
+}
+/* Subtle prism variant for internal dividers */
+.prism-divider-subtle {
+  position: relative;
+  height: 1px;
+  border: none;
+  margin: 0;
+  overflow: visible;
+}
+.prism-divider-subtle::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,
+    transparent 5%,
+    rgba(0,174,255,0.2) 25%,
+    rgba(0,222,148,0.15) 40%,
+    rgba(123,97,255,0.2) 60%,
+    rgba(0,174,255,0.1) 80%,
+    transparent 95%
+  );
+  background-size: 200% 100%;
+  animation: prism-sweep 6s linear infinite;
+}
+/* Legacy sec-rule — upgraded to prism */
 .sec-rule {
-  border: none; height: 1px; margin: 0 auto; max-width: 1080px;
-  background: linear-gradient(90deg, transparent, rgba(0,174,255,0.2), rgba(0,222,148,0.15), rgba(123,97,255,0.1), transparent);
+  border: none; height: 1px; margin: 0;
+  position: relative;
+  overflow: visible;
+}
+.sec-rule::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255,77,77,0.08) 10%,
+    rgba(255,184,0,0.1) 20%,
+    rgba(0,222,148,0.12) 35%,
+    rgba(0,174,255,0.15) 50%,
+    rgba(123,97,255,0.12) 65%,
+    rgba(0,222,148,0.08) 80%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: prism-sweep 5s linear infinite;
 }
 .sec { padding: 100px 0; position: relative; z-index: 1; min-height: 100vh; display: flex; align-items: center; }
 .sec > .con { width: 100%; }
@@ -830,14 +935,32 @@ h1 em {
 }
 .sec-light h2 { color: #1A1F2E; }
 .sec-light .eyebrow { color: rgba(0,0,0,0.45); }
-.sec-light .eyebrow::before { background: var(--blue); opacity: .6; }
+.sec-light .eyebrow::before { background: linear-gradient(90deg, var(--blue), var(--teal)); opacity: .7; }
 .sec-light .sec-lead { color: rgba(0,0,0,0.6); }
-.sec-light .feat { background: #fff; border-color: rgba(0,0,0,0.08); }
-.sec-light .feat:hover { border-color: rgba(0,0,0,0.15); box-shadow: 0 16px 48px rgba(0,0,0,0.08); }
+.sec-light .feat {
+  background: #fff; border-color: rgba(0,0,0,0.06);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+}
+.sec-light .feat:hover {
+  border-color: rgba(0,174,255,0.2);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,174,255,0.05);
+}
+.sec-light .feat:nth-child(2):hover { border-color: rgba(0,222,148,0.2); box-shadow: 0 20px 60px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,222,148,0.05); }
+.sec-light .feat:nth-child(3):hover { border-color: rgba(123,97,255,0.2); box-shadow: 0 20px 60px rgba(0,0,0,0.08), 0 0 0 1px rgba(123,97,255,0.05); }
+.sec-light .feat::before { opacity: 0; }
+.sec-light .feat:hover::before { opacity: 1; }
+.sec-light .feat::after { background: radial-gradient(circle at 70% 30%, rgba(0,174,255,0.03) 0%, transparent 50%); }
+.sec-light .feat:nth-child(2)::after { background: radial-gradient(circle at 70% 30%, rgba(0,222,148,0.03) 0%, transparent 50%); }
+.sec-light .feat:nth-child(3)::after { background: radial-gradient(circle at 70% 30%, rgba(123,97,255,0.03) 0%, transparent 50%); }
 .sec-light .feat-title { color: #1A1F2E; }
 .sec-light .feat-desc { color: rgba(0,0,0,0.6); }
-.sec-light .feat-num { color: var(--blue); opacity: 0.2; }
+.sec-light .feat-num { background: linear-gradient(135deg, rgba(0,174,255,0.3), rgba(0,222,148,0.2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.sec-light .feat:nth-child(2) .feat-num { background: linear-gradient(135deg, rgba(0,222,148,0.3), rgba(0,174,255,0.2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.sec-light .feat:nth-child(3) .feat-num { background: linear-gradient(135deg, rgba(123,97,255,0.3), rgba(0,174,255,0.2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 .sec-light .feat-badge { color: rgba(0,0,0,0.5); border-color: rgba(0,0,0,0.1); background: rgba(0,0,0,0.03); }
+/* Light section orbs use lighter colors */
+.sec-light .sec-orb-blue { background: radial-gradient(circle, rgba(0,174,255,0.08) 0%, transparent 70%); }
+.sec-light .sec-orb-violet { background: radial-gradient(circle, rgba(123,97,255,0.06) 0%, transparent 70%); }
 .sec-light .step { background: #fff; }
 .sec-light .step-t { color: #1A1F2E; }
 .sec-light .step-d { color: rgba(0,0,0,0.6); }
@@ -1002,8 +1125,24 @@ h2 {
   gap: 1px;
   background: var(--border);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 14px;
   overflow: hidden;
+  position: relative;
+}
+.steps::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 2px; z-index: 1;
+  background: linear-gradient(90deg,
+    rgba(255,77,77,0.4) 0%,
+    rgba(255,184,0,0.4) 20%,
+    rgba(0,222,148,0.4) 40%,
+    rgba(0,174,255,0.5) 60%,
+    rgba(123,97,255,0.4) 80%,
+    rgba(255,77,77,0.3) 100%
+  );
+  background-size: 200% 100%;
+  animation: prism-sweep 5s linear infinite;
 }
 .step {
   background: var(--bg);
@@ -1050,8 +1189,23 @@ h2 {
   gap: 1px;
   background: var(--border);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 14px;
   overflow: hidden;
+  position: relative;
+}
+.stats-grid::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 2px; z-index: 1;
+  background: linear-gradient(90deg,
+    rgba(0,174,255,0.5) 0%,
+    rgba(0,222,148,0.4) 25%,
+    rgba(123,97,255,0.4) 50%,
+    rgba(255,184,0,0.4) 75%,
+    rgba(0,174,255,0.3) 100%
+  );
+  background-size: 200% 100%;
+  animation: prism-sweep 6s linear infinite;
 }
 .stat-cell {
   background: var(--bg);
@@ -1199,8 +1353,19 @@ h2 {
   content: '';
   position: absolute;
   top: 0; left: 50%; transform: translateX(-50%);
-  width: 60%; height: 2px;
-  background: linear-gradient(90deg, transparent, var(--blue), var(--teal), rgba(123,97,255,0.6), transparent);
+  width: 70%; height: 2px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(255,77,77,0.4),
+    rgba(255,184,0,0.4),
+    rgba(0,222,148,0.5),
+    rgba(0,174,255,0.6),
+    rgba(123,97,255,0.5),
+    rgba(255,77,77,0.3),
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: prism-sweep 4s linear infinite;
 }
 .cta-glow {
   position: absolute; inset: 0;
@@ -1288,10 +1453,19 @@ h2 {
 .cta-fine { font-family: var(--font-m); font-size: 10px; color: var(--tx3); }
 /* ── TRUST ── */
 .trust-sec {
-  padding: 48px 0;
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  background: #111827;
+  padding: 56px 0;
+  border-top: none;
+  border-bottom: none;
+  background: #F5F7FA;
+  color: #1A1F2E;
+  position: relative;
+  overflow: hidden;
+}
+.trust-sec::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0,174,255,0.15), rgba(123,97,255,0.12), transparent);
 }
 .trust-heading {
   text-align: center;
@@ -1302,14 +1476,14 @@ h2 {
   font-size: 10px;
   letter-spacing: .12em;
   text-transform: uppercase;
-  color: var(--tx3);
+  color: rgba(0,0,0,0.4);
   margin-bottom: 6px;
 }
 .trust-heading-title {
   font-family: var(--font-d);
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 400;
-  color: var(--tx1);
+  color: #1A1F2E;
   letter-spacing: -0.015em;
 }
 .trust-row {
@@ -1317,9 +1491,9 @@ h2 {
   align-items: stretch;
   justify-content: center;
   gap: 1px;
-  background: var(--border);
-  border: 1px solid var(--border);
-  border-radius: 12px;
+  background: rgba(0,0,0,0.06);
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 14px;
   overflow: hidden;
   flex-wrap: wrap;
 }
@@ -1328,31 +1502,32 @@ h2 {
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  padding: 24px 28px;
-  background: var(--bg);
+  padding: 28px 28px;
+  background: #fff;
   flex: 1;
   min-width: 140px;
   text-align: center;
-  transition: background .2s;
+  transition: all .25s;
 }
-.trust-item:hover { background: var(--surface); }
+.trust-item:hover { background: #F8FAFC; transform: translateY(-2px); }
 .trust-ico {
-  width: 40px; height: 40px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, rgba(0,174,255,0.06), rgba(0,222,148,0.03));
-  border: 1px solid rgba(0,174,255,0.1);
+  width: 42px; height: 42px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, rgba(0,174,255,0.08), rgba(0,222,148,0.04));
+  border: 1px solid rgba(0,174,255,0.12);
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
-  transition: all .3s;
+  transition: all .3s cubic-bezier(0.16,1,0.3,1);
 }
+.trust-ico svg { color: rgba(0,100,180,0.5) !important; }
 .trust-item:hover .trust-ico {
-  background: linear-gradient(135deg, rgba(0,174,255,0.12), rgba(0,222,148,0.06));
-  border-color: rgba(0,174,255,0.2);
-  transform: scale(1.05);
-  box-shadow: 0 4px 16px rgba(0,174,255,0.1);
+  background: linear-gradient(135deg, rgba(0,174,255,0.14), rgba(0,222,148,0.08));
+  border-color: rgba(0,174,255,0.25);
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(0,174,255,0.12);
 }
-.trust-t { font-family: var(--font-m); font-size: 11px; color: var(--tx1); font-weight: 500; }
-.trust-s { font-family: var(--font-m); font-size: 9px; color: var(--tx3); line-height: 1.5; max-width: 120px; }
+.trust-t { font-family: var(--font-m); font-size: 12px; color: #1A1F2E; font-weight: 600; }
+.trust-s { font-family: var(--font-m); font-size: 11px; color: rgba(0,0,0,0.5); line-height: 1.5; max-width: 130px; }
 /* ── FOOTER ── */
 footer {
   background: var(--deep);
@@ -1425,9 +1600,27 @@ footer {
   gap: 10px;
 }
 .footer-copy, .footer-patent { font-family: var(--font-m); font-size: 10px; color: var(--tx3); }
-/* ── REVEAL ── */
+/* ── REVEAL VARIANTS ── */
 .reveal { opacity: 0; transform: translateY(28px); transition: opacity .8s cubic-bezier(0.16,1,0.3,1), transform .8s cubic-bezier(0.16,1,0.3,1); }
 .reveal.in { opacity: 1; transform: translateY(0); }
+.reveal-left { opacity: 0; transform: translateX(-40px); transition: opacity .8s cubic-bezier(0.16,1,0.3,1), transform .8s cubic-bezier(0.16,1,0.3,1); }
+.reveal-left.in { opacity: 1; transform: translateX(0); }
+.reveal-right { opacity: 0; transform: translateX(40px); transition: opacity .8s cubic-bezier(0.16,1,0.3,1), transform .8s cubic-bezier(0.16,1,0.3,1); }
+.reveal-right.in { opacity: 1; transform: translateX(0); }
+.reveal-scale { opacity: 0; transform: scale(0.92); transition: opacity .9s cubic-bezier(0.16,1,0.3,1), transform .9s cubic-bezier(0.16,1,0.3,1); }
+.reveal-scale.in { opacity: 1; transform: scale(1); }
+/* Prism flash on reveal — brief prismatic shimmer when element enters view */
+.reveal-prism { opacity: 0; transform: translateY(20px); transition: opacity .8s cubic-bezier(0.16,1,0.3,1), transform .8s cubic-bezier(0.16,1,0.3,1); position: relative; }
+.reveal-prism::after {
+  content: ''; position: absolute; inset: -2px; border-radius: inherit; pointer-events: none; opacity: 0;
+  background: linear-gradient(135deg, rgba(255,77,77,0.1), rgba(255,184,0,0.1), rgba(0,222,148,0.1), rgba(0,174,255,0.15), rgba(123,97,255,0.1));
+  background-size: 300% 300%;
+  transition: opacity .6s;
+  z-index: -1;
+}
+.reveal-prism.in { opacity: 1; transform: translateY(0); }
+.reveal-prism.in::after { opacity: 1; animation: gradient-text 3s ease 1 forwards; }
+.reveal-prism.done::after { opacity: 0; }
 /* ── RESPONSIVE ── */
 @media (max-width: 900px) {
   .hero-inner, .sample-grid, .footer-grid { grid-template-columns: 1fr; }
@@ -2102,7 +2295,7 @@ footer {
     <div class="eyebrow reveal">Market Radar</div>
     <h2 class="reveal" style="margin-bottom:8px;">Live narrative signals</h2>
     <p class="sec-lead reveal" style="margin-bottom:28px;">Real-time narrative energy across the coverage universe — breakouts, exhaustion, coordination risk, and sector momentum.</p>
-    <div class="deck reveal" style="display:flex;gap:20px;justify-content:center;flex-wrap:wrap;">
+    <div class="deck reveal-scale" style="display:flex;gap:20px;justify-content:center;flex-wrap:wrap;">
       <!-- NVDA -->
       <div class="card-scene" style="width:232px;">
         <div class="tc">
@@ -2214,7 +2407,7 @@ footer {
     </div>
   </div>
 </div>
-<hr class="sec-rule">
+<div class="prism-divider"></div>
 <!-- ── TRUST ── -->
 <div class="trust-sec">
   <div class="con">
@@ -2256,16 +2449,16 @@ footer {
     </div>
   </div>
 </div>
-<hr class="sec-rule">
+<div class="prism-divider"></div>
 <!-- ── FEATURES ── -->
-<section class="sec" id="features" style="overflow:hidden;">
+<section class="sec sec-light" id="features" style="overflow:hidden;">
   <div class="sec-orb sec-orb-blue" style="top:-10%;right:-5%;"></div>
   <div class="sec-orb sec-orb-violet" style="bottom:5%;left:-8%;"></div>
   <div class="con">
     <div class="eyebrow reveal">From ticker to trading brief</div>
     <h2 class="reveal" style="font-size:clamp(28px,4vw,44px);line-height:1.15;margin-bottom:12px;">Seven forensic layers. One daily verdict.</h2>
     <p class="sec-lead reveal">Every morning before the bell, the engine runs across 100 tickers &#8212; the same systematic analysis a quant desk runs manually, delivered in a 30-second read.</p>
-    <div class="features-grid reveal">
+    <div class="features-grid reveal-scale">
       <div class="feat">
         <div class="feat-head">
           <div class="feat-num">01</div>
@@ -2293,14 +2486,14 @@ footer {
     </div>
   </div>
 </section>
-<hr class="sec-rule">
+<div class="prism-divider"></div>
 <!-- ── HOW IT WORKS ── -->
 <section class="sec sec-alt">
   <div class="con">
     <div class="eyebrow reveal">How it works</div>
     <h2 class="reveal">From ticker to full briefing in seconds</h2>
     <p class="sec-lead reveal">Enter any ticker on the dashboard or search here. Market Prism pulls every relevant narrative, cross-references it against fundamentals, and delivers a structured forensic briefing.</p>
-    <div class="steps reveal">
+    <div class="steps reveal-scale">
       <div class="step">
         <div class="step-n">01</div>
         <div class="step-t">Enter a ticker</div>
@@ -2319,13 +2512,13 @@ footer {
     </div>
   </div>
 </section>
-<hr class="sec-rule">
+<div class="prism-divider"></div>
 <!-- ── STATS ── -->
 <section class="sec sec-light">
   <div class="con">
     <div class="eyebrow reveal">Coverage</div>
     <h2 class="reveal">Built for serious market participants</h2>
-    <div class="stats-grid reveal">
+    <div class="stats-grid reveal-scale">
       <div class="stat-cell"><div class="stat-n">200,000<span class="acc">+</span></div><div class="stat-l">Stories tracked</div><div class="stat-d">Active and historical narratives across equities, indexed and cross-referenced.</div></div>
       <div class="stat-cell"><div class="stat-n">100<span class="acc">+</span></div><div class="stat-l">Tickers covered</div><div class="stat-d">US-listed equities across AI, fintech, defense, healthcare, and more.</div></div>
       <div class="stat-cell"><div class="stat-n">24<span class="acc">/7</span></div><div class="stat-l">Live monitoring</div><div class="stat-d">Continuous ingestion of filings, earnings, and market-moving publications.</div></div>
@@ -2333,14 +2526,15 @@ footer {
     </div>
   </div>
 </section>
-<hr class="sec-rule">
+<div class="prism-divider"></div>
 <!-- ── SAMPLE OUTPUT ── -->
-<section class="sec sec-alt">
+<section class="sec sec-alt" style="overflow:hidden;">
+  <div class="sec-orb sec-orb-teal" style="top:10%;right:-8%;"></div>
   <div class="con">
     <div class="eyebrow reveal">Sample output</div>
     <h2 class="reveal">What you see when you open a ticker</h2>
     <p class="sec-lead reveal">Every ticker page shows you the full narrative picture — not just the headline, but the mechanics beneath it.</p>
-    <div class="sample-grid reveal">
+    <div class="sample-grid reveal-left">
       <div class="story-card">
         <div class="sc-top">
           <div class="sc-mid">
@@ -2377,7 +2571,7 @@ footer {
       </div>
     </div>
     <!-- Ticker detail preview -->
-    <div class="detail-preview reveal">
+    <div class="detail-preview reveal-right">
       <div class="dp-hero">
         <div class="dp-hero-row">
           <div>
@@ -2432,7 +2626,7 @@ footer {
     </div>
   </div>
 </section>
-<hr class="sec-rule">
+<div class="prism-divider"></div>
 <!-- ── CTA ── -->
 <section class="cta-sec">
   <div class="con">
@@ -2564,9 +2758,17 @@ footer {
   });
 })();
 
-// Scroll reveal
-const obs = new IntersectionObserver(e => e.forEach(x => { if(x.isIntersecting) x.target.classList.add('in'); }), {threshold:.07});
-document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+// Scroll reveal — supports all reveal variants
+const obs = new IntersectionObserver(e => e.forEach(x => {
+  if(x.isIntersecting) {
+    x.target.classList.add('in');
+    // For prism reveals, remove the glow after it plays
+    if(x.target.classList.contains('reveal-prism')) {
+      setTimeout(() => x.target.classList.add('done'), 1500);
+    }
+  }
+}), {threshold:.07});
+document.querySelectorAll('.reveal,.reveal-left,.reveal-right,.reveal-scale,.reveal-prism').forEach(el => obs.observe(el));
 document.querySelectorAll('.features-grid,.steps,.stats-grid,.sample-grid,.radar-grid,.trust-row,.deck').forEach(g => {
   [...g.children].forEach((c,i) => { c.style.transitionDelay = (i*80)+'ms'; });
 });
