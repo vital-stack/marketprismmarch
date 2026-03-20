@@ -212,9 +212,11 @@
   .verdict-monitoring { background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.5); border-color: rgba(255,255,255,0.08); }
 
   /* hero-claim, hero-right, hero-price, hero-delta overridden below */
-  .delta-pos { color: var(--mp-teal); }
-  .delta-neg { color: #38C8B8; }
+  .delta-pos { color: #fff; }
+  .delta-neg { color: #fff; }
   .delta-flat { color: var(--text-tertiary); }
+  .chg-arrow-up { color: #00DE94; }
+  .chg-arrow-dn { color: #FF4D4D; }
   .hero-fv { font-size: 12px; color: var(--text-tertiary); margin-top: 6px; font-family: var(--font-body); }
   .hero-fv span { font-family: var(--font-body); color: rgba(255,255,255,0.7); }
 
@@ -296,14 +298,6 @@
     color: var(--text-primary);
   }
   .metric-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 1px; }
-
-  /* ── Forensic text ── */
-  .forensic-pad { padding: 16px 18px; }
-  .forensic-text {
-    font-size: 13px;
-    color: var(--mp-text-secondary);
-    line-height: 1.65;
-  }
 
   /* ── Chart ── */
   .chart-controls {
@@ -1651,7 +1645,7 @@
     font-family: var(--mono);
     letter-spacing: -0.03em;
   }
-  .hero-delta { font-size: 14px; font-family: var(--mono); margin-top: 4px; }
+  .hero-delta { font-size: 14px; font-family: var(--font-body); margin-top: 4px; }
 
   /* ── Diag strip fix ── */
   .diag-strip {
@@ -1942,13 +1936,6 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
         <div class="section">
           <div class="section-label">Forensic Analysis</div>
           <div class="section-body">
-            <div class="forensic-pad">
-              <div id="forensic-text">
-                <div class="skel" style="height:13px;margin-bottom:7px;"></div>
-                <div class="skel" style="height:13px;width:92%;margin-bottom:7px;"></div>
-                <div class="skel" style="height:13px;width:78%;"></div>
-              </div>
-            </div>
             <div class="metrics-strip" id="metrics-strip">
               <div class="metric-cell"><div class="skel" style="height:10px;width:50%;margin-bottom:5px;"></div><div class="skel" style="height:16px;width:70%;"></div></div>
               <div class="metric-cell"><div class="skel" style="height:10px;width:50%;margin-bottom:5px;"></div><div class="skel" style="height:16px;width:70%;"></div></div>
@@ -2247,7 +2234,8 @@ function fmtPrice(p) {
 }
 function fmtPct(p) {
   if (p == null) return { cls:'delta-flat', txt:'—' };
-  return { cls: p > 0 ? 'delta-pos' : p < 0 ? 'delta-neg' : 'delta-flat', txt: (p > 0 ? '+' : '') + p.toFixed(2) + '%' };
+  var arrow = p > 0 ? '<span class="chg-arrow-up">\u25B2</span> +' : p < 0 ? '<span class="chg-arrow-dn">\u25BC</span> ' : '';
+  return { cls: p > 0 ? 'delta-pos' : p < 0 ? 'delta-neg' : 'delta-flat', txt: arrow + p.toFixed(2) + '%' };
 }
 function stateClass(s) {
   return ({ Breaking:'badge-breaking', Surging:'badge-surging', Fragile:'badge-fragile', Stable:'badge-stable' })[s] || 'badge-stable';
@@ -2376,12 +2364,6 @@ async function loadHero() {
     // Update feed ticker
     const feedTicker = document.getElementById('tk-feed-ticker');
     if (feedTicker) feedTicker.textContent = r.ticker;
-
-    // Forensic text — prefer mda_snippet if forensic_rebuttal is absent
-    const forensicContent = r.forensic_rebuttal || r.mda_snippet;
-    document.getElementById('forensic-text').innerHTML = forensicContent
-      ? `<div class="forensic-text">${esc(forensicContent)}</div>`
-      : `<div class="no-data" style="padding:0;">No forensic analysis available.</div>`;
 
     // ── Metrics strip — 6 cells of real SEC/Benzinga data ──
     const fmtRevenue = v => {
