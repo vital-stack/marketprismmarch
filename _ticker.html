@@ -5,61 +5,63 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ticker — Market Prism</title>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&family=Anton&family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1/dist/fonts/geist-mono/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1/dist/fonts/geist-sans/style.css">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --mp-obsidian: #08090F;
-    --mp-deep: #0C0D14;
-    --mp-surface: #12131C;
-    --mp-border: rgba(255,255,255,0.06);
+    --mp-obsidian: #0b1017;
+    --mp-deep: #0f1520;
+    --mp-surface: #141d27;
+    --mp-border: rgba(255,255,255,0.07);
     --mp-border-mid: rgba(255,255,255,0.10);
-    --mp-blue: #00AEFF;
-    --mp-blue-glow: rgba(0,174,255,0.10);
-    --mp-cyan: #00FFFF;
-    --mp-teal: #00DE94;
-    --mp-prism-4: #00FF52;
-    --mp-prism-5: #38C8B8;
+    --mp-blue: #3b82f6;
+    --mp-blue-glow: rgba(59,130,246,0.10);
+    --mp-cyan: #3b82f6;
+    --mp-teal: #22c55e;
+    --mp-prism-4: #22c55e;
+    --mp-prism-5: #ef4444;
     --mp-text-primary: #E8ECF4;
-    --mp-text-secondary: #6B7394;
-    --mp-text-tertiary: #3D4466;
+    --mp-text-secondary: #9ca3af;
+    --mp-text-tertiary: #6b7280;
     --font-display: 'Instrument Serif', 'DM Serif Display', Georgia, serif;
-    --font-body: 'Inter', 'DM Sans', system-ui, sans-serif;
-    --font-mono: 'Inter', 'DM Sans', system-ui, sans-serif;
+    --font-body: 'Geist', 'Inter', 'DM Sans', system-ui, sans-serif;
+    --font-mono: 'Geist Mono', 'Inter', monospace;
     /* Legacy mappings for JS-generated inline styles */
-    --accent-breaking: #FF6B6B;
-    --accent-breaking-bg: rgba(255,77,77,0.08);
-    --accent-surging: var(--mp-text-primary);
-    --accent-surging-bg: rgba(255,255,255,0.06);
-    --accent-fragile: var(--mp-text-secondary);
-    --accent-fragile-bg: rgba(255,255,255,0.03);
-    --accent-stable: var(--mp-text-secondary);
-    --accent-stable-bg: rgba(255,255,255,0.04);
-    --accent-trap: var(--mp-text-secondary);
-    --accent-supported: var(--mp-text-primary);
-    --bg: #08090F;
-    --surface: #12131C;
-    --surface2: #0C0D14;
-    --surface3: #181922;
-    --border: rgba(255,255,255,0.06);
+    --accent-breaking: #ef4444;
+    --accent-breaking-bg: rgba(239,68,68,0.08);
+    --accent-surging: #22c55e;
+    --accent-surging-bg: rgba(34,197,94,0.08);
+    --accent-fragile: #ef4444;
+    --accent-fragile-bg: rgba(239,68,68,0.08);
+    --accent-stable: #3b82f6;
+    --accent-stable-bg: rgba(59,130,246,0.08);
+    --accent-trap: #ef4444;
+    --accent-supported: #22c55e;
+    --bg: #0b1017;
+    --surface: #141d27;
+    --surface2: #0f1520;
+    --surface3: #1a2433;
+    --border: rgba(255,255,255,0.07);
     --border-strong: rgba(255,255,255,0.10);
     --text-primary: #E8ECF4;
-    --text-secondary: #6B7394;
-    --text-tertiary: #3D4466;
-    --font: 'DM Sans', system-ui, sans-serif;
-    --mono: 'Inter', 'DM Sans', system-ui, sans-serif;
-    --green: #00DE94;
-    --green-mid: #00DE94;
-    --green-bg: rgba(0,222,148,0.08);
-    --green-bd: rgba(0,222,148,0.18);
-    --red: #38C8B8;
-    --red-bg: rgba(56,200,184,0.08);
-    --red-bd: rgba(56,200,184,0.18);
-    --amber: #00DE94;
-    --amber-bg: rgba(0,222,148,0.08);
-    --amber-bd: rgba(0,222,148,0.18);
-    --blue: #00AEFF;
-    --blue-bg: rgba(0,174,255,0.08);
+    --text-secondary: #9ca3af;
+    --text-tertiary: #6b7280;
+    --font: 'Geist', 'DM Sans', system-ui, sans-serif;
+    --mono: 'Geist Mono', 'Inter', monospace;
+    --green: #22c55e;
+    --green-mid: #22c55e;
+    --green-bg: rgba(34,197,94,0.08);
+    --green-bd: rgba(34,197,94,0.20);
+    --red: #ef4444;
+    --red-bg: rgba(239,68,68,0.08);
+    --red-bd: rgba(239,68,68,0.20);
+    --amber: #3b82f6;
+    --amber-bg: rgba(59,130,246,0.08);
+    --amber-bd: rgba(59,130,246,0.20);
+    --blue: #3b82f6;
+    --blue-bg: rgba(59,130,246,0.08);
   }
 
   html { font-size: 16px; }
@@ -215,24 +217,24 @@
   .delta-pos { color: #fff; }
   .delta-neg { color: #fff; }
   .delta-flat { color: var(--text-tertiary); }
-  .chg-arrow-up { color: #00DE94; }
-  .chg-arrow-dn { color: #FF4D4D; }
-  .hero-fv { font-size: 12px; color: var(--text-tertiary); margin-top: 6px; font-family: var(--font-body); }
-  .hero-fv span { font-family: var(--font-body); color: rgba(255,255,255,0.7); }
+  .chg-arrow-up { color: #22c55e; }
+  .chg-arrow-dn { color: #ef4444; }
+  .hero-fv { font-size: 12px; color: #6b7280; margin-top: 6px; font-family: var(--mono); }
+  .hero-fv span { font-family: var(--mono); color: rgba(255,255,255,0.5); }
 
   /* ── Section ── */
   .section { margin-bottom: 28px; overflow: hidden; }
   .section-label {
-    font-size: 11px;
+    font-size: 9px;
     font-weight: 500;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: rgba(255,255,255,0.45);
+    letter-spacing: 0.12em;
+    color: #6b7280;
     margin-bottom: 12px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    font-family: var(--font-body);
+    font-family: var(--mono);
   }
   .section-label-sub {
     font-size: 10px;
@@ -244,23 +246,17 @@
   .section-body {
     background: var(--mp-surface);
     border: 1px solid var(--mp-border);
-    border-radius: 16px;
+    border-radius: 12px;
     overflow: hidden;
     width: 100%;
     transition: all 0.4s cubic-bezier(0.16,1,0.3,1);
     position: relative;
   }
   .section-body::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--mp-teal), var(--mp-blue), transparent);
-    opacity: 0.5;
+    display: none;
   }
   .section-body:hover {
-    border-color: rgba(0,174,255,0.12);
-    box-shadow: 0 4px 24px rgba(0,174,255,0.04);
+    border-color: rgba(255,255,255,0.12);
   }
 
   /* ── Skeleton ── */
@@ -285,11 +281,12 @@
   }
   .metric-cell:last-child { border-right: none; }
   .metric-label {
-    font-size: 10px;
+    font-size: 9px;
     text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--text-tertiary);
+    letter-spacing: 0.10em;
+    color: #6b7280;
     margin-bottom: 3px;
+    font-family: var(--mono);
   }
   .metric-value {
     font-size: 15px;
@@ -418,8 +415,8 @@
     border-radius: 99px;
     border: 1px solid;
   }
-  .popup-vms-bull { background: var(--accent-surging-bg); color: var(--accent-supported); border-color: rgba(0,229,180,0.25); }
-  .popup-vms-bear { background: var(--accent-breaking-bg); color: var(--accent-breaking); border-color: rgba(255,107,107,0.3); }
+  .popup-vms-bull { background: rgba(34,197,94,0.08); color: #22c55e; border-color: rgba(34,197,94,0.20); }
+  .popup-vms-bear { background: rgba(239,68,68,0.08); color: #ef4444; border-color: rgba(239,68,68,0.20); }
   /* ── Bear Stories list ── */
   .bear-stories-wrap { border-top: 1px solid var(--border); }
   .bear-stories-header {
@@ -432,23 +429,24 @@
   }
   .bear-stories-header:hover { background: var(--surface2); }
   .bear-stories-title {
-    font-size: 11px;
+    font-size: 9px;
     font-weight: 500;
     text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--text-tertiary);
+    letter-spacing: 0.10em;
+    color: #6b7280;
     display: flex;
     align-items: center;
     gap: 6px;
+    font-family: var(--mono);
   }
   .bear-count-badge {
     font-size: 10px;
-    font-family: var(--font-body);
+    font-family: var(--mono);
     padding: 1px 6px;
     border-radius: 99px;
-    background: var(--accent-breaking-bg);
-    color: var(--accent-breaking);
-    border: 1px solid rgba(255,107,107,0.3);
+    background: rgba(239,68,68,0.08);
+    color: #ef4444;
+    border: 1px solid rgba(239,68,68,0.20);
   }
   .bear-toggle-icon { font-size: 12px; color: var(--text-tertiary); transition: transform 0.15s; }
   .bear-toggle-icon.open { transform: rotate(180deg); }
@@ -462,7 +460,7 @@
     gap: 10px;
   }
   .bear-story-item:hover { background: var(--surface2); cursor: pointer; }
-  .bear-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent-breaking); flex-shrink: 0; margin-top: 4px; }
+  .bear-dot { width: 7px; height: 7px; border-radius: 50%; background: #ef4444; flex-shrink: 0; margin-top: 4px; }
   .bear-story-date { font-size: 10px; font-family: var(--font-body); color: var(--text-tertiary); white-space: nowrap; flex-shrink: 0; margin-top: 1px; }
   .bear-story-text { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
 
@@ -514,11 +512,12 @@
   }
   .lc-stat { background: var(--mp-deep); padding: 9px 13px; }
   .lc-stat-label {
-    font-size: 10px;
+    font-size: 9px;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text-tertiary);
+    letter-spacing: 0.10em;
+    color: #6b7280;
     margin-bottom: 2px;
+    font-family: var(--mono);
   }
   .lc-stat-val {
     font-size: 14px;
@@ -579,11 +578,12 @@
     overflow: hidden;
   }
   .ct-group-label {
-    font-size: 10px;
+    font-size: 9px;
     text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--text-tertiary);
+    letter-spacing: 0.10em;
+    color: #6b7280;
     margin-bottom: 2px;
+    font-family: var(--mono);
   }
   .ct-chip {
     display: inline-flex;
@@ -601,11 +601,11 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .ct-chip.upstream   { background: var(--accent-stable-bg);   border-color: rgba(26,110,255,0.25); color: var(--accent-stable); }
-  .ct-chip.downstream { background: var(--accent-breaking-bg); border-color: rgba(255,107,107,0.3); color: var(--accent-breaking); }
+  .ct-chip.upstream   { background: rgba(59,130,246,0.08); border-color: rgba(59,130,246,0.20); color: #3b82f6; }
+  .ct-chip.downstream { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.20); color: #ef4444; }
   .ct-chip.focal {
-    background: var(--mp-blue);
-    border-color: var(--mp-blue);
+    background: #3b82f6;
+    border-color: #3b82f6;
     color: #fff;
     font-size: 13px;
     padding: 8px 14px;
@@ -724,8 +724,8 @@
     flex-shrink: 0;
     margin-top: 1px;
   }
-  .pr-met     { background: var(--accent-surging-bg); color: var(--accent-supported); border-color: rgba(0,229,180,0.25); }
-  .pr-not-met { background: var(--accent-breaking-bg); color: var(--accent-breaking); border-color: rgba(255,107,107,0.3); }
+  .pr-met     { background: rgba(34,197,94,0.08); color: #22c55e; border-color: rgba(34,197,94,0.20); }
+  .pr-not-met { background: rgba(239,68,68,0.08); color: #ef4444; border-color: rgba(239,68,68,0.20); }
   .pr-pending { background: var(--surface2); color: var(--text-tertiary); border-color: var(--border); }
   .pr-text { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
 
@@ -765,7 +765,7 @@
     align-items: center;
     gap: 7px;
   }
-  .par-sim-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); }
+  .par-sim-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.10em; color: #6b7280; font-family: var(--mono); }
   .par-sim-track { width: 72px; height: 3px; background: var(--surface3); border-radius: 99px; overflow: hidden; }
   .par-sim-fill { height: 100%; background: var(--accent-stable); border-radius: 99px; }
   .par-sim-pct { font-size: 11px; font-family: var(--mono); color: var(--text-tertiary); }
@@ -778,9 +778,9 @@
     border-radius: 99px;
     border: 1px solid;
   }
-  .hero-trend-badge.trend-rising    { background: rgba(0,222,148,0.10); color: var(--mp-teal); border-color: rgba(0,222,148,0.25); }
-  .hero-trend-badge.trend-collapsing { background: rgba(56,200,184,0.08); color: #38C8B8; border-color: rgba(56,200,184,0.22); }
-  .hero-trend-badge.trend-stable    { background: rgba(0,174,255,0.06); color: var(--mp-blue); border-color: rgba(0,174,255,0.15); }
+  .hero-trend-badge.trend-rising    { background: rgba(34,197,94,0.08); color: #22c55e; border-color: rgba(34,197,94,0.20); }
+  .hero-trend-badge.trend-collapsing { background: rgba(239,68,68,0.08); color: #ef4444; border-color: rgba(239,68,68,0.20); }
+  .hero-trend-badge.trend-stable    { background: rgba(59,130,246,0.08); color: #3b82f6; border-color: rgba(59,130,246,0.20); }
 
   .hero-stock-type {
     font-size: 11px;
@@ -821,13 +821,13 @@
   }
   .si-cagr {
     font-size: 11px;
-    font-family: var(--font-body);
+    font-family: var(--mono);
     font-weight: 500;
     padding: 2px 8px;
     border-radius: 99px;
-    background: var(--accent-surging-bg);
-    color: var(--accent-supported);
-    border: 1px solid rgba(0,229,180,0.25);
+    background: rgba(34,197,94,0.08);
+    color: #22c55e;
+    border: 1px solid rgba(34,197,94,0.20);
   }
   .si-framework {
     font-size: 11px;
@@ -861,12 +861,13 @@
     padding: 14px 18px;
   }
   .si-block-label {
-    font-size: 10px;
+    font-size: 9px;
     text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--text-tertiary);
+    letter-spacing: 0.10em;
+    color: #6b7280;
     margin-bottom: 5px;
     font-weight: 500;
+    font-family: var(--mono);
   }
   .si-block-text {
     font-size: 12px;
@@ -879,12 +880,13 @@
     background: var(--surface2);
   }
   .si-contrarian-label {
-    font-size: 10px;
+    font-size: 9px;
     text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--text-tertiary);
+    letter-spacing: 0.10em;
+    color: #6b7280;
     font-weight: 500;
     margin-bottom: 6px;
+    font-family: var(--mono);
   }
   .si-contrarian-text {
     font-size: 12px;
@@ -922,11 +924,12 @@
   .driver-left { flex: 1; min-width: 0; }
   .driver-name { font-size: 13px; color: var(--text-primary); }
   .driver-class-tag {
-    font-size: 10px;
+    font-size: 9px;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text-tertiary);
+    letter-spacing: 0.10em;
+    color: #6b7280;
     margin-top: 2px;
+    font-family: var(--mono);
   }
   .driver-right {
     display: flex;
@@ -976,6 +979,8 @@
   .narr-header-mid { flex: 1; min-width: 0; }
   .narr-text {
     font-size: 14px;
+    font-family: var(--font-display);
+    font-style: italic;
     color: #FFFFFF;
     line-height: 1.55;
     margin-bottom: 6px;
@@ -996,10 +1001,10 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
-  .narr-v-verified   { background: rgba(255,255,255,0.06); color: var(--mp-text-primary); border-color: rgba(255,255,255,0.10); }
-  .narr-v-misleading { background: rgba(255,255,255,0.04); color: var(--mp-text-secondary); border-color: rgba(255,255,255,0.08); }
-  .narr-v-monitoring { background: rgba(255,255,255,0.03); color: var(--text-tertiary); border-color: var(--border); }
-  .narr-v-trap       { background: rgba(255,255,255,0.04); color: var(--mp-text-secondary); border-color: rgba(255,255,255,0.08); }
+  .narr-v-verified   { background: rgba(34,197,94,0.08); color: #22c55e; border-color: rgba(34,197,94,0.20); }
+  .narr-v-misleading { background: rgba(239,68,68,0.08); color: #ef4444; border-color: rgba(239,68,68,0.20); }
+  .narr-v-monitoring { background: rgba(59,130,246,0.08); color: #3b82f6; border-color: rgba(59,130,246,0.20); }
+  .narr-v-trap       { background: rgba(239,68,68,0.08); color: #ef4444; border-color: rgba(239,68,68,0.20); }
 
   .narr-cite {
     font-size: 11px;
@@ -1051,12 +1056,13 @@
     flex-wrap: wrap;
   }
   .narr-claim-label {
-    font-size: 10px;
+    font-size: 9px;
     text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--text-tertiary);
+    letter-spacing: 0.10em;
+    color: #6b7280;
     font-weight: 500;
     white-space: nowrap;
+    font-family: var(--mono);
   }
   .narr-claim-val {
     font-size: 14px;
@@ -1116,15 +1122,15 @@
     background: var(--surface2);
     color: var(--text-tertiary);
   }
-  .narr-signal.good { background: var(--accent-surging-bg); color: var(--accent-supported); border-color: rgba(0,229,180,0.25); }
-  .narr-signal.warn { background: var(--accent-breaking-bg); color: var(--accent-breaking); border-color: rgba(255,107,107,0.3); }
+  .narr-signal.good { background: rgba(34,197,94,0.08); color: #22c55e; border-color: rgba(34,197,94,0.20); }
+  .narr-signal.warn { background: rgba(239,68,68,0.08); color: #ef4444; border-color: rgba(239,68,68,0.20); }
 
   /* Omission / discrepancy */
   .narr-flag {
     font-size: 13px;
-    color: #FF6B6B;
-    background: rgba(255,77,77,0.10);
-    border: 1px solid rgba(255,77,77,0.35);
+    color: #ef4444;
+    background: rgba(239,68,68,0.08);
+    border: 1px solid rgba(239,68,68,0.20);
     border-radius: 6px;
     padding: 10px 14px;
     margin-bottom: 10px;
@@ -1143,14 +1149,14 @@
     flex-wrap: wrap;
   }
   .narr-source a {
-    color: var(--accent-stable);
+    color: #3b82f6;
     text-decoration: none;
     font-size: 11px;
   }
   .narr-source a:hover { text-decoration: underline; }
 
   /* ── Error / empty states ── */
-  .inline-err { padding: 14px 18px; font-size: 13px; color: var(--accent-breaking); }
+  .inline-err { padding: 14px 18px; font-size: 13px; color: #ef4444; }
   .no-data    { padding: 16px 18px; font-size: 13px; color: var(--text-tertiary); }
 
   /* ── Diagnosis Strip (overridden below) ── */
@@ -1187,11 +1193,11 @@
   }
   .action-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
   .action-btn.primary {
-    background: rgba(255,255,255,0.08);
-    color: #fff;
-    border-color: rgba(255,255,255,0.12);
+    background: transparent;
+    color: #9ca3af;
+    border-color: rgba(255,255,255,0.07);
   }
-  .action-btn.primary:hover { background: rgba(255,255,255,0.12); }
+  .action-btn.primary:hover { background: rgba(255,255,255,0.04); color: var(--text-primary); }
   /* capture overlay */
   .capture-overlay {
     position: fixed; inset: 0; z-index: 9999;
@@ -1203,13 +1209,13 @@
   .capture-spinner {
     width: 36px; height: 36px;
     border: 3px solid rgba(255,255,255,.2);
-    border-top-color: var(--mp-blue);
+    border-top-color: #3b82f6;
     border-radius: 50%;
     animation: spin .7s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* ── Two-col layout for pulse panels ── */
+  /* ── Two-col layout for pulse panels (legacy) ── */
   .pulse-two {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1220,10 +1226,13 @@
 
   /* ── Primary Claim card ── */
   .claim-title {
-    font-size: 14px;
-    font-weight: 500;
-    line-height: 1.4;
+    font-size: 16px;
+    font-weight: 400;
+    font-family: var(--font-display);
+    font-style: italic;
+    line-height: 1.5;
     margin-bottom: 8px;
+    color: #fff;
   }
   .claim-meta {
     display: flex;
@@ -1246,7 +1255,7 @@
     background: var(--surface2);
     border-radius: 6px;
   }
-  .claim-bullet span { color: var(--text-tertiary); }
+  .claim-bullet span { color: #6b7280; font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; }
   .claim-bullet strong { font-family: var(--mono); font-weight: 500; }
   .claim-summary {
     font-size: 11px;
@@ -1268,14 +1277,15 @@
   .dual-divider { height: 44px; background: var(--mp-border); }
   .score-block { text-align: center; }
   .score-block-label {
-    font-size:11px;
+    font-size: 9px;
     text-transform: uppercase;
-    letter-spacing: .07em;
-    color: var(--text-tertiary);
+    letter-spacing: .12em;
+    color: #6b7280;
     margin-bottom: 3px;
+    font-family: var(--mono);
   }
   .score-block-num {
-    font-size: 30px;
+    font-size: 36px;
     font-weight: 500;
     font-family: var(--mono);
     line-height: 1;
@@ -1284,9 +1294,12 @@
   .score-bar-top {
     display: flex;
     justify-content: space-between;
-    font-size: 11px;
-    color: var(--text-secondary);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #6b7280;
     margin-bottom: 3px;
+    font-family: var(--mono);
   }
   .score-bar-top strong { font-family: var(--mono); color: var(--text-primary); font-weight: 500; }
   .score-bar-track {
@@ -1296,9 +1309,9 @@
     overflow: hidden;
   }
   .score-bar-fill { height: 100%; border-radius: 99px; }
-  .fill-green { background: var(--accent-surging); }
-  .fill-amber { background: var(--accent-fragile); }
-  .fill-red   { background: var(--accent-breaking); }
+  .fill-green { background: #22c55e; }
+  .fill-amber { background: #3b82f6; }
+  .fill-red   { background: #ef4444; }
 
   /* ── Heatmap ── */
   .heatmap-head {
@@ -1308,11 +1321,12 @@
     border-bottom: 1px solid var(--border);
   }
   .heatmap-head > div {
-    font-size:11px;
+    font-size: 9px;
     text-transform: uppercase;
-    letter-spacing: .07em;
-    color: var(--text-tertiary);
+    letter-spacing: .10em;
+    color: #6b7280;
     text-align: center;
+    font-family: var(--mono);
   }
   .heatmap-head > div:first-child { text-align: left; }
   .heatmap-row {
@@ -1334,9 +1348,9 @@
     font-weight: 500;
     margin: 0 3px;
   }
-  .hc-green { background: rgba(0,222,148,0.12); color: #00DE94; }
-  .hc-amber { background: rgba(0,222,148,0.10); color: #00DE94; }
-  .hc-red   { background: rgba(56,200,184,0.10); color: #38C8B8; }
+  .hc-green { background: rgba(34,197,94,0.08); color: #22c55e; }
+  .hc-amber { background: rgba(59,130,246,0.08); color: #3b82f6; }
+  .hc-red   { background: rgba(239,68,68,0.08); color: #ef4444; }
   .heatmap-foot {
     padding: 9px 14px;
     font-size: 11px;
@@ -1355,20 +1369,20 @@
     padding: 9px 16px;
     border-radius: 10px;
     border: 1px solid var(--mp-border);
-    background: rgba(0,174,255,0.02);
+    background: rgba(59,130,246,0.02);
     margin-bottom: 20px;
-    max-width: 600px;
+    max-width: 100%;
     cursor: text;
     transition: all .3s cubic-bezier(0.16,1,0.3,1);
   }
   .ticker-scholar-bar:hover {
-    border-color: rgba(0,174,255,0.2);
-    background: rgba(0,174,255,0.04);
-    box-shadow: 0 0 0 3px rgba(0,174,255,0.04);
+    border-color: rgba(59,130,246,0.2);
+    background: rgba(59,130,246,0.04);
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.04);
   }
   .ticker-scholar-bar:focus-within {
-    border-color: rgba(0,174,255,0.3);
-    box-shadow: 0 0 0 4px rgba(0,174,255,0.06);
+    border-color: rgba(59,130,246,0.3);
+    box-shadow: 0 0 0 4px rgba(59,130,246,0.06);
   }
   .ticker-scholar-icon { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.6; }
   .ticker-scholar-input {
@@ -1389,7 +1403,7 @@
     display: flex;
     align-items: center;
     gap: 0;
-    border-bottom: 2px solid var(--mp-border-mid);
+    border-bottom: 1px solid rgba(255,255,255,0.07);
     margin-bottom: 28px;
     position: sticky;
     top: 0;
@@ -1403,10 +1417,10 @@
     font-weight: 500;
     letter-spacing: .03em;
     text-transform: uppercase;
-    color: var(--mp-text-secondary);
+    color: #6b7280;
     padding: 16px 28px;
     cursor: pointer;
-    border-bottom: 3px solid transparent;
+    border-bottom: 2px solid transparent;
     transition: all .2s;
     white-space: nowrap;
     background: none;
@@ -1417,13 +1431,13 @@
   }
   .tk-tab:hover {
     color: var(--mp-text-primary);
-    background: rgba(255,255,255,0.03);
+    background: none;
   }
   .tk-tab.active {
     color: #fff;
     font-weight: 600;
-    border-bottom-color: rgba(232,232,227,0.5);
-    text-shadow: 0 0 12px rgba(0,255,255,0.3);
+    border-bottom-color: #3b82f6;
+    text-shadow: none;
   }
   .tk-tab-panel { display: none; }
   .tk-tab-panel.active { display: block; }
@@ -1433,16 +1447,23 @@
     .tk-tab { padding: 14px 18px; font-size: 12px; }
   }
 
-  /* ── Full-width split layout ── */
+  /* ── Full-width split layout — 3 columns ── */
   .tk-main-split {
     display: grid;
-    grid-template-columns: 1fr 380px;
-    gap: 28px;
+    grid-template-columns: 5fr 4fr 3fr;
+    gap: 24px;
     align-items: start;
   }
-  @media (max-width: 1100px) {
+  @media (max-width: 1200px) {
+    .tk-main-split { grid-template-columns: 1fr 1fr; }
+    .tk-col-right { grid-column: 1 / -1; }
+  }
+  @media (max-width: 800px) {
     .tk-main-split { grid-template-columns: 1fr; }
   }
+  .tk-col-left { min-width: 0; }
+  .tk-col-mid { min-width: 0; }
+  .tk-col-right { min-width: 0; }
   .tk-content-col { min-width: 0; }
 
   /* ── Stories Feed (right column) ── */
@@ -1470,12 +1491,12 @@
     letter-spacing: .02em;
   }
   .tk-feed-title {
-    font-family: var(--font-body);
-    font-size:11px;
+    font-family: var(--mono);
+    font-size: 9px;
     font-weight: 500;
-    letter-spacing: .08em;
+    letter-spacing: .12em;
     text-transform: uppercase;
-    color: rgba(255,255,255,0.4);
+    color: #6b7280;
   }
   .tk-feed-list { display: flex; flex-direction: column; }
   .tk-feed-item {
@@ -1494,20 +1515,21 @@
     flex-shrink: 0;
     margin-top: 5px;
   }
-  .tk-feed-dot.bull { background: var(--mp-teal); }
-  .tk-feed-dot.bear { background: var(--red); }
-  .tk-feed-dot.neutral { background: var(--mp-text-tertiary); }
+  .tk-feed-dot.bull { background: #22c55e; }
+  .tk-feed-dot.bear { background: #ef4444; }
+  .tk-feed-dot.neutral { background: #6b7280; }
   .tk-feed-body { flex: 1; min-width: 0; }
   .tk-feed-text {
-    font-size: 12px;
-    color: var(--mp-text-primary);
+    font-size: 13px;
+    color: #d1d5db;
     line-height: 1.5;
     margin-bottom: 3px;
+    font-family: var(--font-body);
   }
   .tk-feed-meta {
-    font-family: var(--font-body);
+    font-family: var(--mono);
     font-size: 10px;
-    color: rgba(255,255,255,0.35);
+    color: #6b7280;
     display: flex;
     gap: 8px;
     align-items: center;
@@ -1541,17 +1563,17 @@
     align-items: center;
     gap: 4px;
   }
-  .tk-feed-refresh:hover { color: var(--mp-cyan); border-color: var(--mp-cyan); }
+  .tk-feed-refresh:hover { color: #3b82f6; border-color: #3b82f6; }
   .tk-feed-refresh.spinning svg { animation: tk-spin .6s linear infinite; }
   @keyframes tk-spin { to { transform: rotate(360deg); } }
   .tk-feed-link {
     font-size: 11px;
-    color: var(--mp-cyan);
+    color: #3b82f6;
     text-decoration: none;
-    opacity: 0.7;
+    opacity: 1;
     transition: opacity .15s;
   }
-  .tk-feed-link:hover { opacity: 1; text-decoration: underline; }
+  .tk-feed-link:hover { opacity: 0.8; text-decoration: underline; }
 
   /* ── Redesigned Hero ── */
   .ticker-hero {
@@ -1566,28 +1588,11 @@
     border-bottom: 1px solid var(--mp-border);
   }
   .ticker-hero::before {
-    content: '';
-    position: absolute; inset: 0; z-index: 0;
-    background-image:
-      linear-gradient(var(--mp-border) 1px, transparent 1px),
-      linear-gradient(90deg, var(--mp-border) 1px, transparent 1px);
-    background-size: 72px 72px;
-    mask-image: radial-gradient(ellipse 80% 80% at 50% 40%, black 20%, transparent 80%);
-    pointer-events: none;
+    display: none;
   }
   .ticker-hero::after {
-    content: '';
-    position: absolute;
-    width: 500px; height: 500px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(0,174,255,0.05) 0%, transparent 65%);
-    top: 50%; left: 30%;
-    transform: translate(-50%, -55%);
-    animation: heroGlow 8s ease-in-out infinite;
-    pointer-events: none;
-    z-index: 0;
+    display: none;
   }
-  @keyframes heroGlow { 0%,100%{opacity:.7;transform:translate(-50%,-55%) scale(1);} 50%{opacity:1;transform:translate(-50%,-55%) scale(1.08);} }
   .hero-left { flex: 1; min-width: 0; position: relative; z-index: 1; }
   .hero-ticker-row {
     display: flex;
@@ -1608,16 +1613,17 @@
   }
   .hero-ticker {
     font-size: 40px;
-    font-weight: 300;
+    font-weight: 700;
     font-family: var(--font-body);
     letter-spacing: -0.03em;
   }
   .hero-claim {
-    font-size: 17px;
-    color: #fff;
+    font-size: 14px;
+    color: #9ca3af;
     line-height: 1.6;
     max-width: 700px;
-    font-weight: 300;
+    font-weight: 400;
+    font-style: italic;
     margin-bottom: 16px;
     margin-top: 10px;
   }
@@ -1645,6 +1651,7 @@
     font-weight: 400;
     font-family: var(--mono);
     letter-spacing: -0.03em;
+    color: #fff;
   }
   .hero-delta { font-size: 14px; font-family: var(--font-body); margin-top: 4px; }
 
@@ -1657,17 +1664,12 @@
     border: 1px solid var(--mp-border);
     border-radius: 12px;
     overflow: hidden;
-    margin-bottom: 24px;
-    margin-top: 24px;
+    margin-bottom: 0;
+    margin-top: 0;
     position: relative;
   }
   .diag-strip::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--mp-blue), var(--mp-teal), transparent);
-    z-index: 1;
+    display: none;
   }
   @media (max-width: 900px) { .diag-strip { grid-template-columns: repeat(4, 1fr); } }
   @media (max-width: 640px) { .diag-strip { grid-template-columns: repeat(2,1fr); } }
@@ -1678,13 +1680,13 @@
     overflow: hidden;
   }
   .diag-label {
-    font-size:11px;
+    font-size: 9px;
     font-weight: 500;
     text-transform: uppercase;
-    letter-spacing: .08em;
-    color: rgba(255,255,255,0.45);
+    letter-spacing: .12em;
+    color: #6b7280;
     margin-bottom: 6px;
-    font-family: var(--font-body);
+    font-family: var(--mono);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1716,12 +1718,12 @@
     --mp-surface: #FFFFFF;
     --mp-border: rgba(0,0,0,0.08);
     --mp-border-mid: rgba(0,0,0,0.12);
-    --mp-blue: #00AEFF;
-    --mp-blue-glow: rgba(0,174,255,0.08);
-    --mp-cyan: #00FFFF;
-    --mp-teal: #00DE94;
-    --mp-prism-4: #00FF52;
-    --mp-prism-5: #38C8B8;
+    --mp-blue: #3b82f6;
+    --mp-blue-glow: rgba(59,130,246,0.08);
+    --mp-cyan: #3b82f6;
+    --mp-teal: #22c55e;
+    --mp-prism-4: #22c55e;
+    --mp-prism-5: #ef4444;
     --mp-text-primary: #111827;
     --mp-text-secondary: #6B7280;
     --mp-text-tertiary: #9CA3AF;
@@ -1734,20 +1736,20 @@
     --text-primary: #111827;
     --text-secondary: #5A6072;
     --text-tertiary: #8B90A0;
-    --accent-breaking: #DC4444;
-    --accent-breaking-bg: rgba(220,68,68,0.1);
-    --accent-surging: #00A87A;
-    --accent-surging-bg: rgba(0,168,122,0.08);
-    --accent-fragile: #C97F00;
-    --accent-fragile-bg: rgba(201,127,0,0.08);
-    --accent-stable: #00AEFF;
-    --accent-stable-bg: rgba(26,110,255,0.08);
-    --accent-trap: #DC4444;
-    --accent-supported: #00A87A;
-    --green: #00A87A;
-    --red: #DC4444;
-    --amber: #C97F00;
-    --blue: #00AEFF;
+    --accent-breaking: #ef4444;
+    --accent-breaking-bg: rgba(239,68,68,0.08);
+    --accent-surging: #22c55e;
+    --accent-surging-bg: rgba(34,197,94,0.08);
+    --accent-fragile: #ef4444;
+    --accent-fragile-bg: rgba(239,68,68,0.08);
+    --accent-stable: #3b82f6;
+    --accent-stable-bg: rgba(59,130,246,0.08);
+    --accent-trap: #ef4444;
+    --accent-supported: #22c55e;
+    --green: #22c55e;
+    --red: #ef4444;
+    --amber: #3b82f6;
+    --blue: #3b82f6;
   }
   [data-theme="light"] body { background: var(--bg); color: var(--text-primary); }
   [data-theme="light"] .sidebar { background: #FFFFFF; border-color: rgba(0,0,0,0.08); }
@@ -1770,6 +1772,7 @@
     .section-label { font-size:11px; }
     .tk-main-split { grid-template-columns: 1fr; gap: 16px; }
     .tk-feed { position: static; max-height: none; }
+    .tk-col-right { grid-column: auto; }
   }
   @media (max-width: 480px) {
     .page-wrap { padding: 12px 10px 40px; }
@@ -1870,7 +1873,6 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
     <button class="tk-tab active" data-tab="overview">Overview</button>
     <button class="tk-tab" data-tab="narratives">Narratives</button>
     <button class="tk-tab" data-tab="history">History</button>
-    <button class="tk-tab" data-tab="chart">Chart</button>
   </div>
 
   <!-- Action bar -->
@@ -1890,50 +1892,76 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
   <!-- ═══ TAB: OVERVIEW ═══ -->
   <div class="tk-tab-panel active" id="tab-overview">
     <div class="tk-main-split">
-      <div class="tk-content-col">
 
-        <!-- Diagnosis Strip -->
-        <div id="diag-strip" class="diag-strip">
-          <div class="diag-cell"><div class="diag-label">Phase</div><div class="diag-val"><div class="skel" style="width:70px;height:20px;border-radius:99px;"></div></div></div>
-          <div class="diag-cell"><div class="diag-label">Fragility</div><div class="diag-val"><div class="skel" style="width:50px;height:17px;"></div></div></div>
-          <div class="diag-cell"><div class="diag-label">Energy</div><div class="diag-val"><div class="skel" style="width:50px;height:17px;"></div></div></div>
-          <div class="diag-cell"><div class="diag-label">Exhaustion</div><div class="diag-val"><div class="skel" style="width:40px;height:17px;"></div></div></div>
-          <div class="diag-cell"><div class="diag-label">Net Pressure</div><div class="diag-val"><div class="skel" style="width:40px;height:17px;"></div></div></div>
-          <div class="diag-cell"><div class="diag-label">Health</div><div class="diag-val"><div class="skel" style="width:50px;height:17px;"></div></div></div>
-          <div class="diag-cell"><div class="diag-label">Direction</div><div class="diag-val"><div class="skel" style="width:60px;height:17px;"></div></div></div>
-          <div class="diag-cell"><div class="diag-label">Fair Value Gap</div><div class="diag-val"><div class="skel" style="width:50px;height:17px;"></div></div></div>
-        </div>
+      <!-- ── Left Column (col-span-5) ── -->
+      <div class="tk-col-left">
 
-        <!-- Primary Claim + Warranted vs Hype -->
-        <div class="pulse-two">
-          <div class="section" style="margin-bottom:0;">
-            <div class="section-label">Primary Claim</div>
-            <div class="section-body" style="padding:14px 16px;" id="primary-claim-body">
-              <div class="skel" style="height:14px;width:90%;margin-bottom:8px;"></div>
-              <div class="skel" style="height:14px;width:70%;margin-bottom:12px;"></div>
-              <div class="skel" style="height:60px;border-radius:7px;"></div>
-            </div>
-          </div>
-          <div class="section" style="margin-bottom:0;">
-            <div class="section-label">Warranted vs Hype</div>
-            <div class="section-body" style="padding:14px 16px;" id="warranted-body">
-              <div class="skel" style="height:44px;margin-bottom:14px;"></div>
-              <div class="skel" style="height:5px;margin-bottom:10px;border-radius:99px;"></div>
-              <div class="skel" style="height:5px;margin-bottom:10px;border-radius:99px;"></div>
-              <div class="skel" style="height:5px;border-radius:99px;"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Narrative Heatmap -->
+        <!-- Primary Claim -->
         <div class="section">
-          <div class="section-label">Narrative Heatmap</div>
-          <div class="section-body" id="heatmap-body">
-            <div style="padding:14px;"><div class="skel" style="height:80px;border-radius:7px;"></div></div>
+          <div class="section-label">Primary Claim</div>
+          <div class="section-body" style="padding:20px;" id="primary-claim-body">
+            <div class="skel" style="height:14px;width:90%;margin-bottom:8px;"></div>
+            <div class="skel" style="height:14px;width:70%;margin-bottom:12px;"></div>
+            <div class="skel" style="height:60px;border-radius:7px;"></div>
           </div>
         </div>
 
-        <!-- Forensic Analysis -->
+        <!-- Narrative History Chart (moved from Chart tab) -->
+        <div class="section">
+          <div class="section-label">Price &amp; Narratives</div>
+          <div class="section-body">
+            <div class="chart-controls">
+              <div class="chart-timeframes">
+                <button class="tf-btn" data-days="30">30D</button>
+                <button class="tf-btn active" data-days="90">90D</button>
+                <button class="tf-btn" data-days="180">6M</button>
+                <button class="tf-btn" data-days="365">1Y</button>
+                <button class="tf-btn" data-days="0">All</button>
+              </div>
+              <div class="chart-sort">
+                <span>Sort stories</span>
+                <select class="sort-select" id="story-sort">
+                  <option value="date-desc">Newest first</option>
+                  <option value="date-asc">Oldest first</option>
+                  <option value="bear">Bearish only</option>
+                  <option value="bull">Bullish only</option>
+                </select>
+              </div>
+            </div>
+            <div class="chart-outer" id="chart-outer" style="height:280px;">
+              <canvas id="price-canvas"></canvas>
+              <div class="chart-tip" id="chart-tip"></div>
+              <div class="story-popup" id="story-popup">
+                <button class="popup-close" id="popup-close">&#10005;</button>
+                <div class="popup-date" id="popup-date"></div>
+                <div class="popup-headline" id="popup-headline"></div>
+                <div class="popup-body" id="popup-body"></div>
+                <div id="popup-vms"></div>
+              </div>
+            </div>
+            <div class="chart-bottom-bar">
+              <div class="chart-legend">
+                <div class="legend-item"><div class="leg-line" style="background:var(--text-primary);"></div> Price</div>
+                <div class="legend-item"><div class="leg-dash"></div> Fair Value</div>
+                <div class="legend-item"><div class="leg-dot" style="background:#22c55e;"></div> Bullish</div>
+                <div class="legend-item"><div class="leg-dot" style="background:#ef4444;"></div> Bearish</div>
+                <div class="legend-item"><div class="leg-line" style="background:#3b82f6;opacity:0.7;border-top:2px dashed #3b82f6;height:0;width:14px;"></div> Narrative energy</div>
+              </div>
+            </div>
+            <div class="bear-stories-wrap" id="bear-stories-wrap" style="display:none;">
+              <div class="bear-stories-header" id="bear-stories-header">
+                <div class="bear-stories-title">
+                  Bear Stories
+                  <span class="bear-count-badge" id="bear-count">0</span>
+                </div>
+                <span class="bear-toggle-icon" id="bear-toggle-icon">&#9662;</span>
+              </div>
+              <div class="bear-stories-list" id="bear-stories-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Forensic Analysis (news cards) -->
         <div class="section">
           <div class="section-label">Forensic Analysis</div>
           <div class="section-body">
@@ -1943,6 +1971,45 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
               <div class="metric-cell"><div class="skel" style="height:10px;width:50%;margin-bottom:5px;"></div><div class="skel" style="height:16px;width:70%;"></div></div>
               <div class="metric-cell"><div class="skel" style="height:10px;width:50%;margin-bottom:5px;"></div><div class="skel" style="height:16px;width:70%;"></div></div>
             </div>
+          </div>
+        </div>
+
+      </div><!-- /tk-col-left -->
+
+      <!-- ── Middle Column (col-span-4) ── -->
+      <div class="tk-col-mid">
+
+        <!-- Warranted vs Hype -->
+        <div class="section">
+          <div class="section-label">Warranted vs Hype</div>
+          <div class="section-body" style="padding:20px;" id="warranted-body">
+            <div class="skel" style="height:44px;margin-bottom:14px;"></div>
+            <div class="skel" style="height:5px;margin-bottom:10px;border-radius:99px;"></div>
+            <div class="skel" style="height:5px;margin-bottom:10px;border-radius:99px;"></div>
+            <div class="skel" style="height:5px;border-radius:99px;"></div>
+          </div>
+        </div>
+
+        <!-- Narrative Heatmap (Runway) -->
+        <div class="section">
+          <div class="section-label">Narrative Runway</div>
+          <div class="section-body" id="heatmap-body">
+            <div style="padding:14px;"><div class="skel" style="height:80px;border-radius:7px;"></div></div>
+          </div>
+        </div>
+
+        <!-- Diagnosis Strip (Event/Trade stats) -->
+        <div class="section">
+          <div class="section-label">Forensic Multiples</div>
+          <div id="diag-strip" class="diag-strip">
+            <div class="diag-cell"><div class="diag-label">Phase</div><div class="diag-val"><div class="skel" style="width:70px;height:20px;border-radius:99px;"></div></div></div>
+            <div class="diag-cell"><div class="diag-label">Fragility</div><div class="diag-val"><div class="skel" style="width:50px;height:17px;"></div></div></div>
+            <div class="diag-cell"><div class="diag-label">Energy</div><div class="diag-val"><div class="skel" style="width:50px;height:17px;"></div></div></div>
+            <div class="diag-cell"><div class="diag-label">Exhaustion</div><div class="diag-val"><div class="skel" style="width:40px;height:17px;"></div></div></div>
+            <div class="diag-cell"><div class="diag-label">Net Pressure</div><div class="diag-val"><div class="skel" style="width:40px;height:17px;"></div></div></div>
+            <div class="diag-cell"><div class="diag-label">Health</div><div class="diag-val"><div class="skel" style="width:50px;height:17px;"></div></div></div>
+            <div class="diag-cell"><div class="diag-label">Direction</div><div class="diag-val"><div class="skel" style="width:60px;height:17px;"></div></div></div>
+            <div class="diag-cell"><div class="diag-label">Fair Value Gap</div><div class="diag-val"><div class="skel" style="width:50px;height:17px;"></div></div></div>
           </div>
         </div>
 
@@ -1968,21 +2035,23 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
           </div>
         </div>
 
-      </div><!-- /tk-content-col -->
+      </div><!-- /tk-col-mid -->
 
-      <!-- Stories Feed (right column) -->
-      <div class="tk-feed" id="tk-feed">
-        <div class="tk-feed-header">
-          <span class="tk-feed-ticker" id="tk-feed-ticker">&mdash;</span>
-          <span class="tk-feed-title">Story Feed</span>
-          <button class="tk-feed-refresh" id="tk-feed-refresh" title="Refresh stories">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-          </button>
+      <!-- ── Right Column (col-span-3): Story Feed ── -->
+      <div class="tk-col-right">
+        <div class="tk-feed" id="tk-feed">
+          <div class="tk-feed-header">
+            <span class="tk-feed-ticker" id="tk-feed-ticker">&mdash;</span>
+            <span class="tk-feed-title">Story Feed</span>
+            <button class="tk-feed-refresh" id="tk-feed-refresh" title="Refresh stories">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            </button>
+          </div>
+          <div class="tk-feed-list" id="tk-feed-list">
+            <div class="tk-feed-empty">Loading stories...</div>
+          </div>
         </div>
-        <div class="tk-feed-list" id="tk-feed-list">
-          <div class="tk-feed-empty">Loading stories...</div>
-        </div>
-      </div>
+      </div><!-- /tk-col-right -->
 
     </div><!-- /tk-main-split -->
   </div><!-- /tab-overview -->
@@ -2092,62 +2161,7 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
     </div>
   </div><!-- /tab-history -->
 
-  <!-- ═══ TAB: CHART ═══ -->
-  <div class="tk-tab-panel" id="tab-chart">
-    <div class="section">
-      <div class="section-label">Price &amp; Narratives</div>
-      <div class="section-body">
-        <div class="chart-controls">
-          <div class="chart-timeframes">
-            <button class="tf-btn" data-days="30">30D</button>
-            <button class="tf-btn active" data-days="90">90D</button>
-            <button class="tf-btn" data-days="180">6M</button>
-            <button class="tf-btn" data-days="365">1Y</button>
-            <button class="tf-btn" data-days="0">All</button>
-          </div>
-          <div class="chart-sort">
-            <span>Sort stories</span>
-            <select class="sort-select" id="story-sort">
-              <option value="date-desc">Newest first</option>
-              <option value="date-asc">Oldest first</option>
-              <option value="bear">Bearish only</option>
-              <option value="bull">Bullish only</option>
-            </select>
-          </div>
-        </div>
-        <div class="chart-outer" id="chart-outer" style="height:400px;">
-          <canvas id="price-canvas"></canvas>
-          <div class="chart-tip" id="chart-tip"></div>
-          <div class="story-popup" id="story-popup">
-            <button class="popup-close" id="popup-close">&#10005;</button>
-            <div class="popup-date" id="popup-date"></div>
-            <div class="popup-headline" id="popup-headline"></div>
-            <div class="popup-body" id="popup-body"></div>
-            <div id="popup-vms"></div>
-          </div>
-        </div>
-        <div class="chart-bottom-bar">
-          <div class="chart-legend">
-            <div class="legend-item"><div class="leg-line" style="background:var(--text-primary);"></div> Price</div>
-            <div class="legend-item"><div class="leg-dash"></div> Fair Value</div>
-            <div class="legend-item"><div class="leg-dot" style="background:var(--accent-surging);"></div> Bullish</div>
-            <div class="legend-item"><div class="leg-dot" style="background:var(--accent-breaking);"></div> Bearish</div>
-            <div class="legend-item"><div class="leg-line" style="background:var(--accent-stable);opacity:0.7;border-top:2px dashed var(--accent-stable);height:0;width:14px;"></div> Narrative energy</div>
-          </div>
-        </div>
-        <div class="bear-stories-wrap" id="bear-stories-wrap" style="display:none;">
-          <div class="bear-stories-header" id="bear-stories-header">
-            <div class="bear-stories-title">
-              Bear Stories
-              <span class="bear-count-badge" id="bear-count">0</span>
-            </div>
-            <span class="bear-toggle-icon" id="bear-toggle-icon">&#9662;</span>
-          </div>
-          <div class="bear-stories-list" id="bear-stories-list"></div>
-        </div>
-      </div>
-    </div>
-  </div><!-- /tab-chart -->
+  <!-- Chart tab removed — chart now embedded in Overview -->
 
     </div>
   </main>
@@ -2335,8 +2349,8 @@ async function loadHero() {
     const isBull = r.price_change_pct > 0 || verdict === 'Structurally Supported' || h.narrative_trend === 'Rising';
     const isBear = verdict === 'Narrative Trap' || h.narrative_trend === 'Collapsing';
     const biasColor = isBear ? 'var(--red)' : isBull ? 'var(--mp-teal)' : 'var(--mp-text-secondary)';
-    const sentBorder = isBear ? '#FF4D4D' : isBull ? '#00DE94' : '#00AEFF';
-    const sentGlow = isBear ? 'rgba(255,77,77,0.10)' : isBull ? 'rgba(0,222,148,0.10)' : 'rgba(0,174,255,0.10)';
+    const sentBorder = isBear ? '#ef4444' : isBull ? '#22c55e' : '#3b82f6';
+    const sentGlow = isBear ? 'rgba(239,68,68,0.10)' : isBull ? 'rgba(34,197,94,0.10)' : 'rgba(59,130,246,0.10)';
     const conf = tc.primary_confidence != null ? Math.round(tc.primary_confidence) : null;
     const shortTf = tc.shortest_timeframe || '';
     const longTf = tc.longest_timeframe || '';
@@ -2734,7 +2748,7 @@ function drawChart(snaps, narrs, fairValue) {
   // Price line
   ctx.beginPath(); ctx.setLineDash([]);
   snaps.forEach((s,i) => { if (s.price_close==null) return; i===0 ? ctx.moveTo(xOf(i),yOf(s.price_close)) : ctx.lineTo(xOf(i),yOf(s.price_close)); });
-  ctx.strokeStyle = isLight() ? '#00AEFF' : '#F0F4FF'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.strokeStyle = isLight() ? '#3b82f6' : '#F0F4FF'; ctx.lineWidth = 1.5; ctx.stroke();
 
   // Narrative energy overlay (blue dashed, right axis 0-100)
   const lo = snaps[0]?.snapshot_date?.slice(0,10) || '';
@@ -2747,7 +2761,7 @@ function drawChart(snaps, narrs, fairValue) {
     // Right axis ticks for energy
     ctx.save();
     ctx.font = `9px Inter, sans-serif`;
-    ctx.fillStyle = '#00C2FF'; ctx.textAlign = 'left'; ctx.globalAlpha = 0.7;
+    ctx.fillStyle = '#3b82f6'; ctx.textAlign = 'left'; ctx.globalAlpha = 0.7;
     [0, 50, 100].forEach(v => {
       ctx.fillText(v, W - PAD.right + 4, yEnergy(v) + 3);
     });
@@ -2755,7 +2769,7 @@ function drawChart(snaps, narrs, fairValue) {
 
     ctx.save();
     ctx.setLineDash([3,3]);
-    ctx.strokeStyle = '#00C2FF'; ctx.lineWidth = 1.2; ctx.globalAlpha = 0.7;
+    ctx.strokeStyle = '#3b82f6'; ctx.lineWidth = 1.2; ctx.globalAlpha = 0.7;
     ctx.beginPath();
     let started = false;
     decayFiltered.forEach(d => {
@@ -2782,7 +2796,7 @@ function drawChart(snaps, narrs, fairValue) {
     const isBull = (n.sentiment_score ?? 0) > 0;
     ctx.beginPath();
     ctx.arc(cx, cy, 5, 0, Math.PI*2);
-    ctx.fillStyle   = isBull ? '#00AEFF' : '#38C8B8';
+    ctx.fillStyle   = isBull ? '#22c55e' : '#ef4444';
     ctx.fill();
     ctx.strokeStyle = isLight() ? '#FFFFFF' : '#0A0E1A'; ctx.lineWidth = 1.5; ctx.stroke();
     dotHits.push({ cx, cy, n });
@@ -3548,12 +3562,12 @@ function renderWarranted(p) {
     <div class="dual-score">
       <div class="score-block">
         <div class="score-block-label">Warranted</div>
-        <div class="score-block-num" style="${warranted >= 60 ? 'color:var(--accent-supported)' : 'color:var(--accent-fragile)'}">${warranted}</div>
+        <div class="score-block-num" style="${warranted >= 60 ? 'color:#22c55e' : 'color:#ef4444'}">${warranted}</div>
       </div>
       <div class="dual-divider"></div>
       <div class="score-block">
         <div class="score-block-label">Hype</div>
-        <div class="score-block-num" style="${hype >= 50 ? 'color:var(--accent-breaking)' : 'color:var(--text-secondary)'}">${hype}</div>
+        <div class="score-block-num" style="${hype >= 50 ? 'color:#ef4444' : 'color:#9ca3af'}">${hype}</div>
       </div>
     </div>
     <div class="score-bar-row">
@@ -3813,8 +3827,8 @@ async function createImage() {
       tab.classList.add('active');
       const panel = document.getElementById('tab-' + tab.dataset.tab);
       if (panel) panel.classList.add('active');
-      // Re-render chart when switching to chart tab
-      if (tab.dataset.tab === 'chart' && ALL_SNAPS.length) {
+      // Re-render chart when switching tabs (chart now in overview)
+      if (tab.dataset.tab === 'overview' && ALL_SNAPS.length) {
         setTimeout(() => renderChart(), 50);
       }
     });
@@ -3847,9 +3861,9 @@ async function loadStoriesFeed() {
         : v.includes('MISLEAD') || v.includes('FALSE') ? 'Misleading'
         : v.includes('TRAP') ? 'Trap'
         : 'Monitoring';
-      const vColor = v.includes('VERIF') ? 'color:var(--mp-teal);border-color:rgba(0,222,148,.3)'
-        : v.includes('MISLEAD') || v.includes('TRAP') || v.includes('FALSE') ? 'color:var(--red);border-color:rgba(56,200,184,.3)'
-        : 'color:var(--mp-text-tertiary);border-color:var(--mp-border)';
+      const vColor = v.includes('VERIF') ? 'color:#22c55e;border-color:rgba(34,197,94,.2)'
+        : v.includes('MISLEAD') || v.includes('TRAP') || v.includes('FALSE') ? 'color:#ef4444;border-color:rgba(239,68,68,.2)'
+        : 'color:#6b7280;border-color:rgba(255,255,255,.07)';
       const dateStr = r.snapshot_date
         ? new Date(r.snapshot_date).toLocaleDateString('en-US', { month:'short', day:'numeric' })
         : '';
