@@ -2707,50 +2707,15 @@ body{
   letter-spacing:0.12em;text-transform:uppercase;
   color:var(--mp-text-tertiary);margin-bottom:10px;
 }
-.nf-sum-cards{display:flex;flex-direction:column;gap:8px;flex:1;}
-/* Mini trading card */
-.nf-mini-card{
-  display:flex;align-items:center;gap:10px;
-  padding:10px 12px;border-radius:10px;
-  background:rgba(255,255,255,0.03);
-  border:1px solid rgba(255,255,255,0.06);
-  cursor:pointer;text-decoration:none;color:inherit;
-  transition:border-color .2s,background .2s;
-  position:relative;overflow:hidden;
+.nf-sum-cards{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1;
 }
-.nf-mini-card:hover{border-color:rgba(255,255,255,0.14);background:rgba(255,255,255,0.05);}
-.nf-mini-card::before{
-  content:'';position:absolute;top:0;left:0;bottom:0;width:3px;
+.nf-sum-cards .card-scene{
+  width:100% !important;min-width:0;
 }
-.nf-mini-card[data-dir="bull"]::before{background:#00DE94;}
-.nf-mini-card[data-dir="bear"]::before{background:#FF4D4D;}
-.nf-mini-card[data-dir="neutral"]::before{background:#00AEFF;}
-.nf-mc-logo{
-  width:28px;height:28px;display:flex;align-items:center;justify-content:center;
-  border-radius:6px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);
-  flex-shrink:0;overflow:hidden;
-}
-.nf-mc-logo img{width:16px;height:16px;border-radius:3px;object-fit:contain;}
-.nf-mc-logo span{font-family:var(--font-body);font-size:10px;font-weight:600;color:var(--mp-text-tertiary);}
-.nf-mc-info{flex:1;min-width:0;}
-.nf-mc-top{display:flex;align-items:center;gap:6px;margin-bottom:2px;}
-.nf-mc-ticker{font-family:var(--font-body);font-size:14px;font-weight:700;color:#fff;}
-.nf-mc-verdict{
-  font-family:var(--font-body);font-size:9px;font-weight:600;
-  letter-spacing:0.06em;text-transform:uppercase;
-  padding:1px 6px;border-radius:10px;
-}
-.nf-mc-verdict-bull{color:#00DE94;border:1px solid rgba(0,222,148,0.3);background:rgba(0,222,148,0.08);}
-.nf-mc-verdict-bear{color:#FF4D4D;border:1px solid rgba(255,77,77,0.3);background:rgba(255,77,77,0.08);}
-.nf-mc-verdict-neutral{color:#FFB800;border:1px solid rgba(255,184,0,0.3);background:rgba(255,184,0,0.08);}
-.nf-mc-claim{
-  font-family:var(--font-body);font-size:12px;font-weight:400;
-  color:var(--mp-text-secondary);line-height:1.35;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-.nf-mc-right{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0;}
-.nf-mc-price{font-family:var(--font-body);font-size:13px;font-weight:600;color:#fff;}
-.nf-mc-change{font-family:var(--font-body);font-size:11px;font-weight:500;}
+.nf-sum-cards .tc{min-height:240px;}
+.nf-sum-cards .tc-context{-webkit-line-clamp:2;}
+.nf-sum-cards .tc-card-actions{display:none;}
 
 .nf-sum-stats{
   display:grid;grid-template-columns:repeat(3,1fr);gap:12px;
@@ -4422,50 +4387,27 @@ function renderMiniTradingCards(){
 
   var items=[];
   if(DATA.length>0){
-    items=DATA.filter(function(r){return r.story_claim&&r.price!=null;})
+    items=DATA.filter(function(r){return r.story_claim&&r.price!=null&&r.biasText;})
       .sort(function(a,b){return Math.abs(b.price_change_pct||0)-Math.abs(a.price_change_pct||0);})
       .slice(0,4);
   }
 
-  // Use demo data if no real data
-  var cards=items.length?items.map(function(r){
-    var pct=r.price_change_pct||0;
-    return {
-      ticker:r.ticker, claim:r.story_claim,
-      dir:pct>0?'bull':(pct<0?'bear':'neutral'),
-      verdict:r.prism_verdict||'Monitoring',
-      price:r.price, pct:pct
-    };
-  }):[
-    {ticker:'NVDA',claim:'Blackwell ramp ahead of estimates as hyperscaler capex holds firm.',dir:'bull',verdict:'Supported',price:118.42,pct:2.14},
-    {ticker:'TSLA',claim:'Brand erosion accelerating — delivery miss compounds margin pressure.',dir:'bear',verdict:'Bear Pressure',price:247.15,pct:-1.83},
-    {ticker:'AAPL',claim:'India pivot reduces China tariff exposure. Services mix improving.',dir:'bull',verdict:'Supported',price:212.80,pct:1.87},
-    {ticker:'RDDT',claim:'AI licensing demand decoupled from engagement cycle.',dir:'neutral',verdict:'Narrative Trap',price:148.60,pct:0.42}
-  ];
+  // Demo fallback
+  if(!items.length){
+    items=[
+      {ticker:'NVDA',price:118.42,price_change_pct:-2.14,biasText:'Fade Rallies',story_claim:'Supply constraint narrative breaking. Hyperscaler digestion period likely H2.',narrative_state:'Decay Phase',sector_name:'Semiconductors',prism_verdict:'Breaking'},
+      {ticker:'TSLA',price:247.15,price_change_pct:-1.83,biasText:'Sell Strength',story_claim:'Brand erosion accelerating — delivery miss compounds margin pressure.',narrative_state:'Breaking',sector_name:'Auto / EV',prism_verdict:'Breaking'},
+      {ticker:'AAPL',price:212.80,price_change_pct:1.87,biasText:'Buy Dips',story_claim:'India pivot reduces China tariff exposure. Services mix improving.',narrative_state:'Surging',sector_name:'Consumer Tech',prism_verdict:'Surging'},
+      {ticker:'META',price:583.20,price_change_pct:0.91,biasText:'Accumulate',story_claim:'Llama 4 adoption ahead of targets. Ad efficiency gains in SMB retention.',narrative_state:'Stable',sector_name:'Social / AI',prism_verdict:'Stable'}
+    ];
+  }
 
-  el.innerHTML=cards.map(function(c){
-    var domain=DOMAIN_MAP[c.ticker];
-    var logoHTML=domain
-      ?'<div class="nf-mc-logo"><img src="https://www.google.com/s2/favicons?domain='+domain+'&sz=32" alt="" onerror="this.parentElement.innerHTML=\'<span>'+esc((c.ticker||'').substring(0,2))+'</span>\'"></div>'
-      :'<div class="nf-mc-logo"><span>'+esc((c.ticker||'').substring(0,2))+'</span></div>';
-    var verdictCls=c.dir==='bull'?'nf-mc-verdict-bull':(c.dir==='bear'?'nf-mc-verdict-bear':'nf-mc-verdict-neutral');
-    var chgColor=c.pct>0?'#00DE94':(c.pct<0?'#FF4D4D':'#A0A8B0');
-    var chgSign=c.pct>0?'+':'';
-    return '<a class="nf-mini-card" data-dir="'+c.dir+'" href="/ticker/'+encodeURIComponent(c.ticker)+'">'
-      +logoHTML
-      +'<div class="nf-mc-info">'
-        +'<div class="nf-mc-top">'
-          +'<span class="nf-mc-ticker">'+esc(c.ticker)+'</span>'
-          +'<span class="nf-mc-verdict '+verdictCls+'">'+esc(c.verdict)+'</span>'
-        +'</div>'
-        +'<div class="nf-mc-claim">'+esc(c.claim)+'</div>'
-      +'</div>'
-      +'<div class="nf-mc-right">'
-        +'<div class="nf-mc-price">$'+fmtPrice(c.price)+'</div>'
-        +'<div class="nf-mc-change" style="color:'+chgColor+';">'+chgSign+c.pct.toFixed(2)+'%</div>'
-      +'</div>'
-    +'</a>';
-  }).join('');
+  if(typeof buildCardFrontHTML==='function'){
+    el.innerHTML=items.map(function(c,i){
+      return buildCardFrontHTML(c,i,'','daily-tc',false);
+    }).join('');
+    if(typeof attachCardInteractions==='function') attachCardInteractions(el);
+  }
 }
 
 // ── Render: Sectors tab ──
