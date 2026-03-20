@@ -2698,10 +2698,64 @@ body{
   border:1px solid var(--mp-blue);color:var(--mp-blue);
   background:rgba(0,174,255,0.06);
 }
+/* ── Featured Trading Cards in Summary ── */
+.nf-sum-cards-section{
+  margin-top:16px;flex:1;display:flex;flex-direction:column;
+}
+.nf-sum-cards-label{
+  font-family:var(--font-body);font-size:10px;font-weight:600;
+  letter-spacing:0.12em;text-transform:uppercase;
+  color:var(--mp-text-tertiary);margin-bottom:10px;
+}
+.nf-sum-cards{display:flex;flex-direction:column;gap:8px;flex:1;}
+/* Mini trading card */
+.nf-mini-card{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;border-radius:10px;
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.06);
+  cursor:pointer;text-decoration:none;color:inherit;
+  transition:border-color .2s,background .2s;
+  position:relative;overflow:hidden;
+}
+.nf-mini-card:hover{border-color:rgba(255,255,255,0.14);background:rgba(255,255,255,0.05);}
+.nf-mini-card::before{
+  content:'';position:absolute;top:0;left:0;bottom:0;width:3px;
+}
+.nf-mini-card[data-dir="bull"]::before{background:#00DE94;}
+.nf-mini-card[data-dir="bear"]::before{background:#FF4D4D;}
+.nf-mini-card[data-dir="neutral"]::before{background:#00AEFF;}
+.nf-mc-logo{
+  width:28px;height:28px;display:flex;align-items:center;justify-content:center;
+  border-radius:6px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);
+  flex-shrink:0;overflow:hidden;
+}
+.nf-mc-logo img{width:16px;height:16px;border-radius:3px;object-fit:contain;}
+.nf-mc-logo span{font-family:var(--font-body);font-size:10px;font-weight:600;color:var(--mp-text-tertiary);}
+.nf-mc-info{flex:1;min-width:0;}
+.nf-mc-top{display:flex;align-items:center;gap:6px;margin-bottom:2px;}
+.nf-mc-ticker{font-family:var(--font-body);font-size:14px;font-weight:700;color:#fff;}
+.nf-mc-verdict{
+  font-family:var(--font-body);font-size:9px;font-weight:600;
+  letter-spacing:0.06em;text-transform:uppercase;
+  padding:1px 6px;border-radius:10px;
+}
+.nf-mc-verdict-bull{color:#00DE94;border:1px solid rgba(0,222,148,0.3);background:rgba(0,222,148,0.08);}
+.nf-mc-verdict-bear{color:#FF4D4D;border:1px solid rgba(255,77,77,0.3);background:rgba(255,77,77,0.08);}
+.nf-mc-verdict-neutral{color:#FFB800;border:1px solid rgba(255,184,0,0.3);background:rgba(255,184,0,0.08);}
+.nf-mc-claim{
+  font-family:var(--font-body);font-size:12px;font-weight:400;
+  color:var(--mp-text-secondary);line-height:1.35;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.nf-mc-right{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0;}
+.nf-mc-price{font-family:var(--font-body);font-size:13px;font-weight:600;color:#fff;}
+.nf-mc-change{font-family:var(--font-body);font-size:11px;font-weight:500;}
+
 .nf-sum-stats{
   display:grid;grid-template-columns:repeat(3,1fr);gap:12px;
   border-top:1px solid var(--mp-border);padding-top:14px;
-  margin-top:auto;
+  margin-top:14px;
 }
 .nf-stat{display:flex;flex-direction:column;gap:2px;}
 .nf-stat-num{font-family:var(--font-body);font-size:20px;font-weight:700;color:#1a8a5e;}
@@ -3194,6 +3248,15 @@ body{
             <span class="nf-tag">Semis</span>
             <span class="nf-tag">Yield Watch</span>
           </div>
+
+          <!-- Featured Trading Cards of the Day -->
+          <div class="nf-sum-cards-section">
+            <div class="nf-sum-cards-label">Trading Cards of the Day</div>
+            <div class="nf-sum-cards" id="nf-sum-cards">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+
           <div class="nf-sum-stats" id="nf-sum-stats">
             <div class="nf-stat"><span class="nf-stat-num" id="nf-stat-bull">68%</span><span class="nf-stat-lbl">Bull Signals</span></div>
             <div class="nf-stat"><span class="nf-stat-num" id="nf-stat-traps2">14</span><span class="nf-stat-lbl">Active Traps</span></div>
@@ -4348,6 +4411,61 @@ function renderNarrativeCards(){
 
   // Update summary stats
   nfUpdateSummary();
+
+  // Render 4 featured mini trading cards in left column
+  renderMiniTradingCards();
+}
+
+function renderMiniTradingCards(){
+  var el=document.getElementById('nf-sum-cards');
+  if(!el) return;
+
+  var items=[];
+  if(DATA.length>0){
+    items=DATA.filter(function(r){return r.story_claim&&r.price!=null;})
+      .sort(function(a,b){return Math.abs(b.price_change_pct||0)-Math.abs(a.price_change_pct||0);})
+      .slice(0,4);
+  }
+
+  // Use demo data if no real data
+  var cards=items.length?items.map(function(r){
+    var pct=r.price_change_pct||0;
+    return {
+      ticker:r.ticker, claim:r.story_claim,
+      dir:pct>0?'bull':(pct<0?'bear':'neutral'),
+      verdict:r.prism_verdict||'Monitoring',
+      price:r.price, pct:pct
+    };
+  }):[
+    {ticker:'NVDA',claim:'Blackwell ramp ahead of estimates as hyperscaler capex holds firm.',dir:'bull',verdict:'Supported',price:118.42,pct:2.14},
+    {ticker:'TSLA',claim:'Brand erosion accelerating — delivery miss compounds margin pressure.',dir:'bear',verdict:'Bear Pressure',price:247.15,pct:-1.83},
+    {ticker:'AAPL',claim:'India pivot reduces China tariff exposure. Services mix improving.',dir:'bull',verdict:'Supported',price:212.80,pct:1.87},
+    {ticker:'RDDT',claim:'AI licensing demand decoupled from engagement cycle.',dir:'neutral',verdict:'Narrative Trap',price:148.60,pct:0.42}
+  ];
+
+  el.innerHTML=cards.map(function(c){
+    var domain=DOMAIN_MAP[c.ticker];
+    var logoHTML=domain
+      ?'<div class="nf-mc-logo"><img src="https://www.google.com/s2/favicons?domain='+domain+'&sz=32" alt="" onerror="this.parentElement.innerHTML=\'<span>'+esc((c.ticker||'').substring(0,2))+'</span>\'"></div>'
+      :'<div class="nf-mc-logo"><span>'+esc((c.ticker||'').substring(0,2))+'</span></div>';
+    var verdictCls=c.dir==='bull'?'nf-mc-verdict-bull':(c.dir==='bear'?'nf-mc-verdict-bear':'nf-mc-verdict-neutral');
+    var chgColor=c.pct>0?'#00DE94':(c.pct<0?'#FF4D4D':'#A0A8B0');
+    var chgSign=c.pct>0?'+':'';
+    return '<a class="nf-mini-card" data-dir="'+c.dir+'" href="/ticker/'+encodeURIComponent(c.ticker)+'">'
+      +logoHTML
+      +'<div class="nf-mc-info">'
+        +'<div class="nf-mc-top">'
+          +'<span class="nf-mc-ticker">'+esc(c.ticker)+'</span>'
+          +'<span class="nf-mc-verdict '+verdictCls+'">'+esc(c.verdict)+'</span>'
+        +'</div>'
+        +'<div class="nf-mc-claim">'+esc(c.claim)+'</div>'
+      +'</div>'
+      +'<div class="nf-mc-right">'
+        +'<div class="nf-mc-price">$'+fmtPrice(c.price)+'</div>'
+        +'<div class="nf-mc-change" style="color:'+chgColor+';">'+chgSign+c.pct.toFixed(2)+'%</div>'
+      +'</div>'
+    +'</a>';
+  }).join('');
 }
 
 // ── Render: Sectors tab ──
