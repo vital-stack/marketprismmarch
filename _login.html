@@ -220,6 +220,17 @@ body::before{
   .login-card{padding:28px 22px 24px;border-radius:16px;}
   .auth-tab{font-size:10px;padding:8px 0;}
 }
+/* Beta button */
+.btn-beta-glow{
+  background:linear-gradient(135deg,#00DE94,#00AEFF);
+  box-shadow:0 4px 20px rgba(0,222,148,0.3),0 0 40px rgba(0,222,148,0.1),inset 0 1px 0 rgba(255,255,255,0.15);
+  font-size:13px;font-weight:600;letter-spacing:0.08em;
+}
+.btn-beta-glow:hover{
+  background:linear-gradient(135deg,#00F5A0,#00C4FF);
+  box-shadow:0 8px 32px rgba(0,222,148,0.4),0 0 60px rgba(0,222,148,0.15),inset 0 1px 0 rgba(255,255,255,0.2);
+  transform:translateY(-2px);
+}
 /* Spinner */
 .spinner{
   display:inline-block;width:14px;height:14px;
@@ -250,8 +261,8 @@ body::before{
   <div class="login-card">
     <!-- Tabs -->
     <div class="auth-tabs">
-      <button class="auth-tab" onclick="switchAuthTab('beta')">Beta Access</button>
-      <button class="auth-tab active" onclick="switchAuthTab('signin')">Sign In</button>
+      <button class="auth-tab active" onclick="switchAuthTab('beta')">Beta Access</button>
+      <button class="auth-tab" onclick="switchAuthTab('signin')">Sign In</button>
       <button class="auth-tab" onclick="switchAuthTab('register')">Register</button>
       <button class="auth-tab" onclick="switchAuthTab('reset')">Reset Password</button>
     </div>
@@ -260,7 +271,7 @@ body::before{
     <div class="auth-message" id="auth-message"></div>
 
     <!-- Beta Access Form -->
-    <form class="auth-form" id="form-beta" onsubmit="handleBetaAccess(event)">
+    <form class="auth-form active" id="form-beta" onsubmit="handleBetaAccess(event)">
       <div style="text-align:center;margin-bottom:6px;">
         <div style="font-family:var(--font-display);font-size:18px;color:var(--mp-text-primary);margin-bottom:6px;">Have a beta code?</div>
         <div style="font-size:13px;color:var(--mp-text-secondary);line-height:1.5;">Enter your access code to skip registration.</div>
@@ -269,11 +280,11 @@ body::before{
         <label class="form-label" for="beta-code">Access Code</label>
         <input class="form-input" id="beta-code" type="text" placeholder="Enter beta code" required autocomplete="off" style="text-align:center;font-size:16px;letter-spacing:0.08em;">
       </div>
-      <button class="btn-submit" type="submit" id="btn-beta">Enter</button>
+      <button class="btn-submit btn-beta-glow" type="submit" id="btn-beta">Enter Beta</button>
     </form>
 
     <!-- Sign In Form -->
-    <form class="auth-form active" id="form-signin" onsubmit="handleSignIn(event)">
+    <form class="auth-form" id="form-signin" onsubmit="handleSignIn(event)">
       <div class="form-group">
         <label class="form-label" for="signin-email">Email</label>
         <input class="form-input" id="signin-email" type="email" placeholder="you@example.com" required autocomplete="email">
@@ -338,7 +349,11 @@ body::before{
 
   var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-  // Check if already logged in
+  // Check if already logged in (Supabase session or beta code)
+  if(localStorage.getItem('mp-beta-access') === 'true'){
+    window.location.href = '/dashboard';
+    return;
+  }
   supabase.auth.getSession().then(function(result){
     if(result.data.session){
       window.location.href = '/dashboard';
@@ -408,7 +423,7 @@ body::before{
   };
 
   // ── Beta Access ──
-  window.handleBetaAccess = async function(e){
+  window.handleBetaAccess = function(e){
     e.preventDefault();
     clearMsg();
     var code = document.getElementById('beta-code').value.trim();
@@ -418,16 +433,10 @@ body::before{
       return;
     }
     setLoading('btn-beta', true);
-    try {
-      var result = await supabase.auth.signInWithPassword({ email:'admin@admin.com', password:'KARMA' });
-      if(result.error) throw result.error;
-      showMsg('success','Beta access granted. Redirecting…');
-      document.getElementById('btn-beta').classList.add('success');
-      setTimeout(function(){ window.location.href = '/dashboard'; }, 800);
-    } catch(err){
-      showMsg('error', err.message || 'Beta access failed. Please try again.');
-      setLoading('btn-beta', false);
-    }
+    localStorage.setItem('mp-beta-access', 'true');
+    showMsg('success','Beta access granted. Redirecting…');
+    document.getElementById('btn-beta').classList.add('success');
+    setTimeout(function(){ window.location.href = '/dashboard'; }, 600);
   };
 
   // ── Register ──
