@@ -197,7 +197,7 @@ body{
 }
 .hamburger-btn{background:none;border:none;color:var(--mp-text-primary);cursor:pointer;padding:4px;display:flex;align-items:center;}
 .hamburger-btn svg{width:20px;height:20px;}
-.nav-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:150;}
+.nav-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99;}
 .nav-overlay.open{display:block;}
 /* ── MAIN ── */
 .main{margin-left:224px;flex:1;display:flex;flex-direction:column;min-height:100vh;overflow-x:hidden;}
@@ -3779,6 +3779,11 @@ function switchTab(id, btn){
   if(id==='narrative'&&typeof renderNHT==='function')setTimeout(renderNHT,50);
   if(id==='cards'&&typeof renderCardsGallery==='function')setTimeout(renderCardsGallery,50);
   if(id==='calendar'&&typeof calendarBoot==='function')setTimeout(calendarBoot,50);
+  // Close mobile flyout menu after tab switch
+  var nav=document.getElementById('side-nav');
+  var ov=document.getElementById('nav-overlay');
+  if(nav)nav.classList.remove('open');
+  if(ov)ov.classList.remove('open');
 }
 // ── Supabase config ───────────────────────────────────────────────────────────
 var SUPABASE_URL  = (window.__env||{}).SUPABASE_URL  || '';
