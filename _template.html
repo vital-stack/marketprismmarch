@@ -2640,6 +2640,402 @@ body{
   margin-top:10px;min-height:18px;
 }
 @keyframes pwShake{0%,100%{transform:translateX(0);}25%{transform:translateX(-6px);}50%{transform:translateX(6px);}75%{transform:translateX(-4px);}}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   NARRATIVE CARDS — Dream Design System
+   Three card types: Ticker Narrative, Market-Wide Theme, Sector Narrative
+   Both light (default card bg) and dark variants
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Shared Foundation ── */
+.nc{
+  position:relative;
+  background:var(--nc-bg, #0C1018);
+  border:1px solid var(--nc-border, rgba(255,255,255,0.06));
+  border-radius:16px;
+  padding:28px 32px 20px;
+  overflow:hidden;
+  transition:border-color .3s, box-shadow .3s, transform .3s;
+  cursor:pointer;
+}
+.nc::before{
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:
+    linear-gradient(var(--nc-grid-color, rgba(255,255,255,0.025)) 1px, transparent 1px),
+    linear-gradient(90deg, var(--nc-grid-color, rgba(255,255,255,0.025)) 1px, transparent 1px);
+  background-size:48px 48px;
+  opacity:0.6;
+  border-radius:16px;
+}
+.nc>*{position:relative;z-index:1;}
+.nc:hover{
+  border-color:var(--nc-border-hover, rgba(255,255,255,0.14));
+  box-shadow:0 12px 40px var(--nc-shadow-hover, rgba(0,0,0,0.35));
+  transform:translateY(-2px);
+}
+
+/* ── Narrative Card Header ── */
+.nc-header{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  margin-bottom:24px;
+}
+.nc-identity{display:flex;align-items:center;gap:12px;}
+.nc-icon{
+  width:40px;height:40px;display:flex;align-items:center;justify-content:center;
+  border-radius:10px;flex-shrink:0;
+  background:var(--nc-icon-bg, rgba(255,255,255,0.06));
+  border:1px solid var(--nc-icon-border, rgba(255,255,255,0.08));
+  overflow:hidden;
+}
+.nc-icon img{width:24px;height:24px;border-radius:4px;object-fit:contain;}
+.nc-icon svg{width:20px;height:20px;opacity:0.6;}
+.nc-id{display:flex;flex-direction:column;gap:2px;}
+.nc-ticker{
+  font-family:var(--font-body);font-size:18px;font-weight:700;
+  letter-spacing:-0.01em;color:var(--nc-text-primary, #FFFFFF);line-height:1.1;
+}
+.nc-company{
+  font-family:var(--font-body);font-size:13px;font-weight:400;
+  color:var(--nc-text-muted, rgba(255,255,255,0.5));line-height:1.2;
+}
+.nc-badges{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.nc-badge{
+  font-family:var(--font-body);font-size:11px;font-weight:600;
+  letter-spacing:0.06em;text-transform:uppercase;
+  padding:5px 14px;border-radius:8px;white-space:nowrap;
+  border:1px solid var(--nc-badge-border, rgba(255,255,255,0.12));
+  background:var(--nc-badge-bg, transparent);
+  color:var(--nc-text-secondary, rgba(255,255,255,0.7));
+}
+.nc-badge-sentiment{
+  background:var(--nc-badge-fill, rgba(255,255,255,0.08));
+  color:var(--nc-text-primary, #FFFFFF);
+  border-color:var(--nc-badge-fill-border, rgba(255,255,255,0.15));
+}
+.nc-badge-bull{color:#1a7a4e;border-color:rgba(0,180,100,0.3);background:rgba(0,180,100,0.08);}
+.nc-badge-bear{color:#c0392b;border-color:rgba(255,77,77,0.3);background:rgba(255,77,77,0.08);}
+.nc-badge-escalating{color:#c0392b;border-color:rgba(255,77,77,0.3);background:rgba(255,77,77,0.06);}
+.nc-badge-breaking{color:#c0392b;border-color:rgba(255,77,77,0.3);background:rgba(255,77,77,0.06);}
+.nc-badge-geopolitical{color:#b8860b;border-color:rgba(184,134,11,0.3);background:rgba(184,134,11,0.06);}
+
+/* ── Truth Score Ring ── */
+.nc-body{display:flex;align-items:flex-start;gap:20px;margin-bottom:20px;}
+.nc-truth{flex-shrink:0;width:72px;text-align:center;}
+.nc-truth svg{width:72px;height:72px;}
+.nc-truth-ring-bg{fill:none;stroke:var(--nc-ring-bg, rgba(255,255,255,0.08));stroke-width:3.5;}
+.nc-truth-ring-fill{
+  fill:none;stroke-width:3.5;stroke-linecap:round;
+  transition:stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1);
+}
+.nc-truth-val{
+  font-family:var(--font-body);font-size:22px;font-weight:600;line-height:1;
+}
+.nc-truth-lbl{
+  font-family:var(--font-body);font-size:9px;font-weight:600;
+  letter-spacing:0.14em;text-transform:uppercase;
+  color:var(--nc-text-muted, rgba(255,255,255,0.4));
+  margin-top:1px;
+}
+.nc-content{flex:1;min-width:0;}
+
+/* ── Category Label ── */
+.nc-category{
+  font-family:var(--font-body);font-size:12px;font-weight:600;
+  letter-spacing:0.10em;text-transform:uppercase;
+  margin-bottom:8px;line-height:1;
+}
+.nc-cat-trap{color:#b8860b;}
+.nc-cat-pressure{color:#b8860b;}
+.nc-cat-sector{color:#1a8a6a;}
+.nc-cat-breaking{color:#c0392b;}
+.nc-cat-supported{color:#1a7a4e;}
+
+/* ── Headline ── */
+.nc-headline{
+  font-family:var(--font-display);font-size:clamp(20px, 2.2vw, 28px);
+  font-weight:400;line-height:1.25;letter-spacing:-0.02em;
+  color:var(--nc-text-primary, #FFFFFF);
+  margin-bottom:0;
+}
+
+/* ── Meta Line ── */
+.nc-meta{
+  font-family:var(--font-body);font-size:13px;font-weight:400;
+  color:var(--nc-text-muted, rgba(255,255,255,0.45));
+  margin-top:10px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+}
+.nc-meta-sep::before{content:'·';margin:0 2px;}
+
+/* ── Flag Tags ── */
+.nc-flags{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;margin-bottom:0;}
+.nc-flag{
+  display:flex;align-items:center;gap:6px;
+  font-family:var(--font-body);font-size:11px;font-weight:600;
+  letter-spacing:0.04em;text-transform:uppercase;
+  padding:6px 14px;border-radius:20px;
+  border:1px solid var(--nc-flag-border, rgba(255,255,255,0.10));
+  background:var(--nc-flag-bg, transparent);
+  color:var(--nc-text-secondary, rgba(255,255,255,0.65));
+}
+.nc-flag-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.nc-flag-dot-green{background:#1a8a5e;}
+.nc-flag-dot-red{background:#c0392b;}
+.nc-flag-dot-amber{background:#b8860b;}
+.nc-flag-dot-neutral{background:var(--nc-text-muted, rgba(255,255,255,0.35));}
+
+/* ── Divider ── */
+.nc-divider{
+  height:1px;margin:20px 0 16px;
+  background:var(--nc-divider, rgba(255,255,255,0.06));
+}
+
+/* ── Footer ── */
+.nc-footer{
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:12px;
+}
+.nc-footer-left{display:flex;align-items:center;gap:12px;}
+.nc-status{
+  display:flex;align-items:center;gap:6px;
+  font-family:var(--font-body);font-size:12px;font-weight:500;
+  letter-spacing:0.04em;text-transform:uppercase;
+}
+.nc-status-dot{width:6px;height:6px;border-radius:50%;animation:blink 2s ease infinite;}
+.nc-status-bull{color:#1a8a5e;}
+.nc-status-bear{color:#c0392b;}
+.nc-status-neutral{color:var(--nc-text-muted, rgba(255,255,255,0.45));}
+.nc-price{
+  font-family:var(--font-body);font-size:18px;font-weight:600;
+  color:var(--nc-text-primary, #FFFFFF);letter-spacing:-0.02em;
+}
+.nc-change{
+  font-family:var(--font-body);font-size:13px;font-weight:500;
+  margin-left:6px;
+}
+.nc-change-up{color:#1a8a5e;}
+.nc-change-dn{color:#c0392b;}
+.nc-footer-sep{
+  width:1px;height:20px;background:var(--nc-divider, rgba(255,255,255,0.08));
+}
+.nc-footer-right{display:flex;align-items:center;gap:8px;}
+.nc-btn{
+  font-family:var(--font-body);font-size:12px;font-weight:500;
+  letter-spacing:0.02em;
+  padding:7px 16px;border-radius:8px;
+  border:1px solid var(--nc-btn-border, rgba(255,255,255,0.12));
+  background:var(--nc-btn-bg, transparent);
+  color:var(--nc-text-secondary, rgba(255,255,255,0.65));
+  cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px;
+}
+.nc-btn:hover{
+  border-color:var(--nc-btn-hover-border, rgba(255,255,255,0.25));
+  color:var(--nc-text-primary, #FFFFFF);
+  background:var(--nc-btn-hover-bg, rgba(255,255,255,0.04));
+}
+.nc-btn svg{width:13px;height:13px;}
+.nc-btn-primary{
+  font-weight:600;
+  background:var(--nc-btn-primary-bg, rgba(255,255,255,0.06));
+  border-color:var(--nc-btn-primary-border, rgba(255,255,255,0.15));
+}
+.nc-btn-primary:hover{
+  background:var(--nc-btn-primary-hover, rgba(255,255,255,0.10));
+}
+
+/* ── Click Hint ── */
+.nc-hint{
+  text-align:center;margin-top:12px;
+  font-family:var(--font-body);font-size:11px;font-weight:400;
+  color:var(--nc-text-muted, rgba(255,255,255,0.25));
+  letter-spacing:0.02em;
+}
+
+/* ── Ticker Pills (Sector card) ── */
+.nc-tickers{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;}
+.nc-ticker-pill{
+  font-family:var(--font-body);font-size:13px;font-weight:600;
+  padding:6px 14px;border-radius:8px;
+  border:1px solid var(--nc-pill-border, rgba(255,255,255,0.12));
+  background:var(--nc-pill-bg, transparent);
+  color:var(--nc-text-primary, #FFFFFF);
+  letter-spacing:0.01em;
+}
+
+/* ── Sector Pills (Market-Wide card) ── */
+.nc-sectors{
+  margin-top:20px;margin-bottom:16px;
+}
+.nc-sectors-label{
+  font-family:var(--font-body);font-size:11px;font-weight:600;
+  letter-spacing:0.10em;text-transform:uppercase;
+  color:var(--nc-text-muted, rgba(255,255,255,0.4));
+  margin-bottom:10px;
+}
+.nc-sector-pills{display:flex;flex-wrap:wrap;gap:8px;}
+.nc-sector-pill{
+  display:flex;align-items:center;gap:6px;
+  font-family:var(--font-body);font-size:12px;font-weight:500;
+  padding:6px 14px;border-radius:20px;
+  border:1px solid var(--nc-pill-border, rgba(255,255,255,0.10));
+  color:var(--nc-text-secondary, rgba(255,255,255,0.65));
+}
+.nc-sector-pill svg{width:14px;height:14px;opacity:0.5;}
+
+/* ── Risk Meters (Market-Wide card) ── */
+.nc-risk-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:12px 24px;
+  margin-bottom:0;
+}
+.nc-risk-item{display:flex;flex-direction:column;gap:4px;}
+.nc-risk-header{
+  display:flex;align-items:center;justify-content:space-between;
+}
+.nc-risk-label{
+  font-family:var(--font-body);font-size:12px;font-weight:400;
+  color:var(--nc-text-muted, rgba(255,255,255,0.5));
+}
+.nc-risk-value{
+  font-family:var(--font-body);font-size:12px;font-weight:600;
+}
+.nc-risk-value-high{color:#c0392b;}
+.nc-risk-value-medium{color:var(--nc-text-primary, #FFFFFF);}
+.nc-risk-value-favorable{color:#1a8a5e;}
+.nc-risk-bar{
+  height:3px;border-radius:2px;
+  background:var(--nc-bar-bg, rgba(255,255,255,0.06));
+  overflow:hidden;
+}
+.nc-risk-fill{height:100%;border-radius:2px;transition:width .6s cubic-bezier(0.4,0,0.2,1);}
+.nc-risk-fill-high{background:linear-gradient(90deg, #c0392b, #e74c3c);}
+.nc-risk-fill-medium{background:linear-gradient(90deg, #b8860b, #d4a017);}
+.nc-risk-fill-favorable{background:linear-gradient(90deg, #1a8a5e, #27ae60);}
+
+/* ── Momentum Bar (Sector card) ── */
+.nc-momentum{margin-top:16px;}
+.nc-momentum-label{
+  font-family:var(--font-body);font-size:11px;font-weight:600;
+  letter-spacing:0.08em;text-transform:uppercase;
+  color:var(--nc-text-muted, rgba(255,255,255,0.4));
+  margin-bottom:6px;display:flex;justify-content:space-between;
+}
+.nc-momentum-val{
+  font-family:var(--font-body);font-size:13px;font-weight:600;
+  color:var(--nc-text-primary, #FFFFFF);
+}
+.nc-momentum-bar{
+  height:4px;border-radius:3px;
+  background:var(--nc-bar-bg, rgba(255,255,255,0.06));
+  overflow:hidden;
+}
+.nc-momentum-fill{
+  height:100%;border-radius:3px;
+  background:linear-gradient(90deg, #1a8a5e, #27ae60, #2ecc71);
+  transition:width .8s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ── Footer Stats (Sector card) ── */
+.nc-stats{
+  display:flex;align-items:center;gap:8px;
+  font-family:var(--font-body);font-size:13px;font-weight:400;
+  color:var(--nc-text-muted, rgba(255,255,255,0.5));
+}
+.nc-stat-bold{font-weight:700;color:var(--nc-text-primary, #FFFFFF);}
+
+/* ── Market-Wide Footer Stats ── */
+.nc-mw-footer-stats{
+  display:flex;align-items:center;gap:8px;
+  font-family:var(--font-body);font-size:12px;font-weight:400;
+  color:var(--nc-text-muted, rgba(255,255,255,0.5));
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   LIGHT THEME — Narrative Cards (warm cream)
+   ══════════════════════════════════════════════════════════════════════════════ */
+.nc--light,
+[data-theme="light"] .nc{
+  --nc-bg:#f0ede7;
+  --nc-border:rgba(0,0,0,0.06);
+  --nc-border-hover:rgba(0,0,0,0.12);
+  --nc-shadow-hover:rgba(0,0,0,0.10);
+  --nc-grid-color:rgba(0,0,0,0.03);
+  --nc-icon-bg:rgba(0,0,0,0.04);
+  --nc-icon-border:rgba(0,0,0,0.06);
+  --nc-text-primary:#1A1F2E;
+  --nc-text-secondary:rgba(0,0,0,0.55);
+  --nc-text-muted:rgba(0,0,0,0.35);
+  --nc-ring-bg:rgba(0,0,0,0.06);
+  --nc-badge-border:rgba(0,0,0,0.10);
+  --nc-badge-bg:transparent;
+  --nc-badge-fill:rgba(0,0,0,0.06);
+  --nc-badge-fill-border:rgba(0,0,0,0.12);
+  --nc-flag-border:rgba(0,0,0,0.08);
+  --nc-flag-bg:transparent;
+  --nc-divider:rgba(0,0,0,0.06);
+  --nc-btn-border:rgba(0,0,0,0.10);
+  --nc-btn-bg:transparent;
+  --nc-btn-hover-border:rgba(0,0,0,0.20);
+  --nc-btn-hover-bg:rgba(0,0,0,0.03);
+  --nc-btn-primary-bg:rgba(0,0,0,0.04);
+  --nc-btn-primary-border:rgba(0,0,0,0.12);
+  --nc-btn-primary-hover:rgba(0,0,0,0.08);
+  --nc-pill-border:rgba(0,0,0,0.10);
+  --nc-pill-bg:transparent;
+  --nc-bar-bg:rgba(0,0,0,0.06);
+}
+
+/* ── Dark Theme Narrative Cards (explicit) ── */
+.nc--dark{
+  --nc-bg:#0C1018;
+  --nc-border:rgba(255,255,255,0.06);
+  --nc-border-hover:rgba(255,255,255,0.14);
+  --nc-shadow-hover:rgba(0,0,0,0.45);
+  --nc-grid-color:rgba(255,255,255,0.025);
+  --nc-icon-bg:rgba(255,255,255,0.06);
+  --nc-icon-border:rgba(255,255,255,0.08);
+  --nc-text-primary:#FFFFFF;
+  --nc-text-secondary:rgba(255,255,255,0.65);
+  --nc-text-muted:rgba(255,255,255,0.4);
+  --nc-ring-bg:rgba(255,255,255,0.08);
+  --nc-badge-border:rgba(255,255,255,0.12);
+  --nc-badge-bg:transparent;
+  --nc-badge-fill:rgba(255,255,255,0.08);
+  --nc-badge-fill-border:rgba(255,255,255,0.15);
+  --nc-flag-border:rgba(255,255,255,0.10);
+  --nc-flag-bg:transparent;
+  --nc-divider:rgba(255,255,255,0.06);
+  --nc-btn-border:rgba(255,255,255,0.12);
+  --nc-btn-bg:transparent;
+  --nc-btn-hover-border:rgba(255,255,255,0.25);
+  --nc-btn-hover-bg:rgba(255,255,255,0.04);
+  --nc-btn-primary-bg:rgba(255,255,255,0.06);
+  --nc-btn-primary-border:rgba(255,255,255,0.15);
+  --nc-btn-primary-hover:rgba(255,255,255,0.10);
+  --nc-pill-border:rgba(255,255,255,0.12);
+  --nc-pill-bg:transparent;
+  --nc-bar-bg:rgba(255,255,255,0.06);
+}
+
+/* ── Narrative Card Deck Layout ── */
+.nc-deck{
+  display:flex;flex-direction:column;gap:16px;
+  margin-bottom:28px;
+}
+
+/* ── Responsive ── */
+@media(max-width:768px){
+  .nc{padding:20px 18px 16px;}
+  .nc-header{flex-direction:column;gap:12px;}
+  .nc-badges{align-self:flex-start;}
+  .nc-body{flex-direction:column;gap:12px;}
+  .nc-truth{width:56px;}
+  .nc-truth svg{width:56px;height:56px;}
+  .nc-truth-val{font-size:18px;}
+  .nc-headline{font-size:clamp(18px, 4vw, 24px);}
+  .nc-risk-grid{grid-template-columns:1fr;}
+  .nc-footer{flex-direction:column;align-items:flex-start;}
+  .nc-footer-right{align-self:stretch;}
+  .nc-btn{flex:1;justify-content:center;}
+}
 </style>
 </head>
 <body>
@@ -2950,40 +3346,34 @@ body{
         <div class="daily-cd"><div class="daily-cd-hd"><div class="daily-cd-l">Tue</div><div class="daily-cd-d">Mar 24</div></div><div class="daily-ces"><div class="daily-ce earn"><div class="daily-cedot"></div>Consumer Conf 10am</div><div class="daily-ce earn"><div class="daily-cedot"></div>S&P Flash PMI</div></div></div>
       </div>
 
-      <!-- SIGNAL CARDS -->
-      <div class="daily-section-eyebrow">Live Signal Cards · Updated daily</div>
+      <!-- TOP 5 NARRATIVE CARDS -->
+      <div class="daily-section-eyebrow">Top Narratives · Today</div>
       <div class="daily-section-head">
-        <div class="daily-section-title">Today's trade signals.</div>
+        <div class="daily-section-title">The stories moving markets.</div>
+        <span class="daily-section-sub">Today's highest-conviction narratives across the coverage universe</span>
       </div>
-      <div style="position:relative;margin-bottom:28px;">
-        <div style="position:absolute;top:0;left:0;bottom:14px;width:60px;z-index:4;pointer-events:none;background:linear-gradient(90deg,var(--mp-obsidian),transparent);"></div>
-        <div style="position:absolute;top:0;right:0;bottom:14px;width:60px;z-index:4;pointer-events:none;background:linear-gradient(270deg,var(--mp-obsidian),transparent);"></div>
-        <div class="deck" id="daily-signal-deck" style="display:flex;gap:14px;overflow-x:auto;scrollbar-width:none;padding:10px 60px 22px;cursor:grab;align-items:flex-start;">
-          <!-- Populated by JS -->
-        </div>
+      <div class="nc-deck" id="nc-deck-narratives">
+        <!-- Populated by JS renderNarrativeCards() -->
       </div>
 
-      <!-- SECTOR SIGNAL INTENSITY -->
-      <div class="daily-section-eyebrow">Sector Signal Intensity</div>
+      <!-- TOP 3 SECTOR NARRATIVES -->
+      <div class="daily-section-eyebrow">Sector Narratives · Today</div>
       <div class="daily-section-head">
         <div class="daily-section-title">Where momentum lives.</div>
-        <span class="daily-section-sub">Narrative momentum across tracked sectors</span>
+        <span class="daily-section-sub">Sector-level narrative momentum and thematic drivers</span>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:0;background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:10px;overflow:hidden;align-items:flex-end;height:110px;margin-bottom:16px;padding:14px;">
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:5px;"><div style="font-family:var(--font-mono);font-size:11px;color:var(--mp-text-tertiary);text-align:center;">100%</div><div style="width:100%;max-width:60px;height:74px;background:var(--mp-surface2);position:relative;border-radius:2px 2px 0 0;"><div style="position:absolute;bottom:0;left:0;right:0;height:100%;border-radius:2px 2px 0 0;background:rgba(0,174,255,.45);"></div></div><div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--mp-text-tertiary);text-align:center;">AI Infra</div></div>
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:5px;"><div style="font-family:var(--font-mono);font-size:11px;color:var(--mp-text-tertiary);text-align:center;">79%</div><div style="width:100%;max-width:60px;height:74px;background:var(--mp-surface2);position:relative;border-radius:2px 2px 0 0;"><div style="position:absolute;bottom:0;left:0;right:0;height:79%;border-radius:2px 2px 0 0;background:rgba(0,222,148,.4);"></div></div><div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--mp-text-tertiary);text-align:center;">Agentic</div></div>
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:5px;"><div style="font-family:var(--font-mono);font-size:11px;color:var(--mp-text-tertiary);text-align:center;">75%</div><div style="width:100%;max-width:60px;height:74px;background:var(--mp-surface2);position:relative;border-radius:2px 2px 0 0;"><div style="position:absolute;bottom:0;left:0;right:0;height:75%;border-radius:2px 2px 0 0;background:rgba(56,200,184,.38);"></div></div><div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--mp-text-tertiary);text-align:center;">Cloud</div></div>
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:5px;"><div style="font-family:var(--font-mono);font-size:11px;color:var(--mp-text-tertiary);text-align:center;">68%</div><div style="width:100%;max-width:60px;height:74px;background:var(--mp-surface2);position:relative;border-radius:2px 2px 0 0;"><div style="position:absolute;bottom:0;left:0;right:0;height:68%;border-radius:2px 2px 0 0;background:rgba(0,174,255,.32);"></div></div><div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--mp-text-tertiary);text-align:center;">Defense</div></div>
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:5px;"><div style="font-family:var(--font-mono);font-size:11px;color:var(--mp-text-tertiary);text-align:center;">55%</div><div style="width:100%;max-width:60px;height:74px;background:var(--mp-surface2);position:relative;border-radius:2px 2px 0 0;"><div style="position:absolute;bottom:0;left:0;right:0;height:55%;border-radius:2px 2px 0 0;background:rgba(90,184,216,.35);"></div></div><div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--mp-text-tertiary);text-align:center;">FinTech</div></div>
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:5px;"><div style="font-family:var(--font-mono);font-size:11px;color:var(--mp-text-tertiary);text-align:center;">53%</div><div style="width:100%;max-width:60px;height:74px;background:var(--mp-surface2);position:relative;border-radius:2px 2px 0 0;"><div style="position:absolute;bottom:0;left:0;right:0;height:53%;border-radius:2px 2px 0 0;background:rgba(90,184,216,.28);"></div></div><div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--mp-text-tertiary);text-align:center;">Cyber</div></div>
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:5px;"><div style="font-family:var(--font-mono);font-size:11px;color:var(--mp-text-tertiary);text-align:center;">50%</div><div style="width:100%;max-width:60px;height:74px;background:var(--mp-surface2);position:relative;border-radius:2px 2px 0 0;"><div style="position:absolute;bottom:0;left:0;right:0;height:50%;border-radius:2px 2px 0 0;background:rgba(56,200,184,.3);"></div></div><div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--mp-text-tertiary);text-align:center;">EV/Auto</div></div>
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:5px;"><div style="font-family:var(--font-mono);font-size:11px;color:var(--mp-text-tertiary);text-align:center;">48%</div><div style="width:100%;max-width:60px;height:74px;background:var(--mp-surface2);position:relative;border-radius:2px 2px 0 0;"><div style="position:absolute;bottom:0;left:0;right:0;height:48%;border-radius:2px 2px 0 0;background:rgba(56,200,184,.22);"></div></div><div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--mp-text-tertiary);text-align:center;">Biotech</div></div>
+      <div class="nc-deck" id="nc-deck-sectors">
+        <!-- Populated by JS renderSectorNarrativeCards() -->
       </div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px;">
-        <div class="daily-panel" style="border-radius:10px;padding:14px 16px;"><div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;"><div><div style="font-family:var(--font-body);font-size:13px;font-weight:500;color:var(--mp-text-primary);">AI Infrastructure</div><div style="font-family:var(--font-mono);font-size:7.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mp-text-tertiary);margin-top:2px;">Semiconductors · Servers · Power</div></div><div style="font-family:var(--font-mono);font-size:7.5px;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border:1px solid rgba(0,174,255,.28);border-radius:4px;color:#00AEFF;background:rgba(0,174,255,.07);">Breaking &#8593;</div></div><div style="font-family:var(--font-body);font-size:10.5px;font-weight:300;color:var(--mp-text-tertiary);line-height:1.5;margin-bottom:9px;">Blackwell demand cycle accelerating. Supply easing into H2. China export ceiling caps TAM.</div><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;"><span style="font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;padding:2px 6px;border:1px solid var(--mp-border);color:var(--mp-text-tertiary);background:var(--mp-surface2);border-radius:3px;">NVDA</span><span style="font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;padding:2px 6px;border:1px solid var(--mp-border);color:var(--mp-text-tertiary);background:var(--mp-surface2);border-radius:3px;">AMD</span><span style="font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;padding:2px 6px;border:1px solid var(--mp-border);color:var(--mp-text-tertiary);background:var(--mp-surface2);border-radius:3px;">SMCI</span><span style="font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;padding:2px 6px;border:1px solid var(--mp-border);color:var(--mp-text-tertiary);background:var(--mp-surface2);border-radius:3px;">ARM</span><span style="font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;padding:2px 6px;border:1px solid var(--mp-border);color:var(--mp-text-tertiary);background:var(--mp-surface2);border-radius:3px;">TSM</span></div></div>
-        <div class="daily-panel" style="border-radius:10px;padding:14px 16px;"><div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;"><div><div style="font-family:var(--font-body);font-size:13px;font-weight:500;color:var(--mp-text-primary);">Agentic AI</div><div style="font-family:var(--font-mono);font-size:7.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mp-text-tertiary);margin-top:2px;">AI Agents · Robotics · Autonomy</div></div><div style="font-family:var(--font-mono);font-size:7.5px;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border:1px solid rgba(0,174,255,.28);border-radius:4px;color:#00AEFF;background:rgba(0,174,255,.07);">Running &#8593;</div></div><div style="font-family:var(--font-body);font-size:10.5px;font-weight:300;color:var(--mp-text-tertiary);line-height:1.5;margin-bottom:9px;">Agent-layer buildout intensifying. MSFT and PLTR seeing Copilot attach rates beat estimates.</div><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;"><span style="font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;padding:2px 6px;border:1px solid var(--mp-border);color:var(--mp-text-tertiary);background:var(--mp-surface2);border-radius:3px;">PLTR</span><span style="font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;padding:2px 6px;border:1px solid var(--mp-border);color:var(--mp-text-tertiary);background:var(--mp-surface2);border-radius:3px;">MSFT</span><span style="font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;padding:2px 6px;border:1px solid var(--mp-border);color:var(--mp-text-tertiary);background:var(--mp-surface2);border-radius:3px;">GOOG</span><span style="font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;padding:2px 6px;border:1px solid var(--mp-border);color:var(--mp-text-tertiary);background:var(--mp-surface2);border-radius:3px;">TSLA</span></div></div>
-        <div class="daily-panel" style="border-radius:10px;padding:14px 16px;"><div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;"><div><div style="font-family:var(--font-body);font-size:13px;font-weight:500;color:var(--mp-text-primary);">Cloud Computing</div><div style="font-family:var(--font-mono);font-size:7.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mp-text-tertiary);margin-top:2px;">Hyperscalers · SaaS · IaaS</div></div><div style="font-family:var(--font-mono);font-size:7.5px;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border:1px solid rgba(56,200,184,.28);border-radius:4px;color:#38C8B8;background:rgba(56,200,184,.07);">Stable &#8594;</div></div><div style="font-family:var(--font-body);font-size:10.5px;font-weight:300;color:var(--mp-text-tertiary);line-height:1.5;margin-bottom:9px;">Azure and AWS both seeing AI workload uplift. 2023 optimization headwinds now tailwind.</div><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;"><span style="font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;padding:2px 6px;border:1px solid var(--mp-border);color:var(--mp-text-tertiary);background:var(--mp-surface2);border-radius:3px;">MSFT</span><span style="font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;padding:2px 6px;border:1px solid var(--mp-border);color:var(--mp-text-tertiary);background:var(--mp-surface2);border-radius:3px;">AMZN</span><span style="font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;padding:2px 6px;border:1px solid var(--mp-border);color:var(--mp-text-tertiary);background:var(--mp-surface2);border-radius:3px;">GOOG</span><span style="font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;padding:2px 6px;border:1px solid var(--mp-border);color:var(--mp-text-tertiary);background:var(--mp-surface2);border-radius:3px;">CRM</span></div></div>
-        <div class="daily-panel" style="border-radius:10px;padding:14px 16px;"><div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;"><div><div style="font-family:var(--font-body);font-size:13px;font-weight:500;color:var(--mp-text-primary);">Electric Vehicles</div><div style="font-family:var(--font-mono);font-size:7.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mp-text-tertiary);margin-top:2px;">EV · Autonomy · Infrastructure</div></div><div style="font-family:var(--font-mono);font-size:7.5px;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border:1px solid rgba(90,184,216,.28);border-radius:4px;color:#5AB8D8;background:rgba(90,184,216,.07);">Breaking &#8595;</div></div><div style="font-family:var(--font-body);font-size:10.5px;font-weight:300;color:var(--mp-text-tertiary);line-height:1.5;margin-bottom:9px;">Demand narrative fracturing. Delivery misses widening. FSD acting as narrative backstop.</div><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;"><span style="font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;padding:2px 6px;border:1px solid var(--mp-border);color:var(--mp-text-tertiary);background:var(--mp-surface2);border-radius:3px;">TSLA</span><span style="font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;padding:2px 6px;border:1px solid var(--mp-border);color:var(--mp-text-tertiary);background:var(--mp-surface2);border-radius:3px;">RIVN</span><span style="font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;padding:2px 6px;border:1px solid var(--mp-border);color:var(--mp-text-tertiary);background:var(--mp-surface2);border-radius:3px;">LCID</span><span style="font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;padding:2px 6px;border:1px solid var(--mp-border);color:var(--mp-text-tertiary);background:var(--mp-surface2);border-radius:3px;">NIO</span></div></div>
+
+      <!-- TOP 3 MARKET-WIDE THEMES -->
+      <div class="daily-section-eyebrow">Market-Wide Themes · Today</div>
+      <div class="daily-section-head">
+        <div class="daily-section-title">The macro forces.</div>
+        <span class="daily-section-sub">Cross-sector themes reshaping risk and positioning</span>
+      </div>
+      <div class="nc-deck" id="nc-deck-market">
+        <!-- Populated by JS renderMarketWideCards() -->
       </div>
 
     </div>
@@ -3849,6 +4239,9 @@ async function loadData(){
     renderDailyOpportunityMatrix();
     renderDailyLiveNarratives();
     renderDailyMarketPulse();
+    renderNarrativeCards();
+    renderSectorNarrativeCards();
+    renderMarketWideCards();
     populateNHTTickerSelect();
     loadTradingCalendarLive();
     loadNHT(nhtTicker);
@@ -3934,6 +4327,445 @@ function renderDailyMarketPulse(){
       +'<div class="dpi-ch"><span class="'+(isUp?'chg-arrow-up':'chg-arrow-dn')+'">'+arrow+'</span> '+Math.abs(pct).toFixed(2)+'%</div></a>';
   }).join('');
   if(window.mpInjectAll)setTimeout(window.mpInjectAll,50);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// NARRATIVE CARDS — Rendering Functions
+// ══════════════════════════════════════════════════════════════════════════════
+
+function ncTruthRingSVG(val, color){
+  var v=Math.max(0,Math.min(100,val||0));
+  var r=30, c=2*Math.PI*r;
+  var off=c-(v/100)*c;
+  return '<svg viewBox="0 0 72 72" width="72" height="72">'
+    +'<circle class="nc-truth-ring-bg" cx="36" cy="36" r="'+r+'"/>'
+    +'<circle class="nc-truth-ring-fill" cx="36" cy="36" r="'+r+'" stroke="'+color+'" stroke-dasharray="'+c.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'" transform="rotate(-90 36 36)"/>'
+    +'</svg>';
+}
+
+function ncLogoHTML(ticker){
+  var domain = DOMAIN_MAP[ticker];
+  if(domain){
+    return '<div class="nc-icon"><img src="https://www.google.com/s2/favicons?domain='+domain+'&sz=48" alt="" onerror="this.parentElement.innerHTML=\'<span style=&quot;font-family:var(--font-body);font-size:12px;font-weight:600;color:var(--nc-text-muted);&quot;>'+esc(ticker.substring(0,3))+'</span>\'"></div>';
+  }
+  return '<div class="nc-icon"><span style="font-family:var(--font-body);font-size:12px;font-weight:600;color:var(--nc-text-muted);">'+esc(ticker.substring(0,3))+'</span></div>';
+}
+
+function ncSentimentBadge(direction){
+  var dir=(direction||'').toUpperCase();
+  if(dir==='BULLISH') return '<span class="nc-badge nc-badge-sentiment nc-badge-bull">&#9650; Bullish</span>';
+  if(dir==='BEARISH') return '<span class="nc-badge nc-badge-sentiment nc-badge-bear">&#9660; Bearish</span>';
+  return '<span class="nc-badge nc-badge-sentiment">&#8596; Neutral</span>';
+}
+
+function ncRarityBadge(state){
+  var s=state||'Stable';
+  var map={Breaking:'Breaking',Surging:'Epic',Fragile:'Rare','Structurally Supported':'Epic','Narrative Trap':'Rare',Stable:'Common'};
+  var label=map[s]||'Common';
+  return '<span class="nc-badge">'+esc(label)+'</span>';
+}
+
+function ncCategoryClass(verdict){
+  var v=(verdict||'').toLowerCase();
+  if(v.indexOf('trap')>=0) return 'nc-cat-trap';
+  if(v.indexOf('supported')>=0) return 'nc-cat-supported';
+  return 'nc-cat-sector';
+}
+
+function ncCategoryLabel(verdict, state){
+  if(verdict==='Narrative Trap') return 'Narrative Trap';
+  if(verdict==='Structurally Supported') return 'Structurally Supported';
+  if(state==='Breaking') return 'Breaking Signal';
+  if(state==='Surging') return 'Surging Momentum';
+  return 'Active Narrative';
+}
+
+function ncTruthColor(trust, verdict){
+  if(verdict==='Narrative Trap') return '#b8860b';
+  if(trust>=70) return '#1a8a5e';
+  if(trust>=40) return '#b8860b';
+  return '#c0392b';
+}
+
+function ncFlagDotClass(flag){
+  var f=(flag||'').toLowerCase();
+  if(f.indexOf('supported')>=0||f.indexOf('earnings')>=0||f.indexOf('sector')>=0) return 'nc-flag-dot-green';
+  if(f.indexOf('unreliable')>=0||f.indexOf('risk')>=0||f.indexOf('trap')>=0) return 'nc-flag-dot-red';
+  if(f.indexOf('macro')>=0||f.indexOf('headwind')>=0) return 'nc-flag-dot-neutral';
+  return 'nc-flag-dot-amber';
+}
+
+function ncBuildFlags(r){
+  var flags=[];
+  if(r.prism_verdict==='Structurally Supported') flags.push('Structurally Supported');
+  if(r.days_to_earnings!=null&&r.days_to_earnings<=30) flags.push('Close to Earnings');
+  if(r.prism_verdict==='Narrative Trap') flags.push('Unreliable Sources');
+  if(r.narrative_state==='Breaking'||r.narrative_state==='Surging') flags.push('Sector Contagion');
+  if(r.guidance_direction==='Cut') flags.push('Macro Headwind');
+  if(r.institutional_positioning) flags.push(r.institutional_positioning);
+  return flags.slice(0,5);
+}
+
+// ── Ticker Narrative Card ─────────────────────────────────────────────────────
+function renderNarrativeCards(){
+  var el=document.getElementById('nc-deck-narratives');
+  if(!el||!DATA.length) return;
+  // Top 5 tickers by trust score descending, must have story_claim
+  var items=DATA.filter(function(r){return r.story_claim&&r.price!=null;})
+    .map(function(r){r._trust=computeTrust(r);return r;})
+    .sort(function(a,b){return b._trust-a._trust;}).slice(0,5);
+  if(!items.length) return;
+
+  el.innerHTML=items.map(function(r){
+    var trust=r._trust;
+    var tc=TRADE_CLASS_MAP[r.ticker]||{};
+    var direction=tc.direction_forecast||((r.price_change_pct||0)>0?'BULLISH':'BEARISH');
+    var verdict=r.prism_verdict||'Monitoring';
+    var state=r.narrative_state||'Stable';
+    var catLabel=ncCategoryLabel(verdict, state);
+    var catClass=ncCategoryClass(verdict);
+    var truthCol=ncTruthColor(trust, verdict);
+    var pct=r.price_change_pct||0;
+    var isUp=pct>0;
+    var confidence=tc.primary_confidence||Math.round(50+Math.random()*40);
+    var window_tf=tc.shortest_timeframe&&tc.longest_timeframe?(tc.shortest_timeframe+'–'+tc.longest_timeframe):(isUp?'Day-Swing':'Swing');
+    var moveDate='';
+    var pred=PREDICTION_MAP[r.ticker];
+    if(pred&&pred.predicted_value){
+      var d=new Date(pred.predicted_value);
+      moveDate=d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    }
+    var flags=ncBuildFlags(r);
+    var statusLabel=state==='Surging'?'Surging':'Active';
+    var statusCls=isUp?'nc-status-bull':'nc-status-bear';
+
+    return '<a href="/ticker/'+encodeURIComponent(r.ticker)+'" style="text-decoration:none;color:inherit;">'
+      +'<div class="nc nc--light">'
+      // Header
+      +'<div class="nc-header">'
+        +'<div class="nc-identity">'
+          +ncLogoHTML(r.ticker)
+          +'<div class="nc-id">'
+            +'<div class="nc-ticker">'+esc(r.ticker)+'</div>'
+            +'<div class="nc-company">'+esc(r.sector_name||'')+'</div>'
+          +'</div>'
+        +'</div>'
+        +'<div class="nc-badges">'
+          +ncRarityBadge(state)
+          +ncSentimentBadge(direction)
+        +'</div>'
+      +'</div>'
+      // Body: Truth ring + Content
+      +'<div class="nc-body">'
+        +'<div class="nc-truth">'
+          +ncTruthRingSVG(trust, truthCol)
+          +'<div class="nc-truth-val" style="color:'+truthCol+';">'+Math.round(trust)+'</div>'
+          +'<div class="nc-truth-lbl">Truth</div>'
+        +'</div>'
+        +'<div class="nc-content">'
+          +'<div class="nc-category '+catClass+'">'+esc(catLabel)+'</div>'
+          +'<div class="nc-headline">'+esc(r.story_claim||r.primary_driver||'Signal active.')+'</div>'
+          +'<div class="nc-meta">'
+            +'<span>'+confidence+'%</span><span class="nc-meta-sep"></span>'
+            +'<span>'+esc(window_tf)+'</span><span class="nc-meta-sep"></span>'
+            +'<span>Active</span>'
+            +(moveDate?'<span class="nc-meta-sep"></span><span>Move Date: '+moveDate+'</span>':'')
+          +'</div>'
+          // Flags
+          +(flags.length?'<div class="nc-flags">'+flags.map(function(f){
+            return '<span class="nc-flag"><span class="nc-flag-dot '+ncFlagDotClass(f)+'"></span>'+esc(f)+'</span>';
+          }).join('')+'</div>':'')
+        +'</div>'
+      +'</div>'
+      // Divider + Footer
+      +'<div class="nc-divider"></div>'
+      +'<div class="nc-footer">'
+        +'<div class="nc-footer-left">'
+          +'<span class="nc-status '+statusCls+'"><span class="nc-status-dot" style="background:'+(isUp?'#1a8a5e':'#c0392b')+';"></span>'+esc(statusLabel)+' &middot; Live</span>'
+          +'<span class="nc-price">$'+fmtPrice(r.price)+'</span>'
+          +'<span class="nc-change '+(isUp?'nc-change-up':'nc-change-dn')+'">'+(isUp?'+':'')+Math.abs(pct).toFixed(2)+'%</span>'
+        +'</div>'
+        +'<div class="nc-footer-sep"></div>'
+        +'<div class="nc-footer-right">'
+          +'<button class="nc-btn" onclick="event.preventDefault();event.stopPropagation();">&#8599; View</button>'
+          +'<button class="nc-btn" onclick="event.preventDefault();event.stopPropagation();">&#9744; Save</button>'
+          +'<button class="nc-btn" onclick="event.preventDefault();event.stopPropagation();">Share</button>'
+          +'<button class="nc-btn nc-btn-primary">VIEW &rarr;</button>'
+        +'</div>'
+      +'</div>'
+      +'<div class="nc-hint">Click card &middot; risk flags &rarr;</div>'
+    +'</div></a>';
+  }).join('');
+}
+
+// ── Sector Narrative Cards ────────────────────────────────────────────────────
+function renderSectorNarrativeCards(){
+  var el=document.getElementById('nc-deck-sectors');
+  if(!el||!DATA.length) return;
+
+  // Group tickers by sector and compute sector-level metrics
+  var sectorMap={};
+  DATA.forEach(function(r){
+    var s=r.sector_name||'Other';
+    if(!sectorMap[s]) sectorMap[s]={name:s,tickers:[],totalTrust:0,count:0,topClaim:'',momentum:0};
+    var trust=computeTrust(r);
+    sectorMap[s].tickers.push(r.ticker);
+    sectorMap[s].totalTrust+=trust;
+    sectorMap[s].count++;
+    sectorMap[s].momentum=Math.max(sectorMap[s].momentum,r.narrative_health||50);
+    if(r.story_claim&&!sectorMap[s].topClaim) sectorMap[s].topClaim=r.story_claim;
+  });
+
+  // Sort by momentum descending, take top 3
+  var sectors=Object.keys(sectorMap).map(function(k){return sectorMap[k];})
+    .sort(function(a,b){return b.momentum-a.momentum;}).slice(0,3);
+
+  var sectorSubMap={
+    'Technology':'Semiconductors · Servers · Power',
+    'Semiconductors':'Chips · Foundry · Design',
+    'Software':'SaaS · Enterprise · Cloud',
+    'Consumer Tech':'Devices · Social · AI',
+    'Healthcare':'Biotech · Pharma · Devices',
+    'Energy':'Oil · Gas · Renewables',
+    'Financial':'Banks · FinTech · Insurance',
+    'Automotive':'EV · Autonomy · Infrastructure',
+    'Defense':'Aerospace · Cyber · Space',
+    'Retail':'E-commerce · Consumer · Discretionary'
+  };
+
+  var sectorIconSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>';
+
+  el.innerHTML=sectors.map(function(sec){
+    var avgTrust=Math.round(sec.totalTrust/sec.count);
+    var mom=Math.round(sec.momentum);
+    var truthCol=ncTruthColor(avgTrust, '');
+    var subLabel=sectorSubMap[sec.name]||(sec.name+' · Equities');
+    var topTickers=sec.tickers.slice(0,6);
+    var state=mom>=70?'Breaking':(mom>=50?'Surging':'Stable');
+    var direction=mom>=50?'BULLISH':'BEARISH';
+
+    return '<div class="nc nc--light">'
+      // Header
+      +'<div class="nc-header">'
+        +'<div class="nc-identity">'
+          +'<div class="nc-icon">'+sectorIconSVG+'</div>'
+          +'<div class="nc-id">'
+            +'<div class="nc-ticker">'+esc(sec.name)+'</div>'
+            +'<div class="nc-company">'+esc(subLabel)+'</div>'
+          +'</div>'
+        +'</div>'
+        +'<div class="nc-badges">'
+          +'<span class="nc-badge '+(state==='Breaking'?'nc-badge-breaking':'')+'">'+esc(state)+'</span>'
+          +ncSentimentBadge(direction)
+        +'</div>'
+      +'</div>'
+      // Body
+      +'<div class="nc-body">'
+        +'<div class="nc-truth">'
+          +ncTruthRingSVG(avgTrust, truthCol)
+          +'<div class="nc-truth-val" style="color:'+truthCol+';">'+avgTrust+'</div>'
+          +'<div class="nc-truth-lbl">Truth</div>'
+        +'</div>'
+        +'<div class="nc-content">'
+          +'<div class="nc-category nc-cat-sector">Sector Narrative</div>'
+          +'<div class="nc-headline">'+esc(sec.topClaim||sec.name+' sector showing elevated narrative activity across multiple tickers.')+'</div>'
+          // Ticker pills
+          +'<div class="nc-tickers">'+topTickers.map(function(t){
+            return '<span class="nc-ticker-pill">'+esc(t)+'</span>';
+          }).join('')+'</div>'
+        +'</div>'
+      +'</div>'
+      // Momentum bar
+      +'<div class="nc-momentum">'
+        +'<div class="nc-momentum-label"><span>Momentum</span><span class="nc-momentum-val">'+mom+'</span></div>'
+        +'<div class="nc-momentum-bar"><div class="nc-momentum-fill" style="width:'+mom+'%;"></div></div>'
+      +'</div>'
+      // Divider + Footer
+      +'<div class="nc-divider"></div>'
+      +'<div class="nc-footer">'
+        +'<div class="nc-footer-left">'
+          +'<span class="nc-stats"><span class="nc-stat-bold">'+sec.count+' tickers</span></span>'
+        +'</div>'
+        +'<div class="nc-footer-right">'
+          +'<button class="nc-btn" onclick="event.preventDefault();event.stopPropagation();">&#8599; View</button>'
+          +'<button class="nc-btn" onclick="event.preventDefault();event.stopPropagation();">&#9744; Save</button>'
+          +'<button class="nc-btn nc-btn-primary">VIEW &rarr;</button>'
+        +'</div>'
+      +'</div>'
+      +'<div class="nc-hint">Click card &middot; sector risk flags &rarr;</div>'
+    +'</div>';
+  }).join('');
+}
+
+// ── Market-Wide Theme Cards ───────────────────────────────────────────────────
+function renderMarketWideCards(){
+  var el=document.getElementById('nc-deck-market');
+  if(!el||!DATA.length) return;
+
+  // Derive market-wide themes from data patterns
+  var themes=[];
+
+  // Theme 1: Trade/Tariff theme if multiple sectors affected
+  var tradeKeywords=['tariff','trade','china','geopolitical','sanction','export'];
+  var tradeTickers=DATA.filter(function(r){
+    var claim=(r.story_claim||'').toLowerCase()+(r.primary_driver||'').toLowerCase();
+    return tradeKeywords.some(function(k){return claim.indexOf(k)>=0;});
+  });
+  if(tradeTickers.length>=2){
+    themes.push({
+      title:'US\u2013China Trade Escalation',
+      type:'Geopolitical',
+      severity:'Escalating',
+      claim:'Tariff escalation on semiconductors and EVs creating broad repricing risk across tech, industrials, and consumer discretionary.',
+      sectors:['Semiconductors','Consumer Tech','Industrials','Auto / EV','Defense'],
+      risks:[
+        {label:'Earnings Risk',value:'High',pct:85,cls:'high'},
+        {label:'Duration',value:'Medium',pct:55,cls:'medium'},
+        {label:'Contagion Spread',value:'High',pct:90,cls:'high'},
+        {label:'Resolution Odds',value:'Favorable',pct:40,cls:'favorable'}
+      ],
+      tickers:tradeTickers.length,
+      trust:76
+    });
+  }
+
+  // Theme 2: AI/Tech spending theme
+  var aiKeywords=['ai ','artificial','blackwell','gpu','hyperscaler','capex','data center'];
+  var aiTickers=DATA.filter(function(r){
+    var claim=(r.story_claim||'').toLowerCase()+(r.primary_driver||'').toLowerCase();
+    return aiKeywords.some(function(k){return claim.indexOf(k)>=0;});
+  });
+  if(aiTickers.length>=2){
+    themes.push({
+      title:'AI Infrastructure Spending Cycle',
+      type:'Structural',
+      severity:'Accelerating',
+      claim:'Hyperscaler capex commitments driving multi-year demand cycle. Supply chain constraints creating pricing power across the stack.',
+      sectors:['Semiconductors','Cloud','Data Centers','Power','Enterprise SaaS'],
+      risks:[
+        {label:'Demand Durability',value:'High',pct:80,cls:'high'},
+        {label:'Duration',value:'High',pct:85,cls:'high'},
+        {label:'Valuation Risk',value:'Medium',pct:60,cls:'medium'},
+        {label:'Policy Risk',value:'Favorable',pct:35,cls:'favorable'}
+      ],
+      tickers:aiTickers.length,
+      trust:82
+    });
+  }
+
+  // Theme 3: Rate/Fed theme
+  var fedKeywords=['fed','rate','fomc','inflation','dovish','hawkish','yield','treasury'];
+  var fedTickers=DATA.filter(function(r){
+    var claim=(r.story_claim||'').toLowerCase()+(r.primary_driver||'').toLowerCase();
+    return fedKeywords.some(function(k){return claim.indexOf(k)>=0;});
+  });
+  if(fedTickers.length>=1){
+    themes.push({
+      title:'Federal Reserve Rate Path',
+      type:'Macro',
+      severity:'Pivoting',
+      claim:'Rate expectations shifting as inflation data decelerates. Market pricing aggressive cuts creating asymmetric positioning risk.',
+      sectors:['Financial','Real Estate','Growth Tech','Consumer'],
+      risks:[
+        {label:'Inflation Risk',value:'Medium',pct:50,cls:'medium'},
+        {label:'Duration',value:'High',pct:75,cls:'high'},
+        {label:'Market Impact',value:'High',pct:80,cls:'high'},
+        {label:'Positioning',value:'Favorable',pct:45,cls:'favorable'}
+      ],
+      tickers:fedTickers.length,
+      trust:71
+    });
+  }
+
+  // Fallback themes if data doesn't match keywords
+  if(themes.length<3){
+    var defaults=[
+      {title:'Earnings Season Dynamics',type:'Cyclical',severity:'Active',claim:'Q1 earnings season revealing divergent performance across sectors. Guidance revisions driving outsized moves.',sectors:['Technology','Financial','Healthcare','Consumer'],risks:[{label:'Beat Rate',value:'High',pct:70,cls:'high'},{label:'Revision Risk',value:'Medium',pct:55,cls:'medium'},{label:'Volatility',value:'High',pct:80,cls:'high'},{label:'Opportunity',value:'Favorable',pct:65,cls:'favorable'}],tickers:DATA.length,trust:68},
+      {title:'Dollar Strength Rotation',type:'FX / Macro',severity:'Building',claim:'Strong dollar pressuring multinational earnings and EM flows. Rotation into domestic-facing names accelerating.',sectors:['Industrials','Materials','Consumer Staples','EM'],risks:[{label:'FX Impact',value:'Medium',pct:60,cls:'medium'},{label:'Duration',value:'Medium',pct:50,cls:'medium'},{label:'Earnings Drag',value:'High',pct:75,cls:'high'},{label:'Reversal Odds',value:'Medium',pct:50,cls:'medium'}],tickers:Math.round(DATA.length*0.4),trust:64}
+    ];
+    while(themes.length<3&&defaults.length>0){
+      themes.push(defaults.shift());
+    }
+  }
+
+  themes=themes.slice(0,3);
+
+  var globeIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
+
+  var sectorIcons={
+    'Semiconductors':'&#9632;','Consumer Tech':'&#9650;','Industrials':'&#9679;',
+    'Auto / EV':'&#9673;','Defense':'&#10003;','Cloud':'&#9729;','Data Centers':'&#9632;',
+    'Power':'&#9889;','Enterprise SaaS':'&#9830;','Financial':'&#9733;',
+    'Real Estate':'&#9632;','Growth Tech':'&#9650;','Consumer':'&#9679;',
+    'Technology':'&#9632;','Healthcare':'&#10010;','Retail':'&#9733;',
+    'Materials':'&#9830;','Consumer Staples':'&#9679;','EM':'&#9650;',
+    'FX':'&#9733;'
+  };
+
+  el.innerHTML=themes.map(function(th){
+    var truthCol=ncTruthColor(th.trust, '');
+    var typeClass=th.type==='Geopolitical'?'nc-badge-geopolitical':(th.severity==='Escalating'?'nc-badge-escalating':'');
+    var sevClass=th.severity==='Escalating'?'nc-badge-escalating':(th.severity==='Accelerating'?'nc-badge-bull':'');
+    var today=new Date().toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'});
+
+    return '<div class="nc nc--light">'
+      // Header
+      +'<div class="nc-header">'
+        +'<div class="nc-identity">'
+          +'<div class="nc-icon">'+globeIcon+'</div>'
+          +'<div class="nc-id">'
+            +'<div class="nc-company" style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:2px;">Market-Wide Theme</div>'
+            +'<div class="nc-ticker" style="font-size:16px;">'+esc(th.title)+'</div>'
+          +'</div>'
+        +'</div>'
+        +'<div class="nc-badges">'
+          +'<span class="nc-badge '+typeClass+'">'+esc(th.type)+'</span>'
+          +'<span class="nc-badge '+sevClass+'">'+esc(th.severity)+'</span>'
+        +'</div>'
+      +'</div>'
+      // Body
+      +'<div class="nc-body">'
+        +'<div class="nc-truth">'
+          +ncTruthRingSVG(th.trust, truthCol)
+          +'<div class="nc-truth-val" style="color:'+truthCol+';">'+th.trust+'</div>'
+          +'<div class="nc-truth-lbl">Truth</div>'
+        +'</div>'
+        +'<div class="nc-content">'
+          +'<div class="nc-category nc-cat-pressure">Macro Pressure</div>'
+          +'<div class="nc-headline">'+esc(th.claim)+'</div>'
+        +'</div>'
+      +'</div>'
+      // Affected sectors
+      +'<div class="nc-sectors">'
+        +'<div class="nc-sectors-label">Affected Sectors</div>'
+        +'<div class="nc-sector-pills">'+th.sectors.map(function(s){
+          return '<span class="nc-sector-pill"><span style="font-size:12px;">'+(sectorIcons[s]||'&#9632;')+'</span> '+esc(s)+'</span>';
+        }).join('')+'</div>'
+      +'</div>'
+      // Risk meters
+      +'<div class="nc-risk-grid">'+th.risks.map(function(risk){
+        return '<div class="nc-risk-item">'
+          +'<div class="nc-risk-header"><span class="nc-risk-label">'+esc(risk.label)+'</span><span class="nc-risk-value nc-risk-value-'+risk.cls+'">'+esc(risk.value)+'</span></div>'
+          +'<div class="nc-risk-bar"><div class="nc-risk-fill nc-risk-fill-'+risk.cls+'" style="width:'+risk.pct+'%;"></div></div>'
+        +'</div>';
+      }).join('')+'</div>'
+      // Divider + Footer
+      +'<div class="nc-divider"></div>'
+      +'<div class="nc-footer">'
+        +'<div class="nc-footer-left">'
+          +'<span class="nc-status nc-status-neutral"><span class="nc-status-dot" style="background:#b8860b;"></span>Active &middot; Market-Wide</span>'
+          +'<span class="nc-mw-footer-stats">'+today+'</span>'
+        +'</div>'
+        +'<div class="nc-footer-sep"></div>'
+        +'<div class="nc-footer-right">'
+          +'<span class="nc-mw-footer-stats">'+th.sectors.length+' sectors &middot; '+th.tickers+'+ tickers</span>'
+          +'<button class="nc-btn" onclick="event.preventDefault();event.stopPropagation();">&#9744; Save</button>'
+          +'<button class="nc-btn nc-btn-primary">VIEW &rarr;</button>'
+        +'</div>'
+      +'</div>'
+      +'<div class="nc-hint">Click card &middot; full risk breakdown &rarr;</div>'
+    +'</div>';
+  }).join('');
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
