@@ -2642,400 +2642,164 @@ body{
 @keyframes pwShake{0%,100%{transform:translateX(0);}25%{transform:translateX(-6px);}50%{transform:translateX(6px);}75%{transform:translateX(-4px);}}
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   NARRATIVE CARDS — Dream Design System
-   Three card types: Ticker Narrative, Market-Wide Theme, Sector Narrative
-   Both light (default card bg) and dark variants
+   NARRATIVE FEED — 2-column tabbed scrollable layout
    ══════════════════════════════════════════════════════════════════════════════ */
 
-/* ── Shared Foundation ── */
-.nc{
-  position:relative;
-  background:var(--nc-bg, #0C1018);
-  border:1px solid var(--nc-border, rgba(255,255,255,0.06));
-  border-radius:16px;
-  padding:28px 32px 20px;
-  overflow:hidden;
-  transition:border-color .3s, box-shadow .3s, transform .3s;
-  cursor:pointer;
+/* ── Split Layout ── */
+.nf-split{
+  display:grid;grid-template-columns:1fr 1fr;gap:16px;
+  margin-bottom:28px;align-items:start;
 }
-.nc::before{
-  content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
-  background:
-    linear-gradient(var(--nc-grid-color, rgba(255,255,255,0.025)) 1px, transparent 1px),
-    linear-gradient(90deg, var(--nc-grid-color, rgba(255,255,255,0.025)) 1px, transparent 1px);
-  background-size:48px 48px;
-  opacity:0.6;
-  border-radius:16px;
-}
-.nc>*{position:relative;z-index:1;}
-.nc:hover{
-  border-color:var(--nc-border-hover, rgba(255,255,255,0.14));
-  box-shadow:0 12px 40px var(--nc-shadow-hover, rgba(0,0,0,0.35));
-  transform:translateY(-2px);
-}
+@media(max-width:900px){.nf-split{grid-template-columns:1fr;}}
 
-/* ── Narrative Card Header ── */
-.nc-header{
-  display:flex;align-items:flex-start;justify-content:space-between;
-  margin-bottom:24px;
+/* ── LEFT: Summary Card ── */
+.nf-summary{
+  background:var(--mp-surface);border:1px solid var(--mp-border);
+  border-radius:12px;padding:18px 20px;
 }
-.nc-identity{display:flex;align-items:center;gap:12px;}
-.nc-icon{
-  width:40px;height:40px;display:flex;align-items:center;justify-content:center;
-  border-radius:10px;flex-shrink:0;
-  background:var(--nc-icon-bg, rgba(255,255,255,0.06));
-  border:1px solid var(--nc-icon-border, rgba(255,255,255,0.08));
-  overflow:hidden;
+.nf-sum-header{
+  display:flex;align-items:center;gap:8px;margin-bottom:14px;
 }
-.nc-icon img{width:24px;height:24px;border-radius:4px;object-fit:contain;}
-.nc-icon svg{width:20px;height:20px;opacity:0.6;}
-.nc-id{display:flex;flex-direction:column;gap:2px;}
-.nc-ticker{
-  font-family:var(--font-body);font-size:18px;font-weight:700;
-  letter-spacing:-0.01em;color:var(--nc-text-primary, #FFFFFF);line-height:1.1;
-}
-.nc-company{
-  font-family:var(--font-body);font-size:13px;font-weight:400;
-  color:var(--nc-text-muted, rgba(255,255,255,0.5));line-height:1.2;
-}
-.nc-badges{display:flex;align-items:center;gap:8px;flex-shrink:0;}
-.nc-badge{
-  font-family:var(--font-body);font-size:11px;font-weight:600;
-  letter-spacing:0.06em;text-transform:uppercase;
-  padding:5px 14px;border-radius:8px;white-space:nowrap;
-  border:1px solid var(--nc-badge-border, rgba(255,255,255,0.12));
-  background:var(--nc-badge-bg, transparent);
-  color:var(--nc-text-secondary, rgba(255,255,255,0.7));
-}
-.nc-badge-sentiment{
-  background:var(--nc-badge-fill, rgba(255,255,255,0.08));
-  color:var(--nc-text-primary, #FFFFFF);
-  border-color:var(--nc-badge-fill-border, rgba(255,255,255,0.15));
-}
-.nc-badge-bull{color:#1a7a4e;border-color:rgba(0,180,100,0.3);background:rgba(0,180,100,0.08);}
-.nc-badge-bear{color:#c0392b;border-color:rgba(255,77,77,0.3);background:rgba(255,77,77,0.08);}
-.nc-badge-escalating{color:#c0392b;border-color:rgba(255,77,77,0.3);background:rgba(255,77,77,0.06);}
-.nc-badge-breaking{color:#c0392b;border-color:rgba(255,77,77,0.3);background:rgba(255,77,77,0.06);}
-.nc-badge-geopolitical{color:#b8860b;border-color:rgba(184,134,11,0.3);background:rgba(184,134,11,0.06);}
-
-/* ── Truth Score Ring ── */
-.nc-body{display:flex;align-items:flex-start;gap:20px;margin-bottom:20px;}
-.nc-truth{flex-shrink:0;width:72px;text-align:center;}
-.nc-truth svg{width:72px;height:72px;}
-.nc-truth-ring-bg{fill:none;stroke:var(--nc-ring-bg, rgba(255,255,255,0.08));stroke-width:3.5;}
-.nc-truth-ring-fill{
-  fill:none;stroke-width:3.5;stroke-linecap:round;
-  transition:stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1);
-}
-.nc-truth-val{
-  font-family:var(--font-body);font-size:22px;font-weight:600;line-height:1;
-}
-.nc-truth-lbl{
-  font-family:var(--font-body);font-size:9px;font-weight:600;
-  letter-spacing:0.14em;text-transform:uppercase;
-  color:var(--nc-text-muted, rgba(255,255,255,0.4));
-  margin-top:1px;
-}
-.nc-content{flex:1;min-width:0;}
-
-/* ── Category Label ── */
-.nc-category{
-  font-family:var(--font-body);font-size:12px;font-weight:600;
+.nf-sum-dot{width:6px;height:6px;border-radius:50%;background:#1a8a5e;animation:blink 2s ease infinite;flex-shrink:0;}
+.nf-sum-label{
+  font-family:var(--font-body);font-size:10px;font-weight:600;
   letter-spacing:0.10em;text-transform:uppercase;
-  margin-bottom:8px;line-height:1;
+  color:var(--mp-text-secondary);
 }
-.nc-cat-trap{color:#b8860b;}
-.nc-cat-pressure{color:#b8860b;}
-.nc-cat-sector{color:#1a8a6a;}
-.nc-cat-breaking{color:#c0392b;}
-.nc-cat-supported{color:#1a7a4e;}
-
-/* ── Headline ── */
-.nc-headline{
-  font-family:var(--font-display);font-size:clamp(20px, 2.2vw, 28px);
-  font-weight:400;line-height:1.25;letter-spacing:-0.02em;
-  color:var(--nc-text-primary, #FFFFFF);
-  margin-bottom:0;
+.nf-sum-time{
+  margin-left:auto;font-family:var(--font-body);font-size:11px;
+  color:var(--mp-text-tertiary);
 }
-
-/* ── Meta Line ── */
-.nc-meta{
+.nf-sum-body{
   font-family:var(--font-body);font-size:13px;font-weight:400;
-  color:var(--nc-text-muted, rgba(255,255,255,0.45));
-  margin-top:10px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+  line-height:1.6;color:var(--mp-text-primary);margin-bottom:16px;
 }
-.nc-meta-sep::before{content:'·';margin:0 2px;}
-
-/* ── Flag Tags ── */
-.nc-flags{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;margin-bottom:0;}
-.nc-flag{
-  display:flex;align-items:center;gap:6px;
-  font-family:var(--font-body);font-size:11px;font-weight:600;
-  letter-spacing:0.04em;text-transform:uppercase;
-  padding:6px 14px;border-radius:20px;
-  border:1px solid var(--nc-flag-border, rgba(255,255,255,0.10));
-  background:var(--nc-flag-bg, transparent);
-  color:var(--nc-text-secondary, rgba(255,255,255,0.65));
+.nf-sum-body strong{font-weight:600;}
+.nf-sum-narrative{
+  border-left:3px solid #b8860b;padding-left:14px;margin-bottom:16px;
 }
-.nc-flag-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
-.nc-flag-dot-green{background:#1a8a5e;}
-.nc-flag-dot-red{background:#c0392b;}
-.nc-flag-dot-amber{background:#b8860b;}
-.nc-flag-dot-neutral{background:var(--nc-text-muted, rgba(255,255,255,0.35));}
-
-/* ── Divider ── */
-.nc-divider{
-  height:1px;margin:20px 0 16px;
-  background:var(--nc-divider, rgba(255,255,255,0.06));
-}
-
-/* ── Footer ── */
-.nc-footer{
-  display:flex;align-items:center;justify-content:space-between;
-  flex-wrap:wrap;gap:12px;
-}
-.nc-footer-left{display:flex;align-items:center;gap:12px;}
-.nc-status{
-  display:flex;align-items:center;gap:6px;
-  font-family:var(--font-body);font-size:12px;font-weight:500;
-  letter-spacing:0.04em;text-transform:uppercase;
-}
-.nc-status-dot{width:6px;height:6px;border-radius:50%;animation:blink 2s ease infinite;}
-.nc-status-bull{color:#1a8a5e;}
-.nc-status-bear{color:#c0392b;}
-.nc-status-neutral{color:var(--nc-text-muted, rgba(255,255,255,0.45));}
-.nc-price{
-  font-family:var(--font-body);font-size:18px;font-weight:600;
-  color:var(--nc-text-primary, #FFFFFF);letter-spacing:-0.02em;
-}
-.nc-change{
-  font-family:var(--font-body);font-size:13px;font-weight:500;
-  margin-left:6px;
-}
-.nc-change-up{color:#1a8a5e;}
-.nc-change-dn{color:#c0392b;}
-.nc-footer-sep{
-  width:1px;height:20px;background:var(--nc-divider, rgba(255,255,255,0.08));
-}
-.nc-footer-right{display:flex;align-items:center;gap:8px;}
-.nc-btn{
-  font-family:var(--font-body);font-size:12px;font-weight:500;
-  letter-spacing:0.02em;
-  padding:7px 16px;border-radius:8px;
-  border:1px solid var(--nc-btn-border, rgba(255,255,255,0.12));
-  background:var(--nc-btn-bg, transparent);
-  color:var(--nc-text-secondary, rgba(255,255,255,0.65));
-  cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px;
-}
-.nc-btn:hover{
-  border-color:var(--nc-btn-hover-border, rgba(255,255,255,0.25));
-  color:var(--nc-text-primary, #FFFFFF);
-  background:var(--nc-btn-hover-bg, rgba(255,255,255,0.04));
-}
-.nc-btn svg{width:13px;height:13px;}
-.nc-btn-primary{
-  font-weight:600;
-  background:var(--nc-btn-primary-bg, rgba(255,255,255,0.06));
-  border-color:var(--nc-btn-primary-border, rgba(255,255,255,0.15));
-}
-.nc-btn-primary:hover{
-  background:var(--nc-btn-primary-hover, rgba(255,255,255,0.10));
-}
-
-/* ── Click Hint ── */
-.nc-hint{
-  text-align:center;margin-top:12px;
-  font-family:var(--font-body);font-size:11px;font-weight:400;
-  color:var(--nc-text-muted, rgba(255,255,255,0.25));
-  letter-spacing:0.02em;
-}
-
-/* ── Ticker Pills (Sector card) ── */
-.nc-tickers{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;}
-.nc-ticker-pill{
-  font-family:var(--font-body);font-size:13px;font-weight:600;
-  padding:6px 14px;border-radius:8px;
-  border:1px solid var(--nc-pill-border, rgba(255,255,255,0.12));
-  background:var(--nc-pill-bg, transparent);
-  color:var(--nc-text-primary, #FFFFFF);
-  letter-spacing:0.01em;
-}
-
-/* ── Sector Pills (Market-Wide card) ── */
-.nc-sectors{
-  margin-top:20px;margin-bottom:16px;
-}
-.nc-sectors-label{
-  font-family:var(--font-body);font-size:11px;font-weight:600;
-  letter-spacing:0.10em;text-transform:uppercase;
-  color:var(--nc-text-muted, rgba(255,255,255,0.4));
-  margin-bottom:10px;
-}
-.nc-sector-pills{display:flex;flex-wrap:wrap;gap:8px;}
-.nc-sector-pill{
-  display:flex;align-items:center;gap:6px;
-  font-family:var(--font-body);font-size:12px;font-weight:500;
-  padding:6px 14px;border-radius:20px;
-  border:1px solid var(--nc-pill-border, rgba(255,255,255,0.10));
-  color:var(--nc-text-secondary, rgba(255,255,255,0.65));
-}
-.nc-sector-pill svg{width:14px;height:14px;opacity:0.5;}
-
-/* ── Risk Meters (Market-Wide card) ── */
-.nc-risk-grid{
-  display:grid;grid-template-columns:1fr 1fr;gap:12px 24px;
-  margin-bottom:0;
-}
-.nc-risk-item{display:flex;flex-direction:column;gap:4px;}
-.nc-risk-header{
-  display:flex;align-items:center;justify-content:space-between;
-}
-.nc-risk-label{
-  font-family:var(--font-body);font-size:12px;font-weight:400;
-  color:var(--nc-text-muted, rgba(255,255,255,0.5));
-}
-.nc-risk-value{
-  font-family:var(--font-body);font-size:12px;font-weight:600;
-}
-.nc-risk-value-high{color:#c0392b;}
-.nc-risk-value-medium{color:var(--nc-text-primary, #FFFFFF);}
-.nc-risk-value-favorable{color:#1a8a5e;}
-.nc-risk-bar{
-  height:3px;border-radius:2px;
-  background:var(--nc-bar-bg, rgba(255,255,255,0.06));
-  overflow:hidden;
-}
-.nc-risk-fill{height:100%;border-radius:2px;transition:width .6s cubic-bezier(0.4,0,0.2,1);}
-.nc-risk-fill-high{background:linear-gradient(90deg, #c0392b, #e74c3c);}
-.nc-risk-fill-medium{background:linear-gradient(90deg, #b8860b, #d4a017);}
-.nc-risk-fill-favorable{background:linear-gradient(90deg, #1a8a5e, #27ae60);}
-
-/* ── Momentum Bar (Sector card) ── */
-.nc-momentum{margin-top:16px;}
-.nc-momentum-label{
-  font-family:var(--font-body);font-size:11px;font-weight:600;
+.nf-sum-nar-label{
+  font-family:var(--font-body);font-size:10px;font-weight:600;
   letter-spacing:0.08em;text-transform:uppercase;
-  color:var(--nc-text-muted, rgba(255,255,255,0.4));
-  margin-bottom:6px;display:flex;justify-content:space-between;
+  color:#b8860b;margin-bottom:6px;
 }
-.nc-momentum-val{
-  font-family:var(--font-body);font-size:13px;font-weight:600;
-  color:var(--nc-text-primary, #FFFFFF);
-}
-.nc-momentum-bar{
-  height:4px;border-radius:3px;
-  background:var(--nc-bar-bg, rgba(255,255,255,0.06));
-  overflow:hidden;
-}
-.nc-momentum-fill{
-  height:100%;border-radius:3px;
-  background:linear-gradient(90deg, #1a8a5e, #27ae60, #2ecc71);
-  transition:width .8s cubic-bezier(0.4,0,0.2,1);
-}
-
-/* ── Footer Stats (Sector card) ── */
-.nc-stats{
-  display:flex;align-items:center;gap:8px;
+.nf-sum-narrative p{
   font-family:var(--font-body);font-size:13px;font-weight:400;
-  color:var(--nc-text-muted, rgba(255,255,255,0.5));
+  line-height:1.6;color:var(--mp-text-primary);
 }
-.nc-stat-bold{font-weight:700;color:var(--nc-text-primary, #FFFFFF);}
+.nf-sum-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;}
+.nf-tag{
+  font-family:var(--font-body);font-size:11px;font-weight:500;
+  padding:4px 12px;border-radius:14px;
+  border:1px solid var(--mp-blue);color:var(--mp-blue);
+  background:rgba(0,174,255,0.06);
+}
+.nf-sum-stats{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:12px;
+  border-top:1px solid var(--mp-border);padding-top:14px;
+}
+.nf-stat{display:flex;flex-direction:column;gap:2px;}
+.nf-stat-num{font-family:var(--font-body);font-size:20px;font-weight:700;color:#1a8a5e;}
+.nf-stat-lbl{
+  font-family:var(--font-body);font-size:10px;font-weight:500;
+  letter-spacing:0.06em;text-transform:uppercase;
+  color:var(--mp-text-tertiary);
+}
 
-/* ── Market-Wide Footer Stats ── */
-.nc-mw-footer-stats{
+/* ── RIGHT: Tabbed Feed ── */
+.nf-feed{
+  background:var(--mp-surface);border:1px solid var(--mp-border);
+  border-radius:12px;overflow:hidden;display:flex;flex-direction:column;
+  position:relative;
+}
+.nf-tabs{
+  display:flex;gap:0;border-bottom:1px solid var(--mp-border);
+  padding:0 4px;flex-shrink:0;
+}
+.nf-tab{
+  font-family:var(--font-body);font-size:13px;font-weight:500;
+  padding:12px 18px;border:none;background:none;
+  color:var(--mp-text-tertiary);cursor:pointer;
+  border-bottom:2px solid transparent;transition:all .2s;
+}
+.nf-tab:hover{color:var(--mp-text-primary);}
+.nf-tab.active{
+  color:var(--mp-text-primary);font-weight:600;
+  border-bottom-color:var(--mp-text-primary);
+}
+.nf-scroll{
+  overflow-y:auto;max-height:420px;scrollbar-width:thin;
+  scrollbar-color:rgba(255,255,255,0.08) transparent;
+}
+.nf-scroll::-webkit-scrollbar{width:4px;}
+.nf-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:4px;}
+.nf-list{display:flex;flex-direction:column;}
+.nf-scroll-hint{
+  display:flex;justify-content:center;padding:8px 0;
+  color:var(--mp-text-tertiary);opacity:0.4;flex-shrink:0;
+  border-top:1px solid var(--mp-border);
+}
+
+/* ── Feed Row ── */
+.nf-row{
+  display:flex;align-items:stretch;gap:0;
+  border-bottom:1px solid var(--mp-border);
+  transition:background .15s;cursor:pointer;text-decoration:none;color:inherit;
+}
+.nf-row:last-child{border-bottom:none;}
+.nf-row:hover{background:rgba(255,255,255,0.02);}
+.nf-row-accent{width:3px;flex-shrink:0;border-radius:0;}
+.nf-row-accent-bull{background:#1a8a5e;}
+.nf-row-accent-bear{background:#c0392b;}
+.nf-row-accent-neutral{background:#b8860b;}
+.nf-row-id{
   display:flex;align-items:center;gap:8px;
-  font-family:var(--font-body);font-size:12px;font-weight:400;
-  color:var(--nc-text-muted, rgba(255,255,255,0.5));
+  padding:12px 12px 12px 14px;min-width:130px;flex-shrink:0;
 }
+.nf-row-logo{
+  width:24px;height:24px;border-radius:6px;flex-shrink:0;
+  background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+}
+.nf-row-logo img{width:16px;height:16px;border-radius:3px;object-fit:contain;}
+.nf-row-logo span{font-family:var(--font-body);font-size:9px;font-weight:600;color:var(--mp-text-tertiary);}
+.nf-row-tkinfo{display:flex;flex-direction:column;gap:1px;}
+.nf-row-ticker{font-family:var(--font-body);font-size:13px;font-weight:700;color:var(--mp-text-primary);line-height:1;}
+.nf-row-sector{font-family:var(--font-body);font-size:10px;font-weight:400;color:var(--mp-text-tertiary);line-height:1.2;}
+.nf-row-body{
+  flex:1;min-width:0;padding:12px 12px;display:flex;align-items:center;
+}
+.nf-row-headline{
+  font-family:var(--font-display);font-size:13px;font-weight:400;
+  line-height:1.4;color:var(--mp-text-primary);
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+}
+.nf-row-verdict{
+  flex-shrink:0;padding:12px 14px 12px 8px;display:flex;align-items:center;
+}
+.nf-row-badge{
+  font-family:var(--font-body);font-size:10px;font-weight:600;
+  letter-spacing:0.04em;text-transform:uppercase;
+  padding:4px 10px;border-radius:6px;white-space:nowrap;
+  border:1px solid rgba(255,255,255,0.08);
+  color:var(--mp-text-secondary);background:rgba(255,255,255,0.04);
+}
+.nf-row-badge-supported{color:#1a8a5e;border-color:rgba(26,138,94,0.25);background:rgba(26,138,94,0.06);}
+.nf-row-badge-trap{color:#b8860b;border-color:rgba(184,134,11,0.25);background:rgba(184,134,11,0.06);}
+.nf-row-badge-bear{color:#c0392b;border-color:rgba(192,57,43,0.25);background:rgba(192,57,43,0.06);}
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   LIGHT THEME — Narrative Cards (warm cream)
-   ══════════════════════════════════════════════════════════════════════════════ */
-.nc--light,
-[data-theme="light"] .nc{
-  --nc-bg:#f0ede7;
-  --nc-border:rgba(0,0,0,0.06);
-  --nc-border-hover:rgba(0,0,0,0.12);
-  --nc-shadow-hover:rgba(0,0,0,0.10);
-  --nc-grid-color:rgba(0,0,0,0.03);
-  --nc-icon-bg:rgba(0,0,0,0.04);
-  --nc-icon-border:rgba(0,0,0,0.06);
-  --nc-text-primary:#1A1F2E;
-  --nc-text-secondary:rgba(0,0,0,0.55);
-  --nc-text-muted:rgba(0,0,0,0.35);
-  --nc-ring-bg:rgba(0,0,0,0.06);
-  --nc-badge-border:rgba(0,0,0,0.10);
-  --nc-badge-bg:transparent;
-  --nc-badge-fill:rgba(0,0,0,0.06);
-  --nc-badge-fill-border:rgba(0,0,0,0.12);
-  --nc-flag-border:rgba(0,0,0,0.08);
-  --nc-flag-bg:transparent;
-  --nc-divider:rgba(0,0,0,0.06);
-  --nc-btn-border:rgba(0,0,0,0.10);
-  --nc-btn-bg:transparent;
-  --nc-btn-hover-border:rgba(0,0,0,0.20);
-  --nc-btn-hover-bg:rgba(0,0,0,0.03);
-  --nc-btn-primary-bg:rgba(0,0,0,0.04);
-  --nc-btn-primary-border:rgba(0,0,0,0.12);
-  --nc-btn-primary-hover:rgba(0,0,0,0.08);
-  --nc-pill-border:rgba(0,0,0,0.10);
-  --nc-pill-bg:transparent;
-  --nc-bar-bg:rgba(0,0,0,0.06);
-}
-
-/* ── Dark Theme Narrative Cards (explicit) ── */
-.nc--dark{
-  --nc-bg:#0C1018;
-  --nc-border:rgba(255,255,255,0.06);
-  --nc-border-hover:rgba(255,255,255,0.14);
-  --nc-shadow-hover:rgba(0,0,0,0.45);
-  --nc-grid-color:rgba(255,255,255,0.025);
-  --nc-icon-bg:rgba(255,255,255,0.06);
-  --nc-icon-border:rgba(255,255,255,0.08);
-  --nc-text-primary:#FFFFFF;
-  --nc-text-secondary:rgba(255,255,255,0.65);
-  --nc-text-muted:rgba(255,255,255,0.4);
-  --nc-ring-bg:rgba(255,255,255,0.08);
-  --nc-badge-border:rgba(255,255,255,0.12);
-  --nc-badge-bg:transparent;
-  --nc-badge-fill:rgba(255,255,255,0.08);
-  --nc-badge-fill-border:rgba(255,255,255,0.15);
-  --nc-flag-border:rgba(255,255,255,0.10);
-  --nc-flag-bg:transparent;
-  --nc-divider:rgba(255,255,255,0.06);
-  --nc-btn-border:rgba(255,255,255,0.12);
-  --nc-btn-bg:transparent;
-  --nc-btn-hover-border:rgba(255,255,255,0.25);
-  --nc-btn-hover-bg:rgba(255,255,255,0.04);
-  --nc-btn-primary-bg:rgba(255,255,255,0.06);
-  --nc-btn-primary-border:rgba(255,255,255,0.15);
-  --nc-btn-primary-hover:rgba(255,255,255,0.10);
-  --nc-pill-border:rgba(255,255,255,0.12);
-  --nc-pill-bg:transparent;
-  --nc-bar-bg:rgba(255,255,255,0.06);
-}
-
-/* ── Narrative Card Deck Layout ── */
-.nc-deck{
-  display:flex;flex-direction:column;gap:16px;
-  margin-bottom:28px;
-}
-
-/* ── Responsive ── */
-@media(max-width:768px){
-  .nc{padding:20px 18px 16px;}
-  .nc-header{flex-direction:column;gap:12px;}
-  .nc-badges{align-self:flex-start;}
-  .nc-body{flex-direction:column;gap:12px;}
-  .nc-truth{width:56px;}
-  .nc-truth svg{width:56px;height:56px;}
-  .nc-truth-val{font-size:18px;}
-  .nc-headline{font-size:clamp(18px, 4vw, 24px);}
-  .nc-risk-grid{grid-template-columns:1fr;}
-  .nc-footer{flex-direction:column;align-items:flex-start;}
-  .nc-footer-right{align-self:stretch;}
-  .nc-btn{flex:1;justify-content:center;}
-}
+/* ── Light Theme ── */
+[data-theme="light"] .nf-summary{background:var(--mp-surface);border-color:rgba(0,0,0,0.06);}
+[data-theme="light"] .nf-feed{background:var(--mp-surface);border-color:rgba(0,0,0,0.06);}
+[data-theme="light"] .nf-tabs{border-bottom-color:rgba(0,0,0,0.06);}
+[data-theme="light"] .nf-tab{color:var(--mp-text-tertiary);}
+[data-theme="light"] .nf-tab.active{color:var(--mp-text-primary);border-bottom-color:var(--mp-text-primary);}
+[data-theme="light"] .nf-row{border-bottom-color:rgba(0,0,0,0.04);}
+[data-theme="light"] .nf-row:hover{background:rgba(0,0,0,0.015);}
+[data-theme="light"] .nf-row-logo{background:rgba(0,0,0,0.04);border-color:rgba(0,0,0,0.06);}
+[data-theme="light"] .nf-row-badge{border-color:rgba(0,0,0,0.08);color:var(--mp-text-secondary);background:rgba(0,0,0,0.03);}
+[data-theme="light"] .nf-scroll::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.08);}
+[data-theme="light"] .nf-scroll-hint{border-top-color:rgba(0,0,0,0.06);}
 </style>
 </head>
 <body>
@@ -3346,34 +3110,58 @@ body{
         <div class="daily-cd"><div class="daily-cd-hd"><div class="daily-cd-l">Tue</div><div class="daily-cd-d">Mar 24</div></div><div class="daily-ces"><div class="daily-ce earn"><div class="daily-cedot"></div>Consumer Conf 10am</div><div class="daily-ce earn"><div class="daily-cedot"></div>S&P Flash PMI</div></div></div>
       </div>
 
-      <!-- TOP 5 NARRATIVE CARDS -->
-      <div class="daily-section-eyebrow">Top Narratives · Today</div>
-      <div class="daily-section-head">
-        <div class="daily-section-title">The stories moving markets.</div>
-        <span class="daily-section-sub">Today's highest-conviction narratives across the coverage universe</span>
-      </div>
-      <div class="nc-deck" id="nc-deck-narratives">
-        <!-- Populated by JS renderNarrativeCards() -->
-      </div>
+      <!-- NARRATIVE FEED — 2-column layout -->
+      <div class="nf-split">
+        <!-- LEFT: Market Narrative Summary -->
+        <div class="nf-summary" id="nf-summary">
+          <div class="nf-sum-header">
+            <span class="nf-sum-dot"></span>
+            <span class="nf-sum-label">Market Narrative Summary</span>
+            <span class="nf-sum-time" id="nf-sum-time">Generated 06:42 ET</span>
+          </div>
+          <div class="nf-sum-body" id="nf-sum-body">
+            <p><strong>Fed holds as expected.</strong> Attention shifts to whether the AI capex cycle can sustain momentum in a slowing macro environment. Asian markets mixed — Nikkei flat, US futures modestly positive.</p>
+          </div>
+          <div class="nf-sum-narrative">
+            <div class="nf-sum-nar-label">Dominant Narrative</div>
+            <p id="nf-sum-dominant">Narrow AI rally against tightening credit. Hyperscaler capex supports semis and cloud but concentrated in fewer names than priced. Watch breadth — small-cap underperformance at 6-week lows.</p>
+          </div>
+          <div class="nf-sum-tags" id="nf-sum-tags">
+            <span class="nf-tag">AI Capex</span>
+            <span class="nf-tag">FOMC Day</span>
+            <span class="nf-tag">Breadth Risk</span>
+            <span class="nf-tag">Semis</span>
+            <span class="nf-tag">Yield Watch</span>
+          </div>
+          <div class="nf-sum-stats" id="nf-sum-stats">
+            <div class="nf-stat"><span class="nf-stat-num" id="nf-stat-bull">68%</span><span class="nf-stat-lbl">Bull Signals</span></div>
+            <div class="nf-stat"><span class="nf-stat-num" id="nf-stat-traps2">14</span><span class="nf-stat-lbl">Active Traps</span></div>
+            <div class="nf-stat"><span class="nf-stat-num" id="nf-stat-breaking2">3</span><span class="nf-stat-lbl">Breaking</span></div>
+          </div>
+        </div>
 
-      <!-- TOP 3 SECTOR NARRATIVES -->
-      <div class="daily-section-eyebrow">Sector Narratives · Today</div>
-      <div class="daily-section-head">
-        <div class="daily-section-title">Where momentum lives.</div>
-        <span class="daily-section-sub">Sector-level narrative momentum and thematic drivers</span>
-      </div>
-      <div class="nc-deck" id="nc-deck-sectors">
-        <!-- Populated by JS renderSectorNarrativeCards() -->
-      </div>
-
-      <!-- TOP 3 MARKET-WIDE THEMES -->
-      <div class="daily-section-eyebrow">Market-Wide Themes · Today</div>
-      <div class="daily-section-head">
-        <div class="daily-section-title">The macro forces.</div>
-        <span class="daily-section-sub">Cross-sector themes reshaping risk and positioning</span>
-      </div>
-      <div class="nc-deck" id="nc-deck-market">
-        <!-- Populated by JS renderMarketWideCards() -->
+        <!-- RIGHT: Tabbed Narrative Feed -->
+        <div class="nf-feed">
+          <div class="nf-tabs">
+            <button class="nf-tab active" data-nf-tab="tickers" onclick="switchNFTab('tickers',this)">Tickers</button>
+            <button class="nf-tab" data-nf-tab="sectors" onclick="switchNFTab('sectors',this)">Sectors</button>
+            <button class="nf-tab" data-nf-tab="market" onclick="switchNFTab('market',this)">Market-Wide</button>
+          </div>
+          <div class="nf-scroll">
+            <div class="nf-list" id="nf-list-tickers">
+              <!-- Populated by JS -->
+            </div>
+            <div class="nf-list" id="nf-list-sectors" style="display:none;">
+              <!-- Populated by JS -->
+            </div>
+            <div class="nf-list" id="nf-list-market" style="display:none;">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+          <div class="nf-scroll-hint">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -4330,9 +4118,179 @@ function renderDailyMarketPulse(){
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// NARRATIVE CARDS — Rendering Functions
+// NARRATIVE FEED — Tabbed scrollable row system
 // ══════════════════════════════════════════════════════════════════════════════
 
+// Tab switching
+function switchNFTab(tab, btn){
+  document.querySelectorAll('.nf-tab').forEach(function(t){t.classList.remove('active');});
+  btn.classList.add('active');
+  document.querySelectorAll('.nf-list').forEach(function(l){l.style.display='none';});
+  var el=document.getElementById('nf-list-'+tab);
+  if(el) el.style.display='';
+}
+
+// Demo data for when Supabase is not connected
+var NF_DEMO_TICKERS=[
+  {ticker:'NVDA',sector:'Semiconductors',claim:'Blackwell ramp ahead of estimates as hyperscaler capex holds firm into H2.',verdict:'Structurally Supported',direction:'bull'},
+  {ticker:'TSLA',sector:'Auto / EV',claim:'Brand erosion accelerating \u2014 delivery miss compounds margin pressure structurally.',verdict:'Bear Pressure',direction:'bear'},
+  {ticker:'RDDT',sector:'Data Licensing',claim:'Macro weakness overstated \u2014 AI licensing demand decoupled from engagement cycle.',verdict:'Narrative Trap',direction:'neutral'},
+  {ticker:'AAPL',sector:'Consumer Tech',claim:'India pivot reduces China tariff exposure ahead of earnings. Services mix improving.',verdict:'Structurally Supported',direction:'bull'},
+  {ticker:'META',sector:'Social / AI',claim:'Llama 4 adoption ahead of targets. Advertising efficiency gains showing up in SMB retention.',verdict:'Structurally Supported',direction:'bull'},
+  {ticker:'PLTR',sector:'Enterprise AI',claim:'Government contract pipeline expanding. Commercial revenue inflection visible in Q1 bookings.',verdict:'Structurally Supported',direction:'bull'},
+  {ticker:'AMD',sector:'Semiconductors',claim:'MI300 demand strong but supply-constrained. NVIDIA dependency narrative overstated.',verdict:'Structurally Supported',direction:'bull'},
+  {ticker:'COIN',sector:'FinTech',claim:'Regulatory clarity insufficient. Volume recovery stalling as retail exits crypto.',verdict:'Narrative Trap',direction:'bear'},
+  {ticker:'SMCI',sector:'Servers',claim:'Accounting restatement overhang clearing. AI server demand backlog at record levels.',verdict:'Bear Pressure',direction:'bear'},
+  {ticker:'GOOGL',sector:'Technology',claim:'AI monetization discount narrowing. YouTube + Search AI upgrade cycle not in estimates.',verdict:'Structurally Supported',direction:'bull'}
+];
+var NF_DEMO_SECTORS=[
+  {name:'AI Infrastructure',sub:'Semiconductors \u00b7 Servers \u00b7 Power',claim:'Blackwell demand cycle accelerating across hyperscalers. Supply easing into H2.',verdict:'Breaking',direction:'bull'},
+  {name:'Agentic AI',sub:'AI Agents \u00b7 Robotics \u00b7 Autonomy',claim:'Agent-layer buildout intensifying. Copilot attach rates beating enterprise estimates.',verdict:'Surging',direction:'bull'},
+  {name:'Cloud Computing',sub:'Hyperscalers \u00b7 SaaS \u00b7 IaaS',claim:'Azure and AWS seeing AI workload uplift. Optimization headwinds now tailwind.',verdict:'Stable',direction:'bull'},
+  {name:'Electric Vehicles',sub:'EV \u00b7 Autonomy \u00b7 Infrastructure',claim:'Demand narrative fracturing. Delivery misses widening across sector.',verdict:'Breaking',direction:'bear'},
+  {name:'Cybersecurity',sub:'Zero Trust \u00b7 Cloud Security',claim:'Enterprise security budgets resilient. Consolidation plays gaining share.',verdict:'Stable',direction:'bull'}
+];
+var NF_DEMO_MARKET=[
+  {title:'US\u2013China Trade Escalation',type:'Geopolitical',claim:'Tariff escalation on semiconductors and EVs creating broad repricing risk across tech and industrials.',verdict:'Escalating',direction:'bear'},
+  {title:'AI Infrastructure Spending',type:'Structural',claim:'Hyperscaler capex commitments driving multi-year demand cycle across the compute stack.',verdict:'Accelerating',direction:'bull'},
+  {title:'Federal Reserve Rate Path',type:'Macro',claim:'Rate expectations shifting as inflation decelerates. Market pricing aggressive cuts.',verdict:'Pivoting',direction:'neutral'},
+  {title:'Earnings Season Dynamics',type:'Cyclical',claim:'Q1 earnings revealing divergent performance. Guidance revisions driving outsized moves.',verdict:'Active',direction:'neutral'}
+];
+
+function nfLogoHTML(ticker){
+  var domain=DOMAIN_MAP[ticker];
+  if(domain){
+    return '<div class="nf-row-logo"><img src="https://www.google.com/s2/favicons?domain='+domain+'&sz=32" alt="" onerror="this.parentElement.innerHTML=\'<span>'+esc((ticker||'').substring(0,2))+'</span>\'"></div>';
+  }
+  return '<div class="nf-row-logo"><span>'+esc((ticker||'').substring(0,2))+'</span></div>';
+}
+
+function nfAccentClass(dir){
+  if(dir==='bull') return 'nf-row-accent-bull';
+  if(dir==='bear') return 'nf-row-accent-bear';
+  return 'nf-row-accent-neutral';
+}
+
+function nfBadgeClass(verdict){
+  var v=(verdict||'').toLowerCase();
+  if(v.indexOf('supported')>=0) return 'nf-row-badge-supported';
+  if(v.indexOf('trap')>=0) return 'nf-row-badge-trap';
+  if(v.indexOf('bear')>=0||v.indexOf('escalat')>=0) return 'nf-row-badge-bear';
+  return '';
+}
+
+function nfBuildRow(accent, logoHtml, ticker, sector, headline, verdict, href){
+  return '<a class="nf-row" '+(href?'href="'+href+'"':'')+'>'
+    +'<div class="nf-row-accent '+nfAccentClass(accent)+'"></div>'
+    +'<div class="nf-row-id">'
+      +logoHtml
+      +'<div class="nf-row-tkinfo">'
+        +'<div class="nf-row-ticker">'+esc(ticker)+'</div>'
+        +'<div class="nf-row-sector">'+esc(sector)+'</div>'
+      +'</div>'
+    +'</div>'
+    +'<div class="nf-row-body"><div class="nf-row-headline">'+esc(headline)+'</div></div>'
+    +'<div class="nf-row-verdict"><span class="nf-row-badge '+nfBadgeClass(verdict)+'">'+esc(verdict)+'</span></div>'
+  +'</a>';
+}
+
+// ── Render: Tickers tab ──
+function renderNarrativeCards(){
+  var el=document.getElementById('nf-list-tickers');
+  if(!el) return;
+
+  var items=[];
+  if(DATA.length>0){
+    items=DATA.filter(function(r){return r.story_claim&&r.price!=null;})
+      .sort(function(a,b){return Math.abs(b.price_change_pct||0)-Math.abs(a.price_change_pct||0);})
+      .slice(0,12);
+  }
+
+  if(!items.length){
+    // Use demo data
+    el.innerHTML=NF_DEMO_TICKERS.map(function(d){
+      return nfBuildRow(d.direction, nfLogoHTML(d.ticker), d.ticker, d.sector, d.claim, d.verdict, '/ticker/'+encodeURIComponent(d.ticker));
+    }).join('');
+  } else {
+    el.innerHTML=items.map(function(r){
+      var pct=r.price_change_pct||0;
+      var dir=pct>0?'bull':(pct<0?'bear':'neutral');
+      var verdict=r.prism_verdict||'Monitoring';
+      return nfBuildRow(dir, nfLogoHTML(r.ticker), r.ticker, r.sector_name||'', r.story_claim, verdict, '/ticker/'+encodeURIComponent(r.ticker));
+    }).join('');
+  }
+
+  // Update summary stats
+  nfUpdateSummary();
+}
+
+// ── Render: Sectors tab ──
+function renderSectorNarrativeCards(){
+  var el=document.getElementById('nf-list-sectors');
+  if(!el) return;
+
+  if(DATA.length>0){
+    var sectorMap={};
+    DATA.forEach(function(r){
+      var s=r.sector_name||'Other';
+      if(!sectorMap[s]) sectorMap[s]={name:s,topClaim:r.story_claim||r.primary_driver||'',count:0,direction:'neutral'};
+      sectorMap[s].count++;
+      if((r.price_change_pct||0)>0) sectorMap[s].direction='bull';
+      else if((r.price_change_pct||0)<-1) sectorMap[s].direction='bear';
+    });
+    var sectors=Object.keys(sectorMap).map(function(k){return sectorMap[k];}).slice(0,8);
+    el.innerHTML=sectors.map(function(s){
+      var state=s.direction==='bull'?'Surging':(s.direction==='bear'?'Breaking':'Stable');
+      return nfBuildRow(s.direction, '<div class="nf-row-logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>', s.name, s.count+' tickers', s.topClaim, state, '');
+    }).join('');
+  } else {
+    el.innerHTML=NF_DEMO_SECTORS.map(function(d){
+      return nfBuildRow(d.direction, '<div class="nf-row-logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>', d.name, d.sub, d.claim, d.verdict, '');
+    }).join('');
+  }
+}
+
+// ── Render: Market-Wide tab ──
+function renderMarketWideCards(){
+  var el=document.getElementById('nf-list-market');
+  if(!el) return;
+
+  // Always use curated themes (these are editorial, not auto-derived)
+  el.innerHTML=NF_DEMO_MARKET.map(function(d){
+    return nfBuildRow(d.direction, '<div class="nf-row-logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>', d.title, d.type, d.claim, d.verdict, '');
+  }).join('');
+}
+
+// ── Update summary panel from live data ──
+function nfUpdateSummary(){
+  if(!DATA.length) return;
+  var bullPct=Math.round(DATA.filter(function(r){return (r.price_change_pct||0)>0;}).length/DATA.length*100);
+  var traps=DATA.filter(function(r){return r.prism_verdict==='Narrative Trap';}).length;
+  var breaking=DATA.filter(function(r){return r.narrative_state==='Breaking';}).length;
+
+  var bullEl=document.getElementById('nf-stat-bull');
+  var trapEl=document.getElementById('nf-stat-traps2');
+  var breakEl=document.getElementById('nf-stat-breaking2');
+  if(bullEl) bullEl.textContent=bullPct+'%';
+  if(trapEl) trapEl.textContent=traps;
+  if(breakEl) breakEl.textContent=breaking;
+
+  // Update summary time
+  var timeEl=document.getElementById('nf-sum-time');
+  if(timeEl){
+    var now=new Date();
+    timeEl.textContent='Generated '+now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false})+' ET';
+  }
+
+  // Update dominant narrative from top story
+  var top=DATA.filter(function(r){return r.story_claim;}).sort(function(a,b){return Math.abs(b.price_change_pct||0)-Math.abs(a.price_change_pct||0);})[0];
+  if(top){
+    var domEl=document.getElementById('nf-sum-dominant');
+    if(domEl) domEl.textContent=top.story_claim;
+  }
+}
+
+// ── Helpers ─ (ncTruthRingSVG kept for ticker page use) ──
 function ncTruthRingSVG(val, color){
   var v=Math.max(0,Math.min(100,val||0));
   var r=30, c=2*Math.PI*r;
@@ -4343,430 +4301,8 @@ function ncTruthRingSVG(val, color){
     +'</svg>';
 }
 
-function ncLogoHTML(ticker){
-  var domain = DOMAIN_MAP[ticker];
-  if(domain){
-    return '<div class="nc-icon"><img src="https://www.google.com/s2/favicons?domain='+domain+'&sz=48" alt="" onerror="this.parentElement.innerHTML=\'<span style=&quot;font-family:var(--font-body);font-size:12px;font-weight:600;color:var(--nc-text-muted);&quot;>'+esc(ticker.substring(0,3))+'</span>\'"></div>';
-  }
-  return '<div class="nc-icon"><span style="font-family:var(--font-body);font-size:12px;font-weight:600;color:var(--nc-text-muted);">'+esc(ticker.substring(0,3))+'</span></div>';
-}
+// (old nc card helpers removed — replaced by nf feed system above)
 
-function ncSentimentBadge(direction){
-  var dir=(direction||'').toUpperCase();
-  if(dir==='BULLISH') return '<span class="nc-badge nc-badge-sentiment nc-badge-bull">&#9650; Bullish</span>';
-  if(dir==='BEARISH') return '<span class="nc-badge nc-badge-sentiment nc-badge-bear">&#9660; Bearish</span>';
-  return '<span class="nc-badge nc-badge-sentiment">&#8596; Neutral</span>';
-}
-
-function ncRarityBadge(state){
-  var s=state||'Stable';
-  var map={Breaking:'Breaking',Surging:'Epic',Fragile:'Rare','Structurally Supported':'Epic','Narrative Trap':'Rare',Stable:'Common'};
-  var label=map[s]||'Common';
-  return '<span class="nc-badge">'+esc(label)+'</span>';
-}
-
-function ncCategoryClass(verdict){
-  var v=(verdict||'').toLowerCase();
-  if(v.indexOf('trap')>=0) return 'nc-cat-trap';
-  if(v.indexOf('supported')>=0) return 'nc-cat-supported';
-  return 'nc-cat-sector';
-}
-
-function ncCategoryLabel(verdict, state){
-  if(verdict==='Narrative Trap') return 'Narrative Trap';
-  if(verdict==='Structurally Supported') return 'Structurally Supported';
-  if(state==='Breaking') return 'Breaking Signal';
-  if(state==='Surging') return 'Surging Momentum';
-  return 'Active Narrative';
-}
-
-function ncTruthColor(trust, verdict){
-  if(verdict==='Narrative Trap') return '#b8860b';
-  if(trust>=70) return '#1a8a5e';
-  if(trust>=40) return '#b8860b';
-  return '#c0392b';
-}
-
-function ncFlagDotClass(flag){
-  var f=(flag||'').toLowerCase();
-  if(f.indexOf('supported')>=0||f.indexOf('earnings')>=0||f.indexOf('sector')>=0) return 'nc-flag-dot-green';
-  if(f.indexOf('unreliable')>=0||f.indexOf('risk')>=0||f.indexOf('trap')>=0) return 'nc-flag-dot-red';
-  if(f.indexOf('macro')>=0||f.indexOf('headwind')>=0) return 'nc-flag-dot-neutral';
-  return 'nc-flag-dot-amber';
-}
-
-function ncBuildFlags(r){
-  var flags=[];
-  if(r.prism_verdict==='Structurally Supported') flags.push('Structurally Supported');
-  if(r.days_to_earnings!=null&&r.days_to_earnings<=30) flags.push('Close to Earnings');
-  if(r.prism_verdict==='Narrative Trap') flags.push('Unreliable Sources');
-  if(r.narrative_state==='Breaking'||r.narrative_state==='Surging') flags.push('Sector Contagion');
-  if(r.guidance_direction==='Cut') flags.push('Macro Headwind');
-  if(r.institutional_positioning) flags.push(r.institutional_positioning);
-  return flags.slice(0,5);
-}
-
-// ── Ticker Narrative Card ─────────────────────────────────────────────────────
-function renderNarrativeCards(){
-  var el=document.getElementById('nc-deck-narratives');
-  if(!el||!DATA.length) return;
-  // Top 5 tickers by trust score descending, must have story_claim
-  var items=DATA.filter(function(r){return r.story_claim&&r.price!=null;})
-    .map(function(r){r._trust=computeTrust(r);return r;})
-    .sort(function(a,b){return b._trust-a._trust;}).slice(0,5);
-  if(!items.length) return;
-
-  el.innerHTML=items.map(function(r){
-    var trust=r._trust;
-    var tc=TRADE_CLASS_MAP[r.ticker]||{};
-    var direction=tc.direction_forecast||((r.price_change_pct||0)>0?'BULLISH':'BEARISH');
-    var verdict=r.prism_verdict||'Monitoring';
-    var state=r.narrative_state||'Stable';
-    var catLabel=ncCategoryLabel(verdict, state);
-    var catClass=ncCategoryClass(verdict);
-    var truthCol=ncTruthColor(trust, verdict);
-    var pct=r.price_change_pct||0;
-    var isUp=pct>0;
-    var confidence=tc.primary_confidence||Math.round(50+Math.random()*40);
-    var window_tf=tc.shortest_timeframe&&tc.longest_timeframe?(tc.shortest_timeframe+'–'+tc.longest_timeframe):(isUp?'Day-Swing':'Swing');
-    var moveDate='';
-    var pred=PREDICTION_MAP[r.ticker];
-    if(pred&&pred.predicted_value){
-      var d=new Date(pred.predicted_value);
-      moveDate=d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
-    }
-    var flags=ncBuildFlags(r);
-    var statusLabel=state==='Surging'?'Surging':'Active';
-    var statusCls=isUp?'nc-status-bull':'nc-status-bear';
-
-    return '<a href="/ticker/'+encodeURIComponent(r.ticker)+'" style="text-decoration:none;color:inherit;">'
-      +'<div class="nc nc--light">'
-      // Header
-      +'<div class="nc-header">'
-        +'<div class="nc-identity">'
-          +ncLogoHTML(r.ticker)
-          +'<div class="nc-id">'
-            +'<div class="nc-ticker">'+esc(r.ticker)+'</div>'
-            +'<div class="nc-company">'+esc(r.sector_name||'')+'</div>'
-          +'</div>'
-        +'</div>'
-        +'<div class="nc-badges">'
-          +ncRarityBadge(state)
-          +ncSentimentBadge(direction)
-        +'</div>'
-      +'</div>'
-      // Body: Truth ring + Content
-      +'<div class="nc-body">'
-        +'<div class="nc-truth">'
-          +ncTruthRingSVG(trust, truthCol)
-          +'<div class="nc-truth-val" style="color:'+truthCol+';">'+Math.round(trust)+'</div>'
-          +'<div class="nc-truth-lbl">Truth</div>'
-        +'</div>'
-        +'<div class="nc-content">'
-          +'<div class="nc-category '+catClass+'">'+esc(catLabel)+'</div>'
-          +'<div class="nc-headline">'+esc(r.story_claim||r.primary_driver||'Signal active.')+'</div>'
-          +'<div class="nc-meta">'
-            +'<span>'+confidence+'%</span><span class="nc-meta-sep"></span>'
-            +'<span>'+esc(window_tf)+'</span><span class="nc-meta-sep"></span>'
-            +'<span>Active</span>'
-            +(moveDate?'<span class="nc-meta-sep"></span><span>Move Date: '+moveDate+'</span>':'')
-          +'</div>'
-          // Flags
-          +(flags.length?'<div class="nc-flags">'+flags.map(function(f){
-            return '<span class="nc-flag"><span class="nc-flag-dot '+ncFlagDotClass(f)+'"></span>'+esc(f)+'</span>';
-          }).join('')+'</div>':'')
-        +'</div>'
-      +'</div>'
-      // Divider + Footer
-      +'<div class="nc-divider"></div>'
-      +'<div class="nc-footer">'
-        +'<div class="nc-footer-left">'
-          +'<span class="nc-status '+statusCls+'"><span class="nc-status-dot" style="background:'+(isUp?'#1a8a5e':'#c0392b')+';"></span>'+esc(statusLabel)+' &middot; Live</span>'
-          +'<span class="nc-price">$'+fmtPrice(r.price)+'</span>'
-          +'<span class="nc-change '+(isUp?'nc-change-up':'nc-change-dn')+'">'+(isUp?'+':'')+Math.abs(pct).toFixed(2)+'%</span>'
-        +'</div>'
-        +'<div class="nc-footer-sep"></div>'
-        +'<div class="nc-footer-right">'
-          +'<button class="nc-btn" onclick="event.preventDefault();event.stopPropagation();">&#8599; View</button>'
-          +'<button class="nc-btn" onclick="event.preventDefault();event.stopPropagation();">&#9744; Save</button>'
-          +'<button class="nc-btn" onclick="event.preventDefault();event.stopPropagation();">Share</button>'
-          +'<button class="nc-btn nc-btn-primary">VIEW &rarr;</button>'
-        +'</div>'
-      +'</div>'
-      +'<div class="nc-hint">Click card &middot; risk flags &rarr;</div>'
-    +'</div></a>';
-  }).join('');
-}
-
-// ── Sector Narrative Cards ────────────────────────────────────────────────────
-function renderSectorNarrativeCards(){
-  var el=document.getElementById('nc-deck-sectors');
-  if(!el||!DATA.length) return;
-
-  // Group tickers by sector and compute sector-level metrics
-  var sectorMap={};
-  DATA.forEach(function(r){
-    var s=r.sector_name||'Other';
-    if(!sectorMap[s]) sectorMap[s]={name:s,tickers:[],totalTrust:0,count:0,topClaim:'',momentum:0};
-    var trust=computeTrust(r);
-    sectorMap[s].tickers.push(r.ticker);
-    sectorMap[s].totalTrust+=trust;
-    sectorMap[s].count++;
-    sectorMap[s].momentum=Math.max(sectorMap[s].momentum,r.narrative_health||50);
-    if(r.story_claim&&!sectorMap[s].topClaim) sectorMap[s].topClaim=r.story_claim;
-  });
-
-  // Sort by momentum descending, take top 3
-  var sectors=Object.keys(sectorMap).map(function(k){return sectorMap[k];})
-    .sort(function(a,b){return b.momentum-a.momentum;}).slice(0,3);
-
-  var sectorSubMap={
-    'Technology':'Semiconductors · Servers · Power',
-    'Semiconductors':'Chips · Foundry · Design',
-    'Software':'SaaS · Enterprise · Cloud',
-    'Consumer Tech':'Devices · Social · AI',
-    'Healthcare':'Biotech · Pharma · Devices',
-    'Energy':'Oil · Gas · Renewables',
-    'Financial':'Banks · FinTech · Insurance',
-    'Automotive':'EV · Autonomy · Infrastructure',
-    'Defense':'Aerospace · Cyber · Space',
-    'Retail':'E-commerce · Consumer · Discretionary'
-  };
-
-  var sectorIconSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>';
-
-  el.innerHTML=sectors.map(function(sec){
-    var avgTrust=Math.round(sec.totalTrust/sec.count);
-    var mom=Math.round(sec.momentum);
-    var truthCol=ncTruthColor(avgTrust, '');
-    var subLabel=sectorSubMap[sec.name]||(sec.name+' · Equities');
-    var topTickers=sec.tickers.slice(0,6);
-    var state=mom>=70?'Breaking':(mom>=50?'Surging':'Stable');
-    var direction=mom>=50?'BULLISH':'BEARISH';
-
-    return '<div class="nc nc--light">'
-      // Header
-      +'<div class="nc-header">'
-        +'<div class="nc-identity">'
-          +'<div class="nc-icon">'+sectorIconSVG+'</div>'
-          +'<div class="nc-id">'
-            +'<div class="nc-ticker">'+esc(sec.name)+'</div>'
-            +'<div class="nc-company">'+esc(subLabel)+'</div>'
-          +'</div>'
-        +'</div>'
-        +'<div class="nc-badges">'
-          +'<span class="nc-badge '+(state==='Breaking'?'nc-badge-breaking':'')+'">'+esc(state)+'</span>'
-          +ncSentimentBadge(direction)
-        +'</div>'
-      +'</div>'
-      // Body
-      +'<div class="nc-body">'
-        +'<div class="nc-truth">'
-          +ncTruthRingSVG(avgTrust, truthCol)
-          +'<div class="nc-truth-val" style="color:'+truthCol+';">'+avgTrust+'</div>'
-          +'<div class="nc-truth-lbl">Truth</div>'
-        +'</div>'
-        +'<div class="nc-content">'
-          +'<div class="nc-category nc-cat-sector">Sector Narrative</div>'
-          +'<div class="nc-headline">'+esc(sec.topClaim||sec.name+' sector showing elevated narrative activity across multiple tickers.')+'</div>'
-          // Ticker pills
-          +'<div class="nc-tickers">'+topTickers.map(function(t){
-            return '<span class="nc-ticker-pill">'+esc(t)+'</span>';
-          }).join('')+'</div>'
-        +'</div>'
-      +'</div>'
-      // Momentum bar
-      +'<div class="nc-momentum">'
-        +'<div class="nc-momentum-label"><span>Momentum</span><span class="nc-momentum-val">'+mom+'</span></div>'
-        +'<div class="nc-momentum-bar"><div class="nc-momentum-fill" style="width:'+mom+'%;"></div></div>'
-      +'</div>'
-      // Divider + Footer
-      +'<div class="nc-divider"></div>'
-      +'<div class="nc-footer">'
-        +'<div class="nc-footer-left">'
-          +'<span class="nc-stats"><span class="nc-stat-bold">'+sec.count+' tickers</span></span>'
-        +'</div>'
-        +'<div class="nc-footer-right">'
-          +'<button class="nc-btn" onclick="event.preventDefault();event.stopPropagation();">&#8599; View</button>'
-          +'<button class="nc-btn" onclick="event.preventDefault();event.stopPropagation();">&#9744; Save</button>'
-          +'<button class="nc-btn nc-btn-primary">VIEW &rarr;</button>'
-        +'</div>'
-      +'</div>'
-      +'<div class="nc-hint">Click card &middot; sector risk flags &rarr;</div>'
-    +'</div>';
-  }).join('');
-}
-
-// ── Market-Wide Theme Cards ───────────────────────────────────────────────────
-function renderMarketWideCards(){
-  var el=document.getElementById('nc-deck-market');
-  if(!el||!DATA.length) return;
-
-  // Derive market-wide themes from data patterns
-  var themes=[];
-
-  // Theme 1: Trade/Tariff theme if multiple sectors affected
-  var tradeKeywords=['tariff','trade','china','geopolitical','sanction','export'];
-  var tradeTickers=DATA.filter(function(r){
-    var claim=(r.story_claim||'').toLowerCase()+(r.primary_driver||'').toLowerCase();
-    return tradeKeywords.some(function(k){return claim.indexOf(k)>=0;});
-  });
-  if(tradeTickers.length>=2){
-    themes.push({
-      title:'US\u2013China Trade Escalation',
-      type:'Geopolitical',
-      severity:'Escalating',
-      claim:'Tariff escalation on semiconductors and EVs creating broad repricing risk across tech, industrials, and consumer discretionary.',
-      sectors:['Semiconductors','Consumer Tech','Industrials','Auto / EV','Defense'],
-      risks:[
-        {label:'Earnings Risk',value:'High',pct:85,cls:'high'},
-        {label:'Duration',value:'Medium',pct:55,cls:'medium'},
-        {label:'Contagion Spread',value:'High',pct:90,cls:'high'},
-        {label:'Resolution Odds',value:'Favorable',pct:40,cls:'favorable'}
-      ],
-      tickers:tradeTickers.length,
-      trust:76
-    });
-  }
-
-  // Theme 2: AI/Tech spending theme
-  var aiKeywords=['ai ','artificial','blackwell','gpu','hyperscaler','capex','data center'];
-  var aiTickers=DATA.filter(function(r){
-    var claim=(r.story_claim||'').toLowerCase()+(r.primary_driver||'').toLowerCase();
-    return aiKeywords.some(function(k){return claim.indexOf(k)>=0;});
-  });
-  if(aiTickers.length>=2){
-    themes.push({
-      title:'AI Infrastructure Spending Cycle',
-      type:'Structural',
-      severity:'Accelerating',
-      claim:'Hyperscaler capex commitments driving multi-year demand cycle. Supply chain constraints creating pricing power across the stack.',
-      sectors:['Semiconductors','Cloud','Data Centers','Power','Enterprise SaaS'],
-      risks:[
-        {label:'Demand Durability',value:'High',pct:80,cls:'high'},
-        {label:'Duration',value:'High',pct:85,cls:'high'},
-        {label:'Valuation Risk',value:'Medium',pct:60,cls:'medium'},
-        {label:'Policy Risk',value:'Favorable',pct:35,cls:'favorable'}
-      ],
-      tickers:aiTickers.length,
-      trust:82
-    });
-  }
-
-  // Theme 3: Rate/Fed theme
-  var fedKeywords=['fed','rate','fomc','inflation','dovish','hawkish','yield','treasury'];
-  var fedTickers=DATA.filter(function(r){
-    var claim=(r.story_claim||'').toLowerCase()+(r.primary_driver||'').toLowerCase();
-    return fedKeywords.some(function(k){return claim.indexOf(k)>=0;});
-  });
-  if(fedTickers.length>=1){
-    themes.push({
-      title:'Federal Reserve Rate Path',
-      type:'Macro',
-      severity:'Pivoting',
-      claim:'Rate expectations shifting as inflation data decelerates. Market pricing aggressive cuts creating asymmetric positioning risk.',
-      sectors:['Financial','Real Estate','Growth Tech','Consumer'],
-      risks:[
-        {label:'Inflation Risk',value:'Medium',pct:50,cls:'medium'},
-        {label:'Duration',value:'High',pct:75,cls:'high'},
-        {label:'Market Impact',value:'High',pct:80,cls:'high'},
-        {label:'Positioning',value:'Favorable',pct:45,cls:'favorable'}
-      ],
-      tickers:fedTickers.length,
-      trust:71
-    });
-  }
-
-  // Fallback themes if data doesn't match keywords
-  if(themes.length<3){
-    var defaults=[
-      {title:'Earnings Season Dynamics',type:'Cyclical',severity:'Active',claim:'Q1 earnings season revealing divergent performance across sectors. Guidance revisions driving outsized moves.',sectors:['Technology','Financial','Healthcare','Consumer'],risks:[{label:'Beat Rate',value:'High',pct:70,cls:'high'},{label:'Revision Risk',value:'Medium',pct:55,cls:'medium'},{label:'Volatility',value:'High',pct:80,cls:'high'},{label:'Opportunity',value:'Favorable',pct:65,cls:'favorable'}],tickers:DATA.length,trust:68},
-      {title:'Dollar Strength Rotation',type:'FX / Macro',severity:'Building',claim:'Strong dollar pressuring multinational earnings and EM flows. Rotation into domestic-facing names accelerating.',sectors:['Industrials','Materials','Consumer Staples','EM'],risks:[{label:'FX Impact',value:'Medium',pct:60,cls:'medium'},{label:'Duration',value:'Medium',pct:50,cls:'medium'},{label:'Earnings Drag',value:'High',pct:75,cls:'high'},{label:'Reversal Odds',value:'Medium',pct:50,cls:'medium'}],tickers:Math.round(DATA.length*0.4),trust:64}
-    ];
-    while(themes.length<3&&defaults.length>0){
-      themes.push(defaults.shift());
-    }
-  }
-
-  themes=themes.slice(0,3);
-
-  var globeIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
-
-  var sectorIcons={
-    'Semiconductors':'&#9632;','Consumer Tech':'&#9650;','Industrials':'&#9679;',
-    'Auto / EV':'&#9673;','Defense':'&#10003;','Cloud':'&#9729;','Data Centers':'&#9632;',
-    'Power':'&#9889;','Enterprise SaaS':'&#9830;','Financial':'&#9733;',
-    'Real Estate':'&#9632;','Growth Tech':'&#9650;','Consumer':'&#9679;',
-    'Technology':'&#9632;','Healthcare':'&#10010;','Retail':'&#9733;',
-    'Materials':'&#9830;','Consumer Staples':'&#9679;','EM':'&#9650;',
-    'FX':'&#9733;'
-  };
-
-  el.innerHTML=themes.map(function(th){
-    var truthCol=ncTruthColor(th.trust, '');
-    var typeClass=th.type==='Geopolitical'?'nc-badge-geopolitical':(th.severity==='Escalating'?'nc-badge-escalating':'');
-    var sevClass=th.severity==='Escalating'?'nc-badge-escalating':(th.severity==='Accelerating'?'nc-badge-bull':'');
-    var today=new Date().toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'});
-
-    return '<div class="nc nc--light">'
-      // Header
-      +'<div class="nc-header">'
-        +'<div class="nc-identity">'
-          +'<div class="nc-icon">'+globeIcon+'</div>'
-          +'<div class="nc-id">'
-            +'<div class="nc-company" style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:2px;">Market-Wide Theme</div>'
-            +'<div class="nc-ticker" style="font-size:16px;">'+esc(th.title)+'</div>'
-          +'</div>'
-        +'</div>'
-        +'<div class="nc-badges">'
-          +'<span class="nc-badge '+typeClass+'">'+esc(th.type)+'</span>'
-          +'<span class="nc-badge '+sevClass+'">'+esc(th.severity)+'</span>'
-        +'</div>'
-      +'</div>'
-      // Body
-      +'<div class="nc-body">'
-        +'<div class="nc-truth">'
-          +ncTruthRingSVG(th.trust, truthCol)
-          +'<div class="nc-truth-val" style="color:'+truthCol+';">'+th.trust+'</div>'
-          +'<div class="nc-truth-lbl">Truth</div>'
-        +'</div>'
-        +'<div class="nc-content">'
-          +'<div class="nc-category nc-cat-pressure">Macro Pressure</div>'
-          +'<div class="nc-headline">'+esc(th.claim)+'</div>'
-        +'</div>'
-      +'</div>'
-      // Affected sectors
-      +'<div class="nc-sectors">'
-        +'<div class="nc-sectors-label">Affected Sectors</div>'
-        +'<div class="nc-sector-pills">'+th.sectors.map(function(s){
-          return '<span class="nc-sector-pill"><span style="font-size:12px;">'+(sectorIcons[s]||'&#9632;')+'</span> '+esc(s)+'</span>';
-        }).join('')+'</div>'
-      +'</div>'
-      // Risk meters
-      +'<div class="nc-risk-grid">'+th.risks.map(function(risk){
-        return '<div class="nc-risk-item">'
-          +'<div class="nc-risk-header"><span class="nc-risk-label">'+esc(risk.label)+'</span><span class="nc-risk-value nc-risk-value-'+risk.cls+'">'+esc(risk.value)+'</span></div>'
-          +'<div class="nc-risk-bar"><div class="nc-risk-fill nc-risk-fill-'+risk.cls+'" style="width:'+risk.pct+'%;"></div></div>'
-        +'</div>';
-      }).join('')+'</div>'
-      // Divider + Footer
-      +'<div class="nc-divider"></div>'
-      +'<div class="nc-footer">'
-        +'<div class="nc-footer-left">'
-          +'<span class="nc-status nc-status-neutral"><span class="nc-status-dot" style="background:#b8860b;"></span>Active &middot; Market-Wide</span>'
-          +'<span class="nc-mw-footer-stats">'+today+'</span>'
-        +'</div>'
-        +'<div class="nc-footer-sep"></div>'
-        +'<div class="nc-footer-right">'
-          +'<span class="nc-mw-footer-stats">'+th.sectors.length+' sectors &middot; '+th.tickers+'+ tickers</span>'
-          +'<button class="nc-btn" onclick="event.preventDefault();event.stopPropagation();">&#9744; Save</button>'
-          +'<button class="nc-btn nc-btn-primary">VIEW &rarr;</button>'
-        +'</div>'
-      +'</div>'
-      +'<div class="nc-hint">Click card &middot; full risk breakdown &rarr;</div>'
-    +'</div>';
-  }).join('');
-}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function esc(s){return s?(s+'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):'';  }
