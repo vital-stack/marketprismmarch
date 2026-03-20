@@ -3829,6 +3829,20 @@ function redirectToLogin(){
 function ensureDashboardAuth(){
   if(AUTH_READY) return AUTH_READY;
   AUTH_READY = (async function(){
+    // Beta code bypass — no Supabase session needed
+    if(localStorage.getItem('mp-beta-access') === 'true'){
+      var betaUser = {email:'beta@marketprism.app',id:'beta'};
+      applyAuthenticatedUser(betaUser);
+      var logoutBtn = document.getElementById('logout-btn');
+      if(logoutBtn && !logoutBtn.dataset.bound){
+        logoutBtn.dataset.bound = 'true';
+        logoutBtn.addEventListener('click', function(){
+          localStorage.removeItem('mp-beta-access');
+          redirectToLogin();
+        });
+      }
+      return betaUser;
+    }
     if(!SUPA){
       redirectToLogin();
       return null;
