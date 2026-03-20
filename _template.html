@@ -277,6 +277,9 @@ body{
 .tab-panel.active{display:block;}
 /* ── DAILY BRIEF ── */
 .daily-hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:stretch;margin-bottom:32px;}
+.daily-hero-centered{text-align:center;margin-bottom:28px;}
+.daily-hero-centered .daily-tag{justify-content:center;}
+.daily-hero-centered .daily-tag::before{display:none;}
 .daily-tag{font-family:var(--font-body);font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:rgba(232,232,227,0.5);margin-bottom:18px;display:flex;align-items:center;gap:10px;}
 .daily-tag::before{content:'';width:20px;height:1px;background:rgba(232,232,227,0.5);opacity:.5;}
 .daily-title{font-family:'Instrument Serif',var(--font-display),Georgia,serif;font-size:clamp(28px,3.2vw,42px);font-weight:400;color:var(--mp-text-primary);line-height:1.1;letter-spacing:-0.025em;margin-bottom:6px;}
@@ -399,7 +402,7 @@ body{
 .daily-narr-fill{height:100%;border-radius:3px;transition:width 0.6s cubic-bezier(0.16,1,0.3,1);}
 .daily-narr-count{font-family:var(--font-mono);font-size:11px;color:var(--mp-text-tertiary);width:24px;flex-shrink:0;}
 /* Mobile responsiveness for daily */
-@media(max-width:900px){.daily-hero-grid{grid-template-columns:1fr;gap:24px;}.daily-intel-grid{grid-template-columns:1fr;}}
+@media(max-width:900px){.daily-hero-grid{grid-template-columns:1fr;gap:24px;}.daily-hero-centered{margin-bottom:20px;}.daily-intel-grid{grid-template-columns:1fr;}}
 @media(max-width:768px){.daily-pulse-strip{grid-template-columns:repeat(4,1fr);}.daily-cal-days{grid-template-columns:repeat(3,1fr);}}
 @media(max-width:480px){.daily-pulse-strip{grid-template-columns:repeat(2,1fr);}.daily-cal-days{grid-template-columns:1fr;}}
 /* ── PAGE HEADER ── */
@@ -2648,7 +2651,7 @@ body{
 /* ── Split Layout ── */
 .nf-split{
   display:grid;grid-template-columns:1fr 1fr;gap:16px;
-  margin-bottom:28px;align-items:start;
+  margin-bottom:28px;align-items:stretch;
 }
 @media(max-width:900px){.nf-split{grid-template-columns:1fr;}}
 
@@ -2656,6 +2659,7 @@ body{
 .nf-summary{
   background:var(--mp-surface);border:1px solid var(--mp-border);
   border-radius:12px;padding:18px 20px;
+  display:flex;flex-direction:column;
 }
 .nf-sum-header{
   display:flex;align-items:center;gap:8px;margin-bottom:14px;
@@ -2697,6 +2701,7 @@ body{
 .nf-sum-stats{
   display:grid;grid-template-columns:repeat(3,1fr);gap:12px;
   border-top:1px solid var(--mp-border);padding-top:14px;
+  margin-top:auto;
 }
 .nf-stat{display:flex;flex-direction:column;gap:2px;}
 .nf-stat-num{font-family:var(--font-body);font-size:20px;font-weight:700;color:#1a8a5e;}
@@ -2708,8 +2713,8 @@ body{
 
 /* ── RIGHT: Tabbed Feed ── */
 .nf-feed{
-  background:var(--mp-surface);border:1px solid var(--mp-border);
-  border-radius:12px;overflow:hidden;display:flex;flex-direction:column;
+  background:transparent;border:none;
+  border-radius:0;overflow:hidden;display:flex;flex-direction:column;
   position:relative;
 }
 .nf-tabs{
@@ -2728,7 +2733,7 @@ body{
   border-bottom-color:var(--mp-text-primary);
 }
 .nf-scroll{
-  overflow-y:auto;max-height:600px;scrollbar-width:thin;
+  overflow-y:auto;flex:1;scrollbar-width:thin;
   scrollbar-color:rgba(255,255,255,0.08) transparent;
 }
 .nf-scroll::-webkit-scrollbar{width:4px;}
@@ -2789,59 +2794,49 @@ body{
 .nf-row-badge-bear{color:#c0392b;border-color:rgba(192,57,43,0.25);background:rgba(192,57,43,0.06);}
 
 /* ── Narrative Cards (trading-card style) ── */
-.nf-list{display:flex;flex-direction:column;gap:16px;padding:16px;}
+.nf-list{display:flex;flex-direction:column;gap:10px;padding:0;}
 .nc-card{
   position:relative;display:flex;flex-direction:column;
   background:var(--mp-surface);border:1px solid rgba(255,255,255,0.06);
-  border-radius:16px;overflow:hidden;cursor:pointer;
+  border-radius:12px;overflow:hidden;cursor:pointer;
   text-decoration:none;color:inherit;
-  filter:drop-shadow(0 4px 12px rgba(0,0,0,0.4));
-  transition:filter .3s,transform .3s,border-color .2s;
+  transition:border-color .2s,background .2s;
 }
-.nc-card::before{
-  content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
-  background:linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-             linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-  background-size:48px 48px;border-radius:16px;
-}
-.nc-card:hover{
-  filter:drop-shadow(0 12px 32px rgba(0,0,0,0.6));
-  transform:translateY(-4px);border-color:rgba(255,255,255,0.14);
-}
-.nc-accent{position:absolute;top:0;left:0;right:0;height:2px;z-index:2;border-radius:16px 16px 0 0;}
-.nc-body{position:relative;z-index:1;padding:20px;}
+.nc-card:hover{border-color:rgba(255,255,255,0.14);background:var(--mp-surface2);}
+.nc-accent{position:absolute;top:0;left:0;right:0;height:2px;z-index:2;border-radius:12px 12px 0 0;}
+.nc-body{position:relative;z-index:1;padding:14px 16px 12px;}
 /* Header */
-.nc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:8px;}
-.nc-id{display:flex;align-items:center;gap:10px;min-width:0;}
+.nc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:6px;}
+.nc-id{display:flex;align-items:center;gap:8px;min-width:0;}
 .nc-logo{
-  width:32px;height:32px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
-  border-radius:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);overflow:hidden;
+  width:26px;height:26px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  border-radius:6px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);overflow:hidden;
 }
-.nc-logo img{width:20px;height:20px;border-radius:3px;object-fit:contain;}
-.nc-logo span{font-family:var(--font-body);font-size:11px;font-weight:600;color:var(--mp-text-tertiary);}
-.nc-tkinfo{display:flex;flex-direction:column;gap:1px;min-width:0;}
-.nc-ticker{font-family:var(--font-body);font-size:16px;font-weight:700;color:#fff;line-height:1;letter-spacing:-0.01em;}
-.nc-sector{font-family:var(--font-body);font-size:11px;color:rgba(255,255,255,0.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;}
-.nc-badges{display:flex;gap:6px;flex-shrink:0;}
+.nc-logo img{width:16px;height:16px;border-radius:3px;object-fit:contain;}
+.nc-logo span{font-family:var(--font-body);font-size:10px;font-weight:600;color:var(--mp-text-tertiary);}
+.nc-tkinfo{display:flex;flex-direction:column;gap:0;min-width:0;}
+.nc-ticker{font-family:var(--font-body);font-size:14px;font-weight:700;color:#fff;line-height:1;letter-spacing:-0.01em;}
+.nc-sector{display:none;}
+.nc-badges{display:flex;gap:5px;flex-shrink:0;}
 .nc-rarity{
-  font-family:var(--font-body);font-size:11px;font-weight:500;
-  letter-spacing:0.06em;text-transform:uppercase;padding:2px 8px;
+  font-family:var(--font-body);font-size:10px;font-weight:500;
+  letter-spacing:0.06em;text-transform:uppercase;padding:2px 7px;
   border-radius:20px;border:1px solid;white-space:nowrap;opacity:0.65;
 }
 .nc-sentiment{
-  font-family:var(--font-body);font-size:11px;font-weight:600;
-  letter-spacing:0.04em;text-transform:uppercase;padding:2px 10px;
+  font-family:var(--font-body);font-size:10px;font-weight:600;
+  letter-spacing:0.04em;text-transform:uppercase;padding:2px 8px;
   border-radius:20px;border:1px solid;white-space:nowrap;
 }
 .nc-sentiment-bull{color:#00DE94;border-color:rgba(0,222,148,0.3);background:rgba(0,222,148,0.08);}
 .nc-sentiment-bear{color:#FF4D4D;border-color:rgba(255,77,77,0.3);background:rgba(255,77,77,0.08);}
 .nc-sentiment-neutral{color:#00AEFF;border-color:rgba(0,174,255,0.3);background:rgba(0,174,255,0.08);}
-/* Divider */
-.nc-divider{height:1px;background:rgba(255,255,255,0.06);margin-bottom:14px;}
+/* Divider — hidden for compact */
+.nc-divider{display:none;}
 /* Verdict label */
 .nc-verdict-label{
-  font-family:var(--font-body);font-size:11px;font-weight:600;
-  letter-spacing:0.10em;text-transform:uppercase;margin-bottom:8px;
+  font-family:var(--font-body);font-size:10px;font-weight:600;
+  letter-spacing:0.10em;text-transform:uppercase;margin-bottom:6px;
 }
 .nc-verdict-trap{color:#b8860b;}
 .nc-verdict-supported{color:#1a8a5e;}
@@ -2849,21 +2844,22 @@ body{
 .nc-verdict-default{color:var(--mp-text-tertiary);}
 /* Headline */
 .nc-headline{
-  font-family:var(--font-body);font-size:16px;font-weight:600;
-  line-height:1.35;color:#fff;margin-bottom:12px;letter-spacing:-0.01em;
+  font-family:var(--font-body);font-size:13px;font-weight:500;
+  line-height:1.4;color:#fff;margin-bottom:10px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
 }
 /* Meta + Truth score row */
-.nc-meta-row{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+.nc-meta-row{display:flex;align-items:center;gap:10px;margin-bottom:0;}
 .nc-truth{
-  width:44px;height:44px;border-radius:50%;flex-shrink:0;
+  width:36px;height:36px;border-radius:50%;flex-shrink:0;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   border:2px solid;
 }
-.nc-truth-num{font-family:var(--font-body);font-size:16px;font-weight:700;line-height:1;color:#fff;}
-.nc-truth-lbl{font-family:var(--font-body);font-size:7px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.5);}
-.nc-meta{font-family:var(--font-body);font-size:12px;color:#A0A8B0;line-height:1.5;}
-/* Tags */
-.nc-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;}
+.nc-truth-num{font-family:var(--font-body);font-size:14px;font-weight:700;line-height:1;color:#fff;}
+.nc-truth-lbl{font-family:var(--font-body);font-size:6px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.5);}
+.nc-meta{font-family:var(--font-body);font-size:11px;color:#A0A8B0;line-height:1.4;}
+/* Tags — hidden for compact */
+.nc-tags{display:none;}
 .nc-tag{
   font-family:var(--font-body);font-size:10px;font-weight:600;
   letter-spacing:0.04em;text-transform:uppercase;
@@ -2875,31 +2871,31 @@ body{
 .nc-tag-red{color:#c0392b;border-color:rgba(192,57,43,0.25);background:rgba(192,57,43,0.06);}
 .nc-tag-amber{color:#b8860b;border-color:rgba(184,134,11,0.25);background:rgba(184,134,11,0.06);}
 .nc-tag-cyan{color:#00AEFF;border-color:rgba(0,174,255,0.25);background:rgba(0,174,255,0.06);}
-/* Footer */
+/* Footer — compact */
 .nc-footer{
   display:flex;align-items:center;gap:0;
   border-top:1px solid rgba(255,255,255,0.06);
-  margin:0 -20px -20px;background:rgba(255,255,255,0.02);
+  margin:0 -16px -12px;background:rgba(255,255,255,0.02);
 }
 .nc-footer-state{
-  display:flex;align-items:center;gap:6px;padding:12px 16px;
-  font-family:var(--font-body);font-size:11px;font-weight:500;
-  letter-spacing:0.08em;text-transform:uppercase;color:#A0A8B0;
+  display:flex;align-items:center;gap:5px;padding:8px 12px;
+  font-family:var(--font-body);font-size:10px;font-weight:500;
+  letter-spacing:0.06em;text-transform:uppercase;color:#A0A8B0;
   white-space:nowrap;
 }
-.nc-pulse{width:5px;height:5px;border-radius:50%;animation:blink 2s ease infinite;flex-shrink:0;}
+.nc-pulse{width:4px;height:4px;border-radius:50%;animation:blink 2s ease infinite;flex-shrink:0;}
 .nc-footer-price{
-  font-family:var(--font-body);font-size:14px;font-weight:600;color:#fff;
-  padding:12px 4px 12px 12px;margin-left:auto;
+  font-family:var(--font-body);font-size:13px;font-weight:600;color:#fff;
+  padding:8px 3px 8px 10px;margin-left:auto;
 }
 .nc-footer-change{
-  font-family:var(--font-body);font-size:12px;font-weight:500;
-  padding:12px 16px 12px 4px;
+  font-family:var(--font-body);font-size:11px;font-weight:500;
+  padding:8px 12px 8px 3px;
 }
 .nc-footer-view{
-  font-family:var(--font-body);font-size:11px;font-weight:600;
-  letter-spacing:0.08em;text-transform:uppercase;
-  color:var(--mp-cyan);padding:12px 16px;white-space:nowrap;
+  font-family:var(--font-body);font-size:10px;font-weight:600;
+  letter-spacing:0.06em;text-transform:uppercase;
+  color:var(--mp-cyan);padding:8px 12px;white-space:nowrap;
   border-left:1px solid rgba(255,255,255,0.06);
   transition:color .2s,background .2s;
 }
@@ -3106,72 +3102,14 @@ body{
     ═══════════════════════════════════════ -->
     <div class="tab-panel active" id="tab-daily">
 
-      <!-- HERO / DEBRIEF -->
-      <div class="daily-hero-grid">
-        <!-- LEFT — prose briefing -->
-        <div>
-          <div class="daily-tag">Market Prism · Daily Intelligence · <span id="daily-date-tag"></span></div>
-          <div class="daily-title">Your market briefing.</div>
-          <span class="daily-title-italic">Every morning.</span>
-          <p class="daily-desc" id="daily-desc">
-            Generated at 06:42 ET — <strong>FOMC day</strong>. Fed holds as expected. Attention shifts to whether the AI capex cycle can sustain earnings in a slowing macro environment.
-          </p>
-          <div class="debrief-prose">
-            <div class="dp-block overnight">
-              <div class="dp-lbl">Overnight Picture</div>
-              <div class="dp-text">Asian markets mixed — <strong>Nikkei +0.4%</strong> on yen weakness, Hang Seng –0.8%. US futures <span class="gt">modestly positive</span>: S&P +0.3%, Nasdaq +0.45%. <span class="at">10Y yields +4bps to 4.21%</span>. Crude softer at $71.40. Gold consolidated at $2,180.</div>
-            </div>
-            <div class="dp-block narrative">
-              <div class="dp-lbl">Dominant Narrative</div>
-              <div class="dp-text"><strong>Narrow AI rally</strong> against tightening credit. Hyperscaler capex supports semis and cloud but <span class="gt">concentrated in fewer names than priced</span>. Watch breadth — small-cap underperformance at 6-week lows. <span class="rt">Key risk:</span> housing data at 10am could reprice dovish Fed narrative.</div>
-            </div>
-            <div class="dp-block setup">
-              <div class="dp-lbl">Today's Trade Setup</div>
-              <div class="dp-text"><strong>Risk appetite elevated but narrow.</strong> Avoid broad index longs into FOMC print. Best setup: <strong>oversold AI-adjacent names that haven't re-rated</strong> — INTC, AMD remain the unloved side of the semi trade. FOMC yield spike = REIT short setup.</div>
-            </div>
-          </div>
-          <div class="daily-tag-row">
-            <span class="daily-tag-item">AI Capex</span><span class="daily-tag-item">FOMC Day</span><span class="daily-tag-item">Semis</span><span class="daily-tag-item">Yield Watch</span><span class="daily-tag-item">Breadth Risk</span>
-          </div>
-        </div>
-        <!-- RIGHT — stat tiles + watch list -->
-        <div style="display:flex;flex-direction:column;">
-          <div class="daily-watch-list">
-            <div class="daily-watch-item dwi-fed">
-              <div class="dwi-time">2:00 PM</div>
-              <div class="dwi-desc"><strong>FOMC Decision</strong> — Rate hold expected. Focus on SEP dot plot and Powell's tone on 2026 cuts.</div>
-              <div class="dwi-badge fed">High Impact</div>
-            </div>
-            <div class="daily-watch-item dwi-data">
-              <div class="dwi-time">10:00 AM</div>
-              <div class="dwi-desc"><strong>Housing Starts</strong> — Est. 1.42M. Beat pressures yields and tests growth-stock resilience.</div>
-              <div class="dwi-badge data">Medium</div>
-            </div>
-            <div class="daily-watch-item dwi-earn">
-              <div class="dwi-time">After Close</div>
-              <div class="dwi-desc"><strong>No major earnings</strong> — NVDA confirmed May 20. Light catalyst day may compress intraday range.</div>
-              <div class="dwi-badge earn">Low Impact</div>
-            </div>
-          </div>
-          <div class="daily-sent-row">
-            <span class="daily-sent-lbl">Sentiment</span>
-            <div class="daily-sent-bar">
-              <div class="daily-sent-fill"></div>
-              <div class="daily-sent-cursor" style="left:64%"></div>
-            </div>
-            <span class="daily-sent-val">64 · Risk-On</span>
-          </div>
-
-          <!-- Top Movers -->
-          <div style="margin-top:14px;flex:1;display:flex;flex-direction:column;background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:6px;padding:12px 0 0;">
-            <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#fff;margin-bottom:10px;padding:0 12px;">Top Movers Today</div>
-            <div id="daily-top-movers" style="display:flex;flex-direction:column;gap:0;flex:1;">
-              <!-- Populated by JS -->
-            </div>
-          </div>
-
-          <!-- Narrative Breakdown removed -->
-        </div>
+      <!-- HERO — centered -->
+      <div class="daily-hero-centered">
+        <div class="daily-tag" style="justify-content:center;">Market Prism · Daily Intelligence · <span id="daily-date-tag"></span></div>
+        <div class="daily-title" style="text-align:center;">Your market briefing.</div>
+        <span class="daily-title-italic" style="text-align:center;">Every morning.</span>
+        <p class="daily-desc" id="daily-desc" style="text-align:center;max-width:640px;margin-left:auto;margin-right:auto;">
+          Generated at 06:42 ET — <strong>FOMC day</strong>. Fed holds as expected. Attention shifts to whether the AI capex cycle can sustain earnings in a slowing macro environment.
+        </p>
       </div>
 
       <!-- MARKET PULSE -->
@@ -3281,9 +3219,7 @@ body{
               <!-- Populated by JS -->
             </div>
           </div>
-          <div class="nf-scroll-hint">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
-          </div>
+          <!-- scroll hint removed -->
         </div>
       </div>
 
@@ -4387,12 +4323,12 @@ function renderNarrativeCards(){
   if(DATA.length>0){
     items=DATA.filter(function(r){return r.story_claim&&r.price!=null;})
       .sort(function(a,b){return Math.abs(b.price_change_pct||0)-Math.abs(a.price_change_pct||0);})
-      .slice(0,12);
+      .slice(0,5);
   }
 
   if(!items.length){
     // Use demo data
-    el.innerHTML=NF_DEMO_TICKERS.map(function(d){
+    el.innerHTML=NF_DEMO_TICKERS.slice(0,5).map(function(d){
       return nfBuildRow(d.direction, nfLogoHTML(d.ticker), d.ticker, d.sector, d.claim, d.verdict, '/ticker/'+encodeURIComponent(d.ticker), {state:d.verdict==='Structurally Supported'?'Surging':(d.direction==='bear'?'Breaking':'Stable')});
     }).join('');
   } else {
