@@ -83,7 +83,16 @@
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }
 }
-html { font-size: 16px; scroll-behavior: smooth; }
+@keyframes scroll-bounce {
+  0%, 100% { transform: translateY(0) translateX(-50%); opacity: 0.4; }
+  50% { transform: translateY(8px) translateX(-50%); opacity: 0.8; }
+}
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  scroll-snap-type: y mandatory;
+  overflow-x: hidden;
+}
 body {
   font-family: var(--font-b);
   background: var(--bg);
@@ -92,6 +101,60 @@ body {
   font-weight: 300;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
+}
+/* ── FULL-PAGE SNAP SECTIONS ── */
+.snap-section {
+  scroll-snap-align: start;
+  height: 100vh;
+  min-height: 100vh;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.snap-section > .con {
+  width: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.snap-section > .con::-webkit-scrollbar { display: none; }
+/* Footer snap — auto height, snaps at end */
+.snap-footer {
+  scroll-snap-align: end;
+}
+/* ── Section pagination dots ── */
+.section-dots {
+  position: fixed;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 99;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+.section-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.3s ease;
+}
+.section-dot:hover {
+  background: rgba(255,255,255,0.35);
+  transform: scale(1.3);
+}
+.section-dot.active {
+  background: var(--blue);
+  box-shadow: 0 0 8px rgba(0,174,255,0.4);
+  transform: scale(1.4);
 }
 /* ── TICKER TAPE ── */
 .ticker-wrap {
@@ -425,7 +488,9 @@ nav {
 }
 /* ── HERO ── */
 .hero {
-  min-height: calc(100vh - 56px - 38px);
+  scroll-snap-align: start;
+  height: 100vh;
+  min-height: 100vh;
   display: flex;
   align-items: center;
   position: relative;
@@ -497,6 +562,31 @@ nav {
 @keyframes gp { 0%,100%{opacity:.7;transform:translate(-50%,-55%) scale(1);} 50%{opacity:1;transform:translate(-50%,-55%) scale(1.12);} }
 @keyframes gp2 { 0%,100%{opacity:.4;transform:translate(-50%,-50%) scale(1);} 50%{opacity:.8;transform:translate(-45%,-55%) scale(1.15);} }
 @keyframes gp3 { 0%,100%{opacity:.3;transform:translate(-50%,-50%) scale(1);} 50%{opacity:.6;transform:translate(-55%,-45%) scale(1.1);} }
+/* Scroll indicator */
+.scroll-hint {
+  position: absolute;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  animation: scroll-bounce 2s ease-in-out infinite;
+}
+.scroll-hint-text {
+  font-family: var(--font-m);
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--tx3);
+}
+.scroll-hint-line {
+  width: 1px;
+  height: 24px;
+  background: linear-gradient(to bottom, var(--tx3), transparent);
+}
 .hero-inner {
   position: relative; z-index: 1;
   max-width: 1080px; margin: 0 auto; width: 100%;
@@ -816,12 +906,9 @@ h1 em {
 .fa-text { font-family: var(--font-m); font-size: 12px; color: var(--tx1); font-weight: 500; }
 .fa-sub  { font-family: var(--font-m); font-size: 10px; color: var(--tx3); margin-top: 1px; }
 /* ── PRISM DIVIDERS ── */
+/* Standalone dividers hidden in snap mode — effect moved to section ::after */
 .prism-divider {
-  position: relative;
-  height: 3px;
-  border: none;
-  margin: 0;
-  overflow: visible;
+  display: none;
 }
 .prism-divider::before {
   content: '';
@@ -882,11 +969,9 @@ h1 em {
   background-size: 200% 100%;
   animation: prism-sweep 6s linear infinite;
 }
-/* Legacy sec-rule — upgraded to prism */
+/* Legacy sec-rule — hidden in snap mode */
 .sec-rule {
-  border: none; height: 1px; margin: 0;
-  position: relative;
-  overflow: visible;
+  display: none;
 }
 .sec-rule::before {
   content: '';
@@ -902,8 +987,42 @@ h1 em {
   background-size: 200% 100%;
   animation: prism-sweep 6s linear infinite;
 }
-.sec { padding: 72px 0; position: relative; z-index: 1; }
-.sec > .con { width: 100%; }
+.sec {
+  scroll-snap-align: start;
+  height: 100vh;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+}
+.sec > .con {
+  width: 100%;
+  max-height: 100vh;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 60px 0;
+}
+.sec > .con::-webkit-scrollbar { display: none; }
+/* Prism line at bottom of each snap section */
+.sec::after, .hero::after, .trust-sec::after, .cta-sec::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(0,174,255,0.15) 25%,
+    rgba(0,222,148,0.12) 45%,
+    rgba(123,97,255,0.1) 65%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: prism-sweep 6s linear infinite;
+  z-index: 10;
+}
 .sec-alt { background: var(--deep); }
 /* Decorative section orbs */
 .sec-orb {
@@ -1335,7 +1454,17 @@ h2 {
   font-family: var(--font-m);
 }
 /* ── CTA ── */
-.cta-sec { padding: 72px 0; background: var(--bg); display: flex; align-items: center; }
+.cta-sec {
+  scroll-snap-align: start;
+  height: 100vh;
+  min-height: 100vh;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
 .cta-sec > .con { width: 100%; }
 .cta-inner {
   background: var(--deep);
@@ -1439,7 +1568,12 @@ h2 {
 .cta-fine { font-family: var(--font-m); font-size: 10px; color: var(--tx3); }
 /* ── TRUST ── */
 .trust-sec {
-  padding: 56px 0;
+  scroll-snap-align: start;
+  height: 100vh;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-bottom: none;
   background: var(--deep);
   position: relative;
@@ -1514,6 +1648,7 @@ h2 {
 .trust-s { font-family: var(--font-m); font-size: 11px; color: var(--tx2); line-height: 1.5; max-width: 130px; }
 /* ── FOOTER ── */
 footer {
+  scroll-snap-align: end;
   background: var(--deep);
   border-top: 1px solid var(--border);
   padding: 52px 40px 28px;
@@ -1644,7 +1779,17 @@ footer {
   h1 { font-size: 24px; }
 }
 /* ── MARKET RADAR ── */
-.radar-sec { padding: 72px 0 48px; background: var(--deep); display: flex; align-items: center; position: relative; overflow: hidden; }
+.radar-sec {
+  scroll-snap-align: start;
+  height: 100vh;
+  min-height: 100vh;
+  background: var(--deep);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
 .radar-sec > .con { width: 100%; position: relative; z-index: 1; }
 .radar-sec::before {
   content: '';
@@ -2271,6 +2416,10 @@ footer {
         </div>
       </div>
     </div>
+  </div>
+  <div class="scroll-hint">
+    <span class="scroll-hint-text">Scroll</span>
+    <div class="scroll-hint-line"></div>
   </div>
 </div>
 <!-- ── LIVE NARRATIVE SIGNALS ── -->
@@ -3356,6 +3505,53 @@ window.MP_DOMAINS   = MP_DOMAINS;
 
   init();
   loop();
+})();
+</script>
+<!-- ── SECTION DOTS NAV ── -->
+<nav class="section-dots" id="section-dots" aria-label="Section navigation"></nav>
+<script>
+(function(){
+  // Build dots from all snap sections
+  const sections = document.querySelectorAll('.hero, .radar-sec, .trust-sec, .sec, .cta-sec');
+  const dotsNav = document.getElementById('section-dots');
+  const dots = [];
+  sections.forEach(function(sec, i) {
+    const dot = document.createElement('button');
+    dot.className = 'section-dot';
+    dot.setAttribute('aria-label', 'Go to section ' + (i + 1));
+    dot.addEventListener('click', function() {
+      sec.scrollIntoView({ behavior: 'smooth' });
+    });
+    dotsNav.appendChild(dot);
+    dots.push(dot);
+  });
+
+  // Intersection observer to highlight active dot
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        var idx = Array.prototype.indexOf.call(sections, entry.target);
+        dots.forEach(function(d, i) {
+          d.classList.toggle('active', i === idx);
+        });
+      }
+    });
+  }, { threshold: 0.5 });
+
+  sections.forEach(function(sec) { observer.observe(sec); });
+
+  // Hide scroll hint after first scroll
+  var scrollHint = document.querySelector('.scroll-hint');
+  if (scrollHint) {
+    var hidden = false;
+    window.addEventListener('scroll', function() {
+      if (!hidden && window.scrollY > 100) {
+        scrollHint.style.opacity = '0';
+        scrollHint.style.transition = 'opacity 0.5s';
+        hidden = true;
+      }
+    });
+  }
 })();
 </script>
 </body>
