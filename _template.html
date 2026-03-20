@@ -753,7 +753,7 @@ body{
 .snap-table thead tr{border-bottom:1px solid var(--mp-border);}
 .snap-table th{
   padding:12px 14px;font-family:var(--font-mono);font-size:10px;
-  text-transform:uppercase;letter-spacing:.10em;color:var(--mp-text-tertiary);
+  text-transform:uppercase;letter-spacing:.10em;color:rgba(255,255,255,0.7);
   font-weight:400;text-align:left;white-space:nowrap;background:transparent;
 }
 .snap-table th.r{text-align:right;}
@@ -1343,7 +1343,7 @@ body{
   .sector-name{font-size:15px;}
   .sector-card-header{flex-wrap:wrap;}
   /* Snapshots */
-  .snap-table th:nth-child(n+6),.snap-table td:nth-child(n+6){display:none;}
+  .snap-table th:nth-child(n+6),.snap-table td:nth-child(n+6){display:none;} /* hide trade type + view card on tablet */
   .snap-table{min-width:600px;}
   /* Memes */
   .meme-grid{grid-template-columns:1fr;}
@@ -2770,7 +2770,7 @@ body{
   flex:1;min-width:0;padding:12px 12px;display:flex;align-items:center;
 }
 .nf-row-headline{
-  font-family:var(--font-display);font-size:13px;font-weight:400;
+  font-family:var(--font-body);font-size:13px;font-weight:400;
   line-height:1.4;color:var(--mp-text-primary);
   display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
 }
@@ -3360,10 +3360,6 @@ body{
               <th>State</th>
               <th>Primary narrative</th>
               <th>Trade type</th>
-              <th>Verdict</th>
-              <th>Sector</th>
-              <th class="r">P/E</th>
-              <th class="r">Earnings</th>
               <th></th>
             </tr>
           </thead>
@@ -4778,7 +4774,7 @@ function renderSnap(){
   var tbody=document.getElementById('snap-tbody');
   var lm=document.getElementById('snap-load-more');
   var slice=arr.slice(0,snapShowing);
-  if(arr.length===0){tbody.innerHTML='<tr><td colspan="11" class="empty-state" style="padding:32px;text-align:center;color:var(--mp-text-tertiary);">No tickers match.</td></tr>';lm.style.display='none';return;}
+  if(arr.length===0){tbody.innerHTML='<tr><td colspan="7" class="empty-state" style="padding:32px;text-align:center;color:var(--mp-text-tertiary);">No tickers match.</td></tr>';lm.style.display='none';return;}
   tbody.innerHTML=slice.map(function(r){
     var delta=fmtDelta(r.price_change_pct);
     var sc=stateClass(r.narrative_state);
@@ -4793,10 +4789,6 @@ function renderSnap(){
       +'<td><span class="snap-state '+sc+'">'+esc(r.narrative_state)+'</span></td>'
       +'<td><div class="snap-driver">'+esc(r.story_claim||r.primary_driver||'—')+'</div></td>'
       +'<td><span class="snap-state" style="font-size:11px;">'+tradeType+'</span></td>'
-      +'<td>'+(vc?'<span class="snap-verdict '+vc+'">'+esc(vl)+'</span>':'<span style="color:var(--mp-text-tertiary);font-size:11px;">'+esc(r.prism_verdict||'—')+'</span>')+'</td>'
-      +'<td><div class="snap-sector">'+esc(r.sector_name||'—')+'</div></td>'
-      +'<td class="r"><span class="pe-val">'+( r.pe_ratio!=null?r.pe_ratio.toFixed(1)+'x':'—')+'</span></td>'
-      +'<td class="r"><span class="snap-date'+ec+'">'+( r.days_to_earnings!=null?r.days_to_earnings+'d':'—')+'</span></td>'
       +'<td class="r"><a href="/ticker/'+encodeURIComponent(r.ticker)+'" class="snap-cta" onclick="event.stopPropagation();">View Card <span style="font-size:13px;">→</span></a></td>'
     +'</tr>';
   }).join('');
