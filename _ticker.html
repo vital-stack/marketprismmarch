@@ -1360,7 +1360,18 @@
   }
   @media (max-width: 500px) {
     .heatmap-head { display: none; }
-    .heatmap-row  { grid-template-columns: 1fr; gap: 4px; }
+    .heatmap-row  { grid-template-columns: 1fr; gap: 6px; padding: 12px 14px; }
+    .heatmap-row > div { display: flex; align-items: center; justify-content: space-between; }
+    .heatmap-row > div::before {
+      content: attr(data-label);
+      font-family: var(--mono);
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #6b7280;
+    }
+    .heatmap-row > div:first-child { flex-direction: column; align-items: flex-start; }
+    .heatmap-row > div:first-child::before { display: none; }
   }
   /* ── Scholar Ask Bar ── */
   .ticker-scholar-bar {
@@ -3658,10 +3669,10 @@ function renderHeatmap(p) {
           <div class="hm-name">${esc(r.name)}</div>
           <div class="hm-sub">${esc(r.sub)}</div>
         </div>
-        <div><div class="hm-cell ${heatClass(r.evidence)}">${r.evidence}</div></div>
-        <div><div class="hm-cell ${heatClass(r.energy)}">${r.energy}</div></div>
-        <div><div class="hm-cell ${heatClass(100 - r.coord)}">${r.coord}</div></div>
-        <div><span class="verdict-badge ${r.statusCls}" style="font-size:10px;padding:2px 7px;">${esc(r.status)}</span></div>
+        <div data-label="Evidence"><div class="hm-cell ${heatClass(r.evidence)}">${r.evidence}</div></div>
+        <div data-label="Energy"><div class="hm-cell ${heatClass(r.energy)}">${r.energy}</div></div>
+        <div data-label="Coord."><div class="hm-cell ${heatClass(100 - r.coord)}">${r.coord}</div></div>
+        <div data-label="Status"><span class="verdict-badge ${r.statusCls}" style="font-size:10px;padding:2px 7px;">${esc(r.status)}</span></div>
       </div>`).join('')}
     <div class="heatmap-foot">
       Prevailing: <strong>${esc(p.prevailing_narrative || '—')}</strong>
