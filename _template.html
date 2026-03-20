@@ -2071,7 +2071,6 @@ body{
 .stories-stream-inner{
   padding:8px 0;
 }
-}
 /* ══════════════════════════════════════════════════════════════════════════════
    TRADING CALENDAR
    ══════════════════════════════════════════════════════════════════════════════ */
@@ -4086,6 +4085,8 @@ async function loadData(){
     populateNHTTickerSelect();
     loadTradingCalendarLive();
     loadNHT(nhtTicker);
+    // Sync stories column height after cards have rendered
+    requestAnimationFrame(function(){setTimeout(syncStoriesHeight,300);});
   } catch(err){
     feed.innerHTML='<div class="empty-state" style="color:var(--mp-red);">Failed to load: '+esc(err.message)+'<br><small style="font-size:11px;opacity:.6;">Check Supabase credentials in environment variables.</small></div>';
     // Still render static demos
@@ -7496,10 +7497,16 @@ function syncStoriesHeight(){
   var section=document.querySelector('.trading-cards-section');
   var col=document.querySelector('.stories-stream-col');
   if(section&&col){
-    col.style.maxHeight=section.offsetHeight+'px';
+    var h=section.offsetHeight;
+    // Never collapse: use CSS max-height as fallback if cards haven't laid out yet
+    if(h>200){
+      col.style.maxHeight=h+'px';
+    } else {
+      col.style.maxHeight='';
+    }
   }
 }
-var _syncObs=new MutationObserver(function(){setTimeout(syncStoriesHeight,100);});
+var _syncObs=new MutationObserver(function(){setTimeout(syncStoriesHeight,200);});
 var _deck=document.getElementById('trading-deck');
 if(_deck)_syncObs.observe(_deck,{childList:true,subtree:true});
 window.addEventListener('resize',syncStoriesHeight);
