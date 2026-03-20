@@ -2728,7 +2728,7 @@ body{
   border-bottom-color:var(--mp-text-primary);
 }
 .nf-scroll{
-  overflow-y:auto;max-height:420px;scrollbar-width:thin;
+  overflow-y:auto;max-height:600px;scrollbar-width:thin;
   scrollbar-color:rgba(255,255,255,0.08) transparent;
 }
 .nf-scroll::-webkit-scrollbar{width:4px;}
@@ -2788,6 +2788,123 @@ body{
 .nf-row-badge-trap{color:#b8860b;border-color:rgba(184,134,11,0.25);background:rgba(184,134,11,0.06);}
 .nf-row-badge-bear{color:#c0392b;border-color:rgba(192,57,43,0.25);background:rgba(192,57,43,0.06);}
 
+/* ── Narrative Cards (trading-card style) ── */
+.nf-list{display:flex;flex-direction:column;gap:16px;padding:16px;}
+.nc-card{
+  position:relative;display:flex;flex-direction:column;
+  background:var(--mp-surface);border:1px solid rgba(255,255,255,0.06);
+  border-radius:16px;overflow:hidden;cursor:pointer;
+  text-decoration:none;color:inherit;
+  filter:drop-shadow(0 4px 12px rgba(0,0,0,0.4));
+  transition:filter .3s,transform .3s,border-color .2s;
+}
+.nc-card::before{
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+             linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size:48px 48px;border-radius:16px;
+}
+.nc-card:hover{
+  filter:drop-shadow(0 12px 32px rgba(0,0,0,0.6));
+  transform:translateY(-4px);border-color:rgba(255,255,255,0.14);
+}
+.nc-accent{position:absolute;top:0;left:0;right:0;height:2px;z-index:2;border-radius:16px 16px 0 0;}
+.nc-body{position:relative;z-index:1;padding:20px;}
+/* Header */
+.nc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:8px;}
+.nc-id{display:flex;align-items:center;gap:10px;min-width:0;}
+.nc-logo{
+  width:32px;height:32px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  border-radius:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);overflow:hidden;
+}
+.nc-logo img{width:20px;height:20px;border-radius:3px;object-fit:contain;}
+.nc-logo span{font-family:var(--font-body);font-size:11px;font-weight:600;color:var(--mp-text-tertiary);}
+.nc-tkinfo{display:flex;flex-direction:column;gap:1px;min-width:0;}
+.nc-ticker{font-family:var(--font-body);font-size:16px;font-weight:700;color:#fff;line-height:1;letter-spacing:-0.01em;}
+.nc-sector{font-family:var(--font-body);font-size:11px;color:rgba(255,255,255,0.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;}
+.nc-badges{display:flex;gap:6px;flex-shrink:0;}
+.nc-rarity{
+  font-family:var(--font-body);font-size:11px;font-weight:500;
+  letter-spacing:0.06em;text-transform:uppercase;padding:2px 8px;
+  border-radius:20px;border:1px solid;white-space:nowrap;opacity:0.65;
+}
+.nc-sentiment{
+  font-family:var(--font-body);font-size:11px;font-weight:600;
+  letter-spacing:0.04em;text-transform:uppercase;padding:2px 10px;
+  border-radius:20px;border:1px solid;white-space:nowrap;
+}
+.nc-sentiment-bull{color:#00DE94;border-color:rgba(0,222,148,0.3);background:rgba(0,222,148,0.08);}
+.nc-sentiment-bear{color:#FF4D4D;border-color:rgba(255,77,77,0.3);background:rgba(255,77,77,0.08);}
+.nc-sentiment-neutral{color:#00AEFF;border-color:rgba(0,174,255,0.3);background:rgba(0,174,255,0.08);}
+/* Divider */
+.nc-divider{height:1px;background:rgba(255,255,255,0.06);margin-bottom:14px;}
+/* Verdict label */
+.nc-verdict-label{
+  font-family:var(--font-body);font-size:11px;font-weight:600;
+  letter-spacing:0.10em;text-transform:uppercase;margin-bottom:8px;
+}
+.nc-verdict-trap{color:#b8860b;}
+.nc-verdict-supported{color:#1a8a5e;}
+.nc-verdict-bear{color:#c0392b;}
+.nc-verdict-default{color:var(--mp-text-tertiary);}
+/* Headline */
+.nc-headline{
+  font-family:var(--font-body);font-size:16px;font-weight:600;
+  line-height:1.35;color:#fff;margin-bottom:12px;letter-spacing:-0.01em;
+}
+/* Meta + Truth score row */
+.nc-meta-row{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+.nc-truth{
+  width:44px;height:44px;border-radius:50%;flex-shrink:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border:2px solid;
+}
+.nc-truth-num{font-family:var(--font-body);font-size:16px;font-weight:700;line-height:1;color:#fff;}
+.nc-truth-lbl{font-family:var(--font-body);font-size:7px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.5);}
+.nc-meta{font-family:var(--font-body);font-size:12px;color:#A0A8B0;line-height:1.5;}
+/* Tags */
+.nc-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;}
+.nc-tag{
+  font-family:var(--font-body);font-size:10px;font-weight:600;
+  letter-spacing:0.04em;text-transform:uppercase;
+  padding:4px 10px;border-radius:14px;white-space:nowrap;
+  border:1px solid rgba(255,255,255,0.10);color:var(--mp-text-secondary);
+  background:rgba(255,255,255,0.04);
+}
+.nc-tag-green{color:#1a8a5e;border-color:rgba(26,138,94,0.25);background:rgba(26,138,94,0.06);}
+.nc-tag-red{color:#c0392b;border-color:rgba(192,57,43,0.25);background:rgba(192,57,43,0.06);}
+.nc-tag-amber{color:#b8860b;border-color:rgba(184,134,11,0.25);background:rgba(184,134,11,0.06);}
+.nc-tag-cyan{color:#00AEFF;border-color:rgba(0,174,255,0.25);background:rgba(0,174,255,0.06);}
+/* Footer */
+.nc-footer{
+  display:flex;align-items:center;gap:0;
+  border-top:1px solid rgba(255,255,255,0.06);
+  margin:0 -20px -20px;background:rgba(255,255,255,0.02);
+}
+.nc-footer-state{
+  display:flex;align-items:center;gap:6px;padding:12px 16px;
+  font-family:var(--font-body);font-size:11px;font-weight:500;
+  letter-spacing:0.08em;text-transform:uppercase;color:#A0A8B0;
+  white-space:nowrap;
+}
+.nc-pulse{width:5px;height:5px;border-radius:50%;animation:blink 2s ease infinite;flex-shrink:0;}
+.nc-footer-price{
+  font-family:var(--font-body);font-size:14px;font-weight:600;color:#fff;
+  padding:12px 4px 12px 12px;margin-left:auto;
+}
+.nc-footer-change{
+  font-family:var(--font-body);font-size:12px;font-weight:500;
+  padding:12px 16px 12px 4px;
+}
+.nc-footer-view{
+  font-family:var(--font-body);font-size:11px;font-weight:600;
+  letter-spacing:0.08em;text-transform:uppercase;
+  color:var(--mp-cyan);padding:12px 16px;white-space:nowrap;
+  border-left:1px solid rgba(255,255,255,0.06);
+  transition:color .2s,background .2s;
+}
+.nc-card:hover .nc-footer-view{background:rgba(0,174,255,0.06);}
+
 /* ── Light Theme ── */
 [data-theme="light"] .nf-summary{background:var(--mp-surface);border-color:rgba(0,0,0,0.06);}
 [data-theme="light"] .nf-feed{background:var(--mp-surface);border-color:rgba(0,0,0,0.06);}
@@ -2800,6 +2917,12 @@ body{
 [data-theme="light"] .nf-row-badge{border-color:rgba(0,0,0,0.08);color:var(--mp-text-secondary);background:rgba(0,0,0,0.03);}
 [data-theme="light"] .nf-scroll::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.08);}
 [data-theme="light"] .nf-scroll-hint{border-top-color:rgba(0,0,0,0.06);}
+[data-theme="light"] .nc-card{background:var(--mp-surface);border-color:rgba(0,0,0,0.08);filter:drop-shadow(0 2px 8px rgba(0,0,0,0.08));}
+[data-theme="light"] .nc-card:hover{filter:drop-shadow(0 8px 24px rgba(0,0,0,0.12));border-color:rgba(0,0,0,0.14);}
+[data-theme="light"] .nc-card::before{opacity:0;}
+[data-theme="light"] .nc-divider{background:rgba(0,0,0,0.06);}
+[data-theme="light"] .nc-footer{border-top-color:rgba(0,0,0,0.06);background:rgba(0,0,0,0.02);}
+[data-theme="light"] .nc-tag{border-color:rgba(0,0,0,0.10);background:rgba(0,0,0,0.03);}
 </style>
 </head>
 <body>
@@ -4156,37 +4279,102 @@ var NF_DEMO_MARKET=[
 function nfLogoHTML(ticker){
   var domain=DOMAIN_MAP[ticker];
   if(domain){
-    return '<div class="nf-row-logo"><img src="https://www.google.com/s2/favicons?domain='+domain+'&sz=32" alt="" onerror="this.parentElement.innerHTML=\'<span>'+esc((ticker||'').substring(0,2))+'</span>\'"></div>';
+    return '<div class="nc-logo"><img src="https://www.google.com/s2/favicons?domain='+domain+'&sz=32" alt="" onerror="this.parentElement.innerHTML=\'<span>'+esc((ticker||'').substring(0,2))+'</span>\'"></div>';
   }
-  return '<div class="nf-row-logo"><span>'+esc((ticker||'').substring(0,2))+'</span></div>';
+  return '<div class="nc-logo"><span>'+esc((ticker||'').substring(0,2))+'</span></div>';
 }
 
-function nfAccentClass(dir){
-  if(dir==='bull') return 'nf-row-accent-bull';
-  if(dir==='bear') return 'nf-row-accent-bear';
-  return 'nf-row-accent-neutral';
+function ncAccentColor(dir){
+  if(dir==='bull') return '#00DE94';
+  if(dir==='bear') return '#FF4D4D';
+  return '#00AEFF';
 }
 
-function nfBadgeClass(verdict){
+function ncVerdictClass(verdict){
   var v=(verdict||'').toLowerCase();
-  if(v.indexOf('supported')>=0) return 'nf-row-badge-supported';
-  if(v.indexOf('trap')>=0) return 'nf-row-badge-trap';
-  if(v.indexOf('bear')>=0||v.indexOf('escalat')>=0) return 'nf-row-badge-bear';
-  return '';
+  if(v.indexOf('supported')>=0) return 'nc-verdict-supported';
+  if(v.indexOf('trap')>=0) return 'nc-verdict-trap';
+  if(v.indexOf('bear')>=0||v.indexOf('escalat')>=0) return 'nc-verdict-bear';
+  return 'nc-verdict-default';
 }
 
-function nfBuildRow(accent, logoHtml, ticker, sector, headline, verdict, href){
-  return '<a class="nf-row" '+(href?'href="'+href+'"':'')+'>'
-    +'<div class="nf-row-accent '+nfAccentClass(accent)+'"></div>'
-    +'<div class="nf-row-id">'
-      +logoHtml
-      +'<div class="nf-row-tkinfo">'
-        +'<div class="nf-row-ticker">'+esc(ticker)+'</div>'
-        +'<div class="nf-row-sector">'+esc(sector)+'</div>'
+function ncSentimentLabel(dir){
+  if(dir==='bull') return '\u25B2 BULLISH';
+  if(dir==='bear') return '\u25BC BEARISH';
+  return '\u25C6 NEUTRAL';
+}
+
+function ncRarityFromVerdict(verdict,state){
+  var rKey=verdict||state||'Stable';
+  var r=RARITY_MAP[rKey]||RARITY_MAP['Stable'];
+  return r;
+}
+
+function ncBuildTags(verdict,state,daysToEarnings){
+  var tags=[];
+  var v=(verdict||'').toLowerCase();
+  if(v.indexOf('supported')>=0) tags.push({label:'Structurally Supported',cls:'nc-tag-green'});
+  if(v.indexOf('trap')>=0) tags.push({label:'Narrative Trap',cls:'nc-tag-amber'});
+  if(v.indexOf('bear')>=0||v.indexOf('escalat')>=0) tags.push({label:'Bear Pressure',cls:'nc-tag-red'});
+  if(daysToEarnings!=null&&daysToEarnings<=14) tags.push({label:'Close to Earnings',cls:'nc-tag-amber'});
+  if(state==='Breaking') tags.push({label:'Breaking',cls:'nc-tag-red'});
+  if(state==='Surging') tags.push({label:'Surging',cls:'nc-tag-green'});
+  if(state==='Fragile') tags.push({label:'Fragile',cls:'nc-tag-amber'});
+  return tags;
+}
+
+function nfBuildRow(dir, logoHtml, ticker, sector, headline, verdict, href, extra){
+  extra=extra||{};
+  var accentColor=ncAccentColor(dir);
+  var rarity=ncRarityFromVerdict(verdict,extra.state);
+  var sentCls='nc-sentiment-'+(dir||'neutral');
+  var verdictCls=ncVerdictClass(verdict);
+  var tags=ncBuildTags(verdict,extra.state,extra.daysToEarnings);
+  var conf=extra.confidence||Math.round(60+Math.random()*30);
+  var truthColor=dir==='bull'?'#00DE94':(dir==='bear'?'#FF4D4D':'#00AEFF');
+  var priceHTML='';
+  if(extra.price!=null){
+    var pct=extra.pricePct||0;
+    var isUp=pct>0;
+    var chgColor=isUp?'#00DE94':'#FF4D4D';
+    priceHTML='<div class="nc-footer-price">$'+fmtPrice(extra.price)+'</div>'
+      +'<div class="nc-footer-change" style="color:'+chgColor+';">'+(isUp?'+':'')+pct.toFixed(2)+'%</div>';
+  }
+  var stateLabel=extra.state||'Monitoring';
+
+  return '<a class="nc-card" '+(href?'href="'+href+'"':'')+'>'
+    +'<div class="nc-accent" style="background:'+accentColor+';"></div>'
+    +'<div class="nc-body">'
+      +'<div class="nc-header">'
+        +'<div class="nc-id">'
+          +logoHtml
+          +'<div class="nc-tkinfo">'
+            +'<div class="nc-ticker">'+esc(ticker)+'</div>'
+            +'<div class="nc-sector">'+esc(sector)+'</div>'
+          +'</div>'
+        +'</div>'
+        +'<div class="nc-badges">'
+          +'<span class="nc-rarity" style="color:'+rarity.color+';border-color:'+rarity.border+';background:'+hexToRgba(rarity.color,0.08)+';">'+rarity.label+'</span>'
+          +'<span class="nc-sentiment '+sentCls+'">'+ncSentimentLabel(dir)+'</span>'
+        +'</div>'
       +'</div>'
+      +'<div class="nc-divider"></div>'
+      +'<div class="nc-verdict-label '+verdictCls+'">'+esc(verdict)+'</div>'
+      +'<div class="nc-headline">'+esc(headline)+'</div>'
+      +'<div class="nc-meta-row">'
+        +'<div class="nc-truth" style="border-color:'+truthColor+';">'
+          +'<span class="nc-truth-num">'+conf+'</span>'
+          +'<span class="nc-truth-lbl">Truth</span>'
+        +'</div>'
+        +'<div class="nc-meta">'+conf+'% \u00B7 '+(extra.window||'Day\u2013Swing')+' \u00B7 '+stateLabel+'</div>'
+      +'</div>'
+      +(tags.length?'<div class="nc-tags">'+tags.map(function(t){return '<span class="nc-tag '+t.cls+'">'+t.label+'</span>';}).join('')+'</div>':'')
     +'</div>'
-    +'<div class="nf-row-body"><div class="nf-row-headline">'+esc(headline)+'</div></div>'
-    +'<div class="nf-row-verdict"><span class="nf-row-badge '+nfBadgeClass(verdict)+'">'+esc(verdict)+'</span></div>'
+    +'<div class="nc-footer">'
+      +'<div class="nc-footer-state"><span class="nc-pulse" style="background:'+accentColor+';"></span>'+esc(stateLabel)+' \u00B7 LIVE</div>'
+      +priceHTML
+      +'<div class="nc-footer-view">VIEW \u2192</div>'
+    +'</div>'
   +'</a>';
 }
 
@@ -4205,14 +4393,20 @@ function renderNarrativeCards(){
   if(!items.length){
     // Use demo data
     el.innerHTML=NF_DEMO_TICKERS.map(function(d){
-      return nfBuildRow(d.direction, nfLogoHTML(d.ticker), d.ticker, d.sector, d.claim, d.verdict, '/ticker/'+encodeURIComponent(d.ticker));
+      return nfBuildRow(d.direction, nfLogoHTML(d.ticker), d.ticker, d.sector, d.claim, d.verdict, '/ticker/'+encodeURIComponent(d.ticker), {state:d.verdict==='Structurally Supported'?'Surging':(d.direction==='bear'?'Breaking':'Stable')});
     }).join('');
   } else {
     el.innerHTML=items.map(function(r){
       var pct=r.price_change_pct||0;
       var dir=pct>0?'bull':(pct<0?'bear':'neutral');
       var verdict=r.prism_verdict||'Monitoring';
-      return nfBuildRow(dir, nfLogoHTML(r.ticker), r.ticker, r.sector_name||'', r.story_claim, verdict, '/ticker/'+encodeURIComponent(r.ticker));
+      var tc=TRADE_CLASS_MAP[r.ticker]||{};
+      return nfBuildRow(dir, nfLogoHTML(r.ticker), r.ticker, r.sector_name||'', r.story_claim, verdict, '/ticker/'+encodeURIComponent(r.ticker), {
+        price:r.price, pricePct:pct, state:r.narrative_state,
+        daysToEarnings:r.days_to_earnings,
+        confidence:tc.primary_confidence!=null?Math.round(tc.primary_confidence):null,
+        window:tc.shortest_timeframe||null
+      });
     }).join('');
   }
 
@@ -4237,11 +4431,11 @@ function renderSectorNarrativeCards(){
     var sectors=Object.keys(sectorMap).map(function(k){return sectorMap[k];}).slice(0,8);
     el.innerHTML=sectors.map(function(s){
       var state=s.direction==='bull'?'Surging':(s.direction==='bear'?'Breaking':'Stable');
-      return nfBuildRow(s.direction, '<div class="nf-row-logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>', s.name, s.count+' tickers', s.topClaim, state, '');
+      return nfBuildRow(s.direction, '<div class="nc-logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>', s.name, s.count+' tickers', s.topClaim, state, '', {state:state});
     }).join('');
   } else {
     el.innerHTML=NF_DEMO_SECTORS.map(function(d){
-      return nfBuildRow(d.direction, '<div class="nf-row-logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>', d.name, d.sub, d.claim, d.verdict, '');
+      return nfBuildRow(d.direction, '<div class="nc-logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>', d.name, d.sub, d.claim, d.verdict, '', {state:d.verdict});
     }).join('');
   }
 }
@@ -4253,7 +4447,7 @@ function renderMarketWideCards(){
 
   // Always use curated themes (these are editorial, not auto-derived)
   el.innerHTML=NF_DEMO_MARKET.map(function(d){
-    return nfBuildRow(d.direction, '<div class="nf-row-logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>', d.title, d.type, d.claim, d.verdict, '');
+    return nfBuildRow(d.direction, '<div class="nc-logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>', d.title, d.type, d.claim, d.verdict, '', {state:d.verdict});
   }).join('');
 }
 
