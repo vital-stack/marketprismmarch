@@ -1343,12 +1343,8 @@
     color: var(--mp-cyan);
     border-color: var(--mp-cyan);
   }
-  .info-tip .info-text {
-    display: none;
-    position: absolute;
-    bottom: calc(100% + 8px);
-    left: 50%;
-    transform: translateX(-50%);
+  .info-tip-popup {
+    position: fixed;
     background: #1a1f2e;
     border: 1px solid rgba(255,255,255,0.10);
     border-radius: 8px;
@@ -1361,21 +1357,13 @@
     letter-spacing: normal;
     line-height: 1.45;
     white-space: normal;
-    width: 210px;
-    z-index: 100;
+    width: 220px;
+    z-index: 10000;
     pointer-events: none;
     box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    display: none;
   }
-  .info-tip .info-text::after {
-    content: '';
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 5px solid transparent;
-    border-top-color: #1a1f2e;
-  }
-  .info-tip:hover .info-text { display: block; }
+  .info-tip-popup.visible { display: block; }
   .claim-summary {
     font-size: 11px;
     color: var(--text-secondary);
@@ -1934,6 +1922,7 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
   </script>
 </head>
 <body>
+<div class="info-tip-popup" id="info-tip-popup"></div>
 <div class="app-layout">
   <aside class="sidebar" id="sidebar">
     <a href="/" class="sidebar-logo">
@@ -3743,10 +3732,10 @@ function renderPrimaryClaim(p) {
       ${shifted}
     </div>
     <div class="claim-bullets">
-      <div class="claim-bullet"><span class="info-tip">Narrative energy<i class="info-icon">i</i><span class="info-text">How strongly this narrative is driving media coverage (0–100)</span></span><strong>${energy}/100</strong></div>
-      <div class="claim-bullet"><span class="info-tip">Est. exhaustion<i class="info-icon">i</i><span class="info-text">Days until media interest in this narrative is likely to fade</span></span><strong>${exdays}</strong></div>
-      <div class="claim-bullet"><span class="info-tip">Coordination risk<i class="info-icon">i</i><span class="info-text">How likely sources are echoing each other vs. independent reporting</span></span><strong>${coord}</strong></div>
-      <div class="claim-bullet"><span class="info-tip">Active narratives<i class="info-icon">i</i><span class="info-text">Number of distinct storylines currently active for this ticker</span></span><strong>${p.active_narrative_count ?? '—'}</strong></div>
+      <div class="claim-bullet"><span class="info-tip" data-tip="How strongly this narrative is driving media coverage (0–100)">Narrative energy<i class="info-icon">i</i></span><strong>${energy}/100</strong></div>
+      <div class="claim-bullet"><span class="info-tip" data-tip="Days until media interest in this narrative is likely to fade">Est. exhaustion<i class="info-icon">i</i></span><strong>${exdays}</strong></div>
+      <div class="claim-bullet"><span class="info-tip" data-tip="How likely sources are echoing each other vs. independent reporting">Coordination risk<i class="info-icon">i</i></span><strong>${coord}</strong></div>
+      <div class="claim-bullet"><span class="info-tip" data-tip="Number of distinct storylines currently active for this ticker">Active narratives<i class="info-icon">i</i></span><strong>${p.active_narrative_count ?? '—'}</strong></div>
     </div>
     <div class="claim-summary">${esc(p.pulse_summary || 'Awaiting forensic summary from pipeline.')}</div>`;
 }
@@ -3780,19 +3769,19 @@ function renderWarranted(p) {
       </div>
     </div>
     <div class="score-bar-row">
-      <div class="score-bar-top"><span class="info-tip">Evidence quality<i class="info-icon">i</i><span class="info-text">How well the narrative is backed by filings, data, and verified sources</span></span><strong>${evidence}</strong></div>
+      <div class="score-bar-top"><span class="info-tip" data-tip="How well the narrative is backed by filings, data, and verified sources">Evidence quality<i class="info-icon">i</i></span><strong>${evidence}</strong></div>
       <div class="score-bar-track"><div class="score-bar-fill ${barFill(evidence)}" style="width:${evidence}%"></div></div>
     </div>
     <div class="score-bar-row">
-      <div class="score-bar-top"><span class="info-tip">Fragility<i class="info-icon">i</i><span class="info-text">How vulnerable the narrative is to reversal or collapse</span></span><strong>${frag}</strong></div>
+      <div class="score-bar-top"><span class="info-tip" data-tip="How vulnerable the narrative is to reversal or collapse">Fragility<i class="info-icon">i</i></span><strong>${frag}</strong></div>
       <div class="score-bar-track"><div class="score-bar-fill ${barFill(100 - frag)}" style="width:${frag}%"></div></div>
     </div>
     <div class="score-bar-row">
-      <div class="score-bar-top"><span class="info-tip">Valuation stretch<i class="info-icon">i</i><span class="info-text">How far the current price has moved from estimated fair value</span></span><strong>${valStr}</strong></div>
+      <div class="score-bar-top"><span class="info-tip" data-tip="How far the current price has moved from estimated fair value">Valuation stretch<i class="info-icon">i</i></span><strong>${valStr}</strong></div>
       <div class="score-bar-track"><div class="score-bar-fill ${barFill(100 - valStr)}" style="width:${valStr}%"></div></div>
     </div>
     <div class="score-bar-row">
-      <div class="score-bar-top"><span class="info-tip">Narrative pressure<i class="info-icon">i</i><span class="info-text">How much the prevailing narrative is shifting sentiment directionally</span></span><strong>${pressure}</strong></div>
+      <div class="score-bar-top"><span class="info-tip" data-tip="How much the prevailing narrative is shifting sentiment directionally">Narrative pressure<i class="info-icon">i</i></span><strong>${pressure}</strong></div>
       <div class="score-bar-track"><div class="score-bar-fill ${barFill(100 - pressure)}" style="width:${pressure}%"></div></div>
     </div>
     <div class="claim-summary" style="margin-top:10px;">
@@ -4361,6 +4350,32 @@ window.mpInjectAll  = mpInjectAll;
 window.mpLogoUrl    = mpLogoUrl;
 window.mpLogoImg    = mpLogoImg;
 window.MP_DOMAINS   = MP_DOMAINS;
+
+/* ── Info-tip hover positioning ── */
+(function(){
+  var popup = document.getElementById('info-tip-popup');
+  if(!popup) return;
+  document.addEventListener('mouseover', function(e){
+    var tip = e.target.closest('.info-tip');
+    if(!tip || !tip.dataset.tip) return;
+    popup.textContent = tip.dataset.tip;
+    popup.classList.add('visible');
+    var rect = tip.getBoundingClientRect();
+    var pw = 220;
+    var left = rect.left + rect.width / 2 - pw / 2;
+    if(left < 8) left = 8;
+    if(left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+    var top = rect.bottom + 8;
+    if(top + 60 > window.innerHeight) top = rect.top - popup.offsetHeight - 8;
+    popup.style.left = left + 'px';
+    popup.style.top = top + 'px';
+  });
+  document.addEventListener('mouseout', function(e){
+    var tip = e.target.closest('.info-tip');
+    if(!tip) return;
+    popup.classList.remove('visible');
+  });
+})();
 </script>
 </body>
 </html>
