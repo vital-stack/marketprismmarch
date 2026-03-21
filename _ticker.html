@@ -1139,7 +1139,7 @@
     line-height: 1.5;
   }
 
-  /* Source link */
+  /* Source link (legacy single) */
   .narr-source {
     display: flex;
     align-items: center;
@@ -1156,6 +1156,62 @@
     font-size: 11px;
   }
   .narr-source a:hover { text-decoration: underline; }
+
+  /* Clustered source list */
+  .narr-sources-list {
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+  }
+  .narr-sources-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+    font-weight: 600;
+    margin-bottom: 8px;
+    font-family: var(--font-body);
+  }
+  .narr-source-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 7px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    flex-wrap: wrap;
+  }
+  .narr-source-row:last-child { border-bottom: none; }
+  .narr-source-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .narr-src-outlet {
+    font-size: 12px;
+    font-family: var(--font-body);
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+  .narr-src-analyst {
+    font-size: 11px;
+    color: var(--text-tertiary);
+  }
+  .narr-source-detail {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .narr-source-detail a {
+    color: #3b82f6;
+    text-decoration: none;
+    font-size: 11px;
+  }
+  .narr-source-detail a:hover { text-decoration: underline; }
+
+  /* Needs Validation verdict variant */
+  .narr-v-needs { background: rgba(255,184,0,0.08); color: #FFB800; border-color: rgba(255,184,0,0.20); }
 
   /* ── Error / empty states ── */
   .inline-err { padding: 14px 18px; font-size: 13px; color: #ef4444; }
@@ -1579,6 +1635,10 @@
   .tk-feed-refresh:hover { color: #3b82f6; border-color: #3b82f6; }
   .tk-feed-refresh.spinning svg { animation: tk-spin .6s linear infinite; }
   @keyframes tk-spin { to { transform: rotate(360deg); } }
+  .tk-feed-pub {
+    color: #60a5fa;
+    font-weight: 500;
+  }
   .tk-feed-link {
     font-size: 11px;
     color: #3b82f6;
@@ -1911,7 +1971,7 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
 
         <!-- Primary Claim -->
         <div class="section">
-          <div class="section-label">Primary Claim</div>
+          <div class="section-label">Primary Narrative Claim</div>
           <div class="section-body" style="padding:20px;" id="primary-claim-body">
             <div class="skel" style="height:14px;width:90%;margin-bottom:8px;"></div>
             <div class="skel" style="height:14px;width:70%;margin-bottom:12px;"></div>
@@ -3231,20 +3291,57 @@ async function loadNarratives() {
       return;
     }
 
-    // Group by narrative_hash — keep latest row, count citations
-    const groups = {};
+    // ── Cluster narratives by theme (text similarity) ──
+    // Step 1: Group by hash first (exact duplicates)
+    const hashGroups = {};
     rows.forEach(r => {
       const key = r.narrative_hash || r.narrative_text;
-      if (!groups[key]) {
-        groups[key] = { ...r, citation_count: 0 };
-      }
-      groups[key].citation_count++;
+      if (!hashGroups[key]) hashGroups[key] = { ...r, citations: [] };
+      hashGroups[key].citations.push(r);
     });
 
-    // Sort by citation count desc, take top 5
-    const top = Object.values(groups)
-      .sort((a, b) => b.citation_count - a.citation_count)
-      .slice(0, 5);
+    // Step 2: Cluster hash-groups by word overlap into themes
+    function narrTokens(text) {
+      return (text || '').toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 3);
+    }
+    function wordOverlap(a, b) {
+      const setA = new Set(narrTokens(a));
+      const setB = new Set(narrTokens(b));
+      if (!setA.size || !setB.size) return 0;
+      let shared = 0;
+      setA.forEach(w => { if (setB.has(w)) shared++; });
+      return shared / Math.min(setA.size, setB.size);
+    }
+
+    const hashList = Object.values(hashGroups);
+    const themes = []; // Each theme = { primary, allCitations: [...rows] }
+    const used = new Set();
+
+    // Sort hash groups by citation count desc so the most-cited becomes the theme lead
+    hashList.sort((a, b) => b.citations.length - a.citations.length);
+
+    hashList.forEach((g, i) => {
+      if (used.has(i)) return;
+      used.add(i);
+      const theme = { primary: g, allCitations: [...g.citations] };
+      // Find similar hash groups and merge
+      for (let j = i + 1; j < hashList.length; j++) {
+        if (used.has(j)) continue;
+        if (wordOverlap(g.narrative_text, hashList[j].narrative_text) >= 0.55) {
+          used.add(j);
+          theme.allCitations.push(...hashList[j].citations);
+        }
+      }
+      themes.push(theme);
+    });
+
+    // Sort themes by total citation count, take top 5
+    themes.sort((a, b) => b.allCitations.length - a.allCitations.length);
+    const top = themes.slice(0, 5).map(t => ({
+      ...t.primary,
+      citation_count: t.allCitations.length,
+      allCitations: t.allCitations
+    }));
 
     document.getElementById('narr-list').innerHTML = top.map((n, idx) => {
       // Verdict class
@@ -3316,13 +3413,46 @@ async function loadNarratives() {
       const priceAtTime = dateKey ? priceByDate[dateKey] : null;
       const priceStr = priceAtTime != null ? fmtPrice(priceAtTime) : null;
 
-      // Source row (expanded)
-      const sourceHtml = `<div class="narr-source">
-        ${n.source_outlet ? `<span>${esc(n.source_outlet)}</span>` : ''}
-        ${n.analyst_firm  ? `<span>· ${esc(n.analyst_firm)}</span>` : ''}
-        ${dateStr         ? `<span class="narr-date">${dateStr}</span>` : ''}
-        ${priceStr        ? `<span class="narr-price-at">Stock: <strong>${priceStr}</strong></span>` : ''}
-        ${n.article_url   ? `<a href="${esc(n.article_url)}" target="_blank" rel="noopener">View article →</a>` : ''}
+      // Source rows — show all citations from the theme cluster
+      const citations = n.allCitations || [n];
+      // Deduplicate by outlet+date, sort newest first
+      const seen = new Set();
+      const uniqueCites = citations.filter(c => {
+        const k = (c.source_outlet||'') + '|' + (c.snapshot_date||'').slice(0,10);
+        if (seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      }).sort((a, b) => (b.snapshot_date || '').localeCompare(a.snapshot_date || ''));
+
+      const sourceHtml = `<div class="narr-sources-list">
+        <div class="narr-sources-label">Sources (${uniqueCites.length})</div>
+        ${uniqueCites.map(c => {
+          const cDate = c.snapshot_date?.slice(0,10);
+          const cDateStr = cDate
+            ? new Date(c.snapshot_date).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })
+            : '';
+          const cPrice = cDate ? priceByDate[cDate] : null;
+          const cPriceStr = cPrice != null ? fmtPrice(cPrice) : null;
+          const cVerdict = (c.verdict || '').toUpperCase();
+          const cVCls = cVerdict.includes('VERIF') ? 'narr-v-verified'
+            : cVerdict.includes('STRUCT') ? 'narr-v-verified'
+            : cVerdict.includes('MISLEAD') || cVerdict.includes('FALSE') ? 'narr-v-misleading'
+            : cVerdict.includes('TRAP') ? 'narr-v-trap'
+            : cVerdict.includes('NEED') ? 'narr-v-needs'
+            : 'narr-v-monitoring';
+          return `<div class="narr-source-row">
+            <div class="narr-source-meta">
+              ${c.source_outlet ? `<span class="narr-src-outlet">${esc(c.source_outlet)}</span>` : ''}
+              ${c.analyst_firm  ? `<span class="narr-src-analyst">· ${esc(c.analyst_firm)}</span>` : ''}
+              ${c.verdict ? `<span class="narr-verdict ${cVCls}" style="font-size:9px;padding:1px 5px;">${esc(c.verdict)}</span>` : ''}
+            </div>
+            <div class="narr-source-detail">
+              ${cDateStr ? `<span class="narr-date">${cDateStr}</span>` : ''}
+              ${cPriceStr ? `<span class="narr-price-at">@ <strong>$${cPriceStr}</strong></span>` : ''}
+              ${c.article_url ? `<a href="${esc(c.article_url)}" target="_blank" rel="noopener">View article →</a>` : ''}
+            </div>
+          </div>`;
+        }).join('')}
       </div>`;
 
       const itemId = `narr-${idx}`;
@@ -3335,7 +3465,12 @@ async function loadNarratives() {
             <div class="narr-meta-row">
               <span class="narr-verdict ${vCls}">${vLbl}</span>
               <span class="narr-cite"><span class="narr-cite-count">${n.citation_count}</span> citation${n.citation_count !== 1 ? 's' : ''}</span>
-              ${n.source_outlet ? `<span class="narr-outlet">${esc(n.source_outlet)}</span>` : ''}
+              ${(() => {
+                const outlets = [...new Set((n.allCitations||[n]).map(c => c.source_outlet).filter(Boolean))];
+                return outlets.length > 0
+                  ? `<span class="narr-outlet">${outlets.map(o => esc(o)).join(', ')}</span>`
+                  : '';
+              })()}
               ${n.narrative_type ? `<span class="narr-outlet">· ${esc(n.narrative_type)}</span>` : ''}
               ${dateStr ? `<span class="narr-date">${dateStr}</span>` : ''}
               ${priceStr ? `<span class="narr-price-at">@ <strong>${priceStr}</strong></span>` : ''}
@@ -3889,7 +4024,7 @@ async function loadStoriesFeed() {
         + '<div class="tk-feed-text">' + esc(r.narrative_text || '') + '</div>'
         + '<div class="tk-feed-meta">'
         + (dateStr ? '<span>' + dateStr + '</span>' : '')
-        + (r.source_outlet ? '<span>' + esc(r.source_outlet) + '</span>' : '')
+        + (r.source_outlet ? '<span class="tk-feed-pub">' + esc(r.source_outlet) + '</span>' : '')
         + '<span class="tk-feed-verdict" style="' + vColor + '">' + vLbl + '</span>'
         + linkHtml
         + '</div></div></div>';
