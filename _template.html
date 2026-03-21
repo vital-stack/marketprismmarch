@@ -69,7 +69,7 @@
   --mp-cyan:#00FFFF;
   --mp-teal:#00DE94;
   --mp-violet:#00FF52;
-  --mp-red:#38C8B8;
+  --mp-red:#FF4D4D;
   --mp-amber:#00DE94;
   --mp-text-primary:#E8ECF4;
   --mp-text-secondary:#6B7394;
@@ -1482,7 +1482,7 @@ body{
   --mp-cyan:#00FFFF;
   --mp-teal:#00DE94;
   --mp-violet:#00FF52;
-  --mp-red:#38C8B8;
+  --mp-red:#FF4D4D;
   --mp-amber:#00DE94;
 }
 /* ── LIGHT THEME — comprehensive overrides ── */
@@ -5395,17 +5395,22 @@ async function loadNHT(ticker){
   document.getElementById('nht-ytd').textContent='';
   var loadEl=document.getElementById('nht-loading');
   if(loadEl)loadEl.style.display='';
-  // Fetch all data in parallel
-  var results=await Promise.all([
-    fetchMassivePrices(nhtTicker),
-    fetchNarrativeScorecard(nhtTicker),
-    fetchNarrativeHealth(nhtTicker)
-  ]);
-  nhtPriceCache=results[0]||[];
-  nhtEventsCache=scorecardToEvents(results[1]||[]);
-  nhtHealthCache=(results[2]||[]).map(function(r){
-    return {date:r.snapshot_date,sentiment:r.sentiment_score,trend:r.narrative_trend,attention:r.attention_trend,health:r.narrative_health};
-  });
+  // Fetch all data in parallel (each catches its own errors)
+  try {
+    var results=await Promise.all([
+      fetchMassivePrices(nhtTicker).catch(function(e){console.warn('Price fetch failed:',e);return [];}),
+      fetchNarrativeScorecard(nhtTicker).catch(function(e){console.warn('Scorecard fetch failed:',e);return [];}),
+      fetchNarrativeHealth(nhtTicker).catch(function(e){console.warn('Health fetch failed:',e);return [];})
+    ]);
+    nhtPriceCache=results[0]||[];
+    nhtEventsCache=scorecardToEvents(results[1]||[]);
+    nhtHealthCache=(results[2]||[]).map(function(r){
+      return {date:r.snapshot_date,sentiment:r.sentiment_score,trend:r.narrative_trend,attention:r.attention_trend,health:r.narrative_health};
+    });
+  } catch(e) {
+    console.error('NHT load error:',e);
+    nhtPriceCache=[];nhtEventsCache=[];nhtHealthCache=[];
+  }
   if(loadEl)loadEl.style.display='none';
   // Update price + YTD in header
   if(nhtPriceCache.length){
@@ -5417,7 +5422,7 @@ async function loadNHT(ticker){
     ytdEl.textContent=(ytd>=0?'\u25B2 +':'\u25BC ')+ytd.toFixed(1)+'% (2Y)';
     ytdEl.className='nht-ytd '+(ytd>=0?'delta-pos':'delta-neg');
   } else {
-    document.getElementById('nht-price').textContent='No data';
+    document.getElementById('nht-price').textContent='No price data';
   }
   // Update select
   var sel=document.getElementById('nht-ticker-select');
@@ -5464,7 +5469,7 @@ function renderNHT(){
   var prices=nhtPriceCache.filter(function(p){return p.date>=cutoff;});
   var events=nhtEventsCache.filter(function(e){return e.date>=cutoff;});
   if(!prices.length){
-    document.getElementById('nht-events-grid').innerHTML='<div style="padding:20px;font-size:13px;color:var(--mp-text-tertiary);font-family:var(--font-mono);">No price data available. Check Massive API key.</div>';
+    document.getElementById('nht-events-grid').innerHTML='<div style="padding:20px;font-size:13px;color:var(--mp-text-tertiary);font-family:var(--font-body);">No price data found for '+esc(nhtTicker)+'. The ticker_snapshots table may not have data for this ticker yet.</div>';
     return;
   }
   // Dedupe events by date (keep highest confidence per date)
