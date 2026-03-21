@@ -613,20 +613,30 @@ async function sbFetch(table, params) {
     .filter(([,v]) => v !== undefined && v !== null && v !== '')
     .map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
     .join('&');
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${qs}`, {
-    headers: {
-      'apikey': SUPABASE_ANON,
-      'Authorization': `Bearer ${SUPABASE_ANON}`,
-      'Accept': 'application/json'
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${qs}`, {
+      headers: {
+        'apikey': SUPABASE_ANON,
+        'Authorization': `Bearer ${SUPABASE_ANON}`,
+        'Accept': 'application/json'
+      },
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error(`[${table}] ${res.status}: ${body.slice(0,200)}`);
     }
-  });
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new Error(`[${table}] ${res.status}: ${body.slice(0,200)}`);
+    const text = await res.text();
+    try { return JSON.parse(text); }
+    catch(e) { throw new Error(`[${table}] JSON parse failed. Starts with: ${text.slice(0,120)}`); }
+  } catch(e) {
+    clearTimeout(timeout);
+    if (e.name === 'AbortError') throw new Error(`[${table}] Request timed out after 15s`);
+    throw e;
   }
-  const text = await res.text();
-  try { return JSON.parse(text); }
-  catch(e) { throw new Error(`[${table}] JSON parse failed. Starts with: ${text.slice(0,120)}`); }
 }
 
 function esc(s) {
@@ -692,11 +702,19 @@ async function fetchData() {
       'prevailing_narrative','pulse_drift','active_narrative_count',
       'pulse_nrs','pulse_coordination','pulse_summary','worst_nrs'
     ].join(','),
-    order: 'pulse_health_score.desc',
-    limit: '500'
+    order: 'snapshot_date.desc,pulse_health_score.desc',
+    limit: '1000'
   });
 
-  return rows.map(r => ({
+  // Deduplicate: keep only the latest snapshot per ticker
+  const seen = new Set();
+  const deduped = rows.filter(r => {
+    if (!r.ticker || seen.has(r.ticker)) return false;
+    seen.add(r.ticker);
+    return true;
+  });
+
+  return deduped.map(r => ({
     t:         r.ticker,
     date:      r.snapshot_date,
     health:    Math.round(r.pulse_health_score ?? 50),
@@ -896,14 +914,22 @@ document.querySelector('.sort-group').addEventListener('click', e => {
 // ── Refresh ────────────────────────────────────────────────────────────────
 async function refreshData() {
   const btn = document.getElementById('refresh-btn');
+  const grid = document.getElementById('heatmap-grid');
   btn.textContent = '\u21BB Loading\u2026';
   btn.classList.add('spinning');
   try {
     ALL_TICKERS = await fetchData();
-    renderGrid();
+    if (ALL_TICKERS.length) {
+      renderGrid();
+    } else {
+      grid.innerHTML = '<div class="no-results">No ticker data found. The ticker_pulse table may be empty.</div>';
+      document.getElementById('count-bar').innerHTML = 'Showing <span>0</span> tickers';
+    }
   } catch(err) {
-    document.getElementById('heatmap-grid').innerHTML =
+    console.error('Heatmap load error:', err);
+    grid.innerHTML =
       `<div class="inline-err">Failed to load: ${esc(err.message)}</div>`;
+    document.getElementById('count-bar').innerHTML = 'Error loading data';
   } finally {
     btn.textContent = '\u21BB Refresh';
     btn.classList.remove('spinning');
