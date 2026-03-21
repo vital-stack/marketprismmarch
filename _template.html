@@ -7866,8 +7866,8 @@ document.addEventListener('visibilitychange',function(){
     sendBtn.disabled = true;
     isStreaming = true;
 
-    // Build market data context (send top 20 tickers)
-    var marketData = (typeof DATA !== 'undefined' && Array.isArray(DATA)) ? DATA.slice(0, 20).map(function(d){
+    // Build market data context — send ALL tickers so Scholar can find any
+    var marketData = (typeof DATA !== 'undefined' && Array.isArray(DATA)) ? DATA.map(function(d){
       return {
         ticker: d.ticker,
         price: d.price,
@@ -7879,9 +7879,28 @@ document.addEventListener('visibilitychange',function(){
         sector_name: d.sector_name,
         pe_ratio: d.pe_ratio,
         fair_value: d.fair_value,
-        guidance_direction: d.guidance_direction
+        guidance_direction: d.guidance_direction,
+        narrative_health: d.narrative_health,
+        narrative_trend: d.narrative_trend,
+        recovery_probability: d.recovery_probability
       };
     }) : [];
+
+    // Extract tickers mentioned in the question so the server can query Supabase for missing ones
+    var mentionedTickers = [];
+    var knownSet = {};
+    marketData.forEach(function(d){ knownSet[d.ticker] = true; });
+    // Match 1-5 uppercase letter sequences that could be tickers
+    var tickerMatches = question.toUpperCase().match(/\b[A-Z]{1,5}\b/g);
+    if(tickerMatches){
+      tickerMatches.forEach(function(t){
+        // Filter common English words
+        var SKIP = {THE:1,AND:1,FOR:1,ARE:1,BUT:1,NOT:1,YOU:1,ALL:1,CAN:1,HER:1,WAS:1,ONE:1,OUR:1,OUT:1,HAS:1,HIS:1,HOW:1,ITS:1,MAY:1,NEW:1,NOW:1,OLD:1,SEE:1,WAY:1,WHO:1,DID:1,GET:1,HIM:1,LET:1,SAY:1,SHE:1,TOO:1,USE:1,WHAT:1,WILL:1,WITH:1,THIS:1,THAT:1,HAVE:1,FROM:1,THEY:1,BEEN:1,SOME:1,WHEN:1,VERY:1,JUST:1,THAN:1,THEM:1,EACH:1,MAKE:1,LIKE:1,LONG:1,LOOK:1,MANY:1,MOST:1,OVER:1,SUCH:1,TAKE:1,ALSO:1,BACK:1,COME:1,GOOD:1,INTO:1,KNOW:1,MORE:1,MUCH:1,ONLY:1,TELL:1,WELL:1,DOES:1,GOES:1,GOING:1,ABOUT:1,WHERE:1,WHICH:1,THEIR:1,WOULD:1,COULD:1,SHOULD:1,THERE:1,THINK:1,THESE:1,OTHER:1,AFTER:1,BEING:1,STILL:1,STOCK:1,PRICE:1,HIGH:1,DOWN:1,BEST:1,WORST:1,WHY:1};
+        if(!SKIP[t] && !knownSet[t] && t.length >= 2){
+          mentionedTickers.push(t);
+        }
+      });
+    }
 
     // Show typing indicator
     addTypingIndicator();
@@ -7893,6 +7912,7 @@ document.addEventListener('visibilitychange',function(){
       body: JSON.stringify({
         question: question,
         market_data: marketData,
+        lookup_tickers: mentionedTickers,
         history: chatHistory.slice(-6)
       })
     }).then(function(res){
