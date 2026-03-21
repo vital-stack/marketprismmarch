@@ -1515,6 +1515,87 @@
     border-radius: 4px; border: 1px solid rgba(255,255,255,0.10);
     background: rgba(255,255,255,0.04); flex-shrink: 0;
   }
+  /* ── Scholar Inline Chat ── */
+  .ticker-scholar-chat {
+    border: 1px solid var(--mp-border);
+    border-radius: 12px;
+    background: var(--mp-surface);
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .ticker-scholar-messages {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .ticker-scholar-msg {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .ticker-scholar-msg.user {
+    flex-direction: row-reverse;
+  }
+  .ticker-scholar-msg-avatar {
+    width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: Inter, sans-serif; font-size: 11px; font-weight: 600;
+  }
+  .ticker-scholar-msg.user .ticker-scholar-msg-avatar {
+    background: rgba(59,130,246,0.15); color: #60a5fa;
+  }
+  .ticker-scholar-msg.assistant .ticker-scholar-msg-avatar {
+    background: rgba(0,222,148,0.12); color: #00de94;
+  }
+  .ticker-scholar-msg-bubble {
+    font-family: Inter, sans-serif; font-size: 13px; line-height: 1.6;
+    color: var(--mp-text-primary); max-width: 85%;
+  }
+  .ticker-scholar-msg.user .ticker-scholar-msg-bubble {
+    background: rgba(59,130,246,0.08);
+    padding: 8px 14px; border-radius: 12px 12px 2px 12px;
+  }
+  .ticker-scholar-msg.assistant .ticker-scholar-msg-bubble {
+    padding: 2px 0;
+  }
+  .ticker-scholar-msg-bubble p { margin: 0 0 8px; }
+  .ticker-scholar-msg-bubble p:last-child { margin-bottom: 0; }
+  .ticker-scholar-msg-bubble strong { color: #fff; }
+  .ticker-scholar-msg-bubble a { color: var(--mp-blue); text-decoration: none; }
+  .ticker-scholar-msg-bubble a:hover { text-decoration: underline; }
+  .ticker-scholar-msg-bubble ul { margin: 4px 0 8px 16px; padding: 0; }
+  .ticker-scholar-msg-bubble li { margin-bottom: 4px; }
+  .ticker-scholar-msg-bubble code { background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 4px; font-family: Inter, sans-serif; font-size: 12px; }
+  .ticker-scholar-typing-dots span {
+    display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+    background: rgba(255,255,255,0.3); margin-right: 4px;
+    animation: scholarDot 1.4s infinite ease-in-out both;
+  }
+  .ticker-scholar-typing-dots span:nth-child(2) { animation-delay: 0.16s; }
+  .ticker-scholar-typing-dots span:nth-child(3) { animation-delay: 0.32s; }
+  @keyframes scholarDot { 0%,80%,100%{transform:scale(0);} 40%{transform:scale(1);} }
+  .ticker-scholar-input-wrap {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 16px;
+    border-top: 1px solid var(--mp-border);
+  }
+  .ticker-scholar-follow-input {
+    flex: 1; background: transparent; border: none; outline: none;
+    font-family: Inter, sans-serif; font-size: 13px; color: var(--mp-text-primary);
+  }
+  .ticker-scholar-follow-input::placeholder { color: var(--mp-text-tertiary); }
+  .ticker-scholar-send {
+    width: 28px; height: 28px; border-radius: 6px; border: none;
+    background: rgba(59,130,246,0.15); color: #60a5fa;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0; transition: background 0.2s;
+  }
+  .ticker-scholar-send:hover:not(:disabled) { background: rgba(59,130,246,0.25); }
+  .ticker-scholar-send:disabled { opacity: 0.3; cursor: default; }
+  .ticker-scholar-send svg { width: 14px; height: 14px; }
 
   /* ── TAB BAR ── */
   .tk-tab-bar {
@@ -1984,11 +2065,20 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
     </div>
   </div>
 
-  <!-- ── Scholar Ask Bar ── -->
+  <!-- ── Scholar Ask Bar + Inline Chat ── -->
   <div class="ticker-scholar-bar" id="ticker-scholar-bar">
     <svg class="ticker-scholar-icon" viewBox="0 0 32 32" fill="none"><path d="M16 28c-6 0-10-4.5-10-10C6 12 10 6 16 6s10 6 10 12c0 5.5-4 10-10 10z" fill="none" stroke="var(--mp-blue)" stroke-width="1.5" opacity="0.6"/><circle cx="12" cy="15" r="2" fill="var(--mp-blue)" opacity="0.7"/><circle cx="20" cy="15" r="2" fill="var(--mp-blue)" opacity="0.7"/></svg>
     <input class="ticker-scholar-input" id="ticker-scholar-input" placeholder="Ask Market Scholar about this ticker..." autocomplete="off">
     <span class="ticker-scholar-tag">AI</span>
+  </div>
+  <div class="ticker-scholar-chat" id="ticker-scholar-chat" style="display:none;">
+    <div class="ticker-scholar-messages" id="ticker-scholar-messages"></div>
+    <div class="ticker-scholar-input-wrap">
+      <input class="ticker-scholar-follow-input" id="ticker-scholar-follow" placeholder="Ask a follow-up..." autocomplete="off">
+      <button class="ticker-scholar-send" id="ticker-scholar-send" disabled>
+        <svg viewBox="0 0 14 14" fill="none"><path d="M1 7h12M8 2l5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
   </div>
 
   <!-- ═══ TAB BAR ═══ -->
@@ -4085,12 +4175,17 @@ async function loadStoriesFeed() {
 }
 
 // ── Boot ─────────────────────────────────────────────────────────────────────
+var _tickerHeroData = null;
+var _tickerPulseData = null;
+
 async function refreshAll() {
   if (!TICKER) return;
   const [heroData, pulse] = await Promise.all([
     loadHero(),
     loadPulse()
   ]);
+  _tickerHeroData = heroData;
+  _tickerPulseData = pulse;
   const fairValue = heroData?.fair_value ?? pulse?.fair_value ?? null;
 
   renderDiagStrip(pulse);
@@ -4128,26 +4223,223 @@ document.addEventListener('visibilitychange', () => {
   if (!document.hidden) refreshAll();
 });
 
-// ── Ticker Scholar bar → navigate to dashboard with Scholar query ──
+// ── Ticker Scholar — inline AI chat ──────────────────────────────────────────
 (function(){
   var scholarInput = document.getElementById('ticker-scholar-input');
   var scholarBar = document.getElementById('ticker-scholar-bar');
-  if(scholarInput){
-    // Pre-fill placeholder with current ticker
-    if(typeof TICKER !== 'undefined' && TICKER){
-      scholarInput.placeholder = 'Ask Market Scholar about ' + TICKER + '...';
-    }
-    scholarInput.addEventListener('keydown', function(e){
-      if(e.key === 'Enter' && this.value.trim()){
-        e.preventDefault();
-        var q = encodeURIComponent(this.value.trim());
-        window.location.href = '/dashboard?scholar=' + q;
-      }
-    });
-    if(scholarBar){
-      scholarBar.addEventListener('click', function(){ scholarInput.focus(); });
-    }
+  var chatPanel = document.getElementById('ticker-scholar-chat');
+  var msgArea = document.getElementById('ticker-scholar-messages');
+  var followInput = document.getElementById('ticker-scholar-follow');
+  var sendBtn = document.getElementById('ticker-scholar-send');
+  var chatHistory = [];
+  var isStreaming = false;
+
+  if(!scholarInput || !chatPanel) return;
+
+  if(typeof TICKER !== 'undefined' && TICKER){
+    scholarInput.placeholder = 'Ask Market Scholar about ' + TICKER + '...';
   }
+
+  function mdToHtml(text){
+    text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+    text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    text = text.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>');
+    text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+    var paragraphs = text.split(/\n{2,}/);
+    text = paragraphs.map(function(p){
+      p = p.trim();
+      if(!p) return '';
+      if(/^[-•]\s/.test(p)){
+        var items = p.split(/\n/).map(function(li){ return '<li>'+li.replace(/^[-•]\s*/,'')+'</li>'; }).join('');
+        return '<ul>'+items+'</ul>';
+      }
+      p = p.replace(/\n/g, '<br>');
+      return '<p>'+p+'</p>';
+    }).join('');
+    return text;
+  }
+
+  function addMsg(role, content){
+    var el = document.createElement('div');
+    el.className = 'ticker-scholar-msg ' + role;
+    var avatar = role === 'assistant' ? '<svg viewBox="0 0 32 32" fill="none" style="width:16px;height:16px;"><path d="M16 28c-6 0-10-4.5-10-10C6 12 10 6 16 6s10 6 10 12c0 5.5-4 10-10 10z" fill="none" stroke="#00de94" stroke-width="1.5" opacity="0.7"/><circle cx="12" cy="15" r="2" fill="#00de94" opacity="0.8"/><circle cx="20" cy="15" r="2" fill="#00de94" opacity="0.8"/></svg>' : 'Y';
+    el.innerHTML = '<div class="ticker-scholar-msg-avatar">'+avatar+'</div>'
+      +'<div class="ticker-scholar-msg-bubble">'+(role === 'assistant' ? mdToHtml(content) : esc(content))+'</div>';
+    msgArea.appendChild(el);
+    msgArea.scrollTop = msgArea.scrollHeight;
+    return el;
+  }
+
+  function addTyping(){
+    var el = document.createElement('div');
+    el.className = 'ticker-scholar-msg assistant';
+    el.id = 'ticker-scholar-typing';
+    el.innerHTML = '<div class="ticker-scholar-msg-avatar"><svg viewBox="0 0 32 32" fill="none" style="width:16px;height:16px;"><path d="M16 28c-6 0-10-4.5-10-10C6 12 10 6 16 6s10 6 10 12c0 5.5-4 10-10 10z" fill="none" stroke="#00de94" stroke-width="1.5" opacity="0.7"/><circle cx="12" cy="15" r="2" fill="#00de94" opacity="0.8"/><circle cx="20" cy="15" r="2" fill="#00de94" opacity="0.8"/></svg></div>'
+      +'<div class="ticker-scholar-msg-bubble"><div class="ticker-scholar-typing-dots"><span></span><span></span><span></span></div></div>';
+    msgArea.appendChild(el);
+    msgArea.scrollTop = msgArea.scrollHeight;
+  }
+
+  function removeTyping(){
+    var el = document.getElementById('ticker-scholar-typing');
+    if(el) el.remove();
+  }
+
+  function buildTickerContext(){
+    var data = [];
+    var h = (typeof _tickerHeroData !== 'undefined') ? _tickerHeroData : null;
+    var p = (typeof _tickerPulseData !== 'undefined') ? _tickerPulseData : null;
+    if(h){
+      data.push({
+        ticker: h.ticker || TICKER,
+        price: h.price,
+        price_change_pct: h.price_change_pct,
+        narrative_state: h.narrative_state,
+        prism_verdict: h.prism_verdict,
+        primary_driver: h.primary_driver || (p && p.primary_driver),
+        story_claim: h.story_claim,
+        sector_name: h.sector_name,
+        pe_ratio: h.pe_ratio,
+        fair_value: h.fair_value,
+        guidance_direction: h.guidance_direction,
+        narrative_health: h.narrative_health,
+        narrative_trend: h.narrative_trend,
+        institutional_positioning: h.institutional_positioning,
+        forensic_rebuttal: h.forensic_rebuttal,
+        stock_type: h.stock_type,
+        days_to_earnings: h.days_to_earnings
+      });
+    }
+    return data;
+  }
+
+  function sendMessage(question){
+    if(isStreaming) return;
+    isStreaming = true;
+
+    // Show chat panel
+    chatPanel.style.display = 'block';
+    addMsg('user', question);
+    chatHistory.push({ role: 'user', content: question });
+
+    // Prepend ticker context to the question
+    var contextNote = '[User is viewing the ticker page for ' + TICKER + '. Answer specifically about ' + TICKER + '.]';
+    var marketData = buildTickerContext();
+
+    addTyping();
+
+    fetch('/api/scholar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        question: contextNote + ' ' + question,
+        market_data: marketData,
+        lookup_tickers: [TICKER],
+        history: chatHistory.slice(-6)
+      })
+    }).then(function(res){
+      if(res.status === 429){
+        removeTyping();
+        addMsg('assistant', 'Rate limit reached. Please wait a moment.');
+        isStreaming = false;
+        return;
+      }
+      if(!res.ok){
+        return res.json().then(function(err){
+          removeTyping();
+          addMsg('assistant', err.error || 'Something went wrong.');
+          isStreaming = false;
+        });
+      }
+      removeTyping();
+      var assistantEl = addMsg('assistant', '');
+      var bubble = assistantEl.querySelector('.ticker-scholar-msg-bubble');
+      var fullText = '';
+      var reader = res.body.getReader();
+      var decoder = new TextDecoder();
+      var buffer = '';
+
+      function readChunk(){
+        reader.read().then(function(result){
+          if(result.done){
+            chatHistory.push({ role: 'assistant', content: fullText });
+            isStreaming = false;
+            sendBtn.disabled = !followInput.value.trim();
+            return;
+          }
+          buffer += decoder.decode(result.value, { stream: true });
+          var lines = buffer.split('\n');
+          buffer = lines.pop();
+          for(var i = 0; i < lines.length; i++){
+            var line = lines[i].trim();
+            if(!line.startsWith('data: ')) continue;
+            var d = line.slice(6);
+            if(d === '[DONE]'){
+              chatHistory.push({ role: 'assistant', content: fullText });
+              isStreaming = false;
+              sendBtn.disabled = !followInput.value.trim();
+              return;
+            }
+            try{
+              var parsed = JSON.parse(d);
+              if(parsed.text){
+                fullText += parsed.text;
+                bubble.innerHTML = mdToHtml(fullText);
+                msgArea.scrollTop = msgArea.scrollHeight;
+              }
+            }catch(e){}
+          }
+          readChunk();
+        }).catch(function(){
+          isStreaming = false;
+          if(!fullText) addMsg('assistant', 'Connection lost. Please try again.');
+          else chatHistory.push({ role: 'assistant', content: fullText });
+        });
+      }
+      readChunk();
+    }).catch(function(){
+      removeTyping();
+      addMsg('assistant', 'Could not reach the Scholar. Check your connection.');
+      isStreaming = false;
+    });
+  }
+
+  // Enter on main bar
+  scholarInput.addEventListener('keydown', function(e){
+    if(e.key === 'Enter' && this.value.trim()){
+      e.preventDefault();
+      var q = this.value.trim();
+      this.value = '';
+      sendMessage(q);
+    }
+  });
+
+  // Focus bar on click
+  if(scholarBar){
+    scholarBar.addEventListener('click', function(){ scholarInput.focus(); });
+  }
+
+  // Follow-up input
+  followInput.addEventListener('input', function(){
+    sendBtn.disabled = !this.value.trim() || isStreaming;
+  });
+  followInput.addEventListener('keydown', function(e){
+    if(e.key === 'Enter' && !e.shiftKey && this.value.trim()){
+      e.preventDefault();
+      var q = this.value.trim();
+      this.value = '';
+      sendBtn.disabled = true;
+      sendMessage(q);
+    }
+  });
+  sendBtn.addEventListener('click', function(){
+    if(!isStreaming && followInput.value.trim()){
+      var q = followInput.value.trim();
+      followInput.value = '';
+      sendBtn.disabled = true;
+      sendMessage(q);
+    }
+  });
 })();
 </script>
 <script>
