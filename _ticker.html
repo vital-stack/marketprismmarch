@@ -2650,9 +2650,6 @@ async function loadHero() {
       `<span class="hero-insight-badge" style="background:${b.bg};color:${b.color};border:1px solid ${b.border};">${esc(b.label)}</span>`
     ).join('');
 
-    // Build company context line from narrative + sector
-    const companyContext = r.mda_snippet || '';
-
     document.getElementById('hero').innerHTML = `
       <div class="hero-left">
         ${(function(t){var d=window.MP_DOMAINS&&window.MP_DOMAINS[t];return d?'<img src="https://www.google.com/s2/favicons?domain='+d+'&sz=128" alt="'+t+'" class="hero-ticker-logo" onerror="this.style.display=\'none\'">':'';})( r.ticker )}
@@ -2661,7 +2658,6 @@ async function loadHero() {
           ${insightHtml || `<span class="hero-state-badge ${stateClass(r.narrative_state)}">${esc(r.narrative_state || '—')}</span>`}
         </div>
         <div class="hero-claim">${esc(r.primary_driver || r.story_claim || '')}</div>
-        ${companyContext ? `<div class="hero-company-ctx">${esc(companyContext)}</div>` : ''}
         ${r.sector_name ? `<div class="hero-sector">${esc(r.sector_name)}</div>` : ''}
       </div>
       <div class="hero-right">
