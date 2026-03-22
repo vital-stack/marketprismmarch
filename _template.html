@@ -8648,6 +8648,13 @@ var BOARDS=[
     var r=await sq('narrative_scorecard?select=ticker,fvd_pct,vms&snapshot_date=eq.'+encodeURIComponent(date)+'&fvd_pct=gt.0&order=fvd_pct.desc&limit=10');
     return r.map(function(x){var g=x.fvd_pct||0;return{name:x.ticker,meta:'Reliability: '+Math.round(x.vms||0),score:Math.round(g),scoreDisplay:g>=1000?(Math.round(g/100)/10)+'k%':Math.round(g)+'%',link:'/ticker/'+encodeURIComponent(x.ticker)};});
   }},
+  {id:'undervalued',title:'Under Fair Value',sub:'Price below fundamental fair value · potential opportunities',color:'#00DE94',bg:'rgba(0,222,148,0.12)',scoreLabel:'Discount %',
+  fetch:async function(){
+    var date=await latestDate('narrative_scorecard');
+    if(!date) return[];
+    var r=await sq('narrative_scorecard?select=ticker,fvd_pct,vms,energy_remaining,verdict,narrative&snapshot_date=eq.'+encodeURIComponent(date)+'&fvd_pct=lt.0&order=fvd_pct.asc&limit=10');
+    return r.map(function(x){var disc=Math.abs(x.fvd_pct||0);var narr=(x.narrative||'').slice(0,55);return{name:x.ticker,meta:'Reliability: '+Math.round(x.vms||0)+' · Energy: '+Math.round(x.energy_remaining||0)+'% · '+(x.verdict||'')+(!narr?'':' · '+narr),score:Math.round(disc*10)/10,scoreDisplay:'-'+Math.round(disc)+'%',_scoreColor:'#00DE94',link:'/ticker/'+encodeURIComponent(x.ticker)};});
+  }},
   {id:'alltime',title:'All-Time Narrative Traps',sub:'Highest hype gaps ever recorded',color:'#FF4D4D',bg:'rgba(255,77,77,0.12)',scoreLabel:'Peak Gap %',
   fetch:async function(){
     var r=await sq('narrative_scorecard?select=ticker,fvd_pct,snapshot_date&fvd_pct=gt.0&order=fvd_pct.desc&limit=300');
@@ -8770,6 +8777,7 @@ var BOARDS=[
 
 function rankClass(i){return i===0?' lb-r1':i===1?' lb-r2':i===2?' lb-r3':'';}
 function scoreColor(id,score){
+  if(id==='undervalued') return '#00DE94';
   if(id==='safest'||id==='combos') return score>=85?'#00DE94':score>=65?'#FFB800':'#FF4D4D';
   if(id==='hype'||id==='alltime') return score>=500?'#FF4D4D':score>=150?'#FFB800':'#A0A8B0';
   if(id==='decaying') return score>0.05?'#FF4D4D':score>0.02?'#FFB800':'#00DE94';
