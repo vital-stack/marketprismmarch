@@ -2948,7 +2948,7 @@ body{
 .mm-node{position:absolute;transform:translate(-50%,-50%);cursor:pointer;transition:transform .15s;}
 .mm-node:hover{transform:translate(-50%,-50%) scale(1.08);}
 #mm-stage:active{cursor:grabbing;}
-@media(max-width:767px){#mm-stage{height:340px;}.mm-mbt{font-size:10px;padding:4px 9px;}}
+@media(max-width:767px){#mm-stage{height:420px;}.mm-mbt{font-size:10px;padding:4px 9px;}}
 /* ── LEADERBOARD ── */
 .lb-section{background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:14px;overflow:hidden;}
 .lb-head{padding:14px 16px;border-bottom:1px solid var(--mp-border);display:flex;align-items:center;gap:10px;}
@@ -3716,11 +3716,11 @@ body{
             <button class="mm-mbt" onclick="mmMode('cluster',this)">Story Clusters</button>
           </div>
         </div>
-        <div id="mm-stage" style="position:relative;width:100%;height:480px;overflow:hidden;cursor:grab;background:var(--mp-deep);">
+        <div id="mm-stage" style="position:relative;width:100%;height:580px;overflow:hidden;cursor:grab;background:var(--mp-deep);">
           <canvas id="mm-canvas" style="position:absolute;top:0;left:0;pointer-events:none;"></canvas>
+          <button id="mm-back" onclick="mmBack()" style="display:none;position:absolute;top:14px;left:14px;z-index:10;background:rgba(12,16,24,0.85);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:#00AEFF;font-size:12px;font-weight:600;padding:7px 14px;cursor:pointer;font-family:var(--font-body);transition:all .15s;letter-spacing:.02em;" onmouseenter="this.style.background='rgba(0,174,255,0.12)';this.style.borderColor='#00AEFF'" onmouseleave="this.style.background='rgba(12,16,24,0.85)';this.style.borderColor='rgba(255,255,255,0.12)'">← Back</button>
         </div>
         <div id="mm-detail" style="padding:16px 20px;min-height:90px;border-top:1px solid var(--mp-border);">
-          <button id="mm-back" onclick="mmBack()" style="display:none;background:none;border:1px solid var(--mp-border);border-radius:6px;color:var(--mp-text-secondary);font-size:11px;padding:4px 10px;cursor:pointer;margin-bottom:10px;font-family:var(--font-body);">← Back to themes</button>
           <div id="mm-detail-inner"><p style="font-size:13px;color:var(--mp-text-tertiary);font-style:italic;">Click any theme to explore connected tickers — click a ticker to read its narrative.</p></div>
         </div>
       </div>
@@ -8342,82 +8342,76 @@ window.MP_DOMAINS   = MP_DOMAINS;
 <script>
 /* ── NARRATIVE MAP ── */
 (function(){
-var MM={
-  macro:[
-    {id:'ai',label:'AI Capex',color:'#00AEFF',tickers:[
-      {sym:'NVDA',name:'NVIDIA',chg:2.1,rel:94,days:22,narr:"NVIDIA's data center revenue is surging as hyperscalers accelerate AI infrastructure spending, driven by H100 and Blackwell GPU demand."},
-      {sym:'AVGO',name:'Broadcom',chg:-2.5,rel:69,days:8,narr:"Broadcom's custom AI chips and Tomahawk 6 switches are capturing significant AI revenue as hyperscalers build proprietary silicon."},
-      {sym:'VRT',name:'Vertiv',chg:-1.2,rel:62,days:5,narr:"Vertiv's data center cooling infrastructure is seeing surging demand from AI build-out, with backlog hitting record levels."},
-      {sym:'NEE',name:'NextEra',chg:-3.1,rel:80,days:14,narr:"AI data centers are driving electricity demand growth, benefiting NextEra's renewable energy generation pipeline."},
-      {sym:'AMAT',name:'Applied Materials',chg:-1.6,rel:84,days:12,narr:"Applied Materials benefits from rising demand for semiconductor equipment driven by AI memory deals with Micron and SK Hynix."},
-    ]},
-    {id:'ev',label:'China EV',color:'#FF4D4D',tickers:[
-      {sym:'TSLA',name:'Tesla',chg:-0.04,rel:90,days:30,narr:"Tesla is losing UK and European market share to Chinese EV manufacturers, particularly BYD, as competition intensifies globally."},
-      {sym:'NIO',name:'NIO',chg:4.59,rel:55,days:12,narr:"NIO's profitability struggles and weak European performance create uncertainty despite aggressive new model launches."},
-      {sym:'F',name:'Ford',chg:-2.74,rel:60,days:18,narr:"Investor confidence in Ford's EV competitiveness against Chinese rivals keeps the stock afloat despite weak earnings."},
-    ]},
-    {id:'fomc',label:'FOMC / Rates',color:'#FFB800',tickers:[
-      {sym:'JPM',name:'JPMorgan',chg:-0.38,rel:44,days:33,narr:"JPMorgan faces headwinds from AI disruption to traditional banking and adverse tariff effects beginning in 2026."},
-      {sym:'DUK',name:'Duke Energy',chg:-1.9,rel:75,days:18,narr:"Duke Energy is expected to grow earnings via nuclear tax credits and debt refinancing despite a planned stock offering."},
-      {sym:'AWK',name:'American Water',chg:-0.73,rel:75,days:31,narr:"Rising water consumption from AI data centers is expected to drive financial gains for American Water Works."},
-    ]},
-    {id:'defense',label:'Defense',color:'#7B61FF',tickers:[
-      {sym:'RTX',name:'RTX Corp',chg:-1.98,rel:65,days:12,narr:"Rising geopolitical tensions in the Middle East are expected to increase government contracts for Raytheon's missile systems."},
-      {sym:'J',name:'Jacobs Solutions',chg:-0.6,rel:91,days:30,narr:"Jacobs Solutions' long-term government contracts and acquisitions suggest the stock may be undervalued at current levels."},
-    ]},
-    {id:'comm',label:'Commodities',color:'#00DE94',tickers:[
-      {sym:'FCX',name:'Freeport-McMoRan',chg:-3.89,rel:58,days:23,narr:"FCX is expected to decline to $38 due to macro risks and Grasberg mine concerns, despite strong copper demand."},
-      {sym:'SCCO',name:'Southern Copper',chg:-4.88,rel:82,days:14,narr:"Southern Copper's stock is susceptible to declines if copper production volume disappoints even with high copper prices."},
-      {sym:'CCJ',name:'Cameco',chg:-4.61,rel:33,days:5,narr:"Cameco faces pressure from declining uranium prices and risk-off market sentiment ahead of its annual meeting."},
-    ]},
-  ],
-  sector:[
-    {id:'tech',label:'Technology',color:'#00AEFF',tickers:[
-      {sym:'SMCI',name:'Super Micro',chg:-33.6,rel:49,days:4,narr:"SMCI declining due to revenue slowdown and co-founder's alleged chip smuggling to China, eroding investor confidence."},
-      {sym:'AMD',name:'AMD',chg:-1.91,rel:90,days:38,narr:"AMD faces weak demand for older chips while pivoting to AI, with export restrictions creating additional uncertainty."},
-      {sym:'INTC',name:'Intel',chg:1.01,rel:60,days:15,narr:"Intel's turnaround is undermined by rising operating expenses that offset gains from AI-related demand."},
-      {sym:'IBM',name:'IBM',chg:-1.82,rel:70,days:24,narr:"AI-driven code modernization tools are expected to decrease demand for IBM's traditional IT services."},
-    ]},
-    {id:'energy',label:'Energy',color:'#FFB800',tickers:[
-      {sym:'HAL',name:'Halliburton',chg:-1.78,rel:83,days:24,narr:"Halliburton faces downward pressure from an oversupplied oil market, geopolitical instability, and declining rig counts."},
-      {sym:'XOM',name:'ExxonMobil',chg:0.5,rel:49,days:42,narr:"ExxonMobil's market cap is projected to reach $1 trillion due to escalating oil prices driven by US-Iran tensions."},
-      {sym:'CVX',name:'Chevron',chg:1.2,rel:74,days:90,narr:"Chevron is rallying on oil prices despite insider selling, Venezuela challenges, and acquisition uncertainty."},
-    ]},
-    {id:'consumer',label:'Consumer',color:'#FF4D4D',tickers:[
-      {sym:'MCD',name:"McDonald's",chg:-0.22,rel:59,days:27,narr:"McDonald's is expected to report strong Q4 earnings due to increased sales, potentially boosting its stock price."},
-      {sym:'SBUX',name:'Starbucks',chg:-3.24,rel:74,days:90,narr:"Starbucks' new supply-chain hub is expected to improve margins and boost institutional investor confidence."},
-      {sym:'TGT',name:'Target',chg:-1.35,rel:73,days:38,narr:"Target's loyalty program investments are expected to boost sales, but cybersecurity threats require attention."},
-    ]},
-    {id:'util',label:'Utilities',color:'#00DE94',tickers:[
-      {sym:'NEE',name:'NextEra',chg:-3.08,rel:80,days:14,narr:"AI data center electricity demand is expected to drive growth in NextEra Energy's renewable generation business."},
-      {sym:'WTRG',name:'Essential Util.',chg:-0.94,rel:78,days:24,narr:"Essential Utilities faces margin pressure and has issued $500M in senior notes amid reduced growth."},
-      {sym:'DUK',name:'Duke Energy',chg:-1.9,rel:75,days:18,narr:"Duke Energy is expected to grow earnings via nuclear tax credits and debt refinancing."},
-    ]},
-  ],
-  cluster:[
-    {id:'ai-chain',label:'AI Supply Chain',color:'#00AEFF',tickers:[
-      {sym:'NVDA',name:'NVIDIA',chg:2.1,rel:94,days:22,narr:"NVIDIA leads the AI infrastructure build-out as the dominant GPU supplier for hyperscaler data centers."},
-      {sym:'AVGO',name:'Broadcom',chg:-2.5,rel:69,days:8,narr:"Broadcom is capturing custom AI chip revenue as hyperscalers build proprietary silicon to reduce NVIDIA dependency."},
-      {sym:'AMAT',name:'Applied Materials',chg:-1.58,rel:84,days:12,narr:"Applied Materials benefits from rising demand for semiconductor equipment driven by AI memory deals."},
-      {sym:'LRCX',name:'Lam Research',chg:1.89,rel:85,days:13,narr:"Lam Research stock expected to rise on strong chip equipment demand from AI data center build-out."},
-    ]},
-    {id:'ev-tariff',label:'EV + Tariffs',color:'#FF4D4D',tickers:[
-      {sym:'TSLA',name:'Tesla',chg:-0.04,rel:90,days:30,narr:"Tesla is losing market share to Chinese EV makers as competition intensifies globally."},
-      {sym:'GM',name:'General Motors',chg:-1.2,rel:55,days:18,narr:"GM's quarterly results will be weak due to EV production problems and rising manufacturing costs."},
-      {sym:'F',name:'Ford',chg:-2.74,rel:60,days:18,narr:"Investor confidence in Ford's EV strategy against Chinese rivals keeps the stock afloat."},
-      {sym:'NIO',name:'NIO',chg:4.59,rel:55,days:12,narr:"NIO's profitability struggles and declining European business create ongoing uncertainty."},
-    ]},
-    {id:'nuclear',label:'Nuclear Renaissance',color:'#00DE94',tickers:[
-      {sym:'CEG',name:'Constellation',chg:-2.1,rel:64,days:8,narr:"Constellation's AI-driven nuclear pivot after the Calpine acquisition is projected to underperform the S&P 500."},
-      {sym:'CCJ',name:'Cameco',chg:-4.61,rel:33,days:5,narr:"Cameco faces pressure from declining uranium prices and risk-off market sentiment."},
-      {sym:'LEU',name:'Centrus Energy',chg:-9.56,rel:82,days:14,narr:"Centrus LEU faces supply chain disruptions and scarcity of nuclear fuel components."},
-    ]},
-  ]
-};
-var mmMode='macro',mmActiveTheme=null,mmNodes=[],mmW=0,mmH=480;
+var MM={macro:[],sector:[],cluster:[]};
+var MM_LOADED=false;
+var THEME_COLORS=['#00AEFF','#FF4D4D','#FFB800','#7B61FF','#00DE94','#38C8B8','#FF6B35','#E040FB','#64FFDA','#FFD740','#FF80AB','#B388FF','#82B1FF','#CCFF90','#FF9E80'];
+async function mmLoadData(){
+  if(MM_LOADED) return;
+  try{
+    var user=await ensureDashboardAuth();
+    if(!user) return;
+    /* --- Macro Themes from narrative_analyses --- */
+    var narrRows=await sq('narrative_analyses?select=macro_theme,ticker,narrative_text,verdict,sentiment_score,contagion_risk&macro_theme=not.is.null&order=contagion_risk.desc&limit=500');
+    var macroMap={};
+    narrRows.forEach(function(r){
+      if(!r.macro_theme||!r.ticker) return;
+      if(!macroMap[r.macro_theme]) macroMap[r.macro_theme]={tickers:{},risk:0,n:0};
+      macroMap[r.macro_theme].risk+=(r.contagion_risk||0);
+      macroMap[r.macro_theme].n++;
+      if(!macroMap[r.macro_theme].tickers[r.ticker]) macroMap[r.macro_theme].tickers[r.ticker]={narr:r.narrative_text||r.verdict||'',verdict:r.verdict||''};
+    });
+    /* Enrich macro tickers with price data from daily_trade_labels */
+    var dtlDate=await latestDate('daily_trade_labels');
+    var dtlRows=[];
+    if(dtlDate) dtlRows=await sq('daily_trade_labels?select=ticker,price_change_pct,price,prism_verdict,primary_narrative,story_claim,signal_strength,vms,sector_name,label&snapshot_date=eq.'+encodeURIComponent(dtlDate)+'&limit=500');
+    var dtlMap={};
+    dtlRows.forEach(function(r){if(r.ticker) dtlMap[r.ticker]=r;});
+    var macroArr=Object.keys(macroMap).sort(function(a,b){return macroMap[b].n-macroMap[a].n;}).slice(0,15);
+    MM.macro=macroArr.map(function(theme,idx){
+      var m=macroMap[theme];
+      var tickers=Object.keys(m.tickers).slice(0,12).map(function(sym){
+        var d=dtlMap[sym]||{};
+        var narrText=m.tickers[sym].narr||(d.story_claim||d.primary_narrative||'');
+        return{sym:sym,name:sym,chg:d.price_change_pct||0,rel:Math.round(d.vms||d.signal_strength||0),days:0,narr:narrText.slice(0,180)};
+      });
+      return{id:'macro-'+idx,label:theme.replace(/_/g,' '),color:THEME_COLORS[idx%THEME_COLORS.length],tickers:tickers};
+    });
+    /* --- Sectors from daily_trade_labels grouped by sector_name --- */
+    var sectorMap={};
+    dtlRows.forEach(function(r){
+      if(!r.sector_name||!r.ticker) return;
+      if(!sectorMap[r.sector_name]) sectorMap[r.sector_name]=[];
+      if(sectorMap[r.sector_name].length<12){
+        sectorMap[r.sector_name].push({sym:r.ticker,name:r.ticker,chg:r.price_change_pct||0,rel:Math.round(r.vms||r.signal_strength||0),days:0,narr:(r.story_claim||r.primary_narrative||'').slice(0,180)});
+      }
+    });
+    var sectorArr=Object.keys(sectorMap).sort(function(a,b){return sectorMap[b].length-sectorMap[a].length;}).slice(0,15);
+    MM.sector=sectorArr.map(function(sect,idx){
+      return{id:'sect-'+idx,label:sect,color:THEME_COLORS[idx%THEME_COLORS.length],tickers:sectorMap[sect]};
+    });
+    /* --- Story Clusters: group by prism_verdict from daily_trade_labels --- */
+    var clusterMap={};
+    dtlRows.forEach(function(r){
+      var key=r.prism_verdict||r.label;
+      if(!key||!r.ticker) return;
+      if(!clusterMap[key]) clusterMap[key]=[];
+      if(clusterMap[key].length<12){
+        clusterMap[key].push({sym:r.ticker,name:r.ticker,chg:r.price_change_pct||0,rel:Math.round(r.vms||r.signal_strength||0),days:0,narr:(r.story_claim||r.primary_narrative||'').slice(0,180)});
+      }
+    });
+    var clusterArr=Object.keys(clusterMap).filter(function(k){return clusterMap[k].length>=2;}).sort(function(a,b){return clusterMap[b].length-clusterMap[a].length;}).slice(0,15);
+    MM.cluster=clusterArr.map(function(cl,idx){
+      return{id:'cl-'+idx,label:cl,color:THEME_COLORS[idx%THEME_COLORS.length],tickers:clusterMap[cl]};
+    });
+    MM_LOADED=true;
+  }catch(e){
+    console.error('Mindmap data load error:',e);
+  }
+}
+var mmMode='macro',mmActiveTheme=null,mmNodes=[],mmW=0,mmH=580;
 var mmPanX=0,mmPanY=0,mmDrag=false,mmDS=null,mmPS=null;
 var mmStage=null,mmCvs=null,mmCtx=null,mmInited=false;
-function mmInit(){
+async function mmInit(){
   mmStage=document.getElementById('mm-stage');
   mmCvs=document.getElementById('mm-canvas');
   if(!mmStage||!mmCvs) return;
@@ -8427,6 +8421,7 @@ function mmInit(){
   mmStage.addEventListener('mousedown',function(e){if(e.target!==mmStage&&e.target!==mmCvs) return;mmDrag=true;mmDS={x:e.clientX,y:e.clientY};mmPS={x:mmPanX,y:mmPanY};});
   window.addEventListener('mousemove',function(e){if(!mmDrag) return;mmPanX=mmPS.x+(e.clientX-mmDS.x);mmPanY=mmPS.y+(e.clientY-mmDS.y);mmRedraw();});
   window.addEventListener('mouseup',function(){mmDrag=false;});
+  await mmLoadData();
   mmInited=true; mmDraw();
 }
 function mmDraw(){
@@ -8434,16 +8429,21 @@ function mmDraw(){
   mmStage.querySelectorAll('.mm-node').forEach(function(n){n.remove();});
   mmNodes=[]; mmPanX=0; mmPanY=0;
   mmCtx.clearRect(0,0,mmW,mmH);
-  var themes=MM[mmMode], cx=mmW/2, cy=mmH/2;
+  var themes=MM[mmMode]||[], cx=mmW/2, cy=mmH/2;
+  var backBtn=document.getElementById('mm-back');
   if(!mmActiveTheme){
+    if(backBtn) backBtn.style.display='none';
     mmMakeNode(cx,cy,'center',null,null);
-    var R=Math.min(mmW,mmH)*0.3;
-    themes.forEach(function(t,i){var a=(i/themes.length)*Math.PI*2-Math.PI/2;var tx=cx+Math.cos(a)*R,ty=cy+Math.sin(a)*R;mmMakeLine(cx,cy,tx,ty,'rgba(255,255,255,0.07)',1);mmMakeNode(tx,ty,'theme',t,null);});
+    var n=themes.length||1;
+    var R=n>8?Math.min(mmW,mmH)*0.38:Math.min(mmW,mmH)*0.3;
+    themes.forEach(function(t,i){var a=(i/n)*Math.PI*2-Math.PI/2;var tx=cx+Math.cos(a)*R,ty=cy+Math.sin(a)*R;mmMakeLine(cx,cy,tx,ty,'rgba(255,255,255,0.07)',1);mmMakeNode(tx,ty,'theme',t,null);});
   } else {
+    if(backBtn) backBtn.style.display='inline-block';
     var t=mmActiveTheme;
     mmMakeNode(cx,cy,'theme-center',t,null);
-    var R2=Math.min(mmW,mmH)*0.33;
-    t.tickers.forEach(function(tk,i){var a=(i/t.tickers.length)*Math.PI*2-Math.PI/2;var tx=cx+Math.cos(a)*R2,ty=cy+Math.sin(a)*R2;mmMakeLine(cx,cy,tx,ty,t.color+'55',1.5);mmMakeNode(tx,ty,'ticker',t,tk);});
+    var tn=t.tickers.length||1;
+    var R2=tn>8?Math.min(mmW,mmH)*0.38:Math.min(mmW,mmH)*0.33;
+    t.tickers.forEach(function(tk,i){var a=(i/tn)*Math.PI*2-Math.PI/2;var tx=cx+Math.cos(a)*R2,ty=cy+Math.sin(a)*R2;mmMakeLine(cx,cy,tx,ty,t.color+'55',1.5);mmMakeNode(tx,ty,'ticker',t,tk);});
   }
 }
 function mmMakeLine(x1,y1,x2,y2,color,w){mmCtx.beginPath();mmCtx.moveTo(x1,y1);mmCtx.lineTo(x2,y2);mmCtx.strokeStyle=color;mmCtx.lineWidth=w;mmCtx.stroke();}
@@ -8472,21 +8472,21 @@ function mmMakeNode(x,y,type,theme,ticker){
 function mmRedraw(){
   mmCtx.clearRect(0,0,mmW,mmH);
   var cx=mmW/2+mmPanX, cy=mmH/2+mmPanY;
-  if(!mmActiveTheme){var R=Math.min(mmW,mmH)*0.3;MM[mmMode].forEach(function(t,i){var a=(i/MM[mmMode].length)*Math.PI*2-Math.PI/2;mmMakeLine(cx,cy,cx+Math.cos(a)*R,cy+Math.sin(a)*R,'rgba(255,255,255,0.07)',1);});}
-  else{var R2=Math.min(mmW,mmH)*0.33;mmActiveTheme.tickers.forEach(function(tk,i){var a=(i/mmActiveTheme.tickers.length)*Math.PI*2-Math.PI/2;mmMakeLine(cx,cy,cx+Math.cos(a)*R2,cy+Math.sin(a)*R2,mmActiveTheme.color+'55',1.5);});}
+  var themes=MM[mmMode]||[];
+  if(!mmActiveTheme){var n=themes.length||1;var R=n>8?Math.min(mmW,mmH)*0.38:Math.min(mmW,mmH)*0.3;themes.forEach(function(t,i){var a=(i/n)*Math.PI*2-Math.PI/2;mmMakeLine(cx,cy,cx+Math.cos(a)*R,cy+Math.sin(a)*R,'rgba(255,255,255,0.07)',1);});}
+  else{var tn=mmActiveTheme.tickers.length||1;var R2=tn>8?Math.min(mmW,mmH)*0.38:Math.min(mmW,mmH)*0.33;mmActiveTheme.tickers.forEach(function(tk,i){var a=(i/tn)*Math.PI*2-Math.PI/2;mmMakeLine(cx,cy,cx+Math.cos(a)*R2,cy+Math.sin(a)*R2,mmActiveTheme.color+'55',1.5);});}
   mmNodes.forEach(function(n){n.el.style.left=(n.bx+mmPanX)+'px';n.el.style.top=(n.by+mmPanY)+'px';});
 }
 function mmShowTicker(tk,color){
-  document.getElementById('mm-back').style.display='inline-block';
   var rc=tk.rel>=75?'#00DE94':tk.rel>=55?'#FFB800':'#FF4D4D';
   var dc=tk.days<=7?'#FF4D4D':tk.days<=20?'#FFB800':'#00DE94';
   var cc=tk.chg>0?'#00DE94':'#FF4D4D';
   document.getElementById('mm-detail-inner').innerHTML='<div style="display:flex;align-items:center;gap:10px;"><a href="/ticker/'+encodeURIComponent(tk.sym)+'" style="font-size:18px;font-weight:700;color:var(--mp-text-primary);text-decoration:none;transition:color 0.2s;" onmouseenter="this.style.color=\'#00AEFF\'" onmouseleave="this.style.color=\'var(--mp-text-primary)\'">'+tk.sym+'</a><a href="/ticker/'+encodeURIComponent(tk.sym)+'" style="font-size:11px;color:#00AEFF;text-decoration:none;padding:3px 10px;border-radius:6px;background:rgba(0,174,255,0.08);border:1px solid rgba(0,174,255,0.15);transition:background 0.2s;" onmouseenter="this.style.background=\'rgba(0,174,255,0.15)\'" onmouseleave="this.style.background=\'rgba(0,174,255,0.08)\'">View analysis &rarr;</a></div><div style="font-size:12px;color:var(--mp-text-secondary);margin-top:2px;">'+tk.name+'</div><div style="font-size:13px;color:var(--mp-text-secondary);line-height:1.55;margin-top:10px;font-style:italic;font-family:var(--font-display);border-left:2px solid '+color+';padding-left:12px;">"'+tk.narr+'"</div><div style="display:flex;gap:20px;margin-top:12px;flex-wrap:wrap;"><div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--mp-text-tertiary);margin-bottom:2px;">Reliability</div><div style="font-size:16px;font-weight:700;color:'+rc+';">'+tk.rel+'</div></div><div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--mp-text-tertiary);margin-bottom:2px;">Days Left</div><div style="font-size:16px;font-weight:700;color:'+dc+';">'+tk.days+'d</div></div><div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--mp-text-tertiary);margin-bottom:2px;">Price Change</div><div style="font-size:16px;font-weight:700;color:'+cc+';">'+(tk.chg>0?'+':'')+tk.chg.toFixed(2)+'%</div></div></div>';
 }
-function mmClearDetail(){document.getElementById('mm-back').style.display='none';document.getElementById('mm-detail-inner').innerHTML='<p style="font-size:13px;color:var(--mp-text-tertiary);font-style:italic;">Click a ticker to read its narrative.</p>';}
-window.mmBack=function(){mmActiveTheme=null;mmDraw();document.getElementById('mm-back').style.display='none';document.getElementById('mm-detail-inner').innerHTML='<p style="font-size:13px;color:var(--mp-text-tertiary);font-style:italic;">Click any theme to explore — click a ticker to read its narrative.</p>';};
+function mmClearDetail(){document.getElementById('mm-detail-inner').innerHTML='<p style="font-size:13px;color:var(--mp-text-tertiary);font-style:italic;">Click a ticker to read its narrative.</p>';}
+window.mmBack=function(){mmActiveTheme=null;mmDraw();document.getElementById('mm-detail-inner').innerHTML='<p style="font-size:13px;color:var(--mp-text-tertiary);font-style:italic;">Click any theme to explore — click a ticker to read its narrative.</p>';};
 window.mmMode=function(m,btn){mmMode=m;mmActiveTheme=null;document.querySelectorAll('.mm-mbt').forEach(function(b){b.classList.remove('mm-on');});btn.classList.add('mm-on');mmDraw();window.mmBack();};
-window.mmSearch=function(q){if(!q.trim()) return;q=q.toLowerCase();var themes=MM[mmMode];for(var i=0;i<themes.length;i++){var t=themes[i];if(t.label.toLowerCase().includes(q)){mmActiveTheme=t;mmDraw();mmClearDetail();return;}for(var j=0;j<t.tickers.length;j++){var tk=t.tickers[j];if(tk.sym.toLowerCase().includes(q)||tk.name.toLowerCase().includes(q)||tk.narr.toLowerCase().includes(q)){mmActiveTheme=t;mmDraw();setTimeout(function(_tk,_c){mmShowTicker(_tk,_c);}(tk,t.color),50);return;}}}};
+window.mmSearch=function(q){if(!q.trim()) return;q=q.toLowerCase();var themes=MM[mmMode]||[];for(var i=0;i<themes.length;i++){var t=themes[i];if(t.label.toLowerCase().includes(q)){mmActiveTheme=t;mmDraw();mmClearDetail();return;}for(var j=0;j<t.tickers.length;j++){var tk=t.tickers[j];if(tk.sym.toLowerCase().includes(q)||tk.name.toLowerCase().includes(q)||tk.narr.toLowerCase().includes(q)){mmActiveTheme=t;mmDraw();setTimeout(function(_tk,_c){mmShowTicker(_tk,_c);}(tk,t.color),50);return;}}}};
 var _origST=window.switchTab;
 window.switchTab=function(id,btn){_origST(id,btn);if(id==='mindmap'){setTimeout(function(){if(!mmInited){mmInit();}else{mmW=document.getElementById('mm-stage').offsetWidth;mmCvs.width=mmW;mmDraw();}},60);}};
 })();
