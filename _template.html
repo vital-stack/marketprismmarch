@@ -2949,6 +2949,31 @@ body{
 .mm-node:hover{transform:translate(-50%,-50%) scale(1.08);}
 #mm-stage:active{cursor:grabbing;}
 @media(max-width:767px){#mm-stage{height:340px;}.mm-mbt{font-size:10px;padding:4px 9px;}}
+/* ── LEADERBOARD ── */
+.lb-section{background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:14px;overflow:hidden;}
+.lb-head{padding:14px 16px;border-bottom:1px solid var(--mp-border);display:flex;align-items:center;gap:10px;}
+.lb-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.lb-htitle{font-size:13px;font-weight:600;color:var(--mp-text-primary);}
+.lb-hsub{font-size:11px;color:var(--mp-text-tertiary);margin-top:1px;}
+.lb-rows{padding:4px 0;}
+.lb-row{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.04);transition:background .15s;cursor:pointer;text-decoration:none;color:inherit;}
+.lb-row:last-child{border-bottom:none;}
+.lb-row:hover{background:rgba(255,255,255,0.03);}
+.lb-rank{font-size:12px;font-weight:700;color:rgba(255,255,255,0.25);width:18px;flex-shrink:0;text-align:center;}
+.lb-r1{color:#FFB800!important;}.lb-r2{color:#A0A8B0!important;}.lb-r3{color:#CD7F32!important;}
+.lb-av{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;letter-spacing:.02em;}
+.lb-info{flex:1;min-width:0;}
+.lb-name{font-size:13px;font-weight:500;color:var(--mp-text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lb-meta{font-size:11px;color:var(--mp-text-tertiary);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lb-bar-wrap{height:2px;background:rgba(255,255,255,0.07);border-radius:1px;margin-top:5px;}
+.lb-bar{height:100%;border-radius:1px;}
+.lb-score{flex-shrink:0;text-align:right;}
+.lb-sval{font-size:14px;font-weight:700;line-height:1;}
+.lb-slbl{font-size:10px;color:var(--mp-text-tertiary);margin-top:2px;}
+.lb-arr{font-size:11px;color:var(--mp-text-tertiary);flex-shrink:0;margin-left:2px;}
+.lb-row:hover .lb-arr{color:#00AEFF;}
+.lb-empty{padding:20px 16px;font-size:13px;color:var(--mp-text-tertiary);}
+@media(max-width:767px){#lb-grid{grid-template-columns:1fr!important;}}
 </style>
 </head>
 <body>
@@ -3077,6 +3102,11 @@ body{
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="3" cy="5" r="2"/><circle cx="21" cy="5" r="2"/><circle cx="3" cy="19" r="2"/><circle cx="21" cy="19" r="2"/><path d="M5 5.5l5 5M14 13.5l5 5M5 18.5l5-5M14 10.5l5-5"/></svg>
       Narrative Map
       <span class="nav-item-badge teal" id="nav-badge-mindmap">New</span>
+    </button>
+    <button class="nav-item" data-tab="leaderboard" onclick="switchTab('leaderboard',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+      Leaderboard
+      <span class="nav-item-badge teal" id="nav-badge-leaderboard">New</span>
     </button>
     <button class="nav-item" data-tab="calendar" onclick="switchTab('calendar',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/><path d="M8.25 15h.008v.008H8.25V15zm0 2.25h.008v.008H8.25V17.25zm2.25-2.25h.008v.008H10.5V15zm0 2.25h.008v.008H10.5V17.25zm2.25-2.25h.008v.008H12.75V15zm0 2.25h.008v.008H12.75V17.25zm2.25-2.25h.008v.008H15V15zm0 2.25h.008v.008H15V17.25z"/></svg>
@@ -3695,6 +3725,23 @@ body{
     </div>
 
     <!-- ══════════════════════════════════════
+         TAB: LEADERBOARD
+    ═══════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-leaderboard">
+      <div class="page-header" style="margin-bottom:24px;">
+        <div class="ph-eyebrow">Market Prism · Intelligence Rankings</div>
+        <h1>The Leaderboard.</h1>
+        <span class="ph-italic">Who's moving markets. What's driving them.</span>
+        <p>Live rankings across sources, figures, themes, and signals — pulled daily from the narrative scorecard.</p>
+      </div>
+      <div id="lb-loading" style="text-align:center;padding:60px 0;color:var(--mp-text-tertiary);font-size:14px;">Loading rankings…</div>
+      <div id="lb-error" style="display:none;color:#FF4D4D;font-size:13px;padding:20px 0;"></div>
+      <div id="lb-body" style="display:none;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;" id="lb-grid"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
          TAB: TRADING CALENDAR
     ═══════════════════════════════════════ -->
     <div class="tab-panel" id="tab-calendar">
@@ -3855,8 +3902,8 @@ document.querySelectorAll('.page-header p').forEach(function(p,i){
   if(i===0) return;
 });
 // ── Tab switching ─────────────────────────────────────────────────────────────
-var TABS = ['daily','discover','sector','snapshots','memes','narrative','cards','calendar','trapradar','mindmap'];
-var TAB_TITLES = {daily:'Daily Brief',discover:'Discover',sector:'Sector Pulse',snapshots:'Ticker Snapshots',memes:'Market Sharing',narrative:'Narrative History',cards:'Trading Cards',calendar:'Trading Calendar',trapradar:'Trap Radar',mindmap:'Narrative Map'};
+var TABS = ['daily','discover','sector','snapshots','memes','narrative','cards','calendar','trapradar','mindmap','leaderboard'];
+var TAB_TITLES = {daily:'Daily Brief',discover:'Discover',sector:'Sector Pulse',snapshots:'Ticker Snapshots',memes:'Market Sharing',narrative:'Narrative History',cards:'Trading Cards',calendar:'Trading Calendar',trapradar:'Trap Radar',mindmap:'Narrative Map',leaderboard:'Leaderboard'};
 function switchTab(id, btn){
   TABS.forEach(function(t){
     document.getElementById('tab-'+t).classList.toggle('active', t===id);
@@ -8440,6 +8487,192 @@ window.mmMode=function(m,btn){mmMode=m;mmActiveTheme=null;document.querySelector
 window.mmSearch=function(q){if(!q.trim()) return;q=q.toLowerCase();var themes=MM[mmMode];for(var i=0;i<themes.length;i++){var t=themes[i];if(t.label.toLowerCase().includes(q)){mmActiveTheme=t;mmDraw();mmClearDetail();return;}for(var j=0;j<t.tickers.length;j++){var tk=t.tickers[j];if(tk.sym.toLowerCase().includes(q)||tk.name.toLowerCase().includes(q)||tk.narr.toLowerCase().includes(q)){mmActiveTheme=t;mmDraw();setTimeout(function(_tk,_c){mmShowTicker(_tk,_c);}(tk,t.color),50);return;}}}};
 var _origST=window.switchTab;
 window.switchTab=function(id,btn){_origST(id,btn);if(id==='mindmap'){setTimeout(function(){if(!mmInited){mmInit();}else{mmW=document.getElementById('mm-stage').offsetWidth;mmCvs.width=mmW;mmDraw();}},60);}};
+})();
+</script>
+
+<script>
+/* ── LEADERBOARD — 12 BOARDS ── */
+(function(){
+var LB_BOOTED=false;
+
+function hdrs(){return{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Accept':'application/json'};}
+async function sq(path){
+  var r=await fetch(SUPABASE_URL+'/rest/v1/'+path,{headers:hdrs()});
+  if(!r.ok) throw new Error('Supabase '+r.status);
+  return r.json();
+}
+async function latestDate(table){
+  var r=await sq(table+'?select=snapshot_date&order=snapshot_date.desc&limit=1');
+  return r[0]&&r[0].snapshot_date;
+}
+function ini(s){return(s||'').split(/\s+/).slice(0,2).map(function(w){return(w[0]||'').toUpperCase();}).join('')||'??';}
+function lbEsc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+
+var BOARDS=[
+  {id:'sources',title:'Top Sources',sub:'By credibility & prediction accuracy',color:'#00AEFF',bg:'rgba(0,174,255,0.12)',scoreLabel:'Trust Score',
+  fetch:async function(){
+    var r=await sq('source_scores?select=source_name,srs,total_claims,correct_claims,source_type&order=srs.desc&limit=10');
+    return r.map(function(x){return{name:x.source_name||'Unknown',meta:(x.source_type||'Media')+' \u00b7 '+(x.total_claims||0)+' claims',score:Math.round((x.srs||0)*10)/10,link:'#narrative'};});
+  }},
+  {id:'figures',title:'Top Market Figures',sub:'By overall credibility score',color:'#7B61FF',bg:'rgba(123,97,255,0.12)',scoreLabel:'Credibility',
+  fetch:async function(){
+    var r=await sq('market_figures?select=canonical_name,figure_type,firm_name,overall_credibility,total_calls&order=overall_credibility.desc&limit=10');
+    return r.map(function(x){return{name:x.canonical_name||'Unknown',meta:(x.figure_type||'Figure')+' \u00b7 '+(x.firm_name||'Independent'),score:Math.round((x.overall_credibility||0)*10)/10,link:'#'};});
+  }},
+  {id:'themes',title:'Top Themes',sub:'Average narrative strength \u00b7 latest snapshot',color:'#FFB800',bg:'rgba(255,184,0,0.12)',scoreLabel:'Avg NRS',
+  fetch:async function(){
+    var date=await latestDate('narrative_scorecard');
+    if(!date) return[];
+    var r=await sq('narrative_scorecard?select=macro_theme,nrs&snapshot_date=eq.'+encodeURIComponent(date)+'&macro_theme=not.is.null&limit=500');
+    var map={};
+    r.forEach(function(x){if(!x.macro_theme)return;if(!map[x.macro_theme])map[x.macro_theme]={s:0,n:0};map[x.macro_theme].s+=(x.nrs||0);map[x.macro_theme].n++;});
+    return Object.keys(map).map(function(t){return{name:t,meta:map[t].n+' tickers',score:Math.round(map[t].s/map[t].n*10)/10,link:'#mindmap'};}).sort(function(a,b){return b.score-a.score;}).slice(0,10);
+  }},
+  {id:'political',title:'Macro & Political Events',sub:'By market narrative impact score',color:'#FF4D4D',bg:'rgba(255,77,77,0.12)',scoreLabel:'Impact',
+  fetch:async function(){
+    var r=await sq('macro_narrative_events?select=event_name,event_type,event_date,ticker_count,impact_score&order=impact_score.desc&limit=10');
+    return r.map(function(x){return{name:x.event_name||'Event',meta:(x.event_type||'Macro')+' \u00b7 '+(x.event_date||'')+' \u00b7 '+(x.ticker_count||0)+' tickers',score:Math.round(x.impact_score||0),link:'#discover'};});
+  }},
+  {id:'hype',title:'Highest Hype Gap',sub:'Price vs. fundamental fair value \u00b7 today',color:'#FF4D4D',bg:'rgba(255,77,77,0.12)',scoreLabel:'Hype Gap %',
+  fetch:async function(){
+    var date=await latestDate('narrative_scorecard');
+    if(!date) return[];
+    var r=await sq('narrative_scorecard?select=ticker,fvd_pct,vms&snapshot_date=eq.'+encodeURIComponent(date)+'&fvd_pct=gt.0&order=fvd_pct.desc&limit=10');
+    return r.map(function(x){var g=x.fvd_pct||0;return{name:x.ticker,meta:'Reliability: '+Math.round(x.vms||0),score:Math.round(g),scoreDisplay:g>=1000?(Math.round(g/100)/10)+'k%':Math.round(g)+'%',link:'/ticker/'+encodeURIComponent(x.ticker)};});
+  }},
+  {id:'alltime',title:'All-Time Narrative Traps',sub:'Highest hype gaps ever recorded',color:'#FF4D4D',bg:'rgba(255,77,77,0.12)',scoreLabel:'Peak Gap %',
+  fetch:async function(){
+    var r=await sq('narrative_scorecard?select=ticker,fvd_pct,snapshot_date&fvd_pct=gt.0&order=fvd_pct.desc&limit=300');
+    var seen={},best=[];
+    r.forEach(function(x){if(!seen[x.ticker]){seen[x.ticker]=true;best.push(x);}});
+    return best.slice(0,10).map(function(x){var g=x.fvd_pct||0;return{name:x.ticker,meta:'Peak: '+(g>=1000?(Math.round(g/100)/10)+'k%':Math.round(g)+'%')+' \u00b7 '+x.snapshot_date,score:Math.round(g),scoreDisplay:g>=1000?(Math.round(g/100)/10)+'k%':Math.round(g)+'%',link:'/ticker/'+encodeURIComponent(x.ticker)};});
+  }},
+  {id:'safest',title:'Safest Buys',sub:'Highest reliability score \u00b7 today',color:'#00DE94',bg:'rgba(0,222,148,0.12)',scoreLabel:'Reliability',
+  fetch:async function(){
+    var date=await latestDate('narrative_scorecard');
+    if(!date) return[];
+    var r=await sq('narrative_scorecard?select=ticker,vms,srs,acs,verdict&snapshot_date=eq.'+encodeURIComponent(date)+'&vms=gt.0&order=vms.desc&limit=10');
+    return r.map(function(x){return{name:x.ticker,meta:'SRS: '+Math.round(x.srs||0)+' \u00b7 ACS: '+Math.round(x.acs||0)+' \u00b7 '+(x.verdict||''),score:Math.round((x.vms||0)*10)/10,link:'/ticker/'+encodeURIComponent(x.ticker)};});
+  }},
+  {id:'coordinated',title:'Most Coordinated Narratives',sub:'Highest coordination score \u00b7 possible campaigns',color:'#FF4D4D',bg:'rgba(255,77,77,0.12)',scoreLabel:'Coord Score',
+  fetch:async function(){
+    var date=await latestDate('narrative_scorecard');
+    if(!date) return[];
+    var r=await sq('narrative_scorecard?select=ticker,coordination_score,coordination_class,narrative&snapshot_date=eq.'+encodeURIComponent(date)+'&coordination_score=gt.0&order=coordination_score.desc&limit=10');
+    return r.map(function(x){return{name:x.ticker,meta:(x.coordination_class||'Unknown')+' \u00b7 '+(x.narrative||'').slice(0,55)+'\u2026',score:Math.round((x.coordination_score||0)*10)/10,link:'/ticker/'+encodeURIComponent(x.ticker)};});
+  }},
+  {id:'decaying',title:'Fastest Decaying Stories',sub:'Narratives burning out soonest',color:'#FFB800',bg:'rgba(255,184,0,0.12)',scoreLabel:'Decay Rate',
+  fetch:async function(){
+    var date=await latestDate('narrative_scorecard');
+    if(!date) return[];
+    var r=await sq('narrative_scorecard?select=ticker,decay_rate,half_life,predicted_exhaustion_days,narrative&snapshot_date=eq.'+encodeURIComponent(date)+'&decay_rate=gt.0&order=decay_rate.desc&limit=10');
+    return r.map(function(x){return{name:x.ticker,meta:'Half-life: '+Math.round(x.half_life||0)+'d \u00b7 Exhaustion: '+Math.round(x.predicted_exhaustion_days||0)+'d',score:Math.round((x.decay_rate||0)*1000)/1000,link:'/ticker/'+encodeURIComponent(x.ticker)};});
+  }},
+  {id:'suspicion',title:'Highest Manipulation Risk',sub:'Suspicion score \u2014 possible narrative attacks',color:'#7B61FF',bg:'rgba(123,97,255,0.12)',scoreLabel:'Suspicion',
+  fetch:async function(){
+    var date=await latestDate('narrative_scorecard');
+    if(!date) return[];
+    var r=await sq('narrative_scorecard?select=ticker,suspicion_score,suspicion_class,coordination_class,narrative&snapshot_date=eq.'+encodeURIComponent(date)+'&suspicion_score=gt.0&order=suspicion_score.desc&limit=10');
+    return r.map(function(x){return{name:x.ticker,meta:(x.suspicion_class||'Unknown')+' \u00b7 '+(x.coordination_class||''),score:Math.round((x.suspicion_score||0)*10)/10,link:'/ticker/'+encodeURIComponent(x.ticker)};});
+  }},
+  {id:'omission',title:'Biggest Omission Gaps',sub:'Key facts missing from media coverage',color:'#38C8B8',bg:'rgba(56,200,184,0.12)',scoreLabel:'Omission Gap',
+  fetch:async function(){
+    var date=await latestDate('narrative_scorecard');
+    if(!date) return[];
+    var r=await sq('narrative_scorecard?select=ticker,omission_gap_score,drift_score,drift_explanation,narrative&snapshot_date=eq.'+encodeURIComponent(date)+'&omission_gap_score=gt.0&order=omission_gap_score.desc&limit=10');
+    return r.map(function(x){return{name:x.ticker,meta:(x.drift_explanation||x.narrative||'').slice(0,60)+'\u2026',score:x.omission_gap_score||0,link:'/ticker/'+encodeURIComponent(x.ticker)};});
+  }},
+  {id:'combos',title:'Best Signal Combinations',sub:'Highest win-rate signal combos \u00b7 all time',color:'#00DE94',bg:'rgba(0,222,148,0.12)',scoreLabel:'Win Rate %',
+  fetch:async function(){
+    var r=await sq('signal_combo_stats?select=signal_combo,trades,win_rate,avg_return_pct,sharpe_ratio&order=win_rate.desc&limit=10');
+    return r.map(function(x){return{name:x.signal_combo||'Combo',meta:(x.trades||0)+' trades \u00b7 Avg return: '+(Math.round((x.avg_return_pct||0)*100)/100)+'% \u00b7 Sharpe: '+(Math.round((x.sharpe_ratio||0)*100)/100),score:Math.round((x.win_rate||0)*10)/10,link:'#discover'};});
+  }},
+];
+
+function rankClass(i){return i===0?' lb-r1':i===1?' lb-r2':i===2?' lb-r3':'';}
+function scoreColor(id,score){
+  if(id==='safest'||id==='combos') return score>=85?'#00DE94':score>=65?'#FFB800':'#FF4D4D';
+  if(id==='hype'||id==='alltime') return score>=500?'#FF4D4D':score>=150?'#FFB800':'#A0A8B0';
+  if(id==='decaying') return score>0.05?'#FF4D4D':score>0.02?'#FFB800':'#00DE94';
+  return null;
+}
+function renderBoard(b,rows){
+  var max=rows.reduce(function(m,r){return Math.max(m,r.score);},1);
+  var rowsHtml=rows.map(function(r,i){
+    var pct=Math.round(r.score/max*100);
+    var sc=scoreColor(b.id,r.score)||b.color;
+    var disp=r.scoreDisplay!=null?r.scoreDisplay:r.score;
+    return '<a class="lb-row" href="'+lbEsc(r.link||'#')+'">'
+      +'<div class="lb-rank'+rankClass(i)+'">'+(i+1)+'</div>'
+      +'<div class="lb-av" style="background:'+b.bg+';color:'+b.color+';">'+lbEsc(ini(r.name))+'</div>'
+      +'<div class="lb-info">'
+        +'<div class="lb-name">'+lbEsc(r.name)+'</div>'
+        +'<div class="lb-meta">'+lbEsc(r.meta||'')+'</div>'
+        +'<div class="lb-bar-wrap"><div class="lb-bar" style="width:'+pct+'%;background:'+b.color+';"></div></div>'
+      +'</div>'
+      +'<div class="lb-score">'
+        +'<div class="lb-sval" style="color:'+sc+';">'+lbEsc(String(disp))+'</div>'
+        +'<div class="lb-slbl">'+lbEsc(b.scoreLabel)+'</div>'
+      +'</div>'
+      +'<div class="lb-arr">\u203a</div>'
+    +'</a>';
+  }).join('');
+  return '<div class="lb-section">'
+    +'<div class="lb-head">'
+      +'<div class="lb-icon" style="background:'+b.bg+';">'
+        +'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="'+b.color+'" stroke-width="2" stroke-linecap="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>'
+      +'</div>'
+      +'<div><div class="lb-htitle">'+lbEsc(b.title)+'</div><div class="lb-hsub">'+lbEsc(b.sub)+'</div></div>'
+    +'</div>'
+    +'<div class="lb-rows">'+rowsHtml+'</div>'
+  +'</div>';
+}
+function renderEmpty(b){
+  return '<div class="lb-section">'
+    +'<div class="lb-head"><div class="lb-icon" style="background:'+b.bg+';">'
+      +'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="'+b.color+'" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/></svg>'
+    +'</div><div><div class="lb-htitle">'+lbEsc(b.title)+'</div><div class="lb-hsub">No data available</div></div></div>'
+    +'<div class="lb-empty">No rankings data in this table yet.</div>'
+  +'</div>';
+}
+
+async function loadLeaderboard(){
+  if(LB_BOOTED) return;
+  LB_BOOTED=true;
+  var loading=document.getElementById('lb-loading');
+  var error=document.getElementById('lb-error');
+  var body=document.getElementById('lb-body');
+  var grid=document.getElementById('lb-grid');
+  try{
+    var user=await ensureDashboardAuth();
+    if(!user) return;
+    if(!SUPABASE_URL||!SUPABASE_ANON) throw new Error('Supabase not configured');
+    var results=await Promise.allSettled(BOARDS.map(function(b){return b.fetch();}));
+    var html='';
+    results.forEach(function(res,i){
+      var b=BOARDS[i];
+      if(res.status==='fulfilled'&&res.value&&res.value.length){
+        html+=renderBoard(b,res.value);
+      } else {
+        console.warn('Leaderboard board "'+b.id+'" failed:',res.reason||'empty');
+        html+=renderEmpty(b);
+      }
+    });
+    grid.innerHTML=html;
+    if(loading) loading.style.display='none';
+    if(body) body.style.display='block';
+  } catch(e){
+    if(loading) loading.style.display='none';
+    if(error){error.style.display='block';error.textContent='Error loading leaderboard: '+e.message;}
+    console.error('Leaderboard error:',e);
+  }
+}
+
+var _origST2=window.switchTab;
+window.switchTab=function(id,btn){
+  _origST2(id,btn);
+  if(id==='leaderboard') setTimeout(loadLeaderboard,50);
+};
 })();
 </script>
 </body>
