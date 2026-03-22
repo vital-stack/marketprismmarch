@@ -3711,9 +3711,9 @@ body{
             style="flex:1;min-width:180px;background:var(--mp-deep);border:1px solid var(--mp-border);border-radius:10px;color:var(--mp-text-primary);font-size:13px;padding:8px 14px;outline:none;font-family:var(--font-body);"
             oninput="mmSearch(this.value)" onfocus="this.style.borderColor='#00AEFF'" onblur="this.style.borderColor='var(--mp-border)'">
           <div style="display:flex;gap:4px;">
-            <button class="mm-mbt mm-on" onclick="mmMode('macro',this)">Macro Themes</button>
-            <button class="mm-mbt" onclick="mmMode('sector',this)">Sectors</button>
-            <button class="mm-mbt" onclick="mmMode('cluster',this)">Story Clusters</button>
+            <button class="mm-mbt mm-on" data-mm="macro" onclick="mmMode('macro',this)">Macro Themes</button>
+            <button class="mm-mbt" data-mm="sector" onclick="mmMode('sector',this)">Sectors</button>
+            <button class="mm-mbt" data-mm="cluster" onclick="mmMode('cluster',this)">Story Clusters</button>
           </div>
         </div>
         <div id="mm-stage" style="position:relative;width:100%;height:580px;overflow:hidden;cursor:grab;background:var(--mp-deep);">
@@ -8419,6 +8419,9 @@ var MM_FALLBACK={
       {sym:'SMCI',name:'Super Micro',chg:-3.6,rel:49,days:4,narr:"SMCI declining due to revenue slowdown and co-founder's alleged chip smuggling to China."},
       {sym:'AMD',name:'AMD',chg:-1.91,rel:90,days:38,narr:"AMD faces weak demand for older chips while pivoting to AI with export restrictions."},
       {sym:'INTC',name:'Intel',chg:1.01,rel:60,days:15,narr:"Intel's turnaround is undermined by rising operating expenses offsetting AI demand gains."},
+      {sym:'RDDT',name:'Reddit',chg:1.85,rel:65,days:12,narr:"Reddit's ad revenue growth and AI data licensing deals are driving user monetization."},
+      {sym:'SNAP',name:'Snap',chg:-2.1,rel:45,days:8,narr:"Snap faces headwinds from ad market competition and slowing user growth."},
+      {sym:'PLTR',name:'Palantir',chg:3.2,rel:76,days:15,narr:"Palantir's government and commercial AI platform adoption continues to expand."},
     ]},
     {id:'energy',label:'Energy',color:'#FFB800',tickers:[
       {sym:'HAL',name:'Halliburton',chg:-1.78,rel:83,days:24,narr:"Halliburton faces downward pressure from an oversupplied oil market and declining rig counts."},
@@ -8604,7 +8607,39 @@ function mmShowTicker(tk,color){
 function mmClearDetail(){document.getElementById('mm-detail-inner').innerHTML='<p style="font-size:13px;color:var(--mp-text-tertiary);font-style:italic;">Click a ticker to read its narrative.</p>';}
 window.mmBack=function(){mmActiveTheme=null;mmDraw();document.getElementById('mm-detail-inner').innerHTML='<p style="font-size:13px;color:var(--mp-text-tertiary);font-style:italic;">Click any theme to explore — click a ticker to read its narrative.</p>';};
 window.mmMode=function(m,btn){mmMode=m;mmActiveTheme=null;document.querySelectorAll('.mm-mbt').forEach(function(b){b.classList.remove('mm-on');});btn.classList.add('mm-on');mmDraw();window.mmBack();};
-window.mmSearch=function(q){if(!q.trim()) return;q=q.toLowerCase();var themes=MM[mmMode]||[];for(var i=0;i<themes.length;i++){var t=themes[i];if(t.label.toLowerCase().includes(q)){mmActiveTheme=t;mmDraw();mmClearDetail();return;}for(var j=0;j<t.tickers.length;j++){var tk=t.tickers[j];if(tk.sym.toLowerCase().includes(q)||tk.name.toLowerCase().includes(q)||tk.narr.toLowerCase().includes(q)){mmActiveTheme=t;mmDraw();setTimeout(function(_tk,_c){mmShowTicker(_tk,_c);}(tk,t.color),50);return;}}}};
+window.mmSearch=function(q){
+  if(!q.trim()) return;
+  q=q.toLowerCase();
+  function switchMode(mode){
+    if(mmMode!==mode){
+      mmMode=mode;
+      document.querySelectorAll('.mm-mbt').forEach(function(b){b.classList.remove('mm-on');});
+      var tgt=document.querySelector('.mm-mbt[data-mm="'+mode+'"]');
+      if(tgt) tgt.classList.add('mm-on');
+    }
+  }
+  /* Search across ALL modes, not just the current one — start with current mode first */
+  var modes=[mmMode].concat(['macro','sector','cluster'].filter(function(m){return m!==mmMode;}));
+  for(var m=0;m<modes.length;m++){
+    var themes=MM[modes[m]]||[];
+    for(var i=0;i<themes.length;i++){
+      var t=themes[i];
+      if(t.label.toLowerCase().includes(q)){
+        switchMode(modes[m]);
+        mmActiveTheme=t;mmDraw();mmClearDetail();return;
+      }
+      for(var j=0;j<t.tickers.length;j++){
+        var tk=t.tickers[j];
+        if(tk.sym.toLowerCase().includes(q)||tk.name.toLowerCase().includes(q)||tk.narr.toLowerCase().includes(q)){
+          switchMode(modes[m]);
+          mmActiveTheme=t;mmDraw();
+          (function(_tk,_c){setTimeout(function(){mmShowTicker(_tk,_c);},50);})(tk,t.color);
+          return;
+        }
+      }
+    }
+  }
+};
 var _origST=window.switchTab;
 window.switchTab=function(id,btn){_origST(id,btn);if(id==='mindmap'){setTimeout(function(){if(!mmInited){mmInit();}else{mmW=document.getElementById('mm-stage').offsetWidth;mmCvs.width=mmW;mmDraw();}},60);}};
 })();
