@@ -8342,18 +8342,83 @@ window.MP_DOMAINS   = MP_DOMAINS;
 <script>
 /* ── NARRATIVE MAP ── */
 (function(){
-var MM={macro:[],sector:[],cluster:[]};
+var MM_FALLBACK={
+  macro:[
+    {id:'ai',label:'AI Capex',color:'#00AEFF',tickers:[
+      {sym:'NVDA',name:'NVIDIA',chg:2.1,rel:94,days:22,narr:"NVIDIA's data center revenue is surging as hyperscalers accelerate AI infrastructure spending."},
+      {sym:'AVGO',name:'Broadcom',chg:-2.5,rel:69,days:8,narr:"Broadcom's custom AI chips are capturing significant revenue as hyperscalers build proprietary silicon."},
+      {sym:'VRT',name:'Vertiv',chg:-1.2,rel:62,days:5,narr:"Vertiv's data center cooling infrastructure is seeing surging demand from AI build-out."},
+      {sym:'AMAT',name:'Applied Materials',chg:-1.6,rel:84,days:12,narr:"Applied Materials benefits from rising demand for semiconductor equipment driven by AI memory deals."},
+    ]},
+    {id:'ev',label:'China EV',color:'#FF4D4D',tickers:[
+      {sym:'TSLA',name:'Tesla',chg:-0.04,rel:90,days:30,narr:"Tesla is losing market share to Chinese EV manufacturers as competition intensifies globally."},
+      {sym:'NIO',name:'NIO',chg:4.59,rel:55,days:12,narr:"NIO's profitability struggles and weak European performance create uncertainty."},
+      {sym:'F',name:'Ford',chg:-2.74,rel:60,days:18,narr:"Investor confidence in Ford's EV competitiveness against Chinese rivals keeps the stock afloat."},
+    ]},
+    {id:'fomc',label:'FOMC / Rates',color:'#FFB800',tickers:[
+      {sym:'JPM',name:'JPMorgan',chg:-0.38,rel:44,days:33,narr:"JPMorgan faces headwinds from AI disruption to traditional banking and tariff effects."},
+      {sym:'DUK',name:'Duke Energy',chg:-1.9,rel:75,days:18,narr:"Duke Energy is expected to grow earnings via nuclear tax credits and debt refinancing."},
+    ]},
+    {id:'defense',label:'Defense',color:'#7B61FF',tickers:[
+      {sym:'RTX',name:'RTX Corp',chg:-1.98,rel:65,days:12,narr:"Rising geopolitical tensions are expected to increase government contracts for Raytheon's missile systems."},
+      {sym:'J',name:'Jacobs Solutions',chg:-0.6,rel:91,days:30,narr:"Jacobs Solutions' long-term government contracts suggest the stock may be undervalued."},
+    ]},
+    {id:'comm',label:'Commodities',color:'#00DE94',tickers:[
+      {sym:'FCX',name:'Freeport-McMoRan',chg:-3.89,rel:58,days:23,narr:"FCX is expected to decline due to macro risks and Grasberg mine concerns."},
+      {sym:'SCCO',name:'Southern Copper',chg:-4.88,rel:82,days:14,narr:"Southern Copper's stock is susceptible to declines if copper production disappoints."},
+      {sym:'CCJ',name:'Cameco',chg:-4.61,rel:33,days:5,narr:"Cameco faces pressure from declining uranium prices and risk-off sentiment."},
+    ]},
+  ],
+  sector:[
+    {id:'tech',label:'Technology',color:'#00AEFF',tickers:[
+      {sym:'SMCI',name:'Super Micro',chg:-3.6,rel:49,days:4,narr:"SMCI declining due to revenue slowdown and co-founder's alleged chip smuggling to China."},
+      {sym:'AMD',name:'AMD',chg:-1.91,rel:90,days:38,narr:"AMD faces weak demand for older chips while pivoting to AI with export restrictions."},
+      {sym:'INTC',name:'Intel',chg:1.01,rel:60,days:15,narr:"Intel's turnaround is undermined by rising operating expenses offsetting AI demand gains."},
+    ]},
+    {id:'energy',label:'Energy',color:'#FFB800',tickers:[
+      {sym:'HAL',name:'Halliburton',chg:-1.78,rel:83,days:24,narr:"Halliburton faces downward pressure from an oversupplied oil market and declining rig counts."},
+      {sym:'XOM',name:'ExxonMobil',chg:0.5,rel:49,days:42,narr:"ExxonMobil's market cap projected to reach $1T due to escalating oil prices."},
+      {sym:'CVX',name:'Chevron',chg:1.2,rel:74,days:90,narr:"Chevron is rallying on oil prices despite insider selling and acquisition uncertainty."},
+    ]},
+    {id:'consumer',label:'Consumer',color:'#FF4D4D',tickers:[
+      {sym:'MCD',name:"McDonald's",chg:-0.22,rel:59,days:27,narr:"McDonald's expected to report strong Q4 earnings due to increased sales."},
+      {sym:'SBUX',name:'Starbucks',chg:-3.24,rel:74,days:90,narr:"Starbucks' new supply-chain hub expected to improve margins."},
+      {sym:'TGT',name:'Target',chg:-1.35,rel:73,days:38,narr:"Target's loyalty program investments expected to boost sales."},
+    ]},
+    {id:'util',label:'Utilities',color:'#00DE94',tickers:[
+      {sym:'NEE',name:'NextEra',chg:-3.08,rel:80,days:14,narr:"AI data center electricity demand expected to drive NextEra growth."},
+      {sym:'DUK',name:'Duke Energy',chg:-1.9,rel:75,days:18,narr:"Duke Energy expected to grow earnings via nuclear tax credits."},
+    ]},
+  ],
+  cluster:[
+    {id:'ai-chain',label:'AI Supply Chain',color:'#00AEFF',tickers:[
+      {sym:'NVDA',name:'NVIDIA',chg:2.1,rel:94,days:22,narr:"NVIDIA leads the AI infrastructure build-out as the dominant GPU supplier."},
+      {sym:'AVGO',name:'Broadcom',chg:-2.5,rel:69,days:8,narr:"Broadcom is capturing custom AI chip revenue from hyperscaler demand."},
+      {sym:'AMAT',name:'Applied Materials',chg:-1.58,rel:84,days:12,narr:"Applied Materials benefits from rising semiconductor equipment demand."},
+      {sym:'LRCX',name:'Lam Research',chg:1.89,rel:85,days:13,narr:"Lam Research expected to rise on strong chip equipment demand."},
+    ]},
+    {id:'ev-tariff',label:'EV + Tariffs',color:'#FF4D4D',tickers:[
+      {sym:'TSLA',name:'Tesla',chg:-0.04,rel:90,days:30,narr:"Tesla losing market share to Chinese EV makers globally."},
+      {sym:'GM',name:'General Motors',chg:-1.2,rel:55,days:18,narr:"GM quarterly results weak due to EV production problems."},
+      {sym:'F',name:'Ford',chg:-2.74,rel:60,days:18,narr:"Ford EV strategy confidence against Chinese rivals keeps the stock afloat."},
+    ]},
+    {id:'nuclear',label:'Nuclear Renaissance',color:'#00DE94',tickers:[
+      {sym:'CEG',name:'Constellation',chg:-2.1,rel:64,days:8,narr:"Constellation's AI-driven nuclear pivot projected to underperform the S&P 500."},
+      {sym:'CCJ',name:'Cameco',chg:-4.61,rel:33,days:5,narr:"Cameco faces pressure from declining uranium prices."},
+      {sym:'LEU',name:'Centrus Energy',chg:-9.56,rel:82,days:14,narr:"Centrus faces supply chain disruptions and scarcity of nuclear fuel components."},
+    ]},
+  ]
+};
+var MM={macro:MM_FALLBACK.macro.slice(),sector:MM_FALLBACK.sector.slice(),cluster:MM_FALLBACK.cluster.slice()};
 var MM_LOADED=false;
 var THEME_COLORS=['#00AEFF','#FF4D4D','#FFB800','#7B61FF','#00DE94','#38C8B8','#FF6B35','#E040FB','#64FFDA','#FFD740','#FF80AB','#B388FF','#82B1FF','#CCFF90','#FF9E80'];
 async function mmLoadData(){
   if(MM_LOADED) return;
   try{
-    var user=await ensureDashboardAuth();
-    if(!user) return;
     /* --- Macro Themes from narrative_analyses --- */
     var narrRows=await sq('narrative_analyses?select=macro_theme,ticker,narrative_text,verdict,sentiment_score,contagion_risk&macro_theme=not.is.null&order=contagion_risk.desc&limit=500');
     var macroMap={};
-    narrRows.forEach(function(r){
+    (narrRows||[]).forEach(function(r){
       if(!r.macro_theme||!r.ticker) return;
       if(!macroMap[r.macro_theme]) macroMap[r.macro_theme]={tickers:{},risk:0,n:0};
       macroMap[r.macro_theme].risk+=(r.contagion_risk||0);
@@ -8364,18 +8429,21 @@ async function mmLoadData(){
     var dtlDate=await latestDate('daily_trade_labels');
     var dtlRows=[];
     if(dtlDate) dtlRows=await sq('daily_trade_labels?select=ticker,price_change_pct,price,prism_verdict,primary_narrative,story_claim,signal_strength,vms,sector_name,label&snapshot_date=eq.'+encodeURIComponent(dtlDate)+'&limit=500');
+    dtlRows=dtlRows||[];
     var dtlMap={};
     dtlRows.forEach(function(r){if(r.ticker) dtlMap[r.ticker]=r;});
     var macroArr=Object.keys(macroMap).sort(function(a,b){return macroMap[b].n-macroMap[a].n;}).slice(0,15);
-    MM.macro=macroArr.map(function(theme,idx){
-      var m=macroMap[theme];
-      var tickers=Object.keys(m.tickers).slice(0,12).map(function(sym){
-        var d=dtlMap[sym]||{};
-        var narrText=m.tickers[sym].narr||(d.story_claim||d.primary_narrative||'');
-        return{sym:sym,name:sym,chg:d.price_change_pct||0,rel:Math.round(d.vms||d.signal_strength||0),days:0,narr:narrText.slice(0,180)};
+    if(macroArr.length>0){
+      MM.macro=macroArr.map(function(theme,idx){
+        var m=macroMap[theme];
+        var tickers=Object.keys(m.tickers).slice(0,12).map(function(sym){
+          var d=dtlMap[sym]||{};
+          var narrText=m.tickers[sym].narr||(d.story_claim||d.primary_narrative||'');
+          return{sym:sym,name:sym,chg:d.price_change_pct||0,rel:Math.round(d.vms||d.signal_strength||0),days:0,narr:narrText.slice(0,180)};
+        });
+        return{id:'macro-'+idx,label:theme.replace(/_/g,' '),color:THEME_COLORS[idx%THEME_COLORS.length],tickers:tickers};
       });
-      return{id:'macro-'+idx,label:theme.replace(/_/g,' '),color:THEME_COLORS[idx%THEME_COLORS.length],tickers:tickers};
-    });
+    }
     /* --- Sectors from daily_trade_labels grouped by sector_name --- */
     var sectorMap={};
     dtlRows.forEach(function(r){
@@ -8386,9 +8454,11 @@ async function mmLoadData(){
       }
     });
     var sectorArr=Object.keys(sectorMap).sort(function(a,b){return sectorMap[b].length-sectorMap[a].length;}).slice(0,15);
-    MM.sector=sectorArr.map(function(sect,idx){
-      return{id:'sect-'+idx,label:sect,color:THEME_COLORS[idx%THEME_COLORS.length],tickers:sectorMap[sect]};
-    });
+    if(sectorArr.length>0){
+      MM.sector=sectorArr.map(function(sect,idx){
+        return{id:'sect-'+idx,label:sect,color:THEME_COLORS[idx%THEME_COLORS.length],tickers:sectorMap[sect]};
+      });
+    }
     /* --- Story Clusters: group by prism_verdict from daily_trade_labels --- */
     var clusterMap={};
     dtlRows.forEach(function(r){
@@ -8400,12 +8470,15 @@ async function mmLoadData(){
       }
     });
     var clusterArr=Object.keys(clusterMap).filter(function(k){return clusterMap[k].length>=2;}).sort(function(a,b){return clusterMap[b].length-clusterMap[a].length;}).slice(0,15);
-    MM.cluster=clusterArr.map(function(cl,idx){
-      return{id:'cl-'+idx,label:cl,color:THEME_COLORS[idx%THEME_COLORS.length],tickers:clusterMap[cl]};
-    });
+    if(clusterArr.length>0){
+      MM.cluster=clusterArr.map(function(cl,idx){
+        return{id:'cl-'+idx,label:cl,color:THEME_COLORS[idx%THEME_COLORS.length],tickers:clusterMap[cl]};
+      });
+    }
     MM_LOADED=true;
   }catch(e){
     console.error('Mindmap data load error:',e);
+    /* fallback data is already in MM from initialization */
   }
 }
 var mmMode='macro',mmActiveTheme=null,mmNodes=[],mmW=0,mmH=580;
@@ -8415,14 +8488,14 @@ async function mmInit(){
   mmStage=document.getElementById('mm-stage');
   mmCvs=document.getElementById('mm-canvas');
   if(!mmStage||!mmCvs) return;
-  mmW=mmStage.offsetWidth; mmH=mmStage.offsetHeight||480;
+  mmW=mmStage.offsetWidth; mmH=mmStage.offsetHeight||580;
   mmCvs.width=mmW; mmCvs.height=mmH;
   mmCtx=mmCvs.getContext('2d');
   mmStage.addEventListener('mousedown',function(e){if(e.target!==mmStage&&e.target!==mmCvs) return;mmDrag=true;mmDS={x:e.clientX,y:e.clientY};mmPS={x:mmPanX,y:mmPanY};});
   window.addEventListener('mousemove',function(e){if(!mmDrag) return;mmPanX=mmPS.x+(e.clientX-mmDS.x);mmPanY=mmPS.y+(e.clientY-mmDS.y);mmRedraw();});
   window.addEventListener('mouseup',function(){mmDrag=false;});
-  await mmLoadData();
   mmInited=true; mmDraw();
+  mmLoadData().then(function(){mmDraw();}).catch(function(){});
 }
 function mmDraw(){
   if(!mmCtx) return;
