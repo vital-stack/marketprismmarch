@@ -8519,19 +8519,17 @@ var BOARDS=[
     var r=await sq('market_figures?select=canonical_name,figure_type,firm_name,overall_credibility,total_calls&order=overall_credibility.desc&limit=10');
     return r.map(function(x){return{name:x.canonical_name||'Unknown',meta:(x.figure_type||'Figure')+' \u00b7 '+(x.firm_name||'Independent'),score:Math.round((x.overall_credibility||0)*10)/10,link:'#'};});
   }},
-  {id:'themes',title:'Top Themes',sub:'Average narrative strength \u00b7 latest snapshot',color:'#FFB800',bg:'rgba(255,184,0,0.12)',scoreLabel:'Avg NRS',
+  {id:'themes',title:'Top Themes',sub:'By sector risk & contagion level',color:'#FFB800',bg:'rgba(255,184,0,0.12)',scoreLabel:'Tickers',
   fetch:async function(){
-    var date=await latestDate('narrative_scorecard');
-    if(!date) return[];
-    var r=await sq('narrative_scorecard?select=macro_theme,nrs&snapshot_date=eq.'+encodeURIComponent(date)+'&macro_theme=not.is.null&limit=500');
-    var map={};
-    r.forEach(function(x){if(!x.macro_theme)return;if(!map[x.macro_theme])map[x.macro_theme]={s:0,n:0};map[x.macro_theme].s+=(x.nrs||0);map[x.macro_theme].n++;});
-    return Object.keys(map).map(function(t){return{name:t,meta:map[t].n+' tickers',score:Math.round(map[t].s/map[t].n*10)/10,link:'#mindmap'};}).sort(function(a,b){return b.score-a.score;}).slice(0,10);
+    var r=await sq('sector_risk_summary?select=macro_theme,contagion_level,trap_intensity,trap_count,ticker_count&macro_theme=not.is.null&order=ticker_count.desc&limit=10');
+    return r.map(function(x){return{name:x.macro_theme||'Unknown',meta:x.contagion_level+' \u00b7 '+(x.trap_count||0)+' traps \u00b7 intensity '+(Math.round((x.trap_intensity||0)*100))+'%',score:x.ticker_count||0,link:'#mindmap'};});
   }},
-  {id:'political',title:'Macro & Political Events',sub:'By market narrative impact score',color:'#FF4D4D',bg:'rgba(255,77,77,0.12)',scoreLabel:'Impact',
+  {id:'political',title:'Macro & Political Events',sub:'By contagion risk across themes',color:'#FF4D4D',bg:'rgba(255,77,77,0.12)',scoreLabel:'Risk',
   fetch:async function(){
-    var r=await sq('macro_narrative_events?select=event_name,event_type,event_date,ticker_count,impact_score&order=impact_score.desc&limit=10');
-    return r.map(function(x){return{name:x.event_name||'Event',meta:(x.event_type||'Macro')+' \u00b7 '+(x.event_date||'')+' \u00b7 '+(x.ticker_count||0)+' tickers',score:Math.round(x.impact_score||0),link:'#discover'};});
+    var r=await sq('narrative_analyses?select=macro_theme,contagion_risk,ticker&macro_theme=not.is.null&order=contagion_risk.desc&limit=200');
+    var map={};
+    r.forEach(function(x){if(!x.macro_theme)return;if(!map[x.macro_theme])map[x.macro_theme]={risk:0,n:0};map[x.macro_theme].risk+=(x.contagion_risk||0);map[x.macro_theme].n++;});
+    return Object.keys(map).map(function(t){return{name:t,meta:map[t].n+' tickers \u00b7 Avg risk: '+Math.round(map[t].risk/map[t].n),score:Math.round(map[t].risk/map[t].n),link:'#discover'};}).sort(function(a,b){return b.score-a.score;}).slice(0,10);
   }},
   {id:'hype',title:'Highest Hype Gap',sub:'Price vs. fundamental fair value \u00b7 today',color:'#FF4D4D',bg:'rgba(255,77,77,0.12)',scoreLabel:'Hype Gap %',
   fetch:async function(){
