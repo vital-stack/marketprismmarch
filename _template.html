@@ -8511,11 +8511,6 @@ function ini(s){return(s||'').split(/\s+/).slice(0,2).map(function(w){return(w[0
 function lbEsc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 
 var BOARDS=[
-  {id:'sources',title:'Top Sources',sub:'By credibility & prediction accuracy',color:'#00AEFF',bg:'rgba(0,174,255,0.12)',scoreLabel:'Trust Score',
-  fetch:async function(){
-    var r=await sq('source_scores?select=source_name,srs,total_claims,correct_claims,source_type&order=srs.desc&limit=10');
-    return r.map(function(x){return{name:x.source_name||'Unknown',meta:(x.source_type||'Media')+' \u00b7 '+(x.total_claims||0)+' claims',score:Math.round((x.srs||0)*10)/10,link:'#narrative'};});
-  }},
   {id:'themes',title:'Top Themes',sub:'By sector risk & contagion level',color:'#FFB800',bg:'rgba(255,184,0,0.12)',scoreLabel:'Tickers',
   fetch:async function(){
     var r=await sq('sector_risk_summary?select=macro_theme,contagion_level,trap_intensity,trap_count,ticker_count&macro_theme=not.is.null&order=ticker_count.desc&limit=10');
@@ -8642,6 +8637,11 @@ var BOARDS=[
       var reliability=Math.round((sc.vms||0)*10)/10;
       return{name:r.ticker,meta:'Days to cover: '+dtc+'d \u00b7 Story energy: '+energy+'% \u00b7 Reliability: '+reliability+(r.squeeze_risk?' \u00b7 \u26a0 Squeeze risk':''),score:dtc,scoreDisplay:dtc+'d',combined:combined,link:'/_ticker.html?t='+encodeURIComponent(r.ticker)};
     }).filter(Boolean).sort(function(a,b){return b.combined-a.combined;}).slice(0,10);
+  }},
+  {id:'sources',title:'Top Sources',sub:'By credibility & prediction accuracy',color:'#00AEFF',bg:'rgba(0,174,255,0.12)',scoreLabel:'Trust Score',
+  fetch:async function(){
+    var r=await sq('source_scores?select=source_name,srs,total_claims,correct_claims,source_type&order=srs.desc&limit=10');
+    return r.map(function(x){return{name:x.source_name||'Unknown',meta:(x.source_type||'Media')+' \u00b7 '+(x.total_claims||0)+' claims',score:Math.round((x.srs||0)*10)/10,link:'#narrative'};});
   }},
   {id:'figures',title:'Top Market Figures',sub:'By overall credibility score',color:'#7B61FF',bg:'rgba(123,97,255,0.12)',scoreLabel:'Credibility',
   fetch:async function(){
