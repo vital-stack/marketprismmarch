@@ -776,7 +776,7 @@ body{
 .snap-driver{font-size:13px;color:var(--mp-text-primary);max-width:280px;line-height:1.5;}
 .snap-sector{font-size:11px;color:var(--mp-text-tertiary);font-style:italic;max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .snap-tags{display:flex;flex-wrap:wrap;gap:4px;max-width:220px;}
-.snap-tag{font-family:var(--font-body);font-size:10px;font-weight:500;padding:3px 8px;border-radius:99px;white-space:nowrap;letter-spacing:0.02em;background:rgba(0,174,255,0.08);color:#00AEFF;border:1px solid rgba(0,174,255,0.18);}
+.snap-tag{font-family:var(--font-body);font-size:10px;font-weight:500;padding:3px 8px;border-radius:99px;white-space:nowrap;letter-spacing:0.02em;border:1px solid rgba(255,255,255,0.10);background:rgba(255,255,255,0.04);color:var(--mp-text-secondary);}
 .snap-date{font-family:var(--font-mono);font-size:10px;color:var(--mp-text-tertiary);}
 .pe-val{font-family:var(--font-mono);font-size:12px;}
 .snap-table .earnings-soon{color:var(--mp-amber);}
@@ -1594,7 +1594,7 @@ body{
 [data-theme="light"] .snap-table tr:hover td{background:rgba(0,0,0,.02);}
 [data-theme="light"] .snap-state,
 [data-theme="light"] .snap-verdict{background:rgba(0,0,0,0.04);border-color:rgba(0,0,0,0.08);}
-[data-theme="light"] .snap-tag{background:rgba(0,174,255,0.06);border-color:rgba(0,174,255,0.15);color:#0080CC;}
+[data-theme="light"] .snap-tag{background:rgba(0,0,0,0.03);border-color:rgba(0,0,0,0.10);}
 /* Heatmap */
 [data-theme="light"] .discover-heatmap-wrap:hover{border-color:rgba(0,0,0,0.10);box-shadow:0 8px 24px rgba(0,0,0,0.06);}
 [data-theme="light"] .dhm-cell{color:var(--mp-text-primary);}
@@ -4141,13 +4141,14 @@ async function loadData(){
     var tradeP = fetch(SUPABASE_URL+'/rest/v1/trade_classifications?select=ticker,primary_label,primary_confidence,shortest_timeframe,longest_timeframe&order=snapshot_date.desc',{headers:hdrs}).catch(function(){return null;});
     var predP = fetch(SUPABASE_URL+'/rest/v1/prediction_scores?select=ticker,predicted_value&order=prediction_date.desc',{headers:hdrs}).catch(function(){return null;});
     var lhP = fetch(SUPABASE_URL+'/rest/v1/daily_trade_labels?select=ticker,label,signal_strength,price,price_change_pct,primary_narrative,story_claim,prism_verdict&order=signal_strength.desc',{headers:hdrs}).catch(function(){return null;});
+    var scP = fetch(SUPABASE_URL+'/rest/v1/narrative_scorecard?select=ticker,fvd_pct,vms,energy_remaining,predicted_exhaustion_days,coordination_class,suspicion_class,decay_rate,verdict&order=snapshot_date.desc',{headers:hdrs}).catch(function(){return null;});
 
     var res = await mainP;
     if(!res.ok) throw new Error('Supabase '+res.status);
     var rows = await res.json();
 
     // Parse overlay responses in parallel
-    var results = await Promise.all([healthP, pulseP, snapP, tradeP, predP, lhP]);
+    var results = await Promise.all([healthP, pulseP, snapP, tradeP, predP, lhP, scP]);
 
     var healthMap={};
     try{ if(results[0]&&results[0].ok)(await results[0].json()).forEach(function(h){if(!healthMap[h.ticker])healthMap[h.ticker]=h;}); }catch(_){}
@@ -4170,13 +4171,16 @@ async function loadData(){
       }
     }catch(_){}
 
+    var scorecardMap={};
+    try{ if(results[6]&&results[6].ok)(await results[6].json()).forEach(function(s){if(!scorecardMap[s.ticker])scorecardMap[s.ticker]=s;}); }catch(_){}
+
     // dedup + merge
     var seen=new Set();
     DATA = rows.filter(function(r){
       if(seen.has(r.ticker))return false;
       seen.add(r.ticker);return true;
     }).map(function(r){
-      var m=Object.assign({},r,healthMap[r.ticker]||{},pulseMap[r.ticker]||{});
+      var m=Object.assign({},r,healthMap[r.ticker]||{},pulseMap[r.ticker]||{},scorecardMap[r.ticker]||{});
       if(!m.sector_name&&SECTOR_MAP[m.ticker])m.sector_name=SECTOR_MAP[m.ticker][0];
       return m;
     });
@@ -5055,6 +5059,38 @@ function getSnapData(){
   else if(snapSort==='traps')arr=arr.slice().sort(function(a,b){return(a.prism_verdict==='Narrative Trap'?0:1)-(b.prism_verdict==='Narrative Trap'?0:1);});
   return arr;
 }
+function getTickerInsightTags(r){
+  var tags=[];
+  // Leaderboard-derived tags first (prioritized)
+  var fvd=r.fvd_pct;
+  if(fvd!=null){
+    if(fvd<-20) tags.push({label:'Below Fair Value',color:'#00DE94',bg:'rgba(0,222,148,0.10)',border:'rgba(0,222,148,0.25)'});
+    else if(fvd<-5) tags.push({label:'Under Fair Value',color:'#00DE94',bg:'rgba(0,222,148,0.08)',border:'rgba(0,222,148,0.20)'});
+    else if(fvd>100) tags.push({label:'High Hype Gap',color:'#FF4D4D',bg:'rgba(255,77,77,0.10)',border:'rgba(255,77,77,0.25)'});
+    else if(fvd>30) tags.push({label:'Overvalued',color:'#FF4D4D',bg:'rgba(255,77,77,0.08)',border:'rgba(255,77,77,0.20)'});
+  }
+  var vms=r.vms;
+  if(vms!=null){
+    if(vms>=80) tags.push({label:'High Reliability',color:'#00DE94',bg:'rgba(0,222,148,0.08)',border:'rgba(0,222,148,0.20)'});
+    else if(vms<=25) tags.push({label:'Low Reliability',color:'#FFB800',bg:'rgba(255,184,0,0.08)',border:'rgba(255,184,0,0.20)'});
+  }
+  if(r.coordination_class&&r.coordination_class.toLowerCase().indexOf('coordinated')!==-1) tags.push({label:'Coordinated',color:'#FF4D4D',bg:'rgba(255,77,77,0.08)',border:'rgba(255,77,77,0.20)'});
+  if(r.suspicion_class&&r.suspicion_class.toLowerCase().indexOf('high')!==-1) tags.push({label:'Manipulation Risk',color:'#7B61FF',bg:'rgba(123,97,255,0.10)',border:'rgba(123,97,255,0.25)'});
+  var energy=r.energy_remaining;
+  if(energy!=null){
+    if(energy>=85) tags.push({label:'High Energy',color:'#00AEFF',bg:'rgba(0,174,255,0.08)',border:'rgba(0,174,255,0.20)'});
+    else if(energy<=15) tags.push({label:'Story Exhausted',color:'#A0A8B0',bg:'rgba(160,168,176,0.08)',border:'rgba(160,168,176,0.20)'});
+  }
+  var decay=r.decay_rate;
+  if(decay!=null&&decay>0.5) tags.push({label:'Narrative Fading',color:'#FFB800',bg:'rgba(255,184,0,0.08)',border:'rgba(255,184,0,0.20)'});
+  // Verdict tag
+  var v=(r.prism_verdict||r.verdict||'').toLowerCase();
+  if(v.indexOf('trap')!==-1) tags.push({label:'Narrative Trap',color:'#FF4D4D',bg:'rgba(255,77,77,0.08)',border:'rgba(255,77,77,0.20)'});
+  else if(v.indexOf('supported')!==-1||v.indexOf('verified')!==-1) tags.push({label:'Supported',color:'#00DE94',bg:'rgba(0,222,148,0.08)',border:'rgba(0,222,148,0.20)'});
+  // Add sector as last-priority filler
+  (SECTOR_MAP[r.ticker]||[]).forEach(function(s){tags.push({label:s,color:'#00AEFF',bg:'rgba(0,174,255,0.08)',border:'rgba(0,174,255,0.18)',sector:true});});
+  return tags;
+}
 function renderSnap(){
   var arr=getSnapData();
   var tbody=document.getElementById('snap-tbody');
@@ -5074,7 +5110,7 @@ function renderSnap(){
       +'<td class="r"><div class="snap-chg '+delta.cls+'">'+delta.txt+'</div></td>'
       +'<td><span class="snap-state '+sc+'">'+esc(r.narrative_state)+'</span></td>'
       +'<td><div class="snap-driver">'+esc(r.story_claim||r.primary_driver||'—')+'</div></td>'
-      +'<td><div class="snap-tags">'+(SECTOR_MAP[r.ticker]||[]).slice(0,2).map(function(s){return '<span class="snap-tag">'+esc(s)+'</span>';}).join('')+'</div></td>'
+      +'<td><div class="snap-tags">'+getTickerInsightTags(r).slice(0,3).map(function(t){return '<span class="snap-tag" style="background:'+t.bg+';color:'+t.color+';border-color:'+t.border+';">'+esc(t.label)+'</span>';}).join('')+'</div></td>'
       +'<td><span class="snap-state" style="font-size:11px;">'+tradeType+'</span></td>'
       +'<td class="r"><a href="/ticker/'+encodeURIComponent(r.ticker)+'" class="snap-cta" onclick="event.stopPropagation();">View Card <span style="font-size:13px;">→</span></a></td>'
     +'</tr>';
