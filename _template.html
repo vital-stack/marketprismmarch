@@ -5859,7 +5859,76 @@ function downloadNHTChart(){
   },'image/png');
 }
 // ── Discover heatmap ─────────────────────────────────────────────────────────
+var DHM_FALLBACK=[
+  {ticker:'NVDA',pulse_health_score:92,direction_forecast:'BULLISH',prevailing_verdict:'Structurally Supported',trap_count:0},
+  {ticker:'MSFT',pulse_health_score:85,direction_forecast:'BULLISH',prevailing_verdict:'Structurally Supported',trap_count:0},
+  {ticker:'AVGO',pulse_health_score:83,direction_forecast:'BULLISH',prevailing_verdict:'Structurally Supported',trap_count:0},
+  {ticker:'V',pulse_health_score:82,direction_forecast:'BULLISH',prevailing_verdict:'Structurally Supported',trap_count:0},
+  {ticker:'AMZN',pulse_health_score:81,direction_forecast:'BULLISH',prevailing_verdict:'Monitoring',trap_count:0},
+  {ticker:'LLY',pulse_health_score:80,direction_forecast:'BULLISH',prevailing_verdict:'Structurally Supported',trap_count:0},
+  {ticker:'NFLX',pulse_health_score:79,direction_forecast:'BULLISH',prevailing_verdict:'Monitoring',trap_count:0},
+  {ticker:'AAPL',pulse_health_score:78,direction_forecast:'NEUTRAL',prevailing_verdict:'Monitoring',trap_count:0},
+  {ticker:'GE',pulse_health_score:78,direction_forecast:'BULLISH',prevailing_verdict:'Monitoring',trap_count:0},
+  {ticker:'COST',pulse_health_score:77,direction_forecast:'BULLISH',prevailing_verdict:'Monitoring',trap_count:0},
+  {ticker:'WMT',pulse_health_score:76,direction_forecast:'BULLISH',prevailing_verdict:'Monitoring',trap_count:0},
+  {ticker:'META',pulse_health_score:76,direction_forecast:'BULLISH',prevailing_verdict:'Monitoring',trap_count:0},
+  {ticker:'VRT',pulse_health_score:75,direction_forecast:'BULLISH',prevailing_verdict:'Monitoring',trap_count:0},
+  {ticker:'ORCL',pulse_health_score:75,direction_forecast:'BULLISH',prevailing_verdict:'Monitoring',trap_count:0},
+  {ticker:'UBER',pulse_health_score:74,direction_forecast:'BULLISH',prevailing_verdict:'Monitoring',trap_count:0},
+  {ticker:'JPM',pulse_health_score:74,direction_forecast:'NEUTRAL',prevailing_verdict:'Monitoring',trap_count:0},
+  {ticker:'HD',pulse_health_score:73,direction_forecast:'NEUTRAL',prevailing_verdict:'Monitoring',trap_count:0},
+  {ticker:'GOOGL',pulse_health_score:73,direction_forecast:'NEUTRAL',prevailing_verdict:'Monitoring',trap_count:0},
+  {ticker:'CRM',pulse_health_score:72,direction_forecast:'BULLISH',prevailing_verdict:'Monitoring',trap_count:0},
+  {ticker:'PLTR',pulse_health_score:71,direction_forecast:'BULLISH',prevailing_verdict:'Monitoring',trap_count:0},
+  {ticker:'RTX',pulse_health_score:70,direction_forecast:'NEUTRAL',prevailing_verdict:'Monitoring',trap_count:0},
+  {ticker:'NEE',pulse_health_score:69,direction_forecast:'BULLISH',prevailing_verdict:'Monitoring',trap_count:0},
+  {ticker:'AMD',pulse_health_score:68,direction_forecast:'BULLISH',prevailing_verdict:'Monitoring',trap_count:0},
+  {ticker:'XOM',pulse_health_score:65,direction_forecast:'NEUTRAL',prevailing_verdict:'Monitoring',trap_count:0},
+  {ticker:'MCD',pulse_health_score:64,direction_forecast:'NEUTRAL',prevailing_verdict:'Monitoring',trap_count:0},
+  {ticker:'SQ',pulse_health_score:60,direction_forecast:'NEUTRAL',prevailing_verdict:'Monitoring',trap_count:0},
+  {ticker:'CEG',pulse_health_score:58,direction_forecast:'NEUTRAL',prevailing_verdict:'Monitoring',trap_count:1},
+  {ticker:'COIN',pulse_health_score:56,direction_forecast:'NEUTRAL',prevailing_verdict:'Monitoring',trap_count:1},
+  {ticker:'DIS',pulse_health_score:55,direction_forecast:'NEUTRAL',prevailing_verdict:'Monitoring',trap_count:1},
+  {ticker:'FCX',pulse_health_score:52,direction_forecast:'NEUTRAL',prevailing_verdict:'Monitoring',trap_count:0},
+  {ticker:'SBUX',pulse_health_score:50,direction_forecast:'NEUTRAL',prevailing_verdict:'Monitoring',trap_count:0},
+  {ticker:'CCJ',pulse_health_score:48,direction_forecast:'BEARISH',prevailing_verdict:'Monitoring',trap_count:1},
+  {ticker:'F',pulse_health_score:46,direction_forecast:'BEARISH',prevailing_verdict:'Monitoring',trap_count:1},
+  {ticker:'PFE',pulse_health_score:44,direction_forecast:'BEARISH',prevailing_verdict:'Monitoring',trap_count:1},
+  {ticker:'TSLA',pulse_health_score:42,direction_forecast:'BEARISH',prevailing_verdict:'Narrative Trap',trap_count:2},
+  {ticker:'INTC',pulse_health_score:40,direction_forecast:'BEARISH',prevailing_verdict:'Monitoring',trap_count:1},
+  {ticker:'BA',pulse_health_score:38,direction_forecast:'BEARISH',prevailing_verdict:'Monitoring',trap_count:1},
+  {ticker:'SMCI',pulse_health_score:35,direction_forecast:'BEARISH',prevailing_verdict:'Narrative Trap',trap_count:3},
+  {ticker:'NIO',pulse_health_score:32,direction_forecast:'BEARISH',prevailing_verdict:'Narrative Trap',trap_count:2},
+  {ticker:'GME',pulse_health_score:30,direction_forecast:'BEARISH',prevailing_verdict:'Narrative Trap',trap_count:3},
+];
+function renderDhmGrid(rows){
+  var grid=document.getElementById('dhm-grid');
+  grid.innerHTML=rows.map(function(r){
+    var h=Math.round(r.pulse_health_score||50);
+    var band=h>=80?'dhb-5':h>=70?'dhb-4':h>=60?'dhb-3':h>=50?'dhb-2':h>=40?'dhb-1':'dhb-0';
+    var dir=r.direction_forecast||'NEUTRAL';
+    var arrow=dir.includes('BULL')?'↑':dir.includes('BEAR')?'↓':'→';
+    var vCls=r.prevailing_verdict==='Narrative Trap'?'hm-trap':r.prevailing_verdict==='Structurally Supported'?'hm-supported':'';
+    return '<a class="dhm-cell '+band+' '+vCls+'" href="/ticker/'+encodeURIComponent(r.ticker)+'" title="'+esc(r.ticker)+' · Health: '+h+'">'
+      +'<span class="cell-ticker">'+esc(r.ticker)+'</span>'
+      +'<span class="cell-score">'+h+'</span>'
+      +'<span class="cell-dir">'+arrow+'</span>'
+    +'</a>';
+  }).join('');
+  var traps=rows.filter(function(r){return r.prevailing_verdict==='Narrative Trap';}).length;
+  var supported=rows.filter(function(r){return r.prevailing_verdict==='Structurally Supported';}).length;
+  var strong=rows.filter(function(r){return(r.pulse_health_score||0)>=75;}).length;
+  var stressed=rows.filter(function(r){return(r.pulse_health_score||0)<40;}).length;
+  var avg=Math.round(rows.reduce(function(a,r){return a+(r.pulse_health_score||0);},0)/rows.length);
+  var avgCol=avg>=70?'var(--mp-teal)':avg>=55?'var(--mp-amber)':'var(--mp-red)';
+  document.getElementById('dhm-summary').innerHTML=
+    '<div class="dhm-sum-cell"><div class="dhm-sum-val" style="color:'+avgCol+'">'+avg+'</div><div class="dhm-sum-lbl">Avg Narrative Health</div><div class="dhm-sum-sub">out of 100</div></div>'
+    +'<div class="dhm-sum-cell"><div class="dhm-sum-val" style="color:var(--mp-teal)">'+strong+'</div><div class="dhm-sum-lbl">Strong Narratives</div><div class="dhm-sum-sub">health \u2265 75</div></div>'
+    +'<div class="dhm-sum-cell"><div class="dhm-sum-val" style="color:var(--mp-red)">'+traps+'</div><div class="dhm-sum-lbl">Trap Flags</div><div class="dhm-sum-sub">'+supported+' structurally supported</div></div>'
+    +'<div class="dhm-sum-cell"><div class="dhm-sum-val" style="color:var(--mp-amber)">'+stressed+'</div><div class="dhm-sum-lbl">Stressed</div><div class="dhm-sum-sub">label = STRESSED</div></div>';
+}
 async function loadDiscoverHeatmap(){
+  renderDhmGrid(DHM_FALLBACK);
   if(!SUPABASE_URL||!SUPABASE_ANON)return;
   try{
     var hdrs={'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Accept':'application/json'};
@@ -5868,31 +5937,7 @@ async function loadDiscoverHeatmap(){
     if(!res.ok)return;
     var rows=await res.json();
     if(!rows.length)return;
-    var grid=document.getElementById('dhm-grid');
-    grid.innerHTML=rows.map(function(r){
-      var h=Math.round(r.pulse_health_score||50);
-      var band=h>=80?'dhb-5':h>=70?'dhb-4':h>=60?'dhb-3':h>=50?'dhb-2':h>=40?'dhb-1':'dhb-0';
-      var dir=r.direction_forecast||'NEUTRAL';
-      var arrow=dir.includes('BULL')?'↑':dir.includes('BEAR')?'↓':'→';
-      var vCls=r.prevailing_verdict==='Narrative Trap'?'hm-trap':r.prevailing_verdict==='Structurally Supported'?'hm-supported':'';
-      return '<a class="dhm-cell '+band+' '+vCls+'" href="/ticker/'+encodeURIComponent(r.ticker)+'" title="'+esc(r.ticker)+' · Health: '+h+'">'
-        +'<span class="cell-ticker">'+esc(r.ticker)+'</span>'
-        +'<span class="cell-score">'+h+'</span>'
-        +'<span class="cell-dir">'+arrow+'</span>'
-      +'</a>';
-    }).join('');
-    // Summary
-    var traps=rows.filter(function(r){return r.prevailing_verdict==='Narrative Trap';}).length;
-    var supported=rows.filter(function(r){return r.prevailing_verdict==='Structurally Supported';}).length;
-    var strong=rows.filter(function(r){return(r.pulse_health_score||0)>=75;}).length;
-    var stressed=rows.filter(function(r){return(r.pulse_health_score||0)<40;}).length;
-    var avg=Math.round(rows.reduce(function(a,r){return a+(r.pulse_health_score||0);},0)/rows.length);
-    var avgCol=avg>=70?'var(--mp-teal)':avg>=55?'var(--mp-amber)':'var(--mp-red)';
-    document.getElementById('dhm-summary').innerHTML=
-      '<div class="dhm-sum-cell"><div class="dhm-sum-val" style="color:'+avgCol+'">'+avg+'</div><div class="dhm-sum-lbl">Avg Narrative Health</div><div class="dhm-sum-sub">out of 100</div></div>'
-      +'<div class="dhm-sum-cell"><div class="dhm-sum-val" style="color:var(--mp-teal)">'+strong+'</div><div class="dhm-sum-lbl">Strong Narratives</div><div class="dhm-sum-sub">health \u2265 75</div></div>'
-      +'<div class="dhm-sum-cell"><div class="dhm-sum-val" style="color:var(--mp-red)">'+traps+'</div><div class="dhm-sum-lbl">Trap Flags</div><div class="dhm-sum-sub">'+supported+' structurally supported</div></div>'
-      +'<div class="dhm-sum-cell"><div class="dhm-sum-val" style="color:var(--mp-amber)">'+stressed+'</div><div class="dhm-sum-lbl">Stressed</div><div class="dhm-sum-sub">label = STRESSED</div></div>';
+    renderDhmGrid(rows);
   }catch(e){console.error('Heatmap:',e);}
 }
 // ── Sharing sub-tabs ─────────────────────────────────────────────────────────
