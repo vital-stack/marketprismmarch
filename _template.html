@@ -8516,11 +8516,6 @@ var BOARDS=[
     var r=await sq('source_scores?select=source_name,srs,total_claims,correct_claims,source_type&order=srs.desc&limit=10');
     return r.map(function(x){return{name:x.source_name||'Unknown',meta:(x.source_type||'Media')+' \u00b7 '+(x.total_claims||0)+' claims',score:Math.round((x.srs||0)*10)/10,link:'#narrative'};});
   }},
-  {id:'figures',title:'Top Market Figures',sub:'By overall credibility score',color:'#7B61FF',bg:'rgba(123,97,255,0.12)',scoreLabel:'Credibility',
-  fetch:async function(){
-    var r=await sq('market_figures?select=canonical_name,figure_type,firm_name,overall_credibility,total_calls&order=overall_credibility.desc&limit=10');
-    return r.map(function(x){return{name:x.canonical_name||'Unknown',meta:(x.figure_type||'Figure')+' \u00b7 '+(x.firm_name||'Independent'),score:Math.round((x.overall_credibility||0)*10)/10,link:'#'};});
-  }},
   {id:'themes',title:'Top Themes',sub:'By sector risk & contagion level',color:'#FFB800',bg:'rgba(255,184,0,0.12)',scoreLabel:'Tickers',
   fetch:async function(){
     var r=await sq('sector_risk_summary?select=macro_theme,contagion_level,trap_intensity,trap_count,ticker_count&macro_theme=not.is.null&order=ticker_count.desc&limit=10');
@@ -8587,6 +8582,46 @@ var BOARDS=[
     var r=await sq('signal_combo_stats?select=signal_combo,trades,win_rate,avg_return_pct,sharpe_ratio&order=win_rate.desc&limit=10');
     return r.map(function(x){return{name:x.signal_combo||'Combo',meta:(x.trades||0)+' trades \u00b7 Avg return: '+(Math.round((x.avg_return_pct||0)*100)/100)+'% \u00b7 Sharpe: '+(Math.round((x.sharpe_ratio||0)*100)/100),score:Math.round((x.win_rate||0)*10)/10,link:'#discover'};});
   }},
+  {id:'signals',title:'Strongest Daily Signals',sub:'Highest composite signal strength \u00b7 today',color:'#00AEFF',bg:'rgba(0,174,255,0.12)',scoreLabel:'Signal Strength',
+  fetch:async function(){
+    var date=await latestDate('daily_trade_labels');
+    if(!date) return[];
+    var r=await sq('daily_trade_labels?select=ticker,signal_strength,prism_verdict,price_change_pct,story_claim,primary_narrative&snapshot_date=eq.'+encodeURIComponent(date)+'&order=signal_strength.desc&limit=10');
+    return r.map(function(x){var claim=(x.story_claim||x.primary_narrative||'').slice(0,50);return{name:x.ticker||'Unknown',meta:(x.prism_verdict||'')+' \u00b7 '+(Math.round((x.price_change_pct||0)*100)/100)+'% \u00b7 '+claim,score:Math.round(x.signal_strength||0),link:'/_ticker.html?t='+encodeURIComponent(x.ticker)};});
+  }},
+  {id:'movers',title:'Biggest Price Movers',sub:'Largest absolute price change \u00b7 today',color:'#FFB800',bg:'rgba(255,184,0,0.12)',scoreLabel:'% Move',
+  fetch:async function(){
+    var date=await latestDate('daily_trade_labels');
+    if(!date) return[];
+    var dp=encodeURIComponent(date);
+    var up=sq('daily_trade_labels?select=ticker,price_change_pct,price,prism_verdict&snapshot_date=eq.'+dp+'&price_change_pct=gt.0&order=price_change_pct.desc&limit=5');
+    var dn=sq('daily_trade_labels?select=ticker,price_change_pct,price,prism_verdict&snapshot_date=eq.'+dp+'&price_change_pct=lt.0&order=price_change_pct.asc&limit=5');
+    var res=await Promise.allSettled([up,dn]);
+    var all=[];
+    if(res[0].status==='fulfilled') all=all.concat(res[0].value);
+    if(res[1].status==='fulfilled') all=all.concat(res[1].value);
+    all.sort(function(a,b){return Math.abs(b.price_change_pct||0)-Math.abs(a.price_change_pct||0);});
+    return all.slice(0,10).map(function(x){var pct=x.price_change_pct||0;var abs=Math.round(Math.abs(pct)*100)/100;var prefix=pct>=0?'+':'\u2212';return{name:x.ticker||'Unknown',meta:'$'+(Math.round((x.price||0)*100)/100)+' \u00b7 '+(x.prism_verdict||''),score:abs,scoreDisplay:prefix+abs+'%',_scoreColor:pct>=0?'#00DE94':'#FF4D4D',link:'/_ticker.html?t='+encodeURIComponent(x.ticker)};});
+  }},
+  {id:'overreaction',title:'Most Overreacted Stories',sub:'Media reaction far exceeds what facts support',color:'#FF4D4D',bg:'rgba(255,77,77,0.12)',scoreLabel:'Overreaction',
+  fetch:async function(){
+    var date=await latestDate('daily_trade_labels');
+    if(!date) return[];
+    var r=await sq('daily_trade_labels?select=ticker,overreaction_ratio,prism_verdict&snapshot_date=eq.'+encodeURIComponent(date)+'&overreaction_ratio=gt.0&order=overreaction_ratio.desc&limit=10');
+    return r.map(function(x){return{name:x.ticker||'Unknown',meta:'OR ratio: '+(Math.round((x.overreaction_ratio||0)*100)/100)+' \u00b7 '+(x.prism_verdict||''),score:Math.round((x.overreaction_ratio||0)*100)/100,link:'/_ticker.html?t='+encodeURIComponent(x.ticker)};});
+  }},
+  {id:'bullish',title:'Bullish Sentiment Watch',sub:'Tickers with LOVE label \u00b7 today',color:'#00DE94',bg:'rgba(0,222,148,0.12)',scoreLabel:'Reliability',
+  fetch:async function(){
+    var date=await latestDate('daily_trade_labels');
+    if(!date) return[];
+    var r=await sq('daily_trade_labels?select=ticker,signal_strength,vms,story_claim,primary_narrative,label&snapshot_date=eq.'+encodeURIComponent(date)+'&label=eq.LOVE&order=signal_strength.desc&limit=10');
+    return r.map(function(x){var claim=(x.story_claim||x.primary_narrative||'').slice(0,55);return{name:x.ticker||'Unknown',meta:'Signal: '+Math.round(x.signal_strength||0)+' \u00b7 '+claim,score:Math.round((x.vms||0)*10)/10,link:'/_ticker.html?t='+encodeURIComponent(x.ticker)};});
+  }},
+  {id:'figures',title:'Top Market Figures',sub:'By overall credibility score',color:'#7B61FF',bg:'rgba(123,97,255,0.12)',scoreLabel:'Credibility',
+  fetch:async function(){
+    var r=await sq('market_figures?select=canonical_name,figure_type,firm_name,overall_credibility,total_calls&order=overall_credibility.desc&limit=10');
+    return r.map(function(x){return{name:x.canonical_name||'Unknown',meta:(x.figure_type||'Figure')+' \u00b7 '+(x.firm_name||'Independent'),score:Math.round((x.overall_credibility||0)*10)/10,link:'#'};});
+  }},
 ];
 
 function rankClass(i){return i===0?' lb-r1':i===1?' lb-r2':i===2?' lb-r3':'';}
@@ -8600,7 +8635,7 @@ function renderBoard(b,rows){
   var max=rows.reduce(function(m,r){return Math.max(m,r.score);},1);
   var rowsHtml=rows.map(function(r,i){
     var pct=Math.round(r.score/max*100);
-    var sc=scoreColor(b.id,r.score)||b.color;
+    var sc=r._scoreColor||scoreColor(b.id,r.score)||b.color;
     var disp=r.scoreDisplay!=null?r.scoreDisplay:r.score;
     return '<a class="lb-row" href="'+lbEsc(r.link||'#')+'">'
       +'<div class="lb-rank'+rankClass(i)+'">'+(i+1)+'</div>'
