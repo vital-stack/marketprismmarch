@@ -8617,6 +8617,32 @@ var BOARDS=[
     var r=await sq('daily_trade_labels?select=ticker,signal_strength,vms,story_claim,primary_narrative,label&snapshot_date=eq.'+encodeURIComponent(date)+'&label=eq.LOVE&order=signal_strength.desc&limit=10');
     return r.map(function(x){var claim=(x.story_claim||x.primary_narrative||'').slice(0,55);return{name:x.ticker||'Unknown',meta:'Signal: '+Math.round(x.signal_strength||0)+' \u00b7 '+claim,score:Math.round((x.vms||0)*10)/10,link:'/_ticker.html?t='+encodeURIComponent(x.ticker)};});
   }},
+  {id:'squeeze',title:'Narrative-Powered Squeeze Candidates',sub:'High short pressure \u00b7 bullish narrative gaining energy',color:'#00DE94',bg:'rgba(0,222,148,0.12)',scoreLabel:'Days to Cover',
+  fetch:async function(){
+    var dateR=await sq('ticker_short_data?select=fetched_at&order=fetched_at.desc&limit=1');
+    var shortDate=dateR[0]&&dateR[0].fetched_at?dateR[0].fetched_at.slice(0,10):null;
+    if(!shortDate) return[];
+    var scoreDate=await latestDate('narrative_scorecard');
+    if(!scoreDate) return[];
+    var results=await Promise.all([
+      sq('ticker_short_data?select=ticker,days_to_cover,short_volume_ratio_latest,short_volume_trend,short_pressure,squeeze_risk&fetched_at=gte.'+encodeURIComponent(shortDate)+'&days_to_cover=gt.0&order=days_to_cover.desc&limit=50'),
+      sq('narrative_scorecard?select=ticker,vms,energy_remaining,nrs,verdict,narrative&snapshot_date=eq.'+encodeURIComponent(scoreDate)+'&energy_remaining=gt.0&limit=200')
+    ]);
+    var shortRows=results[0],scoreRows=results[1];
+    var scoreMap={};
+    scoreRows.forEach(function(s){scoreMap[s.ticker]=s;});
+    var seen={},deduped=[];
+    shortRows.forEach(function(r){if(!seen[r.ticker]){seen[r.ticker]=true;deduped.push(r);}});
+    return deduped.map(function(r){
+      var sc=scoreMap[r.ticker];
+      if(!sc) return null;
+      var combined=(r.days_to_cover||0)*0.6+(sc.energy_remaining||0)*0.04;
+      var dtc=Math.round((r.days_to_cover||0)*10)/10;
+      var energy=Math.round(sc.energy_remaining||0);
+      var reliability=Math.round((sc.vms||0)*10)/10;
+      return{name:r.ticker,meta:'Days to cover: '+dtc+'d \u00b7 Story energy: '+energy+'% \u00b7 Reliability: '+reliability+(r.squeeze_risk?' \u00b7 \u26a0 Squeeze risk':''),score:dtc,scoreDisplay:dtc+'d',combined:combined,link:'/_ticker.html?t='+encodeURIComponent(r.ticker)};
+    }).filter(Boolean).sort(function(a,b){return b.combined-a.combined;}).slice(0,10);
+  }},
   {id:'figures',title:'Top Market Figures',sub:'By overall credibility score',color:'#7B61FF',bg:'rgba(123,97,255,0.12)',scoreLabel:'Credibility',
   fetch:async function(){
     var r=await sq('market_figures?select=canonical_name,figure_type,firm_name,overall_credibility,total_calls&order=overall_credibility.desc&limit=10');
@@ -8629,6 +8655,7 @@ function scoreColor(id,score){
   if(id==='safest'||id==='combos') return score>=85?'#00DE94':score>=65?'#FFB800':'#FF4D4D';
   if(id==='hype'||id==='alltime') return score>=500?'#FF4D4D':score>=150?'#FFB800':'#A0A8B0';
   if(id==='decaying') return score>0.05?'#FF4D4D':score>0.02?'#FFB800':'#00DE94';
+  if(id==='squeeze') return score>=7?'#FF4D4D':score>=4?'#FFB800':'#00DE94';
   return null;
 }
 function renderBoard(b,rows){
