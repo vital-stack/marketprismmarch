@@ -219,8 +219,40 @@
   .delta-flat { color: var(--text-tertiary); }
   .chg-arrow-up { color: #22c55e; }
   .chg-arrow-dn { color: #ef4444; }
-  .hero-fv { font-size: 12px; color: #6b7280; margin-top: 6px; font-family: var(--mono); }
-  .hero-fv span { font-family: var(--mono); color: rgba(255,255,255,0.5); }
+  .hero-fv { font-size: 12px; color: #6b7280; margin-top: 6px; font-family: var(--font-body); }
+  .hero-fv span { font-family: var(--font-body); color: rgba(255,255,255,0.5); }
+
+  /* ── Insight badges (stock-specific leaderboard pills) ── */
+  .hero-insight-badge {
+    font-size: 11px;
+    font-weight: 500;
+    font-family: var(--font-body);
+    padding: 4px 12px;
+    border-radius: 99px;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .hero-insight-badge:hover {
+    filter: brightness(1.2);
+  }
+  .hero-company-ctx {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-top: 6px;
+    max-width: 600px;
+  }
+  .hero-lb-rank {
+    font-size: 11px;
+    font-weight: 600;
+    font-family: var(--font-body);
+    padding: 4px 12px;
+    border-radius: 99px;
+    white-space: nowrap;
+    animation: badge-in 0.3s ease-out;
+  }
+  @keyframes badge-in { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
 
   /* ── Section ── */
   .section { margin-bottom: 28px; overflow: hidden; }
@@ -2489,7 +2521,7 @@ async function loadHero() {
       'sector_trap_flag','sector_trap_name','days_to_options_expiry','next_options_expiry'
     ].join(',');
 
-    const [rows, healthRows, snapRows, tradeRows] = await Promise.all([
+    const [rows, healthRows, snapRows, tradeRows, scorecardRows] = await Promise.all([
       sbFetch('v_dash_daily_story', { select: cols, ticker: `eq.${TICKER}`, order: 'snapshot_date.desc', limit: '1' }),
       sbFetch('v_dash_narrative_health', {
         select: 'narrative_health,narrative_trend,attention_trend',
@@ -2505,6 +2537,13 @@ async function loadHero() {
       }).catch(() => []),
       sbFetch('trade_classifications', {
         select: 'primary_label,primary_confidence,shortest_timeframe,longest_timeframe',
+        ticker: `eq.${TICKER}`,
+        order:  'snapshot_date.desc',
+        limit:  '1'
+      }).catch(() => []),
+      // Fetch this ticker's scorecard for leaderboard-style badges
+      sbFetch('narrative_scorecard', {
+        select: 'ticker,fvd_pct,vms,coordination_score,decay_rate,suspicion_score,energy_remaining,verdict,narrative',
         ticker: `eq.${TICKER}`,
         order:  'snapshot_date.desc',
         limit:  '1'
@@ -2570,17 +2609,59 @@ async function loadHero() {
     const winTxt = shortTf && longTf && shortTf !== longTf ? (shortTf + '–' + longTf) : (shortTf || longTf || '');
     const energy = h.narrative_health != null ? h.narrative_health : null;
 
+    // ── Build stock-specific insight badges from scorecard data ──
+    const sc = (scorecardRows || [])[0] || {};
+    const insightBadges = [];
+    // Fair value deviation badges
+    if (sc.fvd_pct != null) {
+      if (sc.fvd_pct < -20) insightBadges.push({ label: 'Below Fair Value', color: '#00DE94', bg: 'rgba(0,222,148,0.10)', border: 'rgba(0,222,148,0.25)' });
+      else if (sc.fvd_pct < -5) insightBadges.push({ label: 'Under Fair Value', color: '#00DE94', bg: 'rgba(0,222,148,0.08)', border: 'rgba(0,222,148,0.20)' });
+      else if (sc.fvd_pct > 100) insightBadges.push({ label: 'High Hype Gap', color: '#FF4D4D', bg: 'rgba(255,77,77,0.10)', border: 'rgba(255,77,77,0.25)' });
+      else if (sc.fvd_pct > 30) insightBadges.push({ label: 'Overvalued', color: '#FF4D4D', bg: 'rgba(255,77,77,0.08)', border: 'rgba(255,77,77,0.20)' });
+    }
+    // Reliability badge
+    if (sc.vms != null) {
+      if (sc.vms >= 80) insightBadges.push({ label: 'High Reliability', color: '#00DE94', bg: 'rgba(0,222,148,0.08)', border: 'rgba(0,222,148,0.20)' });
+      else if (sc.vms <= 25) insightBadges.push({ label: 'Low Reliability', color: '#FFB800', bg: 'rgba(255,184,0,0.08)', border: 'rgba(255,184,0,0.20)' });
+    }
+    // Coordination / manipulation risk
+    if (sc.coordination_score != null && sc.coordination_score >= 60) {
+      insightBadges.push({ label: 'Coordinated Narrative', color: '#FF4D4D', bg: 'rgba(255,77,77,0.08)', border: 'rgba(255,77,77,0.20)' });
+    }
+    // Suspicion
+    if (sc.suspicion_score != null && sc.suspicion_score >= 50) {
+      insightBadges.push({ label: 'Manipulation Risk', color: '#7B61FF', bg: 'rgba(123,97,255,0.10)', border: 'rgba(123,97,255,0.25)' });
+    }
+    // Decay
+    if (sc.decay_rate != null && sc.decay_rate >= 0.05) {
+      insightBadges.push({ label: 'Narrative Fading', color: '#FFB800', bg: 'rgba(255,184,0,0.08)', border: 'rgba(255,184,0,0.20)' });
+    }
+    // Energy
+    if (sc.energy_remaining != null) {
+      if (sc.energy_remaining >= 85) insightBadges.push({ label: 'High Energy', color: '#00AEFF', bg: 'rgba(0,174,255,0.08)', border: 'rgba(0,174,255,0.20)' });
+      else if (sc.energy_remaining <= 15) insightBadges.push({ label: 'Story Exhausted', color: '#A0A8B0', bg: 'rgba(160,168,176,0.08)', border: 'rgba(160,168,176,0.20)' });
+    }
+    // Verdict-based badges
+    const scVerdict = (sc.verdict || '').toLowerCase();
+    if (scVerdict.includes('trap')) insightBadges.push({ label: 'Narrative Trap', color: '#FF4D4D', bg: 'rgba(255,77,77,0.08)', border: 'rgba(255,77,77,0.20)' });
+    else if (scVerdict.includes('verified') || scVerdict.includes('supported')) insightBadges.push({ label: 'Fundamentally Supported', color: '#00DE94', bg: 'rgba(0,222,148,0.08)', border: 'rgba(0,222,148,0.20)' });
+
+    const insightHtml = insightBadges.slice(0, 4).map(b =>
+      `<span class="hero-insight-badge" style="background:${b.bg};color:${b.color};border:1px solid ${b.border};">${esc(b.label)}</span>`
+    ).join('');
+
+    // Build company context line from narrative + sector
+    const companyContext = r.mda_snippet || '';
+
     document.getElementById('hero').innerHTML = `
       <div class="hero-left">
         ${(function(t){var d=window.MP_DOMAINS&&window.MP_DOMAINS[t];return d?'<img src="https://www.google.com/s2/favicons?domain='+d+'&sz=128" alt="'+t+'" class="hero-ticker-logo" onerror="this.style.display=\'none\'">':'';})( r.ticker )}
         <div class="hero-ticker-row">
           <span class="hero-ticker">${esc(r.ticker)}</span>
-          <span class="hero-state-badge ${stateClass(r.narrative_state)}">${esc(r.narrative_state || '—')}</span>
-          <span class="verdict-badge ${verdictClass}">${esc(verdict)}</span>
-          ${trendBadge}
-          ${stockTypeBadge}
+          ${insightHtml || `<span class="hero-state-badge ${stateClass(r.narrative_state)}">${esc(r.narrative_state || '—')}</span>`}
         </div>
         <div class="hero-claim">${esc(r.primary_driver || r.story_claim || '')}</div>
+        ${companyContext ? `<div class="hero-company-ctx">${esc(companyContext)}</div>` : ''}
         ${r.sector_name ? `<div class="hero-sector">${esc(r.sector_name)}</div>` : ''}
       </div>
       <div class="hero-right">
@@ -2657,6 +2738,70 @@ async function loadHero() {
   } catch (err) {
     document.getElementById('hero').innerHTML = `<div class="inline-err">Failed to load: ${esc(err.message)}</div>`;
     return null;
+  }
+}
+
+// ── Leaderboard rank enrichment (runs after hero, adds rank badges) ──────────
+async function enrichLeaderboardBadges() {
+  if (!TICKER) return;
+  const row = document.querySelector('.hero-ticker-row');
+  if (!row) return;
+  try {
+    const date = await sbFetch('narrative_scorecard', {
+      select: 'snapshot_date', order: 'snapshot_date.desc', limit: '1'
+    }).then(r => r[0]?.snapshot_date).catch(() => null);
+    if (!date) return;
+
+    // Fetch top 10 from key leaderboards in parallel
+    const [undervalued, overvalued, reliable, hypegap, coordinated] = await Promise.all([
+      sbFetch('narrative_scorecard', {
+        select: 'ticker', snapshot_date: `eq.${date}`,
+        'fvd_pct': 'lt.0', order: 'fvd_pct.asc', limit: '10'
+      }).catch(() => []),
+      sbFetch('narrative_scorecard', {
+        select: 'ticker', snapshot_date: `eq.${date}`,
+        'fvd_pct': 'gt.0', order: 'fvd_pct.desc', limit: '10'
+      }).catch(() => []),
+      sbFetch('narrative_scorecard', {
+        select: 'ticker', snapshot_date: `eq.${date}`,
+        'vms': 'gt.0', order: 'vms.desc', limit: '10'
+      }).catch(() => []),
+      sbFetch('narrative_scorecard', {
+        select: 'ticker', snapshot_date: `eq.${date}`,
+        'fvd_pct': 'gt.0', order: 'fvd_pct.desc', limit: '10'
+      }).catch(() => []),
+      sbFetch('narrative_scorecard', {
+        select: 'ticker', snapshot_date: `eq.${date}`,
+        'coordination_score': 'gt.0', order: 'coordination_score.desc', limit: '10'
+      }).catch(() => [])
+    ]);
+
+    const rankBadges = [];
+    const findRank = (list) => { const idx = list.findIndex(x => x.ticker === TICKER); return idx >= 0 ? idx + 1 : null; };
+
+    const uvRank = findRank(undervalued);
+    if (uvRank) rankBadges.push({ label: `#${uvRank} Under Fair Value`, color: '#00DE94', bg: 'rgba(0,222,148,0.12)', border: 'rgba(0,222,148,0.30)' });
+
+    const ovRank = findRank(overvalued);
+    if (ovRank) rankBadges.push({ label: `#${ovRank} Most Overvalued`, color: '#FF4D4D', bg: 'rgba(255,77,77,0.12)', border: 'rgba(255,77,77,0.30)' });
+
+    const relRank = findRank(reliable);
+    if (relRank) rankBadges.push({ label: `#${relRank} Most Reliable`, color: '#00DE94', bg: 'rgba(0,222,148,0.10)', border: 'rgba(0,222,148,0.25)' });
+
+    const hypeRank = findRank(hypegap);
+    if (hypeRank && !ovRank) rankBadges.push({ label: `#${hypeRank} Hype Gap`, color: '#FF4D4D', bg: 'rgba(255,77,77,0.10)', border: 'rgba(255,77,77,0.25)' });
+
+    const coordRank = findRank(coordinated);
+    if (coordRank) rankBadges.push({ label: `#${coordRank} Coordinated`, color: '#7B61FF', bg: 'rgba(123,97,255,0.12)', border: 'rgba(123,97,255,0.30)' });
+
+    if (rankBadges.length) {
+      const html = rankBadges.slice(0, 3).map(b =>
+        `<span class="hero-lb-rank" style="background:${b.bg};color:${b.color};border:1px solid ${b.border};">${esc(b.label)}</span>`
+      ).join('');
+      row.insertAdjacentHTML('beforeend', html);
+    }
+  } catch (e) {
+    console.warn('Leaderboard badge enrichment failed:', e);
   }
 }
 
@@ -4192,6 +4337,9 @@ async function refreshAll() {
   renderPrimaryClaim(pulse);
   renderWarranted(pulse);
   renderHeatmap(pulse);
+
+  // Fire leaderboard badge enrichment (non-blocking)
+  enrichLeaderboardBadges();
 
   await Promise.all([
     loadNarratives(),
