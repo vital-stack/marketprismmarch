@@ -4715,6 +4715,7 @@ function buildStoryCardHTML(r,idx){
             +(r.sector_name?'<span style="color:var(--mp-text-tertiary);font-size:11px;">'+esc(r.sector_name)+'</span>':'')
             +(updated?'<span style="color:var(--mp-text-tertiary);margin-left:auto;font-family:var(--font-mono);font-size:10px;">'+updated+'</span>':'')
           +'</div>'
+          +(function(){var tags=getTickerInsightTags(r).slice(0,3);if(!tags.length)return '';return '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:5px;">'+tags.map(function(t){return '<span style="font-family:var(--font-body);font-size:10px;font-weight:500;padding:2px 8px;border-radius:99px;white-space:nowrap;letter-spacing:0.02em;background:'+t.bg+';color:'+t.color+';border:1px solid '+t.border+';">'+esc(t.label)+'</span>';}).join('')+'</div>';})()
         +'</div>'
       +'</div>'
       +'<span class="card-arrow">→</span>'
