@@ -2906,13 +2906,13 @@ body{
 .nc-truth-lbl{font-family:var(--font-body);font-size:6px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.5);position:relative;z-index:1;}
 .nc-meta{font-family:var(--font-body);font-size:11px;color:#A0A8B0;line-height:1.4;}
 /* Tags — hidden for compact */
-.nc-tags{display:none;}
+.nc-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;}
 .nc-tag{
-  font-family:var(--font-body);font-size:10px;font-weight:600;
-  letter-spacing:0.04em;text-transform:uppercase;
-  padding:4px 10px;border-radius:14px;white-space:nowrap;
+  font-family:var(--font-body);font-size:11px;font-weight:500;
+  letter-spacing:0.02em;
+  padding:3px 10px;border-radius:99px;white-space:nowrap;
   border:1px solid rgba(255,255,255,0.10);color:var(--mp-text-secondary);
-  background:rgba(255,255,255,0.04);
+  background:rgba(255,255,255,0.04);transition:all 0.2s;
 }
 .nc-tag-green{color:#1a8a5e;border-color:rgba(26,138,94,0.25);background:rgba(26,138,94,0.06);}
 .nc-tag-red{color:#c0392b;border-color:rgba(192,57,43,0.25);background:rgba(192,57,43,0.06);}
@@ -4444,7 +4444,16 @@ function nfBuildRow(dir, logoHtml, ticker, sector, headline, verdict, href, extr
   var rarity=ncRarityFromVerdict(verdict,extra.state);
   var sentCls='nc-sentiment-'+(dir||'neutral');
   var verdictCls=ncVerdictClass(verdict);
-  var tags=ncBuildTags(verdict,extra.state,extra.daysToEarnings);
+  // Use real insight tags from scorecard data when a full record is available
+  var tags;
+  if(extra.record&&typeof getTickerInsightTags==='function'){
+    var insightTags=getTickerInsightTags(extra.record);
+    var insight=insightTags.filter(function(t){return !t.sector;});
+    var sectorTags=insightTags.filter(function(t){return t.sector;});
+    tags=insight.concat(sectorTags).slice(0,4).map(function(t){return {label:t.label,cls:'',style:'background:'+t.bg+';color:'+t.color+';border-color:'+t.border+';'};});
+  } else {
+    tags=ncBuildTags(verdict,extra.state,extra.daysToEarnings).map(function(t){return {label:t.label,cls:t.cls,style:''};});
+  }
   var conf=extra.confidence||Math.round(60+Math.random()*30);
   var truthColor=conf>=50?'#00DE94':'#FF4D4D';
   var priceHTML='';
@@ -4484,7 +4493,7 @@ function nfBuildRow(dir, logoHtml, ticker, sector, headline, verdict, href, extr
         +'</div>'
         +'<div class="nc-meta">'+conf+'% \u00B7 '+(extra.window||'Day\u2013Swing')+' \u00B7 '+stateLabel+'</div>'
       +'</div>'
-      +(tags.length?'<div class="nc-tags">'+tags.map(function(t){return '<span class="nc-tag '+t.cls+'">'+t.label+'</span>';}).join('')+'</div>':'')
+      +(tags.length?'<div class="nc-tags">'+tags.map(function(t){return '<span class="nc-tag '+(t.cls||'')+'"'+(t.style?' style="'+t.style+'"':'')+'>'+t.label+'</span>';}).join('')+'</div>':'')
     +'</div>'
     +'<div class="nc-footer">'
       +'<div class="nc-footer-state"><span class="nc-pulse" style="background:'+accentColor+';"></span>'+esc(stateLabel)+' \u00B7 LIVE</div>'
@@ -4521,7 +4530,8 @@ function renderNarrativeCards(){
         price:r.price, pricePct:pct, state:r.narrative_state,
         daysToEarnings:r.days_to_earnings,
         confidence:tc.primary_confidence!=null?Math.round(tc.primary_confidence):null,
-        window:tc.shortest_timeframe||null
+        window:tc.shortest_timeframe||null,
+        record:r
       });
     }).join('');
   }
