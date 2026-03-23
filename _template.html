@@ -8671,6 +8671,12 @@ function hexToRgb(hex){
 ensureDashboardAuth().then(function(user){
   if(!user) return;
   loadData();
+  // Handle hash-based tab navigation (e.g. /dashboard#discover from ticker page)
+  var hash = window.location.hash.replace('#','');
+  if(hash && TABS.indexOf(hash) !== -1){
+    var btn = document.querySelector('.nav-item[data-tab="'+hash+'"]');
+    switchTab(hash, btn);
+  }
 });
 setInterval(function(){
   ensureDashboardAuth().then(function(user){
