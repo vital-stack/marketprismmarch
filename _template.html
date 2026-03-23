@@ -5494,7 +5494,7 @@ function rangeToCutoff(range){
 }
 function evColor(t){
   if(t==='bull')return 'rgba(0,229,180,1)';
-  if(t==='bear')return 'rgba(255,107,107,1)';
+  if(t==='bear')return 'rgba(255,77,77,1)';
   if(t==='earnings')return 'rgba(123,97,255,1)';
   if(t==='opex')return 'rgba(239,159,39,1)';
   return 'rgba(139,151,184,1)';
@@ -5637,12 +5637,51 @@ async function loadNHT(ticker){
   // Fetch all data in parallel (each catches its own errors)
   try {
     var results=await Promise.all([
-      fetchMassivePrices(nhtTicker).catch(function(e){console.warn('Price fetch failed:',e);return [];}),
+      ensureLiveNarrativeHistory(nhtTicker).catch(function(e){console.warn('Narrative history fetch failed:',e);return null;}),
       fetchNarrativeScorecard(nhtTicker).catch(function(e){console.warn('Scorecard fetch failed:',e);return [];}),
       fetchNarrativeHealth(nhtTicker).catch(function(e){console.warn('Health fetch failed:',e);return [];})
     ]);
-    nhtPriceCache=results[0]||[];
-    nhtEventsCache=scorecardToEvents(results[1]||[]);
+    var model=results[0]||{series:[],events:[],price:0,ytd:0};
+    var series=(model.series||[]).filter(function(row){return row && row.snapshot_date && row.price_close!=null;});
+    nhtPriceCache=series.map(function(row){
+      return {
+        date:row.snapshot_date,
+        dateLabel:fmtDateLabel(row.snapshot_date),
+        o:row.price_close,h:row.price_close,l:row.price_close,c:row.price_close,v:0
+      };
+    });
+    var mappedEvents=(model.events||[]).map(function(ev){
+      var dateIso=ev.date_iso||ev.snapshot_date||ev.date||'';
+      return {
+        date_iso:dateIso,
+        date:dateIso,
+        dateLabel:ev.date||fmtDateShort(dateIso),
+        type:ev.type||'neutral',
+        label:ev.label||'Narrative update',
+        verdict:ev.verdict||'',
+        price:ev.price||0,
+        ticker:nhtTicker
+      };
+    });
+    if(!mappedEvents.length && (results[1]||[]).length){
+      mappedEvents=scorecardToEvents(results[1]).map(function(ev){
+        ev.date_iso=ev.date;
+        return ev;
+      });
+    }
+    var opexEvents=generateOpexEvents(series).map(function(ev){
+      return {
+        date_iso:ev.date_iso,
+        date:ev.date_iso,
+        dateLabel:ev.date,
+        type:ev.type,
+        label:ev.label,
+        verdict:ev.verdict||'',
+        price:ev.price||0,
+        ticker:nhtTicker
+      };
+    });
+    nhtEventsCache=dedupeEvents(mappedEvents.concat(opexEvents));
     nhtHealthCache=(results[2]||[]).map(function(r){
       return {date:r.snapshot_date,sentiment:r.sentiment_score,trend:r.narrative_trend,attention:r.attention_trend,health:r.narrative_health};
     });
@@ -5654,8 +5693,8 @@ async function loadNHT(ticker){
   // Update price + YTD in header
   if(nhtPriceCache.length){
     var latest=nhtPriceCache[nhtPriceCache.length-1];
-    var first=nhtPriceCache[0];
-    var ytd=first.c?((latest.c-first.c)/first.c*100):0;
+    var yOpen=startOfYearPrice((results && results[0] && results[0].series) ? results[0].series : []);
+    var ytd=yOpen?((latest.c-yOpen)/yOpen*100):0;
     document.getElementById('nht-price').textContent='$'+latest.c.toFixed(2);
     var ytdEl=document.getElementById('nht-ytd');
     ytdEl.textContent=(ytd>=0?'\u25B2 +':'\u25BC ')+ytd.toFixed(1)+'% (2Y)';
