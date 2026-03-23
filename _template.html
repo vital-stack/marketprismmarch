@@ -4089,7 +4089,6 @@ var TRADE_CLASS_MAP = {};
 var PREDICTION_MAP  = {};
 var snapshotMap     = {};
 var LOVE_HATE_DATA  = [];
-var TRADE_CARDS_DATA = []; // High-conviction signals from v_trade_cards
 var DOMAIN_MAP = {
   NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadcom.com',
   QCOM:'qualcomm.com',TSM:'tsmc.com',MRVL:'marvell.com',AMAT:'appliedmaterials.com',
@@ -4195,8 +4194,6 @@ async function loadData(){
     var predP = fetch(SUPABASE_URL+'/rest/v1/prediction_scores?select=ticker,predicted_value&order=prediction_date.desc',{headers:hdrs}).catch(function(){return null;});
     var lhP = fetch(SUPABASE_URL+'/rest/v1/daily_trade_labels?select=ticker,label,signal_strength,price,price_change_pct,primary_narrative,story_claim,prism_verdict&order=signal_strength.desc',{headers:hdrs}).catch(function(){return null;});
     var scP = fetch(SUPABASE_URL+'/rest/v1/narrative_scorecard?select=ticker,fvd_pct,vms,energy_remaining,predicted_exhaustion_days,coordination_class,suspicion_class,decay_rate,verdict&order=snapshot_date.desc',{headers:hdrs}).catch(function(){return null;});
-    // ── HIGH-CONVICTION TRADE CARDS from v_trade_cards ──
-    var tcCardsP = fetch(SUPABASE_URL+'/rest/v1/v_trade_cards?select=*&primary_label=in.(NARRATIVE_TRAP,FUNDAMENTAL_DISCONNECT)&direction=eq.BEARISH&confidence=gte.0.35&order=confidence.desc&limit=10',{headers:hdrs}).catch(function(){return null;});
 
     var res = await mainP;
     if(!res.ok) throw new Error('Supabase '+res.status);
@@ -4228,42 +4225,6 @@ async function loadData(){
 
     var scorecardMap={};
     try{ if(results[6]&&results[6].ok)(await results[6].json()).forEach(function(s){if(!scorecardMap[s.ticker])scorecardMap[s.ticker]=s;}); }catch(_){}
-
-    // ── Process v_trade_cards → TRADE_CARDS_DATA ──────────────────────────────
-    try{
-      var tcCardsRes=await tcCardsP;
-      if(tcCardsRes&&tcCardsRes.ok){
-        var tcRows=await tcCardsRes.json();
-        var tcSeen=new Set();
-        TRADE_CARDS_DATA=tcRows.filter(function(r){if(tcSeen.has(r.ticker))return false;tcSeen.add(r.ticker);return true;}).slice(0,10).map(function(r,i){
-          var isNT=r.primary_label==='NARRATIVE_TRAP';
-          var confPct=Math.round((r.confidence||0)*100);
-          var holdDays=r.holding_days||5;
-          var winTxt=holdDays+' day'+(holdDays>1?'s':'');
-          var exitDate=r.exit_date?new Date(r.exit_date).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'';
-          var phase=isNT?'Distribution Phase':'Correction Phase';
-          var biasText=isNT?'SHORT: NARRATIVE TRAP':'SHORT: FUNDAMENTAL DISCONNECT';
-          var desc=isNT
-            ?'Coordinated narrative and valuation distortion detected. Historically leads to rapid downside unwind.'
-            :'Price is diverging from fundamentals. Mean reversion probability elevated.';
-          desc+=' Expected Move: ~2\u20133% downside';
-          return Object.assign({},r,{
-            _fromTradeCards:true,
-            price:r.price||0,
-            price_change_pct:r.price_change_pct||0,
-            biasText:biasText,
-            phase:phase,
-            _confPct:confPct,
-            _winTxt:winTxt,
-            _moveDateStr:exitDate,
-            _description:desc,
-            narrative_state:'Breaking',
-            prism_verdict:isNT?'Narrative Trap':'Fragile',
-            sector_name:r.sector_name||r.sector||(SECTOR_MAP[r.ticker]?SECTOR_MAP[r.ticker][0]:'')||''
-          },TRADING_CARD_COLORS[i%TRADING_CARD_COLORS.length]);
-        });
-      }
-    }catch(_){}
 
     // dedup + merge
     var seen=new Set();
@@ -4344,7 +4305,6 @@ async function loadData(){
     loadDiscoverHeatmap();
     renderTradingCards();
     renderDailySignalCards();
-    renderCardsGallery();
     renderDailyMarketPulse();
     renderNarrativeCards();
     renderSectorNarrativeCards();
@@ -5253,22 +5213,9 @@ function generateMeme(){
   document.getElementById('meme-ticker-inp').value='';
 }
 function renderMemes(){
-  // Merge with live DATA if available — prefer TRADE_CARDS_DATA for high-conviction signals
+  // Merge with live DATA if available
   var cards=MEME_DATA;
-  if(TRADE_CARDS_DATA.length>0&&MEME_DATA===MEME_SEED){
-    cards=TRADE_CARDS_DATA.slice(0,12).map(function(r){
-      var isNT=r.primary_label==='NARRATIVE_TRAP';
-      return{
-        ticker:r.ticker,state:'Breaking',
-        claim:r._description||r.story_claim||'High-conviction trade signal',
-        verdict:isNT?'Narrative Trap':'Fragile',
-        price:r.price||0,chg:r.price_change_pct||0,
-        age:'Today',likes:Math.floor(Math.random()*120),
-        bg:'meme-bg-breaking'
-      };
-    });
-    MEME_DATA=cards;
-  } else if(DATA.length>0&&MEME_DATA===MEME_SEED){
+  if(DATA.length>0&&MEME_DATA===MEME_SEED){
     cards=DATA.slice(0,12).map(function(r){
       return{
         ticker:r.ticker,state:r.narrative_state||'Stable',
@@ -6397,54 +6344,44 @@ function buildCardFrontHTML(c,i,dateStr,prefix,showActions){
   var isBull=c.price_change_pct>0;
   var deltaColor=isBull?'#00DE94':'#FF4D4D';
 
-  // ── DATA from v_trade_cards (high-conviction) or legacy overlays ─────────
-  var conf, winTxt, moveDateStr;
-  if(c._fromTradeCards){
-    // Pre-mapped from v_trade_cards pipeline
-    conf=c._confPct;
-    winTxt=c._winTxt;
-    moveDateStr=c._moveDateStr||'TBD';
-  }else{
-    // Legacy path: trade_classifications + prediction_scores
-    var tc=TRADE_CLASS_MAP[c.ticker]||{};
-    conf=tc.primary_confidence!=null?Math.round(tc.primary_confidence):Math.round(50+Math.random()*40);
-    var shortTf=tc.shortest_timeframe||'';
-    var longTf=tc.longest_timeframe||'';
-    winTxt=shortTf&&longTf&&shortTf!==longTf
-      ?(shortTf+'\u2013'+longTf)
-      :(shortTf||longTf||( isBull?'1\u20133d':conf>70?'3\u20135d':'5\u20137d'));
-    if(tc.primary_label&&LABEL_TO_BIAS[tc.primary_label]){
-      c=Object.assign({},c,{biasText:LABEL_TO_BIAS[tc.primary_label]});
-    }
-    var pred=PREDICTION_MAP[c.ticker]||{};
-    var rawDays=pred.predicted_value!=null?Math.round(pred.predicted_value):null;
-    if(rawDays!=null){
-      if(rawDays<=14){
-        moveDateStr=new Date(Date.now()+rawDays*86400000).toLocaleDateString('en-US',{month:'short',day:'numeric'});
-      }else if(rawDays<=60){
-        moveDateStr=new Date(Date.now()+rawDays*86400000).toLocaleDateString('en-US',{month:'short',day:'numeric'});
-      }else{
-        moveDateStr='30d+';
-      }
+  // ── REAL DATA from trade_classifications ──────────────────────────────────
+  var tc=TRADE_CLASS_MAP[c.ticker]||{};
+  var conf=tc.primary_confidence!=null?Math.round(tc.primary_confidence):Math.round(50+Math.random()*40);
+  var shortTf=tc.shortest_timeframe||'';
+  var longTf=tc.longest_timeframe||'';
+  var winTxt=shortTf&&longTf&&shortTf!==longTf
+    ?(shortTf+'\u2013'+longTf)
+    :(shortTf||longTf||( isBull?'1\u20133d':conf>70?'3\u20135d':'5\u20137d'));
+  // biasText: from classification label, fall back to existing TRADING_CARD_COLORS value
+  if(tc.primary_label&&LABEL_TO_BIAS[tc.primary_label]){
+    c=Object.assign({},c,{biasText:LABEL_TO_BIAS[tc.primary_label]});
+  }
+
+  // ── REAL DATA from prediction_scores ─────────────────────────────────────
+  var pred=PREDICTION_MAP[c.ticker]||{};
+  var rawDays=pred.predicted_value!=null?Math.round(pred.predicted_value):null;
+  var moveDateStr, moveWindow;
+  if(rawDays!=null){
+    if(rawDays<=14){
+      moveDateStr=new Date(Date.now()+rawDays*86400000).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    }else if(rawDays<=60){
+      moveDateStr=new Date(Date.now()+rawDays*86400000).toLocaleDateString('en-US',{month:'short',day:'numeric'});
     }else{
-      var moveDate=new Date();moveDate.setDate(moveDate.getDate()+Math.floor(5+Math.random()*6));
-      moveDateStr=moveDate.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+      moveDateStr='30d+';
     }
+  }else{
+    // fallback: keep existing random logic
+    var moveDate=new Date();moveDate.setDate(moveDate.getDate()+Math.floor(5+Math.random()*6));
+    moveDateStr=moveDate.toLocaleDateString('en-US',{month:'short',day:'numeric'});
   }
 
   // ── Unchanged from here down ───────────────────────────────────────────────
   var energy=c.narrative_health||Math.round(40+Math.random()*50);
   var rKey=c.prism_verdict||c.narrative_state||'Stable';
   var rarity=RARITY_MAP[rKey]||RARITY_MAP['Stable'];
-  // Trade cards: override rarity to show signal type badge
-  if(c._fromTradeCards){
-    rarity=c.primary_label==='NARRATIVE_TRAP'
-      ?{label:'Signal',color:'#FF4D4D',border:'rgba(255,77,77,0.25)'}
-      :{label:'Signal',color:'#FFB800',border:'rgba(255,184,0,0.25)'};
-  }
   var snap=snapshotMap&&snapshotMap[c.ticker]||{};
   var companyName=c.sector_name||snap.sector||'\u2014';
-  var signalPrimary=c._fromTradeCards?esc(c._description):esc(c.synopsis||c.story_claim||c.primary_driver||'Signal under analysis');
+  var signalPrimary=esc(c.synopsis||c.story_claim||c.primary_driver||'Signal under analysis');
   var sentiment=cardSentiment(c);
   var ss=SENTIMENT_STYLES[sentiment];
   var borderColor=ss.border1;
@@ -6467,8 +6404,8 @@ function buildCardFrontHTML(c,i,dateStr,prefix,showActions){
       +'</button>'
     +'</div>';
   }
-  // Phase label — trade cards use their mapped phase, others use narrative_state
-  var phaseLabel=c._fromTradeCards?(c.phase||'Active').toUpperCase():(c.narrative_state||c.phase||'Active').toUpperCase();
+  // Phase label
+  var phaseLabel=(c.narrative_state||c.phase||'Active').toUpperCase();
   return '<div class="card-scene" style="'+styleVars+'" onclick="this.classList.toggle(\'flipped\')">'
     +'<div class="card-flipper">'
       // ── CARD FRONT ──
@@ -6493,7 +6430,7 @@ function buildCardFrontHTML(c,i,dateStr,prefix,showActions){
               +'<span class="tc-change" style="color:'+deltaColor+';">'+(isBull?'\u25B2':'\u25BC')+' '+Math.abs(c.price_change_pct||0).toFixed(2)+'%</span>'
             +'</div>'
             // 3. Command (white for all cards)
-            +'<div class="tc-command">'+(c.biasText||'SIGNAL').toUpperCase()+'</div>'
+            +'<div class="tc-command">'+c.biasText.toUpperCase()+'</div>'
             // 4. Meta line
             +'<div class="tc-meta-line">'+conf+'% \u2022 '+winTxt+' \u2022 ACTIVE</div>'
             // 5. Context
@@ -6518,7 +6455,7 @@ function buildCardFrontHTML(c,i,dateStr,prefix,showActions){
               // Trade Signal header
               +'<div class="back-header-label">Trade Signal</div>'
               // Command
-              +'<div class="back-command" style="color:#FFFFFF;">'+(c.biasText||'SIGNAL').toUpperCase()+'</div>'
+              +'<div class="back-command" style="color:#FFFFFF;">'+c.biasText.toUpperCase()+'</div>'
               // Meta rows
               +'<div class="back-meta-grid">'
                 +'<div class="back-meta-row">Confidence <strong style="color:'+borderColor+';">'+conf+'%</strong><span class="back-sep"></span>Window <strong>'+winTxt+'</strong></div>'
@@ -6570,11 +6507,7 @@ function renderTradingCards(){
   var deck=document.getElementById('trading-deck');
   if(!deck)return;
   var cards=[];
-  // Prefer high-conviction trade cards from v_trade_cards, always fall back to DATA
-  if(TRADE_CARDS_DATA.length>0){
-    cards=TRADE_CARDS_DATA.slice(0,4);
-  }
-  if(!cards.length&&DATA.length>0){
+  if(DATA.length>0){
     var breaking=DATA.filter(function(r){return r.narrative_state==='Breaking'||r.prism_verdict==='Narrative Trap';});
     var surging=DATA.filter(function(r){return r.narrative_state==='Surging'||r.prism_verdict==='Structurally Supported';});
     var fragile=DATA.filter(function(r){return r.narrative_state==='Fragile';});
@@ -6585,8 +6518,7 @@ function renderTradingCards(){
     if(surging[1])cards.push(Object.assign({},surging[1],TRADING_CARD_COLORS[4]));
     var used=new Set(cards.map(function(c){return c.ticker;}));
     DATA.forEach(function(r){if(cards.length<5&&!used.has(r.ticker)){cards.push(Object.assign({},r,TRADING_CARD_COLORS[cards.length%5]));used.add(r.ticker);}});
-  }
-  if(!cards.length){
+  } else {
     cards=[
       {ticker:'NVDA',price:118.42,price_change_pct:-2.14,narrative_state:'Breaking',story_claim:'Narrative breaking while retail still buying strength',sector_name:'Semiconductors',pe_ratio:62,accent:'#00FFFF',bias:'#00FFFF',phase:'Decay Phase',biasText:'Fade Rallies'},
       {ticker:'AAPL',price:212.80,price_change_pct:1.87,narrative_state:'Surging',story_claim:'Institutional accumulation confirming breakout above key resistance',sector_name:'Consumer Technology',pe_ratio:29,accent:'#00DE94',bias:'#00DE94',phase:'Breakout Forming',biasText:'Ride the Trend'},
@@ -6604,11 +6536,7 @@ function renderDailySignalCards(){
   var deck=document.getElementById('daily-signal-deck');
   if(!deck)return;
   var cards=[];
-  // Prefer high-conviction trade cards from v_trade_cards, always fall back to DATA
-  if(TRADE_CARDS_DATA.length>0){
-    cards=TRADE_CARDS_DATA.slice(0,7);
-  }
-  if(!cards.length&&DATA.length>0){
+  if(DATA.length>0){
     var breaking=DATA.filter(function(r){return r.narrative_state==='Breaking'||r.prism_verdict==='Narrative Trap';});
     var surging=DATA.filter(function(r){return r.narrative_state==='Surging'||r.prism_verdict==='Structurally Supported';});
     var fragile=DATA.filter(function(r){return r.narrative_state==='Fragile';});
@@ -6619,8 +6547,7 @@ function renderDailySignalCards(){
     if(surging[1])cards.push(Object.assign({},surging[1],TRADING_CARD_COLORS[4]));
     var used=new Set(cards.map(function(c){return c.ticker;}));
     DATA.forEach(function(r){if(cards.length<7&&!used.has(r.ticker)){cards.push(Object.assign({},r,TRADING_CARD_COLORS[cards.length%5]));used.add(r.ticker);}});
-  }
-  if(!cards.length){
+  } else {
     cards=[
       {ticker:'NVDA',price:118.42,price_change_pct:-2.14,narrative_state:'Breaking',story_claim:'Narrative breaking while retail still buying strength',sector_name:'Semiconductors',pe_ratio:62,accent:'#00FFFF',bias:'#00FFFF',phase:'Decay Phase',biasText:'Fade Rallies'},
       {ticker:'AAPL',price:212.80,price_change_pct:1.87,narrative_state:'Surging',story_claim:'Institutional accumulation confirming breakout above key resistance',sector_name:'Consumer Technology',pe_ratio:29,accent:'#00DE94',bias:'#00DE94',phase:'Breakout Forming',biasText:'Ride the Trend'},
@@ -6641,11 +6568,7 @@ function renderCardsGallery(){
   var grid=document.getElementById('tcg-grid');
   if(!grid)return;
   var cards=[];
-  // Prefer high-conviction trade cards from v_trade_cards, always fall back to DATA
-  if(TRADE_CARDS_DATA.length>0){
-    cards=TRADE_CARDS_DATA.slice(0,10);
-  }
-  if(!cards.length&&DATA.length>0){
+  if(DATA.length>0){
     DATA.forEach(function(r,i){
       cards.push(Object.assign({},r,TRADING_CARD_COLORS[i%TRADING_CARD_COLORS.length]));
     });
@@ -7302,34 +7225,13 @@ function tcQueueToday(idx){
 
 // ── Boot ──
 function tcBuildFromData(){
-  if(!DATA.length&&!TRADE_CARDS_DATA.length)return;
+  if(!DATA.length)return;
   var rMap={
     'Breaking':'Rare','Narrative Trap':'Rare',
     'Surging':'Epic','Structurally Supported':'Epic',
     'Fragile':'Uncommon','Stable':'Common'
   };
-  // Build high-conviction trade card signals first, then fill with DATA
-  var tcSignals=[];
-  if(TRADE_CARDS_DATA.length>0){
-    tcSignals=TRADE_CARDS_DATA.map(function(r){
-      var pct=r.price_change_pct||0;
-      var isUp=pct>0;
-      return{
-        id:r.ticker.toLowerCase(),ticker:r.ticker,
-        name:r.sector_name||'\u2014',
-        price:'$'+fmtPrice(r.price||0),
-        change:(isUp?'\u25B2':'\u25BC')+' '+Math.abs(pct).toFixed(2)+'%',
-        changeDir:isUp?'up':'down',
-        rarity:'Rare',ac:'var(--mp-red)',
-        bias:(r.biasText||'SHORT').toUpperCase(),
-        conf:r._confPct+'%',
-        window:r._winTxt||'5 days',
-        logo:''
-      };
-    });
-  }
-  var tcSeen=new Set(tcSignals.map(function(s){return s.ticker;}));
-  var dataSignals=DATA.filter(function(r){return !tcSeen.has(r.ticker);}).map(function(r,i){
+  TC_SIGNALS=DATA.map(function(r,i){
     var pct=r.price_change_pct||0;
     var isUp=pct>0;
     var tc=TRADE_CLASS_MAP[r.ticker]||{};
@@ -7352,7 +7254,6 @@ function tcBuildFromData(){
       bias:biasText,conf:conf,window:win,logo:''
     };
   });
-  TC_SIGNALS=tcSignals.concat(dataSignals);
 }
 function calendarBoot(){
   if(tcCalBooted)return;
