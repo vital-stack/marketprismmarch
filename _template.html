@@ -9638,11 +9638,6 @@ var BOARDS=[
     var r=await sq('source_scores?select=source_name,srs,total_claims,correct_claims,source_type&order=srs.desc&limit=10');
     return r.map(function(x){return{name:x.source_name||'Unknown',meta:(x.source_type||'Media')+' \u00b7 '+(x.total_claims||0)+' claims',score:Math.round((x.srs||0)*10)/10,link:'#narrative'};});
   }},
-  {id:'figures',title:'Top Market Figures',sub:'By overall credibility score',color:'#7B61FF',bg:'rgba(123,97,255,0.12)',scoreLabel:'Credibility',
-  fetch:async function(){
-    var r=await sq('market_figures?select=canonical_name,figure_type,firm_name,overall_credibility,total_calls&order=overall_credibility.desc&limit=10');
-    return r.map(function(x){return{name:x.canonical_name||'Unknown',meta:(x.figure_type||'Figure')+' \u00b7 '+(x.firm_name||'Independent'),score:Math.round((x.overall_credibility||0)*10)/10,link:'#'};});
-  }},
 ];
 
 function rankClass(i){return i===0?' lb-r1':i===1?' lb-r2':i===2?' lb-r3':'';}
