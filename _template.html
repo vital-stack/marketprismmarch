@@ -3626,6 +3626,7 @@ body{
             <input class="report-ticker-inp" id="report-ticker-inp" placeholder="NVDA" maxlength="6">
             <div class="report-actions">
               <select class="report-format-sel" id="report-format-sel">
+                <option value="pdf">PDF (.pdf)</option>
                 <option value="txt">Text (.txt)</option>
                 <option value="md">Markdown (.md)</option>
                 <option value="csv">CSV (.csv)</option>
@@ -3954,6 +3955,7 @@ body{
 </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Env vars injected by Vercel API handler — do not edit this line -->
 <script id="__env_script">window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '', SCHOLAR_ENABLED: '', ANTHROPIC_KEY: '', MASSIVE_API: '' };</script>
@@ -6232,11 +6234,18 @@ async function generateReport(){
     if(!SUPABASE_URL||!SUPABASE_ANON)throw new Error('Supabase not configured');
     var hdrs={'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Accept':'application/json'};
     var cols='ticker,price,price_change_pct,narrative_state,primary_driver,prism_verdict,story_claim,pe_ratio,days_to_earnings,guidance_direction,institutional_positioning,fair_value,snapshot_date,sector_name,recovery_probability,forensic_rebuttal,mda_snippet,stock_type';
-    var res=await fetch(SUPABASE_URL+'/rest/v1/v_dash_daily_story?select='+cols+'&ticker=eq.'+sym+'&order=snapshot_date.desc&limit=1',{headers:hdrs});
+    // Fetch main data + scorecard in parallel
+    var mainP=fetch(SUPABASE_URL+'/rest/v1/v_dash_daily_story?select='+cols+'&ticker=eq.'+sym+'&order=snapshot_date.desc&limit=1',{headers:hdrs});
+    var scCols='ticker,fvd_pct,vms,coordination_score,coordination_class,suspicion_score,suspicion_class,decay_rate,energy_remaining,verdict,narrative,synopsis,predicted_exhaustion_days,scenario_primary,scenario_primary_pct,p_mean_reversion_30d,p_continuation_30d,p_volatility_expansion,npi_band,current_sentiment';
+    var scP=fetch(SUPABASE_URL+'/rest/v1/narrative_scorecard?select='+scCols+'&ticker=eq.'+encodeURIComponent(sym)+'&order=snapshot_date.desc&limit=1',{headers:hdrs}).catch(function(){return null;});
+    var res=await mainP;
     if(!res.ok)throw new Error('Supabase '+res.status);
     var rows=await res.json();
     if(!rows.length){statusEl.textContent='No data found for '+sym;btn.disabled=false;return;}
     var r=rows[0];
+    // Merge scorecard data
+    var sc={};
+    try{var scRes=await scP;if(scRes&&scRes.ok){var scRows=await scRes.json();if(scRows.length)sc=scRows[0];}}catch(_){}
     // Get selected sections
     var selected={};
     document.querySelectorAll('#report-sections .report-section-opt.selected').forEach(function(el){
@@ -6244,6 +6253,294 @@ async function generateReport(){
     });
     var fmt=document.getElementById('report-format-sel').value;
     var date=new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+    var dateShort=new Date().toISOString().slice(0,10);
+
+    // ── PDF FORMAT ──
+    if(fmt==='pdf'){
+      statusEl.textContent='Building PDF for '+sym+'…';
+      var jsPDF=window.jspdf.jsPDF;
+      var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+      var pw=210,ph=297,mx=18,mxr=pw-18,cw=pw-36;
+      var y=0;
+
+      // Colors
+      var bg=[8,11,17],surface=[12,16,24],cyan=[0,174,255],green=[0,222,148],red=[255,77,77],amber=[255,184,0],white=[255,255,255],muted=[160,168,176],secondary=[180,185,192];
+
+      // Helper: check page break
+      function checkPage(need){if(y+need>ph-20){doc.addPage();drawPageBg();y=18;}return y;}
+      // Helper: draw dark background
+      function drawPageBg(){doc.setFillColor(bg[0],bg[1],bg[2]);doc.rect(0,0,pw,ph,'F');}
+      // Helper: draw rounded rect
+      function roundRect(x,yy,w,h,r,fill,stroke){
+        doc.setFillColor(fill[0],fill[1],fill[2]);
+        if(stroke){doc.setDrawColor(stroke[0],stroke[1],stroke[2]);doc.setLineWidth(0.3);doc.roundedRect(x,yy,w,h,r,r,'FD');}
+        else doc.roundedRect(x,yy,w,h,r,r,'F');
+      }
+      // Helper: section header
+      function sectionHead(title,accentColor){
+        checkPage(18);
+        doc.setFillColor(accentColor[0],accentColor[1],accentColor[2]);
+        doc.rect(mx,y,2,8,'F');
+        doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(white[0],white[1],white[2]);
+        doc.text(title,mx+6,y+6);
+        y+=14;
+      }
+      // Helper: key-value row
+      function kvRow(label,value,valColor){
+        checkPage(8);
+        doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(muted[0],muted[1],muted[2]);
+        doc.text(label,mx+4,y);
+        doc.setFont('helvetica','bold');doc.setFontSize(9.5);
+        var vc=valColor||white;doc.setTextColor(vc[0],vc[1],vc[2]);
+        doc.text(String(value),mx+52,y);
+        y+=6;
+      }
+      // Helper: wrapped text block
+      function textBlock(txt,color,fontSize){
+        if(!txt)return;
+        checkPage(12);
+        doc.setFont('helvetica','normal');doc.setFontSize(fontSize||9);
+        var c=color||secondary;doc.setTextColor(c[0],c[1],c[2]);
+        var split=doc.splitTextToSize(txt,cw-8);
+        split.forEach(function(line){checkPage(5);doc.text(line,mx+4,y);y+=4.5;});
+        y+=3;
+      }
+
+      // ── Page 1 background ──
+      drawPageBg();
+
+      // ── Header bar ──
+      doc.setFillColor(surface[0],surface[1],surface[2]);
+      doc.rect(0,0,pw,44,'F');
+      // Accent line
+      doc.setFillColor(cyan[0],cyan[1],cyan[2]);
+      doc.rect(0,44,pw,0.8,'F');
+
+      // Title
+      doc.setFont('helvetica','bold');doc.setFontSize(22);doc.setTextColor(white[0],white[1],white[2]);
+      doc.text('MARKET PRISM',mx,18);
+      doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor(cyan[0],cyan[1],cyan[2]);
+      doc.text('NARRATIVE INTELLIGENCE REPORT',mx,26);
+
+      // Ticker + Date right aligned
+      doc.setFont('helvetica','bold');doc.setFontSize(28);doc.setTextColor(white[0],white[1],white[2]);
+      doc.text(sym,mxr,20,{align:'right'});
+      doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(muted[0],muted[1],muted[2]);
+      doc.text(date,mxr,28,{align:'right'});
+      if(r.sector_name){
+        doc.setFontSize(9);doc.setTextColor(cyan[0],cyan[1],cyan[2]);
+        doc.text(r.sector_name,mxr,35,{align:'right'});
+      }
+
+      y=52;
+
+      // ── Verdict banner ──
+      var verdict=r.prism_verdict||sc.verdict||'Monitoring';
+      var isTrap=verdict.toLowerCase().indexOf('trap')!==-1;
+      var isSupported=verdict.toLowerCase().indexOf('supported')!==-1||verdict.toLowerCase().indexOf('verified')!==-1;
+      var vColor=isTrap?red:isSupported?green:cyan;
+      var vBg=isTrap?[30,12,12]:isSupported?[10,28,20]:[10,20,32];
+
+      roundRect(mx,y,cw,16,3,vBg,[vColor[0],vColor[1],vColor[2]]);
+      doc.setFont('helvetica','bold');doc.setFontSize(12);doc.setTextColor(vColor[0],vColor[1],vColor[2]);
+      doc.text(verdict.toUpperCase(),pw/2,y+10,{align:'center'});
+      y+=22;
+
+      // ── Insight tags row ──
+      var insightTags=[];
+      if(sc.fvd_pct!=null){
+        if(sc.fvd_pct<-20) insightTags.push({label:'Below Fair Value',c:green});
+        else if(sc.fvd_pct<-5) insightTags.push({label:'Under Fair Value',c:green});
+        else if(sc.fvd_pct>100) insightTags.push({label:'High Hype Gap',c:red});
+        else if(sc.fvd_pct>30) insightTags.push({label:'Overvalued',c:red});
+      }
+      if(sc.vms!=null){
+        if(sc.vms>=80) insightTags.push({label:'High Reliability',c:green});
+        else if(sc.vms<=25) insightTags.push({label:'Low Reliability',c:amber});
+      }
+      if(sc.energy_remaining!=null){
+        if(sc.energy_remaining>=85) insightTags.push({label:'High Energy',c:cyan});
+        else if(sc.energy_remaining<=15) insightTags.push({label:'Story Exhausted',c:muted});
+      }
+      if(sc.decay_rate!=null&&sc.decay_rate>=0.05) insightTags.push({label:'Narrative Fading',c:amber});
+      if(sc.coordination_class&&sc.coordination_class.toLowerCase().indexOf('coordinated')!==-1) insightTags.push({label:'Coordinated',c:red});
+      if(sc.suspicion_class&&sc.suspicion_class.toLowerCase().indexOf('high')!==-1) insightTags.push({label:'Manipulation Risk',c:[123,97,255]});
+
+      if(insightTags.length){
+        var tagX=mx;
+        insightTags.slice(0,5).forEach(function(t){
+          var tw=doc.getTextWidth(t.label)*0.38+10;
+          if(tagX+tw>mxr){y+=9;tagX=mx;}
+          roundRect(tagX,y,tw,7,2,[t.c[0]*0.12+bg[0]*(1-0.12),t.c[1]*0.12+bg[1]*(1-0.12),t.c[2]*0.12+bg[2]*(1-0.12)]);
+          doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(t.c[0],t.c[1],t.c[2]);
+          doc.text(t.label,tagX+tw/2,y+4.8,{align:'center'});
+          tagX+=tw+3;
+        });
+        y+=13;
+      }
+
+      // ── OVERVIEW & PRICE ──
+      if(selected.overview){
+        sectionHead('Overview & Price',cyan);
+        // Price card
+        roundRect(mx,y,cw,28,3,surface);
+        var prc=r.price!=null?'$'+r.price.toFixed(2):'—';
+        var pct=r.price_change_pct||0;
+        var chgTxt=(pct>0?'+':'')+pct.toFixed(2)+'%';
+        var chgColor=pct>0?green:pct<0?red:muted;
+
+        doc.setFont('helvetica','bold');doc.setFontSize(20);doc.setTextColor(white[0],white[1],white[2]);
+        doc.text(prc,mx+8,y+12);
+        doc.setFont('helvetica','bold');doc.setFontSize(14);doc.setTextColor(chgColor[0],chgColor[1],chgColor[2]);
+        doc.text(chgTxt,mx+8,y+22);
+
+        // Right side stats
+        doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(muted[0],muted[1],muted[2]);
+        doc.text('State',mx+100,y+8);doc.text('Fair Value',mx+140,y+8);
+        doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(white[0],white[1],white[2]);
+        doc.text(r.narrative_state||'—',mx+100,y+15);
+        doc.text(r.fair_value!=null?'$'+r.fair_value.toFixed(2):'—',mx+140,y+15);
+
+        if(sc.fvd_pct!=null){
+          doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(muted[0],muted[1],muted[2]);
+          doc.text('FV Deviation',mx+100,y+22);
+          var fvdColor=sc.fvd_pct<0?green:sc.fvd_pct>30?red:amber;
+          doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(fvdColor[0],fvdColor[1],fvdColor[2]);
+          doc.text((sc.fvd_pct>0?'+':'')+sc.fvd_pct.toFixed(1)+'%',mx+140,y+22);
+        }
+        y+=34;
+
+        kvRow('Primary Driver',r.primary_driver||r.story_claim||'—');
+        if(r.stock_type)kvRow('Stock Type',r.stock_type);
+        y+=4;
+      }
+
+      // ── NARRATIVE DIAGNOSIS ──
+      if(selected.diagnosis){
+        sectionHead('Narrative Diagnosis',cyan);
+        kvRow('Story Claim',r.story_claim||'—');
+        kvRow('Narrative State',r.narrative_state||'—',
+          r.narrative_state==='Surging'?green:r.narrative_state==='Breaking'?red:r.narrative_state==='Fragile'?amber:white);
+        kvRow('Verdict',verdict,vColor);
+        kvRow('Recovery Probability',r.recovery_probability!=null?r.recovery_probability+'%':'—',
+          r.recovery_probability!=null&&r.recovery_probability>=60?green:r.recovery_probability!=null&&r.recovery_probability<=30?red:white);
+        if(sc.current_sentiment)kvRow('Current Sentiment',sc.current_sentiment);
+        if(sc.npi_band)kvRow('NPI Band',sc.npi_band);
+        if(sc.narrative){
+          y+=2;
+          doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(muted[0],muted[1],muted[2]);
+          doc.text('Narrative:',mx+4,y);y+=5;
+          textBlock(sc.narrative,secondary,8.5);
+        }
+        if(sc.synopsis){
+          doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(muted[0],muted[1],muted[2]);
+          doc.text('Synopsis:',mx+4,y);y+=5;
+          textBlock(sc.synopsis,secondary,8.5);
+        }
+        y+=4;
+      }
+
+      // ── FORENSIC ANALYSIS ──
+      if(selected.forensic){
+        sectionHead('Forensic Analysis',amber);
+        if(sc.coordination_score!=null||sc.suspicion_score!=null){
+          // Stats row
+          roundRect(mx,y,cw,18,3,surface);
+          var statW=cw/4;
+          var fStats=[
+            {label:'Coordination',val:sc.coordination_score!=null?Math.round(sc.coordination_score):'—',c:sc.coordination_score>=60?red:white},
+            {label:'Suspicion',val:sc.suspicion_score!=null?Math.round(sc.suspicion_score):'—',c:sc.suspicion_score>=50?red:white},
+            {label:'Decay Rate',val:sc.decay_rate!=null?sc.decay_rate.toFixed(3):'—',c:sc.decay_rate>=0.05?amber:white},
+            {label:'Energy',val:sc.energy_remaining!=null?Math.round(sc.energy_remaining)+'%':'—',c:sc.energy_remaining>=85?cyan:sc.energy_remaining<=15?red:white}
+          ];
+          fStats.forEach(function(s,i){
+            var sx=mx+4+i*statW;
+            doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(muted[0],muted[1],muted[2]);
+            doc.text(s.label,sx,y+6);
+            doc.setFont('helvetica','bold');doc.setFontSize(12);doc.setTextColor(s.c[0],s.c[1],s.c[2]);
+            doc.text(String(s.val),sx,y+14);
+          });
+          y+=24;
+        }
+        var fc=r.forensic_rebuttal||r.mda_snippet;
+        if(fc) textBlock(fc);
+        else textBlock('No forensic analysis available.',muted);
+        y+=4;
+      }
+
+      // ── FUNDAMENTALS & METRICS ──
+      if(selected.fundamentals){
+        sectionHead('Fundamentals & Metrics',green);
+        roundRect(mx,y,cw,22,3,surface);
+        var fmStats=[];
+        if(r.pe_ratio!=null)fmStats.push({label:'P/E Ratio',val:r.pe_ratio.toFixed(1)+'x'});
+        if(r.days_to_earnings!=null)fmStats.push({label:'Days to Earnings',val:String(r.days_to_earnings),c:r.days_to_earnings<=14?amber:white});
+        if(r.guidance_direction)fmStats.push({label:'Guidance',val:r.guidance_direction,c:r.guidance_direction.toLowerCase().indexOf('up')!==-1?green:r.guidance_direction.toLowerCase().indexOf('down')!==-1?red:white});
+        if(r.institutional_positioning)fmStats.push({label:'Institutional',val:r.institutional_positioning});
+        if(sc.vms!=null)fmStats.push({label:'Reliability (VMS)',val:Math.round(sc.vms),c:sc.vms>=80?green:sc.vms<=25?amber:white});
+        if(!fmStats.length)fmStats.push({label:'Data',val:'Limited data available'});
+        var fmW=cw/Math.min(fmStats.length,4);
+        fmStats.slice(0,4).forEach(function(s,i){
+          var fx=mx+4+i*fmW;
+          doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(muted[0],muted[1],muted[2]);
+          doc.text(s.label,fx,y+7);
+          var fc=s.c||white;
+          doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(fc[0],fc[1],fc[2]);
+          doc.text(String(s.val),fx,y+16);
+        });
+        y+=28;
+        // Second row if more than 4
+        if(fmStats.length>4){
+          fmStats.slice(4).forEach(function(s){kvRow(s.label,s.val,s.c);});
+          y+=2;
+        }
+        y+=4;
+      }
+
+      // ── SECTOR INTELLIGENCE ──
+      if(selected.sector&&r.sector_name){
+        sectionHead('Sector Intelligence',cyan);
+        kvRow('Sector',r.sector_name,cyan);
+        y+=4;
+      }
+
+      // ── STORY LIFECYCLE ──
+      if(selected.lifecycle){
+        sectionHead('Story Lifecycle',amber);
+        kvRow('Current State',r.narrative_state||'—',
+          r.narrative_state==='Surging'?green:r.narrative_state==='Breaking'?red:white);
+        kvRow('Recovery Probability',r.recovery_probability!=null?r.recovery_probability+'%':'—');
+        if(sc.predicted_exhaustion_days!=null)kvRow('Predicted Exhaustion',sc.predicted_exhaustion_days+' days',
+          sc.predicted_exhaustion_days<=7?red:sc.predicted_exhaustion_days<=21?amber:white);
+        if(sc.scenario_primary)kvRow('Primary Scenario',sc.scenario_primary+(sc.scenario_primary_pct!=null?' ('+Math.round(sc.scenario_primary_pct)+'%)':''));
+        if(sc.p_mean_reversion_30d!=null)kvRow('Mean Reversion 30d',Math.round(sc.p_mean_reversion_30d*100)+'%');
+        if(sc.p_continuation_30d!=null)kvRow('Continuation 30d',Math.round(sc.p_continuation_30d*100)+'%');
+        if(sc.p_volatility_expansion!=null)kvRow('Volatility Expansion',Math.round(sc.p_volatility_expansion*100)+'%');
+        y+=4;
+      }
+
+      // ── Footer ──
+      var pageCount=doc.internal.getNumberOfPages();
+      for(var p=1;p<=pageCount;p++){
+        doc.setPage(p);
+        doc.setFillColor(surface[0],surface[1],surface[2]);
+        doc.rect(0,ph-12,pw,12,'F');
+        doc.setFillColor(cyan[0],cyan[1],cyan[2]);
+        doc.rect(0,ph-12,pw,0.4,'F');
+        doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(muted[0],muted[1],muted[2]);
+        doc.text('Generated by Market Prism  ·  '+date+'  ·  marketprism.app',mx,ph-4);
+        doc.text('Page '+p+' / '+pageCount,mxr,ph-4,{align:'right'});
+        doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(cyan[0],cyan[1],cyan[2]);
+        doc.text('NARRATIVE INTELLIGENCE',pw/2,ph-4,{align:'center'});
+      }
+
+      doc.save(sym+'-market-prism-report-'+dateShort+'.pdf');
+      statusEl.textContent='PDF report downloaded for '+sym;
+      btn.disabled=false;
+      return;
+    }
+
+    // ── TEXT FORMATS (TXT, MD, CSV) ──
     var lines=[];
     if(fmt==='md'){
       lines.push('# Market Prism — '+sym+' Report','','**Date:** '+date,'');
@@ -6330,7 +6627,7 @@ async function generateReport(){
     var blob=new Blob([lines.join('\n')],{type:mime});
     var url=URL.createObjectURL(blob);
     var a=document.createElement('a');
-    a.href=url;a.download=sym+'-market-prism-report-'+new Date().toISOString().slice(0,10)+ext;
+    a.href=url;a.download=sym+'-market-prism-report-'+dateShort+ext;
     a.click();URL.revokeObjectURL(url);
     statusEl.textContent='Report downloaded for '+sym;
   }catch(err){
