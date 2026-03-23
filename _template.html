@@ -6479,7 +6479,7 @@ function buildCardFrontHTML(c,i,dateStr,prefix,showActions){
               +'<span class="tc-change" style="color:'+deltaColor+';">'+(isBull?'\u25B2':'\u25BC')+' '+Math.abs(c.price_change_pct||0).toFixed(2)+'%</span>'
             +'</div>'
             // 3. Command (white for all cards)
-            +'<div class="tc-command">'+c.biasText.toUpperCase()+'</div>'
+            +'<div class="tc-command">'+(c.biasText||'SIGNAL').toUpperCase()+'</div>'
             // 4. Meta line
             +'<div class="tc-meta-line">'+conf+'% \u2022 '+winTxt+' \u2022 ACTIVE</div>'
             // 5. Context
@@ -6504,7 +6504,7 @@ function buildCardFrontHTML(c,i,dateStr,prefix,showActions){
               // Trade Signal header
               +'<div class="back-header-label">Trade Signal</div>'
               // Command
-              +'<div class="back-command" style="color:#FFFFFF;">'+c.biasText.toUpperCase()+'</div>'
+              +'<div class="back-command" style="color:#FFFFFF;">'+(c.biasText||'SIGNAL').toUpperCase()+'</div>'
               // Meta rows
               +'<div class="back-meta-grid">'
                 +'<div class="back-meta-row">Confidence <strong style="color:'+borderColor+';">'+conf+'%</strong><span class="back-sep"></span>Window <strong>'+winTxt+'</strong></div>'
@@ -6556,10 +6556,11 @@ function renderTradingCards(){
   var deck=document.getElementById('trading-deck');
   if(!deck)return;
   var cards=[];
-  // Prefer high-conviction trade cards from v_trade_cards
+  // Prefer high-conviction trade cards from v_trade_cards, always fall back to DATA
   if(TRADE_CARDS_DATA.length>0){
     cards=TRADE_CARDS_DATA.slice(0,4);
-  } else if(DATA.length>0){
+  }
+  if(!cards.length&&DATA.length>0){
     var breaking=DATA.filter(function(r){return r.narrative_state==='Breaking'||r.prism_verdict==='Narrative Trap';});
     var surging=DATA.filter(function(r){return r.narrative_state==='Surging'||r.prism_verdict==='Structurally Supported';});
     var fragile=DATA.filter(function(r){return r.narrative_state==='Fragile';});
@@ -6570,7 +6571,8 @@ function renderTradingCards(){
     if(surging[1])cards.push(Object.assign({},surging[1],TRADING_CARD_COLORS[4]));
     var used=new Set(cards.map(function(c){return c.ticker;}));
     DATA.forEach(function(r){if(cards.length<5&&!used.has(r.ticker)){cards.push(Object.assign({},r,TRADING_CARD_COLORS[cards.length%5]));used.add(r.ticker);}});
-  } else {
+  }
+  if(!cards.length){
     cards=[
       {ticker:'NVDA',price:118.42,price_change_pct:-2.14,narrative_state:'Breaking',story_claim:'Narrative breaking while retail still buying strength',sector_name:'Semiconductors',pe_ratio:62,accent:'#00FFFF',bias:'#00FFFF',phase:'Decay Phase',biasText:'Fade Rallies'},
       {ticker:'AAPL',price:212.80,price_change_pct:1.87,narrative_state:'Surging',story_claim:'Institutional accumulation confirming breakout above key resistance',sector_name:'Consumer Technology',pe_ratio:29,accent:'#00DE94',bias:'#00DE94',phase:'Breakout Forming',biasText:'Ride the Trend'},
@@ -6588,10 +6590,11 @@ function renderDailySignalCards(){
   var deck=document.getElementById('daily-signal-deck');
   if(!deck)return;
   var cards=[];
-  // Prefer high-conviction trade cards from v_trade_cards
+  // Prefer high-conviction trade cards from v_trade_cards, always fall back to DATA
   if(TRADE_CARDS_DATA.length>0){
     cards=TRADE_CARDS_DATA.slice(0,7);
-  } else if(DATA.length>0){
+  }
+  if(!cards.length&&DATA.length>0){
     var breaking=DATA.filter(function(r){return r.narrative_state==='Breaking'||r.prism_verdict==='Narrative Trap';});
     var surging=DATA.filter(function(r){return r.narrative_state==='Surging'||r.prism_verdict==='Structurally Supported';});
     var fragile=DATA.filter(function(r){return r.narrative_state==='Fragile';});
@@ -6602,7 +6605,8 @@ function renderDailySignalCards(){
     if(surging[1])cards.push(Object.assign({},surging[1],TRADING_CARD_COLORS[4]));
     var used=new Set(cards.map(function(c){return c.ticker;}));
     DATA.forEach(function(r){if(cards.length<7&&!used.has(r.ticker)){cards.push(Object.assign({},r,TRADING_CARD_COLORS[cards.length%5]));used.add(r.ticker);}});
-  } else {
+  }
+  if(!cards.length){
     cards=[
       {ticker:'NVDA',price:118.42,price_change_pct:-2.14,narrative_state:'Breaking',story_claim:'Narrative breaking while retail still buying strength',sector_name:'Semiconductors',pe_ratio:62,accent:'#00FFFF',bias:'#00FFFF',phase:'Decay Phase',biasText:'Fade Rallies'},
       {ticker:'AAPL',price:212.80,price_change_pct:1.87,narrative_state:'Surging',story_claim:'Institutional accumulation confirming breakout above key resistance',sector_name:'Consumer Technology',pe_ratio:29,accent:'#00DE94',bias:'#00DE94',phase:'Breakout Forming',biasText:'Ride the Trend'},
@@ -6623,10 +6627,11 @@ function renderCardsGallery(){
   var grid=document.getElementById('tcg-grid');
   if(!grid)return;
   var cards=[];
-  // Prefer high-conviction trade cards from v_trade_cards
+  // Prefer high-conviction trade cards from v_trade_cards, always fall back to DATA
   if(TRADE_CARDS_DATA.length>0){
     cards=TRADE_CARDS_DATA.slice(0,10);
-  } else if(DATA.length>0){
+  }
+  if(!cards.length&&DATA.length>0){
     DATA.forEach(function(r,i){
       cards.push(Object.assign({},r,TRADING_CARD_COLORS[i%TRADING_CARD_COLORS.length]));
     });
