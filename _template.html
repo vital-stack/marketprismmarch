@@ -2739,6 +2739,21 @@ body{
   color:var(--mp-text-tertiary);
 }
 
+/* ── RIGHT: Feed Header ── */
+.nf-feed-header{
+  display:flex;align-items:baseline;justify-content:space-between;
+  padding:16px 18px 0 18px;
+}
+.nf-feed-title{
+  font-family:'Instrument Serif','DM Serif Display',Georgia,serif;
+  font-size:18px;font-weight:400;color:var(--mp-text-primary);
+  letter-spacing:-0.025em;
+}
+.nf-feed-date{
+  font-family:Inter,'DM Sans',system-ui,sans-serif;
+  font-size:12px;color:var(--mp-text-tertiary);
+}
+
 /* ── RIGHT: Tabbed Feed ── */
 .nf-feed{
   background:transparent;border:none;
@@ -2936,6 +2951,8 @@ body{
 /* ── Light Theme ── */
 [data-theme="light"] .nf-summary{background:var(--mp-surface);border-color:rgba(0,0,0,0.06);}
 [data-theme="light"] .nf-feed{background:var(--mp-surface);border-color:rgba(0,0,0,0.06);}
+[data-theme="light"] .nf-feed-title{color:var(--mp-text-primary);}
+[data-theme="light"] .nf-feed-date{color:var(--mp-text-tertiary);}
 [data-theme="light"] .nf-tabs{border-bottom-color:rgba(0,0,0,0.06);}
 [data-theme="light"] .nf-tab{color:var(--mp-text-tertiary);}
 [data-theme="light"] .nf-tab.active{color:var(--mp-text-primary);border-bottom-color:var(--mp-text-primary);}
@@ -3252,6 +3269,10 @@ body{
 
         <!-- RIGHT: Tabbed Narrative Feed -->
         <div class="nf-feed">
+          <div class="nf-feed-header">
+            <span class="nf-feed-title">Top NarrativeSignals</span>
+            <span class="nf-feed-date" id="nf-feed-date"></span>
+          </div>
           <div class="nf-tabs">
             <button class="nf-tab active" data-nf-tab="tickers" onclick="switchNFTab('tickers',this)">Tickers</button>
             <button class="nf-tab" data-nf-tab="sectors" onclick="switchNFTab('sectors',this)">Sectors</button>
@@ -3911,6 +3932,8 @@ var el = document.getElementById('topbar-date');
 if(el) el.textContent = dateStr;
 var dailyDateTag = document.getElementById('daily-date-tag');
 if(dailyDateTag) dailyDateTag.textContent = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+var nfFeedDate = document.getElementById('nf-feed-date');
+if(nfFeedDate) nfFeedDate.textContent = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
 document.querySelectorAll('.page-header p').forEach(function(p,i){
   if(i===0) return;
 });
