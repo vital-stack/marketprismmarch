@@ -1351,7 +1351,7 @@ body{
   .sector-name{font-size:15px;}
   .sector-card-header{flex-wrap:wrap;}
   /* Snapshots */
-  .snap-table th:nth-child(n+6),.snap-table td:nth-child(n+6){display:none;} /* hide trade type + view card on tablet */
+  .snap-table th:nth-child(n+7),.snap-table td:nth-child(n+7){display:none;} /* hide view card on tablet */
   .snap-table{min-width:600px;}
   /* Memes */
   .meme-grid{grid-template-columns:1fr;}
@@ -3567,7 +3567,6 @@ body{
               <th>State</th>
               <th>Primary narrative</th>
               <th>Tags</th>
-              <th>Trade type</th>
               <th></th>
             </tr>
           </thead>
@@ -5292,14 +5291,13 @@ function renderSnap(){
   var tbody=document.getElementById('snap-tbody');
   var lm=document.getElementById('snap-load-more');
   var slice=arr.slice(0,snapShowing);
-  if(arr.length===0){tbody.innerHTML='<tr><td colspan="8" class="empty-state" style="padding:32px;text-align:center;color:var(--mp-text-tertiary);">No tickers match.</td></tr>';lm.style.display='none';return;}
+  if(arr.length===0){tbody.innerHTML='<tr><td colspan="7" class="empty-state" style="padding:32px;text-align:center;color:var(--mp-text-tertiary);">No tickers match.</td></tr>';lm.style.display='none';return;}
   tbody.innerHTML=slice.map(function(r){
     var delta=fmtDelta(r.price_change_pct);
     var sc=stateClass(r.narrative_state);
     var vc=r.prism_verdict==='Narrative Trap'?'verdict-trap':r.prism_verdict==='Structurally Supported'?'verdict-supported':'';
     var vl=r.prism_verdict==='Narrative Trap'?'Trap':r.prism_verdict==='Structurally Supported'?'Supported':r.prism_verdict||'—';
     var ec=r.days_to_earnings!=null&&r.days_to_earnings<=14?' earnings-soon':'';
-    var tradeType=r.narrative_state==='Surging'?'Momentum':r.narrative_state==='Breaking'?'Mean Reversion':r.narrative_state==='Fragile'?'Hedge':r.narrative_state==='Stable'?'Hold':'—';
     return '<tr onclick="window.location.href=\'/ticker/'+encodeURIComponent(r.ticker)+'\'" style="cursor:pointer;">'
       +'<td><div style="display:flex;align-items:center;gap:8px;">'+logoHTML(r.ticker,'sm')+'<div class="snap-sym">'+r.ticker+'</div></div></td>'
       +'<td class="r"><div class="snap-price">$'+fmtPrice(r.price)+'</div></td>'
@@ -5307,7 +5305,6 @@ function renderSnap(){
       +'<td><span class="snap-state '+sc+'">'+esc(r.narrative_state)+'</span></td>'
       +'<td><div class="snap-driver">'+esc(r.story_claim||r.primary_driver||'—')+'</div></td>'
       +'<td><div class="snap-tags">'+(function(){var allTags=getTickerInsightTags(r);var insight=allTags.filter(function(t){return !t.sector;});var sector=allTags.filter(function(t){return t.sector;});return insight.concat(sector).slice(0,4).map(function(t){return '<span class="snap-tag" style="background:'+t.bg+';color:'+t.color+';border-color:'+t.border+';">'+esc(t.label)+'</span>';}).join('');})()+'</div></td>'
-      +'<td><span class="snap-state" style="font-size:11px;">'+tradeType+'</span></td>'
       +'<td class="r"><a href="/ticker/'+encodeURIComponent(r.ticker)+'" class="snap-cta" onclick="event.stopPropagation();">View Card <span style="font-size:13px;">→</span></a></td>'
     +'</tr>';
   }).join('');
