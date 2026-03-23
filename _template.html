@@ -5269,8 +5269,8 @@ function getTickerInsightTags(r){
   }
   var vms=r.vms;
   if(vms!=null){
-    if(vms>=80) tags.push({label:'High Reliability',color:'#00DE94',bg:'rgba(0,222,148,0.08)',border:'rgba(0,222,148,0.20)'});
-    else if(vms<=25) tags.push({label:'Low Reliability',color:'#FFB800',bg:'rgba(255,184,0,0.08)',border:'rgba(255,184,0,0.20)'});
+    if(vms>=80) tags.push({label:'Reliable Narrative',color:'#00DE94',bg:'rgba(0,222,148,0.08)',border:'rgba(0,222,148,0.20)'});
+    else if(vms<=25) tags.push({label:'Unreliable Narrative',color:'#FFB800',bg:'rgba(255,184,0,0.08)',border:'rgba(255,184,0,0.20)'});
   }
   if(r.coordination_class&&r.coordination_class.toLowerCase().indexOf('coordinated')!==-1) tags.push({label:'Coordinated',color:'#FF4D4D',bg:'rgba(255,77,77,0.08)',border:'rgba(255,77,77,0.20)'});
   if(r.suspicion_class&&r.suspicion_class.toLowerCase().indexOf('high')!==-1) tags.push({label:'Manipulation Risk',color:'#7B61FF',bg:'rgba(123,97,255,0.10)',border:'rgba(123,97,255,0.25)'});
@@ -6357,8 +6357,8 @@ async function generateReport(){
         else if(sc.fvd_pct>30) insightTags.push({label:'Overvalued',c:red});
       }
       if(sc.vms!=null){
-        if(sc.vms>=80) insightTags.push({label:'High Reliability',c:green});
-        else if(sc.vms<=25) insightTags.push({label:'Low Reliability',c:amber});
+        if(sc.vms>=80) insightTags.push({label:'Reliable Narrative',c:green});
+        else if(sc.vms<=25) insightTags.push({label:'Unreliable Narrative',c:amber});
       }
       if(sc.energy_remaining!=null){
         if(sc.energy_remaining>=85) insightTags.push({label:'High Energy',c:cyan});
@@ -9660,7 +9660,7 @@ var BOARDS=[
       var dtc=Math.round((r.days_to_cover||0)*10)/10;
       var energy=Math.round(sc.energy_remaining||0);
       var reliability=Math.round((sc.vms||0)*10)/10;
-      return{name:r.ticker,meta:'Days to cover: '+dtc+'d \u00b7 Story energy: '+energy+'% \u00b7 Reliability: '+reliability+(r.squeeze_risk?' \u00b7 \u26a0 Squeeze risk':''),score:dtc,scoreDisplay:dtc+'d',combined:combined,link:'/ticker/'+encodeURIComponent(r.ticker)};
+      return{name:r.ticker,meta:'Days to cover: '+dtc+'d \u00b7 Story energy: '+energy+'% \u00b7 Narrative reliability: '+reliability+(r.squeeze_risk?' \u00b7 \u26a0 Squeeze risk':''),score:dtc,scoreDisplay:dtc+'d',combined:combined,link:'/ticker/'+encodeURIComponent(r.ticker)};
     }).filter(Boolean).sort(function(a,b){return b.combined-a.combined;}).slice(0,10);
   }},
   {id:'sources',title:'Top Sources',sub:'By credibility & prediction accuracy',color:'#00AEFF',bg:'rgba(0,174,255,0.12)',scoreLabel:'Trust Score',
