@@ -7051,22 +7051,19 @@ async function renderLeaderboardCards(){
   // ── Parallel fetches ──────────────────────────────────────────────────────
   // 1. Most undervalued  → narrative_scorecard fvd_pct < 0 (price below fair value)
   // 2. Most overvalued   → narrative_scorecard fvd_pct > 0 (price above fair value)
-  // 3. Highest hype gap  → narrative_scorecard omission_gap_score DESC (or drift_score as proxy)
-  // 4. Earnings-aligned  → v_dash_daily_story: days_to_earnings < 21, guidance_direction != null, sorted by days_to_earnings ASC
+  // 3. Earnings-aligned  → v_dash_daily_story: days_to_earnings < 21, guidance_direction != null, sorted by days_to_earnings ASC
   var scDate = await latestDateLB('narrative_scorecard');
   var scFilter = scDate ? '&snapshot_date=eq.'+encodeURIComponent(scDate) : '&order=snapshot_date.desc';
 
-  var [rUnder, rOver, rHype, rEarnings] = await Promise.all([
+  var [rUnder, rOver, rEarnings] = await Promise.all([
     fetch(SUPABASE_URL+'/rest/v1/narrative_scorecard?select=ticker,fvd_pct,vms,verdict'+scFilter+'&fvd_pct=lt.0&order=fvd_pct.asc&limit=5',{headers:hdrs}).catch(function(){return null;}),
     fetch(SUPABASE_URL+'/rest/v1/narrative_scorecard?select=ticker,fvd_pct,vms,verdict'+scFilter+'&fvd_pct=gt.0&order=fvd_pct.desc&limit=5',{headers:hdrs}).catch(function(){return null;}),
-    fetch(SUPABASE_URL+'/rest/v1/narrative_scorecard?select=ticker,omission_gap_score,drift_score,coordination_score'+scFilter+'&omission_gap_score=gt.0&order=omission_gap_score.desc&limit=5',{headers:hdrs}).catch(function(){return null;}),
     fetch(SUPABASE_URL+'/rest/v1/v_dash_daily_story?select=ticker,days_to_earnings,guidance_direction,narrative_state,prism_verdict&days_to_earnings=lte.21&days_to_earnings=gt.0&order=days_to_earnings.asc&limit=5',{headers:hdrs}).catch(function(){return null;}),
   ]);
 
-  var underRows=[], overRows=[], hypeRows=[], earnRows=[];
+  var underRows=[], overRows=[], earnRows=[];
   try{ if(rUnder&&rUnder.ok) underRows=await rUnder.json(); }catch(_){}
   try{ if(rOver&&rOver.ok)   overRows=await rOver.json();   }catch(_){}
-  try{ if(rHype&&rHype.ok)   hypeRows=await rHype.json();   }catch(_){}
   try{ if(rEarnings&&rEarnings.ok) earnRows=await rEarnings.json(); }catch(_){}
 
   // ── Row builder (shared) ─────────────────────────────────────────────────
@@ -7104,26 +7101,14 @@ async function renderLeaderboardCards(){
     : emptyRows('No overvalued signals today');
   var overFooter='Price \u2265 Fair Value \u2022 Sorted by premium';
 
-  // ── Card 3: Highest Hype Gap ──────────────────────────────────────────────
-  // omission_gap_score = stories missing key negative info (hype gap proxy)
-  var accent3='#F59E0B';
-  var hypeContent = hypeRows.length>0
-    ? hypeRows.map(function(r,i){
-        var score=r.omission_gap_score!=null?Math.round(r.omission_gap_score):'—';
-        var drift=r.drift_score!=null?'+'+r.drift_score.toFixed(1)+'\u03c3':'—';
-        return lbRow(i+1,r.ticker,'Gap '+score,drift,accent3);
-      }).join('')
-    : emptyRows('No hype gap data today');
-  var hypeFooter='Omission score \u2022 Narrative drift \u03c3';
-
-  // ── Card 4: Narratives Aligned with Earnings ──────────────────────────────
+  // ── Card 3: Narratives Aligned with Earnings ──────────────────────────────
   // days_to_earnings < 21, narrative_state or guidance gives alignment signal
-  var accent4='#A78BFA';
+  var accent3='#A78BFA';
   var earnContent = earnRows.length>0
     ? earnRows.map(function(r,i){
         var days=r.days_to_earnings!=null?r.days_to_earnings+'d':'—';
         var guide=r.guidance_direction&&r.guidance_direction!=='Neutral'?r.guidance_direction:'—';
-        return lbRow(i+1,r.ticker,days,guide,accent4);
+        return lbRow(i+1,r.ticker,days,guide,accent3);
       }).join('')
     : emptyRows('No upcoming earnings within 21 days');
   var earnFooter='Days to earnings \u2022 Guidance direction';
@@ -7138,11 +7123,7 @@ async function renderLeaderboardCards(){
      tickerLabel:'OVERVALUED',companyLabel:'Price above fair value',
      command:'MOST OVERVALUED',metaTxt:'FVD Ranked \u2022 Daily',
      context:overContent,sectorDate:overFooter,phaseClass:'ELEVATED RISK'},
-    {accent:accent3,rarityColor:accent3,rarityBorder:'rgba(245,158,11,0.25)',rarityLabel:'HYPE',
-     tickerLabel:'HYPE GAP',companyLabel:'Narrative omission score',
-     command:'HIGHEST HYPE GAP',metaTxt:'Omission Score \u2022 Live',
-     context:hypeContent,sectorDate:hypeFooter,phaseClass:'DISTORTION'},
-    {accent:accent4,rarityColor:accent4,rarityBorder:'rgba(167,139,250,0.25)',rarityLabel:'CATALYST',
+    {accent:accent3,rarityColor:accent3,rarityBorder:'rgba(167,139,250,0.25)',rarityLabel:'CATALYST',
      tickerLabel:'EARNINGS',companyLabel:'Narratives vs. earnings alignment',
      command:'EARNINGS ALIGNMENT',metaTxt:'< 21 Days \u2022 Live',
      context:earnContent,sectorDate:earnFooter,phaseClass:'WATCH'},
@@ -9530,13 +9511,6 @@ var BOARDS=[
     r.forEach(function(x){if(!x.macro_theme)return;if(!map[x.macro_theme])map[x.macro_theme]={risk:0,n:0};map[x.macro_theme].risk+=(x.contagion_risk||0);map[x.macro_theme].n++;});
     return Object.keys(map).map(function(t){return{name:t,meta:map[t].n+' tickers \u00b7 Avg risk: '+Math.round(map[t].risk/map[t].n),score:Math.round(map[t].risk/map[t].n),link:'#discover'};}).sort(function(a,b){return b.score-a.score;}).slice(0,10);
   }},
-  {id:'hype',title:'Highest Hype Gap',sub:'Price vs. fundamental fair value \u00b7 today',color:'#FF4D4D',bg:'rgba(255,77,77,0.12)',scoreLabel:'Hype Gap %',
-  fetch:async function(){
-    var date=await latestDate('narrative_scorecard');
-    if(!date) return[];
-    var r=await sq('narrative_scorecard?select=ticker,fvd_pct,vms&snapshot_date=eq.'+encodeURIComponent(date)+'&fvd_pct=gt.0&order=fvd_pct.desc&limit=10');
-    return r.map(function(x){var g=x.fvd_pct||0;return{name:x.ticker,meta:'Reliability: '+Math.round(x.vms||0),score:Math.round(g),scoreDisplay:g>=1000?(Math.round(g/100)/10)+'k%':Math.round(g)+'%',link:'/ticker/'+encodeURIComponent(x.ticker)};});
-  }},
   {id:'undervalued',title:'Under Fair Value',sub:'Price below fundamental fair value · potential opportunities',color:'#00DE94',bg:'rgba(0,222,148,0.12)',scoreLabel:'Discount %',
   fetch:async function(){
     var date=await latestDate('narrative_scorecard');
@@ -9664,11 +9638,6 @@ var BOARDS=[
     var r=await sq('source_scores?select=source_name,srs,total_claims,correct_claims,source_type&order=srs.desc&limit=10');
     return r.map(function(x){return{name:x.source_name||'Unknown',meta:(x.source_type||'Media')+' \u00b7 '+(x.total_claims||0)+' claims',score:Math.round((x.srs||0)*10)/10,link:'#narrative'};});
   }},
-  {id:'figures',title:'Top Market Figures',sub:'By overall credibility score',color:'#7B61FF',bg:'rgba(123,97,255,0.12)',scoreLabel:'Credibility',
-  fetch:async function(){
-    var r=await sq('market_figures?select=canonical_name,figure_type,firm_name,overall_credibility,total_calls&order=overall_credibility.desc&limit=10');
-    return r.map(function(x){return{name:x.canonical_name||'Unknown',meta:(x.figure_type||'Figure')+' \u00b7 '+(x.firm_name||'Independent'),score:Math.round((x.overall_credibility||0)*10)/10,link:'#'};});
-  }},
 ];
 
 function rankClass(i){return i===0?' lb-r1':i===1?' lb-r2':i===2?' lb-r3':'';}
@@ -9676,7 +9645,7 @@ function scoreColor(id,score){
   if(id==='undervalued') return '#00DE94';
   if(id==='overvalued') return '#FF4D4D';
   if(id==='safest'||id==='combos') return score>=85?'#00DE94':score>=65?'#FFB800':'#FF4D4D';
-  if(id==='hype'||id==='alltime') return score>=500?'#FF4D4D':score>=150?'#FFB800':'#A0A8B0';
+  if(id==='alltime') return score>=500?'#FF4D4D':score>=150?'#FFB800':'#A0A8B0';
   if(id==='decaying') return score>0.05?'#FF4D4D':score>0.02?'#FFB800':'#00DE94';
   if(id==='squeeze') return score>=7?'#FF4D4D':score>=4?'#FFB800':'#00DE94';
   return null;
