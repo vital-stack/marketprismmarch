@@ -2173,7 +2173,7 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
                 </select>
               </div>
             </div>
-            <div class="chart-outer" id="chart-outer" style="height:280px;">
+            <div class="chart-outer" id="chart-outer" style="height:400px;">
               <canvas id="price-canvas"></canvas>
               <div class="chart-tip" id="chart-tip"></div>
               <div class="story-popup" id="story-popup">
@@ -2886,43 +2886,48 @@ async function loadSectorIntelligence(heroRow) {
 }
 
 // ── 2. Price Chart ───────────────────────────────────────────────────────────
-let ALL_SNAPS = [];   // full price history (from Yahoo Finance)
+let ALL_SNAPS = [];   // full price history (from /api/price-history)
 let ALL_NARRS = [];   // narrative health rows with sentiment dots
 let ALL_DECAY = [];   // narrative energy time series
 let CHART_FV  = null; // fair value for dashed line
 
-// ── Yahoo Finance price fetch (via allorigins CORS proxy) ────────────────────
-async function fetchYahooPrice(ticker, days) {
-  const period2 = Math.floor(Date.now() / 1000);
-  const period1 = period2 - (days || 365) * 86400;
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&period1=${period1}&period2=${period2}`;
-  const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-  const res = await fetch(proxy);
-  if (!res.ok) throw new Error(`Yahoo proxy ${res.status}`);
-  const wrapper = await res.json();
-  const data = JSON.parse(wrapper.contents);
-  const result = data?.chart?.result?.[0];
-  if (!result) throw new Error('No Yahoo data returned');
-  const timestamps = result.timestamp || [];
-  const closes    = result.indicators?.quote?.[0]?.close || [];
-  return timestamps.map((ts, i) => ({
-    snapshot_date: new Date(ts * 1000).toISOString().slice(0, 10),
-    price_close:   closes[i] != null ? +closes[i].toFixed(2) : null
-  })).filter(r => r.price_close != null);
+// ── Live price history fetch via local API route (api/price-history.js) ──────
+async function fetchPriceHistoryFromApi(ticker, days) {
+  const queryDays = Math.max(30, Math.min(days || 730, 3650));
+  const res = await fetch(`/api/price-history?ticker=${encodeURIComponent(ticker)}&days=${queryDays}`);
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`price-history ${res.status}: ${text.slice(0, 120)}`);
+  }
+  const json = await res.json();
+  return Array.isArray(json.series)
+    ? json.series
+        .map((row) => ({
+          snapshot_date: row.snapshot_date,
+          price_close: row.price_close != null ? Number(row.price_close) : null
+        }))
+        .filter((row) => row.snapshot_date && row.price_close != null)
+    : [];
 }
 
 async function loadChart(fairValue) {
   if (!TICKER) return;
   CHART_FV = fairValue;
   try {
-    // Fetch Yahoo price + narrative overlays in parallel
-    const [yahooSnaps, narrativeRows, decayRows] = await Promise.all([
-      fetchYahooPrice(TICKER, 365).catch(() => []),
+    // Fetch live price history + narrative overlays in parallel
+    const [apiSnaps, narrativeRows, chartStoryRows, decayRows] = await Promise.all([
+      fetchPriceHistoryFromApi(TICKER, 730).catch(() => []),
       sbFetch('v_dash_narrative_health', {
         select: 'snapshot_date,sentiment_score,narrative_trend',
         ticker: `eq.${TICKER}`,
         order:  'snapshot_date.asc',
         limit:  '365'
+      }).catch(() => []),
+      sbFetch('narrative_analyses', {
+        select: 'snapshot_date,narrative_text,source_outlet,article_url,sentiment_score',
+        ticker: `eq.${TICKER}`,
+        order: 'snapshot_date.desc',
+        limit: '365'
       }).catch(() => []),
       sbFetch('decay_metrics', {
         select: 'snapshot_date,energy_remaining_pct,day_number',
@@ -2932,9 +2937,9 @@ async function loadChart(fairValue) {
       }).catch(() => [])
     ]);
 
-    // Fall back to Supabase price if Yahoo failed
-    if (yahooSnaps.length) {
-      ALL_SNAPS = yahooSnaps;
+    // Fall back to Supabase price if local API is unavailable
+    if (apiSnaps.length) {
+      ALL_SNAPS = apiSnaps;
     } else {
       ALL_SNAPS = await sbFetch('ticker_snapshots', {
         select: 'snapshot_date,price_close',
@@ -2944,7 +2949,34 @@ async function loadChart(fairValue) {
       }).catch(() => []);
     }
 
-    ALL_NARRS = narrativeRows;
+    const storyByDate = {};
+    chartStoryRows.forEach((row) => {
+      const d = row.snapshot_date?.slice(0, 10);
+      if (d && !storyByDate[d]) storyByDate[d] = row;
+    });
+
+    ALL_NARRS = narrativeRows.map((row) => {
+      const d = row.snapshot_date?.slice(0, 10);
+      const story = d ? storyByDate[d] : null;
+      return {
+        ...row,
+        narrative_text: row.narrative_text || story?.narrative_text || '',
+        source_outlet: row.source_outlet || story?.source_outlet || '',
+        article_url: row.article_url || story?.article_url || ''
+      };
+    });
+
+    if (!ALL_NARRS.length && chartStoryRows.length) {
+      ALL_NARRS = chartStoryRows.map((row) => ({
+        snapshot_date: row.snapshot_date,
+        sentiment_score: row.sentiment_score,
+        narrative_trend: '',
+        narrative_text: row.narrative_text || '',
+        source_outlet: row.source_outlet || '',
+        article_url: row.article_url || ''
+      }));
+    }
+
     ALL_DECAY = decayRows;
 
     if (!ALL_SNAPS.length) {
@@ -3144,14 +3176,34 @@ function drawChart(snaps, narrs, fairValue) {
     if (s?.price_close == null) return;
     const cx = xOf(idx);
     const cy = yOf(s.price_close);
-    const isBull = (n.sentiment_score ?? 0) > 0;
     ctx.beginPath();
     ctx.arc(cx, cy, 5, 0, Math.PI*2);
-    ctx.fillStyle   = isBull ? '#22c55e' : '#ef4444';
+    ctx.fillStyle   = '#ef4444';
     ctx.fill();
     ctx.strokeStyle = isLight() ? '#FFFFFF' : '#0A0E1A'; ctx.lineWidth = 1.5; ctx.stroke();
     dotHits.push({ cx, cy, n });
   });
+
+  function showStoryPopup(hit) {
+    const n = hit.n;
+    document.getElementById('popup-date').textContent = n.snapshot_date?.slice(0,10) || '';
+    document.getElementById('popup-headline').textContent = n.narrative_trend || 'Narrative Story';
+    const storyText = n.narrative_text || (n.sentiment_score != null ? `Sentiment: ${n.sentiment_score.toFixed(1)}` : 'No story text available.');
+    document.getElementById('popup-body').textContent = storyText;
+
+    const outlet = n.source_outlet || '';
+    const hasSentiment = n.sentiment_score != null;
+    const sentimentTag = hasSentiment ? `Sentiment ${n.sentiment_score > 0 ? '+' : ''}${n.sentiment_score.toFixed(1)}` : '';
+    document.getElementById('popup-vms').innerHTML = [outlet, sentimentTag].filter(Boolean).join(' · ');
+
+    let px = hit.cx + 10;
+    if (px + 260 > W) px = hit.cx - 270;
+    let py = hit.cy - 10;
+    if (py + 140 > H) py = H - 145;
+    popup.style.left = (px + 14) + 'px';
+    popup.style.top  = (py + 10) + 'px';
+    popup.classList.add('visible');
+  }
 
   // Hover tooltip
   cv.addEventListener('mousemove', e => {
@@ -3160,7 +3212,12 @@ function drawChart(snaps, narrs, fairValue) {
     const my = e.clientY - rect.top;
     const hit = dotHits.find(d => Math.hypot(mx - d.cx, my - d.cy) < 8);
     cv.style.cursor = hit ? 'pointer' : 'default';
-    if (hit) { tip.style.opacity = '0'; return; }
+    if (hit) {
+      tip.style.opacity = '0';
+      showStoryPopup(hit);
+      return;
+    }
+    popup.classList.remove('visible');
     const idx = Math.max(0, Math.min(N-1, Math.round(((mx - PAD.left) / CW) * (N-1))));
     const s = snaps[idx];
     if (!s?.price_close) { tip.style.opacity = '0'; return; }
@@ -3174,25 +3231,14 @@ function drawChart(snaps, narrs, fairValue) {
   });
   cv.addEventListener('mouseleave', () => { tip.style.opacity = '0'; popup.classList.remove('visible'); });
 
-  // Click dot to show story popup
+  // Click dot to keep story popup open
   cv.addEventListener('click', e => {
     const rect = cv.getBoundingClientRect();
     const mx = e.clientX - rect.left;
     const my = e.clientY - rect.top;
     const hit = dotHits.find(d => Math.hypot(mx - d.cx, my - d.cy) < 8);
     if (!hit) { popup.classList.remove('visible'); return; }
-    const n = hit.n;
-    document.getElementById('popup-date').textContent = n.snapshot_date?.slice(0,10) || '';
-    document.getElementById('popup-headline').textContent = n.narrative_trend || '';
-    document.getElementById('popup-body').textContent = n.sentiment_score != null ? `Sentiment: ${n.sentiment_score.toFixed(1)}` : '';
-    document.getElementById('popup-vms').innerHTML = '';
-    let px = hit.cx + 10;
-    if (px + 260 > W) px = hit.cx - 270;
-    let py = hit.cy - 10;
-    if (py + 140 > H) py = H - 145;
-    popup.style.left = (px + 14) + 'px';
-    popup.style.top  = (py + 10) + 'px';
-    popup.classList.add('visible');
+    showStoryPopup(hit);
   });
 }
 
