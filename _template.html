@@ -775,7 +775,7 @@ body{
 .snap-verdict{font-size:10px;padding:3px 10px;border-radius:4px;border:1px solid rgba(255,255,255,0.08);white-space:nowrap;font-family:var(--font-mono);background:rgba(255,255,255,0.04);color:var(--mp-text-secondary);}
 .snap-driver{font-size:13px;color:var(--mp-text-primary);max-width:280px;line-height:1.5;}
 .snap-sector{font-size:11px;color:var(--mp-text-tertiary);font-style:italic;max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.snap-tags{display:flex;flex-wrap:wrap;gap:4px;max-width:220px;}
+.snap-tags{display:flex;flex-wrap:wrap;gap:4px;max-width:320px;}
 .snap-tag{font-family:var(--font-body);font-size:10px;font-weight:500;padding:3px 8px;border-radius:99px;white-space:nowrap;letter-spacing:0.02em;border:1px solid rgba(255,255,255,0.10);background:rgba(255,255,255,0.04);color:var(--mp-text-secondary);}
 .snap-date{font-family:var(--font-mono);font-size:10px;color:var(--mp-text-tertiary);}
 .pe-val{font-family:var(--font-mono);font-size:12px;}
@@ -4884,7 +4884,7 @@ function buildStoryCardHTML(r,idx){
             +(r.sector_name?'<span style="color:var(--mp-text-tertiary);font-size:11px;">'+esc(r.sector_name)+'</span>':'')
             +(updated?'<span style="color:var(--mp-text-tertiary);margin-left:auto;font-family:var(--font-mono);font-size:10px;">'+updated+'</span>':'')
           +'</div>'
-          +(function(){var tags=getTickerInsightTags(r).slice(0,3);if(!tags.length)return '';return '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:5px;">'+tags.map(function(t){return '<span style="font-family:var(--font-body);font-size:10px;font-weight:500;padding:2px 8px;border-radius:99px;white-space:nowrap;letter-spacing:0.02em;background:'+t.bg+';color:'+t.color+';border:1px solid '+t.border+';">'+esc(t.label)+'</span>';}).join('')+'</div>';})()
+          +(function(){var allTags=getTickerInsightTags(r);var insight=allTags.filter(function(t){return !t.sector;});var sector=allTags.filter(function(t){return t.sector;});var tags=insight.concat(sector).slice(0,4);if(!tags.length)return '';return '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:5px;">'+tags.map(function(t){return '<span style="font-family:var(--font-body);font-size:10px;font-weight:500;padding:2px 8px;border-radius:99px;white-space:nowrap;letter-spacing:0.02em;background:'+t.bg+';color:'+t.color+';border:1px solid '+t.border+';">'+esc(t.label)+'</span>';}).join('')+'</div>';})()
         +'</div>'
       +'</div>'
       +'<span class="card-arrow">→</span>'
@@ -5252,11 +5252,11 @@ function getTickerInsightTags(r){
     else if(energy<=15) tags.push({label:'Story Exhausted',color:'#A0A8B0',bg:'rgba(160,168,176,0.08)',border:'rgba(160,168,176,0.20)'});
   }
   var decay=r.decay_rate;
-  if(decay!=null&&decay>0.5) tags.push({label:'Narrative Fading',color:'#FFB800',bg:'rgba(255,184,0,0.08)',border:'rgba(255,184,0,0.20)'});
+  if(decay!=null&&decay>=0.05) tags.push({label:'Narrative Fading',color:'#FFB800',bg:'rgba(255,184,0,0.08)',border:'rgba(255,184,0,0.20)'});
   // Verdict tag
   var v=(r.prism_verdict||r.verdict||'').toLowerCase();
   if(v.indexOf('trap')!==-1) tags.push({label:'Narrative Trap',color:'#FF4D4D',bg:'rgba(255,77,77,0.08)',border:'rgba(255,77,77,0.20)'});
-  else if(v.indexOf('supported')!==-1||v.indexOf('verified')!==-1) tags.push({label:'Supported',color:'#00DE94',bg:'rgba(0,222,148,0.08)',border:'rgba(0,222,148,0.20)'});
+  else if(v.indexOf('supported')!==-1||v.indexOf('verified')!==-1) tags.push({label:'Fundamentally Supported',color:'#00DE94',bg:'rgba(0,222,148,0.08)',border:'rgba(0,222,148,0.20)'});
   // Add sector as last-priority filler
   (SECTOR_MAP[r.ticker]||[]).forEach(function(s){tags.push({label:s,color:'#00AEFF',bg:'rgba(0,174,255,0.08)',border:'rgba(0,174,255,0.18)',sector:true});});
   return tags;
@@ -5280,7 +5280,7 @@ function renderSnap(){
       +'<td class="r"><div class="snap-chg '+delta.cls+'">'+delta.txt+'</div></td>'
       +'<td><span class="snap-state '+sc+'">'+esc(r.narrative_state)+'</span></td>'
       +'<td><div class="snap-driver">'+esc(r.story_claim||r.primary_driver||'—')+'</div></td>'
-      +'<td><div class="snap-tags">'+getTickerInsightTags(r).slice(0,3).map(function(t){return '<span class="snap-tag" style="background:'+t.bg+';color:'+t.color+';border-color:'+t.border+';">'+esc(t.label)+'</span>';}).join('')+'</div></td>'
+      +'<td><div class="snap-tags">'+(function(){var allTags=getTickerInsightTags(r);var insight=allTags.filter(function(t){return !t.sector;});var sector=allTags.filter(function(t){return t.sector;});return insight.concat(sector).slice(0,4).map(function(t){return '<span class="snap-tag" style="background:'+t.bg+';color:'+t.color+';border-color:'+t.border+';">'+esc(t.label)+'</span>';}).join('');})()+'</div></td>'
       +'<td><span class="snap-state" style="font-size:11px;">'+tradeType+'</span></td>'
       +'<td class="r"><a href="/ticker/'+encodeURIComponent(r.ticker)+'" class="snap-cta" onclick="event.stopPropagation();">View Card <span style="font-size:13px;">→</span></a></td>'
     +'</tr>';
