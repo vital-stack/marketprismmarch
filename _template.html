@@ -2934,8 +2934,8 @@ body{
 .nc-truth-num{font-family:var(--font-body);font-size:14px;font-weight:700;line-height:1;color:#fff;position:relative;z-index:1;}
 .nc-truth-lbl{font-family:var(--font-body);font-size:6px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.5);position:relative;z-index:1;}
 .nc-meta{font-family:var(--font-body);font-size:11px;color:#A0A8B0;line-height:1.4;}
-/* Tags — hidden for compact */
-.nc-tags{display:none;}
+/* Tags — insight badges */
+.nc-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;}
 .nc-tag{
   font-family:var(--font-body);font-size:10px;font-weight:600;
   letter-spacing:0.04em;text-transform:uppercase;
@@ -2943,10 +2943,10 @@ body{
   border:1px solid rgba(255,255,255,0.10);color:var(--mp-text-secondary);
   background:rgba(255,255,255,0.04);
 }
-.nc-tag-green{color:#1a8a5e;border-color:rgba(26,138,94,0.25);background:rgba(26,138,94,0.06);}
-.nc-tag-red{color:#c0392b;border-color:rgba(192,57,43,0.25);background:rgba(192,57,43,0.06);}
-.nc-tag-amber{color:#b8860b;border-color:rgba(184,134,11,0.25);background:rgba(184,134,11,0.06);}
-.nc-tag-cyan{color:#00AEFF;border-color:rgba(0,174,255,0.25);background:rgba(0,174,255,0.06);}
+.nc-tag-green{color:#00DE94;border-color:rgba(0,222,148,0.25);background:rgba(0,222,148,0.08);}
+.nc-tag-red{color:#FF4D4D;border-color:rgba(255,77,77,0.25);background:rgba(255,77,77,0.08);}
+.nc-tag-amber{color:#FFB800;border-color:rgba(255,184,0,0.25);background:rgba(255,184,0,0.08);}
+.nc-tag-cyan{color:#00AEFF;border-color:rgba(0,174,255,0.25);background:rgba(0,174,255,0.08);}
 /* Footer — compact */
 .nc-footer{
   display:flex;align-items:center;gap:0;
@@ -4329,6 +4329,24 @@ async function loadData(){
     var pulseMap={};
     var scorecardMap={};
 
+    // ── Fetch narrative_scorecard data for insight tags ──
+    try{
+      var scDateRes=await fetch(SUPABASE_URL+'/rest/v1/narrative_scorecard?select=snapshot_date&order=snapshot_date.desc&limit=1',{headers:hdrs});
+      if(scDateRes&&scDateRes.ok){
+        var scDateJ=await scDateRes.json();
+        var scDate=scDateJ[0]&&scDateJ[0].snapshot_date;
+        if(scDate){
+          var scCols='ticker,fvd_pct,vms,coordination_score,coordination_class,suspicion_score,suspicion_class,decay_rate,energy_remaining,verdict';
+          var scRes=await fetch(SUPABASE_URL+'/rest/v1/narrative_scorecard?select='+scCols+'&snapshot_date=eq.'+encodeURIComponent(scDate)+'&limit=500',{headers:hdrs});
+          if(scRes&&scRes.ok){
+            var scRows=await scRes.json();
+            scRows.forEach(function(s){if(!scorecardMap[s.ticker])scorecardMap[s.ticker]=s;});
+            console.log('[MP] scorecardMap loaded:',Object.keys(scorecardMap).length,'tickers');
+          }
+        }
+      }
+    }catch(e){console.warn('[MP] scorecard fetch failed:',e);}
+
     // dedup + merge
     var seen=new Set();
     DATA = rows.filter(function(r){
@@ -4597,7 +4615,13 @@ function nfBuildRow(dir, logoHtml, ticker, sector, headline, verdict, href, extr
         +'</div>'
         +'<div class="nc-meta">'+conf+'% \u00B7 '+(extra.window||'Day\u2013Swing')+' \u00B7 '+stateLabel+'</div>'
       +'</div>'
-      +(tags.length?'<div class="nc-tags">'+tags.map(function(t){return '<span class="nc-tag '+t.cls+'">'+t.label+'</span>';}).join('')+'</div>':'')
+      +(function(){
+        var insightTags=extra._insightTags||[];
+        if(insightTags.length){
+          return '<div class="nc-tags">'+insightTags.slice(0,4).map(function(t){return '<span class="nc-tag" style="background:'+t.bg+';color:'+t.color+';border-color:'+t.border+';">'+esc(t.label)+'</span>';}).join('')+'</div>';
+        }
+        return tags.length?'<div class="nc-tags">'+tags.map(function(t){return '<span class="nc-tag '+t.cls+'">'+t.label+'</span>';}).join('')+'</div>':'';
+      })()
     +'</div>'
     +'<div class="nc-footer">'
       +'<div class="nc-footer-state"><span class="nc-pulse" style="background:'+accentColor+';"></span>'+esc(stateLabel)+' \u00B7 LIVE</div>'
@@ -4631,11 +4655,13 @@ function renderNarrativeCards(){
       var verdict=r.prism_verdict||'Monitoring';
       // Use CARD_DATA match for confidence/window if available (TRADE_CLASS_MAP is not populated)
       var cdMatch=CARD_DATA.find(function(cd){return cd.ticker===r.ticker;})||{};
+      var insightTags=getTickerInsightTags(r);
       return nfBuildRow(dir, nfLogoHTML(r.ticker), r.ticker, r.sector_name||'', r.story_claim, verdict, '/ticker/'+encodeURIComponent(r.ticker), {
         price:r.price, pricePct:pct, state:r.narrative_state,
         daysToEarnings:r.days_to_earnings,
         confidence:cdMatch._confPct!=null?cdMatch._confPct:null,
-        window:cdMatch._winOverride||null
+        window:cdMatch._winOverride||null,
+        _insightTags:insightTags
       });
     }).join('');
   }
