@@ -3980,7 +3980,7 @@ function switchTab(id, btn){
   if(tt) tt.textContent = TAB_TITLES[id]||id;
   if(id==='discover'&&typeof initStoryStream==='function')setTimeout(initStoryStream,100);
   if(id==='narrative'&&typeof renderNHT==='function')setTimeout(renderNHT,50);
-  if(id==='cards'&&typeof renderCardsGallery==='function')setTimeout(renderCardsGallery,50);
+  if(id==='cards'&&typeof renderCardsGallery==='function')setTimeout(function(){try{renderCardsGallery();}catch(e){console.error('Gallery render:',e);}},50);
   if(id==='calendar'&&typeof calendarBoot==='function')setTimeout(calendarBoot,50);
   if(id==='trapradar'&&typeof initTrapRadar==='function')setTimeout(initTrapRadar,50);
   // Close mobile flyout menu after tab switch
@@ -4340,11 +4340,11 @@ async function loadData(){
     renderSnap();
     renderSectors();
     renderTrapChart();
-    renderMemes();
+    try{renderMemes();}catch(e){console.error('renderMemes:',e);}
     loadDiscoverHeatmap();
-    renderTradingCards();
-    renderDailySignalCards();
-    renderCardsGallery();
+    try{renderTradingCards();}catch(e){console.error('renderTradingCards:',e);}
+    try{renderDailySignalCards();}catch(e){console.error('renderDailySignalCards:',e);}
+    try{renderCardsGallery();}catch(e){console.error('renderCardsGallery:',e);}
     renderDailyMarketPulse();
     renderNarrativeCards();
     renderSectorNarrativeCards();
@@ -4359,8 +4359,9 @@ async function loadData(){
     // Still render static demos
     renderSectors();
     renderTrapChart();
-    renderMemes();
-    renderTradingCards();
+    try{renderMemes();}catch(_){}
+    try{renderTradingCards();}catch(_){}
+    try{renderCardsGallery();}catch(_){}
   }
 }
 // ── Daily Brief: Market Pulse Strip (replaces hardcoded prices) ──────────────
@@ -4686,7 +4687,7 @@ function ncTruthRingSVG(val, color){
 function esc(s){return s?(s+'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):'';  }
 function stateClass(s){return {'Breaking':'badge-breaking','Surging':'badge-surging','Fragile':'badge-fragile','Stable':'badge-stable'}[s]||'badge-stable';}
 function pipClass(v){return v==='Narrative Trap'?'pip-trap':v==='Structurally Supported'?'pip-supported':'pip-monitoring';}
-function fmtPrice(p){return p>=100?p.toFixed(2):p.toFixed(3);}
+function fmtPrice(p){if(p==null||isNaN(p))return '0.00';return p>=100?p.toFixed(2):p.toFixed(3);}
 function fmtDelta(d){
   if(d==null||d===0)return{cls:'delta-flat',txt:'—'};
   return{cls:d>0?'delta-pos':'delta-neg',txt:(d>0?'+':'')+d.toFixed(2)+'%'};
@@ -5221,7 +5222,8 @@ var MEME_SEED=[
   {ticker:'GOOGL',state:'Surging',claim:'Gemini Ultra API adoption outpacing internal estimates — Cloud catching Azure share',verdict:'Structurally Supported',price:198.75,chg:0.45,age:'6h ago',likes:31,bg:'meme-bg-surging'},
   {ticker:'AMD',state:'Fragile',claim:'MI300X customer wins cited but NVDA supply constraints removed as a demand driver',verdict:'Narrative Trap',price:178.90,chg:-0.87,age:'5h ago',likes:28,bg:'meme-bg-fragile'},
 ];
-var MEME_DATA=MEME_SEED.slice();
+var MEME_DATA=MEME_SEED;
+var MEME_DATA_IS_SEED=true;
 function filterMemes(f,btn){
   memeFilter=f;
   document.querySelectorAll('#tab-memes .chip').forEach(function(c){c.classList.remove('active');});
@@ -5255,7 +5257,7 @@ function generateMeme(){
 function renderMemes(){
   // Merge with live DATA if available — prefer TRADE_CARDS_DATA for high-conviction signals
   var cards=MEME_DATA;
-  if(TRADE_CARDS_DATA.length>0&&MEME_DATA===MEME_SEED){
+  if(TRADE_CARDS_DATA.length>0&&MEME_DATA_IS_SEED){
     cards=TRADE_CARDS_DATA.slice(0,12).map(function(r){
       var isNT=r.primary_label==='NARRATIVE_TRAP';
       return{
@@ -5267,8 +5269,8 @@ function renderMemes(){
         bg:'meme-bg-breaking'
       };
     });
-    MEME_DATA=cards;
-  } else if(DATA.length>0&&MEME_DATA===MEME_SEED){
+    MEME_DATA=cards;MEME_DATA_IS_SEED=false;
+  } else if(DATA.length>0&&MEME_DATA_IS_SEED){
     cards=DATA.slice(0,12).map(function(r){
       return{
         ticker:r.ticker,state:r.narrative_state||'Stable',
@@ -5279,7 +5281,7 @@ function renderMemes(){
         bg:r.narrative_state==='Breaking'||r.prism_verdict==='Narrative Trap'?'meme-bg-breaking':r.narrative_state==='Surging'?'meme-bg-surging':r.narrative_state==='Fragile'?'meme-bg-fragile':'meme-bg-stable'
       };
     });
-    MEME_DATA=cards;
+    MEME_DATA=cards;MEME_DATA_IS_SEED=false;
   }
   var filtered=cards.filter(function(c){
     if(memeFilter==='trap')return c.verdict==='Narrative Trap';
@@ -6642,26 +6644,30 @@ function renderCardsGallery(){
   if(!grid)return;
   var cards=[];
   // Prefer high-conviction trade cards from v_trade_cards, always fall back to DATA
-  if(TRADE_CARDS_DATA.length>0){
+  if(TRADE_CARDS_DATA&&TRADE_CARDS_DATA.length>0){
     cards=TRADE_CARDS_DATA.slice(0,10);
   }
-  if(!cards.length&&DATA.length>0){
-    DATA.forEach(function(r,i){
-      cards.push(Object.assign({},r,TRADING_CARD_COLORS[i%TRADING_CARD_COLORS.length]));
-    });
+  if(!cards.length&&DATA&&DATA.length>0){
+    for(var di=0;di<DATA.length;di++){
+      cards.push(Object.assign({},DATA[di],TRADING_CARD_COLORS[di%TRADING_CARD_COLORS.length]));
+    }
   }
+  var countEl=document.getElementById('tcg-count');
+  if(countEl)countEl.textContent=cards.length+' cards';
   if(!cards.length){
     grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--mp-text-tertiary);padding:40px;">No signal data available. Cards appear after data loads.</div>';
     return;
   }
-  var countEl=document.getElementById('tcg-count');
-  if(countEl)countEl.textContent=cards.length+' cards';
   var dateStr=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-  grid.innerHTML=cards.map(function(c,i){
-    return '<div class="tcg-card-wrap" id="tcg-wrap-'+i+'">'
-      +buildCardFrontHTML(c,i,dateStr,'gf',true)
-    +'</div>';
-  }).join('');
+  var html='';
+  for(var ci=0;ci<cards.length;ci++){
+    try{
+      html+='<div class="tcg-card-wrap" id="tcg-wrap-'+ci+'">'
+        +buildCardFrontHTML(cards[ci],ci,dateStr,'gf',true)
+      +'</div>';
+    }catch(e){console.error('Card render error for '+(cards[ci]&&cards[ci].ticker)+':',e);}
+  }
+  grid.innerHTML=html;
   attachCardInteractions(grid);
   TCG_RENDERED=true;
 }
