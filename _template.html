@@ -4344,6 +4344,7 @@ async function loadData(){
     loadDiscoverHeatmap();
     renderTradingCards();
     renderDailySignalCards();
+    renderCardsGallery();
     renderDailyMarketPulse();
     renderNarrativeCards();
     renderSectorNarrativeCards();
@@ -5252,9 +5253,22 @@ function generateMeme(){
   document.getElementById('meme-ticker-inp').value='';
 }
 function renderMemes(){
-  // Merge with live DATA if available
+  // Merge with live DATA if available — prefer TRADE_CARDS_DATA for high-conviction signals
   var cards=MEME_DATA;
-  if(DATA.length>0&&MEME_DATA===MEME_SEED){
+  if(TRADE_CARDS_DATA.length>0&&MEME_DATA===MEME_SEED){
+    cards=TRADE_CARDS_DATA.slice(0,12).map(function(r){
+      var isNT=r.primary_label==='NARRATIVE_TRAP';
+      return{
+        ticker:r.ticker,state:'Breaking',
+        claim:r._description||r.story_claim||'High-conviction trade signal',
+        verdict:isNT?'Narrative Trap':'Fragile',
+        price:r.price||0,chg:r.price_change_pct||0,
+        age:'Today',likes:Math.floor(Math.random()*120),
+        bg:'meme-bg-breaking'
+      };
+    });
+    MEME_DATA=cards;
+  } else if(DATA.length>0&&MEME_DATA===MEME_SEED){
     cards=DATA.slice(0,12).map(function(r){
       return{
         ticker:r.ticker,state:r.narrative_state||'Stable',
@@ -7288,13 +7302,34 @@ function tcQueueToday(idx){
 
 // ── Boot ──
 function tcBuildFromData(){
-  if(!DATA.length)return;
+  if(!DATA.length&&!TRADE_CARDS_DATA.length)return;
   var rMap={
     'Breaking':'Rare','Narrative Trap':'Rare',
     'Surging':'Epic','Structurally Supported':'Epic',
     'Fragile':'Uncommon','Stable':'Common'
   };
-  TC_SIGNALS=DATA.map(function(r,i){
+  // Build high-conviction trade card signals first, then fill with DATA
+  var tcSignals=[];
+  if(TRADE_CARDS_DATA.length>0){
+    tcSignals=TRADE_CARDS_DATA.map(function(r){
+      var pct=r.price_change_pct||0;
+      var isUp=pct>0;
+      return{
+        id:r.ticker.toLowerCase(),ticker:r.ticker,
+        name:r.sector_name||'\u2014',
+        price:'$'+fmtPrice(r.price||0),
+        change:(isUp?'\u25B2':'\u25BC')+' '+Math.abs(pct).toFixed(2)+'%',
+        changeDir:isUp?'up':'down',
+        rarity:'Rare',ac:'var(--mp-red)',
+        bias:(r.biasText||'SHORT').toUpperCase(),
+        conf:r._confPct+'%',
+        window:r._winTxt||'5 days',
+        logo:''
+      };
+    });
+  }
+  var tcSeen=new Set(tcSignals.map(function(s){return s.ticker;}));
+  var dataSignals=DATA.filter(function(r){return !tcSeen.has(r.ticker);}).map(function(r,i){
     var pct=r.price_change_pct||0;
     var isUp=pct>0;
     var tc=TRADE_CLASS_MAP[r.ticker]||{};
@@ -7317,6 +7352,7 @@ function tcBuildFromData(){
       bias:biasText,conf:conf,window:win,logo:''
     };
   });
+  TC_SIGNALS=tcSignals.concat(dataSignals);
 }
 function calendarBoot(){
   if(tcCalBooted)return;
