@@ -3548,6 +3548,12 @@ body{
         <button class="chip" onclick="sortSnap('chg-desc',this)">Top movers ↑</button>
         <button class="chip" onclick="sortSnap('chg-asc',this)">Top movers ↓</button>
         <button class="chip" onclick="sortSnap('traps',this)">Traps first</button>
+        <button class="chip" onclick="sortSnap('overvalued',this)">Overvalued</button>
+        <button class="chip" onclick="sortSnap('undervalued',this)">Under Fair Value</button>
+        <button class="chip" onclick="sortSnap('high-energy',this)">High Energy</button>
+        <button class="chip" onclick="sortSnap('fading',this)">Narrative Fading</button>
+        <button class="chip" onclick="sortSnap('coordinated',this)">Coordinated</button>
+        <button class="chip" onclick="sortSnap('supported',this)">Supported</button>
         <div class="filter-sep"></div>
         <select class="filter-select" id="snap-sector-select" onchange="filterSnapSector(this.value)">
           <option value="">All sectors</option>
@@ -5254,6 +5260,12 @@ function getSnapData(){
   if(snapSort==='chg-desc')arr=arr.slice().sort(function(a,b){return(b.price_change_pct||0)-(a.price_change_pct||0);});
   else if(snapSort==='chg-asc')arr=arr.slice().sort(function(a,b){return(a.price_change_pct||0)-(b.price_change_pct||0);});
   else if(snapSort==='traps')arr=arr.slice().sort(function(a,b){return(a.prism_verdict==='Narrative Trap'?0:1)-(b.prism_verdict==='Narrative Trap'?0:1);});
+  else if(snapSort==='overvalued')arr=arr.slice().sort(function(a,b){var aV=a.fvd_pct!=null&&a.fvd_pct>30?0:1;var bV=b.fvd_pct!=null&&b.fvd_pct>30?0:1;return aV!==bV?aV-bV:(b.fvd_pct||0)-(a.fvd_pct||0);});
+  else if(snapSort==='undervalued')arr=arr.slice().sort(function(a,b){var aV=a.fvd_pct!=null&&a.fvd_pct<-5?0:1;var bV=b.fvd_pct!=null&&b.fvd_pct<-5?0:1;return aV!==bV?aV-bV:(a.fvd_pct||0)-(b.fvd_pct||0);});
+  else if(snapSort==='high-energy')arr=arr.slice().sort(function(a,b){var aV=a.energy_remaining!=null&&a.energy_remaining>=85?0:1;var bV=b.energy_remaining!=null&&b.energy_remaining>=85?0:1;return aV!==bV?aV-bV:(b.energy_remaining||0)-(a.energy_remaining||0);});
+  else if(snapSort==='fading')arr=arr.slice().sort(function(a,b){var aV=a.decay_rate!=null&&a.decay_rate>=0.05?0:1;var bV=b.decay_rate!=null&&b.decay_rate>=0.05?0:1;return aV!==bV?aV-bV:(b.decay_rate||0)-(a.decay_rate||0);});
+  else if(snapSort==='coordinated')arr=arr.slice().sort(function(a,b){var aV=a.coordination_class&&a.coordination_class.toLowerCase().indexOf('coordinated')!==-1?0:1;var bV=b.coordination_class&&b.coordination_class.toLowerCase().indexOf('coordinated')!==-1?0:1;return aV-bV;});
+  else if(snapSort==='supported')arr=arr.slice().sort(function(a,b){var v1=(a.prism_verdict||a.verdict||'').toLowerCase();var v2=(b.prism_verdict||b.verdict||'').toLowerCase();var aV=v1.indexOf('supported')!==-1||v1.indexOf('verified')!==-1?0:1;var bV=v2.indexOf('supported')!==-1||v2.indexOf('verified')!==-1?0:1;return aV-bV;});
   return arr;
 }
 function getTickerInsightTags(r){
