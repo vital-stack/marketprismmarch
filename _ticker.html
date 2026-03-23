@@ -3670,11 +3670,11 @@ async function loadNarratives() {
     document.getElementById('narr-list').innerHTML = top.map((n, idx) => {
       // Verdict class
       const v = (n.verdict || '').toUpperCase();
-      const vCls = v.includes('VERIF') ? 'narr-v-verified'
-        : v.includes('MISLEAD') || v.includes('FALSE') ? 'narr-v-misleading'
+      const vCls = v.includes('MISLEAD') || v.includes('FALSE') ? 'narr-v-misleading'
         : v.includes('TRAP') ? 'narr-v-trap'
         : 'narr-v-monitoring';
-      const vLbl = v || 'Monitoring';
+      const vLbl = v.includes('MISLEAD') || v.includes('FALSE') ? 'Misleading'
+        : v.includes('TRAP') ? 'Trap' : 'Monitoring';
 
       // Parse prerequisites
       let prereqs = [];
@@ -3758,9 +3758,7 @@ async function loadNarratives() {
           const cPrice = cDate ? priceByDate[cDate] : null;
           const cPriceStr = cPrice != null ? fmtPrice(cPrice) : null;
           const cVerdict = (c.verdict || '').toUpperCase();
-          const cVCls = cVerdict.includes('VERIF') ? 'narr-v-verified'
-            : cVerdict.includes('STRUCT') ? 'narr-v-verified'
-            : cVerdict.includes('MISLEAD') || cVerdict.includes('FALSE') ? 'narr-v-misleading'
+          const cVCls = cVerdict.includes('MISLEAD') || cVerdict.includes('FALSE') ? 'narr-v-misleading'
             : cVerdict.includes('TRAP') ? 'narr-v-trap'
             : cVerdict.includes('NEED') ? 'narr-v-needs'
             : 'narr-v-monitoring';
@@ -4314,10 +4312,10 @@ async function loadStoriesFeed() {
   if (!feedList) return;
   try {
     const rows = await sbFetch('narrative_analyses', {
-      select: 'narrative_text,verdict,sentiment_score,snapshot_date,source_outlet,narrative_type,article_url',
+      select: 'narrative_text,verdict,sentiment_score,snapshot_date,created_at,source_outlet,narrative_type,article_url',
       ticker: `eq.${TICKER}`,
-      order: 'snapshot_date.desc',
-      limit: '50'
+      order: 'created_at.desc',
+      limit: '100'
     }).catch(() => []);
 
     if (!rows.length) {
@@ -4329,15 +4327,14 @@ async function loadStoriesFeed() {
       const score = r.sentiment_score ?? 0;
       const dotCls = score > 0 ? 'bull' : score < 0 ? 'bear' : 'neutral';
       const v = (r.verdict || '').toUpperCase();
-      const vLbl = v.includes('VERIF') ? 'Verified'
-        : v.includes('MISLEAD') || v.includes('FALSE') ? 'Misleading'
+      const vLbl = v.includes('MISLEAD') || v.includes('FALSE') ? 'Misleading'
         : v.includes('TRAP') ? 'Trap'
         : 'Monitoring';
-      const vColor = v.includes('VERIF') ? 'color:#22c55e;border-color:rgba(34,197,94,.2)'
-        : v.includes('MISLEAD') || v.includes('TRAP') || v.includes('FALSE') ? 'color:#ef4444;border-color:rgba(239,68,68,.2)'
+      const vColor = v.includes('MISLEAD') || v.includes('TRAP') || v.includes('FALSE') ? 'color:#ef4444;border-color:rgba(239,68,68,.2)'
         : 'color:#6b7280;border-color:rgba(255,255,255,.07)';
-      const dateStr = r.snapshot_date
-        ? new Date(r.snapshot_date).toLocaleDateString('en-US', { month:'short', day:'numeric' })
+      const bestDate = r.created_at || r.snapshot_date;
+      const dateStr = bestDate
+        ? new Date(bestDate).toLocaleDateString('en-US', { month:'short', day:'numeric' })
         : '';
       const linkHtml = r.article_url
         ? '<a class="tk-feed-link" href="' + esc(r.article_url) + '" target="_blank" rel="noopener">Read &rarr;</a>'
