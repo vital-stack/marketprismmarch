@@ -3001,6 +3001,28 @@ body{
 .lb-row:hover .lb-arr{color:#00AEFF;}
 .lb-empty{padding:20px 16px;font-size:13px;color:var(--mp-text-tertiary);}
 @media(max-width:767px){#lb-grid{grid-template-columns:1fr!important;}}
+
+/* ── Leaderboard Toolbar ── */
+.lb-toolbar{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:16px;padding:0 2px;
+}
+.lb-toolbar-date{
+  font-family:Inter,'DM Sans',system-ui,sans-serif;
+  font-size:13px;color:var(--mp-text-tertiary);
+}
+.lb-refresh-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(255,255,255,0.06);border:1px solid var(--mp-border);
+  border-radius:8px;padding:7px 14px;
+  font-family:Inter,'DM Sans',system-ui,sans-serif;font-size:12px;font-weight:500;
+  color:var(--mp-text-secondary);cursor:pointer;transition:all .2s;
+}
+.lb-refresh-btn:hover{background:rgba(255,255,255,0.1);border-color:var(--mp-border-hover);color:var(--mp-text-primary);}
+.lb-refresh-btn.spinning svg{animation:lb-spin .8s linear infinite;}
+@keyframes lb-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+[data-theme="light"] .lb-refresh-btn{background:rgba(0,0,0,0.04);border-color:rgba(0,0,0,0.1);color:var(--mp-text-secondary);}
+[data-theme="light"] .lb-refresh-btn:hover{background:rgba(0,0,0,0.08);color:var(--mp-text-primary);}
 </style>
 </head>
 <body>
@@ -3767,6 +3789,13 @@ body{
         <h1>The Leaderboard.</h1>
         <span class="ph-italic">Who's moving markets. What's driving them.</span>
         <p>Live rankings across sources, figures, themes, and signals — pulled daily from the narrative scorecard.</p>
+      </div>
+      <div class="lb-toolbar">
+        <span class="lb-toolbar-date" id="lb-date"></span>
+        <button class="lb-refresh-btn" id="lb-refresh-btn" onclick="refreshLeaderboard()" title="Refresh leaderboard">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          <span>Refresh</span>
+        </button>
       </div>
       <div id="lb-loading" style="text-align:center;padding:60px 0;color:var(--mp-text-tertiary);font-size:14px;">Loading rankings…</div>
       <div id="lb-error" style="display:none;color:#FF4D4D;font-size:13px;padding:20px 0;"></div>
@@ -8970,6 +8999,25 @@ async function loadLeaderboard(){
     console.error('Leaderboard error:',e);
   }
 }
+
+async function refreshLeaderboard(){
+  var btn=document.getElementById('lb-refresh-btn');
+  if(btn) btn.classList.add('spinning');
+  LB_BOOTED=false;
+  var loading=document.getElementById('lb-loading');
+  var body=document.getElementById('lb-body');
+  if(loading) loading.style.display='';
+  if(body) body.style.display='none';
+  await loadLeaderboard();
+  updateLBDate();
+  if(btn) btn.classList.remove('spinning');
+}
+
+function updateLBDate(){
+  var el=document.getElementById('lb-date');
+  if(el) el.textContent='Last updated: '+new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'})+' · '+new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+}
+updateLBDate();
 
 var _origST2=window.switchTab;
 window.switchTab=function(id,btn){
