@@ -9681,11 +9681,6 @@ var BOARDS=[
       return{name:r.ticker,meta:'Days to cover: '+dtc+'d \u00b7 Story energy: '+energy+'%'+(r.squeeze_risk?' \u00b7 \u26a0 Squeeze risk':''),score:dtc,scoreDisplay:dtc+'d',combined:combined,link:'/ticker/'+encodeURIComponent(r.ticker)};
     }).filter(Boolean).sort(function(a,b){return b.combined-a.combined;}).slice(0,10);
   }},
-  {id:'sources',title:'Top Sources',sub:'By credibility & prediction accuracy',color:'#00AEFF',bg:'rgba(0,174,255,0.12)',scoreLabel:'Trust Score',
-  fetch:async function(){
-    var r=await sq('source_scores?select=source_name,srs,total_claims,correct_claims,source_type&order=srs.desc&limit=10');
-    return r.map(function(x){return{name:x.source_name||'Unknown',meta:(x.source_type||'Media')+' \u00b7 '+(x.total_claims||0)+' claims',score:Math.round((x.srs||0)*10)/10,link:'#narrative'};});
-  }},
   {id:'top-sources',title:'Top Performing Sources',sub:'Highest hit rate publications · 50+ articles',color:'#00DE94',bg:'rgba(0,222,148,0.12)',scoreLabel:'Hit Rate %',
   fetch:async function(){
     var r=await sq('source_credibility?select=publication_name,hit_rate,avg_signed_return,article_count&article_count=gte.50&order=hit_rate.desc&limit=10');
