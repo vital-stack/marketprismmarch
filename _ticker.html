@@ -2158,9 +2158,9 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
             <div class="chart-controls">
               <div class="chart-timeframes">
                 <button class="tf-btn" data-days="30">30D</button>
-                <button class="tf-btn active" data-days="90">90D</button>
+                <button class="tf-btn" data-days="90">90D</button>
                 <button class="tf-btn" data-days="180">6M</button>
-                <button class="tf-btn" data-days="365">1Y</button>
+                <button class="tf-btn active" data-days="365">1Y</button>
                 <button class="tf-btn" data-days="0">All</button>
               </div>
               <div class="chart-sort">
@@ -2888,11 +2888,8 @@ async function loadSectorIntelligence(heroRow) {
 let ALL_SNAPS = [];   // full price history from ticker_snapshots
 let ALL_NARRS = [];   // narrative story dots from narrative_analyses
 let ALL_DECAY = [];   // narrative energy time series
-let CHART_FV  = null;
-
-async function loadChart(fairValue) {
+async function loadChart() {
   if (!TICKER) return;
-  CHART_FV = fairValue;
   try {
     // Fetch prices from ticker_snapshots + stories from narrative_analyses
     const [priceRows, storyRows, decayRows] = await Promise.all([
@@ -2978,7 +2975,7 @@ function renderChart() {
   const snaps = filterSnaps();
   const narrs = filterNarrs();
   if (!snaps.length) return;
-  drawChart(snaps, narrs, CHART_FV);
+  drawChart(snaps, narrs);
 }
 
 function buildBearList() {
@@ -3004,7 +3001,7 @@ function buildBearList() {
   });
 }
 
-function drawChart(snaps, narrs, fairValue) {
+function drawChart(snaps, narrs) {
   const outer  = document.getElementById('chart-outer');
   const canvas = document.getElementById('price-canvas');
   const tip    = document.getElementById('chart-tip');
@@ -3060,8 +3057,6 @@ function drawChart(snaps, narrs, fairValue) {
     const d = new Date(s.snapshot_date);
     ctx.fillText(d.toLocaleDateString('en-US', { month:'short', day:'numeric' }), xOf(i), H - PAD.bottom + 14);
   });
-
-  // Fair value dashed line — removed per user request
 
   // Area fill under price
   const grad = ctx.createLinearGradient(0, PAD.top, 0, H - PAD.bottom);
@@ -4340,7 +4335,7 @@ async function refreshAll() {
 
   await Promise.all([
     loadNarratives(),
-    loadChart(fairValue),
+    loadChart(),
     loadLifecycle(),
     loadContagion(),
     loadPrerequisites(),
