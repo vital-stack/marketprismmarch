@@ -194,6 +194,52 @@ def get_live_data(ticker: str) -> dict:
         return {}
 
 
+# ── IMAGE GENERATOR ──────────────────────────────────────────────────────────
+
+def generate_article_image(ticker: str, title: str, excerpt: str) -> str | None:
+    """
+    Generate a header image via DALL-E 3. Returns public URL or None.
+    Requires OPENAI_API_KEY in environment.
+    """
+    openai_key = os.environ.get("OPENAI_API_KEY")
+    if not openai_key:
+        print("  ⚠ OPENAI_API_KEY not set — skipping image generation")
+        return None
+
+    try:
+        import requests as req_lib
+
+        # Step 1: Claude writes the image prompt
+        prompt_response = claude.messages.create(
+            model=MODEL,
+            max_tokens=150,
+            system="You write image generation prompts for a forensic financial intelligence publication. Style: dark, cinematic, institutional. Deep navy/black backgrounds, electric blue and teal accents. Abstract data visualizations, fragmented market structures, architectural financial metaphors. NO charts with arrows, NO stock photo clichés, NO people. Output ONLY the prompt, max 100 words.",
+            messages=[{"role": "user", "content": f"Write a DALL-E 3 prompt for an article header image.
+Ticker: {ticker}
+Title: {title}
+Excerpt: {excerpt[:200]}
+Make it abstract and forensic — not literal."}],
+        )
+        image_prompt = prompt_response.content[0].text.strip()
+        print(f"  → Image prompt: {image_prompt[:80]}...")
+
+        # Step 2: DALL-E 3 renders it
+        response = req_lib.post(
+            "https://api.openai.com/v1/images/generations",
+            headers={"Authorization": f"Bearer {openai_key}", "Content-Type": "application/json"},
+            json={"model": "dall-e-3", "prompt": image_prompt, "n": 1, "size": "1792x1024", "quality": "standard", "style": "vivid"},
+            timeout=60,
+        )
+        response.raise_for_status()
+        image_url = response.json()["data"][0]["url"]
+        print(f"  ✓ Image generated")
+        return image_url
+
+    except Exception as e:
+        print(f"  ⚠ Image generation failed: {e}")
+        return None
+
+
 # ── ARTICLE GENERATOR ─────────────────────────────────────────────────────────
 
 def build_prompt(ctx: dict, live: dict) -> str:
@@ -341,7 +387,7 @@ def slugify(title: str) -> str:
 
 # ── SUPABASE PUBLISHER ────────────────────────────────────────────────────────
 
-def publish_to_supabase(ticker: str, title: str, body: str, ctx: dict, dry_run: bool = False) -> dict:
+def publish_to_supabase(ticker: str, title: str, body: str, ctx: dict, dry_run: bool = False, **kwargs) -> dict:
     slug = slugify(title)
     # Ensure slug uniqueness with date prefix
     date_prefix = datetime.now().strftime("%Y-%m-%d")
@@ -374,6 +420,7 @@ def publish_to_supabase(ticker: str, title: str, body: str, ctx: dict, dry_run: 
         "published_at": datetime.now(timezone.utc).isoformat(),
         "author": "Market Prism Research",
         "status": "published",
+        "image_url": kwargs.get("image_url") or "",
     }
 
     if dry_run:
@@ -422,9 +469,17 @@ def main():
     print(f"[3/4] Generating article...")
     title, body = generate_article(ctx, live)
 
-    # 4. Publish
-    print(f"[4/4] Publishing to Supabase {'(dry run)' if args.dry_run else ''}...")
-    result = publish_to_supabase(ticker, title, body, ctx, dry_run=args.dry_run)
+    # 4. Generate image
+    image_url = None
+    if os.environ.get("OPENAI_API_KEY"):
+        print(f"[4/5] Generating header image...")
+        image_url = generate_article_image(ticker, title, body[:300])
+    else:
+        print(f"[4/5] Skipping image (OPENAI_API_KEY not set)")
+
+    # 5. Publish
+    print(f"[5/5] Publishing to Supabase {'(dry run)' if args.dry_run else ''}...")
+    result = publish_to_supabase(ticker, title, body, ctx, dry_run=args.dry_run, image_url=image_url)
 
     if result.get("success"):
         print(f"\n✓ Done. Slug: {result['slug']}\n")
