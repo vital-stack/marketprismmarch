@@ -5060,7 +5060,41 @@ function timeAgo(dateStr){
 // ── DISCOVER ─────────────────────────────────────────────────────────────────
 var discoverState='all', discoverVerdict=null, discoverSector='', discoverSearch='', discoverShowing=25;
 function getFilteredDiscover(){
-  return DATA.filter(function(r){
+  // When "Narrative Trap" verdict is selected, merge in TRAP_DATA from narrative_traps table
+  var source = DATA;
+  if(discoverVerdict==='Narrative Trap' && typeof TRAP_DATA!=='undefined' && TRAP_DATA.length){
+    // Build a set of tickers already in DATA that match Narrative Trap
+    var existingTrapTickers = new Set();
+    DATA.forEach(function(r){ if(r.prism_verdict==='Narrative Trap') existingTrapTickers.add(r.ticker); });
+    // Transform TRAP_DATA rows into story-card-compatible format and merge
+    var trapRows = TRAP_DATA.filter(function(t){ return !existingTrapTickers.has(t.ticker); }).map(function(t){
+      var snap = snapshotMap[t.ticker]||{};
+      return {
+        ticker: t.ticker,
+        price: t.current_price || snap.price || 0,
+        price_change_pct: null,
+        narrative_state: 'Fragile',
+        primary_driver: t.narrative || '',
+        prism_verdict: 'Narrative Trap',
+        story_claim: t.narrative || '',
+        pe_ratio: null,
+        days_to_earnings: null,
+        guidance_direction: null,
+        institutional_positioning: null,
+        fair_value: null,
+        snapshot_date: null,
+        sector_name: snap.sector || (SECTOR_MAP[t.ticker]||[])[0] || '',
+        recovery_probability: null,
+        _trap_fvd_pct: t.fvd_pct,
+        _trap_vms: t.vms,
+        _trap_exhaustion_days: t.predicted_exhaustion_days,
+        _trap_coordination: t.coordination_class,
+        _trap_drift: t.drift_score
+      };
+    });
+    source = DATA.concat(trapRows);
+  }
+  return source.filter(function(r){
     if(discoverState!=='all'&&r.narrative_state!==discoverState)return false;
     if(discoverVerdict&&r.prism_verdict!==discoverVerdict)return false;
     if(discoverSector&&r.sector_name!==discoverSector)return false;
@@ -5206,6 +5240,11 @@ document.querySelectorAll('.chip[data-filter]').forEach(function(chip){
       else{discoverVerdict=v;document.querySelectorAll('[data-filter="verdict"]').forEach(function(c){c.classList.remove('active');});chip.classList.add('active');}
     }
     discoverShowing=25;renderDiscover();
+    // If Trap filter selected but TRAP_DATA not yet loaded, fetch it now and re-render
+    if(f==='verdict'&&v==='Narrative Trap'&&discoverVerdict==='Narrative Trap'&&typeof TRAP_DATA!=='undefined'&&TRAP_DATA.length===0&&typeof loadTrapRadar==='function'&&!TRAP_BOOTED){
+      TRAP_BOOTED=true;
+      loadTrapRadar().then(function(){renderDiscover();});
+    }
   });
 });
 document.getElementById('sector-select').addEventListener('change',function(e){discoverSector=e.target.value;discoverShowing=25;renderDiscover();});
