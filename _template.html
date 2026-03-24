@@ -4409,7 +4409,7 @@ async function loadData(){
         var scDateJ=await scDateRes.json();
         var scDate=scDateJ[0]&&scDateJ[0].snapshot_date;
         if(scDate){
-          var scCols='ticker,fvd_pct,vms,coordination_score,coordination_class,suspicion_score,suspicion_class,decay_rate,energy_remaining,verdict';
+          var scCols='ticker,fvd_pct,vms,coordination_score,decay_rate,suspicion_score,energy_remaining,verdict,narrative';
           var scRes=await fetch(SUPABASE_URL+'/rest/v1/narrative_scorecard?select='+scCols+'&snapshot_date=eq.'+encodeURIComponent(scDate)+'&limit=500',{headers:hdrs});
           if(scRes&&scRes.ok){
             var scRows=await scRes.json();
@@ -5509,7 +5509,7 @@ function getSnapData(){
   else if(snapSort==='undervalued')arr=arr.slice().sort(function(a,b){var aV=a.fvd_pct!=null&&a.fvd_pct<-5?0:1;var bV=b.fvd_pct!=null&&b.fvd_pct<-5?0:1;return aV!==bV?aV-bV:(a.fvd_pct||0)-(b.fvd_pct||0);});
   else if(snapSort==='high-energy')arr=arr.slice().sort(function(a,b){var aV=a.energy_remaining!=null&&a.energy_remaining>=85?0:1;var bV=b.energy_remaining!=null&&b.energy_remaining>=85?0:1;return aV!==bV?aV-bV:(b.energy_remaining||0)-(a.energy_remaining||0);});
   else if(snapSort==='fading')arr=arr.slice().sort(function(a,b){var aV=a.decay_rate!=null&&a.decay_rate>=0.05?0:1;var bV=b.decay_rate!=null&&b.decay_rate>=0.05?0:1;return aV!==bV?aV-bV:(b.decay_rate||0)-(a.decay_rate||0);});
-  else if(snapSort==='coordinated')arr=arr.slice().sort(function(a,b){var aV=a.coordination_class&&a.coordination_class.toLowerCase().indexOf('coordinated')!==-1?0:1;var bV=b.coordination_class&&b.coordination_class.toLowerCase().indexOf('coordinated')!==-1?0:1;return aV-bV;});
+  else if(snapSort==='coordinated')arr=arr.slice().sort(function(a,b){var aV=(a.coordination_class&&a.coordination_class.toLowerCase().indexOf('coordinated')!==-1)||(a.coordination_score!=null&&a.coordination_score>=60)?0:1;var bV=(b.coordination_class&&b.coordination_class.toLowerCase().indexOf('coordinated')!==-1)||(b.coordination_score!=null&&b.coordination_score>=60)?0:1;return aV!==bV?aV-bV:(b.coordination_score||0)-(a.coordination_score||0);});
   else if(snapSort==='supported')arr=arr.slice().sort(function(a,b){var v1=(a.prism_verdict||a.verdict||'').toLowerCase();var v2=(b.prism_verdict||b.verdict||'').toLowerCase();var aV=v1.indexOf('supported')!==-1||v1.indexOf('verified')!==-1?0:1;var bV=v2.indexOf('supported')!==-1||v2.indexOf('verified')!==-1?0:1;return aV-bV;});
   return arr;
 }
@@ -5526,8 +5526,8 @@ function getTickerInsightTags(r){
   var vms=r.vms;
   if(vms!=null){
   }
-  if(r.coordination_class&&r.coordination_class.toLowerCase().indexOf('coordinated')!==-1) tags.push({label:'Coordinated',color:'#FF4D4D',bg:'rgba(255,77,77,0.08)',border:'rgba(255,77,77,0.20)'});
-  if(r.suspicion_class&&r.suspicion_class.toLowerCase().indexOf('high')!==-1) tags.push({label:'Manipulation Risk',color:'#7B61FF',bg:'rgba(123,97,255,0.10)',border:'rgba(123,97,255,0.25)'});
+  if(r.coordination_class&&r.coordination_class.toLowerCase().indexOf('coordinated')!==-1||r.coordination_score!=null&&r.coordination_score>=60) tags.push({label:'Coordinated',color:'#FF4D4D',bg:'rgba(255,77,77,0.08)',border:'rgba(255,77,77,0.20)'});
+  if(r.suspicion_class&&r.suspicion_class.toLowerCase().indexOf('high')!==-1||r.suspicion_score!=null&&r.suspicion_score>=60) tags.push({label:'Manipulation Risk',color:'#7B61FF',bg:'rgba(123,97,255,0.10)',border:'rgba(123,97,255,0.25)'});
   var energy=r.energy_remaining;
   if(energy!=null){
     if(energy>=85) tags.push({label:'High Energy',color:'#00AEFF',bg:'rgba(0,174,255,0.08)',border:'rgba(0,174,255,0.20)'});
