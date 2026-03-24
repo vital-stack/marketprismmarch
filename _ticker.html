@@ -4745,23 +4745,28 @@ async function fetchLivePrice() {
         '<span>(' + sign + q.changePct.toFixed(2) + '%)</span>';
     }
 
-    // Determine market status
+    // Determine market status + data freshness
     var now = new Date();
     var et = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
-    var day = et.getDay();
+    var dayOfWeek = et.getDay();
     var hrs = et.getHours();
     var mins = et.getMinutes();
     var mktMins = hrs * 60 + mins;
-    var isWeekday = day >= 1 && day <= 5;
+    var isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
     var isOpen = isWeekday && mktMins >= 570 && mktMins < 960; // 9:30 AM - 4:00 PM ET
     var isPreMarket = isWeekday && mktMins >= 240 && mktMins < 570; // 4:00 AM - 9:30 AM ET
     var isAfterHours = isWeekday && mktMins >= 960 && mktMins < 1200; // 4:00 PM - 8:00 PM ET
+    var isRealtime = q.source === 'snapshot' || q.source === 'last_trade';
 
     if (dotEl && labelEl) {
-      if (isOpen) {
+      if (isOpen && isRealtime) {
         dotEl.className = 'live-dot';
         labelEl.className = 'live-label active';
         labelEl.textContent = 'Live';
+      } else if (isOpen) {
+        dotEl.className = 'live-dot stale';
+        labelEl.className = 'live-label';
+        labelEl.textContent = 'Market Open';
       } else if (isPreMarket) {
         dotEl.className = 'live-dot stale';
         labelEl.className = 'live-label';

@@ -18,79 +18,135 @@ module.exports = async (req, res) => {
       return;
     }
 
-    // Use Polygon snapshot endpoint for latest price data
-    const upstream = `https://api.polygon.io/v2/snapshot/locale/us/markets/stocks/tickers/${encodeURIComponent(ticker)}?apiKey=${encodeURIComponent(apiKey)}`;
-    const upstreamRes = await fetch(upstream);
-    const body = await upstreamRes.text();
+    // Strategy: try endpoints in order of plan compatibility
+    // 1. Snapshot (paid plans) — real-time
+    // 2. Last trade (most plans) — real-time
+    // 3. Previous day aggs (free tier) — end-of-day
 
-    if (!upstreamRes.ok) {
-      // Fallback: try previous close from aggs endpoint
-      const today = new Date().toISOString().slice(0, 10);
-      const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
-      const fallbackUrl = `https://api.polygon.io/v2/aggs/ticker/${encodeURIComponent(ticker)}/range/1/day/${weekAgo}/${today}?adjusted=true&sort=desc&limit=2&apiKey=${encodeURIComponent(apiKey)}`;
-      const fbRes = await fetch(fallbackUrl);
-      if (fbRes.ok) {
-        const fbJson = JSON.parse(await fbRes.text());
-        const results = fbJson.results || [];
-        if (results.length >= 1) {
-          const latest = results[0];
-          const prev = results[1] || results[0];
-          const change = latest.c - prev.c;
-          const changePct = prev.c ? (change / prev.c) * 100 : 0;
-          res.setHeader('Content-Type', 'application/json; charset=utf-8');
-          res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=300');
-          res.statusCode = 200;
-          res.end(JSON.stringify({
+    let result = null;
+
+    // ── Try 1: Snapshot (best data, requires Stocks Starter+) ──
+    try {
+      const snapUrl = `https://api.polygon.io/v2/snapshot/locale/us/markets/stocks/tickers/${encodeURIComponent(ticker)}?apiKey=${encodeURIComponent(apiKey)}`;
+      const snapRes = await fetch(snapUrl);
+      if (snapRes.ok) {
+        const json = JSON.parse(await snapRes.text());
+        const snap = json.ticker || {};
+        const day = snap.day || {};
+        const prevDay = snap.prevDay || {};
+        const lastTrade = snap.lastTrade || {};
+        const lastQuote = snap.lastQuote || {};
+        const price = lastTrade.p || day.c || prevDay.c;
+        if (price) {
+          const prevClose = prevDay.c || null;
+          result = {
             ticker,
-            price: latest.c,
-            change: Number(change.toFixed(2)),
-            changePct: Number(changePct.toFixed(2)),
-            high: latest.h,
-            low: latest.l,
-            open: latest.o,
-            volume: latest.v,
-            timestamp: latest.t,
-            source: 'aggs_fallback'
-          }));
-          return;
+            price,
+            change: prevClose ? Number((price - prevClose).toFixed(2)) : null,
+            changePct: prevClose ? Number(((price - prevClose) / prevClose * 100).toFixed(2)) : null,
+            high: day.h || null,
+            low: day.l || null,
+            open: day.o || null,
+            volume: day.v || null,
+            prevClose,
+            bid: lastQuote.p || null,
+            ask: lastQuote.P || null,
+            timestamp: lastTrade.t || snap.updated || null,
+            source: 'snapshot'
+          };
         }
       }
-      res.statusCode = upstreamRes.status;
+    } catch (_) {}
+
+    // ── Try 2: Last trade + previous close (free tier compatible) ──
+    if (!result) {
+      try {
+        const [tradeRes, prevRes] = await Promise.all([
+          fetch(`https://api.polygon.io/v2/last/trade/${encodeURIComponent(ticker)}?apiKey=${encodeURIComponent(apiKey)}`),
+          fetch(`https://api.polygon.io/v2/aggs/ticker/${encodeURIComponent(ticker)}/prev?adjusted=true&apiKey=${encodeURIComponent(apiKey)}`)
+        ]);
+
+        let tradePrice = null, tradeTs = null;
+        if (tradeRes.ok) {
+          const tradeJson = JSON.parse(await tradeRes.text());
+          const lr = tradeJson.results || tradeJson.last || {};
+          tradePrice = lr.p || lr.price || null;
+          tradeTs = lr.t || lr.sip_timestamp || null;
+        }
+
+        let prevClose = null, prevHigh = null, prevLow = null, prevOpen = null, prevVol = null;
+        if (prevRes.ok) {
+          const prevJson = JSON.parse(await prevRes.text());
+          const pr = (prevJson.results || [])[0] || {};
+          prevClose = pr.c || null;
+          prevHigh = pr.h || null;
+          prevLow = pr.l || null;
+          prevOpen = pr.o || null;
+          prevVol = pr.v || null;
+        }
+
+        const price = tradePrice || prevClose;
+        if (price) {
+          result = {
+            ticker,
+            price,
+            change: prevClose ? Number((price - prevClose).toFixed(2)) : null,
+            changePct: prevClose ? Number(((price - prevClose) / prevClose * 100).toFixed(2)) : null,
+            high: prevHigh,
+            low: prevLow,
+            open: prevOpen,
+            volume: prevVol,
+            prevClose,
+            timestamp: tradeTs,
+            source: tradePrice ? 'last_trade' : 'prev_close'
+          };
+        }
+      } catch (_) {}
+    }
+
+    // ── Try 3: Daily aggs for last 7 days (ultimate fallback) ──
+    if (!result) {
+      try {
+        const today = new Date().toISOString().slice(0, 10);
+        const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+        const aggsUrl = `https://api.polygon.io/v2/aggs/ticker/${encodeURIComponent(ticker)}/range/1/day/${weekAgo}/${today}?adjusted=true&sort=desc&limit=2&apiKey=${encodeURIComponent(apiKey)}`;
+        const aggsRes = await fetch(aggsUrl);
+        if (aggsRes.ok) {
+          const aggsJson = JSON.parse(await aggsRes.text());
+          const results = aggsJson.results || [];
+          if (results.length >= 1) {
+            const latest = results[0];
+            const prev = results[1] || results[0];
+            const change = latest.c - prev.c;
+            result = {
+              ticker,
+              price: latest.c,
+              change: Number(change.toFixed(2)),
+              changePct: prev.c ? Number((change / prev.c * 100).toFixed(2)) : null,
+              high: latest.h,
+              low: latest.l,
+              open: latest.o,
+              volume: latest.v,
+              prevClose: prev.c,
+              timestamp: latest.t,
+              source: 'daily_aggs'
+            };
+          }
+        }
+      } catch (_) {}
+    }
+
+    if (!result) {
+      res.statusCode = 404;
       res.setHeader('Content-Type', 'application/json; charset=utf-8');
-      res.end(JSON.stringify({ error: body.slice(0, 300) }));
+      res.end(JSON.stringify({ error: 'No price data available for ' + ticker }));
       return;
     }
 
-    const json = JSON.parse(body);
-    const snap = json.ticker || {};
-    const day = snap.day || {};
-    const prevDay = snap.prevDay || {};
-    const lastTrade = snap.lastTrade || {};
-    const lastQuote = snap.lastQuote || {};
-
-    const price = lastTrade.p || day.c || prevDay.c || null;
-    const prevClose = prevDay.c || null;
-    const change = price && prevClose ? Number((price - prevClose).toFixed(2)) : null;
-    const changePct = price && prevClose ? Number(((price - prevClose) / prevClose * 100).toFixed(2)) : null;
-
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.setHeader('Cache-Control', 's-maxage=30, stale-while-revalidate=120');
+    res.setHeader('Cache-Control', result.source === 'snapshot' ? 's-maxage=15, stale-while-revalidate=60' : 's-maxage=60, stale-while-revalidate=300');
     res.statusCode = 200;
-    res.end(JSON.stringify({
-      ticker,
-      price,
-      change,
-      changePct,
-      high: day.h || null,
-      low: day.l || null,
-      open: day.o || null,
-      volume: day.v || null,
-      prevClose,
-      bid: lastQuote.p || null,
-      ask: lastQuote.P || null,
-      timestamp: lastTrade.t || snap.updated || null,
-      source: 'snapshot'
-    }));
+    res.end(JSON.stringify(result));
   } catch (error) {
     res.statusCode = 500;
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
