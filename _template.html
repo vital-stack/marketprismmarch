@@ -5060,7 +5060,41 @@ function timeAgo(dateStr){
 // ── DISCOVER ─────────────────────────────────────────────────────────────────
 var discoverState='all', discoverVerdict=null, discoverSector='', discoverSearch='', discoverShowing=25;
 function getFilteredDiscover(){
-  return DATA.filter(function(r){
+  // When "Narrative Trap" verdict is selected, merge in TRAP_DATA from narrative_traps table
+  var source = DATA;
+  if(discoverVerdict==='Narrative Trap' && typeof TRAP_DATA!=='undefined' && TRAP_DATA.length){
+    // Build a set of tickers already in DATA that match Narrative Trap
+    var existingTrapTickers = new Set();
+    DATA.forEach(function(r){ if(r.prism_verdict==='Narrative Trap') existingTrapTickers.add(r.ticker); });
+    // Transform TRAP_DATA rows into story-card-compatible format and merge
+    var trapRows = TRAP_DATA.filter(function(t){ return !existingTrapTickers.has(t.ticker); }).map(function(t){
+      var snap = snapshotMap[t.ticker]||{};
+      return {
+        ticker: t.ticker,
+        price: t.current_price || snap.price || 0,
+        price_change_pct: null,
+        narrative_state: 'Fragile',
+        primary_driver: t.narrative || '',
+        prism_verdict: 'Narrative Trap',
+        story_claim: t.narrative || '',
+        pe_ratio: null,
+        days_to_earnings: null,
+        guidance_direction: null,
+        institutional_positioning: null,
+        fair_value: null,
+        snapshot_date: null,
+        sector_name: snap.sector || (SECTOR_MAP[t.ticker]||[])[0] || '',
+        recovery_probability: null,
+        _trap_fvd_pct: t.fvd_pct,
+        _trap_vms: t.vms,
+        _trap_exhaustion_days: t.predicted_exhaustion_days,
+        _trap_coordination: t.coordination_class,
+        _trap_drift: t.drift_score
+      };
+    });
+    source = DATA.concat(trapRows);
+  }
+  return source.filter(function(r){
     if(discoverState!=='all'&&r.narrative_state!==discoverState)return false;
     if(discoverVerdict&&r.prism_verdict!==discoverVerdict)return false;
     if(discoverSector&&r.sector_name!==discoverSector)return false;
@@ -5206,6 +5240,11 @@ document.querySelectorAll('.chip[data-filter]').forEach(function(chip){
       else{discoverVerdict=v;document.querySelectorAll('[data-filter="verdict"]').forEach(function(c){c.classList.remove('active');});chip.classList.add('active');}
     }
     discoverShowing=25;renderDiscover();
+    // If Trap filter selected but TRAP_DATA not yet loaded, fetch it now and re-render
+    if(f==='verdict'&&v==='Narrative Trap'&&discoverVerdict==='Narrative Trap'&&typeof TRAP_DATA!=='undefined'&&TRAP_DATA.length===0&&typeof loadTrapRadar==='function'&&!TRAP_BOOTED){
+      TRAP_BOOTED=true;
+      loadTrapRadar().then(function(){renderDiscover();});
+    }
   });
 });
 document.getElementById('sector-select').addEventListener('change',function(e){discoverSector=e.target.value;discoverShowing=25;renderDiscover();});
@@ -9844,12 +9883,32 @@ var LB_BOOTED=false;
 function hdrs(){return{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Accept':'application/json'};}
 async function sq(path){
   var r=await fetch(SUPABASE_URL+'/rest/v1/'+path,{headers:hdrs()});
-  if(!r.ok) throw new Error('Supabase '+r.status);
+  if(!r.ok){
+    var body=''; try{body=await r.text();}catch(_){}
+    console.warn('[LB] sq failed:',r.status,path.split('?')[0],body.slice(0,200));
+    throw new Error('Supabase '+r.status+' '+body.slice(0,100));
+  }
   return r.json();
 }
+var _dateCache={};
 async function latestDate(table){
+  if(_dateCache[table]!==undefined) return _dateCache[table];
   var r=await sq(table+'?select=snapshot_date&order=snapshot_date.desc&limit=1');
-  return r[0]&&r[0].snapshot_date;
+  _dateCache[table]=r[0]&&r[0].snapshot_date||null;
+  return _dateCache[table];
+}
+// Fallback: derive leaderboard data from already-loaded scorecardMap / DATA
+function scorecardFallback(filterFn, mapFn, sortFn, limit){
+  if(typeof scorecardMap==='undefined'||!scorecardMap) return [];
+  var rows=Object.values(scorecardMap).filter(filterFn);
+  rows.sort(sortFn);
+  return rows.slice(0,limit||10).map(mapFn);
+}
+function dataFallback(filterFn, mapFn, sortFn, limit){
+  if(typeof DATA==='undefined'||!DATA||!DATA.length) return [];
+  var rows=DATA.filter(filterFn);
+  rows.sort(sortFn);
+  return rows.slice(0,limit||10).map(mapFn);
 }
 function ini(s){return(s||'').split(/\s+/).slice(0,2).map(function(w){return(w[0]||'').toUpperCase();}).join('')||'??';}
 function lbEsc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
@@ -9869,31 +9928,60 @@ var BOARDS=[
   }},
   {id:'undervalued',title:'Under Fair Value',sub:'Price below fundamental fair value · potential opportunities',color:'#00DE94',bg:'rgba(0,222,148,0.12)',scoreLabel:'Discount %',
   fetch:async function(){
-    var date=await latestDate('narrative_scorecard');
-    if(!date) return[];
-    var r=await sq('narrative_scorecard?select=ticker,fvd_pct,vms,energy_remaining,verdict,narrative&snapshot_date=eq.'+encodeURIComponent(date)+'&fvd_pct=lt.0&order=fvd_pct.asc&limit=10');
-    return r.map(function(x){var disc=Math.abs(x.fvd_pct||0);var narr=(x.narrative||'').slice(0,55);return{name:x.ticker,meta:'Reliability: '+Math.round(x.vms||0)+' · Energy: '+Math.round(x.energy_remaining||0)+'% · '+(x.verdict||'')+(!narr?'':' · '+narr),score:Math.round(disc*10)/10,scoreDisplay:'-'+Math.round(disc)+'%',_scoreColor:'#00DE94',link:'/ticker/'+encodeURIComponent(x.ticker)};});
+    try{
+      var date=await latestDate('narrative_scorecard');
+      if(date){
+        var r=await sq('narrative_scorecard?select=ticker,fvd_pct,vms,energy_remaining,verdict,narrative&snapshot_date=eq.'+encodeURIComponent(date)+'&fvd_pct=lt.0&order=fvd_pct.asc&limit=10');
+        if(r.length) return r.map(function(x){var disc=Math.abs(x.fvd_pct||0);var narr=(x.narrative||'').slice(0,55);return{name:x.ticker,meta:'Reliability: '+Math.round(x.vms||0)+' · Energy: '+Math.round(x.energy_remaining||0)+'% · '+(x.verdict||'')+(!narr?'':' · '+narr),score:Math.round(disc*10)/10,scoreDisplay:'-'+Math.round(disc)+'%',_scoreColor:'#00DE94',link:'/ticker/'+encodeURIComponent(x.ticker)};});
+      }
+    }catch(e){console.warn('[LB] undervalued API failed, using fallback:',e.message);}
+    return scorecardFallback(
+      function(s){return s.fvd_pct!=null&&s.fvd_pct<0;},
+      function(s){var disc=Math.abs(s.fvd_pct||0);return{name:s.ticker,meta:'Reliability: '+Math.round(s.vms||0)+' · '+(s.verdict||''),score:Math.round(disc*10)/10,scoreDisplay:'-'+Math.round(disc)+'%',_scoreColor:'#00DE94',link:'/ticker/'+encodeURIComponent(s.ticker)};},
+      function(a,b){return(a.fvd_pct||0)-(b.fvd_pct||0);},10);
   }},
   {id:'overvalued',title:'Most Overvalued',sub:'Stocks trading furthest above fair value · today',color:'#FF4D4D',bg:'rgba(255,77,77,0.12)',scoreLabel:'Premium %',
   fetch:async function(){
-    var date=await latestDate('narrative_scorecard');
-    if(!date) return[];
-    var r=await sq('narrative_scorecard?select=ticker,fvd_pct,vms,energy_remaining,verdict,narrative&snapshot_date=eq.'+encodeURIComponent(date)+'&fvd_pct=gt.0&order=fvd_pct.desc&limit=10');
-    return r.map(function(x){var prem=x.fvd_pct||0;var narr=(x.narrative||'').slice(0,55);return{name:x.ticker,meta:'Reliability: '+Math.round(x.vms||0)+' \u00b7 Energy: '+Math.round(x.energy_remaining||0)+'% \u00b7 '+(x.verdict||'')+(!narr?'':' \u00b7 '+narr),score:Math.round(prem*10)/10,scoreDisplay:'+'+(prem>=1000?(Math.round(prem/100)/10)+'k':Math.round(prem))+'%',_scoreColor:'#FF4D4D',link:'/ticker/'+encodeURIComponent(x.ticker)};});
+    try{
+      var date=await latestDate('narrative_scorecard');
+      if(date){
+        var r=await sq('narrative_scorecard?select=ticker,fvd_pct,vms,energy_remaining,verdict,narrative&snapshot_date=eq.'+encodeURIComponent(date)+'&fvd_pct=gt.0&order=fvd_pct.desc&limit=10');
+        if(r.length) return r.map(function(x){var prem=x.fvd_pct||0;var narr=(x.narrative||'').slice(0,55);return{name:x.ticker,meta:'Reliability: '+Math.round(x.vms||0)+' \u00b7 Energy: '+Math.round(x.energy_remaining||0)+'% \u00b7 '+(x.verdict||'')+(!narr?'':' \u00b7 '+narr),score:Math.round(prem*10)/10,scoreDisplay:'+'+(prem>=1000?(Math.round(prem/100)/10)+'k':Math.round(prem))+'%',_scoreColor:'#FF4D4D',link:'/ticker/'+encodeURIComponent(x.ticker)};});
+      }
+    }catch(e){console.warn('[LB] overvalued API failed, using fallback:',e.message);}
+    return scorecardFallback(
+      function(s){return s.fvd_pct!=null&&s.fvd_pct>0;},
+      function(s){var prem=s.fvd_pct||0;return{name:s.ticker,meta:'Reliability: '+Math.round(s.vms||0)+' \u00b7 '+(s.verdict||''),score:Math.round(prem*10)/10,scoreDisplay:'+'+(prem>=1000?(Math.round(prem/100)/10)+'k':Math.round(prem))+'%',_scoreColor:'#FF4D4D',link:'/ticker/'+encodeURIComponent(s.ticker)};},
+      function(a,b){return(b.fvd_pct||0)-(a.fvd_pct||0);},10);
   }},
   {id:'alltime',title:'All-Time Narrative Traps',sub:'Highest hype gaps ever recorded',color:'#FF4D4D',bg:'rgba(255,77,77,0.12)',scoreLabel:'Peak Gap %',
   fetch:async function(){
-    var r=await sq('narrative_scorecard?select=ticker,fvd_pct,snapshot_date&fvd_pct=gt.0&order=fvd_pct.desc&limit=300');
-    var seen={},best=[];
-    r.forEach(function(x){if(!seen[x.ticker]){seen[x.ticker]=true;best.push(x);}});
-    return best.slice(0,10).map(function(x){var g=x.fvd_pct||0;return{name:x.ticker,meta:'Peak: '+(g>=1000?(Math.round(g/100)/10)+'k%':Math.round(g)+'%')+' \u00b7 '+x.snapshot_date,score:Math.round(g),scoreDisplay:g>=1000?(Math.round(g/100)/10)+'k%':Math.round(g)+'%',link:'/ticker/'+encodeURIComponent(x.ticker)};});
+    try{
+      var r=await sq('narrative_scorecard?select=ticker,fvd_pct,snapshot_date&fvd_pct=gt.0&order=fvd_pct.desc&limit=300');
+      if(r.length){
+        var seen={},best=[];
+        r.forEach(function(x){if(!seen[x.ticker]){seen[x.ticker]=true;best.push(x);}});
+        return best.slice(0,10).map(function(x){var g=x.fvd_pct||0;return{name:x.ticker,meta:'Peak: '+(g>=1000?(Math.round(g/100)/10)+'k%':Math.round(g)+'%')+' \u00b7 '+x.snapshot_date,score:Math.round(g),scoreDisplay:g>=1000?(Math.round(g/100)/10)+'k%':Math.round(g)+'%',link:'/ticker/'+encodeURIComponent(x.ticker)};});
+      }
+    }catch(e){console.warn('[LB] alltime API failed, using fallback:',e.message);}
+    return scorecardFallback(
+      function(s){return s.fvd_pct!=null&&s.fvd_pct>0;},
+      function(s){var g=s.fvd_pct||0;return{name:s.ticker,meta:'FVD: '+(g>=1000?(Math.round(g/100)/10)+'k%':Math.round(g)+'%'),score:Math.round(g),scoreDisplay:g>=1000?(Math.round(g/100)/10)+'k%':Math.round(g)+'%',link:'/ticker/'+encodeURIComponent(s.ticker)};},
+      function(a,b){return(b.fvd_pct||0)-(a.fvd_pct||0);},10);
   }},
   {id:'safest',title:'Narratives Most Aligned with Earnings',sub:'Stories best validated by fundamentals \u00b7 today',color:'#00DE94',bg:'rgba(0,222,148,0.12)',scoreLabel:'Reliability',
   fetch:async function(){
-    var date=await latestDate('narrative_scorecard');
-    if(!date) return[];
-    var r=await sq('narrative_scorecard?select=ticker,vms,srs,acs,verdict&snapshot_date=eq.'+encodeURIComponent(date)+'&vms=gt.0&order=vms.desc&limit=10');
-    return r.map(function(x){return{name:x.ticker,meta:'SRS: '+Math.round(x.srs||0)+' \u00b7 ACS: '+Math.round(x.acs||0)+' \u00b7 '+(x.verdict||''),score:Math.round((x.vms||0)*10)/10,link:'/ticker/'+encodeURIComponent(x.ticker)};});
+    try{
+      var date=await latestDate('narrative_scorecard');
+      if(date){
+        var r=await sq('narrative_scorecard?select=ticker,vms,srs,acs,verdict&snapshot_date=eq.'+encodeURIComponent(date)+'&vms=gt.0&order=vms.desc&limit=10');
+        if(r.length) return r.map(function(x){return{name:x.ticker,meta:'SRS: '+Math.round(x.srs||0)+' \u00b7 ACS: '+Math.round(x.acs||0)+' \u00b7 '+(x.verdict||''),score:Math.round((x.vms||0)*10)/10,link:'/ticker/'+encodeURIComponent(x.ticker)};});
+      }
+    }catch(e){console.warn('[LB] safest API failed, using fallback:',e.message);}
+    return scorecardFallback(
+      function(s){return s.vms!=null&&s.vms>0;},
+      function(s){return{name:s.ticker,meta:(s.verdict||''),score:Math.round((s.vms||0)*10)/10,link:'/ticker/'+encodeURIComponent(s.ticker)};},
+      function(a,b){return(b.vms||0)-(a.vms||0);},10);
   }},
   {id:'coordinated',title:'Most Coordinated Narratives',sub:'Highest coordination score \u00b7 possible campaigns',color:'#FF4D4D',bg:'rgba(255,77,77,0.12)',scoreLabel:'Coord Score',
   fetch:async function(){
@@ -9911,17 +9999,29 @@ var BOARDS=[
   }},
   {id:'suspicion',title:'Highest Manipulation Risk',sub:'Suspicion score \u2014 possible narrative attacks',color:'#7B61FF',bg:'rgba(123,97,255,0.12)',scoreLabel:'Suspicion',
   fetch:async function(){
-    var date=await latestDate('narrative_scorecard');
-    if(!date) return[];
-    var r=await sq('narrative_scorecard?select=ticker,suspicion_score,suspicion_class,coordination_class,narrative&snapshot_date=eq.'+encodeURIComponent(date)+'&suspicion_score=gt.0&order=suspicion_score.desc&limit=10');
-    return r.map(function(x){return{name:x.ticker,meta:(x.suspicion_class||'Unknown')+' \u00b7 '+(x.coordination_class||''),score:Math.round((x.suspicion_score||0)*10)/10,link:'/ticker/'+encodeURIComponent(x.ticker)};});
+    try{
+      var date=await latestDate('narrative_scorecard');
+      if(date){
+        var r=await sq('narrative_scorecard?select=ticker,suspicion_score,suspicion_class,coordination_class,narrative&snapshot_date=eq.'+encodeURIComponent(date)+'&suspicion_score=gt.0&order=suspicion_score.desc&limit=10');
+        if(r.length) return r.map(function(x){return{name:x.ticker,meta:(x.suspicion_class||'Unknown')+' \u00b7 '+(x.coordination_class||''),score:Math.round((x.suspicion_score||0)*10)/10,link:'/ticker/'+encodeURIComponent(x.ticker)};});
+      }
+    }catch(e){console.warn('[LB] suspicion API failed, using fallback:',e.message);}
+    return scorecardFallback(
+      function(s){return s.suspicion_score!=null&&s.suspicion_score>0;},
+      function(s){return{name:s.ticker,meta:(s.suspicion_class||'Unknown')+' \u00b7 '+(s.coordination_class||''),score:Math.round((s.suspicion_score||0)*10)/10,link:'/ticker/'+encodeURIComponent(s.ticker)};},
+      function(a,b){return(b.suspicion_score||0)-(a.suspicion_score||0);},10);
   }},
   {id:'omission',title:'Biggest Omission Gaps',sub:'Key facts missing from media coverage',color:'#38C8B8',bg:'rgba(56,200,184,0.12)',scoreLabel:'Omission Gap',
   fetch:async function(){
-    var date=await latestDate('narrative_scorecard');
-    if(!date) return[];
-    var r=await sq('narrative_scorecard?select=ticker,omission_gap_score,drift_score,drift_explanation,narrative&snapshot_date=eq.'+encodeURIComponent(date)+'&omission_gap_score=gt.0&order=omission_gap_score.desc&limit=10');
-    return r.map(function(x){return{name:x.ticker,meta:(x.drift_explanation||x.narrative||'').slice(0,60)+'\u2026',score:x.omission_gap_score||0,link:'/ticker/'+encodeURIComponent(x.ticker)};});
+    try{
+      var date=await latestDate('narrative_scorecard');
+      if(date){
+        var r=await sq('narrative_scorecard?select=ticker,omission_gap_score,drift_score,drift_explanation,narrative&snapshot_date=eq.'+encodeURIComponent(date)+'&omission_gap_score=gt.0&order=omission_gap_score.desc&limit=10');
+        if(r.length) return r.map(function(x){return{name:x.ticker,meta:(x.drift_explanation||x.narrative||'').slice(0,60)+'\u2026',score:x.omission_gap_score||0,link:'/ticker/'+encodeURIComponent(x.ticker)};});
+      }
+    }catch(e){console.warn('[LB] omission API failed, using fallback:',e.message);}
+    // No omission_gap_score in scorecardMap, return empty
+    return [];
   }},
   {id:'combos',title:'Best Signal Combinations',sub:'Highest win-rate signal combos \u00b7 all time',color:'#00DE94',bg:'rgba(0,222,148,0.12)',scoreLabel:'Win Rate %',
   fetch:async function(){
@@ -9930,38 +10030,66 @@ var BOARDS=[
   }},
   {id:'signals',title:'Strongest Daily Signals',sub:'Highest composite signal strength \u00b7 today',color:'#00AEFF',bg:'rgba(0,174,255,0.12)',scoreLabel:'Signal Strength',
   fetch:async function(){
-    var date=await latestDate('daily_trade_labels');
-    if(!date) return[];
-    var r=await sq('daily_trade_labels?select=ticker,signal_strength,prism_verdict,price_change_pct,story_claim,primary_narrative&snapshot_date=eq.'+encodeURIComponent(date)+'&order=signal_strength.desc&limit=10');
-    return r.map(function(x){var claim=(x.story_claim||x.primary_narrative||'').slice(0,50);return{name:x.ticker||'Unknown',meta:(x.prism_verdict||'')+' \u00b7 '+(Math.round((x.price_change_pct||0)*100)/100)+'% \u00b7 '+claim,score:Math.round(x.signal_strength||0),link:'/ticker/'+encodeURIComponent(x.ticker)};});
+    try{
+      var date=await latestDate('daily_trade_labels');
+      if(date){
+        var r=await sq('daily_trade_labels?select=ticker,signal_strength,prism_verdict,price_change_pct,story_claim,primary_narrative&snapshot_date=eq.'+encodeURIComponent(date)+'&order=signal_strength.desc&limit=10');
+        if(r.length) return r.map(function(x){var claim=(x.story_claim||x.primary_narrative||'').slice(0,50);return{name:x.ticker||'Unknown',meta:(x.prism_verdict||'')+' \u00b7 '+(Math.round((x.price_change_pct||0)*100)/100)+'% \u00b7 '+claim,score:Math.round(x.signal_strength||0),link:'/ticker/'+encodeURIComponent(x.ticker)};});
+      }
+    }catch(e){console.warn('[LB] signals API failed, using fallback:',e.message);}
+    return dataFallback(
+      function(r){return r.ticker;},
+      function(r){var claim=(r.story_claim||r.primary_driver||'').slice(0,50);return{name:r.ticker,meta:(r.prism_verdict||r.narrative_state||'')+' \u00b7 '+(Math.round((r.price_change_pct||0)*100)/100)+'% \u00b7 '+claim,score:Math.round(Math.abs(r.price_change_pct||0)*10),link:'/ticker/'+encodeURIComponent(r.ticker)};},
+      function(a,b){return Math.abs(b.price_change_pct||0)-Math.abs(a.price_change_pct||0);},10);
   }},
   {id:'movers',title:'Biggest Price Movers',sub:'Largest absolute price change \u00b7 today',color:'#FFB800',bg:'rgba(255,184,0,0.12)',scoreLabel:'% Move',
   fetch:async function(){
-    var date=await latestDate('daily_trade_labels');
-    if(!date) return[];
-    var dp=encodeURIComponent(date);
-    var up=sq('daily_trade_labels?select=ticker,price_change_pct,price,prism_verdict&snapshot_date=eq.'+dp+'&price_change_pct=gt.0&order=price_change_pct.desc&limit=5');
-    var dn=sq('daily_trade_labels?select=ticker,price_change_pct,price,prism_verdict&snapshot_date=eq.'+dp+'&price_change_pct=lt.0&order=price_change_pct.asc&limit=5');
-    var res=await Promise.allSettled([up,dn]);
-    var all=[];
-    if(res[0].status==='fulfilled') all=all.concat(res[0].value);
-    if(res[1].status==='fulfilled') all=all.concat(res[1].value);
-    all.sort(function(a,b){return Math.abs(b.price_change_pct||0)-Math.abs(a.price_change_pct||0);});
-    return all.slice(0,10).map(function(x){var pct=x.price_change_pct||0;var abs=Math.round(Math.abs(pct)*100)/100;var prefix=pct>=0?'+':'\u2212';return{name:x.ticker||'Unknown',meta:'$'+(Math.round((x.price||0)*100)/100)+' \u00b7 '+(x.prism_verdict||''),score:abs,scoreDisplay:prefix+abs+'%',_scoreColor:pct>=0?'#00DE94':'#FF4D4D',link:'/ticker/'+encodeURIComponent(x.ticker)};});
+    try{
+      var date=await latestDate('daily_trade_labels');
+      if(date){
+        var dp=encodeURIComponent(date);
+        var up=sq('daily_trade_labels?select=ticker,price_change_pct,price,prism_verdict&snapshot_date=eq.'+dp+'&price_change_pct=gt.0&order=price_change_pct.desc&limit=5');
+        var dn=sq('daily_trade_labels?select=ticker,price_change_pct,price,prism_verdict&snapshot_date=eq.'+dp+'&price_change_pct=lt.0&order=price_change_pct.asc&limit=5');
+        var res=await Promise.allSettled([up,dn]);
+        var all=[];
+        if(res[0].status==='fulfilled') all=all.concat(res[0].value);
+        if(res[1].status==='fulfilled') all=all.concat(res[1].value);
+        if(all.length){
+          all.sort(function(a,b){return Math.abs(b.price_change_pct||0)-Math.abs(a.price_change_pct||0);});
+          return all.slice(0,10).map(function(x){var pct=x.price_change_pct||0;var abs=Math.round(Math.abs(pct)*100)/100;var prefix=pct>=0?'+':'\u2212';return{name:x.ticker||'Unknown',meta:'$'+(Math.round((x.price||0)*100)/100)+' \u00b7 '+(x.prism_verdict||''),score:abs,scoreDisplay:prefix+abs+'%',_scoreColor:pct>=0?'#00DE94':'#FF4D4D',link:'/ticker/'+encodeURIComponent(x.ticker)};});
+        }
+      }
+    }catch(e){console.warn('[LB] movers API failed, using fallback:',e.message);}
+    return dataFallback(
+      function(r){return r.ticker&&r.price_change_pct!=null;},
+      function(r){var pct=r.price_change_pct||0;var abs=Math.round(Math.abs(pct)*100)/100;var prefix=pct>=0?'+':'\u2212';return{name:r.ticker,meta:'$'+fmtPrice(r.price)+' \u00b7 '+(r.prism_verdict||r.narrative_state||''),score:abs,scoreDisplay:prefix+abs+'%',_scoreColor:pct>=0?'#00DE94':'#FF4D4D',link:'/ticker/'+encodeURIComponent(r.ticker)};},
+      function(a,b){return Math.abs(b.price_change_pct||0)-Math.abs(a.price_change_pct||0);},10);
   }},
   {id:'overreaction',title:'Most Overreacted Stories',sub:'Media reaction far exceeds what facts support',color:'#FF4D4D',bg:'rgba(255,77,77,0.12)',scoreLabel:'Overreaction',
   fetch:async function(){
-    var date=await latestDate('daily_trade_labels');
-    if(!date) return[];
-    var r=await sq('daily_trade_labels?select=ticker,overreaction_ratio,prism_verdict&snapshot_date=eq.'+encodeURIComponent(date)+'&overreaction_ratio=gt.0&order=overreaction_ratio.desc&limit=10');
-    return r.map(function(x){return{name:x.ticker||'Unknown',meta:'OR ratio: '+(Math.round((x.overreaction_ratio||0)*100)/100)+' \u00b7 '+(x.prism_verdict||''),score:Math.round((x.overreaction_ratio||0)*100)/100,link:'/ticker/'+encodeURIComponent(x.ticker)};});
+    try{
+      var date=await latestDate('daily_trade_labels');
+      if(date){
+        var r=await sq('daily_trade_labels?select=ticker,overreaction_ratio,prism_verdict&snapshot_date=eq.'+encodeURIComponent(date)+'&overreaction_ratio=gt.0&order=overreaction_ratio.desc&limit=10');
+        if(r.length) return r.map(function(x){return{name:x.ticker||'Unknown',meta:'OR ratio: '+(Math.round((x.overreaction_ratio||0)*100)/100)+' \u00b7 '+(x.prism_verdict||''),score:Math.round((x.overreaction_ratio||0)*100)/100,link:'/ticker/'+encodeURIComponent(x.ticker)};});
+      }
+    }catch(e){console.warn('[LB] overreaction API failed, using fallback:',e.message);}
+    // No overreaction_ratio in DATA fallback
+    return [];
   }},
   {id:'bullish',title:'Bullish Sentiment Watch',sub:'Tickers with LOVE label \u00b7 today',color:'#00DE94',bg:'rgba(0,222,148,0.12)',scoreLabel:'Reliability',
   fetch:async function(){
-    var date=await latestDate('daily_trade_labels');
-    if(!date) return[];
-    var r=await sq('daily_trade_labels?select=ticker,signal_strength,vms,story_claim,primary_narrative,label&snapshot_date=eq.'+encodeURIComponent(date)+'&label=eq.LOVE&order=signal_strength.desc&limit=10');
-    return r.map(function(x){var claim=(x.story_claim||x.primary_narrative||'').slice(0,55);return{name:x.ticker||'Unknown',meta:'Signal: '+Math.round(x.signal_strength||0)+' \u00b7 '+claim,score:Math.round((x.vms||0)*10)/10,link:'/ticker/'+encodeURIComponent(x.ticker)};});
+    try{
+      var date=await latestDate('daily_trade_labels');
+      if(date){
+        var r=await sq('daily_trade_labels?select=ticker,signal_strength,vms,story_claim,primary_narrative,label&snapshot_date=eq.'+encodeURIComponent(date)+'&label=eq.LOVE&order=signal_strength.desc&limit=10');
+        if(r.length) return r.map(function(x){var claim=(x.story_claim||x.primary_narrative||'').slice(0,55);return{name:x.ticker||'Unknown',meta:'Signal: '+Math.round(x.signal_strength||0)+' \u00b7 '+claim,score:Math.round((x.vms||0)*10)/10,link:'/ticker/'+encodeURIComponent(x.ticker)};});
+      }
+    }catch(e){console.warn('[LB] bullish API failed, using fallback:',e.message);}
+    return dataFallback(
+      function(r){return r.ticker&&(r.narrative_state==='Surging'||r.prism_verdict==='Structurally Supported'||(r.price_change_pct&&r.price_change_pct>0));},
+      function(r){var claim=(r.story_claim||r.primary_driver||'').slice(0,55);return{name:r.ticker,meta:(r.narrative_state||'')+' \u00b7 '+claim,score:Math.round(Math.abs(r.price_change_pct||0)*10)/10,link:'/ticker/'+encodeURIComponent(r.ticker)};},
+      function(a,b){return(b.price_change_pct||0)-(a.price_change_pct||0);},10);
   }},
   {id:'squeeze',title:'Narrative-Powered Squeeze Candidates',sub:'High short pressure \u00b7 bullish narrative gaining energy',color:'#00DE94',bg:'rgba(0,222,148,0.12)',scoreLabel:'Days to Cover',
   fetch:async function(){
@@ -10095,10 +10223,11 @@ async function loadLeaderboard(){
   }
 }
 
-async function refreshLeaderboard(){
+window.refreshLeaderboard=async function refreshLeaderboard(){
   var btn=document.getElementById('lb-refresh-btn');
   if(btn) btn.classList.add('spinning');
   LB_BOOTED=false;
+  _dateCache={};
   var loading=document.getElementById('lb-loading');
   var body=document.getElementById('lb-body');
   if(loading) loading.style.display='';
@@ -10106,7 +10235,7 @@ async function refreshLeaderboard(){
   await loadLeaderboard();
   updateLBDate();
   if(btn) btn.classList.remove('spinning');
-}
+};
 
 function updateLBDate(){
   var el=document.getElementById('lb-date');
