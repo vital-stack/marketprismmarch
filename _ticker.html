@@ -2514,18 +2514,18 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
     <!-- Strategy content -->
     <div id="strategy-content" style="display:none;">
 
-      <!-- SECTION 1: Header + Meta -->
+      <!-- SECTION 1: Header + Key Stats -->
       <div class="section">
         <div class="section-label" style="justify-content:space-between;align-items:center;">
           Trading Strategy
-          <span id="strat-type-badge" class="strat-badge"></span>
+          <span id="strat-confidence-badge" class="strat-badge"></span>
         </div>
         <div class="section-body" style="padding:16px;">
           <div id="strat-meta" style="display:flex;gap:12px;flex-wrap:wrap;"></div>
         </div>
       </div>
 
-      <!-- SECTION 2: Summary -->
+      <!-- SECTION 2: Strategy Summary -->
       <div class="section">
         <div class="section-label">Strategy Summary</div>
         <div class="section-body" style="padding:16px;">
@@ -2533,15 +2533,89 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
         </div>
       </div>
 
-      <!-- SECTION 3: Narrative Returns -->
-      <div class="strat-insights-grid" style="grid-template-columns:repeat(2,1fr);">
+      <!-- SECTION 3: Narrative Returns by Sentiment -->
+      <div class="section">
+        <div class="section-label">Narrative Returns by Sentiment</div>
+      </div>
+      <div class="strat-insights-grid" style="grid-template-columns:repeat(3,1fr);">
         <div class="strat-insight-card">
-          <div class="strat-insight-label">Positive Narrative Return</div>
-          <div class="strat-insight-value" id="strat-pos-return" style="color:#00DE94;">—</div>
+          <div class="strat-insight-label">Avg 5d Return · Positive</div>
+          <div class="strat-insight-value" id="strat-ret-pos" style="color:#00DE94;">—</div>
+          <div class="strat-insight-sub" id="strat-ret-pos-n"></div>
         </div>
         <div class="strat-insight-card">
-          <div class="strat-insight-label">Negative Narrative Return</div>
-          <div class="strat-insight-value" id="strat-neg-return" style="color:#FF4D4D;">—</div>
+          <div class="strat-insight-label">Avg 5d Return · Negative</div>
+          <div class="strat-insight-value" id="strat-ret-neg" style="color:#FF4D4D;">—</div>
+          <div class="strat-insight-sub" id="strat-ret-neg-n"></div>
+        </div>
+        <div class="strat-insight-card">
+          <div class="strat-insight-label">Avg 5d Return · Neutral</div>
+          <div class="strat-insight-value" id="strat-ret-neu" style="color:#00AEFF;">—</div>
+          <div class="strat-insight-sub" id="strat-ret-neu-n"></div>
+        </div>
+      </div>
+
+      <!-- SECTION 4: Best Entry Zone -->
+      <div class="section">
+        <div class="section-label">Best Historical Entry Zone</div>
+        <div class="section-body" style="padding:16px;">
+          <div class="strat-insights-grid" style="grid-template-columns:repeat(3,1fr);margin:0;">
+            <div class="strat-insight-card">
+              <div class="strat-insight-label">Zone</div>
+              <div class="strat-insight-value" id="strat-entry-zone" style="color:#FFB800;font-size:16px;">—</div>
+            </div>
+            <div class="strat-insight-card">
+              <div class="strat-insight-label">Avg Price in Zone</div>
+              <div class="strat-insight-value" id="strat-entry-price" style="color:#FFFFFF;font-size:16px;">—</div>
+            </div>
+            <div class="strat-insight-card">
+              <div class="strat-insight-label">Avg 5d Return from Zone</div>
+              <div class="strat-insight-value" id="strat-entry-return" style="color:#00DE94;font-size:16px;">—</div>
+              <div class="strat-insight-sub" id="strat-entry-obs"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 5: Influential Themes -->
+      <div class="section">
+        <div class="section-label">Key Themes</div>
+        <div class="section-body" style="padding:16px;">
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span class="strat-meta-tag" style="min-width:120px;text-align:center;">Most Influential</span>
+              <span id="strat-theme-top" style="font-family:var(--font-body);font-size:13px;color:rgba(255,255,255,0.7);">—</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span class="strat-meta-tag" style="min-width:120px;text-align:center;border-color:rgba(0,222,148,0.3);color:#00DE94;">Top Positive</span>
+              <span id="strat-theme-pos" style="font-family:var(--font-body);font-size:13px;color:rgba(255,255,255,0.7);">—</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span class="strat-meta-tag" style="min-width:120px;text-align:center;border-color:rgba(255,77,77,0.3);color:#FF4D4D;">Top Negative</span>
+              <span id="strat-theme-neg" style="font-family:var(--font-body);font-size:13px;color:rgba(255,255,255,0.7);">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 6: Influential Publications -->
+      <div class="section">
+        <div class="section-label">Key Publications</div>
+        <div class="section-body" style="padding:16px;">
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span class="strat-meta-tag" style="min-width:120px;text-align:center;">Most Influential</span>
+              <span id="strat-pub-top" style="font-family:var(--font-body);font-size:13px;color:rgba(255,255,255,0.7);">—</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span class="strat-meta-tag" style="min-width:120px;text-align:center;border-color:rgba(0,222,148,0.3);color:#00DE94;">Top Positive</span>
+              <span id="strat-pub-pos" style="font-family:var(--font-body);font-size:13px;color:rgba(255,255,255,0.7);">—</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span class="strat-meta-tag" style="min-width:120px;text-align:center;border-color:rgba(255,77,77,0.3);color:#FF4D4D;">Top Negative</span>
+              <span id="strat-pub-neg" style="font-family:var(--font-body);font-size:13px;color:rgba(255,255,255,0.7);">—</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -4736,63 +4810,82 @@ async function loadStrategyData() {
   const nodataEl   = document.getElementById('strategy-nodata');
   const contentEl  = document.getElementById('strategy-content');
   try {
-    console.log('[Strategy] Fetching ticker_strategy_summary for', TICKER);
     const rows = await sbFetch('ticker_strategy_summary', {
-      select: '*',
       ticker: `eq.${TICKER}`,
       limit: '1'
     });
-    console.log('[Strategy] Response:', JSON.stringify(rows).slice(0, 500));
     const d = Array.isArray(rows) ? rows[0] : null;
     if (!d) {
-      console.warn('[Strategy] No data found for', TICKER, '— rows:', rows);
       loadingEl.style.display = 'none';
       nodataEl.style.display = 'block';
       return;
     }
 
-    // Strategy type badge
-    const typeMap = {
-      'FOLLOW_VERIFIED_STRENGTH': { color: '#00DE94', bg: 'rgba(0,222,148,0.12)' },
-      'FADE_HYPE':               { color: '#FF4D4D', bg: 'rgba(255,77,77,0.12)' },
-      'BUY_PANIC_TRAPS':         { color: '#00AEFF', bg: 'rgba(0,174,255,0.12)' },
-      'AVOID_MANIPULATION':      { color: '#FFB800', bg: 'rgba(255,184,0,0.12)' },
-      'FOLLOW_ENERGY':           { color: '#7B61FF', bg: 'rgba(123,97,255,0.12)' },
-      'MIXED':                   { color: '#6b7280', bg: 'rgba(107,114,128,0.12)' }
+    const fmtPct = v => v != null ? ((v >= 0 ? '+' : '') + (v * 100).toFixed(2) + '%') : '—';
+    const fmtUsd = v => v != null ? '$' + Number(v).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) : '—';
+    const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val || '—'; };
+
+    // Confidence badge
+    const confMap = {
+      'HIGH':   { color: '#00DE94', bg: 'rgba(0,222,148,0.12)' },
+      'MEDIUM': { color: '#FFB800', bg: 'rgba(255,184,0,0.12)' },
+      'LOW':    { color: '#FF4D4D', bg: 'rgba(255,77,77,0.12)' }
     };
-    const badge = document.getElementById('strat-type-badge');
-    const tm = typeMap[d.strategy_type] || typeMap['MIXED'];
-    badge.textContent = (d.strategy_type || 'UNKNOWN').replace(/_/g, ' ');
-    badge.style.color = tm.color;
-    badge.style.background = tm.bg;
-    badge.style.border = '1px solid ' + tm.color;
+    const badge = document.getElementById('strat-confidence-badge');
+    const conf = (d.strategy_confidence || '').toUpperCase();
+    const cm = confMap[conf] || { color: '#6b7280', bg: 'rgba(107,114,128,0.12)' };
+    badge.textContent = conf || 'UNKNOWN';
+    badge.style.color = cm.color;
+    badge.style.background = cm.bg;
+    badge.style.border = '1px solid ' + cm.color;
 
-    // Sector / Industry meta tags
+    // Meta tags: price, drawdown, history, articles, narrative behavior
     const metaEl = document.getElementById('strat-meta');
-    metaEl.innerHTML = '';
-    if (d.sector) {
-      const tag = document.createElement('span');
-      tag.className = 'strat-meta-tag';
-      tag.textContent = d.sector;
-      metaEl.appendChild(tag);
-    }
-    if (d.industry) {
-      const tag = document.createElement('span');
-      tag.className = 'strat-meta-tag';
-      tag.textContent = d.industry;
-      metaEl.appendChild(tag);
-    }
+    const metaTags = [
+      d.latest_price_usd != null ? 'Price: ' + fmtUsd(d.latest_price_usd) : null,
+      d.latest_drawdown_vs_60d_peak != null ? 'Drawdown vs 60d peak: ' + fmtPct(d.latest_drawdown_vs_60d_peak) : null,
+      d.history_days != null ? d.history_days + ' days history' : null,
+      d.article_obs != null ? d.article_obs + ' articles' : null,
+      d.narrative_behavior ? d.narrative_behavior : null
+    ].filter(Boolean);
+    metaEl.innerHTML = metaTags.map(t => '<span class="strat-meta-tag">' + t.replace(/</g,'&lt;') + '</span>').join('');
 
-    // Summary text
-    const summaryEl = document.getElementById('strat-summary');
-    summaryEl.textContent = d.summary_text || 'No summary available.';
+    // Strategy summary
+    setText('strat-summary', d.strategy_summary || 'No summary available.');
 
-    // Narrative returns
-    const fmtPct = v => (v >= 0 ? '+' : '') + (v * 100).toFixed(2) + '%';
-    const posEl = document.getElementById('strat-pos-return');
-    const negEl = document.getElementById('strat-neg-return');
-    posEl.textContent = d.pos_return != null ? fmtPct(d.pos_return) : '—';
-    negEl.textContent = d.neg_return != null ? fmtPct(d.neg_return) : '—';
+    // Narrative returns by sentiment
+    setText('strat-ret-pos', fmtPct(d.avg_5d_return_after_positive_articles));
+    setText('strat-ret-pos-n', d.positive_article_count != null ? d.positive_article_count + ' articles' : '');
+    setText('strat-ret-neg', fmtPct(d.avg_5d_return_after_negative_articles));
+    setText('strat-ret-neg-n', d.negative_article_count != null ? d.negative_article_count + ' articles' : '');
+    setText('strat-ret-neu', fmtPct(d.avg_5d_return_after_neutral_articles));
+    setText('strat-ret-neu-n', d.neutral_article_count != null ? d.neutral_article_count + ' articles' : '');
+
+    // Color the return values by sign
+    const colorBySign = (id, v) => {
+      const el = document.getElementById(id);
+      if (el && v != null) el.style.color = v >= 0 ? '#00DE94' : '#FF4D4D';
+    };
+    colorBySign('strat-ret-pos', d.avg_5d_return_after_positive_articles);
+    colorBySign('strat-ret-neg', d.avg_5d_return_after_negative_articles);
+    colorBySign('strat-ret-neu', d.avg_5d_return_after_neutral_articles);
+
+    // Best entry zone
+    setText('strat-entry-zone', d.best_historical_entry_zone);
+    setText('strat-entry-price', fmtUsd(d.avg_price_in_best_entry_zone_usd));
+    setText('strat-entry-return', fmtPct(d.avg_5d_return_from_best_entry_zone));
+    colorBySign('strat-entry-return', d.avg_5d_return_from_best_entry_zone);
+    setText('strat-entry-obs', d.best_entry_zone_observations != null ? d.best_entry_zone_observations + ' observations' : '');
+
+    // Themes
+    setText('strat-theme-top', d.most_influential_theme);
+    setText('strat-theme-pos', d.top_positive_theme);
+    setText('strat-theme-neg', d.top_negative_theme);
+
+    // Publications
+    setText('strat-pub-top', d.most_influential_publication);
+    setText('strat-pub-pos', d.top_positive_publication);
+    setText('strat-pub-neg', d.top_negative_publication);
 
     loadingEl.style.display = 'none';
     contentEl.style.display = 'block';
