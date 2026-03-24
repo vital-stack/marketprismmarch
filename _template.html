@@ -9808,29 +9808,33 @@ var BOARDS=[
   {id:'top-sources',title:'Top Performing Sources',sub:'Highest hit rate publications · 50+ articles',color:'#00DE94',bg:'rgba(0,222,148,0.12)',scoreLabel:'Hit Rate %',
   fetch:async function(){
     var r=await sq('source_credibility?select=publication_name,hit_rate,avg_signed_return,article_count&article_count=gte.50&order=hit_rate.desc&limit=10');
-    return r.map(function(x){var hr=Math.round((x.hit_rate||0)*10)/10;var ret=Math.round((x.avg_signed_return||0)*10)/10;return{name:x.publication_name||'Unknown',meta:ret+'% avg return \u00b7 '+(x.article_count||0)+' articles',score:hr,scoreDisplay:hr+'%',_scoreColor:hr>=70?'#00DE94':hr>=50?'#FFB800':'#FF4D4D',link:'#narrative'};});
+    return r.map(function(x){var hr=(x.hit_rate||0)*100;var hrD=hr.toFixed(1);return{name:x.publication_name||'Unknown',meta:formatEdge(x.avg_signed_return)+' avg return \u00b7 '+(x.article_count||0)+' articles',score:hr,scoreDisplay:hrD+'%',_scoreColor:hr>=70?'#00DE94':hr>=50?'#FFB800':'#FF4D4D',link:'#narrative'};});
   }},
   {id:'worst-sources',title:'Least Reliable Sources',sub:'Lowest hit rate publications',color:'#FF4D4D',bg:'rgba(255,77,77,0.12)',scoreLabel:'Hit Rate %',
   fetch:async function(){
     var r=await sq('source_credibility?select=publication_name,hit_rate,avg_signed_return,article_count&order=hit_rate.asc&limit=10');
-    return r.map(function(x){var hr=Math.round((x.hit_rate||0)*10)/10;var ret=Math.round((x.avg_signed_return||0)*10)/10;return{name:x.publication_name||'Unknown',meta:ret+'% avg return \u00b7 '+(x.article_count||0)+' articles',score:hr,scoreDisplay:hr+'%',_scoreColor:hr<=30?'#FF4D4D':hr<=50?'#FFB800':'#00DE94',link:'#narrative'};});
+    return r.map(function(x){var hr=(x.hit_rate||0)*100;var hrD=hr.toFixed(1);return{name:x.publication_name||'Unknown',meta:formatEdge(x.avg_signed_return)+' avg return \u00b7 '+(x.article_count||0)+' articles',score:hr,scoreDisplay:hrD+'%',_scoreColor:hr<=30?'#FF4D4D':hr<=50?'#FFB800':'#00DE94',link:'#narrative'};});
   }},
   {id:'top-themes',title:'Top Narrative Themes',sub:'Highest avg return themes',color:'#00DE94',bg:'rgba(0,222,148,0.12)',scoreLabel:'Avg Return %',
   fetch:async function(){
     var r=await sq('theme_performance?select=thematic_theme,hit_rate,avg_signed_return,article_count&order=avg_signed_return.desc&limit=10');
-    return r.map(function(x){var ret=Math.round((x.avg_signed_return||0)*10)/10;var hr=Math.round((x.hit_rate||0)*10)/10;return{name:x.thematic_theme||'Unknown',meta:'Hit rate: '+hr+'% \u00b7 '+(x.article_count||0)+' articles',score:ret,scoreDisplay:(ret>=0?'+':'')+ret+'%',_scoreColor:ret>=0?'#00DE94':'#FF4D4D',link:'#discover'};});
+    return r.map(function(x){var ret=(x.avg_signed_return||0)*100;var retD=ret.toFixed(1);return{name:x.thematic_theme||'Unknown',meta:'Hit rate: '+formatPercent(x.hit_rate)+' \u00b7 '+(x.article_count||0)+' articles',score:ret,scoreDisplay:(ret>=0?'+':'')+retD+'%',_scoreColor:ret>=0?'#00DE94':'#FF4D4D',link:'#discover'};});
   }},
   {id:'weak-themes',title:'Weak / Noisy Themes',sub:'Lowest hit rate themes · unreliable narratives',color:'#FF4D4D',bg:'rgba(255,77,77,0.12)',scoreLabel:'Hit Rate %',
   fetch:async function(){
     var r=await sq('theme_performance?select=thematic_theme,hit_rate,avg_signed_return,article_count&order=hit_rate.asc&limit=10');
-    return r.map(function(x){var hr=Math.round((x.hit_rate||0)*10)/10;var ret=Math.round((x.avg_signed_return||0)*10)/10;return{name:x.thematic_theme||'Unknown',meta:ret+'% avg return \u00b7 '+(x.article_count||0)+' articles',score:hr,scoreDisplay:hr+'%',_scoreColor:hr<=30?'#FF4D4D':hr<=50?'#FFB800':'#00DE94',link:'#discover'};});
+    return r.map(function(x){var hr=(x.hit_rate||0)*100;var hrD=hr.toFixed(1);return{name:x.thematic_theme||'Unknown',meta:formatEdge(x.avg_signed_return)+' avg return \u00b7 '+(x.article_count||0)+' articles',score:hr,scoreDisplay:hrD+'%',_scoreColor:hr<=30?'#FF4D4D':hr<=50?'#FFB800':'#00DE94',link:'#discover'};});
   }},
   {id:'source-theme-edge',title:'Source \u00d7 Theme Edge',sub:'Best publication + theme combos · 15+ articles',color:'#38C8B8',bg:'rgba(56,200,184,0.12)',scoreLabel:'Avg Return %',
   fetch:async function(){
     var r=await sq('source_theme_performance?select=publication_name,thematic_theme,hit_rate,avg_signed_return,article_count&article_count=gte.15&order=avg_signed_return.desc&limit=15');
-    return r.map(function(x){var ret=Math.round((x.avg_signed_return||0)*10)/10;var hr=Math.round((x.hit_rate||0)*10)/10;return{name:x.publication_name||'Unknown',meta:x.thematic_theme+' \u00b7 Hit rate: '+hr+'% \u00b7 '+(x.article_count||0)+' articles',score:ret,scoreDisplay:(ret>=0?'+':'')+ret+'%',_scoreColor:ret>=0?'#00DE94':'#FF4D4D',link:'#narrative'};});
+    return r.map(function(x){var ret=(x.avg_signed_return||0)*100;var retD=ret.toFixed(1);return{name:x.publication_name||'Unknown',meta:x.thematic_theme+' \u00b7 Hit rate: '+formatPercent(x.hit_rate)+' \u00b7 '+(x.article_count||0)+' articles',score:ret,scoreDisplay:(ret>=0?'+':'')+retD+'%',_scoreColor:ret>=0?'#00DE94':'#FF4D4D',link:'#narrative'};});
   }},
 ];
+
+function formatPercent(v){if(v===null||v===undefined)return'-';return(v*100).toFixed(1)+'%';}
+function formatEdge(v){if(v===null||v===undefined)return'-';var pct=(v*100).toFixed(1);return v>0?'+'+pct+'%':pct+'%';}
+function edgeColor(v){if(v===null||v===undefined)return'#A0A8B0';if(v>0.001)return'#00DE94';if(v<-0.001)return'#FF4D4D';return'#A0A8B0';}
 
 function rankClass(i){return i===0?' lb-r1':i===1?' lb-r2':i===2?' lb-r3':'';}
 function scoreColor(id,score){
