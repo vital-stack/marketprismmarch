@@ -9686,6 +9686,31 @@ var BOARDS=[
     var r=await sq('source_scores?select=source_name,srs,total_claims,correct_claims,source_type&order=srs.desc&limit=10');
     return r.map(function(x){return{name:x.source_name||'Unknown',meta:(x.source_type||'Media')+' \u00b7 '+(x.total_claims||0)+' claims',score:Math.round((x.srs||0)*10)/10,link:'#narrative'};});
   }},
+  {id:'top-sources',title:'Top Performing Sources',sub:'Highest hit rate publications · 50+ articles',color:'#00DE94',bg:'rgba(0,222,148,0.12)',scoreLabel:'Hit Rate %',
+  fetch:async function(){
+    var r=await sq('source_credibility?select=publication_name,hit_rate,avg_signed_return,article_count&article_count=gte.50&order=hit_rate.desc&limit=10');
+    return r.map(function(x){var hr=Math.round((x.hit_rate||0)*10)/10;var ret=Math.round((x.avg_signed_return||0)*10)/10;return{name:x.publication_name||'Unknown',meta:ret+'% avg return \u00b7 '+(x.article_count||0)+' articles',score:hr,scoreDisplay:hr+'%',_scoreColor:hr>=70?'#00DE94':hr>=50?'#FFB800':'#FF4D4D',link:'#narrative'};});
+  }},
+  {id:'worst-sources',title:'Least Reliable Sources',sub:'Lowest hit rate publications',color:'#FF4D4D',bg:'rgba(255,77,77,0.12)',scoreLabel:'Hit Rate %',
+  fetch:async function(){
+    var r=await sq('source_credibility?select=publication_name,hit_rate,avg_signed_return,article_count&order=hit_rate.asc&limit=10');
+    return r.map(function(x){var hr=Math.round((x.hit_rate||0)*10)/10;var ret=Math.round((x.avg_signed_return||0)*10)/10;return{name:x.publication_name||'Unknown',meta:ret+'% avg return \u00b7 '+(x.article_count||0)+' articles',score:hr,scoreDisplay:hr+'%',_scoreColor:hr<=30?'#FF4D4D':hr<=50?'#FFB800':'#00DE94',link:'#narrative'};});
+  }},
+  {id:'top-themes',title:'Top Narrative Themes',sub:'Highest avg return themes',color:'#00DE94',bg:'rgba(0,222,148,0.12)',scoreLabel:'Avg Return %',
+  fetch:async function(){
+    var r=await sq('theme_performance?select=thematic_theme,hit_rate,avg_signed_return,article_count&order=avg_signed_return.desc&limit=10');
+    return r.map(function(x){var ret=Math.round((x.avg_signed_return||0)*10)/10;var hr=Math.round((x.hit_rate||0)*10)/10;return{name:x.thematic_theme||'Unknown',meta:'Hit rate: '+hr+'% \u00b7 '+(x.article_count||0)+' articles',score:ret,scoreDisplay:(ret>=0?'+':'')+ret+'%',_scoreColor:ret>=0?'#00DE94':'#FF4D4D',link:'#discover'};});
+  }},
+  {id:'weak-themes',title:'Weak / Noisy Themes',sub:'Lowest hit rate themes · unreliable narratives',color:'#FF4D4D',bg:'rgba(255,77,77,0.12)',scoreLabel:'Hit Rate %',
+  fetch:async function(){
+    var r=await sq('theme_performance?select=thematic_theme,hit_rate,avg_signed_return,article_count&order=hit_rate.asc&limit=10');
+    return r.map(function(x){var hr=Math.round((x.hit_rate||0)*10)/10;var ret=Math.round((x.avg_signed_return||0)*10)/10;return{name:x.thematic_theme||'Unknown',meta:ret+'% avg return \u00b7 '+(x.article_count||0)+' articles',score:hr,scoreDisplay:hr+'%',_scoreColor:hr<=30?'#FF4D4D':hr<=50?'#FFB800':'#00DE94',link:'#discover'};});
+  }},
+  {id:'source-theme-edge',title:'Source \u00d7 Theme Edge',sub:'Best publication + theme combos · 15+ articles',color:'#38C8B8',bg:'rgba(56,200,184,0.12)',scoreLabel:'Avg Return %',
+  fetch:async function(){
+    var r=await sq('source_theme_performance?select=publication_name,thematic_theme,hit_rate,avg_signed_return,article_count&article_count=gte.15&order=avg_signed_return.desc&limit=15');
+    return r.map(function(x){var ret=Math.round((x.avg_signed_return||0)*10)/10;var hr=Math.round((x.hit_rate||0)*10)/10;return{name:x.publication_name||'Unknown',meta:x.thematic_theme+' \u00b7 Hit rate: '+hr+'% \u00b7 '+(x.article_count||0)+' articles',score:ret,scoreDisplay:(ret>=0?'+':'')+ret+'%',_scoreColor:ret>=0?'#00DE94':'#FF4D4D',link:'#narrative'};});
+  }},
 ];
 
 function rankClass(i){return i===0?' lb-r1':i===1?' lb-r2':i===2?' lb-r3':'';}
@@ -9696,6 +9721,11 @@ function scoreColor(id,score){
   if(id==='alltime') return score>=500?'#FF4D4D':score>=150?'#FFB800':'#A0A8B0';
   if(id==='decaying') return score>0.05?'#FF4D4D':score>0.02?'#FFB800':'#00DE94';
   if(id==='squeeze') return score>=7?'#FF4D4D':score>=4?'#FFB800':'#00DE94';
+  if(id==='top-sources') return score>=70?'#00DE94':score>=50?'#FFB800':'#FF4D4D';
+  if(id==='worst-sources') return score<=30?'#FF4D4D':score<=50?'#FFB800':'#00DE94';
+  if(id==='top-themes') return score>=0?'#00DE94':'#FF4D4D';
+  if(id==='weak-themes') return score<=30?'#FF4D4D':score<=50?'#FFB800':'#00DE94';
+  if(id==='source-theme-edge') return score>=0?'#00DE94':'#FF4D4D';
   return null;
 }
 function renderBoard(b,rows){
