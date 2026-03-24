@@ -4,6 +4,22 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Market Prism — Intelligence Journal</title>
+<meta name="description" content="">
+<meta name="robots" content="index, follow">
+<link rel="canonical" id="canonical-url" href="https://marketprism.app/blog">
+<!-- Open Graph -->
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Market Prism">
+<meta property="og:title" content="" id="og-title">
+<meta property="og:description" content="" id="og-desc">
+<meta property="og:url" content="" id="og-url">
+<meta property="og:image" content="" id="og-image">
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@marketprism">
+<meta name="twitter:title" content="" id="tw-title">
+<meta name="twitter:description" content="" id="tw-desc">
+<!-- Article schema injected by JS after load -->
 <script id="__env_script">window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '' };</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -264,6 +280,7 @@ nav {
       </a>
       <div class="article-eyebrow" id="article-eyebrow">Market Intel</div>
       <div class="article-title" id="article-title"></div>
+      <img id="article-hero-img" style="display:none;width:100%;aspect-ratio:16/6;object-fit:cover;border-radius:12px;margin-bottom:28px;" alt="">
       <div class="article-meta">
         <span id="article-author">Market Prism Research</span>
         <span class="article-meta-sep"></span>
@@ -410,6 +427,41 @@ async function loadArticle() {
     // Render body
     document.getElementById('article-body').innerHTML = markdownToHtml(post.body || '');
 
+    // Inject SEO meta
+    var pageUrl = 'https://marketprism.app/blog/' + post.slug;
+    document.title = post.title + ' — Market Prism';
+    var setMeta = function(sel, val) { var el = document.querySelector(sel); if(el && val) el.setAttribute('content', val); };
+    setMeta('meta[name="description"]', post.excerpt || '');
+    setMeta('meta[property="og:title"]', post.title);
+    setMeta('meta[property="og:description"]', post.excerpt || '');
+    setMeta('meta[property="og:url"]', pageUrl);
+    setMeta('meta[property="og:image"]', post.image_url || '');
+    setMeta('meta[name="twitter:title"]', post.title);
+    setMeta('meta[name="twitter:description"]', post.excerpt || '');
+    var canon = document.getElementById('canonical-url');
+    if (canon) canon.setAttribute('href', pageUrl);
+    // Article schema
+    var schema = {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": post.title,
+      "description": post.excerpt || '',
+      "datePublished": post.published_at,
+      "author": {"@type": "Organization", "name": post.author || 'Market Prism Research'},
+      "publisher": {"@type": "Organization", "name": "Market Prism", "url": "https://marketprism.app"},
+      "url": pageUrl,
+      "mainEntityOfPage": pageUrl
+    };
+    if (post.image_url) schema.image = post.image_url;
+    var schemaEl = document.createElement('script');
+    schemaEl.type = 'application/ld+json';
+    schemaEl.textContent = JSON.stringify(schema);
+    document.head.appendChild(schemaEl);
+    // Show hero image if available
+    if (post.image_url) {
+      var heroWrap = document.getElementById('article-hero-img');
+      if (heroWrap) { heroWrap.src = post.image_url; heroWrap.style.display = 'block'; }
+    }
     // Show article
     document.getElementById('article-loading').style.display = 'none';
     document.getElementById('article-wrap').style.display = 'block';
