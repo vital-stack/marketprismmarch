@@ -4896,13 +4896,16 @@ async function loadStrategyData() {
   const nodataEl   = document.getElementById('strategy-nodata');
   const contentEl  = document.getElementById('strategy-content');
   try {
+    console.log('[Strategy] Fetching ticker_strategy_final for', TICKER);
     const rows = await sbFetch('ticker_strategy_final', {
       select: '*',
       ticker: `eq.${TICKER}`,
       limit: '1'
     });
+    console.log('[Strategy] Response:', JSON.stringify(rows).slice(0, 500));
     const d = Array.isArray(rows) ? rows[0] : null;
     if (!d) {
+      console.warn('[Strategy] No data found for', TICKER, '— rows:', rows);
       loadingEl.style.display = 'none';
       nodataEl.style.display = 'block';
       return;
@@ -4978,8 +4981,11 @@ async function loadStrategyData() {
     loadingEl.style.display = 'none';
     contentEl.style.display = 'block';
   } catch (err) {
-    console.error('Strategy load failed:', err);
+    console.error('[Strategy] Load failed:', err);
     loadingEl.style.display = 'none';
+    nodataEl.querySelector('.section-body').innerHTML =
+      '<div style="padding:24px;text-align:center;color:#FF4D4D;font-size:13px;">Strategy load error: ' +
+      (err.message || err) + '</div>';
     nodataEl.style.display = 'block';
   }
 }
