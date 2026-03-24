@@ -4245,15 +4245,12 @@ async function loadData(){
       if(ldRes&&ldRes.ok){ var ldJ=await ldRes.json(); if(ldJ&&ldJ[0])latestCardDate=ldJ[0].snapshot_date; }
     }catch(_){}
 
-    // Build URL — single order param, snapshot_date pinned to latest
+    // Build URL — fetch ALL trade cards for latest snapshot date (no label/direction filter)
     var cardUrl = SUPABASE_URL+'/rest/v1/v_trade_cards'
       +'?select=ticker,price,price_change_pct,primary_label,direction,confidence,holding_days,exit_date,sector_name,pe_ratio,narrative_state,prism_verdict,fvd_pct,snapshot_date'
       +(latestCardDate ? '&snapshot_date=eq.'+encodeURIComponent(latestCardDate) : '')
-      +'&primary_label=in.(NARRATIVE_TRAP,FUNDAMENTAL_DISCONNECT)'
-      +'&direction=eq.BEARISH'
-      +'&confidence=gte.0.35'
       +'&order=confidence.desc'
-      +'&limit=10';
+      +'&limit=50';
 
     // ── SECONDARY: existing v_dash_daily_story for dashboard stats/movers (unchanged) ──
     var mainP = fetch(url,{headers:hdrs});
@@ -4280,14 +4277,18 @@ async function loadData(){
     // Build CARD_DATA from v_trade_cards — enrich each row with computed fields
     CARD_DATA = cardRows.map(function(r){
       var label = r.primary_label;
-      var isTrap = label === 'NARRATIVE_TRAP';
-      var isFD   = label === 'FUNDAMENTAL_DISCONNECT';
-      // Title → biasText field (used as the tc-command)
-      var biasText = isTrap  ? 'SHORT: NARRATIVE TRAP'
-                   : isFD   ? 'SHORT: FUNDAMENTAL DISCONNECT'
-                   :          'SHORT: SIGNAL';
-      // Phase
-      var phase = isTrap ? 'Distribution Phase' : isFD ? 'Correction Phase' : 'Active';
+      // Title → biasText field (used as the tc-command) — use LABEL_TO_BIAS for ALL labels
+      var biasText = LABEL_TO_BIAS[label] || 'Hold Steady';
+      // Phase — map label families to meaningful phase names
+      var LABEL_TO_PHASE = {
+        'NARRATIVE_TRAP':'Distribution Phase','FUNDAMENTAL_DISCONNECT':'Correction Phase',
+        'MOMENTUM_RIDE':'Momentum Build','MOMENTUM_CONFIRMED':'Breakout Forming',
+        'SPECULATIVE':'Coil Compress','SPECULATIVE_LOW':'Coil Compress',
+        'FADE_THE_HYPE':'Decay Phase','FUNDAMENTAL_LONG':'Accumulation Phase',
+        'CATALYST_PENDING':'Catalyst Pending','ACCUMULATE':'Accumulation Phase',
+        'FOREIGN_OPAQUE':'Observation Phase'
+      };
+      var phase = LABEL_TO_PHASE[label] || 'Active';
       // Window: holding_days
       var hd = r.holding_days;
       var winOverride = hd ? (hd + (hd > 1 ? ' days' : ' day')) : null;
@@ -4299,10 +4300,21 @@ async function loadData(){
           moveDateOverride=d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
         }catch(_){}
       }
-      // Description
-      var description = isTrap
-        ? 'Coordinated narrative and valuation distortion detected. Historically leads to rapid downside unwind. Expected Move: ~2–3% downside'
-        : 'Price is diverging from fundamentals. Mean reversion probability elevated. Expected Move: ~2–3% downside';
+      // Description — context-aware per label type
+      var LABEL_DESCRIPTIONS = {
+        'NARRATIVE_TRAP':'Coordinated narrative and valuation distortion detected. Historically leads to rapid downside unwind.',
+        'FUNDAMENTAL_DISCONNECT':'Price is diverging from fundamentals. Mean reversion probability elevated.',
+        'MOMENTUM_RIDE':'Strong momentum confirmed with institutional flow alignment. Trend continuation expected.',
+        'MOMENTUM_CONFIRMED':'Breakout confirmed above key resistance with volume support.',
+        'SPECULATIVE':'Elevated speculation detected. Waiting for directional confirmation.',
+        'SPECULATIVE_LOW':'Low-conviction speculative signal. Patience recommended.',
+        'FADE_THE_HYPE':'Narrative breaking while retail still buying strength. Fade rallies into resistance.',
+        'FUNDAMENTAL_LONG':'Fundamentals support accumulation at current levels. Value opportunity detected.',
+        'CATALYST_PENDING':'Catalyst approaching — earnings, product launch, or macro event imminent.',
+        'ACCUMULATE':'Institutional accumulation detected. Gradual position building recommended.',
+        'FOREIGN_OPAQUE':'Limited transparency on foreign-listed entity. Hold steady and monitor.'
+      };
+      var description = LABEL_DESCRIPTIONS[label] || 'Signal under analysis. Monitoring for confirmation.';
       // Confidence as integer %
       var confPct = r.confidence != null ? Math.round(r.confidence * 100) : null;
       // Merge with snapshot for sector fallback
@@ -4311,7 +4323,8 @@ async function loadData(){
       var confVal = r.confidence || 0;
       var derivedRarity = confVal >= 0.75 ? 'Breaking'
                         : confVal >= 0.55 ? 'Narrative Trap'
-                        : 'Fragile';
+                        : confVal >= 0.40 ? 'Fragile'
+                        : 'Stable';
       return Object.assign({}, r, {
         biasText:       biasText,
         phase:          phase,
@@ -4324,7 +4337,6 @@ async function loadData(){
         price:          r.price || snap.price || 0,
         narrative_state: derivedRarity,
         prism_verdict:  derivedRarity,
-        // Suppress old noise fields
         story_claim:    description,
         primary_driver: description,
       });
@@ -7037,7 +7049,7 @@ function renderDailySignalCards(){
   if(!deck)return;
   var cards=[];
   if(CARD_DATA.length>0){
-    // CARD_DATA already filtered (NARRATIVE_TRAP|FUNDAMENTAL_DISCONNECT, BEARISH, conf>=0.35), sorted desc, max 10
+    // CARD_DATA from v_trade_cards, sorted by confidence desc, max 50
     cards=CARD_DATA.map(function(r,i){return Object.assign({},r,TRADING_CARD_COLORS[i%TRADING_CARD_COLORS.length]);});
   } else {
     cards=[
@@ -7060,7 +7072,18 @@ function renderCardsGallery(){
   var grid=document.getElementById('tcg-grid');
   if(!grid)return;
   if(!CARD_DATA.length){
-    grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--mp-text-tertiary);padding:40px;">No high-conviction signals today. Cards appear once v_trade_cards returns results.</div>';
+    // Try fetching directly from v_trade_cards as fallback
+    grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--mp-text-tertiary);padding:40px;">Loading trading cards…</div>';
+    fetchCardsForGallery().then(function(){ _renderGalleryGrid(grid); });
+    return;
+  }
+  _renderGalleryGrid(grid);
+}
+function _renderGalleryGrid(grid){
+  if(!grid)grid=document.getElementById('tcg-grid');
+  if(!grid)return;
+  if(!CARD_DATA.length){
+    grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--mp-text-tertiary);padding:40px;">No trading cards available. Cards appear once v_trade_cards returns results.</div>';
     return;
   }
   var cards=CARD_DATA.map(function(r,i){
@@ -7076,6 +7099,69 @@ function renderCardsGallery(){
   }).join('');
   attachCardInteractions(grid);
   TCG_RENDERED=true;
+}
+// Standalone fetch from v_trade_cards — used by gallery + calendar when CARD_DATA is empty
+async function fetchCardsForGallery(){
+  if(CARD_DATA.length>0)return; // already loaded
+  if(!SUPABASE_URL||!SUPABASE_ANON)return;
+  var hdrs={'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Accept':'application/json'};
+  try{
+    var ldRes=await fetch(SUPABASE_URL+'/rest/v1/v_trade_cards?select=snapshot_date&order=snapshot_date.desc&limit=1',{headers:hdrs});
+    var latestDate=null;
+    if(ldRes&&ldRes.ok){var ldJ=await ldRes.json();if(ldJ&&ldJ[0])latestDate=ldJ[0].snapshot_date;}
+    var cardUrl=SUPABASE_URL+'/rest/v1/v_trade_cards'
+      +'?select=ticker,price,price_change_pct,primary_label,direction,confidence,holding_days,exit_date,sector_name,pe_ratio,narrative_state,prism_verdict,fvd_pct,snapshot_date'
+      +(latestDate?'&snapshot_date=eq.'+encodeURIComponent(latestDate):'')
+      +'&order=confidence.desc&limit=50';
+    var res=await fetch(cardUrl,{headers:hdrs});
+    if(!res||!res.ok)return;
+    var rows=await res.json();
+    if(!Array.isArray(rows)||!rows.length)return;
+    CARD_DATA=rows.map(function(r){
+      var label=r.primary_label;
+      var LABEL_DESCRIPTIONS={
+        'NARRATIVE_TRAP':'Coordinated narrative and valuation distortion detected.',
+        'FUNDAMENTAL_DISCONNECT':'Price is diverging from fundamentals. Mean reversion probability elevated.',
+        'MOMENTUM_RIDE':'Strong momentum confirmed with institutional flow alignment.',
+        'MOMENTUM_CONFIRMED':'Breakout confirmed above key resistance with volume support.',
+        'SPECULATIVE':'Elevated speculation detected. Waiting for directional confirmation.',
+        'SPECULATIVE_LOW':'Low-conviction speculative signal. Patience recommended.',
+        'FADE_THE_HYPE':'Narrative breaking while retail still buying strength.',
+        'FUNDAMENTAL_LONG':'Fundamentals support accumulation at current levels.',
+        'CATALYST_PENDING':'Catalyst approaching — earnings, product launch, or macro event imminent.',
+        'ACCUMULATE':'Institutional accumulation detected. Gradual position building recommended.',
+        'FOREIGN_OPAQUE':'Limited transparency on foreign-listed entity. Hold steady and monitor.'
+      };
+      var LABEL_TO_PHASE={
+        'NARRATIVE_TRAP':'Distribution Phase','FUNDAMENTAL_DISCONNECT':'Correction Phase',
+        'MOMENTUM_RIDE':'Momentum Build','MOMENTUM_CONFIRMED':'Breakout Forming',
+        'SPECULATIVE':'Coil Compress','SPECULATIVE_LOW':'Coil Compress',
+        'FADE_THE_HYPE':'Decay Phase','FUNDAMENTAL_LONG':'Accumulation Phase',
+        'CATALYST_PENDING':'Catalyst Pending','ACCUMULATE':'Accumulation Phase',
+        'FOREIGN_OPAQUE':'Observation Phase'
+      };
+      var biasText=LABEL_TO_BIAS[label]||'Hold Steady';
+      var phase=LABEL_TO_PHASE[label]||'Active';
+      var description=LABEL_DESCRIPTIONS[label]||'Signal under analysis.';
+      var confPct=r.confidence!=null?Math.round(r.confidence*100):null;
+      var hd=r.holding_days;
+      var winOverride=hd?(hd+(hd>1?' days':' day')):null;
+      var moveDateOverride=null;
+      if(r.exit_date){try{var d=new Date(r.exit_date);moveDateOverride=d.toLocaleDateString('en-US',{month:'short',day:'numeric'});}catch(_){}}
+      var confVal=r.confidence||0;
+      var derivedRarity=confVal>=0.75?'Breaking':confVal>=0.55?'Narrative Trap':confVal>=0.40?'Fragile':'Stable';
+      var snap=snapshotMap&&snapshotMap[r.ticker]||{};
+      return Object.assign({},r,{
+        biasText:biasText,phase:phase,_winOverride:winOverride,_moveDateOverride:moveDateOverride,
+        _description:description,_confPct:confPct,
+        sector_name:r.sector_name||snap.sector||'—',
+        price:r.price||snap.price||0,
+        narrative_state:derivedRarity,prism_verdict:derivedRarity,
+        story_claim:description,primary_driver:description
+      });
+    });
+    console.log('[MP] fetchCardsForGallery: loaded',CARD_DATA.length,'cards from v_trade_cards');
+  }catch(e){console.error('[MP] fetchCardsForGallery error:',e);}
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -7441,6 +7527,74 @@ function tcgShareTwitter(idx){
   tcgShowToast('Opening X/Twitter...');
 }
 
+// Download calendar signal card as PNG
+function tcCalDownloadCard(idx){
+  var s=TC_SIGNALS[idx];
+  if(!s)return;
+  // Build a temporary card-scene element to render via cardToCanvas
+  var cd=CARD_DATA.filter(function(c){return c.ticker===s.ticker;})[0];
+  if(cd){
+    // Use the full card builder for a proper download
+    var dateStr=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    var tmp=document.createElement('div');
+    tmp.innerHTML=buildCardFrontHTML(cd,idx,dateStr,'cal',false);
+    var scene=tmp.querySelector('.card-scene');
+    if(scene){
+      try{
+        var cv=cardToCanvas(scene);
+        if(!cv)return;
+        cv.toBlob(function(blob){
+          var url=URL.createObjectURL(blob);
+          var a=document.createElement('a');
+          a.href=url;a.download=s.ticker+'-signal-card-'+new Date().toISOString().slice(0,10)+'.png';
+          document.body.appendChild(a);a.click();document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          if(typeof tcgShowToast==='function')tcgShowToast(s.ticker+' card saved');
+        },'image/png');
+      }catch(e){console.error('tcCalDownloadCard failed',e);}
+      return;
+    }
+  }
+  // Fallback: find the card in the DOM
+  var cards=document.querySelectorAll('#tc-cal-track .tc-sig-card');
+  if(cards[idx]){
+    var tcEl=cards[idx].querySelector('.tc');
+    if(tcEl){
+      try{
+        // Basic canvas render for calendar mini-card
+        var W=280,H=200,PAD=16;
+        var cv=document.createElement('canvas');cv.width=W;cv.height=H;
+        var ctx=cv.getContext('2d');
+        ctx.fillStyle='#0C1018';ctx.fillRect(0,0,W,H);
+        // Sentiment bar
+        var rc=TC_RARITY_COLORS[s.rarity]||'#A0A8B0';
+        ctx.fillStyle=rc;ctx.fillRect(0,0,W,3);
+        // Ticker
+        ctx.font='700 18px Inter,sans-serif';ctx.fillStyle='#fff';ctx.fillText(s.ticker,PAD,34);
+        ctx.font='400 12px Inter,sans-serif';ctx.fillStyle='rgba(255,255,255,0.5)';ctx.fillText(s.name,PAD,50);
+        // Price
+        ctx.font='500 20px Inter,sans-serif';ctx.fillStyle='#fff';ctx.fillText(s.price,PAD,78);
+        ctx.font='400 12px Inter,sans-serif';ctx.fillStyle=s.changeDir==='up'?'#00DE94':'#FF4D4D';
+        ctx.textAlign='right';ctx.fillText(s.change,W-PAD,78);ctx.textAlign='left';
+        // Bias
+        ctx.font='700 16px Inter,sans-serif';ctx.fillStyle='#fff';ctx.fillText(s.bias,PAD,108);
+        // Meta
+        ctx.font='400 11px Inter,sans-serif';ctx.fillStyle='#A0A8B0';ctx.fillText(s.conf+' \u2022 '+s.window,PAD,128);
+        // Footer
+        ctx.font='400 10px Inter,sans-serif';ctx.fillStyle='rgba(255,255,255,0.3)';ctx.fillText('Generated by MarketPrism',PAD,H-12);
+        cv.toBlob(function(blob){
+          var url=URL.createObjectURL(blob);
+          var a=document.createElement('a');
+          a.href=url;a.download=s.ticker+'-signal-card-'+new Date().toISOString().slice(0,10)+'.png';
+          document.body.appendChild(a);a.click();document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          if(typeof tcgShowToast==='function')tcgShowToast(s.ticker+' card saved');
+        },'image/png');
+      }catch(e){console.error('tcCalDownloadCard fallback failed',e);}
+    }
+  }
+}
+
 // Copy shareable link
 function tcgCopyLink(idx){
   var c=DATA[idx];
@@ -7603,6 +7757,7 @@ function tcRenderCards(){
           +'<div class="tc-sector-date">drag to plan \u2193</div>'
           +'<div class="tc-foot">'
             +'<span class="tc-state-tag"><span class="tc-pulse" style="background:'+rc+';"></span>ACTIVE \u2022 LIVE</span>'
+            +'<button class="tc-view-btn" style="font-size:11px;padding:3px 10px;" onclick="event.stopPropagation();tcCalDownloadCard('+i+')" title="Download card">&#11015; Save</button>'
           +'</div>'
         +'</div>'
       +'</div>'
@@ -8028,10 +8183,12 @@ function tcBuildFromData(){
     };
   });
 }
-function calendarBoot(){
+async function calendarBoot(){
   if(tcCalBooted)return;
   tcCalBooted=true;
   tcLoadQueued();
+  // Ensure CARD_DATA is loaded for calendar signals
+  if(!CARD_DATA.length) await fetchCardsForGallery();
   tcBuildFromData();
   tcRenderCards();
   tcRenderCalendar();
@@ -8403,6 +8560,7 @@ function getLiveSignalBias(row, story){
 
 async function loadTradingCalendarLive(){
   if(!SUPABASE_URL || !SUPABASE_ANON) return;
+  // Still load earnings data for calendar event markers
   var rows = await restFetch('earnings_window_active', {
     select:'ticker,days_to_earnings,earnings_position,earnings_window_flag,narrative_earnings_alignment,eps_actual,revenue_actual,earnings_surprise_pct,data_source,snapshot_date',
     order:'days_to_earnings.asc,ticker.asc',
@@ -8418,46 +8576,68 @@ async function loadTradingCalendarLive(){
     LIVE_EARNINGS_BY_DATE[eventDate].push(row);
   });
 
-  var topRows = LIVE_EARNINGS_ROWS.slice(0, 5);
-  var priceSeries = await Promise.all(topRows.map(function(row){
-    return fetchPriceHistory(row.ticker, 30).catch(function(){ return []; });
-  }));
-  TC_SIGNALS = topRows.map(function(row, index){
-    var story = getStoryForTicker(row.ticker) || {};
-    var series = priceSeries[index] || [];
-    var latest = series.length ? series[series.length - 1] : null;
-    var prev = series.length > 1 ? series[series.length - 2] : null;
-    var livePrice = latest && latest.price_close != null ? latest.price_close : story.price;
-    var liveChangePct = latest && prev && prev.price_close ? ((latest.price_close - prev.price_close) / prev.price_close) * 100 : story.price_change_pct;
-    var delta = fmtDelta(liveChangePct);
-    var bias = getLiveSignalBias(row, story);
-    var confidence = story.narrative_health != null ? Math.round(story.narrative_health) : 55;
-    // ── Override with CARD_DATA signal if this ticker has a high-conviction signal ──
-    var cdMatch = CARD_DATA.filter(function(cd){ return cd.ticker === row.ticker; })[0];
-    if(cdMatch){
-      bias = {
-        text: cdMatch.biasText ? cdMatch.biasText.toUpperCase() : bias.text,
-        rarity: cdMatch.confidence >= 0.75 ? 'Rare' : cdMatch.confidence >= 0.55 ? 'Rare' : 'Uncommon',
-        color: '#38C8B8'
+  // ── PRIMARY: Build TC_SIGNALS from CARD_DATA (v_trade_cards) ──
+  // Fetch cards if CARD_DATA is still empty
+  if(!CARD_DATA.length) await fetchCardsForGallery();
+
+  if(CARD_DATA.length > 0){
+    // Use v_trade_cards data directly for calendar signal cards
+    TC_SIGNALS = CARD_DATA.slice(0, 10).map(function(cd){
+      var pct = cd.price_change_pct || 0;
+      var isUp = pct > 0;
+      var confVal = cd.confidence || 0;
+      var rarity = confVal >= 0.75 ? 'Rare' : confVal >= 0.55 ? 'Rare' : confVal >= 0.40 ? 'Uncommon' : 'Common';
+      var rarityColor = rarity === 'Rare' ? '#38C8B8' : rarity === 'Uncommon' ? '#00AEFF' : '#A0A8B0';
+      return {
+        id: cd.ticker.toLowerCase(),
+        ticker: cd.ticker,
+        name: cd.sector_name || getTickerDisplayName(cd.ticker),
+        price: '$' + fmtPrice(cd.price),
+        change: (isUp ? '\u25B2' : '\u25BC') + ' ' + Math.abs(pct).toFixed(2) + '%',
+        changeDir: isUp ? 'up' : 'down',
+        rarity: rarity,
+        ac: rarityColor,
+        bias: (cd.biasText || 'Hold Steady').toUpperCase(),
+        conf: (cd._confPct != null ? cd._confPct : Math.round(confVal * 100)) + '%',
+        window: cd._winOverride || (cd.holding_days ? cd.holding_days + (cd.holding_days > 1 ? ' days' : ' day') : '3\u20137d'),
+        logo: '',
+        eventDate: cd.exit_date || null
       };
-      confidence = cdMatch._confPct != null ? cdMatch._confPct : confidence;
-    }
-    return {
-      id: row.ticker.toLowerCase(),
-      ticker: row.ticker,
-      name: getTickerDisplayName(row.ticker),
-      price: livePrice != null ? '$' + fmtPrice(livePrice) : '—',
-      change: delta.txt,
-      changeDir: liveChangePct > 0 ? 'up' : liveChangePct < 0 ? 'down' : 'flat',
-      rarity: bias.rarity,
-      ac: bias.color,
-      bias: bias.text,
-      conf: Math.max(40, Math.min(95, confidence)) + '%',
-      window: cdMatch && cdMatch._winOverride ? cdMatch._winOverride : (row.days_to_earnings || 0) + 'd to earnings',
-      logo: '',
-      eventDate: addDaysISO(row.snapshot_date, row.days_to_earnings || 0)
-    };
-  });
+    });
+    console.log('[MP] Calendar TC_SIGNALS built from CARD_DATA:', TC_SIGNALS.length, 'signals');
+  } else {
+    // Fallback: build from earnings data if no trade cards available
+    var topRows = LIVE_EARNINGS_ROWS.slice(0, 5);
+    var priceSeries = await Promise.all(topRows.map(function(row){
+      return fetchPriceHistory(row.ticker, 30).catch(function(){ return []; });
+    }));
+    TC_SIGNALS = topRows.map(function(row, index){
+      var story = getStoryForTicker(row.ticker) || {};
+      var series = priceSeries[index] || [];
+      var latest = series.length ? series[series.length - 1] : null;
+      var prev = series.length > 1 ? series[series.length - 2] : null;
+      var livePrice = latest && latest.price_close != null ? latest.price_close : story.price;
+      var liveChangePct = latest && prev && prev.price_close ? ((latest.price_close - prev.price_close) / prev.price_close) * 100 : story.price_change_pct;
+      var delta = fmtDelta(liveChangePct);
+      var bias = getLiveSignalBias(row, story);
+      var confidence = story.narrative_health != null ? Math.round(story.narrative_health) : 55;
+      return {
+        id: row.ticker.toLowerCase(),
+        ticker: row.ticker,
+        name: getTickerDisplayName(row.ticker),
+        price: livePrice != null ? '$' + fmtPrice(livePrice) : '—',
+        change: delta.txt,
+        changeDir: liveChangePct > 0 ? 'up' : liveChangePct < 0 ? 'down' : 'flat',
+        rarity: bias.rarity,
+        ac: bias.color,
+        bias: bias.text,
+        conf: Math.max(40, Math.min(95, confidence)) + '%',
+        window: (row.days_to_earnings || 0) + 'd to earnings',
+        logo: '',
+        eventDate: addDaysISO(row.snapshot_date, row.days_to_earnings || 0)
+      };
+    });
+  }
   if(tcCalBooted){
     tcRenderCards();
     tcRenderCalendar();
