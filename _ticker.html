@@ -1884,11 +1884,31 @@
   .hero-price {
     font-size: 36px;
     font-weight: 400;
-    font-family: var(--mono);
+    font-family: var(--font-body);
     letter-spacing: -0.03em;
     color: #fff;
   }
   .hero-delta { font-size: 14px; font-family: var(--font-body); margin-top: 4px; }
+
+  /* ── Live price indicator ── */
+  .live-price-row { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-bottom: 2px; }
+  .live-dot {
+    width: 7px; height: 7px; border-radius: 50%; background: #00DE94; flex-shrink: 0;
+    animation: livePulse 2s ease-in-out infinite;
+  }
+  .live-dot.stale { background: #FFB800; animation: none; }
+  .live-dot.offline { background: #A0A8B0; animation: none; }
+  @keyframes livePulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,222,148,0.5); }
+    50% { opacity: 0.7; box-shadow: 0 0 0 4px rgba(0,222,148,0); }
+  }
+  .live-label { font-size: 11px; font-family: var(--font-body); color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.05em; }
+  .live-label.active { color: rgba(0,222,148,0.7); }
+  .live-price-main { font-size: 38px; font-weight: 600; font-family: var(--font-body); letter-spacing: -0.03em; color: #fff; line-height: 1; }
+  .live-change { font-size: 14px; font-family: var(--font-body); margin-top: 4px; }
+  .live-change .chg-amount { margin-right: 6px; }
+  .live-meta { font-size: 11px; color: rgba(255,255,255,0.3); font-family: var(--font-body); margin-top: 6px; display: flex; gap: 12px; justify-content: flex-end; }
+  .live-meta span { white-space: nowrap; }
 
   /* ── Diag strip fix ── */
   .diag-strip {
@@ -2000,6 +2020,9 @@
     .page-wrap { padding: 16px 16px 60px; }
     .ticker-hero { flex-direction: column; gap: 16px; padding: 24px 20px; margin: 0 -16px; }
     .hero-right { text-align: left; }
+    .live-price-row { justify-content: flex-start; }
+    .live-price-main { font-size: 28px; }
+    .live-meta { justify-content: flex-start; }
     .hero-ticker { font-size: 28px; }
     .hero-claim { font-size: 14px; }
     .hero-bias { font-size: 24px; }
@@ -2657,10 +2680,15 @@ async function loadHero() {
         <div class="hero-claim">${esc(r.primary_driver || r.story_claim || '')}</div>
         ${r.sector_name ? `<div class="hero-sector">${esc(r.sector_name)}</div>` : ''}
       </div>
-      <div class="hero-right">
-        <div class="hero-price">${fmtPrice(r.price)}</div>
-        <div class="hero-delta ${delta.cls}">${delta.txt}</div>
+      <div class="hero-right" id="hero-right">
+        <div class="live-price-row">
+          <span class="live-dot offline" id="live-dot"></span>
+          <span class="live-label" id="live-label">Loading</span>
+        </div>
+        <div class="live-price-main" id="live-price">${fmtPrice(r.price)}</div>
+        <div class="live-change ${delta.cls}" id="live-change">${delta.txt}</div>
         ${r.fair_value != null ? `<div class="hero-fv">Fair value <span>${fmtPrice(r.fair_value)}</span></div>` : ''}
+        <div class="live-meta" id="live-meta"></div>
       </div>`;
 
     // Update feed ticker
@@ -4125,105 +4153,388 @@ function renderHeatmap(p) {
     </div>`;
 }
 
-// ── Export Report (text file) ─────────────────────────────────────────────────
+// ── Export Report (PDF via jsPDF) ─────────────────────────────────────────────
 function exportReport() {
-  const t = TICKER;
-  const hero = document.getElementById('hero');
-  const price = hero?.querySelector('.hero-price')?.textContent || '';
-  const delta = hero?.querySelector('.hero-delta')?.textContent || '';
-  const state = hero?.querySelector('.hero-state-badge')?.textContent || '';
-  const verdict = hero?.querySelector('.verdict-badge')?.textContent || '';
-  const claim = hero?.querySelector('.hero-claim')?.textContent || '';
-  const sector = hero?.querySelector('.hero-sector')?.textContent || '';
-  const fv = hero?.querySelector('.hero-fv span')?.textContent || '';
+  var btn = document.querySelector('.action-btn[onclick="exportReport()"]');
+  if (btn) btn.disabled = true;
 
-  // Diagnosis strip
-  const diagCells = document.querySelectorAll('#diag-strip .diag-cell');
-  const diag = [];
-  diagCells.forEach(c => {
-    const label = c.querySelector('.diag-label')?.textContent || '';
-    const val = c.querySelector('.diag-val')?.textContent?.trim() || '';
-    if (label && val) diag.push(`  ${label}: ${val}`);
-  });
+  function doExport() {
+    var jsPDF = window.jspdf.jsPDF;
+    var doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    var pw = 210, ph = 297, mx = 18, mxr = pw - 18, cw = pw - 36;
+    var y = 0;
 
-  // Forensic analysis
-  const forensic = document.getElementById('forensic-text')?.textContent?.trim() || '';
+    // Colors
+    var bg = [8,11,17], surface = [12,16,24], cyan = [0,174,255], green = [0,222,148], red = [255,77,77], amber = [255,184,0], white = [255,255,255], muted = [160,168,176], secondary = [180,185,192];
+    var violet = [123,97,255], teal = [56,200,184];
 
-  // Metrics
-  const metricCells = document.querySelectorAll('#metrics-strip .metric-cell');
-  const metrics = [];
-  metricCells.forEach(c => {
-    const label = c.querySelector('.metric-label')?.textContent || '';
-    const val = c.querySelector('.metric-value')?.textContent?.trim() || '';
-    const sub = c.querySelector('.metric-sub')?.textContent?.trim() || '';
-    if (label) metrics.push(`  ${label}: ${val}${sub ? ' (' + sub + ')' : ''}`);
-  });
+    // Helpers
+    function checkPage(need) { if (y + need > ph - 20) { doc.addPage(); drawPageBg(); y = 18; } return y; }
+    function drawPageBg() { doc.setFillColor(bg[0],bg[1],bg[2]); doc.rect(0,0,pw,ph,'F'); }
+    function roundRect(x,yy,w,h,rad,fill,stroke) {
+      doc.setFillColor(fill[0],fill[1],fill[2]);
+      if (stroke) { doc.setDrawColor(stroke[0],stroke[1],stroke[2]); doc.setLineWidth(0.3); doc.roundedRect(x,yy,w,h,rad,rad,'FD'); }
+      else doc.roundedRect(x,yy,w,h,rad,rad,'F');
+    }
+    function sectionHead(title, accentColor) {
+      checkPage(18);
+      doc.setFillColor(accentColor[0],accentColor[1],accentColor[2]);
+      doc.rect(mx,y,2,8,'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(white[0],white[1],white[2]);
+      doc.text(title, mx+6, y+6);
+      y += 14;
+    }
+    function kvRow(label, value, valColor) {
+      checkPage(8);
+      doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(muted[0],muted[1],muted[2]);
+      doc.text(label, mx+4, y);
+      doc.setFont('helvetica','bold'); doc.setFontSize(9.5);
+      var vc = valColor || white; doc.setTextColor(vc[0],vc[1],vc[2]);
+      var valX = mx+52, maxValW = mxr-valX-2;
+      var valLines = doc.splitTextToSize(String(value||'—'), maxValW);
+      valLines.forEach(function(line,i) { if (i>0) checkPage(5); doc.text(line,valX,y); if (i<valLines.length-1) y+=5; });
+      y += 6;
+    }
+    function textBlock(txt, color, fontSize) {
+      if (!txt) return;
+      checkPage(12);
+      doc.setFont('helvetica','normal'); doc.setFontSize(fontSize||9);
+      var c = color || secondary; doc.setTextColor(c[0],c[1],c[2]);
+      var split = doc.splitTextToSize(txt, cw-8);
+      split.forEach(function(line) { checkPage(5); doc.text(line, mx+4, y); y+=4.5; });
+      y += 3;
+    }
 
-  // Sector intelligence
-  const sectorBlocks = document.querySelectorAll('#sector-body .si-block');
-  const sectorInfo = [];
-  sectorBlocks.forEach(b => {
-    const lbl = b.querySelector('.si-label')?.textContent || '';
-    const val = b.querySelector('.si-val')?.textContent?.trim() || '';
-    if (lbl && val) sectorInfo.push(`  ${lbl}: ${val}`);
-  });
+    var t = TICKER;
+    var r = _tickerHeroData || {};
+    var p = _tickerPulseData || {};
+    var date = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+    var dateShort = new Date().toISOString().slice(0,10);
 
-  // Lifecycle
-  const lcBody = document.getElementById('lc-body');
-  const lifecycle = lcBody?.textContent?.trim().replace(/\s+/g, ' ') || '';
+    // ── Page 1 background ──
+    drawPageBg();
 
-  // Prerequisites
-  const prBody = document.getElementById('pr-body');
-  const prereqs = prBody?.textContent?.trim().replace(/\s+/g, ' ') || '';
+    // ── Header bar ──
+    doc.setFillColor(surface[0],surface[1],surface[2]);
+    doc.rect(0,0,pw,44,'F');
+    doc.setFillColor(cyan[0],cyan[1],cyan[2]);
+    doc.rect(0,44,pw,0.8,'F');
 
-  const date = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    doc.setFont('helvetica','bold'); doc.setFontSize(22); doc.setTextColor(white[0],white[1],white[2]);
+    doc.text('MARKET PRISM', mx, 18);
+    doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(cyan[0],cyan[1],cyan[2]);
+    doc.text('NARRATIVE INTELLIGENCE REPORT', mx, 26);
 
-  let report = `MARKET PRISM — FORENSIC INTELLIGENCE REPORT
-${'═'.repeat(50)}
-Ticker: ${t}
-Date: ${date}
-${sector ? 'Sector: ' + sector : ''}
+    doc.setFont('helvetica','bold'); doc.setFontSize(28); doc.setTextColor(white[0],white[1],white[2]);
+    doc.text(t, mxr, 20, {align:'right'});
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(muted[0],muted[1],muted[2]);
+    doc.text(date, mxr, 28, {align:'right'});
+    if (r.sector_name) {
+      doc.setFontSize(9); doc.setTextColor(cyan[0],cyan[1],cyan[2]);
+      doc.text(r.sector_name, mxr, 35, {align:'right'});
+    }
 
-OVERVIEW
-${'─'.repeat(50)}
-  Price: ${price}  (${delta})
-  Narrative State: ${state}
-  Verdict: ${verdict}
-  ${fv ? 'Fair Value: ' + fv : ''}
-  Primary Driver: ${claim}
+    y = 52;
 
-DIAGNOSIS
-${'─'.repeat(50)}
-${diag.join('\n')}
+    // ── Verdict banner ──
+    var verdict = r.prism_verdict || p.prevailing_verdict || 'Monitoring';
+    var isTrap = verdict.toLowerCase().indexOf('trap') !== -1;
+    var isSupported = verdict.toLowerCase().indexOf('supported') !== -1 || verdict.toLowerCase().indexOf('verified') !== -1;
+    var vColor = isTrap ? red : isSupported ? green : cyan;
+    var vBg = isTrap ? [30,12,12] : isSupported ? [10,28,20] : [10,20,32];
 
-FUNDAMENTALS
-${'─'.repeat(50)}
-${metrics.join('\n')}
+    roundRect(mx, y, cw, 16, 3, vBg, [vColor[0],vColor[1],vColor[2]]);
+    doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(vColor[0],vColor[1],vColor[2]);
+    doc.text(verdict.toUpperCase(), pw/2, y+10, {align:'center'});
+    y += 22;
 
-FORENSIC ANALYSIS
-${'─'.repeat(50)}
-  ${forensic || 'No analysis available.'}
-`;
+    // ── Insight tags from hero badges ──
+    var insightTags = [];
+    var heroBadges = document.querySelectorAll('.hero-insight-badges .hero-insight-badge');
+    heroBadges.forEach(function(el) {
+      var label = el.textContent.trim();
+      var style = el.getAttribute('style') || '';
+      var c = cyan;
+      if (style.indexOf('FF4D4D') !== -1 || style.indexOf('red') !== -1) c = red;
+      else if (style.indexOf('00DE94') !== -1 || style.indexOf('green') !== -1) c = green;
+      else if (style.indexOf('FFB800') !== -1 || style.indexOf('amber') !== -1) c = amber;
+      else if (style.indexOf('7B61FF') !== -1) c = violet;
+      if (label) insightTags.push({label:label, c:c});
+    });
 
-  if (sectorInfo.length) {
-    report += `\nSECTOR INTELLIGENCE\n${'─'.repeat(50)}\n${sectorInfo.join('\n')}\n`;
+    if (insightTags.length) {
+      var tagX = mx;
+      insightTags.slice(0,5).forEach(function(tag) {
+        var tw = doc.getTextWidth(tag.label)*0.38 + 10;
+        if (tagX + tw > mxr) { y += 9; tagX = mx; }
+        roundRect(tagX, y, tw, 7, 2, [tag.c[0]*0.12+bg[0]*(1-0.12), tag.c[1]*0.12+bg[1]*(1-0.12), tag.c[2]*0.12+bg[2]*(1-0.12)]);
+        doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(tag.c[0],tag.c[1],tag.c[2]);
+        doc.text(tag.label, tagX+tw/2, y+4.8, {align:'center'});
+        tagX += tw + 3;
+      });
+      y += 13;
+    }
+
+    // ── OVERVIEW & PRICE ──
+    sectionHead('Overview & Price', cyan);
+    roundRect(mx, y, cw, 28, 3, surface);
+    var prc = r.price != null ? '$'+Number(r.price).toFixed(2) : '—';
+    var pctVal = r.price_change_pct || 0;
+    var chgTxt = (pctVal > 0 ? '+' : '') + Number(pctVal).toFixed(2) + '%';
+    var chgColor = pctVal > 0 ? green : pctVal < 0 ? red : muted;
+
+    doc.setFont('helvetica','bold'); doc.setFontSize(20); doc.setTextColor(white[0],white[1],white[2]);
+    doc.text(prc, mx+8, y+12);
+    doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor(chgColor[0],chgColor[1],chgColor[2]);
+    doc.text(chgTxt, mx+8, y+22);
+
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(muted[0],muted[1],muted[2]);
+    doc.text('State', mx+100, y+8); doc.text('Fair Value', mx+140, y+8);
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(white[0],white[1],white[2]);
+    doc.text(r.narrative_state || '—', mx+100, y+15);
+    doc.text(r.fair_value != null ? '$'+Number(r.fair_value).toFixed(2) : '—', mx+140, y+15);
+    y += 34;
+
+    kvRow('Primary Driver', r.story_claim || r.primary_driver || '—');
+    if (r.stock_type) kvRow('Stock Type', r.stock_type);
+    y += 4;
+
+    // ── NARRATIVE DIAGNOSIS ──
+    sectionHead('Narrative Diagnosis', cyan);
+    kvRow('Story Claim', r.story_claim || '—');
+    kvRow('Narrative State', r.narrative_state || '—',
+      r.narrative_state === 'Surging' ? green : r.narrative_state === 'Breaking' ? red : r.narrative_state === 'Fragile' ? amber : white);
+    kvRow('Verdict', verdict, vColor);
+    if (r.narrative_trend) kvRow('Narrative Trend', r.narrative_trend,
+      r.narrative_trend === 'Rising' ? green : r.narrative_trend === 'Collapsing' ? red : r.narrative_trend === 'Weakening' ? amber : white);
+    if (p.prevailing_narrative) {
+      y += 2;
+      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(muted[0],muted[1],muted[2]);
+      doc.text('Prevailing Narrative:', mx+4, y); y += 5;
+      textBlock(p.prevailing_narrative, secondary, 8.5);
+    }
+    y += 4;
+
+    // ── DIAGNOSIS METRICS ──
+    // Read from diag strip in DOM
+    var diagCells = document.querySelectorAll('#diag-strip .diag-cell');
+    if (diagCells.length) {
+      sectionHead('Diagnosis Metrics', cyan);
+      roundRect(mx, y, cw, 22, 3, surface);
+      var statW = cw / Math.min(diagCells.length, 4);
+      var dIdx = 0;
+      diagCells.forEach(function(c) {
+        if (dIdx >= 4) return;
+        var label = (c.querySelector('.diag-label')?.textContent || '').trim();
+        var val = (c.querySelector('.diag-val')?.textContent || '').trim();
+        if (!label) return;
+        var sx = mx + 4 + dIdx * statW;
+        doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(muted[0],muted[1],muted[2]);
+        doc.text(label, sx, y+7);
+        doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(white[0],white[1],white[2]);
+        doc.text(val, sx, y+16);
+        dIdx++;
+      });
+      y += 28;
+      // Remaining diag cells as kvRows
+      dIdx = 0;
+      diagCells.forEach(function(c) {
+        dIdx++;
+        if (dIdx <= 4) return;
+        var label = (c.querySelector('.diag-label')?.textContent || '').trim();
+        var val = (c.querySelector('.diag-val')?.textContent || '').trim();
+        if (label && val) kvRow(label, val);
+      });
+      y += 4;
+    }
+
+    // ── WARRANTED VS HYPE ──
+    var wvhWarranted = document.querySelector('.wvh-val.wvh-warranted')?.textContent?.trim();
+    var wvhHype = document.querySelector('.wvh-val.wvh-hype')?.textContent?.trim();
+    if (wvhWarranted || wvhHype) {
+      sectionHead('Warranted vs Hype', cyan);
+      roundRect(mx, y, cw, 22, 3, surface);
+      // Warranted
+      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(muted[0],muted[1],muted[2]);
+      doc.text('WARRANTED', mx+20, y+7);
+      var wVal = parseInt(wvhWarranted) || 0;
+      var wColor = wVal >= 65 ? green : wVal >= 40 ? amber : red;
+      doc.setFont('helvetica','bold'); doc.setFontSize(18); doc.setTextColor(wColor[0],wColor[1],wColor[2]);
+      doc.text(wvhWarranted || '—', mx+25, y+18);
+      // Hype
+      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(muted[0],muted[1],muted[2]);
+      doc.text('HYPE', mx+80, y+7);
+      var hVal = parseInt(wvhHype) || 0;
+      var hColor = hVal >= 65 ? red : hVal >= 40 ? amber : green;
+      doc.setFont('helvetica','bold'); doc.setFontSize(18); doc.setTextColor(hColor[0],hColor[1],hColor[2]);
+      doc.text(wvhHype || '—', mx+82, y+18);
+      y += 28;
+
+      // Bars from DOM
+      var barItems = document.querySelectorAll('.wvh-bar-row');
+      barItems.forEach(function(row) {
+        var lbl = row.querySelector('.wvh-bar-label')?.textContent?.trim();
+        var valEl = row.querySelector('.wvh-bar-val');
+        var val = valEl?.textContent?.trim();
+        if (lbl && val) kvRow(lbl, val);
+      });
+      // Narrative gap text
+      var gapText = document.querySelector('.wvh-note')?.textContent?.trim();
+      if (gapText) textBlock(gapText, muted, 8);
+      y += 4;
+    }
+
+    // ── FORENSIC ANALYSIS ──
+    var forensicText = document.getElementById('forensic-text')?.textContent?.trim();
+    sectionHead('Forensic Analysis', amber);
+    // Forensic stats row from scorecard
+    var scCoord = p.worst_coordination || p.pulse_coordination;
+    var scEnergy = p.avg_energy_remaining || p.prevailing_energy;
+    if (scCoord != null || scEnergy != null) {
+      roundRect(mx, y, cw, 18, 3, surface);
+      var fStats = [
+        {label:'Coordination', val:p.pulse_coordination != null ? Math.round(p.pulse_coordination) : '—', c:p.pulse_coordination>=60?red:white},
+        {label:'Energy', val:scEnergy != null ? Math.round(scEnergy)+'%' : '—', c:scEnergy>=85?cyan:scEnergy<=15?red:white},
+        {label:'Health Score', val:p.pulse_health_score != null ? Math.round(p.pulse_health_score) : '—', c:p.pulse_health_score>=70?green:p.pulse_health_score>=40?amber:red},
+        {label:'Net Sentiment', val:p.net_sentiment != null ? Math.round(p.net_sentiment) : '—', c:p.net_sentiment>0?green:p.net_sentiment<0?red:white}
+      ];
+      var fsW = cw/4;
+      fStats.forEach(function(s, i) {
+        var sx = mx+4+i*fsW;
+        doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(muted[0],muted[1],muted[2]);
+        doc.text(s.label, sx, y+6);
+        doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(s.c[0],s.c[1],s.c[2]);
+        doc.text(String(s.val), sx, y+14);
+      });
+      y += 24;
+    }
+    textBlock(forensicText || r.forensic_rebuttal || r.mda_snippet || 'No forensic analysis available.', forensicText ? secondary : muted);
+    y += 4;
+
+    // ── FUNDAMENTALS & METRICS ──
+    var metricCells = document.querySelectorAll('#metrics-strip .metric-cell');
+    if (metricCells.length) {
+      sectionHead('Fundamentals & Metrics', green);
+      roundRect(mx, y, cw, 22, 3, surface);
+      var fmStats = [];
+      metricCells.forEach(function(c) {
+        var label = (c.querySelector('.metric-label')?.textContent || '').trim();
+        var val = (c.querySelector('.metric-value')?.textContent || '').trim();
+        if (label && val) fmStats.push({label:label, val:val});
+      });
+      if (!fmStats.length) fmStats.push({label:'Data', val:'Limited data available'});
+      var fmW = cw / Math.min(fmStats.length, 4);
+      fmStats.slice(0,4).forEach(function(s, i) {
+        var fx = mx+4+i*fmW;
+        doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(muted[0],muted[1],muted[2]);
+        doc.text(s.label, fx, y+7);
+        doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(white[0],white[1],white[2]);
+        doc.text(s.val, fx, y+16);
+      });
+      y += 28;
+      if (fmStats.length > 4) {
+        fmStats.slice(4).forEach(function(s) { kvRow(s.label, s.val); });
+        y += 2;
+      }
+      y += 4;
+    }
+
+    // ── SECTOR INTELLIGENCE ──
+    var sectorBlocks = document.querySelectorAll('#sector-body .si-block');
+    if (sectorBlocks.length) {
+      sectionHead('Sector Intelligence', teal);
+      if (r.sector_name) kvRow('Sector', r.sector_name, cyan);
+      sectorBlocks.forEach(function(b) {
+        var lbl = (b.querySelector('.si-label')?.textContent || '').trim();
+        var val = (b.querySelector('.si-val')?.textContent || '').trim();
+        if (lbl && val) kvRow(lbl, val);
+      });
+      y += 4;
+    }
+
+    // ── NARRATIVE RUNWAY ──
+    var runwayRows = document.querySelectorAll('.narr-item');
+    if (runwayRows.length) {
+      sectionHead('Narrative Runway', amber);
+      runwayRows.forEach(function(item) {
+        var claim = item.querySelector('.narr-claim-text')?.textContent?.trim();
+        var evidence = item.querySelector('.narr-ev')?.textContent?.trim();
+        var energy = item.querySelector('.narr-energy')?.textContent?.trim();
+        var status = item.querySelector('.narr-status')?.textContent?.trim();
+        if (claim) {
+          checkPage(14);
+          textBlock(claim, white, 9);
+          var meta = [];
+          if (evidence) meta.push('Evidence: '+evidence);
+          if (energy) meta.push('Energy: '+energy);
+          if (status) meta.push('Status: '+status);
+          if (meta.length) textBlock(meta.join('  |  '), muted, 8);
+          y += 2;
+        }
+      });
+      y += 4;
+    }
+
+    // ── STORY LIFECYCLE ──
+    var lcBody = document.getElementById('lc-body');
+    var lifecycle = lcBody?.textContent?.trim().replace(/\s+/g,' ');
+    if (lifecycle) {
+      sectionHead('Story Lifecycle', amber);
+      kvRow('Current State', r.narrative_state || '—',
+        r.narrative_state==='Surging'?green:r.narrative_state==='Breaking'?red:white);
+      if (p.nearest_exhaustion_days != null) kvRow('Est. Exhaustion', p.nearest_exhaustion_days+' days',
+        p.nearest_exhaustion_days<=7?red:p.nearest_exhaustion_days<=21?amber:white);
+      if (p.direction_forecast) kvRow('Direction Forecast', p.direction_forecast);
+      textBlock(lifecycle, secondary, 8.5);
+      y += 4;
+    }
+
+    // ── PREREQUISITES ──
+    var prBody = document.getElementById('pr-body');
+    var prereqs = prBody?.textContent?.trim().replace(/\s+/g,' ');
+    if (prereqs) {
+      sectionHead('Prerequisite Check', violet);
+      textBlock(prereqs, secondary, 8.5);
+      y += 4;
+    }
+
+    // ── PULSE SUMMARY ──
+    if (p.pulse_summary) {
+      sectionHead('Pulse Summary', cyan);
+      textBlock(p.pulse_summary, secondary, 9);
+      y += 4;
+    }
+
+    // ── Footer on all pages ──
+    var pageCount = doc.internal.getNumberOfPages();
+    for (var pg = 1; pg <= pageCount; pg++) {
+      doc.setPage(pg);
+      doc.setFillColor(surface[0],surface[1],surface[2]);
+      doc.rect(0,ph-12,pw,12,'F');
+      doc.setFillColor(cyan[0],cyan[1],cyan[2]);
+      doc.rect(0,ph-12,pw,0.4,'F');
+      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(muted[0],muted[1],muted[2]);
+      doc.text('Generated by Market Prism  ·  '+date, mx, ph-7);
+      doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(cyan[0],cyan[1],cyan[2]);
+      doc.text('marketprism.co', mx, ph-3);
+      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(muted[0],muted[1],muted[2]);
+      doc.text('Page '+pg+' / '+pageCount, mxr, ph-5, {align:'right'});
+    }
+
+    doc.save(t+'-market-prism-report-'+dateShort+'.pdf');
+    if (btn) btn.disabled = false;
   }
-  if (lifecycle) {
-    report += `\nSTORY LIFECYCLE\n${'─'.repeat(50)}\n  ${lifecycle}\n`;
-  }
-  if (prereqs) {
-    report += `\nPREREQUISITE CHECK\n${'─'.repeat(50)}\n  ${prereqs}\n`;
-  }
 
-  report += `\n${'═'.repeat(50)}\nGenerated by Market Prism · ${date}\nhttps://marketprism.io/ticker/${t}\n`;
-
-  const blob = new Blob([report], { type: 'text/plain' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${t}-market-prism-report-${new Date().toISOString().slice(0,10)}.txt`;
-  a.click();
-  URL.revokeObjectURL(url);
+  // Load jsPDF if not already loaded
+  if (window.jspdf) {
+    doExport();
+  } else {
+    var script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js';
+    script.onload = doExport;
+    script.onerror = function() { alert('Failed to load PDF library. Please try again.'); if (btn) btn.disabled = false; };
+    document.head.appendChild(script);
+  }
 }
 
 // ── Create Image (capture page as PNG) ───────────────────────────────────────
@@ -4392,8 +4703,112 @@ setInterval(() => refreshAll(), 5 * 60 * 1000);
 
 // Refresh when user tabs back to the page
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) refreshAll();
+  if (!document.hidden) { refreshAll(); fetchLivePrice(); }
 });
+
+// ── Live Price via Polygon ────────────────────────────────────────────────────
+var _liveQuoteTimer = null;
+var _lastLivePrice = null;
+
+async function fetchLivePrice() {
+  if (!TICKER) return;
+  try {
+    var res = await fetch('/api/live-quote?ticker=' + encodeURIComponent(TICKER));
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var q = await res.json();
+    if (q.error) throw new Error(q.error);
+    if (q.price == null) throw new Error('No price');
+
+    _lastLivePrice = q;
+
+    var dotEl = document.getElementById('live-dot');
+    var labelEl = document.getElementById('live-label');
+    var priceEl = document.getElementById('live-price');
+    var changeEl = document.getElementById('live-change');
+    var metaEl = document.getElementById('live-meta');
+    if (!priceEl) return;
+
+    // Format price
+    var p = q.price;
+    priceEl.textContent = '$' + (p >= 1000 ? p.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) : p >= 100 ? p.toFixed(2) : p.toFixed(3));
+
+    // Format change
+    if (q.change != null && q.changePct != null) {
+      var isUp = q.change > 0;
+      var isDn = q.change < 0;
+      var arrow = isUp ? '\u25B2' : isDn ? '\u25BC' : '';
+      var sign = isUp ? '+' : '';
+      changeEl.className = 'live-change ' + (isUp ? 'delta-pos' : isDn ? 'delta-neg' : 'delta-flat');
+      changeEl.innerHTML =
+        '<span class="chg-amount">' + (isDn ? '<span class="chg-arrow-dn">' : isUp ? '<span class="chg-arrow-up">' : '<span>') + arrow + '</span> ' +
+        sign + q.change.toFixed(2) + '</span>' +
+        '<span>(' + sign + q.changePct.toFixed(2) + '%)</span>';
+    }
+
+    // Determine market status
+    var now = new Date();
+    var et = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+    var day = et.getDay();
+    var hrs = et.getHours();
+    var mins = et.getMinutes();
+    var mktMins = hrs * 60 + mins;
+    var isWeekday = day >= 1 && day <= 5;
+    var isOpen = isWeekday && mktMins >= 570 && mktMins < 960; // 9:30 AM - 4:00 PM ET
+    var isPreMarket = isWeekday && mktMins >= 240 && mktMins < 570; // 4:00 AM - 9:30 AM ET
+    var isAfterHours = isWeekday && mktMins >= 960 && mktMins < 1200; // 4:00 PM - 8:00 PM ET
+
+    if (dotEl && labelEl) {
+      if (isOpen) {
+        dotEl.className = 'live-dot';
+        labelEl.className = 'live-label active';
+        labelEl.textContent = 'Live';
+      } else if (isPreMarket) {
+        dotEl.className = 'live-dot stale';
+        labelEl.className = 'live-label';
+        labelEl.textContent = 'Pre-Market';
+      } else if (isAfterHours) {
+        dotEl.className = 'live-dot stale';
+        labelEl.className = 'live-label';
+        labelEl.textContent = 'After Hours';
+      } else {
+        dotEl.className = 'live-dot offline';
+        labelEl.className = 'live-label';
+        labelEl.textContent = 'Closed';
+      }
+    }
+
+    // Meta: high/low, volume, updated time
+    if (metaEl) {
+      var parts = [];
+      if (q.high != null && q.low != null) parts.push('<span>H $' + q.high.toFixed(2) + ' · L $' + q.low.toFixed(2) + '</span>');
+      if (q.volume != null) {
+        var vol = q.volume >= 1e6 ? (q.volume/1e6).toFixed(1)+'M' : q.volume >= 1e3 ? (q.volume/1e3).toFixed(0)+'K' : q.volume;
+        parts.push('<span>Vol ' + vol + '</span>');
+      }
+      if (q.prevClose != null) parts.push('<span>Prev $' + q.prevClose.toFixed(2) + '</span>');
+      metaEl.innerHTML = parts.join('');
+    }
+  } catch (err) {
+    // Silently fall back — the Supabase price is already displayed
+    var dotEl = document.getElementById('live-dot');
+    var labelEl = document.getElementById('live-label');
+    if (dotEl) dotEl.className = 'live-dot offline';
+    if (labelEl) { labelEl.className = 'live-label'; labelEl.textContent = 'Delayed'; }
+  }
+}
+
+// Initial fetch + poll every 30s during market hours, 2 min otherwise
+fetchLivePrice();
+function scheduleLivePrice() {
+  var now = new Date();
+  var et = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  var day = et.getDay(), hrs = et.getHours(), mins = et.getMinutes();
+  var mktMins = hrs * 60 + mins;
+  var isActive = day >= 1 && day <= 5 && mktMins >= 240 && mktMins < 1200;
+  var interval = isActive ? 30000 : 120000;
+  _liveQuoteTimer = setTimeout(function() { fetchLivePrice().then(scheduleLivePrice); }, interval);
+}
+scheduleLivePrice();
 
 // ── Ticker Scholar — inline AI chat ──────────────────────────────────────────
 (function(){
