@@ -3391,65 +3391,38 @@ body{
           <input id="stat-ticker-input" type="text" placeholder="Type a ticker…" style="background:var(--mp-deep);border:1px solid var(--mp-border-mid);border-radius:8px;padding:10px 14px;font-family:var(--font-mono);font-size:13px;color:var(--mp-text-primary);outline:none;width:100%;transition:border-color .15s,box-shadow .15s;" onfocus="this.style.borderColor='rgba(26,110,255,.45)';this.style.boxShadow='0 0 0 3px rgba(26,110,255,.1)';" onblur="this.style.borderColor='';this.style.boxShadow='';" onkeydown="if(event.key==='Enter'){var v=this.value.trim().toUpperCase();if(v)window.location.href='/ticker/'+encodeURIComponent(v);this.value='';}">
         </div>
       </div>
-      <!-- ── CARDS + STORIES SPLIT ── -->
-      <div class="cards-stories-split">
-        <!-- LEFT: Trading Cards -->
-        <div class="trading-cards-section">
-          <div class="trading-cards-header">
-            <h3>Live Signal Cards</h3>
-            <span style="font-family:var(--font-mono);font-size:10px;color:#fff;letter-spacing:.06em;">Click to flip</span>
+      <!-- ── LIVE NARRATIVES (single column) ── -->
+      <div class="stories-stream-col" style="width:100%;">
+        <div class="stories-stream-header">
+          <h3>Live Narratives</h3>
+          <span class="stories-stream-count" id="stream-count">—</span>
+        </div>
+        <div class="stories-stream-filters" id="discover-filter-bar">
+          <div style="display:flex;gap:4px;flex-wrap:wrap;">
+            <button class="chip active" data-filter="state" data-val="all">All</button>
+            <button class="chip" data-filter="state" data-val="Breaking">Breaking</button>
+            <button class="chip" data-filter="state" data-val="Surging">Surging</button>
+            <button class="chip" data-filter="state" data-val="Fragile">Fragile</button>
+            <button class="chip" data-filter="state" data-val="Stable">Stable</button>
+            <button class="chip" data-filter="verdict" data-val="Narrative Trap">Trap</button>
+            <button class="chip" data-filter="verdict" data-val="Structurally Supported">Supported</button>
           </div>
-          <div class="deck" id="trading-deck">
-            <!-- Cards populated by JS from live data -->
+          <div style="display:flex;gap:6px;margin-top:6px;">
+            <select id="sector-select" class="filter-select" style="flex:1;"><option value="">All sectors</option></select>
+            <input id="ticker-search" class="search-input" placeholder="Ticker…" style="flex:1;">
           </div>
         </div>
-        <!-- RIGHT: Stories ticker stream -->
-        <div class="stories-stream-col">
-          <div class="stories-stream-header">
-            <h3>Live Narratives</h3>
-            <span class="stories-stream-count" id="stream-count">—</span>
-          </div>
-          <div class="stories-stream-filters" id="discover-filter-bar">
-            <div style="display:flex;gap:4px;flex-wrap:wrap;">
-              <button class="chip active" data-filter="state" data-val="all">All</button>
-              <button class="chip" data-filter="state" data-val="Breaking">Breaking</button>
-              <button class="chip" data-filter="state" data-val="Surging">Surging</button>
-              <button class="chip" data-filter="state" data-val="Fragile">Fragile</button>
-              <button class="chip" data-filter="state" data-val="Stable">Stable</button>
-              <button class="chip" data-filter="verdict" data-val="Narrative Trap">Trap</button>
-              <button class="chip" data-filter="verdict" data-val="Structurally Supported">Supported</button>
-            </div>
-            <div style="display:flex;gap:6px;margin-top:6px;">
-              <select id="sector-select" class="filter-select" style="flex:1;"><option value="">All sectors</option></select>
-              <input id="ticker-search" class="search-input" placeholder="Ticker…" style="flex:1;">
-            </div>
-          </div>
-          <div class="count-bar">
-            <span id="count-line">—</span>
-            <span style="font-size:10px;font-family:var(--font-mono);">click any ticker to open forensic analysis</span>
-          </div>
-          <div class="stories-stream-viewport">
-            <div class="feed stories-stream-inner" id="discover-feed"></div>
-          </div>
-          <div class="load-more" id="discover-load-more" style="display:none;">
-            <button class="load-more-btn" id="discover-load-more-btn">Load more</button>
-          </div>
+        <div class="count-bar">
+          <span id="count-line">—</span>
+          <span style="font-size:10px;font-family:var(--font-mono);">click any ticker to open forensic analysis</span>
         </div>
-      </div><!-- /cards-stories-split -->
-
-      <!-- ── LEADERBOARD ── -->
-      <div class="leaderboard-section">
-        <div class="leaderboard-header">
-          <h3>Leaderboard</h3>
-          <div class="leaderboard-header-right">
-            <span class="leaderboard-eyebrow">Updated daily</span>
-          </div>
+        <div class="stories-stream-viewport">
+          <div class="feed stories-stream-inner" id="discover-feed"></div>
         </div>
-        <div class="deck" id="leaderboard-deck">
-          <!-- Populated by renderLeaderboardCards() -->
+        <div class="load-more" id="discover-load-more" style="display:none;">
+          <button class="load-more-btn" id="discover-load-more-btn">Load more</button>
         </div>
       </div>
-      <!-- /leaderboard -->
 
       <!-- ── Heatmap ── -->
       <div style="margin-bottom:28px;">
