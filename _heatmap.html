@@ -602,11 +602,9 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
 const SUPABASE_URL  = window.__env?.SUPABASE_URL  || '';
 const SUPABASE_ANON = window.__env?.SUPABASE_ANON || '';
 
-if (!SUPABASE_URL || !SUPABASE_ANON) {
-  console.warn('Supabase config missing — using fallback heatmap data');
-  ALL_TICKERS = FALLBACK_TICKERS;
-  setTimeout(() => renderGrid(), 0);
-}
+// Always render fallback data immediately so the grid is never stuck on skeletons
+ALL_TICKERS = FALLBACK_TICKERS;
+setTimeout(() => renderGrid(), 0);
 
 async function sbFetch(table, params) {
   const qs = Object.entries(params)
@@ -768,7 +766,7 @@ async function fetchData() {
     frag:      fragility(r),
     traps:     r.trap_count ?? 0,
     coord:     Math.round(r.worst_coordination ?? 0),
-    fvd:       (r.fvd_pct != null && Math.abs(r.fvd_pct) < 400) ? +r.fvd_pct.toFixed(1) : null,
+    fvd:       (r.fvd_pct != null && Math.abs(Number(r.fvd_pct)) < 400) ? +Number(r.fvd_pct).toFixed(1) : null,
     sentiment: Math.round(r.net_sentiment ?? 0),
     narrative: (r.prevailing_narrative ?? '').slice(0, 120),
     vms:       Math.round(r.pulse_vms ?? 50),
@@ -955,18 +953,20 @@ document.querySelector('.sort-group').addEventListener('click', e => {
 
 // ── Refresh ────────────────────────────────────────────────────────────────
 async function refreshData() {
-  const btn = document.getElementById('refresh-btn');
-  const grid = document.getElementById('heatmap-grid');
+  var btn = document.getElementById('refresh-btn');
+  if (!btn) return;
   btn.textContent = '\u21BB Loading\u2026';
   btn.classList.add('spinning');
   try {
-    var live = await fetchData();
-    ALL_TICKERS = live.length ? live : FALLBACK_TICKERS;
+    if (SUPABASE_URL && SUPABASE_ANON) {
+      var live = await fetchData();
+      ALL_TICKERS = live.length ? live : FALLBACK_TICKERS;
+    }
   } catch(err) {
     console.error('Heatmap load error:', err);
     ALL_TICKERS = FALLBACK_TICKERS;
   }
-  renderGrid();
+  try { renderGrid(); } catch(e) { console.error('Heatmap render error:', e); }
   btn.textContent = '\u21BB Refresh';
   btn.classList.remove('spinning');
 }
