@@ -2885,96 +2885,48 @@ async function loadSectorIntelligence(heroRow) {
 }
 
 // ── 2. Price Chart ───────────────────────────────────────────────────────────
-let ALL_SNAPS = [];   // full price history (from /api/price-history)
-let ALL_NARRS = [];   // narrative health rows with sentiment dots
+let ALL_SNAPS = [];   // full price history from ticker_snapshots
+let ALL_NARRS = [];   // narrative story dots from narrative_analyses
 let ALL_DECAY = [];   // narrative energy time series
-let CHART_FV  = null; // fair value for dashed line
-
-// ── Live price history fetch via local API route (api/price-history.js) ──────
-async function fetchPriceHistoryFromApi(ticker, days) {
-  const queryDays = Math.max(30, Math.min(days || 730, 3650));
-  const res = await fetch(`/api/price-history?ticker=${encodeURIComponent(ticker)}&days=${queryDays}`);
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`price-history ${res.status}: ${text.slice(0, 120)}`);
-  }
-  const json = await res.json();
-  return Array.isArray(json.series)
-    ? json.series
-        .map((row) => ({
-          snapshot_date: row.snapshot_date,
-          price_close: row.price_close != null ? Number(row.price_close) : null
-        }))
-        .filter((row) => row.snapshot_date && row.price_close != null)
-    : [];
-}
+let CHART_FV  = null;
 
 async function loadChart(fairValue) {
   if (!TICKER) return;
   CHART_FV = fairValue;
   try {
-    // Fetch live price history + narrative overlays in parallel
-    const [apiSnaps, narrativeRows, chartStoryRows, decayRows] = await Promise.all([
-      fetchPriceHistoryFromApi(TICKER, 730).catch(() => []),
-      sbFetch('v_dash_narrative_health', {
-        select: 'snapshot_date,sentiment_score,narrative_trend',
+    // Fetch prices from ticker_snapshots + stories from narrative_analyses
+    const [priceRows, storyRows, decayRows] = await Promise.all([
+      sbFetch('ticker_snapshots', {
+        select: 'snapshot_date,price_close',
         ticker: `eq.${TICKER}`,
         order:  'snapshot_date.asc',
-        limit:  '365'
+        limit:  '2000'
       }).catch(() => []),
       sbFetch('narrative_analyses', {
-        select: 'snapshot_date,narrative_text,source_outlet,article_url,sentiment_score',
+        select: 'snapshot_date,narrative_text,source_outlet,article_url,sentiment_score,verdict',
         ticker: `eq.${TICKER}`,
-        order: 'snapshot_date.desc',
-        limit: '365'
+        order:  'snapshot_date.asc',
+        limit:  '2000'
       }).catch(() => []),
       sbFetch('decay_metrics', {
         select: 'snapshot_date,energy_remaining_pct,day_number',
         ticker: `eq.${TICKER}`,
         order:  'snapshot_date.asc',
-        limit:  '365'
+        limit:  '2000'
       }).catch(() => [])
     ]);
 
-    // Fall back to Supabase price if local API is unavailable
-    if (apiSnaps.length) {
-      ALL_SNAPS = apiSnaps;
-    } else {
-      ALL_SNAPS = await sbFetch('ticker_snapshots', {
-        select: 'snapshot_date,price_close',
-        ticker: `eq.${TICKER}`,
-        order:  'snapshot_date.asc',
-        limit:  '365'
-      }).catch(() => []);
-    }
+    ALL_SNAPS = priceRows.filter(r => r.snapshot_date && r.price_close != null);
 
-    const storyByDate = {};
-    chartStoryRows.forEach((row) => {
-      const d = row.snapshot_date?.slice(0, 10);
-      if (d && !storyByDate[d]) storyByDate[d] = row;
-    });
-
-    ALL_NARRS = narrativeRows.map((row) => {
-      const d = row.snapshot_date?.slice(0, 10);
-      const story = d ? storyByDate[d] : null;
-      return {
-        ...row,
-        narrative_text: row.narrative_text || story?.narrative_text || '',
-        source_outlet: row.source_outlet || story?.source_outlet || '',
-        article_url: row.article_url || story?.article_url || ''
-      };
-    });
-
-    if (!ALL_NARRS.length && chartStoryRows.length) {
-      ALL_NARRS = chartStoryRows.map((row) => ({
-        snapshot_date: row.snapshot_date,
-        sentiment_score: row.sentiment_score,
-        narrative_trend: '',
-        narrative_text: row.narrative_text || '',
-        source_outlet: row.source_outlet || '',
-        article_url: row.article_url || ''
-      }));
-    }
+    // Build narrative dots directly from narrative_analyses
+    ALL_NARRS = storyRows.map((row) => ({
+      snapshot_date: row.snapshot_date,
+      sentiment_score: row.sentiment_score,
+      narrative_trend: row.verdict || '',
+      narrative_text: row.narrative_text || '',
+      source_outlet: row.source_outlet || '',
+      article_url: row.article_url || ''
+    }));
 
     ALL_DECAY = decayRows;
 
@@ -3159,10 +3111,31 @@ function drawChart(snaps, narrs, fairValue) {
     ctx.restore();
   }
 
-  // Narrative sentiment dots
+  // Narrative sentiment dots — snap to nearest price date if no exact match
+  const snapDates = snaps.map(s => s.snapshot_date?.slice(0,10));
+  function nearestIdx(dateStr) {
+    let exact = dateIdx[dateStr];
+    if (exact != null) return exact;
+    // Binary search for closest date
+    let lo = 0, hi = snapDates.length - 1;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      if (snapDates[mid] < dateStr) lo = mid + 1;
+      else hi = mid - 1;
+    }
+    if (lo >= snapDates.length) return snapDates.length - 1;
+    if (lo === 0) return 0;
+    // Pick whichever is closer
+    const dLo = Math.abs(new Date(snapDates[lo]) - new Date(dateStr));
+    const dHi = Math.abs(new Date(snapDates[lo-1]) - new Date(dateStr));
+    return dHi <= dLo ? lo - 1 : lo;
+  }
+
   const dotHits = [];
   narrs.forEach(n => {
-    const idx = dateIdx[n.snapshot_date?.slice(0,10)];
+    const d = n.snapshot_date?.slice(0,10);
+    if (!d) return;
+    const idx = nearestIdx(d);
     if (idx == null) return;
     const s = snaps[idx];
     if (s?.price_close == null) return;
@@ -3179,7 +3152,7 @@ function drawChart(snaps, narrs, fairValue) {
   function showStoryPopup(hit) {
     const n = hit.n;
     document.getElementById('popup-date').textContent = n.snapshot_date?.slice(0,10) || '';
-    document.getElementById('popup-headline').textContent = n.narrative_trend || 'Narrative Story';
+    document.getElementById('popup-headline').textContent = n.source_outlet || n.narrative_trend || 'Narrative Story';
     const storyText = n.narrative_text || (n.sentiment_score != null ? `Sentiment: ${n.sentiment_score.toFixed(1)}` : 'No story text available.');
     document.getElementById('popup-body').textContent = storyText;
 
