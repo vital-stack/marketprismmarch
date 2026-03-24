@@ -3321,7 +3321,7 @@ body{
         <!-- RIGHT: Tabbed Narrative Feed -->
         <div class="nf-feed">
           <div class="nf-feed-header">
-            <span class="nf-feed-title">Top NarrativeSignals</span>
+            <span class="nf-feed-title">Top Narrative Signals</span>
             <span class="nf-feed-date" id="nf-feed-date"></span>
           </div>
           <div class="nf-tabs">
@@ -4713,6 +4713,15 @@ function renderSectorNarrativeCards(){
       return nfBuildRow(d.direction, '<div class="nc-logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>', d.name, d.sub, d.claim, d.verdict, '', {state:d.verdict});
     }).join('');
   }
+  // Make all sector cards navigate to Sector Pulse tab
+  el.querySelectorAll('.nc-card').forEach(function(card){
+    card.style.cursor='pointer';
+    card.addEventListener('click',function(e){
+      e.preventDefault();
+      var btn=document.querySelector('[data-tab="sector"]');
+      if(btn) switchTab('sector',btn);
+    });
+  });
 }
 
 // ── Render: Market-Wide tab ──
