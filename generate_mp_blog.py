@@ -214,11 +214,7 @@ def generate_article_image(ticker: str, title: str, excerpt: str) -> str | None:
             model=MODEL,
             max_tokens=150,
             system="You write image generation prompts for a forensic financial intelligence publication. Style: dark, cinematic, institutional. Deep navy/black backgrounds, electric blue and teal accents. Abstract data visualizations, fragmented market structures, architectural financial metaphors. NO charts with arrows, NO stock photo clichés, NO people. Output ONLY the prompt, max 100 words.",
-            messages=[{"role": "user", "content": f"Write a DALL-E 3 prompt for an article header image.
-Ticker: {ticker}
-Title: {title}
-Excerpt: {excerpt[:200]}
-Make it abstract and forensic — not literal."}],
+                        messages=[{"role": "user", "content": "Write a DALL-E 3 prompt for an article header image.\nTicker: " + ticker + "\nTitle: " + title + "\nExcerpt: " + excerpt[:200] + "\nMake it abstract and forensic — not literal."}],
         )
         image_prompt = prompt_response.content[0].text.strip()
         print(f"  → Image prompt: {image_prompt[:80]}...")
