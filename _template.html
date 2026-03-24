@@ -4201,6 +4201,7 @@ var CARD_DATA  = []; // High-conviction trade signals from v_trade_cards (filter
 var TRADE_CLASS_MAP = {};
 var PREDICTION_MAP  = {};
 var snapshotMap     = {};
+var scorecardMap    = {};
 var LOVE_HATE_DATA  = [];
 var DOMAIN_MAP = {
   NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadcom.com',
@@ -4399,7 +4400,7 @@ async function loadData(){
     // Parse overlay responses in parallel — keep for dashboard stats only
     var healthMap={};
     var pulseMap={};
-    var scorecardMap={};
+    scorecardMap={};
 
     // ── Fetch narrative_scorecard data for insight tags ──
     try{
@@ -4414,9 +4415,28 @@ async function loadData(){
             var scRows=await scRes.json();
             scRows.forEach(function(s){if(!scorecardMap[s.ticker])scorecardMap[s.ticker]=s;});
             console.log('[MP] scorecardMap loaded:',Object.keys(scorecardMap).length,'tickers');
+          } else {
+            // Retry with minimal columns if full query fails (column may not exist)
+            console.warn('[MP] scorecard full query failed ('+scRes.status+'), retrying with minimal cols');
+            var scColsMin='ticker,fvd_pct,vms,decay_rate,energy_remaining,verdict';
+            var scRes2=await fetch(SUPABASE_URL+'/rest/v1/narrative_scorecard?select='+scColsMin+'&snapshot_date=eq.'+encodeURIComponent(scDate)+'&limit=500',{headers:hdrs});
+            if(scRes2&&scRes2.ok){
+              var scRows2=await scRes2.json();
+              scRows2.forEach(function(s){if(!scorecardMap[s.ticker])scorecardMap[s.ticker]=s;});
+              console.log('[MP] scorecardMap loaded (minimal):',Object.keys(scorecardMap).length,'tickers');
+            } else {
+              // Last resort: try with just ticker and wildcard
+              console.warn('[MP] scorecard minimal query also failed ('+scRes2.status+'), trying wildcard');
+              var scRes3=await fetch(SUPABASE_URL+'/rest/v1/narrative_scorecard?select=*&snapshot_date=eq.'+encodeURIComponent(scDate)+'&limit=500',{headers:hdrs});
+              if(scRes3&&scRes3.ok){
+                var scRows3=await scRes3.json();
+                scRows3.forEach(function(s){if(!scorecardMap[s.ticker])scorecardMap[s.ticker]=s;});
+                console.log('[MP] scorecardMap loaded (wildcard):',Object.keys(scorecardMap).length,'tickers, cols:',scRows3[0]?Object.keys(scRows3[0]).join(','):'none');
+              }
+            }
           }
-        }
-      }
+        } else { console.warn('[MP] narrative_scorecard has no snapshot dates'); }
+      } else { console.warn('[MP] narrative_scorecard date query failed:',scDateRes&&scDateRes.status); }
     }catch(e){console.warn('[MP] scorecard fetch failed:',e);}
 
     // dedup + merge
@@ -4429,6 +4449,11 @@ async function loadData(){
       if(!m.sector_name&&SECTOR_MAP[m.ticker])m.sector_name=SECTOR_MAP[m.ticker][0];
       return m;
     });
+    // Debug: log how many DATA records have scorecard fields for tags
+    var _withFvd=DATA.filter(function(r){return r.fvd_pct!=null;}).length;
+    var _withEnergy=DATA.filter(function(r){return r.energy_remaining!=null;}).length;
+    var _withCoord=DATA.filter(function(r){return r.coordination_class!=null;}).length;
+    console.log('[MP] DATA enrichment: '+DATA.length+' total, '+_withFvd+' with fvd_pct, '+_withEnergy+' with energy, '+_withCoord+' with coordination_class, scorecardMap size: '+Object.keys(scorecardMap).length);
     // stats
     document.getElementById('stat-total').textContent    = DATA.length;
     document.getElementById('stat-traps').textContent    = DATA.filter(function(r){return r.prism_verdict==='Narrative Trap';}).length;
