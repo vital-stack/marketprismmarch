@@ -2046,6 +2046,138 @@
     .narr-checks { grid-template-columns: 1fr; }
     .section-body { border-radius: 10px; }
   }
+
+  /* ── Strategy Tab Styles ── */
+  .strat-badge {
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 3px 10px;
+    border-radius: 4px;
+    display: inline-block;
+  }
+  .strat-insights-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 768px) {
+    .strat-insights-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  .strat-insight-card {
+    background: var(--mp-surface);
+    border: 1px solid var(--mp-border);
+    border-radius: 12px;
+    padding: 16px;
+    transition: border-color 0.2s;
+  }
+  .strat-insight-card:hover { border-color: var(--mp-border-hover); }
+  .strat-insight-label {
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #6b7280;
+    margin-bottom: 6px;
+  }
+  .strat-insight-value {
+    font-family: var(--font-body);
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+  .strat-insight-sub {
+    font-family: var(--font-body);
+    font-size: 11px;
+    color: rgba(255,255,255,0.4);
+    margin-top: 4px;
+  }
+  .strat-matrix {
+    display: grid;
+    grid-template-columns: 100px 1fr 1fr;
+    gap: 8px;
+    align-items: center;
+  }
+  .strat-matrix-corner { }
+  .strat-matrix-head {
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(255,255,255,0.5);
+    text-align: center;
+  }
+  .strat-matrix-row-label {
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .strat-matrix-cell {
+    font-family: var(--font-body);
+    font-size: 18px;
+    font-weight: 600;
+    text-align: center;
+    padding: 12px 8px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--mp-border);
+  }
+  .strat-cell-green { color: #00DE94; }
+  .strat-cell-red { color: #FF4D4D; }
+  .strat-conditions { display: flex; flex-direction: column; gap: 16px; }
+  .strat-cond-row { display: flex; align-items: flex-start; gap: 16px; }
+  .strat-cond-label {
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.6);
+    width: 100px;
+    flex-shrink: 0;
+    padding-top: 4px;
+  }
+  .strat-cond-bars { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+  .strat-cond-bar-wrap { display: flex; align-items: center; gap: 8px; }
+  .strat-cond-bar-label {
+    font-family: var(--font-body);
+    font-size: 11px;
+    color: #6b7280;
+    width: 80px;
+    flex-shrink: 0;
+  }
+  .strat-cond-bar-bg {
+    flex: 1;
+    height: 8px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .strat-cond-bar {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s cubic-bezier(0.16,1,0.3,1);
+    width: 0%;
+  }
+  .strat-cond-bar-val {
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.7);
+    width: 50px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  @media (max-width: 768px) {
+    .strat-cond-row { flex-direction: column; gap: 6px; }
+    .strat-cond-label { width: auto; }
+    .strat-matrix { grid-template-columns: 80px 1fr 1fr; }
+  }
 </style>
   <!-- Env vars injected by Vercel — do not edit this line -->
   <script>
@@ -2141,6 +2273,7 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
     <button class="tk-tab active" data-tab="overview">Overview</button>
     <button class="tk-tab" data-tab="narratives">Narratives</button>
     <button class="tk-tab" data-tab="history">History</button>
+    <button class="tk-tab" data-tab="strategy">Strategy</button>
   </div>
 
   <!-- Action bar -->
@@ -2427,6 +2560,153 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
       </div>
     </div>
   </div><!-- /tab-history -->
+
+  <!-- ═══ TAB: STRATEGY ═══ -->
+  <div class="tk-tab-panel" id="tab-strategy">
+    <!-- Loading skeleton -->
+    <div id="strategy-loading">
+      <div class="section">
+        <div class="section-label">Trading Strategy</div>
+        <div class="section-body" style="padding:20px;">
+          <div class="skel" style="height:14px;width:40%;margin-bottom:10px;"></div>
+          <div class="skel" style="height:14px;width:60%;margin-bottom:10px;"></div>
+          <div class="skel" style="height:14px;width:50%;"></div>
+        </div>
+      </div>
+    </div>
+    <!-- No data message -->
+    <div id="strategy-nodata" style="display:none;">
+      <div class="section">
+        <div class="section-body" style="padding:24px;text-align:center;color:#6b7280;">
+          No strategy data available
+        </div>
+      </div>
+    </div>
+    <!-- Strategy content -->
+    <div id="strategy-content" style="display:none;">
+
+      <!-- SECTION 1: Header -->
+      <div class="section">
+        <div class="section-label" style="justify-content:space-between;align-items:center;">
+          Trading Strategy
+          <span id="strat-type-badge" class="strat-badge"></span>
+        </div>
+      </div>
+
+      <!-- SECTION 2: Key Insights -->
+      <div class="strat-insights-grid">
+        <div class="strat-insight-card">
+          <div class="strat-insight-label">Best Setup</div>
+          <div class="strat-insight-value" id="strat-best-setup" style="color:#00DE94;">—</div>
+          <div class="strat-insight-sub" id="strat-best-setup-key"></div>
+        </div>
+        <div class="strat-insight-card">
+          <div class="strat-insight-label">Avoid</div>
+          <div class="strat-insight-value" id="strat-avoid" style="color:#FF4D4D;">—</div>
+          <div class="strat-insight-sub" id="strat-avoid-key"></div>
+        </div>
+        <div class="strat-insight-card">
+          <div class="strat-insight-label">Momentum</div>
+          <div class="strat-insight-value" id="strat-momentum" style="color:#00AEFF;">—</div>
+        </div>
+        <div class="strat-insight-card">
+          <div class="strat-insight-label">Trap Risk</div>
+          <div class="strat-insight-value" id="strat-trap" style="color:#FFB800;">—</div>
+        </div>
+      </div>
+
+      <!-- SECTION 3: Narrative Behavior Matrix -->
+      <div class="section" style="margin-top:20px;">
+        <div class="section-label">Narrative Behavior Matrix</div>
+        <div class="section-body" style="padding:16px;">
+          <div class="strat-matrix">
+            <div class="strat-matrix-corner"></div>
+            <div class="strat-matrix-head">High Truth</div>
+            <div class="strat-matrix-head">Low Truth</div>
+            <div class="strat-matrix-row-label" style="color:#00DE94;">Positive</div>
+            <div class="strat-matrix-cell strat-cell-green" id="strat-pos-high">—</div>
+            <div class="strat-matrix-cell strat-cell-green" id="strat-pos-low">—</div>
+            <div class="strat-matrix-row-label" style="color:#FF4D4D;">Negative</div>
+            <div class="strat-matrix-cell strat-cell-red" id="strat-neg-high">—</div>
+            <div class="strat-matrix-cell strat-cell-red" id="strat-neg-low">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 4: Market Conditions -->
+      <div class="section">
+        <div class="section-label">Market Conditions</div>
+        <div class="section-body" style="padding:16px;">
+          <div class="strat-conditions">
+            <!-- Coordination -->
+            <div class="strat-cond-row">
+              <div class="strat-cond-label">Coordination</div>
+              <div class="strat-cond-bars">
+                <div class="strat-cond-bar-wrap">
+                  <span class="strat-cond-bar-label">High</span>
+                  <div class="strat-cond-bar-bg"><div class="strat-cond-bar" id="strat-coord-high" style="background:#00AEFF;"></div></div>
+                  <span class="strat-cond-bar-val" id="strat-coord-high-val"></span>
+                </div>
+                <div class="strat-cond-bar-wrap">
+                  <span class="strat-cond-bar-label">Low</span>
+                  <div class="strat-cond-bar-bg"><div class="strat-cond-bar" id="strat-coord-low" style="background:#6b7280;"></div></div>
+                  <span class="strat-cond-bar-val" id="strat-coord-low-val"></span>
+                </div>
+              </div>
+            </div>
+            <!-- Energy -->
+            <div class="strat-cond-row">
+              <div class="strat-cond-label">Energy</div>
+              <div class="strat-cond-bars">
+                <div class="strat-cond-bar-wrap">
+                  <span class="strat-cond-bar-label">High</span>
+                  <div class="strat-cond-bar-bg"><div class="strat-cond-bar" id="strat-energy-high" style="background:#7B61FF;"></div></div>
+                  <span class="strat-cond-bar-val" id="strat-energy-high-val"></span>
+                </div>
+                <div class="strat-cond-bar-wrap">
+                  <span class="strat-cond-bar-label">Low</span>
+                  <div class="strat-cond-bar-bg"><div class="strat-cond-bar" id="strat-energy-low" style="background:#6b7280;"></div></div>
+                  <span class="strat-cond-bar-val" id="strat-energy-low-val"></span>
+                </div>
+              </div>
+            </div>
+            <!-- Verdicts -->
+            <div class="strat-cond-row">
+              <div class="strat-cond-label">Verdicts</div>
+              <div class="strat-cond-bars">
+                <div class="strat-cond-bar-wrap">
+                  <span class="strat-cond-bar-label">Trap</span>
+                  <div class="strat-cond-bar-bg"><div class="strat-cond-bar" id="strat-v-trap" style="background:#FFB800;"></div></div>
+                  <span class="strat-cond-bar-val" id="strat-v-trap-val"></span>
+                </div>
+                <div class="strat-cond-bar-wrap">
+                  <span class="strat-cond-bar-label">Momentum</span>
+                  <div class="strat-cond-bar-bg"><div class="strat-cond-bar" id="strat-v-momentum" style="background:#00AEFF;"></div></div>
+                  <span class="strat-cond-bar-val" id="strat-v-momentum-val"></span>
+                </div>
+                <div class="strat-cond-bar-wrap">
+                  <span class="strat-cond-bar-label">Fundamental</span>
+                  <div class="strat-cond-bar-bg"><div class="strat-cond-bar" id="strat-v-fundamental" style="background:#38C8B8;"></div></div>
+                  <span class="strat-cond-bar-val" id="strat-v-fundamental-val"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 5: Strategy Summary -->
+      <div class="section">
+        <div class="section-label">Strategy Summary</div>
+        <div class="section-body" style="padding:16px;">
+          <p style="font-family:var(--font-body);font-size:13px;color:rgba(255,255,255,0.7);line-height:1.6;margin:0;">
+            This stock's behavior is driven by narrative strength, sentiment intensity, and coordination dynamics.
+          </p>
+        </div>
+      </div>
+
+    </div><!-- /strategy-content -->
+  </div><!-- /tab-strategy -->
 
   <!-- Chart tab removed — chart now embedded in Overview -->
 
@@ -4600,9 +4880,109 @@ async function createImage() {
       if (tab.dataset.tab === 'overview' && ALL_SNAPS.length) {
         setTimeout(() => renderChart(), 50);
       }
+      // Lazy-load strategy data on first click
+      if (tab.dataset.tab === 'strategy' && !window._strategyLoaded) {
+        window._strategyLoaded = true;
+        loadStrategyData();
+      }
     });
   });
 })();
+
+// ── Strategy Tab ─────────────────────────────────────────────────────────────
+async function loadStrategyData() {
+  if (!TICKER) return;
+  const loadingEl  = document.getElementById('strategy-loading');
+  const nodataEl   = document.getElementById('strategy-nodata');
+  const contentEl  = document.getElementById('strategy-content');
+  try {
+    const rows = await sbFetch('ticker_strategy_final', {
+      select: '*',
+      ticker: `eq.${TICKER}`,
+      limit: '1'
+    });
+    const d = Array.isArray(rows) ? rows[0] : null;
+    if (!d) {
+      loadingEl.style.display = 'none';
+      nodataEl.style.display = 'block';
+      return;
+    }
+
+    // Strategy type badge
+    const typeMap = {
+      'FOLLOW_VERIFIED_STRENGTH': { color: '#00DE94', bg: 'rgba(0,222,148,0.12)' },
+      'FADE_HYPE':               { color: '#FF4D4D', bg: 'rgba(255,77,77,0.12)' },
+      'BUY_PANIC_TRAPS':         { color: '#00AEFF', bg: 'rgba(0,174,255,0.12)' },
+      'AVOID_MANIPULATION':      { color: '#FFB800', bg: 'rgba(255,184,0,0.12)' },
+      'FOLLOW_ENERGY':           { color: '#7B61FF', bg: 'rgba(123,97,255,0.12)' },
+      'MIXED':                   { color: '#6b7280', bg: 'rgba(107,114,128,0.12)' }
+    };
+    const badge = document.getElementById('strat-type-badge');
+    const tm = typeMap[d.strategy_type] || typeMap['MIXED'];
+    badge.textContent = (d.strategy_type || 'UNKNOWN').replace(/_/g, ' ');
+    badge.style.color = tm.color;
+    badge.style.background = tm.bg;
+    badge.style.border = '1px solid ' + tm.color;
+
+    // Return fields for key insights
+    const returnFields = {
+      'High Coord': d.high_coord_return,
+      'Low Coord': d.low_coord_return,
+      'High Energy': d.high_energy_return,
+      'Low Energy': d.low_energy_return,
+      'Trap': d.trap_return,
+      'Momentum': d.momentum_return,
+      'Fundamental': d.fundamental_return
+    };
+    const entries = Object.entries(returnFields).filter(([,v]) => v != null);
+    const fmtPct = v => (v >= 0 ? '+' : '') + (v * 100).toFixed(1) + '%';
+
+    // Best setup (highest)
+    if (entries.length) {
+      const best = entries.reduce((a, b) => b[1] > a[1] ? b : a);
+      document.getElementById('strat-best-setup').textContent = fmtPct(best[1]);
+      document.getElementById('strat-best-setup-key').textContent = best[0];
+      const worst = entries.reduce((a, b) => b[1] < a[1] ? b : a);
+      document.getElementById('strat-avoid').textContent = fmtPct(worst[1]);
+      document.getElementById('strat-avoid-key').textContent = worst[0];
+    }
+
+    // Momentum & Trap
+    if (d.momentum_return != null) document.getElementById('strat-momentum').textContent = fmtPct(d.momentum_return);
+    if (d.trap_return != null) document.getElementById('strat-trap').textContent = fmtPct(d.trap_return);
+
+    // Narrative Behavior Matrix
+    const fmtM = v => v != null ? (v >= 0 ? '+' : '') + (v * 100).toFixed(1) + '%' : '—';
+    document.getElementById('strat-pos-high').textContent = fmtM(d.strong_pos_high_truth);
+    document.getElementById('strat-pos-low').textContent  = fmtM(d.strong_pos_low_truth);
+    document.getElementById('strat-neg-high').textContent = fmtM(d.strong_neg_high_truth);
+    document.getElementById('strat-neg-low').textContent  = fmtM(d.strong_neg_low_truth);
+
+    // Market Conditions bars
+    const allReturns = entries.map(([,v]) => Math.abs(v));
+    const maxAbs = Math.max(...allReturns, 0.01);
+    function setBar(barId, valId, val) {
+      if (val == null) return;
+      const pct = Math.min(Math.abs(val) / maxAbs * 100, 100);
+      document.getElementById(barId).style.width = pct + '%';
+      document.getElementById(valId).textContent = fmtPct(val);
+    }
+    setBar('strat-coord-high', 'strat-coord-high-val', d.high_coord_return);
+    setBar('strat-coord-low',  'strat-coord-low-val',  d.low_coord_return);
+    setBar('strat-energy-high', 'strat-energy-high-val', d.high_energy_return);
+    setBar('strat-energy-low',  'strat-energy-low-val',  d.low_energy_return);
+    setBar('strat-v-trap',      'strat-v-trap-val',      d.trap_return);
+    setBar('strat-v-momentum',  'strat-v-momentum-val',  d.momentum_return);
+    setBar('strat-v-fundamental','strat-v-fundamental-val', d.fundamental_return);
+
+    loadingEl.style.display = 'none';
+    contentEl.style.display = 'block';
+  } catch (err) {
+    console.error('Strategy load failed:', err);
+    loadingEl.style.display = 'none';
+    nodataEl.style.display = 'block';
+  }
+}
 
 // ── Stories Feed ──────────────────────────────────────────────────────────────
 async function loadStoriesFeed() {
