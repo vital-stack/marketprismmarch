@@ -4737,12 +4737,15 @@ async function loadStrategyData() {
   const contentEl  = document.getElementById('strategy-content');
   try {
     console.log('[Strategy] Fetching ticker_strategy_summary for', TICKER);
+    // Debug: log full URL
+    const debugUrl = `${SUPABASE_URL}/rest/v1/ticker_strategy_summary?ticker=eq.${TICKER}&limit=1`;
+    console.log('[Strategy] URL:', debugUrl);
     const rows = await sbFetch('ticker_strategy_summary', {
-      select: '*',
       ticker: `eq.${TICKER}`,
       limit: '1'
     });
     console.log('[Strategy] Response:', JSON.stringify(rows).slice(0, 500));
+    console.log('[Strategy] Type:', typeof rows, 'isArray:', Array.isArray(rows), 'length:', rows && rows.length);
     const d = Array.isArray(rows) ? rows[0] : null;
     if (!d) {
       console.warn('[Strategy] No data found for', TICKER, '— rows:', rows);
