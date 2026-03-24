@@ -6,11 +6,24 @@ on:
   workflow_dispatch:           # manual trigger from GitHub Actions UI
     inputs:
       ticker:
-        description: 'Specific ticker (leave blank to auto-pick)'
+        description: 'Ticker to write about (leave blank to auto-pick hottest signal)'
+        required: false
+        default: ''
+      sentiment:
+        description: 'Story angle — bull, bear, or leave blank for auto'
+        type: choice
+        required: false
+        default: 'auto'
+        options:
+          - auto
+          - bull
+          - bear
+      topic:
+        description: 'Free-form topic e.g. "How to Spot Market Manipulation" (overrides ticker + sentiment)'
         required: false
         default: ''
       dry_run:
-        description: 'Dry run (generate but do not insert)'
+        description: 'Dry run — generate but do not publish'
         type: boolean
         required: false
         default: false
@@ -18,7 +31,7 @@ on:
 jobs:
   generate-blog:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repo
@@ -42,10 +55,17 @@ jobs:
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: |
           ARGS=""
-          if [ -n "${{ github.event.inputs.ticker }}" ]; then
-            ARGS="--ticker ${{ github.event.inputs.ticker }}"
+          if [ -n "${{ github.event.inputs.topic }}" ]; then
+            ARGS="--topic \"${{ github.event.inputs.topic }}\""
+          else
+            if [ -n "${{ github.event.inputs.ticker }}" ]; then
+              ARGS="--ticker ${{ github.event.inputs.ticker }}"
+            fi
+            if [ "${{ github.event.inputs.sentiment }}" != "auto" ] && [ -n "${{ github.event.inputs.sentiment }}" ]; then
+              ARGS="$ARGS --sentiment ${{ github.event.inputs.sentiment }}"
+            fi
           fi
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
             ARGS="$ARGS --dry-run"
           fi
-          python generate_mp_blog.py $ARGS
+          eval python generate_mp_blog.py $ARGS
