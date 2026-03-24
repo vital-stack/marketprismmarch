@@ -2529,7 +2529,7 @@ async function loadHero() {
         limit:  '1'
       }).catch(() => []),
       sbFetch('ticker_snapshots', {
-        select: 'snapshot_date,price_close,price_change_pct',
+        select: 'snapshot_date,price_close',
         ticker: `eq.${TICKER}`,
         order:  'snapshot_date.desc',
         limit:  '1'
@@ -2929,14 +2929,15 @@ async function loadChart() {
     });
 
     // Build narrative dots from narrative_analyses + health trend
-    // Bear = verdict contains TRAP/MISLEAD/FALSE or narrative_trend is Collapsing
+    // Bear = skeptical/negative verdict OR weakening/collapsing trend
     ALL_NARRS = storyRows.map((row) => {
       const v = (row.verdict || '').toUpperCase();
       const d = row.snapshot_date?.slice(0, 10);
       const trend = d ? (trendByDate[d] || '') : '';
       const isBear = v.includes('TRAP') || v.includes('MISLEAD') || v.includes('FALSE')
         || v.includes('BEARISH') || v.includes('DECLINE') || v.includes('NEGATIVE')
-        || trend === 'Collapsing';
+        || v.includes('NEEDS VALIDATION') || v.includes('PLAUSIBLE BUT UNVERIFIED')
+        || trend === 'Collapsing' || trend === 'Weakening';
       return {
         snapshot_date: row.snapshot_date,
         sentiment_score: row.sentiment_score,
