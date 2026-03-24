@@ -237,15 +237,17 @@ def generate_article_image(ticker: str, title: str, excerpt: str, slug: str) -> 
         print(f"  ✓ Image downloaded ({len(img_bytes):,} bytes)")
 
         # Step 4: Upload to Supabase Storage bucket 'blog-images'
+        # Must use service role key — anon key lacks storage write permissions
+        service_key = os.environ.get("SUPABASE_SERVICE_KEY") or SUPABASE_KEY
         filename = slug + ".png"
         storage_path = filename
 
-        # Use Supabase REST API to upload directly
         upload_url = SUPABASE_URL + "/storage/v1/object/blog-images/" + storage_path
         upload_res = req_lib.post(
             upload_url,
             headers={
-                "Authorization": "Bearer " + SUPABASE_KEY,
+                "Authorization": "Bearer " + service_key,
+                "apikey": service_key,
                 "Content-Type": "image/png",
                 "x-upsert": "true",
             },
@@ -255,7 +257,9 @@ def generate_article_image(ticker: str, title: str, excerpt: str, slug: str) -> 
 
         if upload_res.status_code not in (200, 201):
             print(f"  ⚠ Storage upload failed: {upload_res.status_code} {upload_res.text[:200]}")
-            return None
+            # Fall back to storing dalle URL directly (short-lived but better than nothing)
+            print(f"  → Falling back to DALL-E URL (will expire)")
+            return dalle_url
 
         # Step 5: Build permanent public URL
         public_url = SUPABASE_URL + "/storage/v1/object/public/blog-images/" + storage_path
