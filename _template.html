@@ -5822,6 +5822,23 @@ async function loadNHT(ticker){
     ]);
     var model=results[0]||{series:[],events:[],price:0,ytd:0};
     var series=(model.series||[]).filter(function(row){return row && row.snapshot_date && row.price_close!=null;});
+
+    // Merge scorecard price data to extend series through today
+    var scorecardRows=results[1]||[];
+    if(scorecardRows.length){
+      var existingDates={};
+      series.forEach(function(row){existingDates[row.snapshot_date]=true;});
+      var extraPrices=scorecardRows.filter(function(r){
+        return r.snapshot_date && r.current_price!=null && !existingDates[r.snapshot_date];
+      }).map(function(r){
+        return {snapshot_date:r.snapshot_date,price_close:r.current_price};
+      });
+      if(extraPrices.length){
+        series=series.concat(extraPrices);
+        series.sort(function(a,b){return a.snapshot_date.localeCompare(b.snapshot_date);});
+      }
+    }
+
     nhtPriceCache=series.map(function(row){
       return {
         date:row.snapshot_date,
@@ -5842,10 +5859,20 @@ async function loadNHT(ticker){
         ticker:nhtTicker
       };
     });
-    if(!mappedEvents.length && (results[1]||[]).length){
-      mappedEvents=scorecardToEvents(results[1]).map(function(ev){
+    // Always merge scorecard events (richer data) instead of only using as fallback
+    if(scorecardRows.length){
+      var scorecardEvents=scorecardToEvents(scorecardRows).map(function(ev){
         ev.date_iso=ev.date;
         return ev;
+      });
+      // Merge: prefer scorecard events for dates not already covered by narrative_analyses
+      var coveredDates={};
+      mappedEvents.forEach(function(ev){coveredDates[ev.date]=true;});
+      scorecardEvents.forEach(function(ev){
+        if(!coveredDates[ev.date]){
+          mappedEvents.push(ev);
+          coveredDates[ev.date]=true;
+        }
       });
     }
     var opexEvents=generateOpexEvents(series).map(function(ev){
@@ -5872,7 +5899,7 @@ async function loadNHT(ticker){
   // Update price + YTD in header
   if(nhtPriceCache.length){
     var latest=nhtPriceCache[nhtPriceCache.length-1];
-    var yOpen=startOfYearPrice((results && results[0] && results[0].series) ? results[0].series : []);
+    var yOpen=startOfYearPrice(series.length ? series : ((results && results[0] && results[0].series) ? results[0].series : []));
     var ytd=yOpen?((latest.c-yOpen)/yOpen*100):0;
     document.getElementById('nht-price').textContent='$'+latest.c.toFixed(2);
     var ytdEl=document.getElementById('nht-ytd');
