@@ -4,6 +4,24 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Blog — Market Prism</title>
+<meta name="description" content="Forensic narrative intelligence on equity markets. Market Prism Research publishes institutional-grade analysis on narrative mechanics, valuation, and structural market dynamics.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://marketprism.app/blog">
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Market Prism">
+<meta property="og:title" content="Intelligence Journal — Market Prism">
+<meta property="og:description" content="Forensic narrative intelligence on equity markets. Institutional-grade analysis on narrative mechanics, valuation, and structural market dynamics.">
+<meta property="og:url" content="https://marketprism.app/blog">
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@marketprism">
+<meta name="twitter:title" content="Intelligence Journal — Market Prism">
+<meta name="twitter:description" content="Forensic narrative intelligence on equity markets.">
+<!-- Schema.org Blog -->
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Blog","name":"Market Prism Intelligence Journal","description":"Forensic narrative intelligence and institutional-grade market analysis.","url":"https://marketprism.app/blog","publisher":{"@type":"Organization","name":"Market Prism","url":"https://marketprism.app"}}
+</script>
 <script id="__env_script">window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '' };</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -139,8 +157,9 @@ nav {
   border-radius: 4px;
   border: 1px solid rgba(232,232,227,0.2);
   background: rgba(255,255,255,0.04);
-  display: inline-block;
+  display: block;
   margin-bottom: 14px;
+  width: fit-content;
 }
 .featured-title {
   font-family: var(--font-d);
@@ -415,6 +434,7 @@ nav {
 <div class="con-wide" id="featured-wrap">
   <div class="featured-post" id="featured-post" style="display:none">
     <div class="featured-img">
+      <img id="featured-img-el" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:14px;" alt="">
       <span class="featured-img-placeholder" id="featured-ticker">MP</span>
     </div>
     <div>
@@ -504,6 +524,22 @@ function renderFeatured(post) {
   document.getElementById('featured-author').textContent = post.author || 'Market Prism Research';
   document.getElementById('featured-date').textContent = fmtDate(post.published_at);
   document.getElementById('featured-read').textContent = readTime(post.body);
+  // Update page meta for SEO
+  if (post.title) document.title = post.title + ' — Market Prism Intelligence Journal';
+  var desc = post.excerpt || '';
+  var ogDesc = document.querySelector('meta[property="og:description"]');
+  var twDesc = document.querySelector('meta[name="twitter:description"]');
+  var metaDesc = document.querySelector('meta[name="description"]');
+  if (ogDesc && desc) ogDesc.setAttribute('content', desc);
+  if (twDesc && desc) twDesc.setAttribute('content', desc);
+  if (metaDesc && desc) metaDesc.setAttribute('content', desc);
+  // Set featured image if available
+  var imgEl = document.getElementById('featured-img-el');
+  if (imgEl && post.image_url) {
+    imgEl.src = post.image_url;
+    imgEl.style.display = 'block';
+    document.getElementById('featured-ticker').style.display = 'none';
+  }
 }
 
 function renderCards(posts) {
