@@ -2916,14 +2916,20 @@ async function loadChart() {
     ALL_SNAPS = priceRows.filter(r => r.snapshot_date && r.price_close != null);
 
     // Build narrative dots directly from narrative_analyses
-    ALL_NARRS = storyRows.map((row) => ({
-      snapshot_date: row.snapshot_date,
-      sentiment_score: row.sentiment_score,
-      narrative_trend: row.verdict || '',
-      narrative_text: row.narrative_text || '',
-      source_outlet: row.source_outlet || '',
-      article_url: row.article_url || ''
-    }));
+    // Determine bull/bear from verdict field (sentiment_score is magnitude, not directional)
+    ALL_NARRS = storyRows.map((row) => {
+      const v = (row.verdict || '').toUpperCase();
+      const isBear = v.includes('TRAP') || v.includes('MISLEAD') || v.includes('FALSE') || v.includes('BEARISH') || v.includes('DECLINE') || v.includes('NEGATIVE');
+      return {
+        snapshot_date: row.snapshot_date,
+        sentiment_score: row.sentiment_score,
+        isBear: isBear,
+        verdict: row.verdict || '',
+        narrative_text: row.narrative_text || '',
+        source_outlet: row.source_outlet || '',
+        article_url: row.article_url || ''
+      };
+    });
 
     ALL_DECAY = decayRows;
 
@@ -2963,8 +2969,8 @@ function filterNarrs() {
     const d = n.snapshot_date?.slice(0,10);
     return d >= lo && d <= hi;
   });
-  if (sort === 'bear') rows = rows.filter(n => (n.sentiment_score ?? 0) <= 0 || n.narrative_trend === 'Collapsing');
-  if (sort === 'bull') rows = rows.filter(n => (n.sentiment_score ?? 0) >  0);
+  if (sort === 'bear') rows = rows.filter(n => n.isBear);
+  if (sort === 'bull') rows = rows.filter(n => !n.isBear);
   if (sort === 'date-asc') rows = rows.slice().sort((a,b) => a.snapshot_date < b.snapshot_date ? -1 : 1);
   return rows;
 }
@@ -2979,10 +2985,7 @@ function renderChart() {
 }
 
 function buildBearList() {
-  const bears = ALL_NARRS.filter(n =>
-    (n.sentiment_score != null && n.sentiment_score <= 0) ||
-    n.narrative_trend === 'Collapsing'
-  );
+  const bears = ALL_NARRS.filter(n => n.isBear);
   const wrap  = document.getElementById('bear-stories-wrap');
   const list  = document.getElementById('bear-stories-list');
   const count = document.getElementById('bear-count');
@@ -2993,7 +2996,7 @@ function buildBearList() {
     <div class="bear-story-item">
       <div class="bear-dot"></div>
       <div class="bear-story-date">${n.snapshot_date?.slice(0,10) || '—'}</div>
-      <div class="bear-story-text">${esc(n.narrative_trend || '')}${n.sentiment_score != null ? ' · Sentiment ' + n.sentiment_score.toFixed(1) : ''}</div>
+      <div class="bear-story-text">${esc(n.verdict || '')}${n.narrative_text ? ' · ' + esc(n.narrative_text.slice(0, 80)) : ''}</div>
     </div>`).join('');
   document.getElementById('bear-stories-header').addEventListener('click', () => {
     document.getElementById('bear-toggle-icon').classList.toggle('open');
@@ -3138,7 +3141,7 @@ function drawChart(snaps, narrs) {
     const cy = yOf(s.price_close);
     ctx.beginPath();
     ctx.arc(cx, cy, 5, 0, Math.PI*2);
-    ctx.fillStyle   = (n.sentiment_score != null && n.sentiment_score > 0) ? '#22c55e' : '#ef4444';
+    ctx.fillStyle   = n.isBear ? '#ef4444' : '#22c55e';
     ctx.fill();
     ctx.strokeStyle = isLight() ? '#FFFFFF' : '#0A0E1A'; ctx.lineWidth = 1.5; ctx.stroke();
     dotHits.push({ cx, cy, n });
@@ -3147,14 +3150,14 @@ function drawChart(snaps, narrs) {
   function showStoryPopup(hit) {
     const n = hit.n;
     document.getElementById('popup-date').textContent = n.snapshot_date?.slice(0,10) || '';
-    document.getElementById('popup-headline').textContent = n.source_outlet || n.narrative_trend || 'Narrative Story';
+    document.getElementById('popup-headline').textContent = n.source_outlet || n.verdict || 'Narrative Story';
     const storyText = n.narrative_text || (n.sentiment_score != null ? `Sentiment: ${n.sentiment_score.toFixed(1)}` : 'No story text available.');
     document.getElementById('popup-body').textContent = storyText;
 
     const outlet = n.source_outlet || '';
-    const hasSentiment = n.sentiment_score != null;
-    const sentimentTag = hasSentiment ? `Sentiment ${n.sentiment_score > 0 ? '+' : ''}${n.sentiment_score.toFixed(1)}` : '';
-    document.getElementById('popup-vms').innerHTML = [outlet, sentimentTag].filter(Boolean).join(' · ');
+    const verdictTag = n.verdict || '';
+    const sentimentTag = n.isBear ? 'Bearish' : 'Bullish';
+    document.getElementById('popup-vms').innerHTML = [outlet, verdictTag, sentimentTag].filter(Boolean).join(' · ');
 
     let px = hit.cx + 10;
     if (px + 260 > W) px = hit.cx - 270;
