@@ -2891,8 +2891,8 @@ let ALL_DECAY = [];   // narrative energy time series
 async function loadChart() {
   if (!TICKER) return;
   try {
-    // Fetch prices from ticker_snapshots + stories from narrative_analyses
-    const [priceRows, storyRows, decayRows] = await Promise.all([
+    // Fetch prices, stories, narrative health, and decay in parallel
+    const [priceRows, storyRows, healthRows, decayRows] = await Promise.all([
       sbFetch('ticker_snapshots', {
         select: 'snapshot_date,price_close',
         ticker: `eq.${TICKER}`,
@@ -2901,6 +2901,12 @@ async function loadChart() {
       }).catch(() => []),
       sbFetch('narrative_analyses', {
         select: 'snapshot_date,narrative_text,source_outlet,article_url,sentiment_score,verdict',
+        ticker: `eq.${TICKER}`,
+        order:  'snapshot_date.asc',
+        limit:  '2000'
+      }).catch(() => []),
+      sbFetch('v_dash_narrative_health', {
+        select: 'snapshot_date,narrative_trend,sentiment_score',
         ticker: `eq.${TICKER}`,
         order:  'snapshot_date.asc',
         limit:  '2000'
@@ -2915,16 +2921,28 @@ async function loadChart() {
 
     ALL_SNAPS = priceRows.filter(r => r.snapshot_date && r.price_close != null);
 
-    // Build narrative dots directly from narrative_analyses
-    // Determine bull/bear from verdict field (sentiment_score is magnitude, not directional)
+    // Build a map of narrative_trend by date from v_dash_narrative_health
+    const trendByDate = {};
+    healthRows.forEach(h => {
+      const d = h.snapshot_date?.slice(0, 10);
+      if (d) trendByDate[d] = h.narrative_trend || '';
+    });
+
+    // Build narrative dots from narrative_analyses + health trend
+    // Bear = verdict contains TRAP/MISLEAD/FALSE or narrative_trend is Collapsing
     ALL_NARRS = storyRows.map((row) => {
       const v = (row.verdict || '').toUpperCase();
-      const isBear = v.includes('TRAP') || v.includes('MISLEAD') || v.includes('FALSE') || v.includes('BEARISH') || v.includes('DECLINE') || v.includes('NEGATIVE');
+      const d = row.snapshot_date?.slice(0, 10);
+      const trend = d ? (trendByDate[d] || '') : '';
+      const isBear = v.includes('TRAP') || v.includes('MISLEAD') || v.includes('FALSE')
+        || v.includes('BEARISH') || v.includes('DECLINE') || v.includes('NEGATIVE')
+        || trend === 'Collapsing';
       return {
         snapshot_date: row.snapshot_date,
         sentiment_score: row.sentiment_score,
         isBear: isBear,
         verdict: row.verdict || '',
+        narrative_trend: trend,
         narrative_text: row.narrative_text || '',
         source_outlet: row.source_outlet || '',
         article_url: row.article_url || ''
@@ -2932,6 +2950,16 @@ async function loadChart() {
     });
 
     ALL_DECAY = decayRows;
+
+    // Debug: log data counts and sample verdicts to console
+    const bearCount = ALL_NARRS.filter(n => n.isBear).length;
+    const bullCount = ALL_NARRS.filter(n => !n.isBear).length;
+    const verdicts = [...new Set(ALL_NARRS.map(n => n.verdict))];
+    const trends = [...new Set(ALL_NARRS.map(n => n.narrative_trend))];
+    console.log(`[Chart Debug] Prices: ${ALL_SNAPS.length}, Stories: ${ALL_NARRS.length} (bull: ${bullCount}, bear: ${bearCount}), Decay: ${ALL_DECAY.length}`);
+    console.log(`[Chart Debug] Verdict values:`, verdicts);
+    console.log(`[Chart Debug] Trend values:`, trends);
+    if (ALL_NARRS.length) console.log(`[Chart Debug] Sample story:`, ALL_NARRS[0]);
 
     if (!ALL_SNAPS.length) {
       document.getElementById('chart-outer').innerHTML = '<div class="chart-no-data">No price history available.</div>';
