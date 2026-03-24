@@ -9809,10 +9809,10 @@ var BOARDS=[
       return{name:r.ticker,meta:'Days to cover: '+dtc+'d \u00b7 Story energy: '+energy+'%'+(r.squeeze_risk?' \u00b7 \u26a0 Squeeze risk':''),score:dtc,scoreDisplay:dtc+'d',combined:combined,link:'/ticker/'+encodeURIComponent(r.ticker)};
     }).filter(Boolean).sort(function(a,b){return b.combined-a.combined;}).slice(0,10);
   }},
-  {id:'top-sources',title:'Top Performing Sources',sub:'Highest hit rate publications · 50+ articles',color:'#00DE94',bg:'rgba(0,222,148,0.12)',scoreLabel:'Hit Rate %',
+  {id:'top-sources',title:'Top Performing Sources',sub:'Ranked by composite score · hit rate, returns & confidence',color:'#00DE94',bg:'rgba(0,222,148,0.12)',scoreLabel:'Score',
   fetch:async function(){
-    var r=await sq('source_credibility?select=publication_name,hit_rate,avg_signed_return,article_count&article_count=gte.50&order=hit_rate.desc&limit=10');
-    return r.map(function(x){var hr=(x.hit_rate||0)*100;var hrD=hr.toFixed(1);return{name:x.publication_name||'Unknown',meta:formatEdge(x.avg_signed_return)+' avg return \u00b7 '+(x.article_count||0)+' articles',score:hr,scoreDisplay:hrD+'%',_scoreColor:hr>=70?'#00DE94':hr>=50?'#FFB800':'#FF4D4D',link:'#narrative'};});
+    var r=await sq('source_leaderboard?select=publication_name,final_score,final_rank,tier,hit_rate,avg_signed_10d_return,article_count,confidence_score_norm&order=final_rank.asc&limit=10');
+    return r.map(function(x){var fs=+(x.final_score||0);var hr=((x.hit_rate||0)*100).toFixed(1);var tier=x.tier||'';var tColor=tier==='S'?'#00DE94':tier==='A'?'#38C8B8':tier==='B'?'#00AEFF':tier==='C'?'#FFB800':'#A0A8B0';return{name:x.publication_name||'Unknown',meta:hr+'% hit · '+formatEdge(x.avg_signed_10d_return)+' avg 10d · '+(x.article_count||0)+' articles · Tier '+tier,score:fs,scoreDisplay:fs.toFixed(1),_scoreColor:tColor,link:'#narrative'};});
   }},
   {id:'worst-sources',title:'Least Reliable Sources',sub:'Lowest hit rate publications',color:'#FF4D4D',bg:'rgba(255,77,77,0.12)',scoreLabel:'Hit Rate %',
   fetch:async function(){
@@ -9848,7 +9848,7 @@ function scoreColor(id,score){
   if(id==='alltime') return score>=500?'#FF4D4D':score>=150?'#FFB800':'#A0A8B0';
   if(id==='decaying') return score>0.05?'#FF4D4D':score>0.02?'#FFB800':'#00DE94';
   if(id==='squeeze') return score>=7?'#FF4D4D':score>=4?'#FFB800':'#00DE94';
-  if(id==='top-sources') return score>=70?'#00DE94':score>=50?'#FFB800':'#FF4D4D';
+  if(id==='top-sources') return score>=80?'#00DE94':score>=50?'#38C8B8':score>=30?'#00AEFF':'#FFB800';
   if(id==='worst-sources') return score<=30?'#FF4D4D':score<=50?'#FFB800':'#00DE94';
   if(id==='top-themes') return score>=0?'#00DE94':'#FF4D4D';
   if(id==='weak-themes') return score<=30?'#FF4D4D':score<=50?'#FFB800':'#00DE94';
