@@ -4403,37 +4403,23 @@ async function loadData(){
     scorecardMap={};
 
     // ── Fetch narrative_scorecard data for insight tags ──
+    // Use select=* to avoid 400 errors from missing columns (ticker page works this way)
     try{
       var scDateRes=await fetch(SUPABASE_URL+'/rest/v1/narrative_scorecard?select=snapshot_date&order=snapshot_date.desc&limit=1',{headers:hdrs});
       if(scDateRes&&scDateRes.ok){
         var scDateJ=await scDateRes.json();
         var scDate=scDateJ[0]&&scDateJ[0].snapshot_date;
+        console.log('[MP] scorecard latest date:',scDate);
         if(scDate){
-          var scCols='ticker,fvd_pct,vms,coordination_score,decay_rate,suspicion_score,energy_remaining,verdict,narrative';
-          var scRes=await fetch(SUPABASE_URL+'/rest/v1/narrative_scorecard?select='+scCols+'&snapshot_date=eq.'+encodeURIComponent(scDate)+'&limit=500',{headers:hdrs});
+          var scRes=await fetch(SUPABASE_URL+'/rest/v1/narrative_scorecard?select=*&snapshot_date=eq.'+encodeURIComponent(scDate)+'&limit=500',{headers:hdrs});
+          console.log('[MP] scorecard fetch status:',scRes.status,scRes.ok);
           if(scRes&&scRes.ok){
             var scRows=await scRes.json();
-            scRows.forEach(function(s){if(!scorecardMap[s.ticker])scorecardMap[s.ticker]=s;});
-            console.log('[MP] scorecardMap loaded:',Object.keys(scorecardMap).length,'tickers');
+            scRows.forEach(function(s){if(s.ticker&&!scorecardMap[s.ticker])scorecardMap[s.ticker]=s;});
+            console.log('[MP] scorecardMap loaded:',Object.keys(scorecardMap).length,'tickers',scRows[0]?'cols: '+Object.keys(scRows[0]).join(','):'(empty)');
           } else {
-            // Retry with minimal columns if full query fails (column may not exist)
-            console.warn('[MP] scorecard full query failed ('+scRes.status+'), retrying with minimal cols');
-            var scColsMin='ticker,fvd_pct,vms,decay_rate,energy_remaining,verdict';
-            var scRes2=await fetch(SUPABASE_URL+'/rest/v1/narrative_scorecard?select='+scColsMin+'&snapshot_date=eq.'+encodeURIComponent(scDate)+'&limit=500',{headers:hdrs});
-            if(scRes2&&scRes2.ok){
-              var scRows2=await scRes2.json();
-              scRows2.forEach(function(s){if(!scorecardMap[s.ticker])scorecardMap[s.ticker]=s;});
-              console.log('[MP] scorecardMap loaded (minimal):',Object.keys(scorecardMap).length,'tickers');
-            } else {
-              // Last resort: try with just ticker and wildcard
-              console.warn('[MP] scorecard minimal query also failed ('+scRes2.status+'), trying wildcard');
-              var scRes3=await fetch(SUPABASE_URL+'/rest/v1/narrative_scorecard?select=*&snapshot_date=eq.'+encodeURIComponent(scDate)+'&limit=500',{headers:hdrs});
-              if(scRes3&&scRes3.ok){
-                var scRows3=await scRes3.json();
-                scRows3.forEach(function(s){if(!scorecardMap[s.ticker])scorecardMap[s.ticker]=s;});
-                console.log('[MP] scorecardMap loaded (wildcard):',Object.keys(scorecardMap).length,'tickers, cols:',scRows3[0]?Object.keys(scRows3[0]).join(','):'none');
-              }
-            }
+            var errBody=''; try{errBody=await scRes.text();}catch(_){}
+            console.warn('[MP] scorecard query failed:',scRes.status,errBody.slice(0,300));
           }
         } else { console.warn('[MP] narrative_scorecard has no snapshot dates'); }
       } else { console.warn('[MP] narrative_scorecard date query failed:',scDateRes&&scDateRes.status); }
@@ -5526,8 +5512,8 @@ function getTickerInsightTags(r){
   var vms=r.vms;
   if(vms!=null){
   }
-  if(r.coordination_class&&r.coordination_class.toLowerCase().indexOf('coordinated')!==-1||r.coordination_score!=null&&r.coordination_score>=60) tags.push({label:'Coordinated',color:'#FF4D4D',bg:'rgba(255,77,77,0.08)',border:'rgba(255,77,77,0.20)'});
-  if(r.suspicion_class&&r.suspicion_class.toLowerCase().indexOf('high')!==-1||r.suspicion_score!=null&&r.suspicion_score>=60) tags.push({label:'Manipulation Risk',color:'#7B61FF',bg:'rgba(123,97,255,0.10)',border:'rgba(123,97,255,0.25)'});
+  if(r.coordination_score!=null&&r.coordination_score>=60||(r.coordination_class&&r.coordination_class.toLowerCase().indexOf('coordinated')!==-1)) tags.push({label:'Coordinated Narrative',color:'#FF4D4D',bg:'rgba(255,77,77,0.08)',border:'rgba(255,77,77,0.20)'});
+  if(r.suspicion_score!=null&&r.suspicion_score>=50||(r.suspicion_class&&r.suspicion_class.toLowerCase().indexOf('high')!==-1)) tags.push({label:'Manipulation Risk',color:'#7B61FF',bg:'rgba(123,97,255,0.10)',border:'rgba(123,97,255,0.25)'});
   var energy=r.energy_remaining;
   if(energy!=null){
     if(energy>=85) tags.push({label:'High Energy',color:'#00AEFF',bg:'rgba(0,174,255,0.08)',border:'rgba(0,174,255,0.20)'});
