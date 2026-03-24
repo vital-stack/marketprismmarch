@@ -196,9 +196,11 @@ def get_live_data(ticker: str) -> dict:
 
 # ── IMAGE GENERATOR ──────────────────────────────────────────────────────────
 
-def generate_article_image(ticker: str, title: str, excerpt: str) -> str | None:
+def generate_article_image(ticker: str, title: str, excerpt: str, slug: str) -> str | None:
     """
-    Generate a header image via DALL-E 3. Returns public URL or None.
+    Generate a header image via DALL-E 3, download it, upload to Supabase Storage,
+    and return the permanent public URL. DALL-E URLs expire in ~1hr so we never
+    store them directly.
     Requires OPENAI_API_KEY in environment.
     """
     openai_key = os.environ.get("OPENAI_API_KEY")
@@ -213,8 +215,8 @@ def generate_article_image(ticker: str, title: str, excerpt: str) -> str | None:
         prompt_response = claude.messages.create(
             model=MODEL,
             max_tokens=150,
-            system="You write image generation prompts for a forensic financial intelligence publication. Style: dark, cinematic, institutional. Deep navy/black backgrounds, electric blue and teal accents. Abstract data visualizations, fragmented market structures, architectural financial metaphors. NO charts with arrows, NO stock photo clichés, NO people. Output ONLY the prompt, max 100 words.",
-                        messages=[{"role": "user", "content": "Write a DALL-E 3 prompt for an article header image.\nTicker: " + ticker + "\nTitle: " + title + "\nExcerpt: " + excerpt[:200] + "\nMake it abstract and forensic — not literal."}],
+            system="You write image generation prompts for a forensic financial intelligence publication. Style: dark, cinematic, institutional. Deep navy/black backgrounds, electric blue and teal accents. Abstract data visualizations, fragmented market structures, architectural financial metaphors. NO charts with arrows, NO stock photo cliches, NO people. Output ONLY the prompt, max 100 words.",
+            messages=[{"role": "user", "content": "Write a DALL-E 3 prompt for an article header image. Ticker: " + ticker + ". Title: " + title + ". Excerpt: " + excerpt[:200] + ". Make it abstract and forensic, not literal."}],
         )
         image_prompt = prompt_response.content[0].text.strip()
         print(f"  → Image prompt: {image_prompt[:80]}...")
@@ -227,9 +229,38 @@ def generate_article_image(ticker: str, title: str, excerpt: str) -> str | None:
             timeout=60,
         )
         response.raise_for_status()
-        image_url = response.json()["data"][0]["url"]
-        print(f"  ✓ Image generated")
-        return image_url
+        dalle_url = response.json()["data"][0]["url"]
+        print(f"  ✓ Image generated from DALL-E")
+
+        # Step 3: Download the image bytes (DALL-E URLs expire in ~1hr)
+        img_bytes = req_lib.get(dalle_url, timeout=30).content
+        print(f"  ✓ Image downloaded ({len(img_bytes):,} bytes)")
+
+        # Step 4: Upload to Supabase Storage bucket 'blog-images'
+        filename = slug + ".png"
+        storage_path = filename
+
+        # Use Supabase REST API to upload directly
+        upload_url = SUPABASE_URL + "/storage/v1/object/blog-images/" + storage_path
+        upload_res = req_lib.post(
+            upload_url,
+            headers={
+                "Authorization": "Bearer " + SUPABASE_KEY,
+                "Content-Type": "image/png",
+                "x-upsert": "true",
+            },
+            data=img_bytes,
+            timeout=30,
+        )
+
+        if upload_res.status_code not in (200, 201):
+            print(f"  ⚠ Storage upload failed: {upload_res.status_code} {upload_res.text[:200]}")
+            return None
+
+        # Step 5: Build permanent public URL
+        public_url = SUPABASE_URL + "/storage/v1/object/public/blog-images/" + storage_path
+        print(f"  ✓ Image uploaded to Supabase Storage: {public_url}")
+        return public_url
 
     except Exception as e:
         print(f"  ⚠ Image generation failed: {e}")
@@ -469,7 +500,7 @@ def main():
     image_url = None
     if os.environ.get("OPENAI_API_KEY"):
         print(f"[4/5] Generating header image...")
-        image_url = generate_article_image(ticker, title, body[:300])
+        image_url = generate_article_image(ticker, title, body[:300], slug=slugify(title))
     else:
         print(f"[4/5] Skipping image (OPENAI_API_KEY not set)")
 
