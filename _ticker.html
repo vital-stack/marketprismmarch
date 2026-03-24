@@ -1884,11 +1884,31 @@
   .hero-price {
     font-size: 36px;
     font-weight: 400;
-    font-family: var(--mono);
+    font-family: var(--font-body);
     letter-spacing: -0.03em;
     color: #fff;
   }
   .hero-delta { font-size: 14px; font-family: var(--font-body); margin-top: 4px; }
+
+  /* ── Live price indicator ── */
+  .live-price-row { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-bottom: 2px; }
+  .live-dot {
+    width: 7px; height: 7px; border-radius: 50%; background: #00DE94; flex-shrink: 0;
+    animation: livePulse 2s ease-in-out infinite;
+  }
+  .live-dot.stale { background: #FFB800; animation: none; }
+  .live-dot.offline { background: #A0A8B0; animation: none; }
+  @keyframes livePulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,222,148,0.5); }
+    50% { opacity: 0.7; box-shadow: 0 0 0 4px rgba(0,222,148,0); }
+  }
+  .live-label { font-size: 11px; font-family: var(--font-body); color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.05em; }
+  .live-label.active { color: rgba(0,222,148,0.7); }
+  .live-price-main { font-size: 38px; font-weight: 600; font-family: var(--font-body); letter-spacing: -0.03em; color: #fff; line-height: 1; }
+  .live-change { font-size: 14px; font-family: var(--font-body); margin-top: 4px; }
+  .live-change .chg-amount { margin-right: 6px; }
+  .live-meta { font-size: 11px; color: rgba(255,255,255,0.3); font-family: var(--font-body); margin-top: 6px; display: flex; gap: 12px; justify-content: flex-end; }
+  .live-meta span { white-space: nowrap; }
 
   /* ── Diag strip fix ── */
   .diag-strip {
@@ -2000,6 +2020,9 @@
     .page-wrap { padding: 16px 16px 60px; }
     .ticker-hero { flex-direction: column; gap: 16px; padding: 24px 20px; margin: 0 -16px; }
     .hero-right { text-align: left; }
+    .live-price-row { justify-content: flex-start; }
+    .live-price-main { font-size: 28px; }
+    .live-meta { justify-content: flex-start; }
     .hero-ticker { font-size: 28px; }
     .hero-claim { font-size: 14px; }
     .hero-bias { font-size: 24px; }
@@ -2657,10 +2680,15 @@ async function loadHero() {
         <div class="hero-claim">${esc(r.primary_driver || r.story_claim || '')}</div>
         ${r.sector_name ? `<div class="hero-sector">${esc(r.sector_name)}</div>` : ''}
       </div>
-      <div class="hero-right">
-        <div class="hero-price">${fmtPrice(r.price)}</div>
-        <div class="hero-delta ${delta.cls}">${delta.txt}</div>
+      <div class="hero-right" id="hero-right">
+        <div class="live-price-row">
+          <span class="live-dot offline" id="live-dot"></span>
+          <span class="live-label" id="live-label">Loading</span>
+        </div>
+        <div class="live-price-main" id="live-price">${fmtPrice(r.price)}</div>
+        <div class="live-change ${delta.cls}" id="live-change">${delta.txt}</div>
         ${r.fair_value != null ? `<div class="hero-fv">Fair value <span>${fmtPrice(r.fair_value)}</span></div>` : ''}
+        <div class="live-meta" id="live-meta"></div>
       </div>`;
 
     // Update feed ticker
@@ -4675,8 +4703,112 @@ setInterval(() => refreshAll(), 5 * 60 * 1000);
 
 // Refresh when user tabs back to the page
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) refreshAll();
+  if (!document.hidden) { refreshAll(); fetchLivePrice(); }
 });
+
+// ── Live Price via Polygon ────────────────────────────────────────────────────
+var _liveQuoteTimer = null;
+var _lastLivePrice = null;
+
+async function fetchLivePrice() {
+  if (!TICKER) return;
+  try {
+    var res = await fetch('/api/live-quote?ticker=' + encodeURIComponent(TICKER));
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var q = await res.json();
+    if (q.error) throw new Error(q.error);
+    if (q.price == null) throw new Error('No price');
+
+    _lastLivePrice = q;
+
+    var dotEl = document.getElementById('live-dot');
+    var labelEl = document.getElementById('live-label');
+    var priceEl = document.getElementById('live-price');
+    var changeEl = document.getElementById('live-change');
+    var metaEl = document.getElementById('live-meta');
+    if (!priceEl) return;
+
+    // Format price
+    var p = q.price;
+    priceEl.textContent = '$' + (p >= 1000 ? p.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) : p >= 100 ? p.toFixed(2) : p.toFixed(3));
+
+    // Format change
+    if (q.change != null && q.changePct != null) {
+      var isUp = q.change > 0;
+      var isDn = q.change < 0;
+      var arrow = isUp ? '\u25B2' : isDn ? '\u25BC' : '';
+      var sign = isUp ? '+' : '';
+      changeEl.className = 'live-change ' + (isUp ? 'delta-pos' : isDn ? 'delta-neg' : 'delta-flat');
+      changeEl.innerHTML =
+        '<span class="chg-amount">' + (isDn ? '<span class="chg-arrow-dn">' : isUp ? '<span class="chg-arrow-up">' : '<span>') + arrow + '</span> ' +
+        sign + q.change.toFixed(2) + '</span>' +
+        '<span>(' + sign + q.changePct.toFixed(2) + '%)</span>';
+    }
+
+    // Determine market status
+    var now = new Date();
+    var et = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+    var day = et.getDay();
+    var hrs = et.getHours();
+    var mins = et.getMinutes();
+    var mktMins = hrs * 60 + mins;
+    var isWeekday = day >= 1 && day <= 5;
+    var isOpen = isWeekday && mktMins >= 570 && mktMins < 960; // 9:30 AM - 4:00 PM ET
+    var isPreMarket = isWeekday && mktMins >= 240 && mktMins < 570; // 4:00 AM - 9:30 AM ET
+    var isAfterHours = isWeekday && mktMins >= 960 && mktMins < 1200; // 4:00 PM - 8:00 PM ET
+
+    if (dotEl && labelEl) {
+      if (isOpen) {
+        dotEl.className = 'live-dot';
+        labelEl.className = 'live-label active';
+        labelEl.textContent = 'Live';
+      } else if (isPreMarket) {
+        dotEl.className = 'live-dot stale';
+        labelEl.className = 'live-label';
+        labelEl.textContent = 'Pre-Market';
+      } else if (isAfterHours) {
+        dotEl.className = 'live-dot stale';
+        labelEl.className = 'live-label';
+        labelEl.textContent = 'After Hours';
+      } else {
+        dotEl.className = 'live-dot offline';
+        labelEl.className = 'live-label';
+        labelEl.textContent = 'Closed';
+      }
+    }
+
+    // Meta: high/low, volume, updated time
+    if (metaEl) {
+      var parts = [];
+      if (q.high != null && q.low != null) parts.push('<span>H $' + q.high.toFixed(2) + ' · L $' + q.low.toFixed(2) + '</span>');
+      if (q.volume != null) {
+        var vol = q.volume >= 1e6 ? (q.volume/1e6).toFixed(1)+'M' : q.volume >= 1e3 ? (q.volume/1e3).toFixed(0)+'K' : q.volume;
+        parts.push('<span>Vol ' + vol + '</span>');
+      }
+      if (q.prevClose != null) parts.push('<span>Prev $' + q.prevClose.toFixed(2) + '</span>');
+      metaEl.innerHTML = parts.join('');
+    }
+  } catch (err) {
+    // Silently fall back — the Supabase price is already displayed
+    var dotEl = document.getElementById('live-dot');
+    var labelEl = document.getElementById('live-label');
+    if (dotEl) dotEl.className = 'live-dot offline';
+    if (labelEl) { labelEl.className = 'live-label'; labelEl.textContent = 'Delayed'; }
+  }
+}
+
+// Initial fetch + poll every 30s during market hours, 2 min otherwise
+fetchLivePrice();
+function scheduleLivePrice() {
+  var now = new Date();
+  var et = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  var day = et.getDay(), hrs = et.getHours(), mins = et.getMinutes();
+  var mktMins = hrs * 60 + mins;
+  var isActive = day >= 1 && day <= 5 && mktMins >= 240 && mktMins < 1200;
+  var interval = isActive ? 30000 : 120000;
+  _liveQuoteTimer = setTimeout(function() { fetchLivePrice().then(scheduleLivePrice); }, interval);
+}
+scheduleLivePrice();
 
 // ── Ticker Scholar — inline AI chat ──────────────────────────────────────────
 (function(){
