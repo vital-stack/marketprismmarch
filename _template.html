@@ -3048,7 +3048,8 @@ body{
 .nc-footer{
   display:flex;align-items:center;gap:0;
   border-top:1px solid rgba(255,255,255,0.06);
-  margin:0 -16px -12px;background:rgba(255,255,255,0.02);
+  margin:0 -16px 0;padding-bottom:2px;background:rgba(255,255,255,0.02);
+  border-radius:0 0 14px 14px;
 }
 .nc-footer-state{
   display:flex;align-items:center;gap:5px;padding:8px 12px;
@@ -3426,6 +3427,8 @@ body{
         <span class="daily-section-sub">15-min delay · Updated continuously</span>
       </div>
       <div class="daily-pulse-strip">
+        <div class="dpi" data-pulse-ticker="SPX"><div class="dpi-tk">S&P 500</div><div class="dpi-px">—</div><div class="dpi-ch">—</div></div>
+        <div class="dpi" data-pulse-ticker="NDX"><div class="dpi-tk">NASDAQ</div><div class="dpi-px">—</div><div class="dpi-ch">—</div></div>
         <div class="dpi"><div class="dpi-tk">SPY</div><div class="dpi-px">562.40</div><div class="dpi-ch"><span class="chg-arrow-up">&#9650;</span> 0.33%</div><svg class="dpi-spk" viewBox="0 0 60 20" width="56" height="18"><polyline points="0,14 10,12 20,15 30,10 40,8 50,6 60,7" fill="none" stroke="#00AEFF" stroke-width="1.2" stroke-linecap="round"/></svg></div>
         <div class="dpi"><div class="dpi-tk">QQQ</div><div class="dpi-px">481.20</div><div class="dpi-ch"><span class="chg-arrow-up">&#9650;</span> 0.51%</div><svg class="dpi-spk" viewBox="0 0 60 20" width="56" height="18"><polyline points="0,16 10,14 20,12 30,11 40,8 50,5 60,4" fill="none" stroke="#00AEFF" stroke-width="1.2" stroke-linecap="round"/></svg></div>
         <div class="dpi"><div class="dpi-tk">VIX</div><div class="dpi-px">18.24</div><div class="dpi-ch"><span class="chg-arrow-dn">&#9660;</span> 4.10%</div><svg class="dpi-spk" viewBox="0 0 60 20" width="56" height="18"><polyline points="0,5 10,8 20,12 30,14 40,16 50,15 60,16" fill="none" stroke="#38C8B8" stroke-width="1.2" stroke-linecap="round"/></svg></div>
@@ -4503,6 +4506,7 @@ async function loadData(){
     renderDailySignalCards();
     renderLeaderboardCards();
     renderDailyMarketPulse();
+    fetchPulseIndexes();
     renderNarrativeCards();
     renderSectorNarrativeCards();
     renderMarketWideCards();
@@ -4562,6 +4566,36 @@ function renderDailyMarketPulse(){
       +'<div class="dpi-ch"><span class="'+(isUp?'chg-arrow-up':'chg-arrow-dn')+'">'+arrow+'</span> '+Math.abs(pct).toFixed(2)+'%</div></a>';
   }).join('');
   if(window.mpInjectAll)setTimeout(window.mpInjectAll,50);
+}
+
+// ── Fetch live index prices (S&P 500, NASDAQ) from Massive API ──
+function fetchPulseIndexes(){
+  var MASSIVE_API=window.__env&&window.__env.MASSIVE_API;
+  if(!MASSIVE_API)return;
+  var indexes=[
+    {apiTicker:'I:SPX',label:'S&P 500',selector:'[data-pulse-ticker="SPX"]'},
+    {apiTicker:'I:NDX',label:'NASDAQ',selector:'[data-pulse-ticker="NDX"]'}
+  ];
+  indexes.forEach(function(idx){
+    var to=new Date().toISOString().slice(0,10);
+    var from=new Date();from.setDate(from.getDate()-5);
+    var fromStr=from.toISOString().slice(0,10);
+    var url='https://api.massive.com/v2/aggs/ticker/'+encodeURIComponent(idx.apiTicker)+'/range/1/day/'+fromStr+'/'+to+'?adjusted=true&sort=desc&limit=2&apiKey='+encodeURIComponent(MASSIVE_API);
+    fetch(url).then(function(r){return r.json();}).then(function(json){
+      if(!json.results||json.results.length<2)return;
+      var latest=json.results[0];
+      var prev=json.results[1];
+      var price=latest.c;
+      var pct=prev.c?((latest.c-prev.c)/prev.c*100):0;
+      var isUp=pct>=0;
+      var el=document.querySelector(idx.selector);
+      if(!el)return;
+      var pxEl=el.querySelector('.dpi-px');
+      var chEl=el.querySelector('.dpi-ch');
+      if(pxEl)pxEl.textContent=price>=1000?price.toFixed(0):price.toFixed(2);
+      if(chEl)chEl.innerHTML='<span class="'+(isUp?'chg-arrow-up':'chg-arrow-dn')+'">'+(isUp?'&#9650;':'&#9660;')+'</span> '+Math.abs(pct).toFixed(2)+'%';
+    }).catch(function(e){console.warn('Index fetch error for '+idx.label+':',e);});
+  });
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
