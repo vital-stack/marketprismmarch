@@ -135,18 +135,10 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tx);-webkit-font-smo
       <div class="sb-label">Security</div>
       <div class="sb-row">
         <div class="sb-field"><label>Ticker</label><input id="inp-ticker" placeholder="NVDA" maxlength="6" style="text-transform:uppercase;"></div>
-        <div class="sb-field"><label>Signal</label><select id="inp-signal">
-          <option value="NARRATIVE TRAP|trap">Narrative Trap</option>
-          <option value="STRUCTURALLY SUPPORTED|bull">Supported</option>
-          <option value="BEARISH REVERSAL|bear">Bearish Rev.</option>
-          <option value="BULLISH BREAKOUT|bull">Bull Breakout</option>
-          <option value="COORDINATION ALERT|trap">Coord. Alert</option>
-          <option value="DECAY DETECTED|bear">Decay</option>
+        <div class="sb-field"><label>Bias</label><select id="inp-bias">
+          <option value="BULLISH">BULLISH</option><option value="BEARISH">BEARISH</option><option value="NEUTRAL">NEUTRAL</option>
         </select></div>
       </div>
-      <div class="sb-field"><label>Bias</label><select id="inp-bias">
-        <option value="BULLISH">BULLISH</option><option value="BEARISH" selected>BEARISH</option><option value="NEUTRAL">NEUTRAL</option>
-      </select></div>
     </div>
     <div class="sb-section">
       <div class="sb-label">Report Blocks</div>
@@ -189,8 +181,6 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tx);-webkit-font-smo
   window.generate=async function(){
     var ticker=(document.getElementById('inp-ticker').value||'').toUpperCase().trim();
     if(!ticker){alert('Enter a ticker');return;}
-    var sigParts=(document.getElementById('inp-signal').value||'').split('|');
-    var signal=sigParts[0],sigType=sigParts[1]||'trap';
     var bias=document.getElementById('inp-bias').value||'BEARISH';
     var blocks=[];document.querySelectorAll('.sb-blk.on').forEach(function(b){blocks.push(b.dataset.b);});
     if(!blocks.length){alert('Enable at least one block');return;}
@@ -213,6 +203,15 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tx);-webkit-font-smo
     }
 
     var sc=d.sc,snaps=d.snaps;
+    // Derive signal from scorecard data
+    var verdict=sc.story_verdict||sc.prism_verdict||'';
+    var vLow=verdict.toLowerCase();
+    var signal,sigType;
+    if(vLow.indexOf('trap')!==-1||vLow.indexOf('disconnect')!==-1){signal='Narrative Trap';sigType='trap';}
+    else if(vLow.indexOf('supported')!==-1||vLow.indexOf('verified')!==-1){signal='Structurally Supported';sigType='bull';}
+    else if(sc.fvd_pct!=null&&sc.fvd_pct>30){signal='Overvalued';sigType='trap';}
+    else if(sc.fvd_pct!=null&&sc.fvd_pct<-10){signal='Undervalued';sigType='bull';}
+    else{signal=bias==='BEARISH'?'Under Pressure':'Monitoring';sigType=bias==='BULLISH'?'bull':bias==='BEARISH'?'bear':'neutral';}
     var ac=sigType==='trap'?'#FF4D4D':sigType==='bull'?'#00DE94':'#00AEFF';
     var acBg=sigType==='trap'?'rgba(255,77,77,0.12)':sigType==='bull'?'rgba(0,222,148,0.12)':'rgba(0,174,255,0.12)';
     var acBorder=sigType==='trap'?'rgba(255,77,77,0.3)':sigType==='bull'?'rgba(0,222,148,0.3)':'rgba(0,174,255,0.3)';
@@ -251,7 +250,7 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tx);-webkit-font-smo
         +'<div class="rpt-callout"><div class="rpt-callout-label">Prism Verdict</div><div class="rpt-callout-val" style="color:'+ac+';">'+esc(verdict)+'</div></div>'
         +'<div class="rpt-kv"><span class="rpt-kv-label">Narrative State</span><span class="rpt-kv-val">'+esc(state)+'</span></div>'
         +'<div class="rpt-kv"><span class="rpt-kv-label">Bias</span><span class="rpt-kv-val">'+bias+'</span></div>'
-        +'<div class="rpt-kv"><span class="rpt-kv-label">Signal Type</span><span class="rpt-kv-val" style="color:'+ac+';">'+signal+'</span></div>'
+        +'<div class="rpt-kv"><span class="rpt-kv-label">Full Analysis</span><span class="rpt-kv-val"><a href="https://www.marketprism.co/ticker/'+ticker+'" style="color:'+ac+';text-decoration:none;">marketprism.co/ticker/'+ticker+'</a></span></div>'
       +'</div>';
     }
 
@@ -325,7 +324,7 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tx);-webkit-font-smo
 
     // ── Footer
     html+='<div class="rpt-foot">'
-      +'<div class="rpt-foot-left">~5,500 data points &middot; 90+ formulas<br>SEC EDGAR &middot; XBRL &middot; 170+ outlets</div>'
+      +'<div class="rpt-foot-left">~5,500 data points &middot; 90+ formulas &middot; SEC EDGAR<br><a href="https://www.marketprism.co" style="color:var(--cyan);text-decoration:none;font-weight:500;">marketprism.co</a></div>'
       +'<div class="rpt-foot-right"><div class="rpt-foot-id">'+sid+'</div><div class="rpt-foot-patent">PATENT PENDING #63/971,470</div></div>'
     +'</div>';
 
@@ -360,10 +359,14 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tx);-webkit-font-smo
     if(!card)return;
     html2canvas(card,{backgroundColor:'#080B11',scale:2,logging:false}).then(function(canvas){
       var imgData=canvas.toDataURL('image/png');
-      var pdf=new jspdf.jsPDF({orientation:'portrait',unit:'px',format:[canvas.width/2,canvas.height/2]});
-      pdf.addImage(imgData,'PNG',0,0,canvas.width/2,canvas.height/2);
+      // jsPDF UMD exposes as window.jspdf.jsPDF or window.jsPDF depending on version
+      var JSPDF=window.jspdf&&window.jspdf.jsPDF?window.jspdf.jsPDF:window.jsPDF;
+      if(!JSPDF){alert('PDF library not loaded');return;}
+      var w=canvas.width/2,h=canvas.height/2;
+      var pdf=new JSPDF({orientation:w>h?'landscape':'portrait',unit:'px',format:[w,h]});
+      pdf.addImage(imgData,'PNG',0,0,w,h);
       pdf.save('MarketPrism-'+document.getElementById('inp-ticker').value.toUpperCase()+'.pdf');
-    });
+    }).catch(function(e){alert('PDF export failed: '+e.message);});
   };
 })();
 </script>
