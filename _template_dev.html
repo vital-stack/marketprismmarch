@@ -4542,6 +4542,8 @@ async function loadData(){
     loadSectorsFromSummaries();
     loadMarketWideFromSummaries();
     loadSupportedData();
+    // Pre-load leaderboard data so it's ready when tab is clicked
+    if(typeof loadLeaderboard==='function') loadLeaderboard();
   } catch(err){
     feed.innerHTML='<div class="empty-state" style="color:var(--mp-red);">Failed to load: '+esc(err.message)+'<br><small style="font-size:11px;opacity:.6;">Check Supabase credentials in environment variables.</small></div>';
     // Still render static demos
@@ -7682,10 +7684,17 @@ function renderCardsGallery(){
   var grid=document.getElementById('tcg-grid');
   if(!grid)return;
   if(!CARD_DATA.length){
-    grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--mp-text-tertiary);padding:40px;">Loading signals...</div>';
-    setTimeout(function(){ if(!TCG_RENDERED) renderCardsGallery(); }, 800);
+    if(!renderCardsGallery._retries) renderCardsGallery._retries=0;
+    renderCardsGallery._retries++;
+    if(renderCardsGallery._retries<=5){
+      grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--mp-text-tertiary);padding:40px;">Loading signals…</div>';
+      setTimeout(function(){ if(!TCG_RENDERED) renderCardsGallery(); }, 1500);
+    } else {
+      grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--mp-text-tertiary);padding:40px;">No trading card signals available today. Cards require high-conviction signals (confidence ≥ 65%) from v_trade_cards.</div>';
+    }
     return;
   }
+  renderCardsGallery._retries=0;
   var cards=CARD_DATA.map(function(r,i){
     return Object.assign({},r,TRADING_CARD_COLORS[i%TRADING_CARD_COLORS.length]);
   });
@@ -9141,7 +9150,8 @@ var TRAP_BOOTED = false;
 var trapSeverityFilter = 'all';
 
 function initTrapRadar(){
-  if(TRAP_BOOTED) return;
+  console.log('[MP] initTrapRadar called, TRAP_BOOTED:', TRAP_BOOTED, 'TRAP_DATA:', TRAP_DATA.length);
+  if(TRAP_BOOTED && TRAP_DATA.length>0) { renderTrapRadar(); return; }
   TRAP_BOOTED = true;
   loadTrapRadar();
 }
