@@ -2100,6 +2100,125 @@ footer {
 .back-footer-label { font-family: var(--font-m); font-size: 8px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tx3); }
 .back-footer-val { font-family: var(--font-m); font-size: 9px; font-weight: 500; }
 .flip-back-hint { text-align: center; font-family: var(--font-m); font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--tx3); padding: 8px 0 10px; }
+/* ── NEW: Hero Stats Strip ── */
+.hero-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 28px;
+}
+.hero-stat-cell {
+  background: var(--surface);
+  padding: 16px 14px;
+  text-align: center;
+}
+.hero-stat-val {
+  font-family: var(--font-b);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--tx1);
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+  background: linear-gradient(135deg, #fff 40%, var(--blue));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero-stat-lbl {
+  font-family: var(--font-b);
+  font-size: 11px;
+  color: var(--tx3);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+/* ── NEW: Signal Card Grid ── */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+.mp-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  transition: border-color .3s, transform .3s cubic-bezier(0.16,1,0.3,1), box-shadow .3s;
+  position: relative;
+}
+.mp-card:hover {
+  border-color: rgba(255,255,255,0.14);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.35);
+}
+/* ── NEW: Comparison Table ── */
+.compare-table {
+  max-width: 720px;
+  margin: 0 auto;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.compare-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.compare-header-cell {
+  font-family: var(--font-b);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  padding: 16px 24px;
+  text-align: center;
+}
+.compare-header-left {
+  background: var(--surface);
+  color: var(--tx3);
+  border-bottom: 1px solid var(--border);
+}
+.compare-header-right {
+  background: rgba(0,174,255,0.08);
+  color: var(--blue);
+  border-bottom: 1px solid rgba(0,174,255,0.15);
+}
+.compare-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid var(--border);
+}
+.compare-row:last-child {
+  border-bottom: none;
+}
+.compare-cell {
+  font-family: var(--font-b);
+  font-size: 15px;
+  padding: 16px 24px;
+  text-align: center;
+}
+.compare-cell-left {
+  background: var(--surface);
+  color: var(--tx3);
+  border-right: 1px solid var(--border);
+}
+.compare-cell-right {
+  background: rgba(0,174,255,0.03);
+  color: var(--tx1);
+  font-weight: 500;
+}
+/* ── Responsive additions ── */
+@media (max-width: 900px) {
+  .card-grid { grid-template-columns: 1fr 1fr; }
+  .hero-stats { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+  .card-grid { grid-template-columns: 1fr; }
+  .hero-stats { grid-template-columns: repeat(2, 1fr); }
+  .compare-cell, .compare-header-cell { font-size: 13px; padding: 12px 16px; }
+}
 </style>
 </head>
 <body>
@@ -2273,36 +2392,43 @@ footer {
     <div>
       <div class="hero-eyebrow">
         <span class="live-dot"></span>
-        narrative intelligence · live market coverage
+        forensic narrative intelligence · live
       </div>
       <h1>
-        Trade like a hedge fund.<br>
-        <em>Every day.</em>
+        Spot narrative traps<br>
+        <em>before they break.</em>
       </h1>
       <p class="hero-lead">
-        Every morning, Market Prism delivers the same forensic narrative analysis institutional desks pay $24,000 a year for. Verdict-driven. SEC-anchored. Statistically validated.
+        Market Prism detects coordinated narratives, scores their decay trajectories, and delivers actionable verdicts — before the story unwinds and takes price with it.
       </p>
       <div class="ticker-search-wrap">
         <div class="ticker-search-label">Analyse a ticker</div>
         <div class="ticker-search-row">
           <input class="ticker-search-input" type="text" placeholder="NVDA, TSLA, AAPL, MSFT…">
-          <button class="btn-primary">Analyse →</button>
+          <button class="btn-primary">Open Dashboard →</button>
         </div>
       </div>
-      <div class="quick-tickers">
-        <span class="quick-label">Try</span>
-        <span class="quick-chip">NVDA</span>
-        <span class="quick-chip">TSLA</span>
-        <span class="quick-chip">PLTR</span>
-        <span class="quick-chip">META</span>
-        <span class="quick-chip">AMZN</span>
+      <div class="quick-tickers" style="margin-bottom:8px;">
+        <a href="/dashboard" class="btn-nav-primary" style="text-decoration:none;font-size:13px;padding:10px 22px;border-radius:8px;">Open Dashboard</a>
+        <a href="/dashboard" class="btn-nav-ghost" style="text-decoration:none;font-size:13px;padding:10px 22px;">View Live Signals</a>
       </div>
-      <div class="social-row">
-        <div class="social-stat"><span class="social-num">200,000+</span><span class="social-lbl">Stories analysed</span></div>
-        <div class="social-sep"></div>
-        <div class="social-stat"><span class="social-num">4,200+</span><span class="social-lbl">Active analysts</span></div>
-        <div class="social-sep"></div>
-        <div class="social-stat"><span class="social-num">3</span><span class="social-lbl">US Patents pending</span></div>
+      <div class="hero-stats">
+        <div class="hero-stat-cell">
+          <div class="hero-stat-val">94.2%</div>
+          <div class="hero-stat-lbl">Trap Accuracy</div>
+        </div>
+        <div class="hero-stat-cell">
+          <div class="hero-stat-val">200K+</div>
+          <div class="hero-stat-lbl">Narratives Scored</div>
+        </div>
+        <div class="hero-stat-cell">
+          <div class="hero-stat-val">7</div>
+          <div class="hero-stat-lbl">Forensic Layers</div>
+        </div>
+        <div class="hero-stat-cell">
+          <div class="hero-stat-val">24/7</div>
+          <div class="hero-stat-lbl">Monitoring</div>
+        </div>
       </div>
     </div>
     <!-- Right: dashboard preview -->
@@ -2421,6 +2547,74 @@ footer {
     <div class="scroll-hint-line"></div>
   </div>
 </div>
+<!-- ── LIVE SIGNAL CARDS ── -->
+<section class="sec sec-alt" id="live-signals">
+  <div class="sec-orb sec-orb-blue" style="top:-15%;left:-8%;"></div>
+  <div class="sec-orb sec-orb-teal" style="bottom:-10%;right:-5%;"></div>
+  <div class="con">
+    <div class="eyebrow reveal">Live Signals</div>
+    <h2 class="reveal" style="margin-bottom:8px;">Active signals detected today</h2>
+    <p class="sec-lead reveal" style="margin-bottom:36px;">Real-time narrative signals from the forensic engine — traps, momentum rides, and structural shifts across the coverage universe.</p>
+    <div class="card-grid reveal-scale">
+      <div class="mp-card" style="border-top:2px solid #FF4D4D;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <span style="font-family:var(--font-b);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#FF4D4D;">Narrative Trap</span>
+          <span style="font-family:var(--font-b);font-size:11px;color:var(--tx3);">5d window</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px;">
+          <span style="font-family:var(--font-b);font-size:18px;font-weight:600;color:var(--tx1);">NVDA</span>
+          <span style="font-family:var(--font-b);font-size:16px;color:var(--tx2);">$118.42</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <span style="font-family:var(--font-b);font-size:13px;font-weight:600;color:#FF4D4D;">87% confidence</span>
+        </div>
+        <p style="font-size:13px;color:var(--tx2);line-height:1.6;">Coordinated narrative inflating valuation beyond fundamental support. Decay signature detected in narrative energy.</p>
+      </div>
+      <div class="mp-card" style="border-top:2px solid #00DE94;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <span style="font-family:var(--font-b);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#00DE94;">Momentum Ride</span>
+          <span style="font-family:var(--font-b);font-size:11px;color:var(--tx3);">12d window</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px;">
+          <span style="font-family:var(--font-b);font-size:18px;font-weight:600;color:var(--tx1);">PLTR</span>
+          <span style="font-family:var(--font-b);font-size:16px;color:var(--tx2);">$98.45</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <span style="font-family:var(--font-b);font-size:13px;font-weight:600;color:#00DE94;">74% confidence</span>
+        </div>
+        <p style="font-size:13px;color:var(--tx2);line-height:1.6;">Government AI contracts structurally supported. Narrative energy accelerating with DoD budget expansion across 12 agencies.</p>
+      </div>
+      <div class="mp-card" style="border-top:2px solid #FF4D4D;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <span style="font-family:var(--font-b);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#FF4D4D;">Narrative Trap</span>
+          <span style="font-family:var(--font-b);font-size:11px;color:var(--tx3);">7d window</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px;">
+          <span style="font-family:var(--font-b);font-size:18px;font-weight:600;color:var(--tx1);">TSLA</span>
+          <span style="font-family:var(--font-b);font-size:16px;color:var(--tx2);">$247.15</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <span style="font-family:var(--font-b);font-size:13px;font-weight:600;color:#FF4D4D;">71% confidence</span>
+        </div>
+        <p style="font-size:13px;color:var(--tx2);line-height:1.6;">Robotaxi narrative re-emerging but delivery fundamentals diverging. Coordination score elevated across media sources.</p>
+      </div>
+      <div class="mp-card" style="border-top:2px solid #00AEFF;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <span style="font-family:var(--font-b);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#00AEFF;">Structural Shift</span>
+          <span style="font-family:var(--font-b);font-size:11px;color:var(--tx3);">14d window</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px;">
+          <span style="font-family:var(--font-b);font-size:18px;font-weight:600;color:var(--tx1);">META</span>
+          <span style="font-family:var(--font-b);font-size:16px;color:var(--tx2);">$612.80</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <span style="font-family:var(--font-b);font-size:13px;font-weight:600;color:#00AEFF;">62% confidence</span>
+        </div>
+        <p style="font-size:13px;color:var(--tx2);line-height:1.6;">Reality Labs losses widening while AI pivot narrative shifts sentiment. Watching for narrative exhaustion signals.</p>
+      </div>
+    </div>
+  </div>
+</section>
 <!-- ── LIVE NARRATIVE SIGNALS ── -->
 <div class="radar-sec">
   <div class="con">
@@ -2543,43 +2737,66 @@ footer {
 <div class="trust-sec">
   <div class="con">
     <div class="trust-heading reveal">
-      <div class="trust-heading-label">Trusted infrastructure</div>
-      <div class="trust-heading-title">Built on institutional-grade data sources</div>
+      <div class="trust-heading-label">Detection Framework</div>
+      <div class="trust-heading-title">Narrative Traps</div>
     </div>
+    <p class="sec-lead reveal" style="text-align:center;max-width:600px;margin:0 auto 48px;">When the story driving a stock diverges from reality, price follows the story — until it doesn't. We detect the divergence before it corrects.</p>
     <div class="trust-row reveal">
       <div class="trust-item">
-        <div class="trust-ico"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color:rgba(232,232,227,0.4);"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z"/></svg></div>
-        <div class="trust-t">SEC EDGAR</div>
-        <div class="trust-s">Real-time filing ingestion</div>
+        <div class="trust-ico"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color:rgba(232,232,227,0.4);"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"/></svg></div>
+        <div class="trust-t">Coordinated Narratives</div>
+        <div class="trust-s">Multiple sources pushing the same story simultaneously — detected via cross-source frequency analysis.</div>
       </div>
       <div class="trust-item">
-        <div class="trust-ico"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color:rgba(232,232,227,0.4);"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg></div>
-        <div class="trust-t">3 USPTO Patents</div>
-        <div class="trust-s">Pending review</div>
+        <div class="trust-ico"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color:rgba(232,232,227,0.4);"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg></div>
+        <div class="trust-t">Weak Fundamentals</div>
+        <div class="trust-s">Price has outpaced what SEC filings, earnings, and cash flows actually support.</div>
       </div>
       <div class="trust-item">
-        <div class="trust-ico"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color:rgba(232,232,227,0.4);"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0H3"/></svg></div>
-        <div class="trust-t">Multi-Model AI</div>
-        <div class="trust-s">Proprietary ensemble engine</div>
+        <div class="trust-ico"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color:rgba(232,232,227,0.4);"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div>
+        <div class="trust-t">Belief > Truth</div>
+        <div class="trust-s">Market consensus has decoupled from verifiable evidence. The story is driving price, not fundamentals.</div>
       </div>
       <div class="trust-item">
-        <div class="trust-ico"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color:rgba(232,232,227,0.4);"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg></div>
-        <div class="trust-t">256-bit TLS</div>
-        <div class="trust-s">End-to-end encrypted</div>
-      </div>
-      <div class="trust-item">
-        <div class="trust-ico"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color:rgba(232,232,227,0.4);"><path stroke-linecap="round" stroke-linejoin="round" d="M11.35 3.836c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m8.9-4.414c.376.023.75.05 1.124.08 1.131.094 1.976 1.057 1.976 2.192V16.5A2.25 2.25 0 0118 18.75h-2.25m-7.5-10.5H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V18.75m-7.5-10.5h6.375c.621 0 1.125.504 1.125 1.125v9.375m-8.25-3l1.5 1.5 3-3.75"/></svg></div>
-        <div class="trust-t">SOC 2</div>
-        <div class="trust-s">Audit-ready compliance</div>
-      </div>
-      <div class="trust-item">
-        <div class="trust-ico"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color:rgba(232,232,227,0.4);"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5m.75-9l3-3 2.148 2.148A12.061 12.061 0 0116.5 7.605"/></svg></div>
-        <div class="trust-t">99.9% Uptime</div>
-        <div class="trust-s">Enterprise SLA</div>
+        <div class="trust-ico"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color:rgba(232,232,227,0.4);"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg></div>
+        <div class="trust-t">Narrative Decay</div>
+        <div class="trust-s">The story is losing energy. Half-life analysis predicts when narrative support collapses.</div>
       </div>
     </div>
   </div>
 </div>
+<div class="prism-divider"></div>
+<!-- ── DIFFERENTIATION ── -->
+<section class="sec sec-alt" id="differentiation">
+  <div class="sec-orb sec-orb-violet" style="top:-10%;right:-8%;"></div>
+  <div class="con">
+    <div class="eyebrow reveal">Why Market Prism</div>
+    <h2 class="reveal" style="margin-bottom:8px;">What you get vs. what everyone else sells</h2>
+    <p class="sec-lead reveal" style="margin-bottom:40px;">Traditional tools show you what happened. Market Prism shows you what's about to happen — and why the market believes what it believes.</p>
+    <div class="compare-table reveal-scale">
+      <div class="compare-header">
+        <div class="compare-header-cell compare-header-left">Traditional Tools</div>
+        <div class="compare-header-cell compare-header-right">Market Prism</div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-cell compare-cell-left">Headlines</div>
+        <div class="compare-cell compare-cell-right">Narrative truth score</div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-cell compare-cell-left">Momentum indicators</div>
+        <div class="compare-cell compare-cell-right">Exhaustion timing</div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-cell compare-cell-left">Analyst opinions</div>
+        <div class="compare-cell compare-cell-right">SEC-verified evidence</div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-cell compare-cell-left">Price action</div>
+        <div class="compare-cell compare-cell-right">Narrative pressure</div>
+      </div>
+    </div>
+  </div>
+</section>
 <div class="prism-divider"></div>
 <!-- ── FEATURES ── -->
 <section class="sec sec-light" id="features" style="overflow:hidden;">
