@@ -10159,21 +10159,6 @@ var BOARDS=[
       function(s){var prem=s.fvd_pct||0;return{name:s.ticker,meta:'Reliability: '+Math.round(s.vms||0)+' \u00b7 '+(s.verdict||''),score:Math.round(prem*10)/10,scoreDisplay:'+'+(prem>=1000?(Math.round(prem/100)/10)+'k':Math.round(prem))+'%',_scoreColor:'#FF4D4D',link:'/ticker/'+encodeURIComponent(s.ticker)};},
       function(a,b){return(b.fvd_pct||0)-(a.fvd_pct||0);},10);
   }},
-  {id:'alltime',title:'All-Time Narrative Traps',sub:'Highest hype gaps ever recorded',color:'#FF4D4D',bg:'rgba(255,77,77,0.12)',scoreLabel:'Peak Gap %',
-  fetch:async function(){
-    try{
-      var r=await sq('narrative_scorecard?select=ticker,fvd_pct,snapshot_date&fvd_pct=gt.0&order=fvd_pct.desc&limit=300');
-      if(r.length){
-        var seen={},best=[];
-        r.forEach(function(x){if(!seen[x.ticker]){seen[x.ticker]=true;best.push(x);}});
-        return best.slice(0,10).map(function(x){var g=x.fvd_pct||0;return{name:x.ticker,meta:'Peak: '+(g>=1000?(Math.round(g/100)/10)+'k%':Math.round(g)+'%')+' \u00b7 '+x.snapshot_date,score:Math.round(g),scoreDisplay:g>=1000?(Math.round(g/100)/10)+'k%':Math.round(g)+'%',link:'/ticker/'+encodeURIComponent(x.ticker)};});
-      }
-    }catch(e){console.warn('[LB] alltime API failed, using fallback:',e.message);}
-    return scorecardFallback(
-      function(s){return s.fvd_pct!=null&&s.fvd_pct>0;},
-      function(s){var g=s.fvd_pct||0;return{name:s.ticker,meta:'FVD: '+(g>=1000?(Math.round(g/100)/10)+'k%':Math.round(g)+'%'),score:Math.round(g),scoreDisplay:g>=1000?(Math.round(g/100)/10)+'k%':Math.round(g)+'%',link:'/ticker/'+encodeURIComponent(s.ticker)};},
-      function(a,b){return(b.fvd_pct||0)-(a.fvd_pct||0);},10);
-  }},
   {id:'safest',title:'Narratives Most Aligned with Earnings',sub:'Stories best validated by fundamentals \u00b7 today',color:'#00DE94',bg:'rgba(0,222,148,0.12)',scoreLabel:'Reliability',
   fetch:async function(){
     try{
@@ -10228,11 +10213,6 @@ var BOARDS=[
     // No omission_gap_score in scorecardMap, return empty
     return [];
   }},
-  {id:'combos',title:'Best Signal Combinations',sub:'Highest win-rate signal combos \u00b7 all time',color:'#00DE94',bg:'rgba(0,222,148,0.12)',scoreLabel:'Win Rate %',
-  fetch:async function(){
-    var r=await sq('signal_combo_stats?select=signal_combo,trades,win_rate,avg_return_pct,sharpe_ratio&order=win_rate.desc&limit=10');
-    return r.map(function(x){return{name:x.signal_combo||'Combo',meta:(x.trades||0)+' trades \u00b7 Avg return: '+(Math.round((x.avg_return_pct||0)*100)/100)+'% \u00b7 Sharpe: '+(Math.round((x.sharpe_ratio||0)*100)/100),score:Math.round((x.win_rate||0)*10)/10,link:'#discover'};});
-  }},
   {id:'signals',title:'Strongest Daily Signals',sub:'Highest composite signal strength \u00b7 today',color:'#00AEFF',bg:'rgba(0,174,255,0.12)',scoreLabel:'Signal Strength',
   fetch:async function(){
     try{
@@ -10245,29 +10225,6 @@ var BOARDS=[
     return dataFallback(
       function(r){return r.ticker;},
       function(r){var claim=(r.story_claim||r.primary_driver||'').slice(0,50);return{name:r.ticker,meta:(r.prism_verdict||r.narrative_state||'')+' \u00b7 '+(Math.round((r.price_change_pct||0)*100)/100)+'% \u00b7 '+claim,score:Math.round(Math.abs(r.price_change_pct||0)*10),link:'/ticker/'+encodeURIComponent(r.ticker)};},
-      function(a,b){return Math.abs(b.price_change_pct||0)-Math.abs(a.price_change_pct||0);},10);
-  }},
-  {id:'movers',title:'Biggest Price Movers',sub:'Largest absolute price change \u00b7 today',color:'#FFB800',bg:'rgba(255,184,0,0.12)',scoreLabel:'% Move',
-  fetch:async function(){
-    try{
-      var date=await latestDate('daily_trade_labels');
-      if(date){
-        var dp=encodeURIComponent(date);
-        var up=sq('daily_trade_labels?select=ticker,price_change_pct,price,prism_verdict&snapshot_date=eq.'+dp+'&price_change_pct=gt.0&order=price_change_pct.desc&limit=5');
-        var dn=sq('daily_trade_labels?select=ticker,price_change_pct,price,prism_verdict&snapshot_date=eq.'+dp+'&price_change_pct=lt.0&order=price_change_pct.asc&limit=5');
-        var res=await Promise.allSettled([up,dn]);
-        var all=[];
-        if(res[0].status==='fulfilled') all=all.concat(res[0].value);
-        if(res[1].status==='fulfilled') all=all.concat(res[1].value);
-        if(all.length){
-          all.sort(function(a,b){return Math.abs(b.price_change_pct||0)-Math.abs(a.price_change_pct||0);});
-          return all.slice(0,10).map(function(x){var pct=x.price_change_pct||0;var abs=Math.round(Math.abs(pct)*100)/100;var prefix=pct>=0?'+':'\u2212';return{name:x.ticker||'Unknown',meta:'$'+(Math.round((x.price||0)*100)/100)+' \u00b7 '+(x.prism_verdict||''),score:abs,scoreDisplay:prefix+abs+'%',_scoreColor:pct>=0?'#00DE94':'#FF4D4D',link:'/ticker/'+encodeURIComponent(x.ticker)};});
-        }
-      }
-    }catch(e){console.warn('[LB] movers API failed, using fallback:',e.message);}
-    return dataFallback(
-      function(r){return r.ticker&&r.price_change_pct!=null;},
-      function(r){var pct=r.price_change_pct||0;var abs=Math.round(Math.abs(pct)*100)/100;var prefix=pct>=0?'+':'\u2212';return{name:r.ticker,meta:'$'+fmtPrice(r.price)+' \u00b7 '+(r.prism_verdict||r.narrative_state||''),score:abs,scoreDisplay:prefix+abs+'%',_scoreColor:pct>=0?'#00DE94':'#FF4D4D',link:'/ticker/'+encodeURIComponent(r.ticker)};},
       function(a,b){return Math.abs(b.price_change_pct||0)-Math.abs(a.price_change_pct||0);},10);
   }},
   {id:'overreaction',title:'Most Overreacted Stories',sub:'Media reaction far exceeds what facts support',color:'#FF4D4D',bg:'rgba(255,77,77,0.12)',scoreLabel:'Overreaction',
@@ -10296,41 +10253,10 @@ var BOARDS=[
       function(r){var claim=(r.story_claim||r.primary_driver||'').slice(0,55);return{name:r.ticker,meta:(r.narrative_state||'')+' \u00b7 '+claim,score:Math.round(Math.abs(r.price_change_pct||0)*10)/10,link:'/ticker/'+encodeURIComponent(r.ticker)};},
       function(a,b){return(b.price_change_pct||0)-(a.price_change_pct||0);},10);
   }},
-  {id:'squeeze',title:'Narrative-Powered Squeeze Candidates',sub:'High short pressure \u00b7 bullish narrative gaining energy',color:'#00DE94',bg:'rgba(0,222,148,0.12)',scoreLabel:'Days to Cover',
-  fetch:async function(){
-    var dateR=await sq('ticker_short_data?select=fetched_at&order=fetched_at.desc&limit=1');
-    var shortDate=dateR[0]&&dateR[0].fetched_at?dateR[0].fetched_at.slice(0,10):null;
-    if(!shortDate) return[];
-    var scoreDate=await latestDate('narrative_scorecard');
-    if(!scoreDate) return[];
-    var results=await Promise.all([
-      sq('ticker_short_data?select=ticker,days_to_cover,short_volume_ratio_latest,short_volume_trend,short_pressure,squeeze_risk&fetched_at=gte.'+encodeURIComponent(shortDate)+'&days_to_cover=gt.0&order=days_to_cover.desc&limit=50'),
-      sq('narrative_scorecard?select=ticker,vms,energy_remaining,nrs,verdict,narrative&snapshot_date=eq.'+encodeURIComponent(scoreDate)+'&energy_remaining=gt.0&limit=200')
-    ]);
-    var shortRows=results[0],scoreRows=results[1];
-    var scoreMap={};
-    scoreRows.forEach(function(s){scoreMap[s.ticker]=s;});
-    var seen={},deduped=[];
-    shortRows.forEach(function(r){if(!seen[r.ticker]){seen[r.ticker]=true;deduped.push(r);}});
-    return deduped.map(function(r){
-      var sc=scoreMap[r.ticker];
-      if(!sc) return null;
-      var combined=(r.days_to_cover||0)*0.6+(sc.energy_remaining||0)*0.04;
-      var dtc=Math.round((r.days_to_cover||0)*10)/10;
-      var energy=Math.round(sc.energy_remaining||0);
-      var reliability=Math.round((sc.vms||0)*10)/10;
-      return{name:r.ticker,meta:'Days to cover: '+dtc+'d \u00b7 Story energy: '+energy+'%'+(r.squeeze_risk?' \u00b7 \u26a0 Squeeze risk':''),score:dtc,scoreDisplay:dtc+'d',combined:combined,link:'/ticker/'+encodeURIComponent(r.ticker)};
-    }).filter(Boolean).sort(function(a,b){return b.combined-a.combined;}).slice(0,10);
-  }},
   {id:'top-sources',title:'Top Performing Sources',sub:'Ranked by composite score · hit rate, returns & confidence',color:'#00DE94',bg:'rgba(0,222,148,0.12)',scoreLabel:'Score',
   fetch:async function(){
     var r=await sq('source_leaderboard?select=publication_name,final_score,final_rank,tier,hit_rate,avg_signed_10d_return,article_count,confidence_score_norm&order=final_rank.asc&limit=10');
     return r.map(function(x){var fs=+(x.final_score||0);var hr=((x.hit_rate||0)*100).toFixed(1);var tier=x.tier||'';var tColor=tier==='S'?'#00DE94':tier==='A'?'#38C8B8':tier==='B'?'#00AEFF':tier==='C'?'#FFB800':'#A0A8B0';return{name:x.publication_name||'Unknown',meta:hr+'% hit · '+formatEdge(x.avg_signed_10d_return)+' avg 10d · '+(x.article_count||0)+' articles · Tier '+tier,score:fs,scoreDisplay:fs.toFixed(1),_scoreColor:tColor,link:'#narrative'};});
-  }},
-  {id:'top-themes',title:'Top Narrative Themes',sub:'Highest avg return themes',color:'#00DE94',bg:'rgba(0,222,148,0.12)',scoreLabel:'Avg Return %',
-  fetch:async function(){
-    var r=await sq('theme_performance?select=thematic_theme,hit_rate,avg_signed_return,article_count&order=avg_signed_return.desc&limit=10');
-    return r.map(function(x){var ret=(x.avg_signed_return||0)*100;var retD=ret.toFixed(1);return{name:x.thematic_theme||'Unknown',meta:'Hit rate: '+formatPercent(x.hit_rate)+' \u00b7 '+(x.article_count||0)+' articles',score:ret,scoreDisplay:(ret>=0?'+':'')+retD+'%',_scoreColor:ret>=0?'#00DE94':'#FF4D4D',link:'#discover'};});
   }},
   {id:'weak-themes',title:'Weak / Noisy Themes',sub:'Lowest hit rate themes · unreliable narratives',color:'#FF4D4D',bg:'rgba(255,77,77,0.12)',scoreLabel:'Hit Rate %',
   fetch:async function(){
