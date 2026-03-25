@@ -3343,7 +3343,7 @@ body{
       <div class="daily-section-head">
         <div class="daily-section-title">Know what's coming.</div>
       </div>
-      <div class="daily-cal-days">
+      <div class="daily-cal-days" id="daily-week-calendar">
         <div class="daily-cd td"><div class="daily-cd-hd"><div class="daily-cd-l">Today · Wed</div><div class="daily-cd-d">Mar 18</div></div><div class="daily-ces"><div class="daily-ce fomc"><div class="daily-cedot"></div>FOMC Decision &#9733;</div><div class="daily-ce fomc"><div class="daily-cedot"></div>SEP Dot Plot 2pm</div><div class="daily-ce fomc"><div class="daily-cedot"></div>Powell Presser</div></div></div>
         <div class="daily-cd"><div class="daily-cd-hd"><div class="daily-cd-l">Thu</div><div class="daily-cd-d">Mar 19</div></div><div class="daily-ces"><div class="daily-ce earn"><div class="daily-cedot"></div>Housing Starts 10am</div><div class="daily-ce earn"><div class="daily-cedot"></div>Philly Fed 8:30am</div></div></div>
         <div class="daily-cd"><div class="daily-cd-hd"><div class="daily-cd-l">Fri</div><div class="daily-cd-d">Mar 20</div></div><div class="daily-ces"><div class="daily-ce opex"><div class="daily-cedot"></div>Mar Quad Witch</div><div class="daily-ce opex"><div class="daily-cedot"></div>Index Rebalance</div></div></div>
@@ -4218,6 +4218,134 @@ function logoHTML(ticker,sizeClass){
 }
 var SECTOR_MAP = {"PLTR":["Agentic AI / Autonomous Systems","Cybersecurity","Defense Technology","Predictive Analytics"],"TSLA":["Agentic AI / Autonomous Systems","Electric Vehicles & Autonomous Transport"],"GOOGL":["Agentic AI / Autonomous Systems","Cloud Computing","Quantum Computing"],"MSFT":["Agentic AI / Autonomous Systems","Cloud Computing","Quantum Computing"],"AMZN":["Agentic AI / Autonomous Systems","Cloud Computing"],"NVDA":["AI Infrastructure","Semiconductors"],"AMD":["AI Infrastructure","Semiconductors"],"SMCI":["AI Infrastructure","Semiconductors"],"ARM":["AI Infrastructure","Semiconductors"],"AVGO":["AI Infrastructure","Semiconductors"],"TSM":["AI Infrastructure","Semiconductors"],"AMAT":["AI Infrastructure","Semiconductors"],"LRCX":["AI Infrastructure","Semiconductors"],"MU":["AI Infrastructure","Semiconductors"],"ORCL":["Cloud Computing"],"CRM":["Cloud Computing","Predictive Analytics"],"NOW":["Cloud Computing"],"WDAY":["Cloud Computing"],"INTU":["Cloud Computing","Predictive Analytics"],"PANW":["Cybersecurity"],"CRWD":["Cybersecurity"],"RDDT":["Data Licensing & AI Training Data","Social Media"],"SPOT":["Data Licensing & AI Training Data","Social Media"],"SNAP":["Data Licensing & AI Training Data","Social Media"],"LMT":["Defense Technology"],"RTX":["Defense Technology"],"BA":["Defense Technology"],"RIVN":["Electric Vehicles"],"LCID":["Electric Vehicles"],"NIO":["Electric Vehicles"],"GM":["Electric Vehicles"],"F":["Electric Vehicles"],"DUK":["Energy Infrastructure"],"NEE":["Energy Infrastructure"],"VST":["Energy Infrastructure"],"CEG":["Energy Infrastructure"],"V":["Fintech & Digital Payments"],"MA":["Fintech & Digital Payments"],"PYPL":["Fintech & Digital Payments"],"HOOD":["Fintech & Digital Payments"],"SOFI":["Fintech & Digital Payments"],"COIN":["Fintech & Digital Payments"],"JPM":["Fintech & Digital Payments"],"GS":["Fintech & Digital Payments"],"LLY":["Healthcare Technology"],"JNJ":["Healthcare Technology"],"MRK":["Healthcare Technology"],"PFE":["Healthcare Technology"],"META":["Social Media & Digital Advertising"],"AAPL":["Consumer Technology"],"INTC":["Semiconductors"],"QCOM":["Semiconductors"],"MRVL":["Semiconductors"],"TXN":["Semiconductors"]};
 // ── Load data ─────────────────────────────────────────────────────────────────
+function startOfWeekMonday(date){
+  var d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  var day = d.getDay();
+  d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day));
+  return d;
+}
+function addDays(date, days){
+  var d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  d.setDate(d.getDate() + days);
+  return d;
+}
+function isoDateLocal(date){
+  return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+}
+function fmtWeekDayLabel(date, todayIso){
+  var iso = isoDateLocal(date);
+  var day = date.toLocaleDateString('en-US', { weekday:'short' });
+  return iso === todayIso ? 'Today · ' + day : day;
+}
+function fmtWeekDateLabel(date){
+  return date.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+}
+function dailyCalendarClassForType(type){
+  var key = String(type || '').toUpperCase();
+  if(key === 'PERSONAL') return 'fomc';
+  if(key.indexOf('FOMC') !== -1) return 'fomc';
+  if(key === 'OPTIONS_EXPIRY' || key === 'QUAD_WITCHING') return 'opex';
+  if(key === 'EARNINGS') return 'earn';
+  return 'earn';
+}
+function dailyCalendarLabel(row){
+  var type = String(row.event_type || '').toUpperCase();
+  var label = row.event_name || type.replace(/_/g, ' ');
+  if(type === 'EARNINGS' && row.ticker) label = row.ticker + ' Earnings';
+  if(row.event_time) label += ' ' + row.event_time;
+  return label;
+}
+function buildDailyWeekPersonalizedRows(baseRows){
+  var personalized = [];
+  var today = new Date();
+  var weekStart = startOfWeekMonday(today);
+  var weekEndIso = isoDateLocal(addDays(weekStart, 4));
+  (baseRows || []).forEach(function(row){
+    if(!row || !row.event_date) return;
+    var override = row.id ? tcGlobalOverrideMap[row.id] : null;
+    if(override && override.is_hidden) return;
+    var renderDate = override && override.override_date ? override.override_date : row.event_date;
+    if(renderDate < isoDateLocal(weekStart) || renderDate > weekEndIso) return;
+    personalized.push({
+      event_date: renderDate,
+      event_type: row.event_type,
+      ticker: row.ticker,
+      event_name: row.event_name,
+      event_time: row.event_time,
+      notes: row.notes,
+      position: override && override.position != null ? override.position : 0,
+      source: 'global'
+    });
+  });
+  (tcUserCustomEvents || []).forEach(function(row){
+    if(!row || !row.event_date) return;
+    if(row.event_date < isoDateLocal(weekStart) || row.event_date > weekEndIso) return;
+    personalized.push({
+      event_date: row.event_date,
+      event_type: 'PERSONAL',
+      ticker: row.metadata && row.metadata.ticker ? row.metadata.ticker : null,
+      event_name: row.title,
+      event_time: null,
+      notes: row.description || '',
+      position: row.position != null ? row.position : 0,
+      source: 'custom'
+    });
+  });
+  return personalized;
+}
+function renderDailyWeekCalendar(rows){
+  var wrap = document.getElementById('daily-week-calendar');
+  if(!wrap) return;
+  var today = new Date();
+  var todayIso = isoDateLocal(today);
+  var weekStart = startOfWeekMonday(today);
+  var byDate = {};
+  buildDailyWeekPersonalizedRows(rows || []).forEach(function(row){
+    if(!row || !row.event_date) return;
+    if(!byDate[row.event_date]) byDate[row.event_date] = [];
+    byDate[row.event_date].push(row);
+  });
+  wrap.innerHTML = [0,1,2,3,4].map(function(offset){
+    var dayDate = addDays(weekStart, offset);
+    var iso = isoDateLocal(dayDate);
+    var events = (byDate[iso] || []).slice().sort(function(a,b){
+      if((a.position || 0) !== (b.position || 0)) return (a.position || 0) - (b.position || 0);
+      return String(a.event_time || '').localeCompare(String(b.event_time || ''));
+    });
+    var items = events.length
+      ? events.slice(0, 4).map(function(row){
+          return '<div class="daily-ce ' + dailyCalendarClassForType(row.event_type) + '"><div class="daily-cedot"></div>' + esc(dailyCalendarLabel(row)) + '</div>';
+        }).join('')
+      : '<div class="daily-ce empty"><div class="daily-cedot"></div>No major events</div>';
+    return '<div class="daily-cd' + (iso === todayIso ? ' td' : '') + '">'
+      + '<div class="daily-cd-hd"><div class="daily-cd-l">' + esc(fmtWeekDayLabel(dayDate, todayIso)) + '</div><div class="daily-cd-d">' + esc(fmtWeekDateLabel(dayDate)) + '</div></div>'
+      + '<div class="daily-ces">' + items + '</div>'
+      + '</div>';
+  }).join('');
+}
+async function loadDailyWeekCalendar(){
+  var wrap = document.getElementById('daily-week-calendar');
+  if(!wrap || !SUPABASE_URL || !SUPABASE_ANON) return;
+  var today = new Date();
+  var weekStart = startOfWeekMonday(today);
+  var weekEnd = addDays(weekStart, 4);
+  try{
+    var rows = await restFetch('market_calendar', {
+      select:'id,event_date,event_type,ticker,event_name,event_time,notes',
+      event_date:'gte.' + isoDateLocal(weekStart),
+      order:'event_date.asc,event_time.asc,event_type.asc'
+    }).catch(function(){ return []; });
+    rows = (rows || []).filter(function(row){
+      return row.event_date && row.event_date <= isoDateLocal(weekEnd);
+    });
+    DAILY_WEEK_BASE_ROWS = rows;
+    renderDailyWeekCalendar(DAILY_WEEK_BASE_ROWS);
+  }catch(e){
+    console.warn('Daily week calendar load failed', e && e.message ? e.message : e);
+    DAILY_WEEK_BASE_ROWS = [];
+    renderDailyWeekCalendar([]);
+  }
+}
 async function loadData(){
   var feed = document.getElementById('discover-feed');
   feed.innerHTML = '<div class="loading-skeleton">'
@@ -4228,6 +4356,7 @@ async function loadData(){
   try {
     var user = await ensureDashboardAuth();
     if(!user) return;
+    loadDailyWeekCalendar();
     if(!SUPABASE_URL || !SUPABASE_ANON) throw new Error('Supabase credentials not configured');
     var COLS = 'ticker,price,price_change_pct,narrative_state,primary_driver,prism_verdict,story_claim,pe_ratio,days_to_earnings,guidance_direction,institutional_positioning,fair_value,snapshot_date,sector_name,recovery_probability';
     var url = SUPABASE_URL+'/rest/v1/v_dash_daily_story?select='+COLS+'&story_claim=not.is.null&order=snapshot_date.desc,ticker.asc';
@@ -7696,6 +7825,7 @@ var tcGlobalOverrideMap = {};
 var TC_GLOBAL_EVENTS_CACHE = {};
 var TC_GLOBAL_TABLE = 'market_calendar';
 var TC_PERSONALIZATION_STORAGE_KEY = 'mp_planner_state_v3';
+var DAILY_WEEK_BASE_ROWS = [];
 
 // localStorage
 var TC_STORAGE_KEY = 'mp_planner_v2';
@@ -8729,6 +8859,7 @@ function tcSignalToCustomEvent(dateStr, sig){
 function tcApplyCalendarState(){
   tcRebuildGlobalOverrideMap();
   tcRebuildQueuedFromCustomEvents();
+  renderDailyWeekCalendar(DAILY_WEEK_BASE_ROWS);
   if(tcCalBooted){
     tcRenderCalendar();
     tcUpdateQueuedBadges();
