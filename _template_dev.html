@@ -664,7 +664,7 @@ body{
   box-shadow:0 24px 80px rgba(0,0,0,0.4);
 }
 .trap-chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:8px;}
-.trap-chart-header h3{font-family:var(--font-mono);font-size:13px;font-weight:400;margin:0;letter-spacing:.08em;text-transform:uppercase;color:var(--mp-text-secondary);}
+.trap-chart-header h3{font-family:var(--font-body);font-size:13px;font-weight:600;margin:0;letter-spacing:.08em;text-transform:uppercase;color:var(--mp-text-secondary);}
 .trap-chart-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .trap-chart-legend{display:none;}
 .trap-chart-legend-item{display:flex;align-items:center;gap:5px;font-size:10px;font-family:var(--font-mono);color:var(--mp-text-tertiary);}
@@ -3578,20 +3578,16 @@ body{
       <!-- Trap Intensity Chart -->
       <div class="trap-chart-wrap" id="trap-chart-wrap">
         <div class="trap-chart-header">
-          <h3>Sector Signal Intensity</h3>
+          <h3>Sector Momentum</h3>
           <div class="trap-chart-controls">
-            <select class="filter-select" id="trap-metric-select" onchange="renderTrapChart()" style="font-size:11px;padding:4px 10px;">
-              <option value="breaking">Breaking %</option>
-              <option value="trap">Trap intensity</option>
-              <option value="fragile">Fragile %</option>
-            </select>
+            <div class="trap-chart-legend" style="display:flex;">
+              <span class="trap-chart-legend-item"><span class="trap-chart-legend-dot" style="background:rgba(0,222,148,0.7);"></span>Breaking</span>
+              <span class="trap-chart-legend-item"><span class="trap-chart-legend-dot" style="background:rgba(0,174,255,0.65);"></span>Surging</span>
+              <span class="trap-chart-legend-item"><span class="trap-chart-legend-dot" style="background:rgba(56,200,184,0.45);"></span>Stable</span>
+              <span class="trap-chart-legend-item"><span class="trap-chart-legend-dot" style="background:rgba(255,184,0,0.5);"></span>Cooling</span>
+              <span class="trap-chart-legend-item"><span class="trap-chart-legend-dot" style="background:rgba(255,77,77,0.6);"></span>Fragile</span>
+            </div>
           </div>
-        </div>
-        <div class="trap-chart-legend">
-          <span class="trap-chart-legend-item"><span class="trap-chart-legend-dot" style="background:#A83232;"></span>Critical</span>
-          <span class="trap-chart-legend-item"><span class="trap-chart-legend-dot" style="background:#C8962E;"></span>Infected</span>
-          <span class="trap-chart-legend-item"><span class="trap-chart-legend-dot" style="background:#4A8FCC;"></span>Noisy</span>
-          <span class="trap-chart-legend-item"><span class="trap-chart-legend-dot" style="background:#2B9E6F;"></span>Clean</span>
         </div>
         <div id="trap-chart-bars"></div>
       </div>
@@ -5573,85 +5569,40 @@ async function loadSectorsFromSummaries(){
   }
 }
 
-// ── Trap Intensity Chart ──────────────────────────────────────────────────────
+// ── Sector Signal Intensity Chart ─────────────────────────────────────────────
+// Reads from SECTOR_STATIC (populated by daily_summaries via loadSectorsFromSummaries).
+// Single bar per sector, height = momentum_score, color by status.
 function renderTrapChart(){
   var barsEl=document.getElementById('trap-chart-bars');
   if(!barsEl)return;
-  var metric=(document.getElementById('trap-metric-select')||{}).value||'breaking';
-  // Gather all unique sectors from SECTOR_MAP
-  var sectorTickers={};
-  Object.keys(SECTOR_MAP).forEach(function(tk){
-    SECTOR_MAP[tk].forEach(function(s){
-      if(!sectorTickers[s])sectorTickers[s]=[];
-      sectorTickers[s].push(tk);
-    });
+
+  // Use SECTOR_STATIC directly — already sorted by momentum desc from daily_summaries
+  var rows=SECTOR_STATIC.map(function(s){
+    return {name:s.name, momentum:s.momentum||0, state:s.state||'Stable', traps:s.live_traps||0, count:s.live_count||s.tickers.length};
   });
-  // Also include SECTOR_STATIC sectors
-  SECTOR_STATIC.forEach(function(s){
-    if(!sectorTickers[s.name])sectorTickers[s.name]=[];
-    s.tickers.forEach(function(t){
-      if(sectorTickers[s.name].indexOf(t)===-1)sectorTickers[s.name].push(t);
-    });
-  });
-  // Compute per-sector metrics
-  var rows=[];
-  Object.keys(sectorTickers).forEach(function(sName){
-    var tickers=sectorTickers[sName];
-    var total=tickers.length;
-    if(total===0)return;
-    var matched=tickers.map(function(t){return DATA.find(function(d){return d.ticker===t;});}).filter(Boolean);
-    var count=matched.length||total; // use matched if available
-    var pct=0,topTicker='';
-    if(metric==='trap'){
-      var traps=matched.filter(function(r){return r.prism_verdict==='Narrative Trap';});
-      pct=count>0?Math.round((traps.length/count)*1000)/10:0;
-      topTicker=traps.length>0?traps[0].ticker:tickers[0];
-    }else if(metric==='breaking'){
-      var brk=matched.filter(function(r){return r.narrative_state==='Breaking';});
-      pct=count>0?Math.round((brk.length/count)*1000)/10:0;
-      topTicker=brk.length>0?brk[0].ticker:tickers[0];
-    }else if(metric==='fragile'){
-      var frag=matched.filter(function(r){return r.narrative_state==='Fragile';});
-      pct=count>0?Math.round((frag.length/count)*1000)/10:0;
-      topTicker=frag.length>0?frag[0].ticker:tickers[0];
-    }
-    // If no live data, use SECTOR_STATIC trap flag as fallback
-    if(matched.length===0&&metric==='trap'){
-      var ss=SECTOR_STATIC.find(function(s){return s.name===sName;});
-      if(ss&&ss.trap)pct=20;
-      topTicker=tickers[0];
-    }
-    rows.push({name:sName,pct:pct,topTicker:topTicker,count:count});
-  });
-  // Sort descending by pct
-  rows.sort(function(a,b){return b.pct-a.pct;});
-  // Max pct for scaling bars
-  var maxPct=Math.max.apply(null,rows.map(function(r){return r.pct;}).concat([1]));
-  // Dual-bar color pairs — matches reference design
-  var barPalettes=[
-    ['rgba(0,174,255,0.65)','rgba(0,222,148,0.55)'],
-    ['rgba(0,222,148,0.55)','rgba(56,200,184,0.45)'],
-    ['rgba(0,174,255,0.50)','rgba(56,200,184,0.50)'],
-    ['rgba(56,200,184,0.45)','rgba(0,174,255,0.40)'],
-    ['rgba(90,184,216,0.40)','rgba(56,200,184,0.35)'],
-    ['rgba(90,184,216,0.35)','rgba(56,200,184,0.30)'],
-    ['rgba(56,200,184,0.30)','rgba(90,184,216,0.32)'],
-    ['rgba(56,200,184,0.25)','rgba(0,222,148,0.28)']
-  ];
-  // Limit to top 8 sectors
-  var top=rows.slice(0,8);
+  rows.sort(function(a,b){return b.momentum-a.momentum;});
+
+  var maxMom=Math.max.apply(null,rows.map(function(r){return r.momentum;}).concat([1]));
+
+  // Status → bar color
+  function barColor(state){
+    if(state==='Breaking') return 'rgba(0,222,148,0.7)';
+    if(state==='Surging') return 'rgba(0,174,255,0.65)';
+    if(state==='Fragile') return 'rgba(255,77,77,0.6)';
+    if(state==='Cooling') return 'rgba(255,184,0,0.5)';
+    return 'rgba(56,200,184,0.45)';
+  }
+
+  // Limit to top 10 sectors
+  var top=rows.slice(0,10);
   var barsHTML='<div class="trap-bars-v">'+top.map(function(r,i){
-    var h=maxPct>0?Math.round((r.pct/maxPct)*100):0;
-    if(r.pct>0&&h<8)h=8;
+    var h=maxMom>0?Math.round((r.momentum/maxMom)*100):0;
+    if(r.momentum>0&&h<8)h=8;
     if(h===0)h=5;
-    var hA=Math.round(h*0.9);
-    var hB=Math.round(h*0.75);
-    var pal=barPalettes[i%barPalettes.length];
     return '<div class="trap-col" style="animation-delay:'+(i*0.06)+'s">'
-      +'<span class="trap-col-pct">'+r.pct.toFixed(0)+'%</span>'
+      +'<span class="trap-col-pct">'+r.momentum+'</span>'
       +'<div class="trap-vbar-pair">'
-        +'<div class="trap-vbar-a" style="height:'+hA+'px;background:'+pal[0]+';animation-delay:'+(i*0.06)+'s"></div>'
-        +'<div class="trap-vbar-b" style="height:'+hB+'px;background:'+pal[1]+';animation-delay:'+(i*0.06+0.03)+'s"></div>'
+        +'<div class="trap-vbar-a" style="height:'+h+'px;background:'+barColor(r.state)+';animation-delay:'+(i*0.06)+'s;border-radius:3px 3px 0 0;"></div>'
       +'</div>'
     +'</div>';
   }).join('')+'</div>';
