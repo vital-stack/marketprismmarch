@@ -5693,6 +5693,10 @@ function sortSnap(s,btn){
   snapSort=s;
   document.querySelectorAll('#tab-snapshots .chip').forEach(function(c){c.classList.remove('active');});
   if(btn)btn.classList.add('active');
+  // Lazy-load trap data if needed for Narrative Trap sort
+  if(s==='traps'&&typeof TRAP_DATA!=='undefined'&&TRAP_DATA.length===0&&typeof loadTrapRadar==='function'){
+    loadTrapRadar().then(function(){snapShowing=50;renderSnap();});
+  }
   snapShowing=50;renderSnap();
 }
 function filterSnapSector(v){snapSector=v;snapShowing=50;renderSnap();}
@@ -5705,13 +5709,35 @@ function getSnapData(){
   });
   if(snapSort==='chg-desc')arr=arr.slice().sort(function(a,b){return(b.price_change_pct||0)-(a.price_change_pct||0);});
   else if(snapSort==='chg-asc')arr=arr.slice().sort(function(a,b){return(a.price_change_pct||0)-(b.price_change_pct||0);});
-  else if(snapSort==='traps')arr=arr.filter(function(r){var v=(r.prism_verdict||r.story_verdict||r.verdict||'').toLowerCase();return v.indexOf('trap')!==-1||v.indexOf('disconnect')!==-1;});
+  else if(snapSort==='traps'){
+    arr=arr.filter(function(r){var v=(r.prism_verdict||r.story_verdict||r.verdict||'').toLowerCase();return v.indexOf('trap')!==-1||v.indexOf('disconnect')!==-1;});
+    // Merge TRAP_DATA from narrative_traps table (same pattern as Discover tab)
+    if(typeof TRAP_DATA!=='undefined'&&TRAP_DATA.length){
+      var existing=new Set();arr.forEach(function(r){existing.add(r.ticker);});
+      TRAP_DATA.forEach(function(t){
+        if(existing.has(t.ticker))return;
+        var snap=snapshotMap[t.ticker]||{};
+        arr.push({ticker:t.ticker,price:t.current_price||snap.price||0,price_change_pct:null,narrative_state:'Fragile',primary_driver:t.narrative||'',prism_verdict:'Narrative Trap',story_claim:t.narrative||'',sector_name:snap.sector||(SECTOR_MAP[t.ticker]||[])[0]||'',fvd_pct:t.fvd_pct,coordination_score:null,coordination_class:t.coordination_class});
+      });
+    }
+  }
   else if(snapSort==='overvalued')arr=arr.slice().sort(function(a,b){var aV=a.fvd_pct!=null&&a.fvd_pct>30?0:1;var bV=b.fvd_pct!=null&&b.fvd_pct>30?0:1;return aV!==bV?aV-bV:(b.fvd_pct||0)-(a.fvd_pct||0);});
   else if(snapSort==='undervalued')arr=arr.slice().sort(function(a,b){var aV=a.fvd_pct!=null&&a.fvd_pct<-5?0:1;var bV=b.fvd_pct!=null&&b.fvd_pct<-5?0:1;return aV!==bV?aV-bV:(a.fvd_pct||0)-(b.fvd_pct||0);});
   else if(snapSort==='high-energy')arr=arr.slice().sort(function(a,b){var aV=a.energy_remaining!=null&&a.energy_remaining>=85?0:1;var bV=b.energy_remaining!=null&&b.energy_remaining>=85?0:1;return aV!==bV?aV-bV:(b.energy_remaining||0)-(a.energy_remaining||0);});
   else if(snapSort==='fading')arr=arr.slice().sort(function(a,b){var aV=a.decay_rate!=null&&a.decay_rate>=0.05?0:1;var bV=b.decay_rate!=null&&b.decay_rate>=0.05?0:1;return aV!==bV?aV-bV:(b.decay_rate||0)-(a.decay_rate||0);});
   else if(snapSort==='coordinated')arr=arr.slice().sort(function(a,b){var aV=(a.coordination_class&&a.coordination_class.toLowerCase().indexOf('coordinated')!==-1)||(a.coordination_score!=null&&a.coordination_score>=60)?0:1;var bV=(b.coordination_class&&b.coordination_class.toLowerCase().indexOf('coordinated')!==-1)||(b.coordination_score!=null&&b.coordination_score>=60)?0:1;return aV!==bV?aV-bV:(b.coordination_score||0)-(a.coordination_score||0);});
-  else if(snapSort==='supported')arr=arr.filter(function(r){var v=(r.prism_verdict||r.story_verdict||r.verdict||'').toLowerCase();return v.indexOf('supported')!==-1||v.indexOf('verified')!==-1;});
+  else if(snapSort==='supported'){
+    arr=arr.filter(function(r){var v=(r.prism_verdict||r.story_verdict||r.verdict||'').toLowerCase();return v.indexOf('supported')!==-1||v.indexOf('verified')!==-1;});
+    // Merge SUPPORTED_DATA from active_supported table
+    if(typeof SUPPORTED_DATA!=='undefined'&&SUPPORTED_DATA.length){
+      var existing=new Set();arr.forEach(function(r){existing.add(r.ticker);});
+      SUPPORTED_DATA.forEach(function(s){
+        if(existing.has(s.ticker))return;
+        var snap=snapshotMap[s.ticker]||{};
+        arr.push({ticker:s.ticker,price:s.current_price?parseFloat(s.current_price):(snap.price||0),price_change_pct:null,narrative_state:'Surging',primary_driver:s.narrative||s.synopsis||'',prism_verdict:'Structurally Supported',story_claim:s.narrative||s.synopsis||'',sector_name:(s.macro_theme||'').replace(/_/g,' ')||(SECTOR_MAP[s.ticker]||[])[0]||'',fvd_pct:s.fvd_pct,energy_remaining:s.energy_remaining,coordination_score:s.coordination_score});
+      });
+    }
+  }
   return arr;
 }
 function getTickerInsightTags(r){
