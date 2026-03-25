@@ -2799,7 +2799,7 @@ body{
   color:var(--mp-text-tertiary);margin-bottom:10px;
 }
 .nf-sum-cards{
-  display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1;
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;flex:1;
 }
 .nf-sum-cards .card-scene{
   width:100% !important;min-width:0;
@@ -3357,65 +3357,60 @@ body{
         </p>
       </div>
 
-      <!-- NARRATIVE FEED — 2-column layout -->
-      <div class="nf-split">
-        <!-- LEFT: Market Narrative Summary -->
-        <div class="nf-summary" id="nf-summary">
-          <div class="nf-sum-header">
-            <span class="nf-sum-dot"></span>
-            <span class="nf-sum-label">Market Narrative Summary</span>
-            <span class="nf-sum-time" id="nf-sum-time">Generated 06:42 ET</span>
-          </div>
-          <div class="nf-sum-body" id="nf-sum-body">
-            <p style="color:var(--mp-text-tertiary);">Loading market narrative…</p>
-          </div>
-          <div class="nf-sum-narrative">
-            <div class="nf-sum-nar-label">Dominant Narrative</div>
-            <p id="nf-sum-dominant">Loading…</p>
-          </div>
-          <div class="nf-sum-tags" id="nf-sum-tags"></div>
-
-          <!-- Featured Trading Cards of the Day -->
-          <div class="nf-sum-cards-section">
-            <div class="nf-sum-cards-label">Trading Cards of the Day</div>
-            <div class="nf-sum-cards" id="nf-sum-cards">
-              <!-- Populated by JS -->
-            </div>
-          </div>
-
+      <!-- 1) MARKET NARRATIVE SUMMARY -->
+      <div class="nf-summary" id="nf-summary" style="margin-bottom:24px;">
+        <div class="nf-sum-header">
+          <span class="nf-sum-dot"></span>
+          <span class="nf-sum-label">Market Narrative Summary</span>
+          <span class="nf-sum-time" id="nf-sum-time">Generated 06:42 ET</span>
         </div>
+        <div class="nf-sum-body" id="nf-sum-body">
+          <p style="color:var(--mp-text-tertiary);">Loading market narrative…</p>
+        </div>
+        <div class="nf-sum-narrative">
+          <div class="nf-sum-nar-label">Dominant Narrative</div>
+          <p id="nf-sum-dominant">Loading…</p>
+        </div>
+        <div class="nf-sum-tags" id="nf-sum-tags"></div>
+      </div>
 
-        <!-- RIGHT: Tabbed Narrative Feed -->
-        <div class="nf-feed">
-          <div class="nf-feed-header">
-            <span class="nf-feed-title">Top Narrative Signals</span>
-            <span class="nf-feed-date" id="nf-feed-date"></span>
+      <!-- 2) TOP NARRATIVE SIGNALS -->
+      <div class="nf-feed" style="margin-bottom:24px;">
+        <div class="nf-feed-header">
+          <span class="nf-feed-title">Top Narrative Signals</span>
+          <span class="nf-feed-date" id="nf-feed-date"></span>
+        </div>
+        <div class="nf-tabs">
+          <button class="nf-tab active" data-nf-tab="tickers" onclick="switchNFTab('tickers',this)">Tickers</button>
+          <button class="nf-tab" data-nf-tab="sectors" onclick="switchNFTab('sectors',this)">Sectors</button>
+          <button class="nf-tab" data-nf-tab="market" onclick="switchNFTab('market',this)">Market-Wide</button>
+          <button class="nf-tab" data-nf-tab="traps" onclick="switchNFTab('traps',this)">Traps <span class="info-tip" data-tip="Narrative Traps are tickers where the media story contradicts SEC filings, fundamentals, or fair value — price may be running ahead of reality."><i class="info-icon">i</i></span></button>
+          <button class="nf-tab" data-nf-tab="supported" onclick="switchNFTab('supported',this)">Supported <span class="info-tip" data-tip="Structurally Supported tickers have narratives backed by fundamental data — filings, earnings, and institutional positioning align with the prevailing story."><i class="info-icon">i</i></span></button>
+        </div>
+        <div class="nf-scroll">
+          <div class="nf-list" id="nf-list-tickers">
+            <!-- Populated by JS -->
           </div>
-          <div class="nf-tabs">
-            <button class="nf-tab active" data-nf-tab="tickers" onclick="switchNFTab('tickers',this)">Tickers</button>
-            <button class="nf-tab" data-nf-tab="sectors" onclick="switchNFTab('sectors',this)">Sectors</button>
-            <button class="nf-tab" data-nf-tab="market" onclick="switchNFTab('market',this)">Market-Wide</button>
-            <button class="nf-tab" data-nf-tab="traps" onclick="switchNFTab('traps',this)">Traps <span class="info-tip" data-tip="Narrative Traps are tickers where the media story contradicts SEC filings, fundamentals, or fair value — price may be running ahead of reality."><i class="info-icon">i</i></span></button>
-            <button class="nf-tab" data-nf-tab="supported" onclick="switchNFTab('supported',this)">Supported <span class="info-tip" data-tip="Structurally Supported tickers have narratives backed by fundamental data — filings, earnings, and institutional positioning align with the prevailing story."><i class="info-icon">i</i></span></button>
+          <div class="nf-list" id="nf-list-sectors" style="display:none;">
+            <!-- Populated by JS -->
           </div>
-          <div class="nf-scroll">
-            <div class="nf-list" id="nf-list-tickers">
-              <!-- Populated by JS -->
-            </div>
-            <div class="nf-list" id="nf-list-sectors" style="display:none;">
-              <!-- Populated by JS -->
-            </div>
-            <div class="nf-list" id="nf-list-market" style="display:none;">
-              <!-- Populated by JS -->
-            </div>
-            <div class="nf-list" id="nf-list-traps" style="display:none;">
-              <!-- Populated by JS -->
-            </div>
-            <div class="nf-list" id="nf-list-supported" style="display:none;">
-              <!-- Populated by JS -->
-            </div>
+          <div class="nf-list" id="nf-list-market" style="display:none;">
+            <!-- Populated by JS -->
           </div>
-          <!-- scroll hint removed -->
+          <div class="nf-list" id="nf-list-traps" style="display:none;">
+            <!-- Populated by JS -->
+          </div>
+          <div class="nf-list" id="nf-list-supported" style="display:none;">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 3) TRADING CARDS OF THE DAY -->
+      <div class="nf-sum-cards-section" style="margin-bottom:24px;">
+        <div class="nf-sum-cards-label">Trading Cards of the Day</div>
+        <div class="nf-sum-cards" id="nf-sum-cards">
+          <!-- Populated by JS -->
         </div>
       </div>
 
