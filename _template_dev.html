@@ -3670,63 +3670,16 @@ body{
         <span class="ph-italic">Your narrative edge.</span>
         <p>Build shareable market intelligence — export cards, create custom briefings, and distribute your narrative analysis.</p>
       </div>
-      <!-- Sub-tabs -->
-      <div class="sharing-tabs">
-        <button class="sharing-tab active" onclick="switchSharingTab('cards',this)">Info Cards</button>
-        <button class="sharing-tab" onclick="switchSharingTab('reports',this)">Reports</button>
-        <button class="sharing-tab" onclick="switchSharingTab('videos',this)">Video Builder</button>
-      </div>
-      <!-- ── INFO CARDS panel ── -->
-      <div class="sharing-panel active" id="sharing-cards">
-        <div class="notice">
-          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
-          Cards are auto-generated from live narrative data. Enter a ticker to create a shareable card.
-        </div>
-        <div class="meme-create-bar">
-          <span class="meme-create-label">Generate a card for</span>
-          <input class="meme-ticker-inp" id="meme-ticker-inp" placeholder="NVDA" maxlength="6">
-          <button class="btn-create-meme" onclick="generateMeme()">Generate card</button>
-          <div class="filter-sep" style="margin:0 4px;"></div>
-          <span class="filter-label">Filter</span>
-          <button class="chip active" onclick="filterMemes('all',this)">All</button>
-          <button class="chip" onclick="filterMemes('trap',this)">Traps</button>
-          <button class="chip" onclick="filterMemes('supported',this)">Supported</button>
-          <button class="chip" onclick="filterMemes('breaking',this)">Breaking</button>
-        </div>
-        <div class="meme-grid" id="meme-grid">
-          <!-- Populated by JS -->
+      <!-- Reports builder (standalone iframe — isolated from dashboard JS) -->
+      <iframe id="mp-reports-frame" src="/api/market-sharing-reports" style="width:100%;height:calc(100vh - 220px);border:none;border-radius:12px;display:block;background:var(--mp-surface);"></iframe>
+      <!-- Hidden: legacy trading cards (kept so renderMemes doesn't error on missing #meme-grid) -->
+      <div style="display:none;">
+        <div class="sharing-panel active" id="sharing-cards">
+          <div class="meme-grid" id="meme-grid"></div>
         </div>
       </div>
-      <!-- ── REPORTS panel — loads standalone page in iframe ── -->
-      <div class="sharing-panel" id="sharing-reports">
-        <iframe id="mp-reports-frame" src="/api/market-sharing-reports" style="width:100%;height:calc(100vh - 180px);border:none;border-radius:12px;display:block;background:var(--mp-surface);"></iframe>
-      </div>
-      <!-- ── VIDEO BUILDER panel ── -->
-      <div class="sharing-panel" id="sharing-videos">
-        <div class="video-builder">
-          <h3>Video Builder</h3>
-          <p>Arrange info cards into a sequence to create a shareable video slideshow</p>
-          <div class="video-timeline" id="video-timeline">
-            <div class="video-slot" onclick="addVideoSlot()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Add card
-            </div>
-          </div>
-          <div class="video-controls">
-            <input class="video-add-inp" id="video-add-inp" placeholder="Ticker" maxlength="6">
-            <button class="btn-video" onclick="addVideoCard()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Add to timeline
-            </button>
-            <button class="btn-video" onclick="clearVideoTimeline()">Clear all</button>
-            <button class="btn-video primary" id="btn-build-video" onclick="buildVideo()" disabled>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-              Export video
-            </button>
-            <span class="video-duration" id="video-duration">0 cards · 0s</span>
-          </div>
-        </div>
-      </div>
+      <!-- Video builder hidden (kept for future use) -->
+      <div class="sharing-panel" id="sharing-videos" style="display:none;"></div>
     </div>
     <!-- ══════════════════════════════════════
          TAB: NARRATIVE HISTORY
