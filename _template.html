@@ -3393,6 +3393,7 @@ body{
             <button class="nf-tab active" data-nf-tab="tickers" onclick="switchNFTab('tickers',this)">Tickers</button>
             <button class="nf-tab" data-nf-tab="sectors" onclick="switchNFTab('sectors',this)">Sectors</button>
             <button class="nf-tab" data-nf-tab="market" onclick="switchNFTab('market',this)">Market-Wide</button>
+            <button class="nf-tab" data-nf-tab="traps" onclick="switchNFTab('traps',this)">Traps</button>
           </div>
           <div class="nf-scroll">
             <div class="nf-list" id="nf-list-tickers">
@@ -3402,6 +3403,9 @@ body{
               <!-- Populated by JS -->
             </div>
             <div class="nf-list" id="nf-list-market" style="display:none;">
+              <!-- Populated by JS -->
+            </div>
+            <div class="nf-list" id="nf-list-traps" style="display:none;">
               <!-- Populated by JS -->
             </div>
           </div>
@@ -4516,6 +4520,7 @@ async function loadData(){
     renderNarrativeCards();
     renderSectorNarrativeCards();
     renderMarketWideCards();
+    renderTrapsCards();
     populateNHTTickerSelect();
     loadTradingCalendarLive();
     loadNHT(nhtTicker);
@@ -4604,6 +4609,14 @@ var NF_DEMO_MARKET=[
   {title:'AI Infrastructure Spending',type:'Structural',claim:'Hyperscaler capex commitments driving multi-year demand cycle across the compute stack.',verdict:'Accelerating',direction:'bull'},
   {title:'Federal Reserve Rate Path',type:'Macro',claim:'Rate expectations shifting as inflation decelerates. Market pricing aggressive cuts.',verdict:'Pivoting',direction:'neutral'},
   {title:'Earnings Season Dynamics',type:'Cyclical',claim:'Q1 earnings revealing divergent performance. Guidance revisions driving outsized moves.',verdict:'Active',direction:'neutral'}
+];
+
+var NF_DEMO_TRAPS=[
+  {ticker:'RDDT',sector:'Data Licensing',claim:'AI licensing revenue narrative inflated beyond verifiable contract pipeline. Engagement metrics decoupling from monetization.',trapType:'Hype Gap',confidence:94,age:'3 days',direction:'bear'},
+  {ticker:'SMCI',sector:'Servers',claim:'Accounting restatement overhang treated as resolved but SEC inquiry still open. Backlog figures unaudited.',trapType:'Coordinated Narrative',confidence:91,age:'5 days',direction:'bear'},
+  {ticker:'COIN',sector:'FinTech',claim:'Regulatory clarity narrative premature. Volume recovery stalling as institutional adoption lags retail exit pace.',trapType:'Narrative Fading',confidence:88,age:'4 days',direction:'bear'},
+  {ticker:'RIVN',sector:'EV / Auto',claim:'Production ramp narrative ignores widening per-unit losses and capital burn acceleration through 2026.',trapType:'Fundamental Disconnect',confidence:85,age:'6 days',direction:'bear'},
+  {ticker:'MSTR',sector:'Crypto / Treasury',claim:'BTC treasury premium narrative masking dilution risk. Convertible note structure creates reflexive downside.',trapType:'Hype Gap',confidence:82,age:'2 days',direction:'bear'}
 ];
 
 function nfLogoHTML(ticker){
@@ -4841,6 +4854,50 @@ function renderMarketWideCards(){
       var btn=document.querySelector('[data-tab="marketwide"]');
       if(btn) switchTab('marketwide',btn);
     });
+  });
+}
+
+// ── Render: Traps tab ──
+function renderTrapsCards(){
+  var el=document.getElementById('nf-list-traps');
+  if(!el) return;
+
+  // Try to derive traps from live DATA
+  var traps=[];
+  if(DATA.length>0){
+    DATA.forEach(function(r){
+      var v=(r.prism_verdict||r.story_verdict||'').toLowerCase();
+      if(v.indexOf('trap')>=0||v.indexOf('disconnect')>=0||v.indexOf('fading')>=0||v.indexOf('hype')>=0){
+        traps.push(r);
+      }
+    });
+    traps.sort(function(a,b){return(b._confPct||b.confidence_score||0)-(a._confPct||a.confidence_score||0);});
+    traps=traps.slice(0,5);
+  }
+
+  if(traps.length>0){
+    el.innerHTML=traps.map(function(r){
+      var conf=r._confPct||r.confidence_score||80;
+      var trapType=r.prism_verdict||r.story_verdict||'Narrative Trap';
+      var insightTags=[
+        {label:trapType,bg:'rgba(255,77,77,0.15)',color:'#FF4D4D',border:'rgba(255,77,77,0.3)'},
+        {label:conf+'% confidence',bg:'rgba(255,184,0,0.12)',color:'#FFB800',border:'rgba(255,184,0,0.25)'}
+      ];
+      return nfBuildRow('bear', nfLogoHTML(r.ticker), r.ticker, r.sector_name||'', r.story_claim||r.primary_driver||'', 'Narrative Trap', '/ticker/'+encodeURIComponent(r.ticker), {state:'Breaking',confidence:conf,_insightTags:insightTags});
+    }).join('');
+  } else {
+    el.innerHTML=NF_DEMO_TRAPS.map(function(d){
+      var insightTags=[
+        {label:d.trapType,bg:'rgba(255,77,77,0.15)',color:'#FF4D4D',border:'rgba(255,77,77,0.3)'},
+        {label:d.confidence+'% \u00B7 '+d.age,bg:'rgba(255,184,0,0.12)',color:'#FFB800',border:'rgba(255,184,0,0.25)'}
+      ];
+      return nfBuildRow(d.direction, nfLogoHTML(d.ticker), d.ticker, d.sector, d.claim, 'Narrative Trap', '/ticker/'+encodeURIComponent(d.ticker), {state:'Breaking',confidence:d.confidence,_insightTags:insightTags});
+    }).join('');
+  }
+
+  // Click navigates to ticker page
+  el.querySelectorAll('.nc-card').forEach(function(card){
+    card.style.cursor='pointer';
   });
 }
 
