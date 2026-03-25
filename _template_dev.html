@@ -10678,15 +10678,14 @@ window.switchTab=function(id,btn){
 
 // ── MP REPORTS BUILDER ──────────────────────────────────────────────────
 (function(){
-  // Block toggle
+  // Block toggle — safe inside DOMContentLoaded-equivalent IIFE
   document.querySelectorAll('.mp-reports-builder .bt').forEach(function(el){
     el.addEventListener('click',function(){el.classList.toggle('on');});
   });
+})();
+var rptCache={};
 
-  // Cache for fetched data
-  var rptCache={};
-
-  window.mpBuildReport=async function mpBuildReport(){
+async function mpBuildReport(){
     var out=document.getElementById('mp-report-out');
     var exportBtn=document.getElementById('mp-export-btn');
     if(!out) return;
@@ -10832,33 +10831,38 @@ window.switchTab=function(id,btn){
     if(!html) html='<div class="ph"><div class="ph-text">No data available for '+ticker+'</div></div>';
     out.innerHTML=html;
     if(exportBtn) exportBtn.style.display='block';
-  };
+}
 
-  function rptMetricBar(label,val,pct,color){
-    return '<div class="rpt-row"><span class="rpt-label">'+label+'</span><div class="rpt-bar-wrap"><div class="rpt-bar"><div class="rpt-bar-fill" style="width:'+Math.max(pct,2)+'%;background:'+color+';"></div></div><span class="rpt-val" style="min-width:50px;text-align:right;">'+val+'</span></div></div>';
-  }
+function rptMetricBar(label,val,pct,color){
+  return '<div class="rpt-row"><span class="rpt-label">'+label+'</span><div class="rpt-bar-wrap"><div class="rpt-bar"><div class="rpt-bar-fill" style="width:'+Math.max(pct,2)+'%;background:'+color+';"></div></div><span class="rpt-val" style="min-width:50px;text-align:right;">'+val+'</span></div></div>';
+}
 
-  function rptFooter(signalId){
-    return '<div class="rpt-footer">~5,500 data points &middot; 90+ formulas &middot; SEC EDGAR &middot; Patent Pending #63/971,470<div class="rpt-signal-id">'+signalId+'</div></div>';
-  }
+function rptFooter(signalId){
+  return '<div class="rpt-footer">~5,500 data points &middot; 90+ formulas &middot; SEC EDGAR &middot; Patent Pending #63/971,470<div class="rpt-signal-id">'+signalId+'</div></div>';
+}
 
-  window.mpExportPNG=function mpExportPNG(){
-    var el=document.getElementById('mp-report-out');
-    if(!el||!el.querySelector('.rpt-card')){alert('Generate a report first');return;}
-    if(typeof html2canvas!=='undefined'){
-      html2canvas(el,{backgroundColor:'#080B11',scale:2}).then(function(canvas){
-        var link=document.createElement('a');link.download='MarketPrism-Report.png';link.href=canvas.toDataURL();link.click();
-      });
-    }else{alert('PNG export requires html2canvas library. Use browser screenshot as fallback.');}
-  };
-})();
+function mpLoadH2C(){
+  return new Promise(function(ok,fail){
+    if(typeof html2canvas!=='undefined') return ok();
+    var s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    s.onload=ok;s.onerror=function(){fail(new Error('Failed to load html2canvas'));};
+    document.head.appendChild(s);
+  });
+}
+function mpExportPNG(){
+  var el=document.getElementById('mp-report-out');
+  if(!el||!el.querySelector('.rpt-card')){alert('Generate a report first');return;}
+  mpLoadH2C().then(function(){
+    html2canvas(el,{backgroundColor:'#080B11',scale:2}).then(function(canvas){
+      var link=document.createElement('a');link.download='MarketPrism-Report.png';link.href=canvas.toDataURL();link.click();
+    });
+  }).catch(function(){alert('Failed to load export library.');});
+}
 // ── END MP REPORTS BUILDER ──────────────────────────────────────────────
 
 // ── SHARE CARDS (replaces trading card memes) ───────────────────────────
-(function(){
-  var scCache={};
-
-  window.buildShareCardHTML=function buildShareCardHTML(c,i){
+function buildShareCardHTML(c,i){
     var isTrap=c.verdict==='Narrative Trap'||c.verdict==='NARRATIVE_TRAP';
     var isSupported=c.verdict==='Structurally Supported';
     var accentColor=isTrap?'#FF4D4D':isSupported?'#00DE94':'#00AEFF';
@@ -10894,18 +10898,17 @@ window.switchTab=function(id,btn){
       +'</div>'
       +'<div class="sc-footer">~5,500 data points &middot; 90+ formulas &middot; SEC EDGAR &middot; Patent Pending #63/971,470<br>'+signalId+'</div>'
     +'</div>';
-  };
+}
 
-  window.mpDownloadShareCard=function mpDownloadShareCard(btn){
-    var card=btn.closest('.sc-card');
-    if(!card)return;
-    if(typeof html2canvas!=='undefined'){
-      html2canvas(card,{backgroundColor:'#0C1018',scale:2}).then(function(canvas){
-        var link=document.createElement('a');link.download='MarketPrism-Card.png';link.href=canvas.toDataURL();link.click();
-      });
-    }else{alert('PNG export requires html2canvas library.');}
-  };
-})();
+function mpDownloadShareCard(btn){
+  var card=btn.closest('.sc-card');
+  if(!card)return;
+  mpLoadH2C().then(function(){
+    html2canvas(card,{backgroundColor:'#0C1018',scale:2}).then(function(canvas){
+      var link=document.createElement('a');link.download='MarketPrism-Card.png';link.href=canvas.toDataURL();link.click();
+    });
+  }).catch(function(){alert('Failed to load export library.');});
+}
 // ── END SHARE CARDS ─────────────────────────────────────────────────────
 </body>
 </html>
