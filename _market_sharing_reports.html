@@ -149,6 +149,8 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tx);-webkit-font-smo
         <div class="sb-blk" data-b="history"><div class="sb-chk"></div><div class="sb-ico">&#128200;</div><div><div class="sb-bname">Price History</div><div class="sb-bdesc">30-day pressure chart</div></div></div>
         <div class="sb-blk on" data-b="decay"><div class="sb-chk">&#10003;</div><div class="sb-ico">&#9203;</div><div><div class="sb-bname">Narrative Decay</div><div class="sb-bdesc">Half-life, exhaustion, momentum</div></div></div>
         <div class="sb-blk" data-b="defense"><div class="sb-chk"></div><div class="sb-ico">&#128737;</div><div><div class="sb-bname">Position Defense</div><div class="sb-bdesc">All 6 scorecard metrics</div></div></div>
+        <div class="sb-blk" data-b="strategy"><div class="sb-chk"></div><div class="sb-ico">&#9889;</div><div><div class="sb-bname">Trading Strategy</div><div class="sb-bdesc">Entry zone, returns, risk</div></div></div>
+        <div class="sb-blk" data-b="drivers"><div class="sb-chk"></div><div class="sb-ico">&#128161;</div><div><div class="sb-bname">Move Drivers</div><div class="sb-bdesc">What's driving the price</div></div></div>
       </div>
     </div>
     <button class="btn-gen" onclick="generate()">Generate Report</button>
@@ -197,14 +199,19 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tx);-webkit-font-smo
         var r=await Promise.all([
           fetch(SB_URL+'/rest/v1/narrative_scorecard?select=*&ticker=eq.'+ticker+'&order=snapshot_date.desc&limit=1',{headers:h}).then(function(r){return r.ok?r.json():[];}),
           fetch(SB_URL+'/rest/v1/ticker_snapshots?select=ticker,price,snapshot_date&ticker=eq.'+ticker+'&order=snapshot_date.desc&limit=30',{headers:h}).then(function(r){return r.ok?r.json():[];}),
+          fetch(SB_URL+'/rest/v1/v_dash_daily_story?select=*&ticker=eq.'+ticker+'&order=snapshot_date.desc&limit=1',{headers:h}).then(function(r){return r.ok?r.json():[];}),
+          fetch(SB_URL+'/rest/v1/ticker_strategy_summary?select=*&ticker=eq.'+ticker+'&order=created_at.desc&limit=1',{headers:h}).then(function(r){return r.ok?r.json():[];}),
+          fetch(SB_URL+'/rest/v1/narrative_analyses?select=narrative_text,verdict,quality_signals,prerequisites_json&ticker=eq.'+ticker+'&order=analysis_date.desc&limit=1',{headers:h}).then(function(r){return r.ok?r.json():[];}),
+          fetch(SB_URL+'/rest/v1/v_dash_move_drivers?select=*&ticker=eq.'+ticker+'&limit=5',{headers:h}).then(function(r){return r.ok?r.json():[];}),
+          fetch(SB_URL+'/rest/v1/share_card_templates?select=*&limit=20',{headers:h}).then(function(r){return r.ok?r.json():[];}).catch(function(){return [];}),
         ]);
-        d={sc:r[0][0]||{},snaps:r[1]||[]};cache[ticker]=d;
+        d={sc:r[0][0]||{},snaps:r[1]||[],story:r[2][0]||{},strategy:r[3][0]||{},analysis:r[4][0]||{},drivers:r[5]||[],templates:r[6]||[]};cache[ticker]=d;
       }catch(e){ph.textContent='Error: '+e.message;return;}
     }
 
-    var sc=d.sc,snaps=d.snaps;
+    var sc=d.sc,snaps=d.snaps,story=d.story,strategy=d.strategy,analysis=d.analysis,drivers=d.drivers,templates=d.templates;
     // Derive signal from scorecard data
-    var verdict=sc.story_verdict||sc.prism_verdict||'';
+    var verdict=sc.story_verdict||sc.prism_verdict||story.prism_verdict||'';
     var vLow=verdict.toLowerCase();
     var signal,sigType;
     if(vLow.indexOf('trap')!==-1||vLow.indexOf('disconnect')!==-1){signal='Narrative Trap';sigType='trap';}
@@ -217,6 +224,8 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tx);-webkit-font-smo
     var acBorder=sigType==='trap'?'rgba(255,77,77,0.3)':sigType==='bull'?'rgba(0,222,148,0.3)':'rgba(0,174,255,0.3)';
     var sid='MP-'+ticker+'-'+Date.now().toString(36).toUpperCase();
     var price=snaps.length?snaps[0].price:null;
+    // Narrative claim from story or analysis
+    var claim=story.story_claim||story.primary_driver||analysis.narrative_text||sc.story_claim||'';
 
     // Build report HTML
     var html='<div class="rpt" id="rpt-card">';
@@ -243,13 +252,16 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tx);-webkit-font-smo
     html+='<div class="rpt-body">';
 
     if(blocks.indexOf('verdict')!==-1){
-      var verdict=sc.story_verdict||sc.prism_verdict||'Under Analysis';
-      var state=sc.narrative_state||'Monitoring';
+      var vrd=sc.story_verdict||sc.prism_verdict||story.prism_verdict||'Under Analysis';
+      var state=sc.narrative_state||story.narrative_state||'Monitoring';
       html+='<div class="rpt-block">'
         +'<div class="rpt-block-title"><span class="rpt-block-ico">&#9878;</span>MARKET VERDICT</div>'
-        +'<div class="rpt-callout"><div class="rpt-callout-label">Prism Verdict</div><div class="rpt-callout-val" style="color:'+ac+';">'+esc(verdict)+'</div></div>'
+        +'<div class="rpt-callout"><div class="rpt-callout-label">Prism Verdict</div><div class="rpt-callout-val" style="color:'+ac+';">'+esc(vrd)+'</div></div>'
+        +(claim?'<div style="font-size:14px;color:var(--tx2);line-height:1.6;margin:12px 0;padding:12px 14px;background:rgba(255,255,255,0.02);border-radius:10px;border-left:2px solid '+ac+';">'+esc(claim)+'</div>':'')
         +'<div class="rpt-kv"><span class="rpt-kv-label">Narrative State</span><span class="rpt-kv-val">'+esc(state)+'</span></div>'
         +'<div class="rpt-kv"><span class="rpt-kv-label">Bias</span><span class="rpt-kv-val">'+bias+'</span></div>'
+        +(story.sector_name?'<div class="rpt-kv"><span class="rpt-kv-label">Sector</span><span class="rpt-kv-val">'+esc(story.sector_name)+'</span></div>':'')
+        +(sc.institutional_positioning?'<div class="rpt-kv"><span class="rpt-kv-label">Institutional Positioning</span><span class="rpt-kv-val">'+esc(sc.institutional_positioning)+'</span></div>':'')
         +'<div class="rpt-kv"><span class="rpt-kv-label">Full Analysis</span><span class="rpt-kv-val"><a href="https://www.marketprism.co/ticker/'+ticker+'" style="color:'+ac+';text-decoration:none;">marketprism.co/ticker/'+ticker+'</a></span></div>'
       +'</div>';
     }
@@ -320,6 +332,41 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tx);-webkit-font-smo
       +'</div>';
     }
 
+    // ── Strategy block
+    if(blocks.indexOf('strategy')!==-1&&(strategy.entry_zone||strategy.themes)){
+      html+='<div class="rpt-block">'
+        +'<div class="rpt-block-title"><span class="rpt-block-ico">&#9889;</span>TRADING STRATEGY</div>';
+      if(strategy.themes){
+        var themes=typeof strategy.themes==='string'?JSON.parse(strategy.themes):strategy.themes;
+        if(Array.isArray(themes)&&themes.length){
+          html+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">'+themes.map(function(t){return '<span style="font-size:11px;padding:4px 10px;border-radius:16px;background:rgba(0,174,255,0.08);color:var(--cyan);border:1px solid rgba(0,174,255,0.2);">'+esc(t)+'</span>';}).join('')+'</div>';
+        }
+      }
+      if(strategy.entry_zone) html+='<div class="rpt-kv"><span class="rpt-kv-label">Entry Zone</span><span class="rpt-kv-val" style="color:var(--green);">'+esc(strategy.entry_zone)+'</span></div>';
+      if(strategy.expected_return) html+='<div class="rpt-kv"><span class="rpt-kv-label">Expected Return</span><span class="rpt-kv-val">'+esc(strategy.expected_return)+'</span></div>';
+      if(strategy.time_horizon) html+='<div class="rpt-kv"><span class="rpt-kv-label">Time Horizon</span><span class="rpt-kv-val">'+esc(strategy.time_horizon)+'</span></div>';
+      if(strategy.risk_level) html+='<div class="rpt-kv"><span class="rpt-kv-label">Risk Level</span><span class="rpt-kv-val">'+esc(strategy.risk_level)+'</span></div>';
+      if(strategy.stop_loss) html+='<div class="rpt-kv"><span class="rpt-kv-label">Stop Loss</span><span class="rpt-kv-val" style="color:var(--red);">'+esc(strategy.stop_loss)+'</span></div>';
+      html+='</div>';
+    }
+
+    // ── Move Drivers block
+    if(blocks.indexOf('drivers')!==-1&&drivers.length>0){
+      html+='<div class="rpt-block">'
+        +'<div class="rpt-block-title"><span class="rpt-block-ico">&#128161;</span>MOVE DRIVERS</div>';
+      drivers.forEach(function(drv){
+        var dColor=drv.direction==='bullish'?'var(--green)':drv.direction==='bearish'?'var(--red)':'var(--cyan)';
+        html+='<div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.03);">'
+          +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">'
+            +'<span style="font-size:14px;font-weight:500;color:var(--tx);">'+esc(drv.driver_name||drv.factor||'')+'</span>'
+            +(drv.impact_score?'<span style="font-size:11px;color:'+dColor+';font-weight:600;">'+drv.impact_score+'</span>':'')
+          +'</div>'
+          +(drv.description?'<div style="font-size:12px;color:var(--tx3);line-height:1.5;">'+esc(drv.description)+'</div>':'')
+        +'</div>';
+      });
+      html+='</div>';
+    }
+
     html+='</div>'; // end body
 
     // ── Footer
@@ -356,17 +403,32 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tx);-webkit-font-smo
 
   window.exportPDF=function(){
     var card=document.getElementById('rpt-card');
-    if(!card)return;
-    html2canvas(card,{backgroundColor:'#080B11',scale:2,logging:false}).then(function(canvas){
+    if(!card){alert('Generate a report first');return;}
+    html2canvas(card,{backgroundColor:'#080B11',scale:2,logging:false,useCORS:true}).then(function(canvas){
       var imgData=canvas.toDataURL('image/png');
-      // jsPDF UMD exposes as window.jspdf.jsPDF or window.jsPDF depending on version
-      var JSPDF=window.jspdf&&window.jspdf.jsPDF?window.jspdf.jsPDF:window.jsPDF;
-      if(!JSPDF){alert('PDF library not loaded');return;}
+      // Try all known jsPDF UMD paths
+      var JP=null;
+      if(window.jspdf&&window.jspdf.jsPDF) JP=window.jspdf.jsPDF;
+      else if(window.jsPDF) JP=window.jsPDF;
+      else{
+        // Try dynamic load as last resort
+        try{JP=jspdf.jsPDF;}catch(_){}
+      }
+      if(!JP){
+        // Fallback: download as PNG instead
+        var a=document.createElement('a');
+        a.download='MarketPrism-'+document.getElementById('inp-ticker').value.toUpperCase()+'.png';
+        a.href=imgData;a.click();
+        return;
+      }
       var w=canvas.width/2,h=canvas.height/2;
-      var pdf=new JSPDF({orientation:w>h?'landscape':'portrait',unit:'px',format:[w,h]});
+      var pdf=new JP({orientation:w>h?'landscape':'portrait',unit:'px',format:[w,h]});
       pdf.addImage(imgData,'PNG',0,0,w,h);
       pdf.save('MarketPrism-'+document.getElementById('inp-ticker').value.toUpperCase()+'.pdf');
-    }).catch(function(e){alert('PDF export failed: '+e.message);});
+    }).catch(function(e){
+      console.error('PDF export error:',e);
+      alert('PDF export failed: '+e.message);
+    });
   };
 })();
 </script>
