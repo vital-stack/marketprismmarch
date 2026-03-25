@@ -5080,8 +5080,18 @@ function nfUpdateSummary(){
 var AI_NARRATIVE_FILLED = false;
 async function fillMarketNarrative(){
   var ANTHROPIC_KEY = (window.__env||{}).ANTHROPIC_KEY || '';
-  if(!ANTHROPIC_KEY || !DATA.length){ console.warn('[MP] Skipping AI narrative — no key or no data'); return; }
+  console.log('[MP] fillMarketNarrative called — key present:', !!ANTHROPIC_KEY, ', DATA rows:', DATA.length, ', CARD_DATA rows:', CARD_DATA.length);
+  if(!ANTHROPIC_KEY){
+    document.getElementById('nf-sum-body').innerHTML='<p style="color:var(--mp-text-tertiary);font-style:italic;">AI narrative unavailable — no API key configured.</p>';
+    document.getElementById('ts-sum-body').innerHTML='<p style="color:var(--mp-text-tertiary);font-style:italic;">AI strategy unavailable — no API key configured.</p>';
+    return;
+  }
+  if(!DATA.length){ console.warn('[MP] Skipping AI narrative — no data'); return; }
   if(AI_NARRATIVE_FILLED) return;
+
+  // Show loading state
+  document.getElementById('nf-sum-body').innerHTML='<p style="color:var(--mp-text-tertiary);">Generating market narrative from live data…</p>';
+  document.getElementById('ts-sum-body').innerHTML='<p style="color:var(--mp-text-tertiary);">Generating trading strategy from live signals…</p>';
 
   // ── 1. BUILD CONTEXT FROM LOADED DATA ──
   var date = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
@@ -5213,7 +5223,9 @@ async function fillMarketNarrative(){
     AI_NARRATIVE_FILLED = true;
     console.log('[MP] AI narrative fill complete');
   }catch(e){
-    console.warn('[MP] Claude narrative fill failed, keeping static content:', e);
+    console.error('[MP] Claude narrative fill failed:', e);
+    document.getElementById('nf-sum-body').innerHTML='<p><strong>Fed holds as expected.</strong> Attention shifts to whether the AI capex cycle can sustain momentum in a slowing macro environment. Asian markets mixed — Nikkei flat, US futures modestly positive.</p>';
+    document.getElementById('ts-sum-body').innerHTML='<p style="color:var(--mp-text-tertiary);font-style:italic;">Strategy generation failed — '+ esc(e.message)+'</p>';
   }
 }
 
