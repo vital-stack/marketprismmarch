@@ -3105,24 +3105,24 @@ body{
 @media(max-width:767px){#mm-stage{height:420px;}.mm-mbt{font-size:10px;padding:4px 9px;}}
 /* ── LEADERBOARD ── */
 .lb-section{background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:14px;overflow:hidden;}
-.lb-head{padding:14px 16px;border-bottom:1px solid var(--mp-border);display:flex;align-items:center;gap:10px;}
-.lb-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.lb-htitle{font-size:13px;font-weight:600;color:var(--mp-text-primary);}
+.lb-head{padding:16px 16px;border-bottom:1px solid var(--mp-border);display:flex;align-items:center;gap:10px;}
+.lb-icon{display:none;}
+.lb-htitle{font-family:'Instrument Serif','DM Serif Display',Georgia,serif;font-size:18px;font-weight:400;color:var(--mp-text-primary);}
 .lb-hsub{font-size:11px;color:var(--mp-text-tertiary);margin-top:1px;}
 .lb-rows{padding:4px 0;}
 .lb-row{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.04);transition:background .15s;cursor:pointer;text-decoration:none;color:inherit;}
 .lb-row:last-child{border-bottom:none;}
 .lb-row:hover{background:rgba(255,255,255,0.03);}
 .lb-rank{font-size:12px;font-weight:700;color:rgba(255,255,255,0.25);width:18px;flex-shrink:0;text-align:center;}
-.lb-r1{color:#FFB800!important;}.lb-r2{color:#A0A8B0!important;}.lb-r3{color:#CD7F32!important;}
-.lb-av{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;letter-spacing:.02em;}
+.lb-r1{color:rgba(255,184,0,0.5)!important;}.lb-r2{color:rgba(160,168,176,0.4)!important;}.lb-r3{color:rgba(205,127,50,0.4)!important;}
+.lb-av{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;letter-spacing:.02em;background:rgba(255,255,255,0.05)!important;color:var(--mp-text-tertiary)!important;}
 .lb-info{flex:1;min-width:0;}
 .lb-name{font-size:13px;font-weight:500;color:var(--mp-text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .lb-meta{font-size:11px;color:var(--mp-text-tertiary);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.lb-bar-wrap{height:2px;background:rgba(255,255,255,0.07);border-radius:1px;margin-top:5px;}
-.lb-bar{height:100%;border-radius:1px;}
+.lb-bar-wrap{height:2px;background:rgba(255,255,255,0.04);border-radius:1px;margin-top:5px;}
+.lb-bar{height:100%;border-radius:1px;opacity:0.35;}
 .lb-score{flex-shrink:0;text-align:right;}
-.lb-sval{font-size:14px;font-weight:700;line-height:1;}
+.lb-sval{font-size:14px;font-weight:700;line-height:1;color:#fff!important;}
 .lb-slbl{font-size:10px;color:var(--mp-text-tertiary);margin-top:2px;}
 .lb-arr{font-size:11px;color:var(--mp-text-tertiary);flex-shrink:0;margin-left:2px;}
 .lb-row:hover .lb-arr{color:#00AEFF;}
@@ -10416,16 +10416,19 @@ function renderBoard(b,rows){
     var pct=Math.round(r.score/max*100);
     var sc=r._scoreColor||scoreColor(b.id,r.score)||b.color;
     var disp=r.scoreDisplay!=null?r.scoreDisplay:r.score;
+    // Use logoHTML for tickers, fall back to initial avatar for non-tickers
+    var isTicker=r.name&&r.name.length<=6&&/^[A-Z]/.test(r.name);
+    var avHtml=isTicker&&typeof logoHTML==='function'?logoHTML(r.name,'sm'):'<div class="lb-av" style="background:rgba(255,255,255,0.05);color:var(--mp-text-tertiary);">'+lbEsc(ini(r.name))+'</div>';
     return '<a class="lb-row" href="'+lbEsc(r.link||'#')+'">'
       +'<div class="lb-rank'+rankClass(i)+'">'+(i+1)+'</div>'
-      +'<div class="lb-av" style="background:'+b.bg+';color:'+b.color+';">'+lbEsc(ini(r.name))+'</div>'
+      +avHtml
       +'<div class="lb-info">'
         +'<div class="lb-name">'+lbEsc(r.name)+'</div>'
         +'<div class="lb-meta">'+lbEsc(r.meta||'')+'</div>'
-        +'<div class="lb-bar-wrap"><div class="lb-bar" style="width:'+pct+'%;background:'+b.color+';"></div></div>'
+        +'<div class="lb-bar-wrap"><div class="lb-bar" style="width:'+pct+'%;background:rgba(255,255,255,0.2);"></div></div>'
       +'</div>'
       +'<div class="lb-score">'
-        +'<div class="lb-sval" style="color:'+sc+';">'+lbEsc(String(disp))+'</div>'
+        +'<div class="lb-sval">'+lbEsc(String(disp))+'</div>'
         +'<div class="lb-slbl">'+lbEsc(b.scoreLabel)+'</div>'
       +'</div>'
       +'<div class="lb-arr">\u203a</div>'
