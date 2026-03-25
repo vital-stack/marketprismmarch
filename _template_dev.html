@@ -3105,12 +3105,36 @@ body{
 #mm-stage:active{cursor:grabbing;}
 @media(max-width:767px){#mm-stage{height:420px;}.mm-mbt{font-size:10px;padding:4px 9px;}}
 /* ── LEADERBOARD ── */
-.lb-section{background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:14px;overflow:hidden;}
-.lb-head{padding:16px 16px;border-bottom:1px solid var(--mp-border);display:flex;align-items:center;gap:10px;}
+.lb-section{
+  background:var(--mp-surface);border:1px solid rgba(255,255,255,0.06);border-radius:16px;
+  overflow:hidden;position:relative;
+  transition:border-color .3s,box-shadow .3s,transform .3s;
+}
+/* Crosshatch grid overlay (from trading cards) */
+.lb-section::before{
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px);
+  background-size:48px 48px;border-radius:16px;
+}
+/* Foil glisten scan (from trading cards) */
+.lb-section::after{
+  content:'';position:absolute;top:-100%;left:-15%;width:130%;height:50%;
+  background:linear-gradient(180deg,transparent 0%,rgba(255,255,255,0.015) 35%,rgba(255,255,255,0.04) 50%,rgba(255,255,255,0.015) 65%,transparent 100%);
+  transform:skewX(-12deg);animation:scanMove 7s ease-in-out infinite;
+  pointer-events:none;z-index:1;border-radius:16px;
+}
+.lb-section:hover{
+  border-color:rgba(255,255,255,0.12);
+  box-shadow:0 12px 40px rgba(0,0,0,0.4);
+  transform:translateY(-2px);
+}
+/* Accent bar at top */
+.lb-section>.lb-accent{position:absolute;top:0;left:0;right:0;height:2px;z-index:2;background:rgba(0,174,255,0.3);}
+.lb-head{padding:16px 16px;border-bottom:1px solid var(--mp-border);display:flex;align-items:center;gap:10px;position:relative;z-index:2;}
 .lb-icon{display:none;}
 .lb-htitle{font-family:'Instrument Serif','DM Serif Display',Georgia,serif;font-size:18px;font-weight:400;color:var(--mp-text-primary);}
 .lb-hsub{font-size:11px;color:var(--mp-text-tertiary);margin-top:1px;}
-.lb-rows{padding:4px 0;}
+.lb-rows{padding:4px 0;position:relative;z-index:2;}
 .lb-row{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.04);transition:background .15s;cursor:pointer;text-decoration:none;color:inherit;}
 .lb-row:last-child{border-bottom:none;}
 .lb-row:hover{background:rgba(255,255,255,0.03);}
@@ -10437,6 +10461,7 @@ function renderBoard(b,rows){
     +'</a>';
   }).join('');
   return '<div class="lb-section">'
+    +'<div class="lb-accent"></div>'
     +'<div class="lb-head">'
       +'<div class="lb-icon" style="background:'+b.bg+';">'
         +'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="'+b.color+'" stroke-width="2" stroke-linecap="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>'
