@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Market Prism — Report Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script id="__env_script">window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '' };</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --mp-obsidian:#080B11;--mp-surface:#0C1018;--mp-surface2:#111927;
+  --mp-border:rgba(255,255,255,0.06);--mp-border-hover:rgba(255,255,255,0.14);
+  --mp-text-primary:#FFFFFF;--mp-text-secondary:rgba(255,255,255,0.7);
+  --mp-text-tertiary:#A0A8B0;--mp-text-muted:rgba(255,255,255,0.3);
+  --mp-cyan:#00AEFF;--mp-green:#00DE94;--mp-red:#FF4D4D;--mp-amber:#FFB800;
+  --font-d:'Instrument Serif','DM Serif Display',Georgia,serif;
+  --font-b:'Inter','DM Sans',system-ui,sans-serif;
+}
+body{font-family:var(--font-b);background:var(--mp-obsidian);color:var(--mp-text-primary);-webkit-font-smoothing:antialiased;}
+/* ── Layout ── */
+.builder{display:flex;height:100vh;gap:0;}
+.sidebar{width:320px;min-width:280px;border-right:1px solid var(--mp-border);padding:20px;overflow-y:auto;flex-shrink:0;background:var(--mp-surface);}
+.canvas{flex:1;display:flex;flex-direction:column;align-items:center;padding:24px;overflow-y:auto;background:var(--mp-obsidian);}
+@media(max-width:900px){.builder{flex-direction:column;height:auto;}.sidebar{width:100%;border-right:none;border-bottom:1px solid var(--mp-border);}}
+/* ── Sidebar ── */
+.cs{margin-bottom:20px;}
+.cs-label{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--mp-text-tertiary);margin-bottom:10px;}
+.field{margin-bottom:10px;}
+.field label{display:block;font-size:11px;color:var(--mp-text-tertiary);margin-bottom:4px;}
+.field select,.field input{width:100%;font-size:13px;padding:8px 10px;border-radius:8px;border:1px solid var(--mp-border);background:var(--mp-obsidian);color:var(--mp-text-primary);font-family:var(--font-b);outline:none;}
+.field select:focus,.field input:focus{border-color:rgba(0,174,255,0.4);}
+.row-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.block-list{display:flex;flex-direction:column;gap:6px;}
+.bt{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--mp-border);cursor:pointer;transition:all .15s;background:transparent;user-select:none;}
+.bt:hover{border-color:var(--mp-border-hover);background:rgba(255,255,255,0.02);}
+.bt.on{border-color:rgba(0,174,255,0.25);background:rgba(0,174,255,0.04);}
+.bt-chk{width:16px;height:16px;border-radius:4px;border:1.5px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:10px;color:transparent;flex-shrink:0;}
+.bt.on .bt-chk{color:var(--mp-cyan);border-color:rgba(0,174,255,0.4);background:rgba(0,174,255,0.1);}
+.bt-icon{font-size:16px;flex-shrink:0;}
+.bt-name{font-size:13px;color:var(--mp-text-primary);}
+.bt-desc{font-size:11px;color:var(--mp-text-tertiary);}
+.btn-generate{background:rgba(0,174,255,0.12);color:var(--mp-cyan);border:1px solid rgba(0,174,255,0.25);border-radius:8px;padding:10px 24px;font-size:12px;font-family:var(--font-b);letter-spacing:0.04em;cursor:pointer;transition:all .2s;width:100%;margin-top:12px;}
+.btn-generate:hover{background:rgba(0,174,255,0.2);}
+.btn-export{margin-top:16px;background:rgba(255,255,255,0.06);color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px 24px;font-size:12px;font-family:var(--font-b);letter-spacing:0.04em;cursor:pointer;transition:all .2s;display:none;}
+.btn-export:hover{background:rgba(255,255,255,0.12);}
+/* ── Report cards ── */
+.rpt-card{background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:14px;padding:20px;margin-bottom:16px;width:100%;max-width:680px;}
+.rpt-card-title{font-family:var(--font-d);font-size:18px;font-weight:400;color:#fff;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.rpt-icon{font-size:16px;}
+.rpt-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.rpt-row:last-child{border-bottom:none;}
+.rpt-label{font-size:13px;color:var(--mp-text-secondary);}
+.rpt-val{font-size:14px;color:var(--mp-text-primary);font-weight:500;}
+.rpt-bar-wrap{display:flex;align-items:center;gap:8px;flex:1;max-width:200px;}
+.rpt-bar{height:6px;border-radius:3px;background:rgba(255,255,255,0.06);flex:1;}
+.rpt-bar-fill{height:100%;border-radius:3px;transition:width .4s;}
+.rpt-verdict-badge{display:inline-block;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:500;letter-spacing:0.04em;}
+.rpt-footer{margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);font-size:9px;color:var(--mp-text-tertiary);text-align:center;line-height:1.6;}
+.rpt-signal-id{font-size:8px;color:rgba(255,255,255,0.2);letter-spacing:0.06em;margin-top:4px;}
+.ph{display:flex;flex-direction:column;align-items:center;justify-content:center;height:300px;color:var(--mp-text-tertiary);gap:16px;}
+.ph-text{font-size:14px;}
+.cert-box{background:#08111B;border:1px solid #1A2E42;border-radius:8px;padding:12px 13px;display:flex;flex-direction:column;gap:9px;}
+.cert-row{display:flex;justify-content:space-between;align-items:center;}
+.cert-label{font-size:10px;color:#4E6E88;}
+.cert-val{font-size:12px;font-weight:500;color:var(--mp-cyan);}
+.cert-divider{height:1px;background:#1A2E42;}
+.cert-sources{font-size:9px;color:#4E6E88;line-height:1.6;}
+.cert-patent{font-size:8px;color:rgba(90,122,149,0.4);letter-spacing:0.08em;text-align:center;margin-top:8px;}
+</style>
+</head>
+<body>
+<div class="builder">
+  <aside class="sidebar">
+    <div class="cs">
+      <div class="cs-label">Security</div>
+      <div class="row-2">
+        <div class="field"><label>Ticker</label><input id="rpt-ticker" placeholder="NVDA" maxlength="6" style="text-transform:uppercase;"></div>
+        <div class="field"><label>Signal</label><select id="rpt-signal">
+          <option value="NARRATIVE TRAP|trap">Narrative Trap</option>
+          <option value="STRUCTURALLY SUPPORTED|bull">Supported</option>
+          <option value="BEARISH REVERSAL|bear">Bearish Rev.</option>
+          <option value="BULLISH BREAKOUT|bull">Bull Breakout</option>
+          <option value="COORDINATION ALERT|trap">Coord. Alert</option>
+          <option value="DECAY DETECTED|bear">Decay</option>
+        </select></div>
+      </div>
+      <div class="field"><label>Bias</label><select id="rpt-bias">
+        <option value="BULLISH">BULLISH</option>
+        <option value="BEARISH" selected>BEARISH</option>
+        <option value="NEUTRAL">NEUTRAL</option>
+      </select></div>
+    </div>
+    <div class="cs">
+      <div class="cs-label">Report Blocks</div>
+      <div class="block-list">
+        <div class="bt on" data-block="verdict"><div class="bt-chk">&#10003;</div><div class="bt-icon">&#9878;</div><div><div class="bt-name">Market Verdict</div><div class="bt-desc">Signal interpretation</div></div></div>
+        <div class="bt on" data-block="scores"><div class="bt-chk">&#10003;</div><div class="bt-icon">&#128202;</div><div><div class="bt-name">Signal Scores</div><div class="bt-desc">Price gap, credibility, truth</div></div></div>
+        <div class="bt on" data-block="evidence"><div class="bt-chk">&#10003;</div><div class="bt-icon">&#128300;</div><div><div class="bt-name">Evidence Trail</div><div class="bt-desc">SEC, news, coordination</div></div></div>
+        <div class="bt" data-block="history"><div class="bt-chk"></div><div class="bt-icon">&#128200;</div><div><div class="bt-name">Narrative History</div><div class="bt-desc">30-day pressure chart</div></div></div>
+        <div class="bt on" data-block="decay"><div class="bt-chk">&#10003;</div><div class="bt-icon">&#9203;</div><div><div class="bt-name">Narrative Decay</div><div class="bt-desc">Story momentum &amp; timing</div></div></div>
+        <div class="bt" data-block="leaderboard"><div class="bt-chk"></div><div class="bt-icon">&#127942;</div><div><div class="bt-name">Sector Leaderboard</div><div class="bt-desc">Peer truth score ranking</div></div></div>
+        <div class="bt" data-block="defense"><div class="bt-chk"></div><div class="bt-icon">&#128737;</div><div><div class="bt-name">Position Defense</div><div class="bt-desc">Data behind the trade</div></div></div>
+        <div class="bt" data-block="fingerprint"><div class="bt-chk"></div><div class="bt-icon">&#128270;</div><div><div class="bt-name">Media Fingerprint</div><div class="bt-desc">Outlet breakdown &amp; alerts</div></div></div>
+      </div>
+    </div>
+    <div class="cs">
+      <div class="cs-label">Certification</div>
+      <div class="cert-box">
+        <div class="cert-row"><span class="cert-label">Data points</span><span class="cert-val">~5,500</span></div>
+        <div class="cert-row"><span class="cert-label">Formulas</span><span class="cert-val">90+</span></div>
+        <div class="cert-row"><span class="cert-label">AI tokens</span><span class="cert-val">~2,300</span></div>
+        <div class="cert-divider"></div>
+        <div class="cert-sources">SEC EDGAR &middot; XBRL &middot; Market Data &middot; Options Flow &middot; Earnings Calls &middot; 170+ News Outlets &middot; Coordination Analysis &middot; Decay Physics</div>
+      </div>
+      <div class="cert-patent">PATENT PENDING #63/971,470 &middot; #63/971,478</div>
+    </div>
+    <button class="btn-generate" onclick="buildReport()">&#9654; Generate Report</button>
+  </aside>
+  <main class="canvas">
+    <div id="report-out"><div class="ph"><div class="ph-text">Enter a ticker &amp; select blocks &rarr; Generate</div></div></div>
+    <button class="btn-export" id="export-btn" onclick="exportPNG()">&#8595; Export PNG</button>
+  </main>
+</div>
+
+<script>
+(function(){
+  var SUPABASE_URL  = (window.__env||{}).SUPABASE_URL  || '';
+  var SUPABASE_ANON = (window.__env||{}).SUPABASE_ANON || '';
+  var cache = {};
+
+  // Block toggles
+  document.querySelectorAll('.bt').forEach(function(el){
+    el.addEventListener('click', function(){ el.classList.toggle('on'); });
+  });
+
+  function esc(s){ return s ? (s+'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : ''; }
+
+  function metricBar(label, val, pct, color){
+    return '<div class="rpt-row"><span class="rpt-label">'+label+'</span>'
+      +'<div class="rpt-bar-wrap"><div class="rpt-bar"><div class="rpt-bar-fill" style="width:'+Math.max(pct,2)+'%;background:'+color+';"></div></div>'
+      +'<span class="rpt-val" style="min-width:50px;text-align:right;">'+val+'</span></div></div>';
+  }
+
+  function footer(id){
+    return '<div class="rpt-footer">~5,500 data points &middot; 90+ formulas &middot; SEC EDGAR &middot; Patent Pending #63/971,470'
+      +'<div class="rpt-signal-id">'+id+'</div></div>';
+  }
+
+  window.buildReport = async function(){
+    var out = document.getElementById('report-out');
+    var exportBtn = document.getElementById('export-btn');
+    var ticker = (document.getElementById('rpt-ticker').value||'NVDA').toUpperCase().trim();
+    if(!ticker){ alert('Enter a ticker'); return; }
+    var signalParts = (document.getElementById('rpt-signal').value||'').split('|');
+    var signal = signalParts[0], signalType = signalParts[1]||'trap';
+    var bias = document.getElementById('rpt-bias').value||'BEARISH';
+    var blocks = [];
+    document.querySelectorAll('.bt.on').forEach(function(b){ blocks.push(b.dataset.block); });
+    if(!blocks.length){ out.innerHTML='<div class="ph"><div class="ph-text">Enable at least one report block</div></div>'; return; }
+
+    out.innerHTML='<div class="ph"><div class="ph-text">Generating report for '+ticker+'...</div></div>';
+
+    // Fetch from Supabase (cached)
+    var data = cache[ticker];
+    if(!data){
+      if(!SUPABASE_URL||!SUPABASE_ANON){ out.innerHTML='<div class="ph"><div class="ph-text">Supabase not configured</div></div>'; return; }
+      try{
+        var hdrs = {'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Accept':'application/json'};
+        var results = await Promise.all([
+          fetch(SUPABASE_URL+'/rest/v1/narrative_scorecard?select=*&ticker=eq.'+ticker+'&order=snapshot_date.desc&limit=1',{headers:hdrs}).then(function(r){return r.ok?r.json():[];}),
+          fetch(SUPABASE_URL+'/rest/v1/ticker_snapshots?select=ticker,price,snapshot_date&ticker=eq.'+ticker+'&order=snapshot_date.desc&limit=30',{headers:hdrs}).then(function(r){return r.ok?r.json():[];}),
+          fetch(SUPABASE_URL+'/rest/v1/ticker_strategy_summary?select=*&ticker=eq.'+ticker+'&order=created_at.desc&limit=1',{headers:hdrs}).then(function(r){return r.ok?r.json():[];})
+        ]);
+        data = { sc: results[0][0]||{}, snaps: results[1]||[], strat: results[2][0]||{} };
+        cache[ticker] = data;
+      }catch(e){ out.innerHTML='<div class="ph"><div class="ph-text">Error: '+esc(e.message)+'</div></div>'; return; }
+    }
+
+    var sc = data.sc, snaps = data.snaps, strat = data.strat;
+    var signalId = 'MP-'+ticker+'-'+Date.now().toString(36).toUpperCase();
+    var ac = signalType==='trap'?'#FF4D4D':signalType==='bull'?'#00DE94':'#00AEFF';
+    var html = '';
+
+    if(blocks.indexOf('verdict')!==-1){
+      html+='<div class="rpt-card" style="border-top:2px solid '+ac+';">'
+        +'<div class="rpt-card-title"><span class="rpt-icon">&#9878;</span>Market Verdict</div>'
+        +'<div class="rpt-row"><span class="rpt-label">Ticker</span><span class="rpt-val">'+ticker+'</span></div>'
+        +'<div class="rpt-row"><span class="rpt-label">Signal</span><span class="rpt-verdict-badge" style="background:'+ac+'22;color:'+ac+';border:1px solid '+ac+'44;">'+signal+'</span></div>'
+        +'<div class="rpt-row"><span class="rpt-label">Bias</span><span class="rpt-val">'+bias+'</span></div>'
+        +'<div class="rpt-row"><span class="rpt-label">Story Verdict</span><span class="rpt-val">'+(sc.story_verdict||sc.prism_verdict||'Under Analysis')+'</span></div>'
+        +'<div class="rpt-row"><span class="rpt-label">Narrative State</span><span class="rpt-val">'+(sc.narrative_state||'Monitoring')+'</span></div>'
+        +footer(signalId)+'</div>';
+    }
+    if(blocks.indexOf('scores')!==-1){
+      var fvd=sc.fvd_pct,vms=sc.vms,nrs=sc.nrs,en=sc.energy_remaining,co=sc.coordination_score,dr=sc.decay_rate;
+      html+='<div class="rpt-card" style="border-top:2px solid '+ac+';">'
+        +'<div class="rpt-card-title"><span class="rpt-icon">&#128202;</span>Signal Scores</div>'
+        +metricBar('Fair Value Deviation',fvd!=null?fvd.toFixed(1)+'%':'—',fvd!=null?Math.min(Math.abs(fvd),100):0,fvd>30?'#FF4D4D':fvd<-5?'#00DE94':'#00AEFF')
+        +metricBar('Virality / Momentum',vms!=null?vms.toFixed(0):'—',vms||0,'#00AEFF')
+        +metricBar('Narrative Reliability',nrs!=null?nrs.toFixed(0):'—',nrs||0,nrs>60?'#00DE94':nrs>30?'#FFB800':'#FF4D4D')
+        +metricBar('Energy Remaining',en!=null?en.toFixed(0)+'%':'—',en||0,en>60?'#00DE94':'#FFB800')
+        +metricBar('Coordination',co!=null?co.toFixed(0):'—',co||0,co>60?'#FF4D4D':'#00AEFF')
+        +metricBar('Decay Rate',dr!=null?(dr*100).toFixed(1)+'%':'—',dr?Math.min(dr*200,100):0,dr>0.05?'#FF4D4D':'#00DE94')
+        +footer(signalId)+'</div>';
+    }
+    if(blocks.indexOf('evidence')!==-1){
+      html+='<div class="rpt-card" style="border-top:2px solid '+ac+';">'
+        +'<div class="rpt-card-title"><span class="rpt-icon">&#128300;</span>Evidence Trail</div>'
+        +'<div class="rpt-row"><span class="rpt-label">SEC Filing Alignment</span><span class="rpt-val">'+(sc.narrative_earnings_alignment||'—')+'</span></div>'
+        +'<div class="rpt-row"><span class="rpt-label">Institutional Positioning</span><span class="rpt-val">'+(sc.institutional_positioning||'—')+'</span></div>'
+        +'<div class="rpt-row"><span class="rpt-label">Coordination Class</span><span class="rpt-val">'+(sc.coordination_class||'—')+'</span></div>'
+        +'<div class="rpt-row"><span class="rpt-label">Suspicion Level</span><span class="rpt-val">'+(sc.suspicion_class||'—')+'</span></div>'
+        +'<div class="rpt-row"><span class="rpt-label">Guidance Direction</span><span class="rpt-val">'+(sc.guidance_direction||'—')+'</span></div>'
+        +footer(signalId)+'</div>';
+    }
+    if(blocks.indexOf('history')!==-1&&snaps.length>1){
+      var sorted=snaps.slice().sort(function(a,b){return a.snapshot_date>b.snapshot_date?1:-1;});
+      var prices=sorted.map(function(s){return s.price||0;});
+      var minP=Math.min.apply(null,prices),maxP=Math.max.apply(null,prices),rangeP=maxP-minP||1;
+      var svgW=600,svgH=120;
+      var pts=prices.map(function(p,i){return(i/(prices.length-1))*svgW+','+(svgH-((p-minP)/rangeP)*svgH*0.85-10);}).join(' ');
+      html+='<div class="rpt-card" style="border-top:2px solid '+ac+';">'
+        +'<div class="rpt-card-title"><span class="rpt-icon">&#128200;</span>Narrative History — 30 Day</div>'
+        +'<svg viewBox="0 0 '+svgW+' '+svgH+'" style="width:100%;height:120px;"><polyline points="'+pts+'" fill="none" stroke="'+ac+'" stroke-width="2" stroke-linejoin="round"/></svg>'
+        +'<div class="rpt-row"><span class="rpt-label">Range</span><span class="rpt-val">$'+minP.toFixed(2)+' — $'+maxP.toFixed(2)+'</span></div>'
+        +'<div class="rpt-row"><span class="rpt-label">Data Points</span><span class="rpt-val">'+snaps.length+' snapshots</span></div>'
+        +footer(signalId)+'</div>';
+    }
+    if(blocks.indexOf('decay')!==-1){
+      html+='<div class="rpt-card" style="border-top:2px solid '+ac+';">'
+        +'<div class="rpt-card-title"><span class="rpt-icon">&#9203;</span>Narrative Decay</div>'
+        +metricBar('Half-Life',sc.half_life_days!=null?sc.half_life_days.toFixed(1)+' days':'—',sc.half_life_days?Math.min(sc.half_life_days*3,100):0,'#FFB800')
+        +metricBar('Exhaustion',sc.predicted_exhaustion_days!=null?sc.predicted_exhaustion_days.toFixed(0)+' days':'—',sc.predicted_exhaustion_days?Math.min(sc.predicted_exhaustion_days*2,100):0,'#00AEFF')
+        +metricBar('Decay Rate',sc.decay_rate!=null?(sc.decay_rate*100).toFixed(1)+'%':'—',sc.decay_rate?Math.min(sc.decay_rate*200,100):0,sc.decay_rate>0.05?'#FF4D4D':'#00DE94')
+        +metricBar('Energy Remaining',sc.energy_remaining!=null?sc.energy_remaining.toFixed(0)+'%':'—',sc.energy_remaining||0,sc.energy_remaining>60?'#00DE94':'#FFB800')
+        +footer(signalId)+'</div>';
+    }
+    if(blocks.indexOf('leaderboard')!==-1){
+      html+='<div class="rpt-card" style="border-top:2px solid '+ac+';">'
+        +'<div class="rpt-card-title"><span class="rpt-icon">&#127942;</span>Sector Leaderboard</div>'
+        +'<div class="rpt-row"><span class="rpt-label">Sector</span><span class="rpt-val">'+(sc.sector_name||'—')+'</span></div>'
+        +'<div class="rpt-row"><span class="rpt-label">Sector Contagion</span><span class="rpt-val">'+(sc.sector_contagion_level||'—')+'</span></div>'
+        +footer(signalId)+'</div>';
+    }
+    if(blocks.indexOf('defense')!==-1){
+      html+='<div class="rpt-card" style="border-top:2px solid '+ac+';">'
+        +'<div class="rpt-card-title"><span class="rpt-icon">&#128737;</span>Position Defense</div>'
+        +metricBar('FVD',sc.fvd_pct!=null?sc.fvd_pct.toFixed(1)+'%':'—',sc.fvd_pct!=null?Math.min(Math.abs(sc.fvd_pct),100):0,ac)
+        +metricBar('VMS',sc.vms!=null?sc.vms.toFixed(0):'—',sc.vms||0,ac)
+        +metricBar('NRS',sc.nrs!=null?sc.nrs.toFixed(0):'—',sc.nrs||0,ac)
+        +metricBar('Coordination',sc.coordination_score!=null?sc.coordination_score.toFixed(0):'—',sc.coordination_score||0,ac)
+        +metricBar('Energy',sc.energy_remaining!=null?sc.energy_remaining.toFixed(0)+'%':'—',sc.energy_remaining||0,ac)
+        +metricBar('Decay',sc.decay_rate!=null?(sc.decay_rate*100).toFixed(1)+'%':'—',sc.decay_rate?Math.min(sc.decay_rate*200,100):0,ac)
+        +footer(signalId)+'</div>';
+    }
+    if(blocks.indexOf('fingerprint')!==-1){
+      html+='<div class="rpt-card" style="border-top:2px solid '+ac+';">'
+        +'<div class="rpt-card-title"><span class="rpt-icon">&#128270;</span>Media Fingerprint</div>'
+        +'<div class="rpt-row"><span class="rpt-label">Suspicion Score</span><span class="rpt-val">'+(sc.suspicion_score!=null?sc.suspicion_score.toFixed(0):'—')+'</span></div>'
+        +'<div class="rpt-row"><span class="rpt-label">Suspicion Class</span><span class="rpt-val">'+(sc.suspicion_class||'—')+'</span></div>'
+        +'<div class="rpt-row"><span class="rpt-label">Coordination Score</span><span class="rpt-val">'+(sc.coordination_score!=null?sc.coordination_score.toFixed(0):'—')+'</span></div>'
+        +'<div class="rpt-row"><span class="rpt-label">Coordination Class</span><span class="rpt-val">'+(sc.coordination_class||'—')+'</span></div>'
+        +footer(signalId)+'</div>';
+    }
+
+    if(!html) html='<div class="ph"><div class="ph-text">No data found for '+ticker+'</div></div>';
+    out.innerHTML = html;
+    exportBtn.style.display = 'block';
+  };
+
+  window.exportPNG = function(){
+    var el = document.getElementById('report-out');
+    if(!el||!el.querySelector('.rpt-card')){ alert('Generate a report first'); return; }
+    var s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    s.onload = function(){
+      html2canvas(el,{backgroundColor:'#080B11',scale:2}).then(function(canvas){
+        var a=document.createElement('a');a.download='MarketPrism-Report.png';a.href=canvas.toDataURL();a.click();
+      });
+    };
+    document.head.appendChild(s);
+  };
+
+  // Enter key on ticker input
+  document.getElementById('rpt-ticker').addEventListener('keydown', function(e){
+    if(e.key==='Enter') buildReport();
+  });
+})();
+</script>
+</body>
+</html>

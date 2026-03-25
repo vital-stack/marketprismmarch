@@ -3697,48 +3697,9 @@ body{
           <!-- Populated by JS -->
         </div>
       </div>
-      <!-- ── REPORTS panel — unified builder ── -->
+      <!-- ── REPORTS panel — loads standalone page in iframe ── -->
       <div class="sharing-panel" id="sharing-reports">
-        <div class="mp-reports-builder" id="mp-reports-builder">
-          <aside class="config-panel">
-            <div class="cs">
-              <div class="cs-label">Security</div>
-              <div class="row-2">
-                <div class="field"><label>Ticker</label><select id="mp-sel-ticker"><option value="NVDA|NVIDIA Corp">NVDA</option><option value="TSLA|Tesla Inc">TSLA</option><option value="AAPL|Apple Inc">AAPL</option><option value="META|Meta Platforms">META</option><option value="MSFT|Microsoft Corp">MSFT</option><option value="AMZN|Amazon.com Inc">AMZN</option><option value="GOOG|Alphabet Inc">GOOG</option><option value="AMD|Advanced Micro Devices">AMD</option><option value="PLTR|Palantir Technologies">PLTR</option><option value="GME|GameStop Corp">GME</option><option value="AMC|AMC Entertainment">AMC</option><option value="RIVN|Rivian Automotive">RIVN</option><option value="SOFI|SoFi Technologies">SOFI</option><option value="COIN|Coinbase Global">COIN</option><option value="MSTR|MicroStrategy Inc">MSTR</option></select></div>
-                <div class="field"><label>Signal</label><select id="mp-sel-signal"><option value="NARRATIVE TRAP|trap">Narrative Trap</option><option value="STRUCTURALLY SUPPORTED|bull">Supported</option><option value="BEARISH REVERSAL|bear">Bearish Rev.</option><option value="BULLISH BREAKOUT|bull">Bull Breakout</option><option value="COORDINATION ALERT|trap">Coord. Alert</option><option value="DECAY DETECTED|bear">Decay</option></select></div>
-              </div>
-              <div class="field"><label>Bias</label><select id="mp-sel-bias"><option value="BULLISH">BULLISH</option><option value="BEARISH" selected>BEARISH</option><option value="NEUTRAL">NEUTRAL</option></select></div>
-            </div>
-            <div class="cs">
-              <div class="cs-label">Report Blocks</div>
-              <div class="block-list">
-                <div class="bt on" data-block="verdict"><div class="bt-chk">&#10003;</div><div class="bt-icon">&#9878;</div><div><div class="bt-name">Market Verdict</div><div class="bt-desc">Signal interpretation</div></div></div>
-                <div class="bt on" data-block="scores"><div class="bt-chk">&#10003;</div><div class="bt-icon">&#128202;</div><div><div class="bt-name">Signal Scores</div><div class="bt-desc">Price gap, credibility, truth</div></div></div>
-                <div class="bt on" data-block="evidence"><div class="bt-chk">&#10003;</div><div class="bt-icon">&#128300;</div><div><div class="bt-name">Evidence Trail</div><div class="bt-desc">SEC, news, coordination</div></div></div>
-                <div class="bt" data-block="history"><div class="bt-chk"></div><div class="bt-icon">&#128200;</div><div><div class="bt-name">Narrative History</div><div class="bt-desc">30-day pressure chart</div></div></div>
-                <div class="bt on" data-block="decay"><div class="bt-chk">&#10003;</div><div class="bt-icon">&#9203;</div><div><div class="bt-name">Narrative Decay</div><div class="bt-desc">Story momentum &amp; timing</div></div></div>
-                <div class="bt" data-block="leaderboard"><div class="bt-chk"></div><div class="bt-icon">&#127942;</div><div><div class="bt-name">Sector Leaderboard</div><div class="bt-desc">Peer truth score ranking</div></div></div>
-                <div class="bt" data-block="defense"><div class="bt-chk"></div><div class="bt-icon">&#128737;</div><div><div class="bt-name">Position Defense</div><div class="bt-desc">Data behind the trade</div></div></div>
-                <div class="bt" data-block="fingerprint"><div class="bt-chk"></div><div class="bt-icon">&#128270;</div><div><div class="bt-name">Media Fingerprint</div><div class="bt-desc">Outlet breakdown &amp; alerts</div></div></div>
-              </div>
-            </div>
-            <div class="cs">
-              <div class="cs-label">Certification</div>
-              <div style="background:#08111B;border:1px solid #1A2E42;border-radius:8px;padding:12px 13px;display:flex;flex-direction:column;gap:9px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:10px;color:#4E6E88;font-family:var(--font-body);">Data points</span><span style="font-family:var(--font-body);font-size:12px;font-weight:500;color:#00AEFF;">~5,500</span></div>
-                <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:10px;color:#4E6E88;font-family:var(--font-body);">Formulas</span><span style="font-family:var(--font-body);font-size:12px;font-weight:500;color:#00AEFF;">90+</span></div>
-                <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:10px;color:#4E6E88;font-family:var(--font-body);">AI tokens</span><span style="font-family:var(--font-body);font-size:12px;font-weight:500;color:#00AEFF;">~2,300</span></div>
-                <div style="height:1px;background:#1A2E42;"></div>
-                <div style="font-size:9px;color:#4E6E88;line-height:1.6;">SEC EDGAR &middot; XBRL &middot; Market Data &middot; Options Flow &middot; Earnings Calls &middot; 170+ News Outlets &middot; Coordination Analysis &middot; Decay Physics</div>
-              </div>
-              <div style="font-family:var(--font-body);font-size:8px;color:rgba(90,122,149,0.4);letter-spacing:0.08em;text-align:center;margin-top:8px;">PATENT PENDING #63/971,470 &middot; #63/971,478</div>
-            </div>
-          </aside>
-          <main class="canvas-area">
-            <div id="mp-report-out"><div class="ph"><div class="ph-hex"></div><div class="ph-text">Select a ticker &rarr; Generate</div></div></div>
-            <button class="btn-export" onclick="mpExportPNG()">&darr; Export PNG</button>
-          </main>
-        </div>
+        <iframe id="mp-reports-frame" src="/api/market-sharing-reports" style="width:100%;height:calc(100vh - 180px);border:none;border-radius:12px;display:block;background:var(--mp-surface);"></iframe>
       </div>
       <!-- ── VIDEO BUILDER panel ── -->
       <div class="sharing-panel" id="sharing-videos">
