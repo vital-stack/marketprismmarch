@@ -4915,10 +4915,11 @@ async function loadSupportedData(){
   if(!SUPABASE_URL||!SUPABASE_ANON) return;
   var hdrs={'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Accept':'application/json'};
   try{
-    var res=await fetch(SUPABASE_URL+'/rest/v1/active_supported?select=*&order=confidence_score.desc&limit=20',{headers:hdrs});
+    var res=await fetch(SUPABASE_URL+'/rest/v1/active_supported?select=ticker,narrative,verdict,verdict_confidence,current_price,fair_value,fvd_pct,macro_theme,synopsis,energy_remaining,coordination_score,nrs,sector_contagion_level&order=verdict_confidence.desc&limit=20',{headers:hdrs});
+    console.log('[MP] active_supported HTTP:', res.status, res.ok);
     if(!res.ok) return;
     SUPPORTED_DATA=await res.json();
-    console.log('[MP] active_supported loaded:',SUPPORTED_DATA.length,'rows');
+    console.log('[MP] active_supported loaded:',SUPPORTED_DATA.length,'rows', SUPPORTED_DATA.slice(0,2));
     renderSupportedCards();
   }catch(e){
     console.warn('[MP] active_supported fetch failed:',e);
@@ -4929,7 +4930,6 @@ function renderSupportedCards(){
   var el=document.getElementById('nf-list-supported');
   if(!el) return;
 
-  // Try live DATA first, then SUPPORTED_DATA
   var supported=[];
   if(SUPPORTED_DATA.length>0){
     supported=SUPPORTED_DATA.slice(0,8);
@@ -4938,18 +4938,30 @@ function renderSupportedCards(){
       var v=(r.prism_verdict||'').toLowerCase();
       if(v.indexOf('supported')>=0) supported.push(r);
     });
-    supported.sort(function(a,b){return(b._confPct||b.confidence_score||0)-(a._confPct||a.confidence_score||0);});
+    supported.sort(function(a,b){return(b.verdict_confidence||b._confPct||0)-(a.verdict_confidence||a._confPct||0);});
     supported=supported.slice(0,5);
   }
 
   if(supported.length>0){
     el.innerHTML=supported.map(function(r){
-      var conf=r.confidence_score||r._confPct||75;
+      var conf=Math.round(r.verdict_confidence||r._confPct||75);
+      var sector=r.macro_theme||r.sector_name||'';
+      // Clean up macro_theme display (AI_Infrastructure → AI Infrastructure)
+      sector=sector.replace(/_/g,' ');
+      var headline=r.narrative||r.synopsis||r.story_claim||r.primary_driver||'';
       var insightTags=[
         {label:'Structurally Supported',bg:'rgba(0,222,148,0.12)',color:'#00DE94',border:'rgba(0,222,148,0.25)'},
-        {label:Math.round(conf)+'% confidence',bg:'rgba(0,174,255,0.12)',color:'#00AEFF',border:'rgba(0,174,255,0.25)'}
+        {label:conf+'% confidence',bg:'rgba(0,174,255,0.12)',color:'#00AEFF',border:'rgba(0,174,255,0.25)'}
       ];
-      return nfBuildRow('bull', nfLogoHTML(r.ticker), r.ticker, r.sector_name||r.sector||'', r.story_claim||r.synopsis||r.primary_driver||'', 'Structurally Supported', '/ticker/'+encodeURIComponent(r.ticker), {state:'Surging',confidence:conf,_insightTags:insightTags});
+      if(r.energy_remaining!=null&&r.energy_remaining>60){
+        insightTags.push({label:'High Energy',bg:'rgba(0,222,148,0.08)',color:'#00DE94',border:'rgba(0,222,148,0.2)'});
+      }
+      return nfBuildRow('bull', nfLogoHTML(r.ticker), r.ticker, sector, headline, 'Structurally Supported', '/ticker/'+encodeURIComponent(r.ticker), {
+        state:'Surging',
+        confidence:conf,
+        price:r.current_price?parseFloat(r.current_price):null,
+        _insightTags:insightTags
+      });
     }).join('');
   } else {
     el.innerHTML='<div class="empty-state" style="padding:20px;text-align:center;color:var(--mp-text-tertiary);font-size:13px;">No structurally supported signals available.</div>';
