@@ -189,7 +189,10 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tx);-webkit-font-smo
         <div class="sb-blk" data-b="history"><div class="sb-chk"></div><div class="sb-ico">&#128200;</div><div><div class="sb-bname">Price History</div><div class="sb-bdesc">30-day pressure chart</div></div></div>
         <div class="sb-blk on" data-b="decay"><div class="sb-chk">&#10003;</div><div class="sb-ico">&#9203;</div><div><div class="sb-bname">Narrative Decay</div><div class="sb-bdesc">Half-life, exhaustion, momentum</div></div></div>
         <div class="sb-blk" data-b="defense"><div class="sb-chk"></div><div class="sb-ico">&#128737;</div><div><div class="sb-bname">Position Defense</div><div class="sb-bdesc">All 6 scorecard metrics</div></div></div>
-        <div class="sb-blk" data-b="strategy"><div class="sb-chk"></div><div class="sb-ico">&#9889;</div><div><div class="sb-bname">Trading Strategy</div><div class="sb-bdesc">Entry zone, returns, risk</div></div></div>
+        <div class="sb-blk on" data-b="narratives"><div class="sb-chk">&#10003;</div><div class="sb-ico">&#128220;</div><div><div class="sb-bname">Current Narratives</div><div class="sb-bdesc">Active stories + sources</div></div></div>
+        <div class="sb-blk on" data-b="claims"><div class="sb-chk">&#10003;</div><div class="sb-ico">&#9745;</div><div><div class="sb-bname">Claims vs Facts</div><div class="sb-bdesc">Prerequisite checks + quality</div></div></div>
+        <div class="sb-blk" data-b="nhistory"><div class="sb-chk"></div><div class="sb-ico">&#128200;</div><div><div class="sb-bname">Narrative History</div><div class="sb-bdesc">Sentiment + price over time</div></div></div>
+        <div class="sb-blk" data-b="strategy"><div class="sb-chk">&#10003;</div><div class="sb-ico">&#9889;</div><div><div class="sb-bname">Trading Strategy</div><div class="sb-bdesc">Entry zone, returns, risk</div></div></div>
         <div class="sb-blk" data-b="drivers"><div class="sb-chk"></div><div class="sb-ico">&#128161;</div><div><div class="sb-bname">Move Drivers</div><div class="sb-bdesc">What's driving the price</div></div></div>
       </div>
     </div>
@@ -241,15 +244,16 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tx);-webkit-font-smo
           fetch(SB_URL+'/rest/v1/ticker_snapshots?select=ticker,price,snapshot_date&ticker=eq.'+ticker+'&order=snapshot_date.desc&limit=30',{headers:h}).then(function(r){return r.ok?r.json():[];}),
           fetch(SB_URL+'/rest/v1/v_dash_daily_story?select=*&ticker=eq.'+ticker+'&order=snapshot_date.desc&limit=1',{headers:h}).then(function(r){return r.ok?r.json():[];}),
           fetch(SB_URL+'/rest/v1/ticker_strategy_summary?select=*&ticker=eq.'+ticker+'&order=created_at.desc&limit=1',{headers:h}).then(function(r){return r.ok?r.json():[];}),
-          fetch(SB_URL+'/rest/v1/narrative_analyses?select=narrative_text,verdict,quality_signals,prerequisites_json&ticker=eq.'+ticker+'&order=analysis_date.desc&limit=1',{headers:h}).then(function(r){return r.ok?r.json():[];}),
+          fetch(SB_URL+'/rest/v1/narrative_analyses?select=narrative_hash,narrative_text,verdict,source_outlet,article_url,snapshot_date,prerequisites_json,prerequisites_met,prerequisites_total,claim_metric,claim_value,claim_timeframe,material_discrepancy,omission_summary,has_source_ref,has_numeric_anchor,has_vague_language,causal_logic_score,sentiment_score&ticker=eq.'+ticker+'&order=snapshot_date.desc&limit=15',{headers:h}).then(function(r){return r.ok?r.json():[];}),
           fetch(SB_URL+'/rest/v1/v_dash_move_drivers?select=*&ticker=eq.'+ticker+'&limit=5',{headers:h}).then(function(r){return r.ok?r.json():[];}),
           fetch(SB_URL+'/rest/v1/share_card_templates?select=*&ticker=eq.'+ticker+'&order=created_at.desc',{headers:h}).then(function(r){return r.ok?r.json():[];}).catch(function(){return [];}),
         ]);
-        d={sc:r[0][0]||{},snaps:r[1]||[],story:r[2][0]||{},strategy:r[3][0]||{},analysis:r[4][0]||{},drivers:r[5]||[],templates:r[6]||[]};cache[ticker]=d;
+        d={sc:r[0][0]||{},snaps:r[1]||[],story:r[2][0]||{},strategy:r[3][0]||{},narratives:r[4]||[],drivers:r[5]||[],templates:r[6]||[]};cache[ticker]=d;
       }catch(e){ph.textContent='Error: '+e.message;return;}
     }
 
-    var sc=d.sc,snaps=d.snaps,story=d.story,strategy=d.strategy,analysis=d.analysis,drivers=d.drivers,templates=d.templates;
+    var sc=d.sc,snaps=d.snaps,story=d.story,strategy=d.strategy,narratives=d.narratives,drivers=d.drivers,templates=d.templates;
+    var analysis=narratives[0]||{};
     // Derive signal from scorecard data
     var verdict=sc.story_verdict||sc.prism_verdict||story.prism_verdict||'';
     var vLow=verdict.toLowerCase();
@@ -369,6 +373,131 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tx);-webkit-font-smo
         +mbar('Coordination',sc.coordination_score,fmt(sc.coordination_score),sc.coordination_score||0,ac)
         +mbar('Energy',sc.energy_remaining,fmt(sc.energy_remaining,'%'),sc.energy_remaining||0,ac)
         +mbar('Decay',sc.decay_rate,sc.decay_rate!=null?(sc.decay_rate*100).toFixed(1)+'%':'—',sc.decay_rate?Math.min(sc.decay_rate*200,100):0,ac)
+      +'</div>';
+    }
+
+    // ── Current Narratives block
+    if(blocks.indexOf('narratives')!==-1&&narratives.length>0){
+      // Deduplicate by narrative_hash
+      var seen={},unique=[];
+      narratives.forEach(function(n){
+        var key=n.narrative_hash||n.narrative_text;
+        if(!seen[key]){seen[key]=true;unique.push(n);}
+      });
+      html+='<div class="rpt-block">'
+        +'<div class="rpt-block-title"><span class="rpt-block-ico">&#128220;</span>CURRENT NARRATIVES</div>';
+      unique.slice(0,5).forEach(function(n){
+        var v=(n.verdict||'').toUpperCase();
+        var vColor=v.indexOf('MISLEAD')!==-1||v.indexOf('FALSE')!==-1?'#FF4D4D':v.indexOf('TRAP')!==-1?'#FFB800':'#00AEFF';
+        var vLabel=v.indexOf('MISLEAD')!==-1||v.indexOf('FALSE')!==-1?'Misleading':v.indexOf('TRAP')!==-1?'Trap':'Monitoring';
+        var dateStr=n.snapshot_date?new Date(n.snapshot_date).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'';
+        html+='<div style="padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.04);">'
+          +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'
+            +'<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:'+vColor+'18;color:'+vColor+';border:1px solid '+vColor+'33;font-weight:600;">'+vLabel+'</span>'
+            +(n.source_outlet?'<span style="font-size:11px;color:var(--tx3);">'+esc(n.source_outlet)+'</span>':'')
+            +(dateStr?'<span style="font-size:11px;color:var(--tx4);margin-left:auto;">'+dateStr+'</span>':'')
+          +'</div>'
+          +'<div style="font-size:13px;color:var(--tx2);line-height:1.6;">'+esc(n.narrative_text)+'</div>'
+        +'</div>';
+      });
+      html+='</div>';
+    }
+
+    // ── Claims vs Facts block
+    if(blocks.indexOf('claims')!==-1&&narratives.length>0){
+      var withClaims=narratives.filter(function(n){return n.claim_metric||n.prerequisites_json||n.material_discrepancy;});
+      if(withClaims.length>0){
+        html+='<div class="rpt-block">'
+          +'<div class="rpt-block-title"><span class="rpt-block-ico">&#9745;</span>CLAIMS VS FACTS</div>';
+        // Deduplicate
+        var claimSeen={};
+        withClaims.forEach(function(n){
+          var key=(n.claim_metric||'')+(n.narrative_text||'').slice(0,50);
+          if(claimSeen[key])return;claimSeen[key]=true;
+          // Claim line
+          if(n.claim_metric){
+            html+='<div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04);">'
+              +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">'
+                +'<span style="font-size:11px;font-weight:600;color:var(--tx);">Claim:</span>'
+                +'<span style="font-size:13px;color:var(--cyan);">'+esc(n.claim_metric)+'</span>'
+                +(n.claim_value?'<span style="font-size:13px;color:var(--tx);">'+esc(n.claim_value)+'</span>':'')
+                +(n.claim_timeframe?'<span style="font-size:11px;color:var(--tx3);">('+esc(n.claim_timeframe)+')</span>':'')
+              +'</div>';
+            // Quality signals
+            var sigs=[];
+            if(n.has_source_ref) sigs.push({l:'Has source',c:'#22c55e'}); else sigs.push({l:'No source',c:'#FF4D4D'});
+            if(n.has_numeric_anchor) sigs.push({l:'Data-backed',c:'#22c55e'}); else sigs.push({l:'No data anchor',c:'#FFB800'});
+            if(n.has_vague_language) sigs.push({l:'Vague language',c:'#FF4D4D'}); else sigs.push({l:'Precise',c:'#22c55e'});
+            if(n.causal_logic_score!=null) sigs.push({l:'Logic '+Math.round(n.causal_logic_score)+'%',c:n.causal_logic_score>=70?'#22c55e':'#FFB800'});
+            html+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">'+sigs.map(function(s){return '<span style="font-size:10px;padding:2px 8px;border-radius:8px;background:'+s.c+'14;color:'+s.c+';border:1px solid '+s.c+'28;">'+s.l+'</span>';}).join('')+'</div>';
+            // Discrepancy flag
+            if(n.material_discrepancy) html+='<div style="margin-top:6px;font-size:12px;color:#FF4D4D;">&#9888; Material discrepancy detected</div>';
+            if(n.omission_summary) html+='<div style="margin-top:4px;font-size:12px;color:var(--tx3);">'+esc(n.omission_summary)+'</div>';
+            html+='</div>';
+          }
+          // Prerequisites
+          if(n.prerequisites_json){
+            var prereqs=[];
+            try{var raw=typeof n.prerequisites_json==='string'?JSON.parse(n.prerequisites_json):n.prerequisites_json;prereqs=Array.isArray(raw)?raw:Object.values(raw);}catch(e){}
+            if(prereqs.length>0){
+              html+='<div style="padding:8px 0;">';
+              prereqs.slice(0,4).forEach(function(p){
+                var met=p.met===true||String(p.status||'').toUpperCase()==='MET';
+                html+='<div style="display:flex;align-items:flex-start;gap:8px;padding:4px 0;">'
+                  +'<span style="font-size:14px;color:'+(met?'#22c55e':'#FF4D4D')+';">'+(met?'&#10003;':'&#10007;')+'</span>'
+                  +'<span style="font-size:12px;color:var(--tx2);">'+esc(p.condition||p.text||p.description||'—')+'</span>'
+                +'</div>';
+              });
+              html+='</div>';
+            }
+          }
+        });
+        html+='</div>';
+      }
+    }
+
+    // ── Narrative History chart (price + sentiment dots)
+    if(blocks.indexOf('nhistory')!==-1&&snaps.length>1&&narratives.length>0){
+      var sorted=snaps.slice().sort(function(a,b){return a.snapshot_date>b.snapshot_date?1:-1;});
+      var prices=sorted.map(function(s){return s.price||0;});
+      var dates=sorted.map(function(s){return s.snapshot_date.slice(0,10);});
+      var mn=Math.min.apply(null,prices),mx=Math.max.apply(null,prices),rng=mx-mn||1;
+      var W=620,H=140,pad=6;
+      // Price line
+      var pts=prices.map(function(p,i){return(pad+i/(prices.length-1)*(W-pad*2))+','+(H-pad-20-((p-mn)/rng)*(H-pad*2-20));}).join(' ');
+      var fillPts=pts+' '+(pad+(prices.length-1)/(prices.length-1)*(W-pad*2))+','+(H-20)+' '+pad+','+(H-20);
+      // Narrative dots on the chart
+      var dots='';
+      narratives.forEach(function(n){
+        if(!n.snapshot_date)return;
+        var nDate=n.snapshot_date.slice(0,10);
+        var di=dates.indexOf(nDate);if(di===-1){for(var j=0;j<dates.length;j++){if(dates[j]>=nDate){di=j;break;}}}
+        if(di===-1||di>=prices.length)return;
+        var x=pad+di/(prices.length-1)*(W-pad*2);
+        var y=H-pad-20-((prices[di]-mn)/rng)*(H-pad*2-20);
+        var v=(n.verdict||'').toUpperCase();
+        var dc=v.indexOf('MISLEAD')!==-1||v.indexOf('FALSE')!==-1?'#FF4D4D':v.indexOf('TRAP')!==-1?'#FFB800':'#00AEFF';
+        dots+='<circle cx="'+x+'" cy="'+y+'" r="4" fill="'+dc+'" opacity="0.8"><title>'+esc(n.source_outlet||'')+' — '+esc((n.narrative_text||'').slice(0,60))+'</title></circle>';
+      });
+      html+='<div class="rpt-block">'
+        +'<div class="rpt-block-title"><span class="rpt-block-ico">&#128200;</span>NARRATIVE HISTORY</div>'
+        +'<div class="rpt-chart">'
+          +'<svg viewBox="0 0 '+W+' '+H+'">'
+            +'<defs><linearGradient id="nhg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+ac+'" stop-opacity="0.15"/><stop offset="100%" stop-color="'+ac+'" stop-opacity="0"/></linearGradient></defs>'
+            +'<polygon points="'+fillPts+'" fill="url(#nhg)"/>'
+            +'<polyline points="'+pts+'" fill="none" stroke="'+ac+'" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" opacity="0.6"/>'
+            +dots
+          +'</svg>'
+        +'</div>'
+        +'<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--tx4);margin-top:4px;">'
+          +'<span>'+dates[0]+'</span>'
+          +'<span style="display:flex;gap:12px;">'
+            +'<span>&#9679; <span style="color:#00AEFF;">Monitoring</span></span>'
+            +'<span>&#9679; <span style="color:#FFB800;">Trap</span></span>'
+            +'<span>&#9679; <span style="color:#FF4D4D;">Misleading</span></span>'
+          +'</span>'
+          +'<span>'+dates[dates.length-1]+'</span>'
+        +'</div>'
       +'</div>';
     }
 
