@@ -3277,12 +3277,6 @@ body{
       Leaderboard
       <span class="nav-item-badge teal" id="nav-badge-leaderboard">New</span>
     </button>
-    <button class="nav-item" data-tab="mindmap" onclick="switchTab('mindmap',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="3" cy="5" r="2"/><circle cx="21" cy="5" r="2"/><circle cx="3" cy="19" r="2"/><circle cx="21" cy="19" r="2"/><path d="M5 5.5l5 5M14 13.5l5 5M5 18.5l5-5M14 10.5l5-5"/></svg>
-      Narrative Map
-      <span class="nav-item-badge teal" id="nav-badge-mindmap">New</span>
-    </button>
-
     <div class="nav-section-lbl">Tools</div>
     <button class="nav-item" data-tab="cards" onclick="switchTab('cards',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="8" height="13" rx="2"/><rect x="14" y="3" width="8" height="13" rx="2"/><path d="M6 19h12"/><path d="M10 21h4"/></svg>
@@ -3904,38 +3898,6 @@ body{
     <div class="tcg-toast" id="tcg-toast"></div>
 
     <!-- ══════════════════════════════════════
-         TAB: NARRATIVE MAP
-    ═══════════════════════════════════════ -->
-    <div class="tab-panel" id="tab-mindmap">
-      <div class="page-header" style="margin-bottom:20px;">
-        <div class="ph-eyebrow">Narrative Intelligence</div>
-        <h1>Narrative Map.</h1>
-        <span class="ph-italic">How stories connect across markets.</span>
-        <p>Explore themes, sectors, story clusters, and contagion chains — click any node to see connected tickers and their narratives.</p>
-      </div>
-      <div style="background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:16px;overflow:hidden;">
-        <div style="padding:16px 20px 12px;border-bottom:1px solid var(--mp-border);display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
-          <input id="mm-search" placeholder="Search themes, tickers, keywords..."
-            style="flex:1;min-width:180px;background:var(--mp-deep);border:1px solid var(--mp-border);border-radius:10px;color:var(--mp-text-primary);font-size:13px;padding:8px 14px;outline:none;font-family:var(--font-body);"
-            oninput="mmSearch(this.value)" onfocus="this.style.borderColor='#00AEFF'" onblur="this.style.borderColor='var(--mp-border)'">
-          <div style="display:flex;gap:4px;">
-            <button class="mm-mbt mm-on" data-mm="macro" onclick="mmMode('macro',this)">Macro Themes</button>
-            <button class="mm-mbt" data-mm="sector" onclick="mmMode('sector',this)">Sectors</button>
-            <button class="mm-mbt" data-mm="cluster" onclick="mmMode('cluster',this)">Story Clusters</button>
-            <button class="mm-mbt" data-mm="contagion" onclick="mmMode('contagion',this)">Contagion Chains</button>
-          </div>
-        </div>
-        <div id="mm-stage" style="position:relative;width:100%;height:680px;overflow:hidden;cursor:grab;background:var(--mp-deep);">
-          <canvas id="mm-canvas" style="position:absolute;top:0;left:0;pointer-events:none;"></canvas>
-          <button id="mm-back" onclick="mmBack()" style="display:none;position:absolute;top:14px;left:14px;z-index:10;background:rgba(12,16,24,0.85);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:#00AEFF;font-size:12px;font-weight:600;padding:7px 14px;cursor:pointer;font-family:var(--font-body);transition:all .15s;letter-spacing:.02em;" onmouseenter="this.style.background='rgba(0,174,255,0.12)';this.style.borderColor='#00AEFF'" onmouseleave="this.style.background='rgba(12,16,24,0.85)';this.style.borderColor='rgba(255,255,255,0.12)'">← Back</button>
-        </div>
-        <div id="mm-detail" style="padding:16px 20px;min-height:90px;border-top:1px solid var(--mp-border);">
-          <div id="mm-detail-inner"><p style="font-size:13px;color:var(--mp-text-tertiary);font-style:italic;">Click any theme to explore connected tickers — click a ticker to read its narrative.</p></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══════════════════════════════════════
          TAB: LEADERBOARD
     ═══════════════════════════════════════ -->
     <div class="tab-panel" id="tab-leaderboard">
@@ -4124,7 +4086,7 @@ document.querySelectorAll('.page-header p').forEach(function(p,i){
 });
 // ── Tab switching ─────────────────────────────────────────────────────────────
 var TABS = ['daily','discover','sector','marketwide','snapshots','memes','narrative','cards','calendar','trapradar','mindmap','leaderboard'];
-var TAB_TITLES = {daily:'Daily Brief',discover:'Discover',sector:'Sector Pulse',marketwide:'Market-Wide',snapshots:'Ticker Snapshots',memes:'Market Sharing',narrative:'Narrative History',cards:'Trading Cards',calendar:'Trading Calendar',trapradar:'Trap Radar',mindmap:'Narrative Map',leaderboard:'Leaderboard'};
+var TAB_TITLES = {daily:'Daily Brief',discover:'Discover',sector:'Sector Pulse',marketwide:'Market-Wide',snapshots:'Ticker Snapshots',memes:'Market Sharing',narrative:'Narrative History',cards:'Trading Cards',calendar:'Trading Calendar',trapradar:'Trap Radar',leaderboard:'Leaderboard'};
 function switchTab(id, btn){
   TABS.forEach(function(t){
     document.getElementById('tab-'+t).classList.toggle('active', t===id);
