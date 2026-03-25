@@ -1,15 +1,13 @@
-const { readFileSync } = require('fs');
-const { join } = require('path');
+const resolveTemplate = require('./_resolve-template');
 
 module.exports = (req, res) => {
-  let html;
   try {
-    html = readFileSync(join(__dirname, '_methodology.html'), 'utf8');
-  } catch {
-    html = readFileSync(join(process.cwd(), '_methodology.html'), 'utf8');
-  }
+    let html = resolveTemplate('_methodology.html');
 
-  res.setHeader('Content-Type', 'text/html; charset=utf-8');
-  res.setHeader('Cache-Control', 'public, max-age=3600');
-  res.status(200).send(html);
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.status(200).send(html);
+  } catch (err) {
+    res.status(500).send('Methodology error: ' + err.message);
+  }
 };
