@@ -71,6 +71,9 @@ module.exports = async (req, res) => {
     const series = Array.isArray(json.results)
       ? json.results.map((row) => ({
           snapshot_date: new Date(row.t).toISOString().slice(0, 10),
+          price_open: Number(row.o),
+          price_high: Number(row.h),
+          price_low: Number(row.l),
           price_close: Number(row.c),
         }))
       : [];

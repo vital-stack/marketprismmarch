@@ -5665,7 +5665,7 @@ function rangeToCutoff(range){
 function evColor(t){
   if(t==='bull')return 'rgba(0,229,180,1)';
   if(t==='bear')return 'rgba(255,77,77,1)';
-  if(t==='earnings')return 'rgba(123,97,255,1)';
+  if(t==='earnings')return 'rgba(0, 255, 82, 1)';
   if(t==='opex')return 'rgba(239,159,39,1)';
   return 'rgba(139,151,184,1)';
 }
@@ -5758,39 +5758,50 @@ async function fetchNarrativeHealth(ticker){
   }catch(e){console.error('Health fetch:',e);return [];}
 }
 
-async function fetchBenzingaEarnings(ticker){
-  if(!SUPABASE_URL||!SUPABASE_ANON)return [];
-  var hdrs={'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Accept':'application/json'};
-  var base=SUPABASE_URL+'/rest/v1/benzinga_earnings?ticker=eq.'+encodeURIComponent(ticker)+'&limit=12';
-  var tries=[
-    base+'&select=date&order=date.desc',
-    base+'&select=report_date&order=report_date.desc',
-    base+'&select=earnings_date&order=earnings_date.desc',
-    base+'&select=reported_date&order=reported_date.desc',
-    base+'&select=date,report_date,earnings_date,reported_date&order=date.desc'
-  ];
-  for(var i=0;i<tries.length;i++){
-    try{
-      var r=await fetch(tries[i],{headers:hdrs});
-      if(!r.ok)continue;
-      var rows=await r.json();
-      if(Array.isArray(rows)&&rows.length)return rows;
-    }catch(e){}
+async function fetchBenzingaEarnings(ticker) {
+  if (!SUPABASE_URL || !SUPABASE_ANON) return [];
+  var hdrs = {
+    'apikey': SUPABASE_ANON,
+    'Authorization': 'Bearer ' + SUPABASE_ANON,
+    'Accept': 'application/json'
+  };
+  try {
+    var url = SUPABASE_URL 
+      + '/rest/v1/benzinga_earnings'
+      + '?ticker=eq.' + encodeURIComponent(ticker.toUpperCase())
+      + '&date=not.is.null'
+      + '&order=date.desc'
+      + '&limit=20'
+      + '&select=date,fiscal_year,fiscal_period,actual_eps,estimated_eps';
+    var r = await fetch(url, { headers: hdrs });
+    console.log('[BENZINGA FETCH] status:', r.status, 'url:', url);
+    if (!r.ok) {
+      console.warn('[BENZINGA FETCH] Error body:', await r.text());
+      return [];
+    }
+    var rows = await r.json();
+    console.log('[BENZINGA FETCH] rows returned:', rows.length, rows);
+    return rows;
+  } catch(e) {
+    console.warn('[BENZINGA FETCH] Exception:', e);
+    return [];
   }
-  return [];
 }
 
 function normalizeEventDate(value){
   if(!value)return '';
-  if(typeof value==='string'){
-    var trimmed=value.trim();
-    if(!trimmed)return '';
-    if(trimmed.indexOf('T')!==-1)return trimmed.split('T')[0];
-    if(trimmed.indexOf(' ')!==-1&&trimmed.indexOf('-')!==-1)return trimmed.split(' ')[0];
-    return trimmed;
-  }
   try{
-    return new Date(value).toISOString().slice(0,10);
+    var dt = new Date(value);
+    if(isNaN(dt.getTime())){
+      if(typeof value==='string'){
+        var trimmed=value.trim();
+        if(trimmed.indexOf('T')!==-1)return trimmed.split('T')[0];
+        if(trimmed.indexOf(' ')!==-1&&trimmed.indexOf('-')!==-1)return trimmed.split(' ')[0];
+        return trimmed;
+      }
+      return '';
+    }
+    return dt.toISOString().slice(0,10);
   }catch(e){
     return '';
   }
@@ -5827,38 +5838,39 @@ function scorecardToEvents(rows){
   });
 }
 
-function benzingaToEvents(rows, series, ticker){
-  var seen={};
-  var mapped=(rows||[]).map(function(row){
-    var dateIso=normalizeEventDate(
-      row.date||row.report_date||row.earnings_date||row.reported_date||row.fiscal_date_ending
-    );
-    if(!dateIso||seen[dateIso])return null;
-    seen[dateIso]=true;
-    var pricePoint=nearestPricePoint(series||[],dateIso);
-    return {
-      date_iso:dateIso,
-      date:dateIso,
-      dateLabel:fmtDateShort(dateIso),
-      type:'earnings',
-      label:'Quarterly earnings',
-      verdict:'Earnings',
-      price:pricePoint&&pricePoint.price_close!=null?pricePoint.price_close:0,
-      ticker:ticker
+function benzingaToEvents(rows, series, ticker) {
+  if (!rows || !rows.length) return [];
+  var byQuarter = {};
+  rows.forEach(function(row) {
+    var dateIso = row.date; // already 'YYYY-MM-DD' from Postgres DATE type
+    if (!dateIso) return;
+    // Key by fiscal_year + fiscal_period if available, else by quarter
+    var key;
+    if (row.fiscal_year && row.fiscal_period) {
+      key = row.fiscal_year + '-' + row.fiscal_period;
+    } else {
+      var d = new Date(dateIso);
+      if (isNaN(d.getTime())) return;
+      key = d.getFullYear() + '-Q' + (Math.floor(d.getMonth() / 3) + 1);
+    }
+    if (byQuarter[key]) return; // keep first (most recent) per quarter
+    var pricePoint = nearestPricePoint(series || [], dateIso);
+    byQuarter[key] = {
+      date: dateIso,
+      date_iso: dateIso,
+      dateLabel: fmtDateShort(dateIso),
+      type: 'earnings',
+      label: 'Quarterly earnings'
+        + (row.fiscal_period ? ' · ' + row.fiscal_period : '')
+        + (row.actual_eps != null ? ' · EPS: $' + row.actual_eps : ''),
+      verdict: 'Earnings',
+      price: pricePoint && pricePoint.price_close != null 
+             ? pricePoint.price_close : 0,
+      ticker: ticker
     };
-  }).filter(Boolean);
-  // Keep a single earnings marker per year-quarter.
-  mapped.sort(function(a,b){return (a.date_iso||'').localeCompare(b.date_iso||'');});
-  var byQuarter={};
-  mapped.forEach(function(ev){
-    var dt=new Date(ev.date_iso+'T00:00:00');
-    if(isNaN(dt.getTime()))return;
-    var q=Math.floor(dt.getMonth()/3)+1;
-    var key=dt.getFullYear()+'-Q'+q;
-    byQuarter[key]=ev;
   });
-  return Object.keys(byQuarter).map(function(k){return byQuarter[k];}).sort(function(a,b){
-    return (a.date_iso||'').localeCompare(b.date_iso||'');
+  return Object.values(byQuarter).sort(function(a, b) {
+    return a.date_iso.localeCompare(b.date_iso);
   });
 }
 
@@ -5883,6 +5895,7 @@ async function loadNHT(ticker){
       fetchNarrativeHealth(nhtTicker).catch(function(e){console.warn('Health fetch failed:',e);return [];}),
       fetchBenzingaEarnings(nhtTicker).catch(function(e){console.warn('Benzinga earnings fetch failed:',e);return [];})
     ]);
+    console.log('STAGE 1: fetchBenzingaEarnings returned:', results[3]);
     var model=results[0]||{series:[],events:[],price:0,ytd:0};
     var series=(model.series||[]).filter(function(row){return row && row.snapshot_date && row.price_close!=null;});
 
@@ -5906,7 +5919,7 @@ async function loadNHT(ticker){
       return {
         date:row.snapshot_date,
         dateLabel:fmtDateLabel(row.snapshot_date),
-        o:row.price_close,h:row.price_close,l:row.price_close,c:row.price_close,v:0
+        o:row.price_open||row.price_close,h:row.price_high||row.price_close,l:row.price_low||row.price_close,c:row.price_close,v:0
       };
     });
     var mappedEvents=(model.events||[]).map(function(ev){
@@ -5951,7 +5964,9 @@ async function loadNHT(ticker){
       };
     });
     var earningsEvents=benzingaToEvents(results[3]||[],series,nhtTicker);
+    console.log('[EARNINGS EVENTS]', earningsEvents, '[RAW BENZINGA]', results[3]);
     nhtEventsCache=dedupeEvents(mappedEvents.concat(earningsEvents,opexEvents));
+    console.log('STAGE 4: nhtEventsCache after dedupe:', nhtEventsCache);
     nhtHealthCache=(results[2]||[]).map(function(r){
       return {date:r.snapshot_date,sentiment:r.sentiment_score,trend:r.narrative_trend,attention:r.attention_trend,health:r.narrative_health};
     });
@@ -6063,6 +6078,10 @@ function renderNHT(){
     var existing=eventByIdx[ev.idx];
     if(!existing||eventPriority(ev)>eventPriority(existing))eventByIdx[ev.idx]=ev;
   });
+
+  console.log('[FILTERED EVENTS]', filtered);
+  console.log('[EVENT BY IDX]', eventByIdx);
+
   var isLt=document.documentElement.getAttribute('data-theme')==='light';
   // Build datasets
   var datasets=[];
@@ -6092,6 +6111,7 @@ function renderNHT(){
     // Line mode (default)
     var pointBg=prices.map(function(_,i){var ev=eventByIdx[i];return ev?evColor(ev.type):'transparent';});
     var pointR=prices.map(function(_,i){var ev=eventByIdx[i];if(!ev)return 0;return ev.type==='earnings'?10:6;});
+    console.log('[POINT RADIUS ARRAY sample]', pointR.filter(function(v){ return v > 0; }));
     var pointBorder=prices.map(function(_,i){var ev=eventByIdx[i];if(!ev)return 'transparent';return evColor(ev.type).replace(',1)',',0.3)');});
     var pointBorderW=prices.map(function(_,i){var ev=eventByIdx[i];return ev?(ev.type==='earnings'?3:4):0;});
     var pointStyle=prices.map(function(_,i){
@@ -6139,7 +6159,7 @@ function renderNHT(){
         if(!pt)return;
         cx.save();
         cx.font='bold 9px Inter, sans-serif';
-        cx.fillStyle=isLt?'#111827':'#fff';
+        cx.fillStyle='#fff';
         cx.textAlign='center';cx.textBaseline='middle';
         cx.fillText('E',pt.x,pt.y);
         cx.restore();
