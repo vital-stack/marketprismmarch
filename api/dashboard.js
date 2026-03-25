@@ -1,26 +1,24 @@
-const { readFileSync } = require('fs');
-const { join } = require('path');
+const resolveTemplate = require('./_resolve-template');
 
 module.exports = (req, res) => {
-  const supabaseUrl = process.env.SUPABASE_URL || '';
-  const supabaseAnon = process.env.SUPABASE_ANON || '';
-  const anthropicKey = process.env.ANTHROPIC_KEY || '';
-  const massiveApi   = process.env.MASSIVE_API   || '';
-
-  let html;
   try {
-    html = readFileSync(join(__dirname, '_template.html'), 'utf8');
-  } catch {
-    html = readFileSync(join(process.cwd(), '_template.html'), 'utf8');
+    const supabaseUrl = process.env.SUPABASE_URL || '';
+    const supabaseAnon = process.env.SUPABASE_ANON || '';
+    const anthropicKey = process.env.ANTHROPIC_KEY || '';
+    const massiveApi   = process.env.MASSIVE_API   || '';
+
+    let html = resolveTemplate('_template.html');
+
+    const scholarEnabled = process.env.ANTHROPIC_API_KEY ? 'true' : '';
+
+    html = html.replace(
+      "window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '', SCHOLAR_ENABLED: '', ANTHROPIC_KEY: '', MASSIVE_API: '' };",
+      `window.__env = { SUPABASE_URL: '${supabaseUrl}', SUPABASE_ANON: '${supabaseAnon}', SCHOLAR_ENABLED: '${scholarEnabled}', ANTHROPIC_KEY: '${anthropicKey}', MASSIVE_API: '${massiveApi}' };`
+    );
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.status(200).send(html);
+  } catch (err) {
+    res.status(500).send('Dashboard error: ' + err.message);
   }
-
-  const scholarEnabled = process.env.ANTHROPIC_API_KEY ? 'true' : '';
-
-  html = html.replace(
-    "window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '', SCHOLAR_ENABLED: '', ANTHROPIC_KEY: '', MASSIVE_API: '' };",
-    `window.__env = { SUPABASE_URL: '${supabaseUrl}', SUPABASE_ANON: '${supabaseAnon}', SCHOLAR_ENABLED: '${scholarEnabled}', ANTHROPIC_KEY: '${anthropicKey}', MASSIVE_API: '${massiveApi}' };`
-  );
-
-  res.setHeader('Content-Type', 'text/html; charset=utf-8');
-  res.status(200).send(html);
 };
