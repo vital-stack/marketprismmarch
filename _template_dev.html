@@ -5467,6 +5467,12 @@ document.getElementById('topbar-search').addEventListener('input',function(e){
   if(id==='tab-discover'){discoverSearch=e.target.value;discoverShowing=25;renderDiscover();}
   else if(id==='tab-snapshots'){document.getElementById('snap-search').value=e.target.value;renderSnap();}
 });
+document.getElementById('topbar-search').addEventListener('keydown',function(e){
+  if(e.key==='Enter'){
+    var val=e.target.value.trim().toUpperCase();
+    if(val) window.location.href='/ticker/'+encodeURIComponent(val);
+  }
+});
 // ── SECTOR PULSE ─────────────────────────────────────────────────────────────
 var SECTOR_STATIC = [
   {name:'AI Infrastructure',sub:'Semiconductors, servers, power',state:'Breaking',cagr:'42%',momentum:88,risk:'medium',desc:'Blackwell demand cycle accelerating across hyperscalers. Supply constraints easing into H2 2025, but China export controls create structural ceiling for key names.',tickers:['NVDA','AMD','SMCI','ARM','AVGO','TSM'],trap:true},
