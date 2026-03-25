@@ -4402,6 +4402,8 @@ async function loadData(){
       seen.add(r.ticker);return true;
     }).map(function(r){
       var m=Object.assign({},r,healthMap[r.ticker]||{},pulseMap[r.ticker]||{},scorecardMap[r.ticker]||{});
+      // Preserve prism_verdict from base row — scorecard merge can overwrite with null
+      if(r.prism_verdict && !m.prism_verdict) m.prism_verdict = r.prism_verdict;
       if(!m.sector_name&&SECTOR_MAP[m.ticker])m.sector_name=SECTOR_MAP[m.ticker][0];
       return m;
     });
@@ -5465,6 +5467,12 @@ document.getElementById('topbar-search').addEventListener('input',function(e){
   if(id==='tab-discover'){discoverSearch=e.target.value;discoverShowing=25;renderDiscover();}
   else if(id==='tab-snapshots'){document.getElementById('snap-search').value=e.target.value;renderSnap();}
 });
+document.getElementById('topbar-search').addEventListener('keydown',function(e){
+  if(e.key==='Enter'){
+    var val=e.target.value.trim().toUpperCase();
+    if(val) window.location.href='/ticker/'+encodeURIComponent(val);
+  }
+});
 // ── SECTOR PULSE ─────────────────────────────────────────────────────────────
 var SECTOR_STATIC = [
   {name:'AI Infrastructure',sub:'Semiconductors, servers, power',state:'Breaking',cagr:'42%',momentum:88,risk:'medium',desc:'Blackwell demand cycle accelerating across hyperscalers. Supply constraints easing into H2 2025, but China export controls create structural ceiling for key names.',tickers:['NVDA','AMD','SMCI','ARM','AVGO','TSM'],trap:true},
@@ -5613,13 +5621,29 @@ function renderSectors(){
     var supportedCount=s.live_supported||0;
     var verdict=trapCount>0?'<span class="sector-trap">Trap present</span>':(supportedCount>0?'<span class="sector-ok">Supported</span>':'');
     var liveNote=s.live_count?'<span class="meta-tag" style="font-size:10px;">'+trapCount+' trap'+(trapCount===1?'':'s')+' / '+s.live_count+' tickers</span>':'';
-    return '<div class="sector-card">'
+    // Derive direction from state + trap presence (consistent with Market-Wide)
+    var dir=(s.state==='Surging'||s.state==='Breaking'&&!s.trap)?'bull':(s.state==='Fragile'||s.state==='Breaking'&&s.trap)?'bear':'neutral';
+    if(s.state==='Surging') dir='bull';
+    else if(s.state==='Fragile'||s.state==='Cooling') dir='bear';
+    else if(s.state==='Breaking'&&s.trap) dir='bear';
+    else if(s.state==='Breaking') dir='bull';
+    else dir='neutral';
+    var accentColor=dir==='bull'?'#00DE94':dir==='bear'?'#FF4D4D':'#00AEFF';
+    var sentLabel=dir==='bull'?'\u25B2 BULLISH':dir==='bear'?'\u25BC BEARISH':'\u25C6 NEUTRAL';
+    var sentBorderColor=dir==='bull'?'rgba(0,222,148,0.3)':dir==='bear'?'rgba(255,77,77,0.3)':'rgba(0,174,255,0.3)';
+    var sentTextColor=dir==='bull'?'#00DE94':dir==='bear'?'#FF4D4D':'#00AEFF';
+    var sentBg=dir==='bull'?'rgba(0,222,148,0.08)':dir==='bear'?'rgba(255,77,77,0.08)':'rgba(0,174,255,0.08)';
+    return '<div class="sector-card" style="border-top:2px solid '+accentColor+';">'
       +'<div class="sector-card-header">'
         +'<div><div class="sector-name">'+esc(s.name)+'</div><div class="sector-sub">'+esc(s.sub)+'</div></div>'
-        +'<span class="sector-state '+sc+'">'+s.state+'</span>'
+        +'<span class="sector-state" style="font-size:11px;padding:4px 10px;border-radius:6px;font-weight:500;letter-spacing:0.04em;text-transform:uppercase;border:1px solid '+sentBorderColor+';color:'+sentTextColor+';background:'+sentBg+';">'+sentLabel+'</span>'
       +'</div>'
       +'<div class="sector-body">'
         +'<div class="sector-desc">'+esc(s.desc)+'</div>'
+        +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">'
+          +'<span class="sector-state '+sc+'" style="font-size:10px;padding:2px 8px;">'+s.state.toUpperCase()+'</span>'
+          +liveNote
+        +'</div>'
         +'<div class="sector-tickers">'+s.tickers.map(function(t){return '<a href="/ticker/'+encodeURIComponent(t)+'" class="sector-ticker-chip" style="display:inline-flex;align-items:center;gap:4px;text-decoration:none;color:inherit;">'+logoHTML(t,'sm')+t+'</a>';}).join('')+'</div>'
       +'</div>'
       +'<div class="sector-momentum-bar">'
@@ -5691,6 +5715,10 @@ function sortSnap(s,btn){
   snapSort=s;
   document.querySelectorAll('#tab-snapshots .chip').forEach(function(c){c.classList.remove('active');});
   if(btn)btn.classList.add('active');
+  // Lazy-load trap data if needed for Narrative Trap sort
+  if(s==='traps'&&typeof TRAP_DATA!=='undefined'&&TRAP_DATA.length===0&&typeof loadTrapRadar==='function'){
+    loadTrapRadar().then(function(){snapShowing=50;renderSnap();});
+  }
   snapShowing=50;renderSnap();
 }
 function filterSnapSector(v){snapSector=v;snapShowing=50;renderSnap();}
@@ -5703,13 +5731,35 @@ function getSnapData(){
   });
   if(snapSort==='chg-desc')arr=arr.slice().sort(function(a,b){return(b.price_change_pct||0)-(a.price_change_pct||0);});
   else if(snapSort==='chg-asc')arr=arr.slice().sort(function(a,b){return(a.price_change_pct||0)-(b.price_change_pct||0);});
-  else if(snapSort==='traps')arr=arr.filter(function(r){var v=(r.prism_verdict||r.verdict||'').toLowerCase();return v.indexOf('trap')!==-1||v.indexOf('disconnect')!==-1;});
+  else if(snapSort==='traps'){
+    arr=arr.filter(function(r){var v=(r.prism_verdict||r.story_verdict||r.verdict||'').toLowerCase();return v.indexOf('trap')!==-1||v.indexOf('disconnect')!==-1;});
+    // Merge TRAP_DATA from narrative_traps table (same pattern as Discover tab)
+    if(typeof TRAP_DATA!=='undefined'&&TRAP_DATA.length){
+      var existing=new Set();arr.forEach(function(r){existing.add(r.ticker);});
+      TRAP_DATA.forEach(function(t){
+        if(existing.has(t.ticker))return;
+        var snap=snapshotMap[t.ticker]||{};
+        arr.push({ticker:t.ticker,price:t.current_price||snap.price||0,price_change_pct:null,narrative_state:'Fragile',primary_driver:t.narrative||'',prism_verdict:'Narrative Trap',story_claim:t.narrative||'',sector_name:snap.sector||(SECTOR_MAP[t.ticker]||[])[0]||'',fvd_pct:t.fvd_pct,coordination_score:null,coordination_class:t.coordination_class});
+      });
+    }
+  }
   else if(snapSort==='overvalued')arr=arr.slice().sort(function(a,b){var aV=a.fvd_pct!=null&&a.fvd_pct>30?0:1;var bV=b.fvd_pct!=null&&b.fvd_pct>30?0:1;return aV!==bV?aV-bV:(b.fvd_pct||0)-(a.fvd_pct||0);});
   else if(snapSort==='undervalued')arr=arr.slice().sort(function(a,b){var aV=a.fvd_pct!=null&&a.fvd_pct<-5?0:1;var bV=b.fvd_pct!=null&&b.fvd_pct<-5?0:1;return aV!==bV?aV-bV:(a.fvd_pct||0)-(b.fvd_pct||0);});
   else if(snapSort==='high-energy')arr=arr.slice().sort(function(a,b){var aV=a.energy_remaining!=null&&a.energy_remaining>=85?0:1;var bV=b.energy_remaining!=null&&b.energy_remaining>=85?0:1;return aV!==bV?aV-bV:(b.energy_remaining||0)-(a.energy_remaining||0);});
   else if(snapSort==='fading')arr=arr.slice().sort(function(a,b){var aV=a.decay_rate!=null&&a.decay_rate>=0.05?0:1;var bV=b.decay_rate!=null&&b.decay_rate>=0.05?0:1;return aV!==bV?aV-bV:(b.decay_rate||0)-(a.decay_rate||0);});
   else if(snapSort==='coordinated')arr=arr.slice().sort(function(a,b){var aV=(a.coordination_class&&a.coordination_class.toLowerCase().indexOf('coordinated')!==-1)||(a.coordination_score!=null&&a.coordination_score>=60)?0:1;var bV=(b.coordination_class&&b.coordination_class.toLowerCase().indexOf('coordinated')!==-1)||(b.coordination_score!=null&&b.coordination_score>=60)?0:1;return aV!==bV?aV-bV:(b.coordination_score||0)-(a.coordination_score||0);});
-  else if(snapSort==='supported')arr=arr.filter(function(r){var v=(r.prism_verdict||r.verdict||'').toLowerCase();return v.indexOf('supported')!==-1||v.indexOf('verified')!==-1;});
+  else if(snapSort==='supported'){
+    arr=arr.filter(function(r){var v=(r.prism_verdict||r.story_verdict||r.verdict||'').toLowerCase();return v.indexOf('supported')!==-1||v.indexOf('verified')!==-1;});
+    // Merge SUPPORTED_DATA from active_supported table
+    if(typeof SUPPORTED_DATA!=='undefined'&&SUPPORTED_DATA.length){
+      var existing=new Set();arr.forEach(function(r){existing.add(r.ticker);});
+      SUPPORTED_DATA.forEach(function(s){
+        if(existing.has(s.ticker))return;
+        var snap=snapshotMap[s.ticker]||{};
+        arr.push({ticker:s.ticker,price:s.current_price?parseFloat(s.current_price):(snap.price||0),price_change_pct:null,narrative_state:'Surging',primary_driver:s.narrative||s.synopsis||'',prism_verdict:'Structurally Supported',story_claim:s.narrative||s.synopsis||'',sector_name:(s.macro_theme||'').replace(/_/g,' ')||(SECTOR_MAP[s.ticker]||[])[0]||'',fvd_pct:s.fvd_pct,energy_remaining:s.energy_remaining,coordination_score:s.coordination_score});
+      });
+    }
+  }
   return arr;
 }
 function getTickerInsightTags(r){
