@@ -5118,7 +5118,6 @@ async function fillMarketNarrative(){
 
   // Show loading state
   document.getElementById('nf-sum-body').innerHTML='<p style="color:var(--mp-text-tertiary);">Loading market narrative…</p>';
-  document.getElementById('ts-sum-body').innerHTML='<p style="color:var(--mp-text-tertiary);">Loading trading strategy…</p>';
 
   // ── 1. Determine today's date (match pipeline format YYYY-MM-DD) ──
   // Try latest available date first, fall back to today
@@ -5143,31 +5142,17 @@ async function fillMarketNarrative(){
       +'&summary_type=eq.market_narrative'
       +'&scope_key=eq._global'
       +'&limit=1';
-    var stratUrl = SUPABASE_URL+'/rest/v1/daily_summaries?select=headline,body,signal_count,avg_confidence,short_bias_pct,long_bias_pct'
-      +'&summary_date=eq.'+encodeURIComponent(today)
-      +'&summary_type=eq.trading_strategy'
-      +'&scope_key=eq._global'
-      +'&limit=1';
 
-    var narP = fetch(narUrl,{headers:hdrs});
-    var stratP = fetch(stratUrl,{headers:hdrs});
-    var narRes = await narP;
-    var stratRes = await stratP;
+    var narRes = await fetch(narUrl,{headers:hdrs});
 
-    // ── 3. Parse responses ──
+    // ── 3. Parse response ──
     var narrative = null;
-    var strategy = null;
     if(narRes.ok){
       var narRows = await narRes.json();
       narrative = narRows[0] || null;
     }
-    if(stratRes.ok){
-      var stratRows = await stratRes.json();
-      strategy = stratRows[0] || null;
-    }
 
     console.log('[MP] daily_summaries narrative:', narrative);
-    console.log('[MP] daily_summaries strategy:', strategy);
 
     // ── 4. WRITE MARKET NARRATIVE SUMMARY TO DOM ──
     if(narrative){
@@ -5192,25 +5177,11 @@ async function fillMarketNarrative(){
       document.getElementById('nf-sum-body').innerHTML='<p style="color:var(--mp-text-tertiary);font-style:italic;">No market narrative available for '+today+'</p>';
     }
 
-    // ── 5. WRITE TRADING STRATEGY SUMMARY TO DOM ──
-    if(strategy){
-      if(strategy.body){
-        document.getElementById('ts-sum-body').innerHTML = '<p>'+esc(strategy.body)+'</p>';
-      }
-      if(strategy.headline){
-        document.getElementById('ts-sum-setup').textContent = strategy.headline;
-      }
-      document.getElementById('ts-sum-time').textContent = 'Generated · '+today;
-    } else {
-      document.getElementById('ts-sum-body').innerHTML='<p style="color:var(--mp-text-tertiary);font-style:italic;">No trading strategy available for '+today+'</p>';
-    }
-
     AI_NARRATIVE_FILLED = true;
     console.log('[MP] daily_summaries fill complete');
   }catch(e){
     console.error('[MP] daily_summaries fetch failed:', e);
     document.getElementById('nf-sum-body').innerHTML='<p style="color:var(--mp-text-tertiary);font-style:italic;">Failed to load narrative — '+esc(e.message)+'</p>';
-    document.getElementById('ts-sum-body').innerHTML='<p style="color:var(--mp-text-tertiary);font-style:italic;">Failed to load strategy — '+esc(e.message)+'</p>';
   }
 }
 
