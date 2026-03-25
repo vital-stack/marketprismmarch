@@ -3012,13 +3012,14 @@ body{
 .nc-verdict-supported{color:#1a8a5e;}
 .nc-verdict-bear{color:#c0392b;}
 .nc-verdict-default{color:var(--mp-text-tertiary);}
-/* Headline */
+/* Headline + Truth score row */
+.nc-headline-row{display:flex;align-items:flex-start;gap:16px;margin-bottom:8px;}
 .nc-headline{
   font-family:var(--font-body);font-size:15px;font-weight:500;
-  line-height:1.5;color:#fff;margin-bottom:10px;
+  line-height:1.5;color:#fff;flex:1;min-width:0;
   display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
 }
-/* Meta + Truth score row */
+/* Meta text below headline */
 .nc-meta-row{display:flex;align-items:center;gap:10px;margin-bottom:0;}
 .nc-truth{
   width:42px;height:42px;flex-shrink:0;
@@ -4592,13 +4593,15 @@ function nfBuildRow(dir, logoHtml, ticker, sector, headline, verdict, href, extr
       +'</div>'
       +'<div class="nc-divider"></div>'
       +'<div class="nc-verdict-label '+verdictCls+'">'+esc(verdict)+'</div>'
-      +'<div class="nc-headline">'+esc(headline)+'</div>'
-      +'<div class="nc-meta-row">'
+      +'<div class="nc-headline-row">'
+        +'<div class="nc-headline">'+esc(headline)+'</div>'
         +'<div class="nc-truth">'
           +ncTruthRingSVG(conf, truthColor)
           +'<span class="nc-truth-num">'+conf+'</span>'
           +'<span class="nc-truth-lbl">Truth</span>'
         +'</div>'
+      +'</div>'
+      +'<div class="nc-meta-row">'
         +'<div class="nc-meta">'+conf+'% \u00B7 '+(extra.window||'Day\u2013Swing')+' \u00B7 '+stateLabel+'</div>'
       +'</div>'
       +(function(){
