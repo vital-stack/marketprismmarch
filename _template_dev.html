@@ -3384,11 +3384,6 @@ body{
             </div>
           </div>
 
-          <div class="nf-sum-stats" id="nf-sum-stats">
-            <div class="nf-stat"><span class="nf-stat-num" id="nf-stat-bull">68%</span><span class="nf-stat-lbl">Bull Signals</span></div>
-            <div class="nf-stat"><span class="nf-stat-num" id="nf-stat-traps2">14</span><span class="nf-stat-lbl">Active Traps</span></div>
-            <div class="nf-stat"><span class="nf-stat-num" id="nf-stat-breaking2">3</span><span class="nf-stat-lbl">Breaking</span></div>
-          </div>
         </div>
 
         <!-- RIGHT: Tabbed Narrative Feed -->
@@ -5062,13 +5057,6 @@ function nfUpdateSummary(){
   var bullPct=Math.round(DATA.filter(function(r){return (r.price_change_pct||0)>0;}).length/DATA.length*100);
   var traps=DATA.filter(function(r){return r.prism_verdict==='Narrative Trap';}).length;
   var breaking=DATA.filter(function(r){return r.narrative_state==='Breaking';}).length;
-
-  var bullEl=document.getElementById('nf-stat-bull');
-  var trapEl=document.getElementById('nf-stat-traps2');
-  var breakEl=document.getElementById('nf-stat-breaking2');
-  if(bullEl) bullEl.textContent=bullPct+'%';
-  if(trapEl) trapEl.textContent=traps;
-  if(breakEl) breakEl.textContent=breaking;
 
   // Update summary time
   var timeEl=document.getElementById('nf-sum-time');
