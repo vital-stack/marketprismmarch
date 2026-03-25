@@ -701,18 +701,18 @@ body{
   padding:14px 16px 10px;
   display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
 }
-.sector-name{font-size:17px;font-weight:500;color:#fff;margin-bottom:3px;}
+.sector-name{font-family:'Instrument Serif','DM Serif Display',Georgia,serif;font-size:18px;font-weight:400;color:#fff;margin-bottom:3px;letter-spacing:-0.025em;}
 .sector-sub{font-size:12px;color:var(--mp-text-secondary);}
 .sector-state{
-  font-size:11px;font-family:var(--font-mono);padding:4px 12px;
-  border-radius:6px;border:1px solid rgba(255,255,255,0.08);flex-shrink:0;font-weight:400;letter-spacing:.06em;
+  font-size:11px;font-family:var(--font-body);padding:4px 12px;
+  border-radius:6px;border:1px solid rgba(255,255,255,0.08);flex-shrink:0;font-weight:500;letter-spacing:.06em;
   text-transform:uppercase;background:rgba(255,255,255,0.04);color:var(--mp-text-secondary);
 }
 .sector-body{padding:0 16px 14px;}
 .sector-desc{font-size:13.5px;color:var(--mp-text-primary);line-height:1.65;margin-bottom:12px;}
 .sector-tickers{display:flex;gap:5px;flex-wrap:wrap;}
 .sector-ticker-chip{
-  font-family:var(--font-mono);font-size:10px;
+  font-family:var(--font-body);font-size:11px;
   padding:3px 10px;border-radius:4px;
   background:rgba(255,255,255,0.03);border:1px solid var(--mp-border);color:var(--mp-text-secondary);
   cursor:pointer;transition:all .3s cubic-bezier(0.16,1,0.3,1);
@@ -723,27 +723,27 @@ body{
   display:flex;align-items:center;justify-content:space-between;
 }
 .sector-cagr{
-  font-family:var(--font-mono);font-size:11px;font-weight:400;
+  font-family:var(--font-body);font-size:11px;font-weight:400;
   color:var(--mp-text-secondary);
 }
 .sector-trap{
   font-size:11px;padding:3px 10px;border-radius:4px;
   background:rgba(255,255,255,.04);color:var(--mp-text-secondary);border:1px solid rgba(255,255,255,.08);
-  font-family:var(--font-mono);letter-spacing:.04em;
+  font-family:var(--font-body);letter-spacing:.04em;
 }
 .sector-ok{
   font-size:11px;padding:3px 10px;border-radius:4px;
   background:rgba(255,255,255,.04);color:var(--mp-text-secondary);border:1px solid rgba(255,255,255,.08);
-  font-family:var(--font-mono);letter-spacing:.04em;
+  font-family:var(--font-body);letter-spacing:.04em;
 }
 .sector-momentum-bar{
   display:flex;align-items:center;gap:8px;padding:8px 16px;
   border-top:1px solid var(--mp-border);
 }
-.sector-bar-lbl{font-size:10px;color:#fff;min-width:64px;font-family:var(--font-mono);}
+.sector-bar-lbl{font-size:10px;color:#fff;min-width:64px;font-family:var(--font-body);}
 .sector-bar-track{flex:1;height:3px;background:rgba(255,255,255,0.04);border-radius:99px;overflow:hidden;}
 .sector-bar-fill{height:100%;border-radius:99px;background:rgba(255,255,255,0.2) !important;}
-.sector-bar-pct{font-family:var(--font-mono);font-size:10px;color:#fff;min-width:28px;text-align:right;}
+.sector-bar-pct{font-family:var(--font-body);font-size:10px;color:#fff;min-width:28px;text-align:right;}
 /* ── MARKET-WIDE ── */
 .mw-summary-row{
   display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;
@@ -3621,8 +3621,16 @@ body{
         <div class="mw-stat"><span class="mw-stat-num" id="mw-stat-neutral">1</span><span class="mw-stat-lbl">Neutral / Pivoting</span></div>
       </div>
 
-      <div class="mw-grid" id="mw-grid">
-        <!-- Populated by JS -->
+      <div class="filter-bar" style="margin-bottom:16px;">
+        <span class="filter-label">Direction</span>
+        <button class="chip active" onclick="filterMarketWide('all',this)">All</button>
+        <button class="chip" onclick="filterMarketWide('bull',this)">Bullish</button>
+        <button class="chip" onclick="filterMarketWide('bear',this)">Bearish</button>
+        <button class="chip" onclick="filterMarketWide('neutral',this)">Neutral</button>
+      </div>
+
+      <div class="sector-grid" id="mw-grid">
+        <!-- Populated by JS — uses sector-card design -->
       </div>
     </div>
     <!-- ══════════════════════════════════════
@@ -4979,8 +4987,10 @@ async function loadMarketWideFromSummaries(){
         direction:statusToDir(r.status),
         verdict:r.status||'STABLE',
         claim:r.body||'',
-        impact:r.ticker_count?r.ticker_count+' tickers'+(r.trap_count?' \u00B7 '+r.trap_count+' traps':''):'—',
-        sectors:tickers.slice(0,6)
+        momentum:Math.round(r.momentum_score||0),
+        trap_count:r.trap_count||0,
+        ticker_count:r.ticker_count||tickers.length,
+        sectors:tickers.slice(0,8)
       };
     });
     console.log('[MP] Market-Wide loaded from daily_summaries:',MW_THEMES.length,'themes');
@@ -4994,45 +5004,53 @@ function renderMarketWidePage(){
   var el=document.getElementById('mw-grid');
   if(!el) return;
 
-  var iconMap={
-    'Geopolitical':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
-    'Structural':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"/></svg>',
-    'Macro':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"/></svg>',
-    'Cyclical':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182"/></svg>'
-  };
-
-  var dirCls={bull:'mw-badge-bull',bear:'mw-badge-bear',neutral:'mw-badge-neutral'};
-  var verdCls={bull:'mw-verdict-bull',bear:'mw-verdict-bear',neutral:'mw-verdict-neutral'};
-  var accentColor={bull:'#00DE94',bear:'#FF4D4D',neutral:'#00AEFF'};
   var sentLabel={bull:'\u25B2 BULLISH',bear:'\u25BC BEARISH',neutral:'\u25C6 NEUTRAL'};
+  var sentClass={bull:'mw-sent-bull',bear:'mw-sent-bear',neutral:'mw-sent-neutral'};
+  var accentColor={bull:'#00DE94',bear:'#FF4D4D',neutral:'#00AEFF'};
 
-  el.innerHTML=MW_THEMES.map(function(t,i){
+  // Apply filter
+  var filtered=MW_THEMES.filter(function(t){
+    if(mwFilter==='bull') return t.direction==='bull';
+    if(mwFilter==='bear') return t.direction==='bear';
+    if(mwFilter==='neutral') return t.direction==='neutral';
+    return true;
+  });
+
+  el.innerHTML=filtered.map(function(t,i){
     var dir=t.direction||'neutral';
-    var icon=iconMap[t.type]||iconMap['Macro'];
-    var bgColor=accentColor[dir];
+    var statusLabel=(t.verdict||'STABLE').toUpperCase();
+    var statusCls='badge-stable';
+    if(statusLabel==='BREAKING'||statusLabel==='FRAGILE') statusCls='badge-breaking';
+    else if(statusLabel==='SURGING') statusCls='badge-surging';
 
-    return '<div class="mw-card" style="animation-delay:'+(i*0.08)+'s;">'
-      +'<div class="mw-accent" style="background:'+bgColor+';"></div>'
-      +'<div class="mw-card-body">'
-        +'<div class="mw-card-header">'
-          +'<div>'
-            +'<div class="mw-card-title">'+esc(t.title)+'</div>'
-            +'<div class="mw-card-type">'+esc(t.type)+'</div>'
-          +'</div>'
-          +'<div class="mw-card-badges">'
-            +'<span class="mw-badge '+(dirCls[dir]||'mw-badge-neutral')+'">'+sentLabel[dir]+'</span>'
-          +'</div>'
-        +'</div>'
-        +'<div class="mw-card-divider"></div>'
-        +'<div class="mw-card-claim">'+esc(t.claim)+'</div>'
-        +'<div class="mw-card-meta">'
-          +'<span class="mw-card-verdict '+(verdCls[dir]||'mw-verdict-neutral')+'">'+esc(t.verdict)+'</span>'
-          +'<span class="mw-card-impact">'+esc(t.impact)+'</span>'
-        +'</div>'
-        +'<div class="mw-card-sectors">'+t.sectors.map(function(s){return '<a href="/ticker/'+encodeURIComponent(s)+'" class="mw-sector-chip" style="text-decoration:none;color:inherit;">'+esc(s)+'</a>';}).join('')+'</div>'
+    var trapCount=t.trap_count||0;
+    var tickerCount=t.ticker_count||t.sectors.length;
+    var liveNote=tickerCount?'<span class="meta-tag" style="font-size:10px;">'+trapCount+' trap'+(trapCount===1?'':'s')+' \u00B7 '+tickerCount+' tickers</span>':'';
+    var momentum=t.momentum||0;
+    var bar_color='rgba(255,255,255,0.2)';
+
+    return '<div class="sector-card" style="animation-delay:'+(i*0.08)+'s;border-top:2px solid '+accentColor[dir]+';">'
+      +'<div class="sector-card-header">'
+        +'<div><div class="sector-name">'+esc(t.title)+'</div><div class="sector-sub">'+esc(t.type)+'</div></div>'
+        +'<span class="sector-state '+sentClass[dir]+'" style="border-color:'+(dir==='bull'?'rgba(0,222,148,0.3)':dir==='bear'?'rgba(255,77,77,0.3)':'rgba(0,174,255,0.3)')+';color:'+(dir==='bull'?'#00DE94':dir==='bear'?'#FF4D4D':'#00AEFF')+';background:'+(dir==='bull'?'rgba(0,222,148,0.08)':dir==='bear'?'rgba(255,77,77,0.08)':'rgba(0,174,255,0.08)')+';">'+sentLabel[dir]+'</span>'
       +'</div>'
+      +'<div class="sector-body">'
+        +'<div class="sector-desc">'+esc(t.claim)+'</div>'
+        +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">'
+          +'<span class="sector-state '+statusCls+'" style="font-size:10px;padding:2px 8px;">'+statusLabel+'</span>'
+          +liveNote
+        +'</div>'
+        +'<div class="sector-tickers">'+t.sectors.map(function(tk){return '<a href="/ticker/'+encodeURIComponent(tk)+'" class="sector-ticker-chip" style="display:inline-flex;align-items:center;gap:4px;text-decoration:none;color:inherit;">'+logoHTML(tk,'sm')+tk+'</a>';}).join('')+'</div>'
+      +'</div>'
+      +(momentum?'<div class="sector-momentum-bar">'
+        +'<span class="sector-bar-lbl">Momentum</span>'
+        +'<div class="sector-bar-track"><div class="sector-bar-fill" style="width:'+momentum+'%;background:'+bar_color+';"></div></div>'
+        +'<span class="sector-bar-pct">'+momentum+'</span>'
+      +'</div>':'')
     +'</div>';
   }).join('');
+
+  if(filtered.length===0) el.innerHTML='<div class="empty-state" style="grid-column:1/-1;">No themes match current filter.</div>';
 
   // Update summary stats
   var bullCount=MW_THEMES.filter(function(t){return t.direction==='bull';}).length;
@@ -5046,6 +5064,13 @@ function renderMarketWidePage(){
   if(buEl) buEl.textContent=bullCount;
   if(beEl) beEl.textContent=bearCount;
   if(neEl) neEl.textContent=neutCount;
+}
+var mwFilter='all';
+function filterMarketWide(f,btn){
+  mwFilter=f;
+  document.querySelectorAll('#tab-marketwide .chip').forEach(function(c){c.classList.remove('active');});
+  if(btn)btn.classList.add('active');
+  renderMarketWidePage();
 }
 
 // ── Update summary panel from live data ──
