@@ -2840,6 +2840,28 @@ body{
   font-family:var(--font-body);font-size:13px;font-weight:400;
   line-height:1.6;color:var(--mp-text-primary);
 }
+/* ── Info tooltips ── */
+.info-tip{position:relative;display:inline-flex;align-items:center;gap:3px;cursor:help;}
+.info-tip .info-icon{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:14px;height:14px;border-radius:50%;
+  border:1px solid rgba(255,255,255,0.15);
+  font-size:9px;font-style:normal;font-family:var(--font-body);
+  color:rgba(255,255,255,0.3);flex-shrink:0;
+  transition:color .15s,border-color .15s;
+}
+.info-tip:hover .info-icon{color:var(--mp-cyan);border-color:var(--mp-cyan);}
+.info-tip-popup{
+  position:fixed;background:#1a1f2e;
+  border:1px solid rgba(255,255,255,0.10);border-radius:8px;
+  padding:8px 12px;font-size:12px;font-family:var(--font-body);
+  font-weight:400;color:rgba(255,255,255,0.8);
+  text-transform:none;letter-spacing:normal;line-height:1.45;
+  white-space:normal;width:220px;z-index:10000;
+  pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,0.5);
+  display:none;
+}
+.info-tip-popup.visible{display:block;}
 .ts-accent{color:#00AEFF !important;
 }
 
@@ -3396,7 +3418,8 @@ body{
             <button class="nf-tab active" data-nf-tab="tickers" onclick="switchNFTab('tickers',this)">Tickers</button>
             <button class="nf-tab" data-nf-tab="sectors" onclick="switchNFTab('sectors',this)">Sectors</button>
             <button class="nf-tab" data-nf-tab="market" onclick="switchNFTab('market',this)">Market-Wide</button>
-            <button class="nf-tab" data-nf-tab="traps" onclick="switchNFTab('traps',this)">Traps</button>
+            <button class="nf-tab" data-nf-tab="traps" onclick="switchNFTab('traps',this)">Traps <span class="info-tip" data-tip="Narrative Traps are tickers where the media story contradicts SEC filings, fundamentals, or fair value — price may be running ahead of reality."><i class="info-icon">i</i></span></button>
+            <button class="nf-tab" data-nf-tab="supported" onclick="switchNFTab('supported',this)">Supported <span class="info-tip" data-tip="Structurally Supported tickers have narratives backed by fundamental data — filings, earnings, and institutional positioning align with the prevailing story."><i class="info-icon">i</i></span></button>
           </div>
           <div class="nf-scroll">
             <div class="nf-list" id="nf-list-tickers">
@@ -3409,6 +3432,9 @@ body{
               <!-- Populated by JS -->
             </div>
             <div class="nf-list" id="nf-list-traps" style="display:none;">
+              <!-- Populated by JS -->
+            </div>
+            <div class="nf-list" id="nf-list-supported" style="display:none;">
               <!-- Populated by JS -->
             </div>
           </div>
@@ -4553,6 +4579,7 @@ async function loadData(){
     fillMarketNarrative();
     loadSectorsFromSummaries();
     loadMarketWideFromSummaries();
+    loadSupportedData();
   } catch(err){
     feed.innerHTML='<div class="empty-state" style="color:var(--mp-red);">Failed to load: '+esc(err.message)+'<br><small style="font-size:11px;opacity:.6;">Check Supabase credentials in environment variables.</small></div>';
     // Still render static demos
@@ -4918,6 +4945,53 @@ function renderTrapsCards(){
   el.querySelectorAll('.nc-card').forEach(function(card){
     card.style.cursor='pointer';
   });
+}
+
+// ── Supported Cards (from active_supported table) ──
+var SUPPORTED_DATA = [];
+async function loadSupportedData(){
+  if(!SUPABASE_URL||!SUPABASE_ANON) return;
+  var hdrs={'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Accept':'application/json'};
+  try{
+    var res=await fetch(SUPABASE_URL+'/rest/v1/active_supported?select=*&order=confidence_score.desc&limit=20',{headers:hdrs});
+    if(!res.ok) return;
+    SUPPORTED_DATA=await res.json();
+    console.log('[MP] active_supported loaded:',SUPPORTED_DATA.length,'rows');
+    renderSupportedCards();
+  }catch(e){
+    console.warn('[MP] active_supported fetch failed:',e);
+  }
+}
+
+function renderSupportedCards(){
+  var el=document.getElementById('nf-list-supported');
+  if(!el) return;
+
+  // Try live DATA first, then SUPPORTED_DATA
+  var supported=[];
+  if(SUPPORTED_DATA.length>0){
+    supported=SUPPORTED_DATA.slice(0,8);
+  } else if(DATA.length>0){
+    DATA.forEach(function(r){
+      var v=(r.prism_verdict||'').toLowerCase();
+      if(v.indexOf('supported')>=0) supported.push(r);
+    });
+    supported.sort(function(a,b){return(b._confPct||b.confidence_score||0)-(a._confPct||a.confidence_score||0);});
+    supported=supported.slice(0,5);
+  }
+
+  if(supported.length>0){
+    el.innerHTML=supported.map(function(r){
+      var conf=r.confidence_score||r._confPct||75;
+      var insightTags=[
+        {label:'Structurally Supported',bg:'rgba(0,222,148,0.12)',color:'#00DE94',border:'rgba(0,222,148,0.25)'},
+        {label:Math.round(conf)+'% confidence',bg:'rgba(0,174,255,0.12)',color:'#00AEFF',border:'rgba(0,174,255,0.25)'}
+      ];
+      return nfBuildRow('bull', nfLogoHTML(r.ticker), r.ticker, r.sector_name||r.sector||'', r.story_claim||r.synopsis||r.primary_driver||'', 'Structurally Supported', '/ticker/'+encodeURIComponent(r.ticker), {state:'Surging',confidence:conf,_insightTags:insightTags});
+    }).join('');
+  } else {
+    el.innerHTML='<div class="empty-state" style="padding:20px;text-align:center;color:var(--mp-text-tertiary);font-size:13px;">No structurally supported signals available.</div>';
+  }
 }
 
 // ── Market-Wide full page ──
@@ -10551,6 +10625,34 @@ window.switchTab=function(id,btn){
   _origST2(id,btn);
   if(id==='leaderboard') setTimeout(loadLeaderboard,50);
 };
+})();
+
+// ── Info tooltip hover handler ──
+(function(){
+  var popup = document.createElement('div');
+  popup.className = 'info-tip-popup';
+  popup.id = 'info-tip-popup';
+  document.body.appendChild(popup);
+  document.addEventListener('mouseover', function(e){
+    var tip = e.target.closest('.info-tip');
+    if(!tip || !tip.dataset.tip) return;
+    popup.textContent = tip.dataset.tip;
+    popup.classList.add('visible');
+    var rect = tip.getBoundingClientRect();
+    var pw = 220;
+    var left = rect.left + rect.width / 2 - pw / 2;
+    if(left < 8) left = 8;
+    if(left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+    var top = rect.bottom + 8;
+    if(top + 60 > window.innerHeight) top = rect.top - popup.offsetHeight - 8;
+    popup.style.left = left + 'px';
+    popup.style.top = top + 'px';
+  });
+  document.addEventListener('mouseout', function(e){
+    var tip = e.target.closest('.info-tip');
+    if(!tip) return;
+    popup.classList.remove('visible');
+  });
 })();
 </script>
 </body>
