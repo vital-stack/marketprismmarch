@@ -4572,8 +4572,10 @@ async function loadData(){
     if(typeof tcCalBooted!=='undefined'&&tcCalBooted&&typeof tcRenderCards==='function') tcRenderCards();
     // Sync stories column height after cards have rendered
     requestAnimationFrame(function(){setTimeout(syncStoriesHeight,300);});
-    // AI narrative fill — runs after all data is loaded (non-blocking)
+    // Load live summaries from daily_summaries table (non-blocking)
     fillMarketNarrative();
+    loadSectorsFromSummaries();
+    loadMarketWideFromSummaries();
   } catch(err){
     feed.innerHTML='<div class="empty-state" style="color:var(--mp-red);">Failed to load: '+esc(err.message)+'<br><small style="font-size:11px;opacity:.6;">Check Supabase credentials in environment variables.</small></div>';
     // Still render static demos
@@ -4943,43 +4945,59 @@ function renderTrapsCards(){
 
 // ── Market-Wide full page ──
 var MW_THEMES=[
-  {
-    title:'US\u2013China Trade Escalation',
-    type:'Geopolitical',
-    direction:'bear',
-    verdict:'Escalating',
-    claim:'Tariff escalation on semiconductors and EVs creating broad repricing risk across tech and industrials. Supply chain diversification accelerating but costs rising.',
-    impact:'High \u2014 affects 40%+ of S&P 500 by revenue exposure',
-    sectors:['Semiconductors','EV / Auto','Industrials','Consumer Electronics']
-  },
-  {
-    title:'AI Infrastructure Spending',
-    type:'Structural',
-    direction:'bull',
-    verdict:'Accelerating',
-    claim:'Hyperscaler capex commitments driving multi-year demand cycle across the compute stack. Data center buildout creating cascading demand from chips to power infrastructure.',
-    impact:'High \u2014 $150B+ annual capex cycle across hyperscalers',
-    sectors:['Cloud / AI','Semiconductors','Data Centers','Power / Utilities']
-  },
-  {
-    title:'Federal Reserve Rate Path',
-    type:'Macro',
-    direction:'neutral',
-    verdict:'Pivoting',
-    claim:'Rate expectations shifting as inflation decelerates. Market pricing aggressive cuts but Fed rhetoric remains cautious. Duration-sensitive sectors in transition.',
-    impact:'Broad \u2014 rate sensitivity across all asset classes',
-    sectors:['Financials','Real Estate','Growth Tech','Consumer Discretionary']
-  },
-  {
-    title:'Earnings Season Dynamics',
-    type:'Cyclical',
-    direction:'bull',
-    verdict:'Active',
-    claim:'Q1 earnings revealing divergent performance across sectors. Guidance revisions driving outsized moves. Margin expansion narratives emerging in select verticals.',
-    impact:'Medium \u2014 stock-specific but driving sector rotations',
-    sectors:['Broad Market','Retail','Healthcare','Financials']
-  }
+  {title:'US\u2013China Trade Escalation',type:'Geopolitical',direction:'bear',verdict:'Escalating',claim:'Tariff escalation on semiconductors and EVs creating broad repricing risk across tech and industrials.',impact:'High',sectors:['Semiconductors','EV / Auto']},
+  {title:'AI Infrastructure Spending',type:'Structural',direction:'bull',verdict:'Accelerating',claim:'Hyperscaler capex commitments driving multi-year demand cycle across the compute stack.',impact:'High',sectors:['Cloud / AI','Semiconductors']},
+  {title:'Federal Reserve Rate Path',type:'Macro',direction:'neutral',verdict:'Pivoting',claim:'Rate expectations shifting as inflation decelerates.',impact:'Broad',sectors:['Financials','Growth Tech']},
+  {title:'Earnings Season Dynamics',type:'Cyclical',direction:'bull',verdict:'Active',claim:'Q1 earnings revealing divergent performance across sectors.',impact:'Medium',sectors:['Broad Market','Retail']}
 ];
+
+// ── Load live Market-Wide themes from daily_summaries ──
+async function loadMarketWideFromSummaries(){
+  if(!SUPABASE_URL||!SUPABASE_ANON) return;
+  var hdrs={'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Accept':'application/json'};
+  try{
+    // Get latest date
+    var dateRes=await fetch(SUPABASE_URL+'/rest/v1/daily_summaries?select=summary_date&summary_type=eq.market_wide&order=summary_date.desc&limit=1',{headers:hdrs});
+    if(!dateRes.ok) return;
+    var dateRows=await dateRes.json();
+    var today=dateRows[0]&&dateRows[0].summary_date;
+    if(!today) return;
+
+    var url=SUPABASE_URL+'/rest/v1/daily_summaries?select=scope_key,body,status,tickers,momentum_score,trap_count,supported_count,ticker_count'
+      +'&summary_date=eq.'+encodeURIComponent(today)
+      +'&summary_type=eq.market_wide'
+      +'&order=momentum_score.desc';
+    var res=await fetch(url,{headers:hdrs});
+    if(!res.ok) return;
+    var rows=await res.json();
+    if(!rows.length) return;
+
+    // Map status to direction
+    function statusToDir(s){
+      s=(s||'').toUpperCase();
+      if(s==='BREAKING'||s==='SURGING') return 'bull';
+      if(s==='FRAGILE'||s==='COOLING') return 'bear';
+      return 'neutral';
+    }
+
+    MW_THEMES=rows.map(function(r){
+      var tickers=typeof r.tickers==='string'?JSON.parse(r.tickers):(r.tickers||[]);
+      return {
+        title:(r.scope_key||'').replace(/_/g,' '),
+        type:'Macro',
+        direction:statusToDir(r.status),
+        verdict:r.status||'STABLE',
+        claim:r.body||'',
+        impact:r.ticker_count?r.ticker_count+' tickers'+(r.trap_count?' \u00B7 '+r.trap_count+' traps':''):'—',
+        sectors:tickers.slice(0,6)
+      };
+    });
+    console.log('[MP] Market-Wide loaded from daily_summaries:',MW_THEMES.length,'themes');
+    if(typeof renderMarketWidePage==='function') renderMarketWidePage();
+  }catch(e){
+    console.warn('[MP] Market-Wide daily_summaries fetch failed:',e);
+  }
+}
 
 function renderMarketWidePage(){
   var el=document.getElementById('mw-grid');
@@ -5020,7 +5038,7 @@ function renderMarketWidePage(){
           +'<span class="mw-card-verdict '+(verdCls[dir]||'mw-verdict-neutral')+'">'+esc(t.verdict)+'</span>'
           +'<span class="mw-card-impact">'+esc(t.impact)+'</span>'
         +'</div>'
-        +'<div class="mw-card-sectors">'+t.sectors.map(function(s){return '<span class="mw-sector-chip">'+esc(s)+'</span>';}).join('')+'</div>'
+        +'<div class="mw-card-sectors">'+t.sectors.map(function(s){return '<a href="/ticker/'+encodeURIComponent(s)+'" class="mw-sector-chip" style="text-decoration:none;color:inherit;">'+esc(s)+'</a>';}).join('')+'</div>'
       +'</div>'
     +'</div>';
   }).join('');
@@ -5498,6 +5516,68 @@ var SECTOR_STATIC = [
   {name:'Energy Infrastructure / Power Grid',sub:'Utilities, grid, nuclear',state:'Surging',cagr:'19%',momentum:82,risk:'medium',desc:'AI data center power demand creating a secular utility re-rating. Nuclear renaissance narrative (CEG, VST) gaining institutional backing. Grid capacity stories are early-stage.',tickers:['DUK','NEE','VST','CEG','PWR'],trap:false},
 ];
 var sectorFilter='all';
+
+// ── Load live Sector data from daily_summaries ──
+async function loadSectorsFromSummaries(){
+  if(!SUPABASE_URL||!SUPABASE_ANON) return;
+  var hdrs={'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Accept':'application/json'};
+  try{
+    var dateRes=await fetch(SUPABASE_URL+'/rest/v1/daily_summaries?select=summary_date&summary_type=eq.sector&order=summary_date.desc&limit=1',{headers:hdrs});
+    if(!dateRes.ok) return;
+    var dateRows=await dateRes.json();
+    var today=dateRows[0]&&dateRows[0].summary_date;
+    if(!today) return;
+
+    var url=SUPABASE_URL+'/rest/v1/daily_summaries?select=scope_key,body,status,tickers,momentum_score,trap_count,supported_count,ticker_count'
+      +'&summary_date=eq.'+encodeURIComponent(today)
+      +'&summary_type=eq.sector'
+      +'&order=momentum_score.desc';
+    var res=await fetch(url,{headers:hdrs});
+    if(!res.ok) return;
+    var rows=await res.json();
+    if(!rows.length) return;
+
+    // Map status to state labels
+    function statusToState(s){
+      s=(s||'').toUpperCase();
+      if(s==='BREAKING') return 'Breaking';
+      if(s==='SURGING') return 'Surging';
+      if(s==='FRAGILE') return 'Fragile';
+      if(s==='COOLING') return 'Cooling';
+      return 'Stable';
+    }
+    function statusToRisk(s){
+      s=(s||'').toUpperCase();
+      if(s==='BREAKING'||s==='FRAGILE') return 'high';
+      if(s==='SURGING'||s==='COOLING') return 'medium';
+      return 'low';
+    }
+
+    SECTOR_STATIC=rows.map(function(r){
+      var tickers=typeof r.tickers==='string'?JSON.parse(r.tickers):(r.tickers||[]);
+      return {
+        name:r.scope_key||'',
+        sub:tickers.slice(0,3).join(', '),
+        state:statusToState(r.status),
+        cagr:'—',
+        momentum:Math.round(r.momentum_score||0),
+        risk:statusToRisk(r.status),
+        desc:r.body||'',
+        tickers:tickers.slice(0,8),
+        trap:!!(r.trap_count&&r.trap_count>0),
+        live_traps:r.trap_count||0,
+        live_supported:r.supported_count||0,
+        live_count:r.ticker_count||tickers.length
+      };
+    });
+    console.log('[MP] Sectors loaded from daily_summaries:',SECTOR_STATIC.length,'sectors');
+    renderSectors();
+    renderTrapChart();
+  }catch(e){
+    console.warn('[MP] Sector daily_summaries fetch failed:',e);
+  }
+}
+
 // ── Trap Intensity Chart ──────────────────────────────────────────────────────
 function renderTrapChart(){
   var barsEl=document.getElementById('trap-chart-bars');
@@ -5613,8 +5693,10 @@ function renderSectors(){
   grid.innerHTML=filtered.map(function(s){
     var sc='badge-stable';
     var bar_color='rgba(255,255,255,0.2)';
-    var verdict=s.trap?'<span class="sector-trap">Trap present</span>':'<span class="sector-ok">Supported</span>';
-    var liveNote=s.live_count?'<span class="meta-tag" style="font-size:10px;">'+(s.live_traps||0)+' trap'+(s.live_traps===1?'':'s')+' / '+s.live_count+' tickers</span>':'';
+    var trapCount=s.live_traps||0;
+    var supportedCount=s.live_supported||0;
+    var verdict=trapCount>0?'<span class="sector-trap">Trap present</span>':(supportedCount>0?'<span class="sector-ok">Supported</span>':'');
+    var liveNote=s.live_count?'<span class="meta-tag" style="font-size:10px;">'+trapCount+' trap'+(trapCount===1?'':'s')+' / '+s.live_count+' tickers</span>':'';
     return '<div class="sector-card">'
       +'<div class="sector-card-header">'
         +'<div><div class="sector-name">'+esc(s.name)+'</div><div class="sector-sub">'+esc(s.sub)+'</div></div>'
