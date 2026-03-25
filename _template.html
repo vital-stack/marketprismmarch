@@ -2232,6 +2232,8 @@ body{
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   cursor:default;
 }
+.tc-cal-evt.draggable{cursor:grab;}
+.tc-cal-evt.draggable:active{cursor:grabbing;}
 .tc-cal-evt-dot{width:4px;height:4px;border-radius:50%;flex-shrink:0;}
 .tc-cal-day-queued{display:flex;flex-direction:column;gap:2px;margin-top:auto;}
 .tc-cal-chip{
@@ -2240,7 +2242,9 @@ body{
   letter-spacing:.05em;color:var(--mp-text-primary);
   background:rgba(255,255,255,.05);border-radius:3px;padding:2px 4px;
   animation:chipIn .2s ease-out both;
+  cursor:grab;
 }
+.tc-cal-chip:active{cursor:grabbing;}
 .tc-cal-chip-dot{width:4px;height:4px;border-radius:50%;flex-shrink:0;}
 .tc-cal-chip-rm{
   margin-left:auto;cursor:pointer;color:var(--mp-text-tertiary);
@@ -7673,6 +7677,7 @@ function tcGetEventsForDate(dateStr){
   });
   return evts;
 }
+var tcStaticEventsBase = tcGetEventsForDate;
 
 // State
 var tcCalMonth = new Date().getMonth();
@@ -7685,6 +7690,12 @@ var TC_CARD_W = 234; // 220 + 14 gap
 var TC_CAROUSEL_MS = 3200;
 var tcCalBooted = false;
 var tcDragData = null;
+var tcUserCustomEvents = [];
+var tcUserGlobalOverrides = [];
+var tcGlobalOverrideMap = {};
+var TC_GLOBAL_EVENTS_CACHE = {};
+var TC_GLOBAL_TABLE = 'market_calendar';
+var TC_PERSONALIZATION_STORAGE_KEY = 'mp_planner_state_v3';
 
 // localStorage
 var TC_STORAGE_KEY = 'mp_planner_v2';
@@ -7701,7 +7712,9 @@ function tcSaveQueued(){
 function tcQueuedCount(id){
   var c=0;
   Object.keys(tcQueued).forEach(function(k){
-    (tcQueued[k]||[]).forEach(function(q){if(q.id===id)c++;});
+    (tcQueued[k]||[]).forEach(function(q){
+      if(q.source_ref===id || q.id===id || (q.metadata&&q.metadata.signal_id===id)) c++;
+    });
   });
   return c;
 }
@@ -7766,7 +7779,7 @@ function tcRenderCards(){
     card.addEventListener('dragstart',function(e){
       var idx=parseInt(this.dataset.idx);
       var s=TC_SIGNALS[idx];
-      tcDragData=s;
+      tcDragData={dragType:'signal-card',signal:s};
       this.classList.add('dragging');
       e.dataTransfer.effectAllowed='copy';
       e.dataTransfer.setData('text/plain',s.id);
@@ -7919,6 +7932,25 @@ function tcRenderCalendar(){
         tag.innerHTML='<span class="tc-cal-evt-dot" style="background:'+ev.color+';"></span>'+ev.label;
         tag.dataset.title=ev.label;
         tag.dataset.detail=ev.detail;
+        if(ev.draggable){
+          tag.setAttribute('draggable','true');
+          tag.classList.add('draggable');
+          tag.addEventListener('dragstart',function(e){
+            tcDragData={
+              dragType:'global-event',
+              globalEventId:ev.globalEventId,
+              label:ev.label,
+              detail:ev.detail,
+              color:ev.color,
+              sourceDate:ev.sourceDate || ds
+            };
+            e.dataTransfer.effectAllowed='move';
+            e.dataTransfer.setData('text/plain',ev.globalEventId||ev.label);
+          });
+          tag.addEventListener('dragend',function(){
+            tcDragData=null;
+          });
+        }
         tag.addEventListener('mouseenter',tcShowTooltip);
         tag.addEventListener('mousemove',tcMoveTooltip);
         tag.addEventListener('mouseleave',tcHideTooltip);
@@ -7948,16 +7980,7 @@ function tcRenderCalendar(){
       this.classList.remove('drag-over');
       var date=this.dataset.date;
       if(!tcDragData)return;
-      var sig=tcDragData;
-      if(!tcQueued[date])tcQueued[date]=[];
-      // No dupe same ticker same day
-      var hasDupe=tcQueued[date].some(function(q){return q.id===sig.id;});
-      if(hasDupe)return;
-      tcQueued[date].push({id:sig.id,ticker:sig.ticker,bias:sig.bias,ac:sig.ac,conf:sig.conf});
-      tcSaveQueued();
-      tcRenderChips(date,document.getElementById('tc-q-'+date));
-      tcUpdateQueuedBadges();
-      tcUpdateSummary();
+      tcHandleCalendarDrop(date, tcDragData);
     });
 
     grid.appendChild(cell);
@@ -7979,19 +8002,25 @@ function tcRenderChips(dateStr,container){
   items.forEach(function(q,i){
     var chip=document.createElement('div');
     chip.className='tc-cal-chip';
+    chip.setAttribute('draggable','true');
     chip.innerHTML='<span class="tc-cal-chip-dot" style="background:'+q.ac+';"></span>'+
-      q.ticker+' '+q.bias.substring(0,10)+
-      '<span class="tc-cal-chip-rm" data-date="'+dateStr+'" data-i="'+i+'">&times;</span>';
+      tcChipLabel(q)+
+      '<span class="tc-cal-chip-rm" data-id="'+q.eventId+'">&times;</span>';
+    chip.addEventListener('dragstart',function(e){
+      tcDragData={
+        dragType:'custom-event',
+        customEventId:q.eventId,
+        sourceDate:q.event_date || dateStr
+      };
+      e.dataTransfer.effectAllowed='move';
+      e.dataTransfer.setData('text/plain',q.eventId||q.title||q.ticker||'item');
+    });
+    chip.addEventListener('dragend',function(){
+      tcDragData=null;
+    });
     chip.querySelector('.tc-cal-chip-rm').addEventListener('click',function(e){
       e.stopPropagation();
-      var dd=this.dataset.date;
-      var ii=parseInt(this.dataset.i);
-      tcQueued[dd].splice(ii,1);
-      if(!tcQueued[dd].length)delete tcQueued[dd];
-      tcSaveQueued();
-      tcRenderChips(dd,document.getElementById('tc-q-'+dd));
-      tcUpdateQueuedBadges();
-      tcUpdateSummary();
+      tcDeleteCustomEvent(q.eventId);
     });
     container.appendChild(chip);
   });
@@ -8036,7 +8065,8 @@ function tcUpdateSummary(){
   Object.keys(tcQueued).forEach(function(k){
     (tcQueued[k]||[]).forEach(function(q){
       count++;
-      tickers[q.ticker]={ac:q.ac};
+      var chipTicker=q.ticker||(q.metadata&&q.metadata.ticker)||null;
+      if(chipTicker) tickers[chipTicker]={ac:q.ac};
     });
   });
   var countEl=document.getElementById('tc-cal-summary-count');
@@ -8091,7 +8121,7 @@ function tcExpandCard(idx){
   // Make expanded card draggable
   panel.setAttribute('draggable','true');
   panel.ondragstart=function(e){
-    tcDragData=s;
+    tcDragData={dragType:'signal-card',signal:s};
     e.dataTransfer.effectAllowed='copy';
     e.dataTransfer.setData('text/plain',s.id);
     var ghost=document.getElementById('tc-cal-drag-ghost');
@@ -8113,14 +8143,7 @@ function tcQueueToday(idx){
   var s=TC_SIGNALS[idx];
   var now=new Date();
   var ds=now.getFullYear()+'-'+tcPadDate(now.getMonth()+1)+'-'+tcPadDate(now.getDate());
-  if(!tcQueued[ds])tcQueued[ds]=[];
-  if(tcQueued[ds].some(function(q){return q.id===s.id;})){tcCloseExpand();return;}
-  tcQueued[ds].push({id:s.id,ticker:s.ticker,bias:s.bias,ac:s.ac,conf:s.conf});
-  tcSaveQueued();
-  var container=document.getElementById('tc-q-'+ds);
-  if(container)tcRenderChips(ds,container);
-  tcUpdateQueuedBadges();
-  tcUpdateSummary();
+  tcCreateSignalCardEvent(ds, s);
   tcCloseExpand();
 }
 
@@ -8179,12 +8202,12 @@ function calendarBoot(){
   document.getElementById('tc-cal-mprev').addEventListener('click',function(){
     tcCalMonth--;
     if(tcCalMonth<0){tcCalMonth=11;tcCalYear--;}
-    tcRenderCalendar();
+    tcEnsureGlobalEventsForYear(tcCalYear).then(tcRenderCalendar);
   });
   document.getElementById('tc-cal-mnext').addEventListener('click',function(){
     tcCalMonth++;
     if(tcCalMonth>11){tcCalMonth=0;tcCalYear++;}
-    tcRenderCalendar();
+    tcEnsureGlobalEventsForYear(tcCalYear).then(tcRenderCalendar);
   });
   // Carousel arrows
   document.getElementById('tc-cal-prev').addEventListener('click',function(){
@@ -8197,11 +8220,7 @@ function calendarBoot(){
   });
   // Clear all
   document.getElementById('tc-cal-clear').addEventListener('click',function(){
-    tcQueued={};
-    tcSaveQueued();
-    tcRenderCalendar();
-    tcUpdateQueuedBadges();
-    tcUpdateSummary();
+    tcClearAllPersonalization();
   });
   // Close expanded card on backdrop click
   document.getElementById('tc-card-overlay').addEventListener('click',function(e){
@@ -8230,6 +8249,31 @@ function restFetch(table, params){
     }
     return res.json();
   });
+}
+
+async function authedRestFetch(table, params){
+  var session = null;
+  try {
+    var sessionResult = await (SUPA && SUPA.auth && SUPA.auth.getSession ? SUPA.auth.getSession() : Promise.resolve(null));
+    session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+  } catch(_) {}
+  var qs = Object.keys(params || {}).filter(function(key){
+    var value = params[key];
+    return value !== undefined && value !== null && value !== '';
+  }).map(function(key){
+    return encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
+  }).join('&');
+  var headers = {
+    'apikey': SUPABASE_ANON,
+    'Authorization': 'Bearer ' + ((session && session.access_token) || SUPABASE_ANON),
+    'Accept': 'application/json'
+  };
+  var res = await fetch(SUPABASE_URL + '/rest/v1/' + table + (qs ? '?' + qs : ''), { headers: headers });
+  if(!res.ok){
+    var body = await res.text().catch(function(){ return ''; });
+    throw new Error('[' + table + '] ' + res.status + ' ' + body.slice(0, 160));
+  }
+  return res.json();
 }
 
 function fmtShortDate(dateStr){
@@ -8483,53 +8527,488 @@ function syncMiniNarrativeChart(model){
   });
 }
 
-tcLoadQueued = function(){
+function tcGetPersonalizationLocalKey(){
+  return (CURRENT_USER ? TC_PERSONALIZATION_STORAGE_KEY + ':' + CURRENT_USER.id : TC_PERSONALIZATION_STORAGE_KEY);
+}
+
+function tcIsUuid(value){
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || ''));
+}
+
+function tcHasPersistableUser(){
+  return !!(CURRENT_USER && tcIsUuid(CURRENT_USER.id));
+}
+
+function tcPulseSaveDot(){
+  var dot = document.getElementById('tc-cal-save-dot');
+  if(dot){ dot.classList.remove('pulse'); void dot.offsetWidth; dot.classList.add('pulse'); }
+}
+
+function tcDefaultEventColor(type){
+  var key = String(type || '').toLowerCase();
+  if(key === 'holiday') return 'var(--mp-red)';
+  if(key === 'fomc' || key === 'fomc_decision' || key === 'fomc_minutes' || key === 'cpi' || key === 'ppi' || key === 'jobs_report' || key === 'gdp' || key === 'pce' || key === 'retail_sales' || key === 'ism_manufacturing' || key === 'ism_services' || key === 'consumer_sentiment' || key === 'jobless_claims') return 'var(--mp-amber)';
+  if(key === 'opex' || key === 'options_expiry') return 'var(--mp-violet)';
+  if(key === 'quad' || key === 'quad_witching') return '#FF6B9D';
+  if(key === 'earn' || key === 'earnings') return 'var(--mp-teal)';
+  return 'var(--mp-cyan)';
+}
+
+function tcNormalizeGlobalEvent(row){
+  if(!row) return null;
+  var eventDate = row.event_date || row.date || row.calendar_date || row.starts_on || null;
+  if(!eventDate) return null;
+  var type = row.event_type || row.category || row.type || 'global';
+  var label = row.title || row.label || row.event_name || row.name || 'Calendar Event';
+  if(row.ticker && label.indexOf(row.ticker) !== 0){
+    label = row.ticker + ' ' + label;
+  }
+  var detailParts = [];
+  if(row.event_time) detailParts.push(row.event_time);
+  if(row.source) detailParts.push(row.source);
+  if(row.notes) detailParts.push(row.notes);
+  if(row.expected_value != null) detailParts.push('Expected: ' + row.expected_value);
+  return {
+    id: row.id || null,
+    event_date: eventDate,
+    label: label,
+    detail: row.description || row.detail || detailParts.join(' · '),
+    type: type,
+    color: row.color_token || row.color || tcDefaultEventColor(type),
+    position: row.position != null ? row.position : 0,
+    raw: row
+  };
+}
+
+function tcGetYearBounds(year){
+  return {
+    start: year + '-01-01',
+    end: year + '-12-31'
+  };
+}
+
+function tcRebuildGlobalOverrideMap(){
+  tcGlobalOverrideMap = {};
+  (tcUserGlobalOverrides || []).forEach(function(row){
+    if(row && row.global_event_id) tcGlobalOverrideMap[row.global_event_id] = row;
+  });
+}
+
+function tcCustomEventToQueuedItem(row){
+  var meta = row.metadata || {};
+  return {
+    eventId: row.id,
+    event_date: row.event_date,
+    source_type: row.source_type,
+    source_ref: row.source_ref,
+    title: row.title,
+    description: row.description || '',
+    ticker: meta.ticker || row.title || 'ITEM',
+    bias: meta.bias || row.title || '',
+    ac: row.color_token || meta.color_token || 'var(--mp-cyan)',
+    conf: meta.conf || meta.confidence || '',
+    metadata: meta,
+    position: row.position || 0,
+    created_at: row.created_at || null
+  };
+}
+
+function tcRebuildQueuedFromCustomEvents(){
+  tcQueued = {};
+  (tcUserCustomEvents || []).slice().sort(function(a,b){
+    if((a.event_date || '') !== (b.event_date || '')) return (a.event_date || '').localeCompare(b.event_date || '');
+    if((a.position || 0) !== (b.position || 0)) return (a.position || 0) - (b.position || 0);
+    return new Date(a.created_at || 0) - new Date(b.created_at || 0);
+  }).forEach(function(row){
+    if(!row || !row.event_date) return;
+    if(!tcQueued[row.event_date]) tcQueued[row.event_date] = [];
+    tcQueued[row.event_date].push(tcCustomEventToQueuedItem(row));
+  });
+}
+
+function tcPersistLocalPersonalization(){
   try {
-    var localKey = CURRENT_USER ? TC_STORAGE_KEY + ':' + CURRENT_USER.id : TC_STORAGE_KEY;
-    var local = JSON.parse(localStorage.getItem(localKey) || localStorage.getItem(TC_STORAGE_KEY));
-    if(local && typeof local === 'object') tcQueued = local;
+    localStorage.setItem(tcGetPersonalizationLocalKey(), JSON.stringify({
+      customEvents: tcUserCustomEvents,
+      globalOverrides: tcUserGlobalOverrides
+    }));
   } catch(_) {}
-  if(SUPA && CURRENT_USER){
-    SUPA.from('user_calendar_state')
-      .select('calendar_data')
-      .eq('user_id', CURRENT_USER.id)
-      .maybeSingle()
-      .then(function(result){
-        if(result && result.data && result.data.calendar_data && typeof result.data.calendar_data === 'object'){
-          tcQueued = result.data.calendar_data;
-          if(tcCalBooted){
-            tcRenderCalendar();
-            tcUpdateQueuedBadges();
-            tcUpdateSummary();
-          }
-        }
-      })
-      .catch(function(err){
-        console.warn('Calendar state load failed', err && err.message ? err.message : err);
+  tcPulseSaveDot();
+}
+
+function tcHydrateLocalPersonalization(){
+  try {
+    var raw = localStorage.getItem(tcGetPersonalizationLocalKey()) || localStorage.getItem(TC_STORAGE_KEY);
+    if(!raw) return;
+    var parsed = JSON.parse(raw);
+    if(parsed && typeof parsed === 'object' && (parsed.customEvents || parsed.globalOverrides)){
+      tcUserCustomEvents = Array.isArray(parsed.customEvents) ? parsed.customEvents : [];
+      tcUserGlobalOverrides = Array.isArray(parsed.globalOverrides) ? parsed.globalOverrides : [];
+    } else if(parsed && typeof parsed === 'object'){
+      tcQueued = parsed;
+      tcUserCustomEvents = [];
+      Object.keys(parsed).forEach(function(dateStr){
+        (parsed[dateStr] || []).forEach(function(item, index){
+          tcUserCustomEvents.push({
+            id: 'legacy-' + dateStr + '-' + index + '-' + (item.id || item.ticker || 'item'),
+            event_date: dateStr,
+            title: item.ticker || item.title || 'Saved Item',
+            description: '',
+            source_type: 'signal_card',
+            source_ref: item.id || item.source_ref || null,
+            color_token: item.ac || 'var(--mp-cyan)',
+            position: index,
+            metadata: {
+              ticker: item.ticker || item.title || 'ITEM',
+              bias: item.bias || item.title || '',
+              conf: item.conf || '',
+              signal_id: item.id || item.source_ref || null
+            }
+          });
+        });
       });
+    }
+  } catch(_) {}
+  tcRebuildGlobalOverrideMap();
+  tcRebuildQueuedFromCustomEvents();
+}
+
+function tcChipLabel(item){
+  if(!item) return 'Item';
+  if(item.source_type === 'signal_card'){
+    var ticker = item.ticker || (item.metadata && item.metadata.ticker) || item.title || 'SIGNAL';
+    var bias = item.bias || (item.metadata && item.metadata.bias) || '';
+    return ticker + (bias ? ' ' + String(bias).substring(0, 10) : '');
+  }
+  return item.title || item.ticker || 'Item';
+}
+
+function tcNextCustomPosition(dateStr){
+  var max = -1;
+  (tcUserCustomEvents || []).forEach(function(row){
+    if(row && row.event_date === dateStr && (row.position || 0) > max) max = row.position || 0;
+  });
+  return max + 1;
+}
+
+function tcFindCustomEventById(id){
+  for(var i = 0; i < (tcUserCustomEvents || []).length; i++){
+    if(tcUserCustomEvents[i] && tcUserCustomEvents[i].id === id) return tcUserCustomEvents[i];
+  }
+  return null;
+}
+
+function tcHasSignalCardDuplicate(dateStr, signalId){
+  return (tcUserCustomEvents || []).some(function(row){
+    return row && row.event_date === dateStr && row.source_type === 'signal_card' && (row.source_ref === signalId || (row.metadata && row.metadata.signal_id === signalId));
+  });
+}
+
+function tcSignalToCustomEvent(dateStr, sig){
+  return {
+    id: 'tmp-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
+    user_id: CURRENT_USER ? CURRENT_USER.id : null,
+    event_date: dateStr,
+    title: sig.ticker + ' ' + sig.bias,
+    description: 'Dropped from the planner signal rail',
+    source_type: 'signal_card',
+    source_ref: sig.id,
+    color_token: sig.ac,
+    position: tcNextCustomPosition(dateStr),
+    metadata: {
+      ticker: sig.ticker,
+      bias: sig.bias,
+      conf: sig.conf,
+      signal_id: sig.id,
+      name: sig.name || ''
+    },
+    created_at: new Date().toISOString()
+  };
+}
+
+function tcApplyCalendarState(){
+  tcRebuildGlobalOverrideMap();
+  tcRebuildQueuedFromCustomEvents();
+  if(tcCalBooted){
+    tcRenderCalendar();
+    tcUpdateQueuedBadges();
+    tcUpdateSummary();
+  }
+}
+
+function tcMergeGlobalEventsForDate(dateStr, fallbackEvents){
+  var year = (dateStr || '').slice(0, 4);
+  var globalRows = TC_GLOBAL_EVENTS_CACHE[year] || [];
+  if(!globalRows.length) return fallbackEvents || [];
+  return globalRows.reduce(function(list, row){
+    var override = row.id ? tcGlobalOverrideMap[row.id] : null;
+    if(override && override.is_hidden) return list;
+    var renderDate = override && override.override_date ? override.override_date : row.event_date;
+    if(renderDate !== dateStr) return list;
+    list.push({
+      type: row.type,
+      color: row.color,
+      label: row.label,
+      detail: row.detail,
+      draggable: !!row.id,
+      globalEventId: row.id,
+      sourceDate: row.event_date,
+      position: override && override.position != null ? override.position : row.position
+    });
+    return list;
+  }, []).sort(function(a,b){
+    return (a.position || 0) - (b.position || 0);
+  });
+}
+
+function tcGetVisibleMonthDates(){
+  var start = tcDateStr(tcCalYear, tcCalMonth, 1);
+  var end = tcDateStr(tcCalYear, tcCalMonth, new Date(tcCalYear, tcCalMonth + 1, 0).getDate());
+  return { start:start, end:end };
+}
+
+async function tcEnsureGlobalEventsForYear(year){
+  if(!SUPA || !SUPABASE_URL || !SUPABASE_ANON) return;
+  if(TC_GLOBAL_EVENTS_CACHE[year]) return;
+  var bounds = tcGetYearBounds(year);
+  try {
+    var result = await SUPA.from(TC_GLOBAL_TABLE)
+      .select('*')
+      .gte('event_date', bounds.start)
+      .lte('event_date', bounds.end)
+      .order('event_date', { ascending:true });
+    if(result && result.error) throw result.error;
+    TC_GLOBAL_EVENTS_CACHE[year] = (result && result.data ? result.data : []).map(tcNormalizeGlobalEvent).filter(Boolean);
+  } catch(err){
+    TC_GLOBAL_EVENTS_CACHE[year] = [];
+    console.warn('Trading calendar global load failed', err && err.message ? err.message : err);
+  }
+}
+
+async function tcLoadRemotePersonalization(){
+  if(!SUPA || !tcHasPersistableUser()) return;
+  var localCustom = (tcUserCustomEvents || []).slice();
+  var localOverrides = (tcUserGlobalOverrides || []).slice();
+  var remoteCustom = null;
+  var remoteOverrides = null;
+  try {
+    remoteCustom = await authedRestFetch('user_calendar_custom_events', {
+      select:'*',
+      user_id:'eq.' + CURRENT_USER.id,
+      order:'event_date.asc,position.asc,created_at.asc'
+    });
+  } catch(err){
+    console.warn('Calendar custom events load failed', err && err.message ? err.message : err);
+  }
+  try {
+    remoteOverrides = await authedRestFetch('user_calendar_global_overrides', {
+      select:'*',
+      user_id:'eq.' + CURRENT_USER.id,
+      order:'created_at.asc'
+    });
+  } catch(err){
+    console.warn('Calendar overrides load failed', err && err.message ? err.message : err);
+  }
+  var hasRemoteData = !!((remoteCustom && remoteCustom.length) || (remoteOverrides && remoteOverrides.length));
+  var hadLocalData = !!(localCustom.length || localOverrides.length);
+  if(hasRemoteData || !hadLocalData){
+    tcUserCustomEvents = Array.isArray(remoteCustom) ? remoteCustom : [];
+    tcUserGlobalOverrides = Array.isArray(remoteOverrides) ? remoteOverrides : [];
+  } else {
+    tcUserCustomEvents = localCustom;
+    tcUserGlobalOverrides = localOverrides;
+    console.warn('Calendar personalization remote read came back empty; keeping local cached state. Check RLS select policies for user calendar tables.');
+  }
+  tcPersistLocalPersonalization();
+  tcApplyCalendarState();
+}
+
+tcLoadQueued = function(){
+  tcHydrateLocalPersonalization();
+  tcApplyCalendarState();
+  tcEnsureGlobalEventsForYear(tcCalYear).then(function(){
+    if(tcCalBooted) tcRenderCalendar();
+  });
+  if(SUPA && tcHasPersistableUser()){
+    tcLoadRemotePersonalization();
   }
 };
 
 tcSaveQueued = function(){
-  try {
-    var localKey = CURRENT_USER ? TC_STORAGE_KEY + ':' + CURRENT_USER.id : TC_STORAGE_KEY;
-    localStorage.setItem(localKey, JSON.stringify(tcQueued));
-  } catch(_) {}
-  var dot = document.getElementById('tc-cal-save-dot');
-  if(dot){ dot.classList.remove('pulse'); void dot.offsetWidth; dot.classList.add('pulse'); }
-  if(!SUPA || !CURRENT_USER) return;
-  clearTimeout(TC_REMOTE_SAVE_TIMER);
-  TC_REMOTE_SAVE_TIMER = setTimeout(function(){
-    SUPA.from('user_calendar_state').upsert({
-      user_id: CURRENT_USER.id,
-      calendar_data: tcQueued
-    }, { onConflict: 'user_id' }).then(function(result){
-      if(result && result.error) throw result.error;
-    }).catch(function(err){
-      console.warn('Calendar state save failed', err && err.message ? err.message : err);
-    });
-  }, 350);
+  tcPersistLocalPersonalization();
+  tcApplyCalendarState();
 };
+
+function tcGetDefaultStaticEventsForDate(dateStr){
+  var base = tcStaticEventsBase ? tcStaticEventsBase(dateStr).slice() : [];
+  (LIVE_EARNINGS_BY_DATE[dateStr] || []).forEach(function(row){
+    base.push({
+      type:'earn',
+      color:'var(--mp-teal)',
+      label:row.ticker + ' Earnings',
+      detail:(row.earnings_position || 'NEUTRAL') + (row.narrative_earnings_alignment ? ' · ' + row.narrative_earnings_alignment : '')
+    });
+  });
+  return base;
+}
+
+async function tcCreateSignalCardEvent(dateStr, sig){
+  if(!sig) return;
+  if(tcHasSignalCardDuplicate(dateStr, sig.id)) return;
+  var optimistic = tcSignalToCustomEvent(dateStr, sig);
+  tcUserCustomEvents.push(optimistic);
+  tcSaveQueued();
+  if(!SUPA || !tcHasPersistableUser()) return;
+  try {
+    var payload = {
+      user_id: CURRENT_USER.id,
+      event_date: dateStr,
+      title: optimistic.title,
+      description: optimistic.description,
+      source_type: optimistic.source_type,
+      source_ref: optimistic.source_ref,
+      color_token: optimistic.color_token,
+      position: optimistic.position,
+      metadata: optimistic.metadata
+    };
+    var result = await SUPA.from('user_calendar_custom_events').insert(payload).select().single();
+    if(result && result.error) throw result.error;
+    tcUserCustomEvents = tcUserCustomEvents.map(function(row){
+      return row.id === optimistic.id ? result.data : row;
+    });
+    tcSaveQueued();
+  } catch(err){
+    tcUserCustomEvents = tcUserCustomEvents.filter(function(row){ return row.id !== optimistic.id; });
+    tcSaveQueued();
+    console.warn('Calendar custom event save failed', err && err.message ? err.message : err);
+  }
+}
+
+async function tcMoveCustomEvent(customEventId, nextDate){
+  var existing = tcFindCustomEventById(customEventId);
+  if(!existing || existing.event_date === nextDate) return;
+  var previousDate = existing.event_date;
+  var previousPosition = existing.position || 0;
+  existing.event_date = nextDate;
+  existing.position = tcNextCustomPosition(nextDate);
+  tcSaveQueued();
+  if(!SUPA || !tcHasPersistableUser() || String(customEventId).indexOf('tmp-') === 0 || String(customEventId).indexOf('legacy-') === 0) return;
+  try {
+    var result = await SUPA.from('user_calendar_custom_events')
+      .update({ event_date: nextDate, position: existing.position })
+      .eq('id', customEventId)
+      .select()
+      .single();
+    if(result && result.error) throw result.error;
+    tcUserCustomEvents = tcUserCustomEvents.map(function(row){
+      return row.id === customEventId ? result.data : row;
+    });
+    tcSaveQueued();
+  } catch(err){
+    existing.event_date = previousDate;
+    existing.position = previousPosition;
+    tcSaveQueued();
+    console.warn('Calendar custom event move failed', err && err.message ? err.message : err);
+  }
+}
+
+async function tcDeleteCustomEvent(customEventId){
+  var existing = tcFindCustomEventById(customEventId);
+  if(!existing) return;
+  tcUserCustomEvents = tcUserCustomEvents.filter(function(row){ return row.id !== customEventId; });
+  tcSaveQueued();
+  if(!SUPA || !tcHasPersistableUser() || String(customEventId).indexOf('tmp-') === 0 || String(customEventId).indexOf('legacy-') === 0) return;
+  try {
+    var result = await SUPA.from('user_calendar_custom_events')
+      .delete()
+      .eq('id', customEventId);
+    if(result && result.error) throw result.error;
+  } catch(err){
+    tcUserCustomEvents.push(existing);
+    tcSaveQueued();
+    console.warn('Calendar custom event delete failed', err && err.message ? err.message : err);
+  }
+}
+
+async function tcMoveGlobalEvent(globalEventId, nextDate){
+  if(!globalEventId) return;
+  var prev = tcGlobalOverrideMap[globalEventId] ? Object.assign({}, tcGlobalOverrideMap[globalEventId]) : null;
+  var nextOverride = Object.assign({}, prev || {}, {
+    user_id: CURRENT_USER ? CURRENT_USER.id : null,
+    global_event_id: globalEventId,
+    override_date: nextDate,
+    is_hidden: false,
+    position: 0
+  });
+  var found = false;
+  tcUserGlobalOverrides = (tcUserGlobalOverrides || []).map(function(row){
+    if(row.global_event_id === globalEventId){
+      found = true;
+      return Object.assign({}, row, nextOverride);
+    }
+    return row;
+  });
+  if(!found) tcUserGlobalOverrides.push(nextOverride);
+  tcSaveQueued();
+  if(!SUPA || !tcHasPersistableUser()) return;
+  try {
+    var result = await SUPA.from('user_calendar_global_overrides')
+      .upsert({
+        user_id: CURRENT_USER.id,
+        global_event_id: globalEventId,
+        override_date: nextDate,
+        is_hidden: false,
+        position: 0
+      }, { onConflict:'user_id,global_event_id' })
+      .select()
+      .single();
+    if(result && result.error) throw result.error;
+    tcUserGlobalOverrides = tcUserGlobalOverrides.map(function(row){
+      return row.global_event_id === globalEventId ? result.data : row;
+    });
+    tcSaveQueued();
+  } catch(err){
+    if(prev){
+      tcUserGlobalOverrides = tcUserGlobalOverrides.map(function(row){
+        return row.global_event_id === globalEventId ? prev : row;
+      });
+    } else {
+      tcUserGlobalOverrides = tcUserGlobalOverrides.filter(function(row){
+        return row.global_event_id !== globalEventId;
+      });
+    }
+    tcSaveQueued();
+    console.warn('Calendar global override save failed', err && err.message ? err.message : err);
+  }
+}
+
+function tcHandleCalendarDrop(dateStr, dragData){
+  if(!dragData) return;
+  if(dragData.dragType === 'signal-card') return tcCreateSignalCardEvent(dateStr, dragData.signal);
+  if(dragData.dragType === 'custom-event') return tcMoveCustomEvent(dragData.customEventId, dateStr);
+  if(dragData.dragType === 'global-event') return tcMoveGlobalEvent(dragData.globalEventId, dateStr);
+  if(dragData.id && dragData.ticker) return tcCreateSignalCardEvent(dateStr, dragData);
+}
+
+async function tcClearAllPersonalization(){
+  var prevCustom = tcUserCustomEvents.slice();
+  var prevOverrides = tcUserGlobalOverrides.slice();
+  tcUserCustomEvents = [];
+  tcUserGlobalOverrides = [];
+  tcSaveQueued();
+  if(!SUPA || !tcHasPersistableUser()) return;
+  try {
+    var delCustom = await SUPA.from('user_calendar_custom_events').delete().eq('user_id', CURRENT_USER.id);
+    if(delCustom && delCustom.error) throw delCustom.error;
+    var delOverrides = await SUPA.from('user_calendar_global_overrides').delete().eq('user_id', CURRENT_USER.id);
+    if(delOverrides && delOverrides.error) throw delOverrides.error;
+  } catch(err){
+    tcUserCustomEvents = prevCustom;
+    tcUserGlobalOverrides = prevOverrides;
+    tcSaveQueued();
+    console.warn('Calendar clear failed', err && err.message ? err.message : err);
+  }
+}
 
 function getLiveSignalBias(row, story){
   if((story && story.prism_verdict === 'Narrative Trap') || row.narrative_earnings_alignment === 'CONTRADICTED'){
@@ -8611,23 +9090,8 @@ async function loadTradingCalendarLive(){
 }
 
 tcGetEventsForDate = function(dateStr){
-  var evts = [];
-  if(TC_HOLIDAYS_2026[dateStr]) evts.push({type:'holiday',color:'var(--mp-red)',label:TC_HOLIDAYS_2026[dateStr],detail:'NYSE Closed'});
-  TC_FOMC_2026.forEach(function(f){
-    if(dateStr === f.d1) evts.push({type:'fomc',color:'var(--mp-amber)',label:'FOMC Day 1' + (f.sep ? ' ★' : ''),detail:'Federal Open Market Committee meeting begins'});
-    if(dateStr === f.d2) evts.push({type:'fomc',color:'var(--mp-amber)',label:'FOMC Decision' + (f.sep ? ' ★' : ''),detail:'Rate decision at 2:00 PM ET' + (f.sep ? ' — SEP & dot-plot release' : '')});
-  });
-  if(TC_OPEX_2026[dateStr]) evts.push({type:'opex',color:'var(--mp-violet)',label:TC_OPEX_2026[dateStr],detail:'Monthly options expiration'});
-  if(TC_QUAD_2026[dateStr]) evts.push({type:'quad',color:'#FF6B9D',label:'Quad Witching',detail:'Stock index futures, options, and stock options expire'});
-  (LIVE_EARNINGS_BY_DATE[dateStr] || []).forEach(function(row){
-    evts.push({
-      type:'earn',
-      color:'var(--mp-teal)',
-      label:row.ticker + ' Earnings',
-      detail:(row.earnings_position || 'NEUTRAL') + (row.narrative_earnings_alignment ? ' · ' + row.narrative_earnings_alignment : '')
-    });
-  });
-  return evts;
+  var fallback = tcGetDefaultStaticEventsForDate(dateStr);
+  return tcMergeGlobalEventsForDate(dateStr, fallback);
 };
 
 // ── Sync stories col height to cards col ──
