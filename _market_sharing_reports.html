@@ -4,81 +4,138 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Market Prism — Report Builder</title>
+<script id="__env_script">window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '' };</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<script id="__env_script">window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '' };</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --mp-obsidian:#080B11;--mp-surface:#0C1018;--mp-surface2:#111927;
-  --mp-border:rgba(255,255,255,0.06);--mp-border-hover:rgba(255,255,255,0.14);
-  --mp-text-primary:#FFFFFF;--mp-text-secondary:rgba(255,255,255,0.7);
-  --mp-text-tertiary:#A0A8B0;--mp-text-muted:rgba(255,255,255,0.3);
-  --mp-cyan:#00AEFF;--mp-green:#00DE94;--mp-red:#FF4D4D;--mp-amber:#FFB800;
-  --font-d:'Instrument Serif','DM Serif Display',Georgia,serif;
-  --font-b:'Inter','DM Sans',system-ui,sans-serif;
+  --bg:#080B11;--surface:#0C1018;--surface2:#111927;
+  --border:rgba(255,255,255,0.06);--border-hi:rgba(255,255,255,0.12);
+  --tx:#FFFFFF;--tx2:rgba(255,255,255,0.7);--tx3:#A0A8B0;--tx4:rgba(255,255,255,0.3);
+  --cyan:#00AEFF;--green:#00DE94;--red:#FF4D4D;--amber:#FFB800;--violet:#7B61FF;
+  --fd:'Instrument Serif','DM Serif Display',Georgia,serif;
+  --fb:'Inter','DM Sans',system-ui,sans-serif;
 }
-body{font-family:var(--font-b);background:var(--mp-obsidian);color:var(--mp-text-primary);-webkit-font-smoothing:antialiased;}
+html{font-size:16px;}
+body{font-family:var(--fb);background:var(--bg);color:var(--tx);-webkit-font-smoothing:antialiased;}
+
 /* ── Layout ── */
-.builder{display:flex;height:100vh;gap:0;}
-.sidebar{width:320px;min-width:280px;border-right:1px solid var(--mp-border);padding:20px;overflow-y:auto;flex-shrink:0;background:var(--mp-surface);}
-.canvas{flex:1;display:flex;flex-direction:column;align-items:center;padding:24px;overflow-y:auto;background:var(--mp-obsidian);}
-@media(max-width:900px){.builder{flex-direction:column;height:auto;}.sidebar{width:100%;border-right:none;border-bottom:1px solid var(--mp-border);}}
+.app{display:flex;height:100vh;}
+.sidebar{width:300px;min-width:260px;border-right:1px solid var(--border);padding:20px;overflow-y:auto;flex-shrink:0;background:var(--surface);}
+.main{flex:1;display:flex;flex-direction:column;align-items:center;padding:28px;overflow-y:auto;background:var(--bg);}
+@media(max-width:900px){.app{flex-direction:column;height:auto;}.sidebar{width:100%;border-right:none;border-bottom:1px solid var(--border);}}
+
 /* ── Sidebar ── */
-.cs{margin-bottom:20px;}
-.cs-label{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--mp-text-tertiary);margin-bottom:10px;}
-.field{margin-bottom:10px;}
-.field label{display:block;font-size:11px;color:var(--mp-text-tertiary);margin-bottom:4px;}
-.field select,.field input{width:100%;font-size:13px;padding:8px 10px;border-radius:8px;border:1px solid var(--mp-border);background:var(--mp-obsidian);color:var(--mp-text-primary);font-family:var(--font-b);outline:none;}
-.field select:focus,.field input:focus{border-color:rgba(0,174,255,0.4);}
-.row-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.block-list{display:flex;flex-direction:column;gap:6px;}
-.bt{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--mp-border);cursor:pointer;transition:all .15s;background:transparent;user-select:none;}
-.bt:hover{border-color:var(--mp-border-hover);background:rgba(255,255,255,0.02);}
-.bt.on{border-color:rgba(0,174,255,0.25);background:rgba(0,174,255,0.04);}
-.bt-chk{width:16px;height:16px;border-radius:4px;border:1.5px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:10px;color:transparent;flex-shrink:0;}
-.bt.on .bt-chk{color:var(--mp-cyan);border-color:rgba(0,174,255,0.4);background:rgba(0,174,255,0.1);}
-.bt-icon{font-size:16px;flex-shrink:0;}
-.bt-name{font-size:13px;color:var(--mp-text-primary);}
-.bt-desc{font-size:11px;color:var(--mp-text-tertiary);}
-.btn-generate{background:rgba(0,174,255,0.12);color:var(--mp-cyan);border:1px solid rgba(0,174,255,0.25);border-radius:8px;padding:10px 24px;font-size:12px;font-family:var(--font-b);letter-spacing:0.04em;cursor:pointer;transition:all .2s;width:100%;margin-top:12px;}
-.btn-generate:hover{background:rgba(0,174,255,0.2);}
-.btn-export{margin-top:16px;background:rgba(255,255,255,0.06);color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px 24px;font-size:12px;font-family:var(--font-b);letter-spacing:0.04em;cursor:pointer;transition:all .2s;display:none;}
-.btn-export:hover{background:rgba(255,255,255,0.12);}
-/* ── Report cards ── */
-.rpt-card{background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:14px;padding:20px;margin-bottom:16px;width:100%;max-width:680px;}
-.rpt-card-title{font-family:var(--font-d);font-size:18px;font-weight:400;color:#fff;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
-.rpt-icon{font-size:16px;}
-.rpt-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
-.rpt-row:last-child{border-bottom:none;}
-.rpt-label{font-size:13px;color:var(--mp-text-secondary);}
-.rpt-val{font-size:14px;color:var(--mp-text-primary);font-weight:500;}
-.rpt-bar-wrap{display:flex;align-items:center;gap:8px;flex:1;max-width:200px;}
-.rpt-bar{height:6px;border-radius:3px;background:rgba(255,255,255,0.06);flex:1;}
-.rpt-bar-fill{height:100%;border-radius:3px;transition:width .4s;}
-.rpt-verdict-badge{display:inline-block;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:500;letter-spacing:0.04em;}
-.rpt-footer{margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);font-size:9px;color:var(--mp-text-tertiary);text-align:center;line-height:1.6;}
-.rpt-signal-id{font-size:8px;color:rgba(255,255,255,0.2);letter-spacing:0.06em;margin-top:4px;}
-.ph{display:flex;flex-direction:column;align-items:center;justify-content:center;height:300px;color:var(--mp-text-tertiary);gap:16px;}
-.ph-text{font-size:14px;}
-.cert-box{background:#08111B;border:1px solid #1A2E42;border-radius:8px;padding:12px 13px;display:flex;flex-direction:column;gap:9px;}
-.cert-row{display:flex;justify-content:space-between;align-items:center;}
-.cert-label{font-size:10px;color:#4E6E88;}
-.cert-val{font-size:12px;font-weight:500;color:var(--mp-cyan);}
-.cert-divider{height:1px;background:#1A2E42;}
-.cert-sources{font-size:9px;color:#4E6E88;line-height:1.6;}
-.cert-patent{font-size:8px;color:rgba(90,122,149,0.4);letter-spacing:0.08em;text-align:center;margin-top:8px;}
+.sb-section{margin-bottom:20px;}
+.sb-label{font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--tx4);margin-bottom:10px;}
+.sb-field{margin-bottom:10px;}
+.sb-field label{display:block;font-size:11px;color:var(--tx3);margin-bottom:4px;}
+.sb-field input,.sb-field select{width:100%;font-size:13px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--tx);font-family:var(--fb);outline:none;}
+.sb-field input:focus,.sb-field select:focus{border-color:rgba(0,174,255,0.4);}
+.sb-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.sb-blocks{display:flex;flex-direction:column;gap:5px;}
+.sb-blk{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:9px;border:1px solid var(--border);cursor:pointer;transition:all .15s;user-select:none;}
+.sb-blk:hover{border-color:var(--border-hi);}
+.sb-blk.on{border-color:rgba(0,174,255,0.3);background:rgba(0,174,255,0.04);}
+.sb-chk{width:15px;height:15px;border-radius:3px;border:1.5px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:9px;color:transparent;flex-shrink:0;}
+.sb-blk.on .sb-chk{color:var(--cyan);border-color:rgba(0,174,255,0.4);background:rgba(0,174,255,0.1);}
+.sb-ico{font-size:15px;flex-shrink:0;}
+.sb-bname{font-size:12px;color:var(--tx);}
+.sb-bdesc{font-size:10px;color:var(--tx3);}
+.btn-gen{background:linear-gradient(135deg,rgba(0,174,255,0.15),rgba(0,222,148,0.1));color:var(--cyan);border:1px solid rgba(0,174,255,0.3);border-radius:8px;padding:11px;font-size:13px;font-weight:500;font-family:var(--fb);cursor:pointer;width:100%;margin-top:14px;transition:all .2s;letter-spacing:0.02em;}
+.btn-gen:hover{background:linear-gradient(135deg,rgba(0,174,255,0.25),rgba(0,222,148,0.15));border-color:rgba(0,174,255,0.5);}
+.btn-row{display:flex;gap:8px;margin-top:16px;}
+.btn-exp{flex:1;background:rgba(255,255,255,0.05);color:var(--tx2);border:1px solid var(--border);border-radius:8px;padding:9px;font-size:12px;font-family:var(--fb);cursor:pointer;transition:all .15s;}
+.btn-exp:hover{background:rgba(255,255,255,0.1);color:var(--tx);}
+.btn-exp:disabled{opacity:.4;cursor:not-allowed;}
+.placeholder{display:flex;align-items:center;justify-content:center;height:300px;color:var(--tx4);font-size:14px;}
+
+/* ══════════════════════════════════════════════════════════
+   REPORT CARD — the shareable output
+   ══════════════════════════════════════════════════════════ */
+.rpt{
+  width:680px;max-width:100%;
+  background:linear-gradient(180deg,#0C1018 0%,#080B11 100%);
+  border:1px solid var(--border-hi);
+  border-radius:20px;
+  overflow:hidden;
+  box-shadow:0 20px 60px rgba(0,0,0,0.6),0 0 0 1px rgba(255,255,255,0.04);
+}
+/* ── Header ── */
+.rpt-head{
+  padding:28px 28px 20px;
+  border-bottom:1px solid var(--border);
+  background:linear-gradient(135deg,rgba(0,174,255,0.04) 0%,rgba(0,222,148,0.02) 100%);
+}
+.rpt-brand{display:flex;align-items:center;gap:8px;margin-bottom:16px;}
+.rpt-logo{width:22px;height:22px;}
+.rpt-brand-name{font-family:var(--fd);font-size:15px;color:var(--tx);letter-spacing:-0.01em;}
+.rpt-brand-tag{font-size:9px;color:var(--tx4);letter-spacing:0.08em;text-transform:uppercase;margin-left:auto;}
+.rpt-ticker-row{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;}
+.rpt-ticker{font-family:var(--fb);font-size:36px;font-weight:700;color:var(--tx);letter-spacing:-0.02em;}
+.rpt-signal-badge{
+  display:inline-block;padding:5px 14px;border-radius:20px;
+  font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;
+}
+.rpt-sub{font-size:13px;color:var(--tx3);display:flex;align-items:center;gap:12px;}
+.rpt-sub span{display:flex;align-items:center;gap:4px;}
+/* ── Body ── */
+.rpt-body{padding:24px 28px;}
+/* Section blocks */
+.rpt-block{margin-bottom:24px;}
+.rpt-block:last-child{margin-bottom:0;}
+.rpt-block-title{
+  font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--tx4);
+  margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:6px;
+}
+.rpt-block-ico{font-size:13px;}
+/* Metric rows */
+.rpt-metric{display:flex;align-items:center;padding:7px 0;gap:12px;}
+.rpt-metric-label{font-size:13px;color:var(--tx2);width:160px;flex-shrink:0;}
+.rpt-metric-bar{flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,0.05);overflow:hidden;}
+.rpt-metric-fill{height:100%;border-radius:3px;transition:width .5s cubic-bezier(0.16,1,0.3,1);}
+.rpt-metric-val{font-size:14px;font-weight:600;color:var(--tx);min-width:60px;text-align:right;font-family:var(--fb);}
+/* KV rows */
+.rpt-kv{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.03);}
+.rpt-kv:last-child{border-bottom:none;}
+.rpt-kv-label{font-size:13px;color:var(--tx2);}
+.rpt-kv-val{font-size:14px;font-weight:500;color:var(--tx);}
+/* Chart */
+.rpt-chart{background:rgba(255,255,255,0.02);border-radius:12px;padding:16px;margin-bottom:8px;}
+.rpt-chart svg{width:100%;height:100px;}
+/* Verdict callout */
+.rpt-callout{
+  background:rgba(255,255,255,0.02);border:1px solid var(--border);
+  border-radius:12px;padding:16px;margin-bottom:12px;
+}
+.rpt-callout-label{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--tx4);margin-bottom:6px;}
+.rpt-callout-val{font-family:var(--fd);font-size:22px;color:var(--tx);font-weight:400;}
+/* ── Footer ── */
+.rpt-foot{
+  padding:16px 28px;
+  border-top:1px solid var(--border);
+  background:rgba(0,0,0,0.15);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.rpt-foot-left{font-size:9px;color:var(--tx4);line-height:1.5;}
+.rpt-foot-right{text-align:right;}
+.rpt-foot-id{font-size:8px;color:rgba(255,255,255,0.15);letter-spacing:0.06em;font-family:var(--fb);}
+.rpt-foot-patent{font-size:7px;color:rgba(255,255,255,0.1);letter-spacing:0.06em;margin-top:2px;}
 </style>
 </head>
 <body>
-<div class="builder">
+<div class="app">
   <aside class="sidebar">
-    <div class="cs">
-      <div class="cs-label">Security</div>
-      <div class="row-2">
-        <div class="field"><label>Ticker</label><input id="rpt-ticker" placeholder="NVDA" maxlength="6" style="text-transform:uppercase;"></div>
-        <div class="field"><label>Signal</label><select id="rpt-signal">
+    <div class="sb-section">
+      <div class="sb-label">Security</div>
+      <div class="sb-row">
+        <div class="sb-field"><label>Ticker</label><input id="inp-ticker" placeholder="NVDA" maxlength="6" style="text-transform:uppercase;"></div>
+        <div class="sb-field"><label>Signal</label><select id="inp-signal">
           <option value="NARRATIVE TRAP|trap">Narrative Trap</option>
           <option value="STRUCTURALLY SUPPORTED|bull">Supported</option>
           <option value="BEARISH REVERSAL|bear">Bearish Rev.</option>
@@ -87,207 +144,227 @@ body{font-family:var(--font-b);background:var(--mp-obsidian);color:var(--mp-text
           <option value="DECAY DETECTED|bear">Decay</option>
         </select></div>
       </div>
-      <div class="field"><label>Bias</label><select id="rpt-bias">
-        <option value="BULLISH">BULLISH</option>
-        <option value="BEARISH" selected>BEARISH</option>
-        <option value="NEUTRAL">NEUTRAL</option>
+      <div class="sb-field"><label>Bias</label><select id="inp-bias">
+        <option value="BULLISH">BULLISH</option><option value="BEARISH" selected>BEARISH</option><option value="NEUTRAL">NEUTRAL</option>
       </select></div>
     </div>
-    <div class="cs">
-      <div class="cs-label">Report Blocks</div>
-      <div class="block-list">
-        <div class="bt on" data-block="verdict"><div class="bt-chk">&#10003;</div><div class="bt-icon">&#9878;</div><div><div class="bt-name">Market Verdict</div><div class="bt-desc">Signal interpretation</div></div></div>
-        <div class="bt on" data-block="scores"><div class="bt-chk">&#10003;</div><div class="bt-icon">&#128202;</div><div><div class="bt-name">Signal Scores</div><div class="bt-desc">Price gap, credibility, truth</div></div></div>
-        <div class="bt on" data-block="evidence"><div class="bt-chk">&#10003;</div><div class="bt-icon">&#128300;</div><div><div class="bt-name">Evidence Trail</div><div class="bt-desc">SEC, news, coordination</div></div></div>
-        <div class="bt" data-block="history"><div class="bt-chk"></div><div class="bt-icon">&#128200;</div><div><div class="bt-name">Narrative History</div><div class="bt-desc">30-day pressure chart</div></div></div>
-        <div class="bt on" data-block="decay"><div class="bt-chk">&#10003;</div><div class="bt-icon">&#9203;</div><div><div class="bt-name">Narrative Decay</div><div class="bt-desc">Story momentum &amp; timing</div></div></div>
-        <div class="bt" data-block="leaderboard"><div class="bt-chk"></div><div class="bt-icon">&#127942;</div><div><div class="bt-name">Sector Leaderboard</div><div class="bt-desc">Peer truth score ranking</div></div></div>
-        <div class="bt" data-block="defense"><div class="bt-chk"></div><div class="bt-icon">&#128737;</div><div><div class="bt-name">Position Defense</div><div class="bt-desc">Data behind the trade</div></div></div>
-        <div class="bt" data-block="fingerprint"><div class="bt-chk"></div><div class="bt-icon">&#128270;</div><div><div class="bt-name">Media Fingerprint</div><div class="bt-desc">Outlet breakdown &amp; alerts</div></div></div>
+    <div class="sb-section">
+      <div class="sb-label">Report Blocks</div>
+      <div class="sb-blocks">
+        <div class="sb-blk on" data-b="verdict"><div class="sb-chk">&#10003;</div><div class="sb-ico">&#9878;</div><div><div class="sb-bname">Market Verdict</div><div class="sb-bdesc">Signal + bias interpretation</div></div></div>
+        <div class="sb-blk on" data-b="scores"><div class="sb-chk">&#10003;</div><div class="sb-ico">&#128202;</div><div><div class="sb-bname">Signal Scores</div><div class="sb-bdesc">FVD, VMS, NRS, energy, coordination</div></div></div>
+        <div class="sb-blk on" data-b="evidence"><div class="sb-chk">&#10003;</div><div class="sb-ico">&#128300;</div><div><div class="sb-bname">Evidence Trail</div><div class="sb-bdesc">SEC, institutional, coordination</div></div></div>
+        <div class="sb-blk" data-b="history"><div class="sb-chk"></div><div class="sb-ico">&#128200;</div><div><div class="sb-bname">Price History</div><div class="sb-bdesc">30-day pressure chart</div></div></div>
+        <div class="sb-blk on" data-b="decay"><div class="sb-chk">&#10003;</div><div class="sb-ico">&#9203;</div><div><div class="sb-bname">Narrative Decay</div><div class="sb-bdesc">Half-life, exhaustion, momentum</div></div></div>
+        <div class="sb-blk" data-b="defense"><div class="sb-chk"></div><div class="sb-ico">&#128737;</div><div><div class="sb-bname">Position Defense</div><div class="sb-bdesc">All 6 scorecard metrics</div></div></div>
       </div>
     </div>
-    <div class="cs">
-      <div class="cs-label">Certification</div>
-      <div class="cert-box">
-        <div class="cert-row"><span class="cert-label">Data points</span><span class="cert-val">~5,500</span></div>
-        <div class="cert-row"><span class="cert-label">Formulas</span><span class="cert-val">90+</span></div>
-        <div class="cert-row"><span class="cert-label">AI tokens</span><span class="cert-val">~2,300</span></div>
-        <div class="cert-divider"></div>
-        <div class="cert-sources">SEC EDGAR &middot; XBRL &middot; Market Data &middot; Options Flow &middot; Earnings Calls &middot; 170+ News Outlets &middot; Coordination Analysis &middot; Decay Physics</div>
-      </div>
-      <div class="cert-patent">PATENT PENDING #63/971,470 &middot; #63/971,478</div>
+    <button class="btn-gen" onclick="generate()">Generate Report</button>
+    <div class="btn-row">
+      <button class="btn-exp" id="btn-pdf" onclick="exportPDF()" disabled>&#8595; Download PDF</button>
+      <button class="btn-exp" id="btn-png" onclick="exportPNG()" disabled>&#128247; Share Image</button>
     </div>
-    <button class="btn-generate" onclick="buildReport()">&#9654; Generate Report</button>
   </aside>
-  <main class="canvas">
-    <div id="report-out"><div class="ph"><div class="ph-text">Enter a ticker &amp; select blocks &rarr; Generate</div></div></div>
-    <button class="btn-export" id="export-btn" onclick="exportPNG()">&#8595; Export PNG</button>
+  <main class="main" id="main-area">
+    <div class="placeholder" id="placeholder">Enter a ticker and click Generate</div>
+    <div id="report-container" style="display:none;"></div>
   </main>
 </div>
 
 <script>
 (function(){
-  var SUPABASE_URL  = (window.__env||{}).SUPABASE_URL  || '';
-  var SUPABASE_ANON = (window.__env||{}).SUPABASE_ANON || '';
-  var cache = {};
+  var SB_URL=(window.__env||{}).SUPABASE_URL||'';
+  var SB_KEY=(window.__env||{}).SUPABASE_ANON||'';
+  var cache={};
+  var today=new Date().toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'});
 
   // Block toggles
-  document.querySelectorAll('.bt').forEach(function(el){
-    el.addEventListener('click', function(){ el.classList.toggle('on'); });
-  });
+  document.querySelectorAll('.sb-blk').forEach(function(el){el.addEventListener('click',function(){el.classList.toggle('on');});});
+  document.getElementById('inp-ticker').addEventListener('keydown',function(e){if(e.key==='Enter')generate();});
 
-  function esc(s){ return s ? (s+'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : ''; }
+  function esc(s){return s?(s+'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'):'—';}
+  function fmt(v,suffix){return v!=null?v.toFixed(v===Math.round(v)?0:1)+(suffix||''):'—';}
+  function barColor(val,thresh,goodColor,badColor){return val>thresh?badColor:goodColor;}
 
-  function metricBar(label, val, pct, color){
-    return '<div class="rpt-row"><span class="rpt-label">'+label+'</span>'
-      +'<div class="rpt-bar-wrap"><div class="rpt-bar"><div class="rpt-bar-fill" style="width:'+Math.max(pct,2)+'%;background:'+color+';"></div></div>'
-      +'<span class="rpt-val" style="min-width:50px;text-align:right;">'+val+'</span></div></div>';
-  }
+  window.generate=async function(){
+    var ticker=(document.getElementById('inp-ticker').value||'').toUpperCase().trim();
+    if(!ticker){alert('Enter a ticker');return;}
+    var sigParts=(document.getElementById('inp-signal').value||'').split('|');
+    var signal=sigParts[0],sigType=sigParts[1]||'trap';
+    var bias=document.getElementById('inp-bias').value||'BEARISH';
+    var blocks=[];document.querySelectorAll('.sb-blk.on').forEach(function(b){blocks.push(b.dataset.b);});
+    if(!blocks.length){alert('Enable at least one block');return;}
 
-  function footer(id){
-    return '<div class="rpt-footer">~5,500 data points &middot; 90+ formulas &middot; SEC EDGAR &middot; Patent Pending #63/971,470'
-      +'<div class="rpt-signal-id">'+id+'</div></div>';
-  }
+    var ph=document.getElementById('placeholder');
+    var container=document.getElementById('report-container');
+    ph.textContent='Fetching data for '+ticker+'...';ph.style.display='flex';container.style.display='none';
 
-  window.buildReport = async function(){
-    var out = document.getElementById('report-out');
-    var exportBtn = document.getElementById('export-btn');
-    var ticker = (document.getElementById('rpt-ticker').value||'NVDA').toUpperCase().trim();
-    if(!ticker){ alert('Enter a ticker'); return; }
-    var signalParts = (document.getElementById('rpt-signal').value||'').split('|');
-    var signal = signalParts[0], signalType = signalParts[1]||'trap';
-    var bias = document.getElementById('rpt-bias').value||'BEARISH';
-    var blocks = [];
-    document.querySelectorAll('.bt.on').forEach(function(b){ blocks.push(b.dataset.block); });
-    if(!blocks.length){ out.innerHTML='<div class="ph"><div class="ph-text">Enable at least one report block</div></div>'; return; }
-
-    out.innerHTML='<div class="ph"><div class="ph-text">Generating report for '+ticker+'...</div></div>';
-
-    // Fetch from Supabase (cached)
-    var data = cache[ticker];
-    if(!data){
-      if(!SUPABASE_URL||!SUPABASE_ANON){ out.innerHTML='<div class="ph"><div class="ph-text">Supabase not configured</div></div>'; return; }
+    var d=cache[ticker];
+    if(!d){
+      if(!SB_URL||!SB_KEY){ph.textContent='Supabase not configured';return;}
       try{
-        var hdrs = {'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Accept':'application/json'};
-        var results = await Promise.all([
-          fetch(SUPABASE_URL+'/rest/v1/narrative_scorecard?select=*&ticker=eq.'+ticker+'&order=snapshot_date.desc&limit=1',{headers:hdrs}).then(function(r){return r.ok?r.json():[];}),
-          fetch(SUPABASE_URL+'/rest/v1/ticker_snapshots?select=ticker,price,snapshot_date&ticker=eq.'+ticker+'&order=snapshot_date.desc&limit=30',{headers:hdrs}).then(function(r){return r.ok?r.json():[];}),
-          fetch(SUPABASE_URL+'/rest/v1/ticker_strategy_summary?select=*&ticker=eq.'+ticker+'&order=created_at.desc&limit=1',{headers:hdrs}).then(function(r){return r.ok?r.json():[];})
+        var h={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Accept':'application/json'};
+        var r=await Promise.all([
+          fetch(SB_URL+'/rest/v1/narrative_scorecard?select=*&ticker=eq.'+ticker+'&order=snapshot_date.desc&limit=1',{headers:h}).then(function(r){return r.ok?r.json():[];}),
+          fetch(SB_URL+'/rest/v1/ticker_snapshots?select=ticker,price,snapshot_date&ticker=eq.'+ticker+'&order=snapshot_date.desc&limit=30',{headers:h}).then(function(r){return r.ok?r.json():[];}),
         ]);
-        data = { sc: results[0][0]||{}, snaps: results[1]||[], strat: results[2][0]||{} };
-        cache[ticker] = data;
-      }catch(e){ out.innerHTML='<div class="ph"><div class="ph-text">Error: '+esc(e.message)+'</div></div>'; return; }
+        d={sc:r[0][0]||{},snaps:r[1]||[]};cache[ticker]=d;
+      }catch(e){ph.textContent='Error: '+e.message;return;}
     }
 
-    var sc = data.sc, snaps = data.snaps, strat = data.strat;
-    var signalId = 'MP-'+ticker+'-'+Date.now().toString(36).toUpperCase();
-    var ac = signalType==='trap'?'#FF4D4D':signalType==='bull'?'#00DE94':'#00AEFF';
-    var html = '';
+    var sc=d.sc,snaps=d.snaps;
+    var ac=sigType==='trap'?'#FF4D4D':sigType==='bull'?'#00DE94':'#00AEFF';
+    var acBg=sigType==='trap'?'rgba(255,77,77,0.12)':sigType==='bull'?'rgba(0,222,148,0.12)':'rgba(0,174,255,0.12)';
+    var acBorder=sigType==='trap'?'rgba(255,77,77,0.3)':sigType==='bull'?'rgba(0,222,148,0.3)':'rgba(0,174,255,0.3)';
+    var sid='MP-'+ticker+'-'+Date.now().toString(36).toUpperCase();
+    var price=snaps.length?snaps[0].price:null;
+
+    // Build report HTML
+    var html='<div class="rpt" id="rpt-card">';
+
+    // ── Header
+    html+='<div class="rpt-head">'
+      +'<div class="rpt-brand">'
+        +'<svg class="rpt-logo" viewBox="0 0 32 32" fill="none"><polygon points="16,2 30,28 2,28" stroke="'+ac+'" stroke-width="1.5" fill="none"/><polygon points="16,10 24,26 8,26" fill="'+ac+'" opacity="0.15"/></svg>'
+        +'<span class="rpt-brand-name">Market Prism</span>'
+        +'<span class="rpt-brand-tag">Forensic Intelligence</span>'
+      +'</div>'
+      +'<div class="rpt-ticker-row">'
+        +'<span class="rpt-ticker">'+ticker+'</span>'
+        +'<span class="rpt-signal-badge" style="background:'+acBg+';color:'+ac+';border:1px solid '+acBorder+';">'+signal+'</span>'
+      +'</div>'
+      +'<div class="rpt-sub">'
+        +'<span>&#9679; '+bias+'</span>'
+        +(price?'<span>$'+price.toFixed(2)+'</span>':'')
+        +'<span>'+today+'</span>'
+      +'</div>'
+    +'</div>';
+
+    // ── Body
+    html+='<div class="rpt-body">';
 
     if(blocks.indexOf('verdict')!==-1){
-      html+='<div class="rpt-card" style="border-top:2px solid '+ac+';">'
-        +'<div class="rpt-card-title"><span class="rpt-icon">&#9878;</span>Market Verdict</div>'
-        +'<div class="rpt-row"><span class="rpt-label">Ticker</span><span class="rpt-val">'+ticker+'</span></div>'
-        +'<div class="rpt-row"><span class="rpt-label">Signal</span><span class="rpt-verdict-badge" style="background:'+ac+'22;color:'+ac+';border:1px solid '+ac+'44;">'+signal+'</span></div>'
-        +'<div class="rpt-row"><span class="rpt-label">Bias</span><span class="rpt-val">'+bias+'</span></div>'
-        +'<div class="rpt-row"><span class="rpt-label">Story Verdict</span><span class="rpt-val">'+(sc.story_verdict||sc.prism_verdict||'Under Analysis')+'</span></div>'
-        +'<div class="rpt-row"><span class="rpt-label">Narrative State</span><span class="rpt-val">'+(sc.narrative_state||'Monitoring')+'</span></div>'
-        +footer(signalId)+'</div>';
+      var verdict=sc.story_verdict||sc.prism_verdict||'Under Analysis';
+      var state=sc.narrative_state||'Monitoring';
+      html+='<div class="rpt-block">'
+        +'<div class="rpt-block-title"><span class="rpt-block-ico">&#9878;</span>MARKET VERDICT</div>'
+        +'<div class="rpt-callout"><div class="rpt-callout-label">Prism Verdict</div><div class="rpt-callout-val" style="color:'+ac+';">'+esc(verdict)+'</div></div>'
+        +'<div class="rpt-kv"><span class="rpt-kv-label">Narrative State</span><span class="rpt-kv-val">'+esc(state)+'</span></div>'
+        +'<div class="rpt-kv"><span class="rpt-kv-label">Bias</span><span class="rpt-kv-val">'+bias+'</span></div>'
+        +'<div class="rpt-kv"><span class="rpt-kv-label">Signal Type</span><span class="rpt-kv-val" style="color:'+ac+';">'+signal+'</span></div>'
+      +'</div>';
     }
+
     if(blocks.indexOf('scores')!==-1){
-      var fvd=sc.fvd_pct,vms=sc.vms,nrs=sc.nrs,en=sc.energy_remaining,co=sc.coordination_score,dr=sc.decay_rate;
-      html+='<div class="rpt-card" style="border-top:2px solid '+ac+';">'
-        +'<div class="rpt-card-title"><span class="rpt-icon">&#128202;</span>Signal Scores</div>'
-        +metricBar('Fair Value Deviation',fvd!=null?fvd.toFixed(1)+'%':'—',fvd!=null?Math.min(Math.abs(fvd),100):0,fvd>30?'#FF4D4D':fvd<-5?'#00DE94':'#00AEFF')
-        +metricBar('Virality / Momentum',vms!=null?vms.toFixed(0):'—',vms||0,'#00AEFF')
-        +metricBar('Narrative Reliability',nrs!=null?nrs.toFixed(0):'—',nrs||0,nrs>60?'#00DE94':nrs>30?'#FFB800':'#FF4D4D')
-        +metricBar('Energy Remaining',en!=null?en.toFixed(0)+'%':'—',en||0,en>60?'#00DE94':'#FFB800')
-        +metricBar('Coordination',co!=null?co.toFixed(0):'—',co||0,co>60?'#FF4D4D':'#00AEFF')
-        +metricBar('Decay Rate',dr!=null?(dr*100).toFixed(1)+'%':'—',dr?Math.min(dr*200,100):0,dr>0.05?'#FF4D4D':'#00DE94')
-        +footer(signalId)+'</div>';
+      html+='<div class="rpt-block">'
+        +'<div class="rpt-block-title"><span class="rpt-block-ico">&#128202;</span>SIGNAL SCORES</div>'
+        +mbar('Fair Value Deviation',sc.fvd_pct,fmt(sc.fvd_pct,'%'),Math.min(Math.abs(sc.fvd_pct||0),100),sc.fvd_pct>30?'#FF4D4D':sc.fvd_pct<-5?'#00DE94':'#00AEFF')
+        +mbar('Virality (VMS)',sc.vms,fmt(sc.vms),sc.vms||0,'#00AEFF')
+        +mbar('Narrative Reliability',sc.nrs,fmt(sc.nrs),sc.nrs||0,sc.nrs>60?'#00DE94':sc.nrs>30?'#FFB800':'#FF4D4D')
+        +mbar('Energy Remaining',sc.energy_remaining,fmt(sc.energy_remaining,'%'),sc.energy_remaining||0,sc.energy_remaining>60?'#00DE94':'#FFB800')
+        +mbar('Coordination',sc.coordination_score,fmt(sc.coordination_score),sc.coordination_score||0,sc.coordination_score>60?'#FF4D4D':'#00AEFF')
+        +mbar('Decay Rate',sc.decay_rate,sc.decay_rate!=null?(sc.decay_rate*100).toFixed(1)+'%':'—',sc.decay_rate?Math.min(sc.decay_rate*200,100):0,sc.decay_rate>0.05?'#FF4D4D':'#00DE94')
+      +'</div>';
     }
+
     if(blocks.indexOf('evidence')!==-1){
-      html+='<div class="rpt-card" style="border-top:2px solid '+ac+';">'
-        +'<div class="rpt-card-title"><span class="rpt-icon">&#128300;</span>Evidence Trail</div>'
-        +'<div class="rpt-row"><span class="rpt-label">SEC Filing Alignment</span><span class="rpt-val">'+(sc.narrative_earnings_alignment||'—')+'</span></div>'
-        +'<div class="rpt-row"><span class="rpt-label">Institutional Positioning</span><span class="rpt-val">'+(sc.institutional_positioning||'—')+'</span></div>'
-        +'<div class="rpt-row"><span class="rpt-label">Coordination Class</span><span class="rpt-val">'+(sc.coordination_class||'—')+'</span></div>'
-        +'<div class="rpt-row"><span class="rpt-label">Suspicion Level</span><span class="rpt-val">'+(sc.suspicion_class||'—')+'</span></div>'
-        +'<div class="rpt-row"><span class="rpt-label">Guidance Direction</span><span class="rpt-val">'+(sc.guidance_direction||'—')+'</span></div>'
-        +footer(signalId)+'</div>';
+      html+='<div class="rpt-block">'
+        +'<div class="rpt-block-title"><span class="rpt-block-ico">&#128300;</span>EVIDENCE TRAIL</div>'
+        +'<div class="rpt-kv"><span class="rpt-kv-label">SEC Filing Alignment</span><span class="rpt-kv-val">'+esc(sc.narrative_earnings_alignment)+'</span></div>'
+        +'<div class="rpt-kv"><span class="rpt-kv-label">Institutional Positioning</span><span class="rpt-kv-val">'+esc(sc.institutional_positioning)+'</span></div>'
+        +'<div class="rpt-kv"><span class="rpt-kv-label">Coordination Class</span><span class="rpt-kv-val" style="color:'+(sc.coordination_class==='Coordinated'?'#FF4D4D':'inherit')+';">'+esc(sc.coordination_class)+'</span></div>'
+        +'<div class="rpt-kv"><span class="rpt-kv-label">Suspicion Level</span><span class="rpt-kv-val">'+esc(sc.suspicion_class)+'</span></div>'
+        +'<div class="rpt-kv"><span class="rpt-kv-label">Guidance Direction</span><span class="rpt-kv-val">'+esc(sc.guidance_direction)+'</span></div>'
+      +'</div>';
     }
+
     if(blocks.indexOf('history')!==-1&&snaps.length>1){
       var sorted=snaps.slice().sort(function(a,b){return a.snapshot_date>b.snapshot_date?1:-1;});
       var prices=sorted.map(function(s){return s.price||0;});
-      var minP=Math.min.apply(null,prices),maxP=Math.max.apply(null,prices),rangeP=maxP-minP||1;
-      var svgW=600,svgH=120;
-      var pts=prices.map(function(p,i){return(i/(prices.length-1))*svgW+','+(svgH-((p-minP)/rangeP)*svgH*0.85-10);}).join(' ');
-      html+='<div class="rpt-card" style="border-top:2px solid '+ac+';">'
-        +'<div class="rpt-card-title"><span class="rpt-icon">&#128200;</span>Narrative History — 30 Day</div>'
-        +'<svg viewBox="0 0 '+svgW+' '+svgH+'" style="width:100%;height:120px;"><polyline points="'+pts+'" fill="none" stroke="'+ac+'" stroke-width="2" stroke-linejoin="round"/></svg>'
-        +'<div class="rpt-row"><span class="rpt-label">Range</span><span class="rpt-val">$'+minP.toFixed(2)+' — $'+maxP.toFixed(2)+'</span></div>'
-        +'<div class="rpt-row"><span class="rpt-label">Data Points</span><span class="rpt-val">'+snaps.length+' snapshots</span></div>'
-        +footer(signalId)+'</div>';
+      var mn=Math.min.apply(null,prices),mx=Math.max.apply(null,prices),rng=mx-mn||1;
+      var W=600,H=100,pad=4;
+      var pts=prices.map(function(p,i){return(pad+i/(prices.length-1)*(W-pad*2))+','+(H-pad-((p-mn)/rng)*(H-pad*2));}).join(' ');
+      // gradient fill
+      var fillPts=pts+' '+(pad+(prices.length-1)/(prices.length-1)*(W-pad*2))+','+H+' '+pad+','+H;
+      html+='<div class="rpt-block">'
+        +'<div class="rpt-block-title"><span class="rpt-block-ico">&#128200;</span>30-DAY PRICE HISTORY</div>'
+        +'<div class="rpt-chart">'
+          +'<svg viewBox="0 0 '+W+' '+H+'">'
+            +'<defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+ac+'" stop-opacity="0.2"/><stop offset="100%" stop-color="'+ac+'" stop-opacity="0"/></linearGradient></defs>'
+            +'<polygon points="'+fillPts+'" fill="url(#cg)"/>'
+            +'<polyline points="'+pts+'" fill="none" stroke="'+ac+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
+          +'</svg>'
+        +'</div>'
+        +'<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--tx3);"><span>$'+mn.toFixed(2)+'</span><span>'+snaps.length+' data points</span><span>$'+mx.toFixed(2)+'</span></div>'
+      +'</div>';
     }
+
     if(blocks.indexOf('decay')!==-1){
-      html+='<div class="rpt-card" style="border-top:2px solid '+ac+';">'
-        +'<div class="rpt-card-title"><span class="rpt-icon">&#9203;</span>Narrative Decay</div>'
-        +metricBar('Half-Life',sc.half_life_days!=null?sc.half_life_days.toFixed(1)+' days':'—',sc.half_life_days?Math.min(sc.half_life_days*3,100):0,'#FFB800')
-        +metricBar('Exhaustion',sc.predicted_exhaustion_days!=null?sc.predicted_exhaustion_days.toFixed(0)+' days':'—',sc.predicted_exhaustion_days?Math.min(sc.predicted_exhaustion_days*2,100):0,'#00AEFF')
-        +metricBar('Decay Rate',sc.decay_rate!=null?(sc.decay_rate*100).toFixed(1)+'%':'—',sc.decay_rate?Math.min(sc.decay_rate*200,100):0,sc.decay_rate>0.05?'#FF4D4D':'#00DE94')
-        +metricBar('Energy Remaining',sc.energy_remaining!=null?sc.energy_remaining.toFixed(0)+'%':'—',sc.energy_remaining||0,sc.energy_remaining>60?'#00DE94':'#FFB800')
-        +footer(signalId)+'</div>';
+      html+='<div class="rpt-block">'
+        +'<div class="rpt-block-title"><span class="rpt-block-ico">&#9203;</span>NARRATIVE DECAY</div>'
+        +mbar('Half-Life',sc.half_life_days,fmt(sc.half_life_days,' days'),sc.half_life_days?Math.min(sc.half_life_days*3,100):0,'#FFB800')
+        +mbar('Exhaustion',sc.predicted_exhaustion_days,fmt(sc.predicted_exhaustion_days,' days'),sc.predicted_exhaustion_days?Math.min(sc.predicted_exhaustion_days*2,100):0,'#00AEFF')
+        +mbar('Decay Rate',sc.decay_rate,sc.decay_rate!=null?(sc.decay_rate*100).toFixed(1)+'%':'—',sc.decay_rate?Math.min(sc.decay_rate*200,100):0,sc.decay_rate>0.05?'#FF4D4D':'#00DE94')
+        +mbar('Energy',sc.energy_remaining,fmt(sc.energy_remaining,'%'),sc.energy_remaining||0,sc.energy_remaining>60?'#00DE94':'#FFB800')
+      +'</div>';
     }
-    if(blocks.indexOf('leaderboard')!==-1){
-      html+='<div class="rpt-card" style="border-top:2px solid '+ac+';">'
-        +'<div class="rpt-card-title"><span class="rpt-icon">&#127942;</span>Sector Leaderboard</div>'
-        +'<div class="rpt-row"><span class="rpt-label">Sector</span><span class="rpt-val">'+(sc.sector_name||'—')+'</span></div>'
-        +'<div class="rpt-row"><span class="rpt-label">Sector Contagion</span><span class="rpt-val">'+(sc.sector_contagion_level||'—')+'</span></div>'
-        +footer(signalId)+'</div>';
-    }
+
     if(blocks.indexOf('defense')!==-1){
-      html+='<div class="rpt-card" style="border-top:2px solid '+ac+';">'
-        +'<div class="rpt-card-title"><span class="rpt-icon">&#128737;</span>Position Defense</div>'
-        +metricBar('FVD',sc.fvd_pct!=null?sc.fvd_pct.toFixed(1)+'%':'—',sc.fvd_pct!=null?Math.min(Math.abs(sc.fvd_pct),100):0,ac)
-        +metricBar('VMS',sc.vms!=null?sc.vms.toFixed(0):'—',sc.vms||0,ac)
-        +metricBar('NRS',sc.nrs!=null?sc.nrs.toFixed(0):'—',sc.nrs||0,ac)
-        +metricBar('Coordination',sc.coordination_score!=null?sc.coordination_score.toFixed(0):'—',sc.coordination_score||0,ac)
-        +metricBar('Energy',sc.energy_remaining!=null?sc.energy_remaining.toFixed(0)+'%':'—',sc.energy_remaining||0,ac)
-        +metricBar('Decay',sc.decay_rate!=null?(sc.decay_rate*100).toFixed(1)+'%':'—',sc.decay_rate?Math.min(sc.decay_rate*200,100):0,ac)
-        +footer(signalId)+'</div>';
-    }
-    if(blocks.indexOf('fingerprint')!==-1){
-      html+='<div class="rpt-card" style="border-top:2px solid '+ac+';">'
-        +'<div class="rpt-card-title"><span class="rpt-icon">&#128270;</span>Media Fingerprint</div>'
-        +'<div class="rpt-row"><span class="rpt-label">Suspicion Score</span><span class="rpt-val">'+(sc.suspicion_score!=null?sc.suspicion_score.toFixed(0):'—')+'</span></div>'
-        +'<div class="rpt-row"><span class="rpt-label">Suspicion Class</span><span class="rpt-val">'+(sc.suspicion_class||'—')+'</span></div>'
-        +'<div class="rpt-row"><span class="rpt-label">Coordination Score</span><span class="rpt-val">'+(sc.coordination_score!=null?sc.coordination_score.toFixed(0):'—')+'</span></div>'
-        +'<div class="rpt-row"><span class="rpt-label">Coordination Class</span><span class="rpt-val">'+(sc.coordination_class||'—')+'</span></div>'
-        +footer(signalId)+'</div>';
+      html+='<div class="rpt-block">'
+        +'<div class="rpt-block-title"><span class="rpt-block-ico">&#128737;</span>POSITION DEFENSE</div>'
+        +mbar('FVD',sc.fvd_pct,fmt(sc.fvd_pct,'%'),sc.fvd_pct!=null?Math.min(Math.abs(sc.fvd_pct),100):0,ac)
+        +mbar('VMS',sc.vms,fmt(sc.vms),sc.vms||0,ac)
+        +mbar('NRS',sc.nrs,fmt(sc.nrs),sc.nrs||0,ac)
+        +mbar('Coordination',sc.coordination_score,fmt(sc.coordination_score),sc.coordination_score||0,ac)
+        +mbar('Energy',sc.energy_remaining,fmt(sc.energy_remaining,'%'),sc.energy_remaining||0,ac)
+        +mbar('Decay',sc.decay_rate,sc.decay_rate!=null?(sc.decay_rate*100).toFixed(1)+'%':'—',sc.decay_rate?Math.min(sc.decay_rate*200,100):0,ac)
+      +'</div>';
     }
 
-    if(!html) html='<div class="ph"><div class="ph-text">No data found for '+ticker+'</div></div>';
-    out.innerHTML = html;
-    exportBtn.style.display = 'block';
+    html+='</div>'; // end body
+
+    // ── Footer
+    html+='<div class="rpt-foot">'
+      +'<div class="rpt-foot-left">~5,500 data points &middot; 90+ formulas<br>SEC EDGAR &middot; XBRL &middot; 170+ outlets</div>'
+      +'<div class="rpt-foot-right"><div class="rpt-foot-id">'+sid+'</div><div class="rpt-foot-patent">PATENT PENDING #63/971,470</div></div>'
+    +'</div>';
+
+    html+='</div>'; // end rpt
+
+    container.innerHTML=html;
+    container.style.display='block';
+    ph.style.display='none';
+    document.getElementById('btn-pdf').disabled=false;
+    document.getElementById('btn-png').disabled=false;
   };
 
-  window.exportPNG = function(){
-    var el = document.getElementById('report-out');
-    if(!el||!el.querySelector('.rpt-card')){ alert('Generate a report first'); return; }
-    var s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-    s.onload = function(){
-      html2canvas(el,{backgroundColor:'#080B11',scale:2}).then(function(canvas){
-        var a=document.createElement('a');a.download='MarketPrism-Report.png';a.href=canvas.toDataURL();a.click();
-      });
-    };
-    document.head.appendChild(s);
+  function mbar(label,raw,display,pct,color){
+    if(raw==null) return '<div class="rpt-metric"><span class="rpt-metric-label">'+label+'</span><div class="rpt-metric-bar"></div><span class="rpt-metric-val" style="color:var(--tx3);">—</span></div>';
+    return '<div class="rpt-metric"><span class="rpt-metric-label">'+label+'</span>'
+      +'<div class="rpt-metric-bar"><div class="rpt-metric-fill" style="width:'+Math.max(pct,3)+'%;background:'+color+';"></div></div>'
+      +'<span class="rpt-metric-val" style="color:'+color+';">'+display+'</span></div>';
+  }
+
+  window.exportPNG=function(){
+    var card=document.getElementById('rpt-card');
+    if(!card)return;
+    html2canvas(card,{backgroundColor:'#080B11',scale:2,logging:false}).then(function(canvas){
+      var a=document.createElement('a');
+      a.download='MarketPrism-'+document.getElementById('inp-ticker').value.toUpperCase()+'.png';
+      a.href=canvas.toDataURL('image/png');a.click();
+    });
   };
 
-  // Enter key on ticker input
-  document.getElementById('rpt-ticker').addEventListener('keydown', function(e){
-    if(e.key==='Enter') buildReport();
-  });
+  window.exportPDF=function(){
+    var card=document.getElementById('rpt-card');
+    if(!card)return;
+    html2canvas(card,{backgroundColor:'#080B11',scale:2,logging:false}).then(function(canvas){
+      var imgData=canvas.toDataURL('image/png');
+      var pdf=new jspdf.jsPDF({orientation:'portrait',unit:'px',format:[canvas.width/2,canvas.height/2]});
+      pdf.addImage(imgData,'PNG',0,0,canvas.width/2,canvas.height/2);
+      pdf.save('MarketPrism-'+document.getElementById('inp-ticker').value.toUpperCase()+'.pdf');
+    });
+  };
 })();
 </script>
 </body>
