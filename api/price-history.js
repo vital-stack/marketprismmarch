@@ -1,10 +1,39 @@
+async function fetchLivePrice(ticker, apiKey) {
+  try {
+    const snapshotUrl = `https://api.polygon.io/v2/snapshot/locale/us/markets/stocks/tickers/${encodeURIComponent(ticker)}?apiKey=${encodeURIComponent(apiKey)}`;
+    const snapshotRes = await fetch(snapshotUrl);
+    if (snapshotRes.ok) {
+      const snapshotJson = JSON.parse(await snapshotRes.text());
+      const snap = snapshotJson.ticker || {};
+      const day = snap.day || {};
+      const prevDay = snap.prevDay || {};
+      const lastTrade = snap.lastTrade || {};
+      const price = Number(lastTrade.p || day.c || prevDay.c || 0);
+      if (price) return price;
+    }
+  } catch (_) {}
+
+  try {
+    const tradeUrl = `https://api.polygon.io/v2/last/trade/${encodeURIComponent(ticker)}?apiKey=${encodeURIComponent(apiKey)}`;
+    const tradeRes = await fetch(tradeUrl);
+    if (tradeRes.ok) {
+      const tradeJson = JSON.parse(await tradeRes.text());
+      const trade = tradeJson.results || tradeJson.last || {};
+      const price = Number(trade.p || trade.price || 0);
+      if (price) return price;
+    }
+  } catch (_) {}
+
+  return null;
+}
+
 module.exports = async (req, res) => {
   try {
     const url = new URL(req.url, 'http://localhost');
     const ticker = (url.searchParams.get('ticker') || '').replace(/[^A-Za-z0-9.\-]/g, '').toUpperCase();
     const daysRaw = parseInt(url.searchParams.get('days') || '730', 10);
     const days = Math.max(30, Math.min(Number.isFinite(daysRaw) ? daysRaw : 730, 3650));
-    const apiKey = process.env.MASSIVE_API_KEY || process.env.POLYGON_API_KEY || '';
+    const apiKey = process.env.MASSIVE_API_KEY || process.env.MASSIVE_API || process.env.POLYGON_API_KEY || '';
 
     if (!ticker) {
       res.statusCode = 400;
@@ -42,12 +71,29 @@ module.exports = async (req, res) => {
     const series = Array.isArray(json.results)
       ? json.results.map((row) => ({
           snapshot_date: new Date(row.t).toISOString().slice(0, 10),
+          price_open: Number(row.o),
+          price_high: Number(row.h),
+          price_low: Number(row.l),
           price_close: Number(row.c),
         }))
       : [];
+    const livePrice = await fetchLivePrice(ticker, apiKey);
+    const today = new Date().toISOString().slice(0, 10);
+
+    if (livePrice) {
+      const latest = series[series.length - 1];
+      if (latest && latest.snapshot_date === today) {
+        latest.price_close = Number(livePrice);
+      } else {
+        series.push({
+          snapshot_date: today,
+          price_close: Number(livePrice),
+        });
+      }
+    }
 
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=86400');
+    res.setHeader('Cache-Control', livePrice ? 's-maxage=60, stale-while-revalidate=300' : 's-maxage=300, stale-while-revalidate=86400');
     res.statusCode = 200;
     res.end(JSON.stringify({ ticker, series }));
   } catch (error) {
