@@ -4817,43 +4817,49 @@ function renderTrapsCards(){
   });
 }
 
-// ── Supported Cards (from narrative_scorecard, falling back to active_supported) ──
+// ── Supported Cards (from active_supported table) ──
 var SUPPORTED_DATA = [];
 async function loadSupportedData(){
   if(!SUPABASE_URL||!SUPABASE_ANON) return;
   var hdrs={'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Accept':'application/json'};
 
-  // Primary: query narrative_scorecard for supported verdicts (same pattern as traps)
+  // Primary: active_supported table — pin to latest snapshot_date (same pattern as narrative_traps)
   try{
-    var dateRes=await fetch(SUPABASE_URL+'/rest/v1/narrative_scorecard?select=snapshot_date&order=snapshot_date.desc&limit=1',{headers:hdrs});
+    var dateRes=await fetch(SUPABASE_URL+'/rest/v1/active_supported?select=snapshot_date&order=snapshot_date.desc&limit=1',{headers:hdrs});
     if(dateRes&&dateRes.ok){
       var dateRows=await dateRes.json();
       if(dateRows.length){
         var maxDate=dateRows[0].snapshot_date;
-        var cols='ticker,narrative,verdict,verdict_confidence,current_price,fair_value,fvd_pct,synopsis,energy_remaining,coordination_score,snapshot_date';
-        var res=await fetch(SUPABASE_URL+'/rest/v1/narrative_scorecard?select='+cols+'&snapshot_date=eq.'+encodeURIComponent(maxDate)+'&verdict=ilike.*supported*&order=verdict_confidence.desc.nullslast&limit=20',{headers:hdrs});
-        console.log('[MP] supported (scorecard) HTTP:', res.status, res.ok);
+        var cols='ticker,narrative,verdict,verdict_confidence,current_price,fair_value,fvd_pct,macro_theme,synopsis,energy_remaining,coordination_score,nrs,sector_contagion_level,advanced_verdict,snapshot_date';
+        var res=await fetch(SUPABASE_URL+'/rest/v1/active_supported?select='+cols+'&snapshot_date=eq.'+encodeURIComponent(maxDate)+'&order=verdict_confidence.desc.nullslast&limit=20',{headers:hdrs});
+        console.log('[MP] active_supported HTTP:', res.status, res.ok);
         if(res.ok){
           SUPPORTED_DATA=await res.json();
-          console.log('[MP] supported (scorecard) loaded:',SUPPORTED_DATA.length,'rows', SUPPORTED_DATA.slice(0,2));
-          if(SUPPORTED_DATA.length){ renderSupportedCards(); return; }
+          console.log('[MP] active_supported loaded:',SUPPORTED_DATA.length,'rows for',maxDate, SUPPORTED_DATA.slice(0,2));
         }
       }
     }
-  }catch(e){ console.warn('[MP] supported scorecard query failed:',e); }
-
-  // Fallback: try active_supported view if scorecard returned nothing
-  try{
-    var res=await fetch(SUPABASE_URL+'/rest/v1/active_supported?select=ticker,narrative,verdict,verdict_confidence,current_price,fair_value,fvd_pct,macro_theme,synopsis,energy_remaining,coordination_score,nrs,sector_contagion_level&order=verdict_confidence.desc&limit=20',{headers:hdrs});
-    console.log('[MP] active_supported HTTP:', res.status, res.ok);
-    if(res.ok){
-      var rows=await res.json();
-      if(rows.length){
-        SUPPORTED_DATA=rows;
-        console.log('[MP] active_supported loaded:',SUPPORTED_DATA.length,'rows', SUPPORTED_DATA.slice(0,2));
-      }
-    }
   }catch(e){ console.warn('[MP] active_supported fetch failed:',e); }
+
+  // Fallback: query narrative_scorecard for supported verdicts
+  if(!SUPPORTED_DATA.length){
+    try{
+      var dateRes=await fetch(SUPABASE_URL+'/rest/v1/narrative_scorecard?select=snapshot_date&order=snapshot_date.desc&limit=1',{headers:hdrs});
+      if(dateRes&&dateRes.ok){
+        var dateRows=await dateRes.json();
+        if(dateRows.length){
+          var maxDate=dateRows[0].snapshot_date;
+          var cols='ticker,narrative,verdict,verdict_confidence,current_price,fair_value,fvd_pct,synopsis,energy_remaining,coordination_score,snapshot_date';
+          var res=await fetch(SUPABASE_URL+'/rest/v1/narrative_scorecard?select='+cols+'&snapshot_date=eq.'+encodeURIComponent(maxDate)+'&verdict=ilike.*supported*&order=verdict_confidence.desc.nullslast&limit=20',{headers:hdrs});
+          console.log('[MP] supported (scorecard fallback) HTTP:', res.status, res.ok);
+          if(res.ok){
+            SUPPORTED_DATA=await res.json();
+            console.log('[MP] supported (scorecard fallback) loaded:',SUPPORTED_DATA.length,'rows', SUPPORTED_DATA.slice(0,2));
+          }
+        }
+      }
+    }catch(e){ console.warn('[MP] supported scorecard fallback failed:',e); }
+  }
 
   renderSupportedCards();
 }
