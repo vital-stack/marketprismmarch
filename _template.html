@@ -2967,76 +2967,104 @@ body{
 .nf-row-badge-trap{color:#b8860b;border-color:rgba(184,134,11,0.25);background:rgba(184,134,11,0.06);}
 .nf-row-badge-bear{color:#c0392b;border-color:rgba(192,57,43,0.25);background:rgba(192,57,43,0.06);}
 
-/* ── Narrative Cards (trading-card style) ── */
-.nf-list{display:flex;flex-direction:column;gap:16px;padding:0;}
+/* ── Narrative Cards (simplified 3-question layout) ── */
+.nf-list{display:flex;flex-direction:column;gap:12px;padding:0;}
 .nc-card{
   position:relative;display:flex;flex-direction:column;
   background:var(--mp-surface);border:1px solid rgba(255,255,255,0.06);
   border-radius:12px;overflow:hidden;cursor:pointer;
   text-decoration:none;color:inherit;
-  transition:border-color .2s,background .2s;
+  transition:border-color .25s,box-shadow .25s,transform .25s;
+  border-left:3px solid transparent;
 }
-.nc-card:hover{border-color:rgba(255,255,255,0.14);background:var(--mp-surface2);}
-.nc-accent{position:absolute;top:0;left:0;right:0;height:2px;z-index:2;border-radius:12px 12px 0 0;}
-.nc-body{position:relative;z-index:1;padding:14px 16px 12px;}
-/* Header */
-.nc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:6px;}
-.nc-id{display:flex;align-items:center;gap:8px;min-width:0;}
+.nc-card:hover{border-color:rgba(255,255,255,0.14);transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,0.3);}
+.nc-card.nc-bull{border-left-color:#00DE94;}
+.nc-card.nc-bear{border-left-color:#FF4D4D;}
+.nc-card.nc-neutral{border-left-color:#00AEFF;}
+.nc-body{position:relative;z-index:1;padding:16px 18px 14px;}
+/* ── Section 1: THE NARRATIVE ── */
+.nc-narrative-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
 .nc-logo{
-  width:26px;height:26px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  width:28px;height:28px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
   border-radius:6px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);overflow:hidden;
 }
-.nc-logo img{width:16px;height:16px;border-radius:3px;object-fit:contain;}
+.nc-logo img{width:18px;height:18px;border-radius:3px;object-fit:contain;}
 .nc-logo span{font-family:var(--font-body);font-size:10px;font-weight:600;color:var(--mp-text-tertiary);}
-.nc-tkinfo{display:flex;flex-direction:column;gap:0;min-width:0;}
-.nc-ticker{font-family:var(--font-body);font-size:14px;font-weight:700;color:#fff;line-height:1;letter-spacing:-0.01em;}
-.nc-sector{display:none;}
-.nc-badges{display:flex;gap:5px;flex-shrink:0;}
-.nc-rarity{
+.nc-tk-group{display:flex;align-items:baseline;gap:8px;flex:1;min-width:0;}
+.nc-ticker{font-family:var(--font-body);font-size:15px;font-weight:700;color:#fff;letter-spacing:-0.01em;flex-shrink:0;}
+.nc-sector-label{font-family:var(--font-body);font-size:11px;color:var(--mp-text-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.nc-price-group{display:flex;align-items:baseline;gap:6px;flex-shrink:0;margin-left:auto;}
+.nc-price{font-family:var(--font-body);font-size:13px;font-weight:500;color:var(--mp-text-secondary);}
+.nc-change{font-family:var(--font-body);font-size:12px;font-weight:600;}
+.nc-change-up{color:#00DE94;}
+.nc-change-dn{color:#FF4D4D;}
+.nc-change-flat{color:var(--mp-text-tertiary);}
+.nc-claim{
+  font-family:var(--font-body);font-size:14px;font-weight:400;
+  line-height:1.55;color:var(--mp-text-primary);margin-bottom:12px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+/* ── Section 2: IS IT TRUE? ── */
+.nc-truth-section{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:10px 12px;margin:0 -18px;
+  background:rgba(255,255,255,0.02);
+  border-top:1px solid rgba(255,255,255,0.04);
+  border-bottom:1px solid rgba(255,255,255,0.04);
+  margin-bottom:10px;
+}
+.nc-truth-icon{
+  width:20px;height:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  border-radius:50%;font-size:11px;margin-top:1px;
+}
+.nc-truth-icon.verified{background:rgba(0,222,148,0.12);color:#00DE94;}
+.nc-truth-icon.contradicted{background:rgba(255,77,77,0.12);color:#FF4D4D;}
+.nc-truth-icon.unverified{background:rgba(0,174,255,0.10);color:#00AEFF;}
+.nc-truth-content{flex:1;min-width:0;}
+.nc-truth-verdict{
+  font-family:var(--font-body);font-size:12px;font-weight:600;
+  letter-spacing:0.02em;margin-bottom:3px;
+}
+.nc-truth-verdict.verified{color:#00DE94;}
+.nc-truth-verdict.contradicted{color:#FF4D4D;}
+.nc-truth-verdict.unverified{color:#00AEFF;}
+.nc-truth-reason{
+  font-family:var(--font-body);font-size:12px;font-weight:300;
+  color:var(--mp-text-secondary);line-height:1.45;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+/* ── Section 3: WHAT TO DO ── */
+.nc-action-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.nc-direction{
+  font-family:var(--font-body);font-size:11px;font-weight:600;
+  letter-spacing:0.06em;text-transform:uppercase;
+  padding:3px 10px;border-radius:4px;white-space:nowrap;
+}
+.nc-dir-bull{color:#00DE94;border:1px solid rgba(0,222,148,0.25);background:rgba(0,222,148,0.06);}
+.nc-dir-bear{color:#FF4D4D;border:1px solid rgba(255,77,77,0.25);background:rgba(255,77,77,0.06);}
+.nc-dir-neutral{color:#00AEFF;border:1px solid rgba(0,174,255,0.25);background:rgba(0,174,255,0.06);}
+.nc-action-text{
+  font-family:var(--font-body);font-size:12px;font-weight:400;
+  color:var(--mp-text-secondary);flex:1;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.nc-view-link{
+  font-family:var(--font-body);font-size:11px;font-weight:500;
+  color:var(--mp-text-tertiary);text-decoration:none;flex-shrink:0;
+  transition:color .15s;letter-spacing:0.02em;
+}
+.nc-card:hover .nc-view-link{color:#00AEFF;}
+/* ── Impact signals (compact tags below action) ── */
+.nc-signals{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;}
+.nc-signal{
   font-family:var(--font-body);font-size:10px;font-weight:500;
-  letter-spacing:0.06em;text-transform:uppercase;padding:2px 7px;
-  border-radius:20px;border:1px solid;white-space:nowrap;opacity:0.65;
+  padding:2px 8px;border-radius:99px;white-space:nowrap;
+  border:1px solid rgba(255,255,255,0.08);
+  color:var(--mp-text-tertiary);background:rgba(255,255,255,0.03);
 }
-.nc-sentiment{
-  font-family:var(--font-body);font-size:10px;font-weight:600;
-  letter-spacing:0.04em;text-transform:uppercase;padding:2px 8px;
-  border-radius:20px;border:1px solid;white-space:nowrap;
-}
-.nc-sentiment-bull{color:#00DE94;border-color:rgba(0,222,148,0.3);background:rgba(0,222,148,0.08);}
-.nc-sentiment-bear{color:#FF4D4D;border-color:rgba(255,77,77,0.3);background:rgba(255,77,77,0.08);}
-.nc-sentiment-neutral{color:#00AEFF;border-color:rgba(0,174,255,0.3);background:rgba(0,174,255,0.08);}
-/* Divider — hidden for compact */
-.nc-divider{display:none;}
-/* Verdict label */
-.nc-verdict-label{
-  font-family:var(--font-body);font-size:10px;font-weight:600;
-  letter-spacing:0.10em;text-transform:uppercase;margin-bottom:6px;
-}
-.nc-verdict-trap{color:#b8860b;}
-.nc-verdict-supported{color:#1a8a5e;}
-.nc-verdict-bear{color:#c0392b;}
-.nc-verdict-default{color:var(--mp-text-tertiary);}
-/* Headline + Truth score row */
-.nc-headline-row{display:flex;align-items:flex-start;gap:16px;margin-bottom:8px;}
-.nc-headline{
-  font-family:var(--font-body);font-size:15px;font-weight:500;
-  line-height:1.5;color:#fff;flex:1;min-width:0;
-  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
-}
-/* Meta text below headline */
-.nc-meta-row{display:flex;align-items:center;gap:10px;margin-bottom:0;}
-.nc-truth{
-  width:42px;height:42px;flex-shrink:0;
-  position:relative;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-}
-.nc-truth svg{position:absolute;top:0;left:0;width:100%;height:100%;}
-.nc-truth-ring-bg{fill:none;stroke:rgba(255,255,255,0.08);stroke-width:3;}
-.nc-truth-ring-fill{fill:none;stroke-width:3;stroke-linecap:round;transition:stroke-dashoffset 0.6s ease;}
-.nc-truth-num{font-family:var(--font-body);font-size:14px;font-weight:700;line-height:1;color:#fff;position:relative;z-index:1;}
-.nc-truth-lbl{font-family:var(--font-body);font-size:6px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.5);position:relative;z-index:1;}
-.nc-meta{font-family:var(--font-body);font-size:11px;color:#A0A8B0;line-height:1.4;}
-/* Tags — insight badges */
+/* Legacy compat — keep old classes that may be referenced elsewhere */
+.nc-accent{display:none;}
+.nc-header,.nc-badges,.nc-rarity,.nc-sentiment,.nc-divider,.nc-verdict-label,.nc-headline-row,.nc-meta-row,.nc-truth,.nc-footer{display:none;}
 .nc-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;}
 .nc-tag{
   font-family:var(--font-body);font-size:10px;font-weight:600;
@@ -3050,35 +3078,6 @@ body{
 .nc-tag-red{color:rgba(255,77,77,0.65);border-color:rgba(255,77,77,0.15);background:rgba(255,77,77,0.04);}
 .nc-tag-amber{color:rgba(255,184,0,0.65);border-color:rgba(255,184,0,0.15);background:rgba(255,184,0,0.04);}
 .nc-tag-cyan{color:rgba(0,174,255,0.65);border-color:rgba(0,174,255,0.15);background:rgba(0,174,255,0.04);}
-/* Footer — compact */
-.nc-footer{
-  display:flex;align-items:center;gap:0;
-  border-top:1px solid rgba(255,255,255,0.06);
-  margin:0 -16px -12px;background:rgba(255,255,255,0.02);
-}
-.nc-footer-state{
-  display:flex;align-items:center;gap:5px;padding:8px 12px;
-  font-family:var(--font-body);font-size:10px;font-weight:500;
-  letter-spacing:0.06em;text-transform:uppercase;color:#A0A8B0;
-  white-space:nowrap;
-}
-.nc-pulse{width:4px;height:4px;border-radius:50%;animation:blink 2s ease infinite;flex-shrink:0;}
-.nc-footer-price{
-  font-family:var(--font-body);font-size:13px;font-weight:600;color:#fff;
-  padding:8px 3px 8px 10px;margin-left:auto;
-}
-.nc-footer-change{
-  font-family:var(--font-body);font-size:11px;font-weight:500;
-  padding:8px 12px 8px 3px;
-}
-.nc-footer-view{
-  font-family:var(--font-body);font-size:10px;font-weight:600;
-  letter-spacing:0.06em;text-transform:uppercase;
-  color:var(--mp-cyan);padding:8px 12px;white-space:nowrap;
-  border-left:1px solid rgba(255,255,255,0.06);
-  transition:color .2s,background .2s;
-}
-.nc-card:hover .nc-footer-view{background:rgba(0,174,255,0.06);}
 
 /* ── Light Theme ── */
 [data-theme="light"] .nf-summary{background:var(--mp-surface);border-color:rgba(0,0,0,0.06);}
@@ -3094,8 +3093,9 @@ body{
 [data-theme="light"] .nf-row-badge{border-color:rgba(0,0,0,0.08);color:var(--mp-text-secondary);background:rgba(0,0,0,0.03);}
 [data-theme="light"] .nf-scroll::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.08);}
 [data-theme="light"] .nf-scroll-hint{border-top-color:rgba(0,0,0,0.06);}
-[data-theme="light"] .nc-card{background:var(--mp-surface);border-color:rgba(0,0,0,0.08);filter:drop-shadow(0 2px 8px rgba(0,0,0,0.08));}
-[data-theme="light"] .nc-card:hover{filter:drop-shadow(0 8px 24px rgba(0,0,0,0.12));border-color:rgba(0,0,0,0.14);}
+[data-theme="light"] .nc-card{background:var(--mp-surface);border-color:rgba(0,0,0,0.08);box-shadow:0 2px 8px rgba(0,0,0,0.08);}
+[data-theme="light"] .nc-card:hover{box-shadow:0 8px 24px rgba(0,0,0,0.12);border-color:rgba(0,0,0,0.14);}
+[data-theme="light"] .nc-truth-section{background:rgba(0,0,0,0.02);border-color:rgba(0,0,0,0.04);}
 [data-theme="light"] .nc-card::before{opacity:0;}
 [data-theme="light"] .nc-divider{background:rgba(0,0,0,0.06);}
 [data-theme="light"] .nc-footer{border-top-color:rgba(0,0,0,0.06);background:rgba(0,0,0,0.02);}
@@ -3404,10 +3404,10 @@ body{
         <div class="nf-sum-tags" id="nf-sum-tags"></div>
       </div>
 
-      <!-- 2) TOP NARRATIVE SIGNALS -->
+      <!-- 2) TODAY'S BIGGEST NARRATIVES -->
       <div class="nf-feed" style="margin-bottom:24px;">
         <div class="nf-feed-header">
-          <span class="nf-feed-title">Top Narrative Signals</span>
+          <span class="nf-feed-title">Today's Biggest Narratives</span>
           <span class="nf-feed-date" id="nf-feed-date"></span>
         </div>
         <div class="nf-tabs">
@@ -4716,65 +4716,159 @@ function ncBuildTags(verdict,state,daysToEarnings){
 
 function nfBuildRow(dir, logoHtml, ticker, sector, headline, verdict, href, extra){
   extra=extra||{};
-  var accentColor=ncAccentColor(dir);
-  var rarity=ncRarityFromVerdict(verdict,extra.state);
-  var sentCls='nc-sentiment-'+(dir||'neutral');
-  var verdictCls=ncVerdictClass(verdict);
-  var tags=ncBuildTags(verdict,extra.state,extra.daysToEarnings);
-  var conf=extra.confidence||Math.round(60+Math.random()*30);
-  var truthColor=conf>=50?'#00DE94':'#FF4D4D';
+  var dirCls=dir==='bull'?'nc-bull':dir==='bear'?'nc-bear':'nc-neutral';
+
+  // ── SECTION 1: THE NARRATIVE (ticker + claim) ──
+  var pct=extra.pricePct||0;
+  var chgCls=pct>0?'nc-change-up':pct<0?'nc-change-dn':'nc-change-flat';
+  var chgTxt=pct===0?'\u2014':(pct>0?'+':'')+pct.toFixed(2)+'%';
   var priceHTML='';
   if(extra.price!=null){
-    var pct=extra.pricePct||0;
-    var isUp=pct>0;
-    var chgColor=isUp?'#00DE94':'#FF4D4D';
-    priceHTML='<div class="nc-footer-price">$'+fmtPrice(extra.price)+'</div>'
-      +'<div class="nc-footer-change" style="color:'+chgColor+';">'+(isUp?'+':'')+pct.toFixed(2)+'%</div>';
+    priceHTML='<div class="nc-price-group">'
+      +'<span class="nc-price">$'+fmtPrice(extra.price)+'</span>'
+      +'<span class="nc-change '+chgCls+'">'+chgTxt+'</span>'
+    +'</div>';
   }
-  var stateLabel=extra.state||'Monitoring';
 
-  return '<a class="nc-card" '+(href?'href="'+href+'"':'')+'>'
-    +'<div class="nc-accent" style="background:rgba(0,174,255,0.5);"></div>'
+  // ── SECTION 2: IS IT TRUE? ──
+  var sc=extra._scorecard||{};
+  var truthResult=nfAssessTruth(verdict,extra,sc);
+
+  // ── SECTION 3: WHAT TO DO ──
+  var dirLabel=dir==='bull'?'\u25B2 Bullish':dir==='bear'?'\u25BC Bearish':'\u25C6 Neutral';
+  var dirBadgeCls=dir==='bull'?'nc-dir-bull':dir==='bear'?'nc-dir-bear':'nc-dir-neutral';
+  var actionText=nfActionText(verdict,dir,extra,sc);
+
+  // ── Impact signals (only the most meaningful) ──
+  var signals=nfTopSignals(extra,sc);
+
+  return '<a class="nc-card '+dirCls+'" '+(href?'href="'+href+'"':'')+'>'
     +'<div class="nc-body">'
-      +'<div class="nc-header">'
-        +'<div class="nc-id">'
-          +logoHtml
-          +'<div class="nc-tkinfo">'
-            +'<div class="nc-ticker">'+esc(ticker)+'</div>'
-            +'<div class="nc-sector">'+esc(sector)+'</div>'
-          +'</div>'
+      // 1. THE NARRATIVE
+      +'<div class="nc-narrative-head">'
+        +logoHtml
+        +'<div class="nc-tk-group">'
+          +'<span class="nc-ticker">'+esc(ticker)+'</span>'
+          +(sector?'<span class="nc-sector-label">'+esc(sector)+'</span>':'')
         +'</div>'
-        +'<div class="nc-badges">'
-          +'<span class="nc-rarity" style="color:'+rarity.color+';border-color:'+rarity.border+';background:'+hexToRgba(rarity.color,0.08)+';">'+rarity.label+'</span>'
-          +'<span class="nc-sentiment '+sentCls+'">'+ncSentimentLabel(dir)+'</span>'
+        +priceHTML
+      +'</div>'
+      +'<div class="nc-claim">'+esc(headline)+'</div>'
+      // 2. IS IT TRUE?
+      +'<div class="nc-truth-section">'
+        +'<div class="nc-truth-icon '+truthResult.cls+'">'+truthResult.icon+'</div>'
+        +'<div class="nc-truth-content">'
+          +'<div class="nc-truth-verdict '+truthResult.cls+'">'+esc(truthResult.label)+'</div>'
+          +(truthResult.reason?'<div class="nc-truth-reason">'+esc(truthResult.reason)+'</div>':'')
         +'</div>'
       +'</div>'
-      +'<div class="nc-divider"></div>'
-      +'<div class="nc-verdict-label '+verdictCls+'">'+esc(verdict)+'</div>'
-      +'<div class="nc-headline-row">'
-        +'<div class="nc-headline">'+esc(headline)+'</div>'
-        +(conf>1?'<div class="nc-truth">'+ncTruthRingSVG(conf, truthColor)+'<span class="nc-truth-num">'+conf+'</span><span class="nc-truth-lbl">Truth</span></div>':'')
+      // 3. WHAT TO DO
+      +'<div class="nc-action-row">'
+        +'<span class="nc-direction '+dirBadgeCls+'">'+dirLabel+'</span>'
+        +'<span class="nc-action-text">'+esc(actionText)+'</span>'
+        +'<span class="nc-view-link">View \u2192</span>'
       +'</div>'
-      +'<div class="nc-meta-row">'
-        +'<div class="nc-meta">'+(conf>1?conf+'% \u00B7 ':'')+(extra.window||'Day\u2013Swing')+' \u00B7 '+stateLabel+'</div>'
-      +'</div>'
-      +(function(){
-        var insightTags=extra._insightTags||[];
-        if(insightTags.length){
-          return '<div class="nc-tags">'+insightTags.slice(0,4).map(function(t){return '<span class="nc-tag" style="background:'+t.bg+';color:'+t.color+';border-color:'+t.border+';">'+esc(t.label)+'</span>';}).join('')+'</div>';
-        }
-        return tags.length?'<div class="nc-tags">'+tags.map(function(t){return '<span class="nc-tag '+t.cls+'">'+t.label+'</span>';}).join('')+'</div>':'';
-      })()
-    +'</div>'
-    +'<div class="nc-footer">'
-      +'<div class="nc-footer-state"><span class="nc-pulse" style="background:'+accentColor+';"></span>'+esc(stateLabel)+' \u00B7 LIVE</div>'
-      +priceHTML
-      +'<div class="nc-footer-view">VIEW \u2192</div>'
+      +(signals.length?'<div class="nc-signals">'+signals.map(function(s){return '<span class="nc-signal" style="color:'+s.color+';border-color:'+s.border+';">'+esc(s.label)+'</span>';}).join('')+'</div>':'')
     +'</div>'
   +'</a>';
 }
 
+// ── Truth assessment: determine if narrative is verified, contradicted, or unverified ──
+function nfAssessTruth(verdict,extra,sc){
+  var v=(verdict||'').toLowerCase();
+  // Strong signals from data
+  if(sc.forensic_rebuttal||sc.mda_snippet){
+    if(v.indexOf('trap')>=0||v.indexOf('bear')>=0)
+      return {cls:'contradicted',icon:'\u2716',label:'Contradicted by evidence',reason:sc.forensic_rebuttal||sc.mda_snippet||''};
+    if(v.indexOf('supported')>=0||v.indexOf('verified')>=0)
+      return {cls:'verified',icon:'\u2714',label:'Verified by fundamentals',reason:sc.forensic_rebuttal||sc.mda_snippet||''};
+  }
+  if(sc.synopsis){
+    if(v.indexOf('trap')>=0) return {cls:'contradicted',icon:'\u2716',label:'Contradicted by data',reason:sc.synopsis};
+    if(v.indexOf('supported')>=0) return {cls:'verified',icon:'\u2714',label:'Backed by fundamentals',reason:sc.synopsis};
+  }
+  // Fair value deviation signals
+  if(sc.fvd_pct!=null){
+    if(sc.fvd_pct>50) return {cls:'contradicted',icon:'\u2716',label:'Price disconnected from fair value',reason:'Trading '+Math.round(sc.fvd_pct)+'% above fair value estimate.'};
+    if(sc.fvd_pct<-20) return {cls:'verified',icon:'\u2714',label:'Undervalued relative to fundamentals',reason:'Trading '+Math.abs(Math.round(sc.fvd_pct))+'% below fair value estimate.'};
+  }
+  // Coordination / manipulation signals
+  if(sc.coordination_class&&sc.coordination_class.toLowerCase().indexOf('coordinated')>=0)
+    return {cls:'contradicted',icon:'\u26A0',label:'Coordinated narrative detected',reason:sc.narrative||'Cross-platform narrative coordination suggests artificial amplification.'};
+  if(sc.suspicion_class&&sc.suspicion_class.toLowerCase().indexOf('high')>=0)
+    return {cls:'contradicted',icon:'\u26A0',label:'Manipulation risk flagged',reason:'High suspicion score — narrative may be artificially driven.'};
+  // Verdict-based fallback
+  if(v.indexOf('trap')>=0) return {cls:'contradicted',icon:'\u2716',label:'Narrative trap — story contradicts data',reason:sc.narrative||extra._reason||''};
+  if(v.indexOf('supported')>=0||v.indexOf('verified')>=0) return {cls:'verified',icon:'\u2714',label:'Fundamentally supported',reason:sc.narrative||extra._reason||''};
+  if(v.indexOf('bear')>=0||v.indexOf('escalat')>=0) return {cls:'contradicted',icon:'\u25BC',label:'Bear pressure building',reason:sc.narrative||extra._reason||''};
+  // Default
+  return {cls:'unverified',icon:'\u2022',label:'Monitoring — not yet verified',reason:sc.narrative||''};
+}
+
+// ── Action text: what should the user do? ──
+function nfActionText(verdict,dir,extra,sc){
+  // Use scenario_primary if available from scorecard
+  if(sc.scenario_primary&&sc.scenario_primary_pct)
+    return sc.scenario_primary+' ('+Math.round(sc.scenario_primary_pct)+'% probability)';
+  if(sc.scenario_primary) return sc.scenario_primary;
+  // Use predicted exhaustion
+  if(sc.predicted_exhaustion_days!=null&&sc.predicted_exhaustion_days>0&&sc.predicted_exhaustion_days<30)
+    return 'Narrative may exhaust in ~'+Math.round(sc.predicted_exhaustion_days)+' days';
+  // Earnings proximity
+  if(extra.daysToEarnings!=null&&extra.daysToEarnings<=14)
+    return 'Earnings in '+extra.daysToEarnings+' days — key catalyst ahead';
+  // Verdict-based
+  var v=(verdict||'').toLowerCase();
+  if(v.indexOf('trap')>=0) return 'Caution: narrative may unwind as fundamentals reassert';
+  if(v.indexOf('supported')>=0) return 'Story is backed by data — trend may continue';
+  if(dir==='bull') return 'Positive momentum — watch for continuation';
+  if(dir==='bear') return 'Negative pressure — watch for reversal signals';
+  return 'Monitor for developing catalysts';
+}
+
+// ── Top signals: pick the 2-3 most meaningful insight tags ──
+function nfTopSignals(extra,sc){
+  var signals=[];
+  if(sc.fvd_pct!=null){
+    if(sc.fvd_pct>100) signals.push({label:'High Hype Gap',color:'rgba(255,77,77,0.7)',border:'rgba(255,77,77,0.15)'});
+    else if(sc.fvd_pct>30) signals.push({label:'+'+Math.round(sc.fvd_pct)+'% Overvalued',color:'rgba(255,77,77,0.6)',border:'rgba(255,77,77,0.12)'});
+    else if(sc.fvd_pct<-20) signals.push({label:Math.round(sc.fvd_pct)+'% Below Fair Value',color:'rgba(0,222,148,0.6)',border:'rgba(0,222,148,0.12)'});
+  }
+  if(sc.energy_remaining!=null){
+    if(sc.energy_remaining<=15) signals.push({label:'Story Exhausted',color:'rgba(160,168,176,0.6)',border:'rgba(160,168,176,0.12)'});
+    else if(sc.energy_remaining>=85) signals.push({label:'High Energy',color:'rgba(0,174,255,0.6)',border:'rgba(0,174,255,0.12)'});
+  }
+  if(sc.decay_rate!=null&&sc.decay_rate>=0.05) signals.push({label:'Fading',color:'rgba(255,184,0,0.6)',border:'rgba(255,184,0,0.12)'});
+  if(sc.coordination_class&&sc.coordination_class.toLowerCase().indexOf('coordinated')>=0) signals.push({label:'Coordinated',color:'rgba(255,77,77,0.6)',border:'rgba(255,77,77,0.12)'});
+  if(extra.daysToEarnings!=null&&extra.daysToEarnings<=14) signals.push({label:'Earnings in '+extra.daysToEarnings+'d',color:'rgba(255,184,0,0.6)',border:'rgba(255,184,0,0.12)'});
+  return signals.slice(0,3);
+}
+
 // ── Render: Tickers tab ──
+// ── Market-impact score: rank narratives by potential to move the market ──
+function nfMarketImpactScore(r){
+  var score=0;
+  // Base: magnitude of price move
+  score+=Math.abs(r.price_change_pct||0)*10;
+  // Boost: narrative energy (high energy = still driving)
+  if(r.energy_remaining!=null) score+=(r.energy_remaining/100)*5;
+  // Boost: coordination (coordinated narratives move harder)
+  if(r.coordination_score!=null) score+=(r.coordination_score/100)*4;
+  // Boost: extreme fair value deviation
+  if(r.fvd_pct!=null) score+=Math.min(Math.abs(r.fvd_pct)/20,5);
+  // Boost: active narrative states
+  if(r.narrative_state==='Breaking') score+=6;
+  else if(r.narrative_state==='Surging') score+=4;
+  else if(r.narrative_state==='Fragile') score+=2;
+  // Boost: strong verdict
+  var v=(r.prism_verdict||'').toLowerCase();
+  if(v.indexOf('trap')>=0) score+=5;
+  else if(v.indexOf('supported')>=0) score+=3;
+  // Boost: close to earnings (catalyst)
+  if(r.days_to_earnings!=null&&r.days_to_earnings<=14) score+=3;
+  return score;
+}
+
 function renderNarrativeCards(){
   var el=document.getElementById('nf-list-tickers');
   if(!el) return;
@@ -4782,13 +4876,13 @@ function renderNarrativeCards(){
   var items=[];
   if(DATA.length>0){
     items=DATA.filter(function(r){return r.story_claim&&r.price!=null;})
-      .sort(function(a,b){return Math.abs(b.price_change_pct||0)-Math.abs(a.price_change_pct||0);})
-      .slice(0,5);
+      .sort(function(a,b){return nfMarketImpactScore(b)-nfMarketImpactScore(a);})
+      .slice(0,10);
   }
 
   if(!items.length){
     // Use demo data
-    el.innerHTML=NF_DEMO_TICKERS.slice(0,5).map(function(d){
+    el.innerHTML=NF_DEMO_TICKERS.slice(0,8).map(function(d){
       return nfBuildRow(d.direction, nfLogoHTML(d.ticker), d.ticker, d.sector, d.claim, d.verdict, '/ticker/'+encodeURIComponent(d.ticker), {state:d.verdict==='Structurally Supported'?'Surging':(d.direction==='bear'?'Breaking':'Stable')});
     }).join('');
   } else {
@@ -4796,15 +4890,15 @@ function renderNarrativeCards(){
       var pct=r.price_change_pct||0;
       var dir=pct>0?'bull':(pct<0?'bear':'neutral');
       var verdict=r.prism_verdict||'Monitoring';
-      // Use CARD_DATA match for confidence/window if available (TRADE_CLASS_MAP is not populated)
-      var cdMatch=CARD_DATA.find(function(cd){return cd.ticker===r.ticker;})||{};
-      var insightTags=getTickerInsightTags(r);
+      var sc=scorecardMap[r.ticker]||{};
+      // Also pass forensic_rebuttal from main data
+      sc.forensic_rebuttal=sc.forensic_rebuttal||r.forensic_rebuttal||'';
+      sc.mda_snippet=sc.mda_snippet||r.mda_snippet||'';
       return nfBuildRow(dir, nfLogoHTML(r.ticker), r.ticker, r.sector_name||'', r.story_claim, verdict, '/ticker/'+encodeURIComponent(r.ticker), {
         price:r.price, pricePct:pct, state:r.narrative_state,
         daysToEarnings:r.days_to_earnings,
-        confidence:cdMatch._confPct!=null?cdMatch._confPct:null,
-        window:cdMatch._winOverride||null,
-        _insightTags:insightTags
+        _scorecard:sc,
+        _reason:r.forensic_rebuttal||r.primary_driver||''
       });
     }).join('');
   }
@@ -4852,27 +4946,29 @@ function renderMiniTradingCards(){
 function renderSectorNarrativeCards(){
   var el=document.getElementById('nf-list-sectors');
   if(!el) return;
+  var sectorIcon='<div class="nc-logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>';
 
   if(DATA.length>0){
-    var sectorMap={};
+    var sMap={};
     DATA.forEach(function(r){
       var s=r.sector_name||'Other';
-      if(!sectorMap[s]) sectorMap[s]={name:s,topClaim:r.story_claim||r.primary_driver||'',count:0,direction:'neutral'};
-      sectorMap[s].count++;
-      if((r.price_change_pct||0)>0) sectorMap[s].direction='bull';
-      else if((r.price_change_pct||0)<-1) sectorMap[s].direction='bear';
+      if(!sMap[s]) sMap[s]={name:s,topClaim:r.story_claim||r.primary_driver||'',count:0,direction:'neutral',impact:0};
+      sMap[s].count++;
+      sMap[s].impact+=Math.abs(r.price_change_pct||0);
+      if((r.price_change_pct||0)>0) sMap[s].direction='bull';
+      else if((r.price_change_pct||0)<-1) sMap[s].direction='bear';
     });
-    var sectors=Object.keys(sectorMap).map(function(k){return sectorMap[k];}).slice(0,8);
+    var sectors=Object.keys(sMap).map(function(k){return sMap[k];})
+      .sort(function(a,b){return b.impact-a.impact;}).slice(0,8);
     el.innerHTML=sectors.map(function(s){
       var state=s.direction==='bull'?'Surging':(s.direction==='bear'?'Breaking':'Stable');
-      return nfBuildRow(s.direction, '<div class="nc-logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>', s.name, s.count+' tickers', s.topClaim, state, '', {state:state});
+      return nfBuildRow(s.direction, sectorIcon, s.name, s.count+' tickers', s.topClaim, state, '', {state:state,_scorecard:{}});
     }).join('');
   } else {
     el.innerHTML=NF_DEMO_SECTORS.map(function(d){
-      return nfBuildRow(d.direction, '<div class="nc-logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>', d.name, d.sub, d.claim, d.verdict, '', {state:d.verdict});
+      return nfBuildRow(d.direction, sectorIcon, d.name, d.sub, d.claim, d.verdict, '', {state:d.verdict,_scorecard:{}});
     }).join('');
   }
-  // Make all sector cards navigate to Sector Pulse tab
   el.querySelectorAll('.nc-card').forEach(function(card){
     card.style.cursor='pointer';
     card.addEventListener('click',function(e){
@@ -4888,9 +4984,9 @@ function renderMarketWideCards(){
   var el=document.getElementById('nf-list-market');
   if(!el) return;
 
-  // Always use curated themes (these are editorial, not auto-derived)
+  var globeIcon='<div class="nc-logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>';
   el.innerHTML=NF_DEMO_MARKET.map(function(d){
-    return nfBuildRow(d.direction, '<div class="nc-logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>', d.title, d.type, d.claim, d.verdict, '', {state:d.verdict});
+    return nfBuildRow(d.direction, globeIcon, d.title, d.type, d.claim, d.verdict, '', {state:d.verdict,_scorecard:{}});
   }).join('');
   // Make all market-wide cards navigate to Market-Wide tab
   el.querySelectorAll('.nc-card').forEach(function(card){
@@ -4925,21 +5021,13 @@ function renderTrapsCards(){
 
   if(traps.length>0){
     el.innerHTML=traps.map(function(r){
-      var conf=r._confPct||r.confidence_score||80;
-      var trapType=r.prism_verdict||r.story_verdict||'Narrative Trap';
-      var insightTags=[
-        {label:trapType,bg:'rgba(255,77,77,0.15)',color:'#FF4D4D',border:'rgba(255,77,77,0.3)'},
-        {label:conf+'% confidence',bg:'rgba(255,184,0,0.12)',color:'#FFB800',border:'rgba(255,184,0,0.25)'}
-      ];
-      return nfBuildRow('bear', nfLogoHTML(r.ticker), r.ticker, r.sector_name||'', r.story_claim||r.primary_driver||'', 'Narrative Trap', '/ticker/'+encodeURIComponent(r.ticker), {state:'Breaking',confidence:conf,_insightTags:insightTags});
+      var sc=scorecardMap[r.ticker]||{};
+      sc.forensic_rebuttal=sc.forensic_rebuttal||r.forensic_rebuttal||'';
+      return nfBuildRow('bear', nfLogoHTML(r.ticker), r.ticker, r.sector_name||'', r.story_claim||r.primary_driver||'', 'Narrative Trap', '/ticker/'+encodeURIComponent(r.ticker), {state:'Breaking',_scorecard:sc,_reason:r.forensic_rebuttal||r.primary_driver||'',price:r.price,pricePct:r.price_change_pct});
     }).join('');
   } else {
     el.innerHTML=NF_DEMO_TRAPS.map(function(d){
-      var insightTags=[
-        {label:d.trapType,bg:'rgba(255,77,77,0.15)',color:'#FF4D4D',border:'rgba(255,77,77,0.3)'},
-        {label:d.confidence+'% \u00B7 '+d.age,bg:'rgba(255,184,0,0.12)',color:'#FFB800',border:'rgba(255,184,0,0.25)'}
-      ];
-      return nfBuildRow(d.direction, nfLogoHTML(d.ticker), d.ticker, d.sector, d.claim, 'Narrative Trap', '/ticker/'+encodeURIComponent(d.ticker), {state:'Breaking',confidence:d.confidence,_insightTags:insightTags});
+      return nfBuildRow(d.direction, nfLogoHTML(d.ticker), d.ticker, d.sector, d.claim, 'Narrative Trap', '/ticker/'+encodeURIComponent(d.ticker), {state:'Breaking',_scorecard:{},_reason:d.claim});
     }).join('');
   }
 
@@ -4995,18 +5083,18 @@ function renderSupportedCards(){
       // Clean up macro_theme display (AI_Infrastructure → AI Infrastructure)
       sector=sector.replace(/_/g,' ');
       var headline=r.narrative||r.synopsis||r.story_claim||r.primary_driver||'';
-      var insightTags=[
-        {label:'Structurally Supported',bg:'rgba(0,222,148,0.12)',color:'#00DE94',border:'rgba(0,222,148,0.25)'},
-        {label:conf+'% confidence',bg:'rgba(0,174,255,0.12)',color:'#00AEFF',border:'rgba(0,174,255,0.25)'}
-      ];
-      if(r.energy_remaining!=null&&r.energy_remaining>60){
-        insightTags.push({label:'High Energy',bg:'rgba(0,222,148,0.08)',color:'#00DE94',border:'rgba(0,222,148,0.2)'});
-      }
+      var sc={
+        fvd_pct:r.fvd_pct!=null?parseFloat(r.fvd_pct):null,
+        energy_remaining:r.energy_remaining!=null?parseFloat(r.energy_remaining):null,
+        coordination_score:r.coordination_score!=null?parseFloat(r.coordination_score):null,
+        synopsis:r.synopsis||'',
+        narrative:r.narrative||''
+      };
       return nfBuildRow('bull', nfLogoHTML(r.ticker), r.ticker, sector, headline, 'Structurally Supported', '/ticker/'+encodeURIComponent(r.ticker), {
         state:'Surging',
-        confidence:conf,
         price:r.current_price?parseFloat(r.current_price):null,
-        _insightTags:insightTags
+        _scorecard:sc,
+        _reason:r.synopsis||r.narrative||''
       });
     }).join('');
   } else {
