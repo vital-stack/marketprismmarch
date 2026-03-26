@@ -6084,22 +6084,22 @@ function getTickerInsightTags(r){
   // ── Priority 4c: Fear/Greed ──
   if(r._na_fear_greed!=null&&r._na_fear_greed>0) tags.push({label:'Fear/Greed',color:'rgba(255,184,0,0.55)',bg:'rgba(255,184,0,0.04)',border:'rgba(255,184,0,0.10)'});
   // ── Priority 5: Analyst citation ──
-  if(r._na_analyst) tags.push({label:'Analyst: '+r._na_analyst,color:'rgba(0,174,255,0.6)',bg:'rgba(0,174,255,0.04)',border:'rgba(0,174,255,0.10)'});
+  if(r._na_analyst) tags.push({label:'Analyst: '+r._na_analyst,color:'rgba(160,168,176,0.7)',bg:'rgba(255,255,255,0.04)',border:'rgba(255,255,255,0.08)'});
   // ── Priority 6: Macro theme (skip Company_Specific) ──
   var macro=r._na_macro;
-  if(macro&&macro!=='Company_Specific') tags.push({label:humanizeSnake(macro),color:'rgba(160,168,176,0.6)',bg:'rgba(160,168,176,0.04)',border:'rgba(160,168,176,0.10)',muted:true});
+  if(macro&&macro!=='Company_Specific') tags.push({label:humanizeSnake(macro),color:'rgba(160,168,176,0.7)',bg:'rgba(255,255,255,0.04)',border:'rgba(255,255,255,0.08)',muted:true});
   // ── Priority 7: Upstream/Downstream exposure ──
   var upTickers=r._na_upstream;
-  if(upTickers&&((Array.isArray(upTickers)&&upTickers.length>0)||(typeof upTickers==='string'&&upTickers.length>2))) tags.push({label:'Upstream Exposure',color:'rgba(56,200,184,0.6)',bg:'rgba(56,200,184,0.04)',border:'rgba(56,200,184,0.10)',tooltip:'Upstream: '+(Array.isArray(upTickers)?upTickers.join(', '):upTickers)});
+  if(upTickers&&((Array.isArray(upTickers)&&upTickers.length>0)||(typeof upTickers==='string'&&upTickers.length>2))) tags.push({label:'Upstream Exposure',color:'rgba(160,168,176,0.7)',bg:'rgba(255,255,255,0.04)',border:'rgba(255,255,255,0.08)',tooltip:'Upstream: '+(Array.isArray(upTickers)?upTickers.join(', '):upTickers)});
   var dnTickers=r._na_downstream;
-  if(dnTickers&&((Array.isArray(dnTickers)&&dnTickers.length>0)||(typeof dnTickers==='string'&&dnTickers.length>2))) tags.push({label:'Downstream Risk',color:'rgba(123,97,255,0.6)',bg:'rgba(123,97,255,0.04)',border:'rgba(123,97,255,0.10)',tooltip:'Downstream: '+(Array.isArray(dnTickers)?dnTickers.join(', '):dnTickers)});
+  if(dnTickers&&((Array.isArray(dnTickers)&&dnTickers.length>0)||(typeof dnTickers==='string'&&dnTickers.length>2))) tags.push({label:'Downstream Risk',color:'rgba(160,168,176,0.7)',bg:'rgba(255,255,255,0.04)',border:'rgba(255,255,255,0.08)',tooltip:'Downstream: '+(Array.isArray(dnTickers)?dnTickers.join(', '):dnTickers)});
   // ── Priority 8: Cluster ──
   var cluster=r._na_cluster;
   if(cluster){
     var clusterLabel=humanizeSnake(cluster);
     // Truncate long cluster names
     if(clusterLabel.length>20) clusterLabel=clusterLabel.substring(0,18)+'…';
-    tags.push({label:clusterLabel,color:'rgba(160,168,176,0.5)',bg:'rgba(160,168,176,0.03)',border:'rgba(160,168,176,0.08)',muted:true});
+    tags.push({label:clusterLabel,color:'rgba(160,168,176,0.7)',bg:'rgba(255,255,255,0.04)',border:'rgba(255,255,255,0.08)',muted:true});
   }
   // ── Priority 9: Existing scorecard-derived tags ──
   var fvd=r.fvd_pct;
@@ -6113,13 +6113,13 @@ function getTickerInsightTags(r){
   if(r.suspicion_score!=null&&r.suspicion_score>=50||(r.suspicion_class&&r.suspicion_class.toLowerCase().indexOf('high')!==-1)) tags.push({label:'Manipulation Risk',color:'rgba(123,97,255,0.6)',bg:'rgba(123,97,255,0.04)',border:'rgba(123,97,255,0.12)'});
   var energy=r.energy_remaining;
   if(energy!=null){
-    if(energy>=85) tags.push({label:'High Energy',color:'rgba(0,174,255,0.6)',bg:'rgba(0,174,255,0.04)',border:'rgba(0,174,255,0.10)'});
-    else if(energy<=15) tags.push({label:'Story Exhausted',color:'rgba(160,168,176,0.5)',bg:'rgba(160,168,176,0.04)',border:'rgba(160,168,176,0.10)'});
+    if(energy>=85) tags.push({label:'High Energy',color:'rgba(160,168,176,0.7)',bg:'rgba(255,255,255,0.04)',border:'rgba(255,255,255,0.08)'});
+    else if(energy<=15) tags.push({label:'Story Exhausted',color:'rgba(160,168,176,0.7)',bg:'rgba(255,255,255,0.04)',border:'rgba(255,255,255,0.08)'});
   }
   var decay=r.decay_rate;
   if(decay!=null&&decay>=0.05) tags.push({label:'Narrative Fading',color:'rgba(255,184,0,0.6)',bg:'rgba(255,184,0,0.04)',border:'rgba(255,184,0,0.10)'});
   // ── Priority 10: Sector tags (lowest priority filler) ──
-  (SECTOR_MAP[r.ticker]||[]).forEach(function(s){tags.push({label:s,color:'rgba(0,174,255,0.5)',bg:'rgba(0,174,255,0.03)',border:'rgba(0,174,255,0.08)',sector:true});});
+  (SECTOR_MAP[r.ticker]||[]).forEach(function(s){tags.push({label:s,color:'rgba(160,168,176,0.7)',bg:'rgba(255,255,255,0.04)',border:'rgba(255,255,255,0.08)',sector:true});});
   // Deduplicate by label
   var seenLabels={};
   tags=tags.filter(function(t){var k=t.label.toLowerCase();if(seenLabels[k])return false;seenLabels[k]=true;return true;});
