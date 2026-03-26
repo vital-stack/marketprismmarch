@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pricing | Market Prism</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&family=Anton&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --mp-obsidian:#080B11;
+  --mp-surface:#0C1018;
+  --mp-surface2:#111927;
+  --mp-border:rgba(255,255,255,0.06);
+  --mp-border-hover:rgba(255,255,255,0.14);
+  --mp-text-primary:#FFFFFF;
+  --mp-text-secondary:rgba(255,255,255,0.7);
+  --mp-text-tertiary:#A0A8B0;
+  --mp-cyan:#00AEFF;
+  --mp-teal:#38C8B8;
+  --mp-green:#00DE94;
+  --mp-red:#FF4D4D;
+  --font-display:'Instrument Serif','DM Serif Display',Georgia,serif;
+  --font-body:'Inter','DM Sans',system-ui,sans-serif;
+}
+html{font-size:16px;}
+body{
+  min-height:100vh;
+  font-family:var(--font-body);
+  background:
+    radial-gradient(circle at top right, rgba(0,174,255,0.08), transparent 35%),
+    radial-gradient(circle at bottom left, rgba(56,200,184,0.08), transparent 30%),
+    var(--mp-obsidian);
+  color:var(--mp-text-primary);
+  line-height:1.6;
+}
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size:48px 48px;
+  opacity:.35;
+}
+.page{position:relative;z-index:1;max-width:1120px;margin:0 auto;padding:32px 24px 72px;}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:42px;}
+.brand{font-family:var(--font-display);font-size:24px;font-weight:400;letter-spacing:-0.025em;color:var(--mp-text-primary);text-decoration:none;}
+.top-links{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.top-link{
+  min-height:40px;
+  padding:10px 14px;
+  border-radius:12px;
+  border:1px solid var(--mp-border);
+  color:var(--mp-text-secondary);
+  text-decoration:none;
+  font-size:13px;
+  transition:border-color .2s,transform .2s,color .2s,background .2s;
+}
+.top-link:hover{border-color:var(--mp-border-hover);color:var(--mp-text-primary);background:rgba(255,255,255,0.03);transform:translateY(-2px);}
+.hero{max-width:760px;margin-bottom:28px;}
+.eyebrow{
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  color:var(--mp-text-secondary);
+  margin-bottom:16px;
+}
+.hero h1{
+  font-family:var(--font-display);
+  font-size:clamp(28px,3.2vw,42px);
+  font-weight:400;
+  letter-spacing:-0.025em;
+  line-height:1.1;
+  margin-bottom:8px;
+}
+.hero .accent{
+  display:block;
+  font-family:var(--font-display);
+  font-size:clamp(32px,3.8vw,50px);
+  font-style:italic;
+  font-weight:400;
+  letter-spacing:-0.025em;
+  color:#4DC8F0;
+  margin-bottom:18px;
+}
+.hero p{font-size:14px;color:var(--mp-text-secondary);max-width:620px;}
+.banner{
+  display:none;
+  margin-bottom:20px;
+  padding:14px 16px;
+  border-radius:16px;
+  border:1px solid var(--mp-border);
+  background:var(--mp-surface);
+  font-size:13px;
+}
+.banner.show{display:block;}
+.banner.info{border-color:rgba(0,174,255,0.24);color:#8dd8ff;}
+.banner.error{border-color:rgba(255,77,77,0.24);color:#ff9e9e;}
+.plans{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(260px,1fr));
+  gap:20px;
+}
+.plan-card{
+  position:relative;
+  background:
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px),
+    var(--mp-surface);
+  background-size:48px 48px,48px 48px,auto;
+  border:1px solid var(--mp-border);
+  border-radius:16px;
+  padding:22px 20px 20px;
+  filter:drop-shadow(0 4px 12px rgba(0,0,0,0.4));
+  transition:border-color .2s,transform .2s,filter .2s;
+}
+.plan-card::before{
+  content:'';
+  position:absolute;
+  left:0;right:0;top:0;
+  height:2px;
+  border-radius:16px 16px 0 0;
+  background:var(--plan-accent,#00AEFF);
+}
+.plan-card:hover{
+  border-color:var(--mp-border-hover);
+  transform:translateY(-4px);
+  filter:drop-shadow(0 12px 24px rgba(0,0,0,0.45));
+}
+.plan-kicker{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--mp-text-secondary);margin-bottom:14px;}
+.plan-name{font-family:var(--font-display);font-size:24px;font-weight:400;letter-spacing:-0.02em;margin-bottom:8px;}
+.plan-price{font-size:30px;font-weight:600;line-height:1;margin-bottom:8px;}
+.plan-desc{font-size:13px;color:var(--mp-text-secondary);min-height:42px;margin-bottom:18px;}
+.feature-list{display:flex;flex-direction:column;gap:10px;margin-bottom:20px;}
+.feature{font-size:13px;color:var(--mp-text-primary);padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06);}
+.feature:last-child{border-bottom:none;padding-bottom:0;}
+.plan-button{
+  width:100%;
+  min-height:46px;
+  border:none;
+  border-radius:14px;
+  background:linear-gradient(135deg,var(--plan-accent,#00AEFF),rgba(255,255,255,0.18));
+  color:#fff;
+  font-size:13px;
+  font-weight:600;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  cursor:pointer;
+  transition:transform .2s,opacity .2s,box-shadow .2s;
+  box-shadow:0 10px 24px rgba(0,0,0,0.28);
+}
+.plan-button:hover:not(:disabled){transform:translateY(-2px);}
+.plan-button:disabled{cursor:not-allowed;opacity:.65;transform:none;}
+.plan-meta{margin-top:12px;font-size:12px;color:var(--mp-text-tertiary);}
+@media (max-width: 780px){
+  .page{padding:24px 16px 56px;}
+  .plans{grid-template-columns:1fr;}
+  .topbar{flex-direction:column;align-items:flex-start;margin-bottom:32px;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="topbar">
+    <a class="brand" href="/">Market Prism</a>
+    <div class="top-links">
+      <a class="top-link" href="/dashboard">Back to dashboard</a>
+      <a class="top-link" href="/login">Sign in</a>
+    </div>
+  </div>
+
+  <div class="hero">
+    <div class="eyebrow">Plans · Billing · Stripe Checkout</div>
+    <h1>Choose your Market Prism plan.</h1>
+    <span class="accent">Upgrade when you're ready.</span>
+    <p>Checkout is handled through Stripe and linked to your existing Supabase account. If you're already signed in, you'll go straight to checkout. If not, we'll send you to the login page first.</p>
+  </div>
+
+  <div class="banner" id="pricing-message" role="status" aria-live="polite"></div>
+
+  <div class="plans">
+    <article class="plan-card" style="--plan-accent:#00AEFF;">
+      <div class="plan-kicker">MarketPrism Standard</div>
+      <div class="plan-name">Standard</div>
+      <div class="plan-price">$15<span style="font-size:16px;font-weight:500;color:var(--mp-text-secondary);">/month</span></div>
+      <div class="plan-desc">Core dashboard access for daily monitoring and signal review.</div>
+      <div class="feature-list">
+        <div class="feature">Daily Brief, Sector Pulse, Snapshots, Trap Radar</div>
+        <div class="feature">Supabase-linked billing and Stripe self-serve checkout</div>
+      </div>
+      <button class="plan-button" type="button" data-plan-id="standard" data-price-id="price_1TEtM5PYE7k13i1B6mxsADp7">GET STANDARD</button>
+      <div class="plan-meta">Use this if you want the core dashboard without the premium tools.</div>
+    </article>
+
+    <article class="plan-card" style="--plan-accent:#00DE94;">
+      <div class="plan-kicker">MarketPrism PRO</div>
+      <div class="plan-name">PRO</div>
+      <div class="plan-price">$25<span style="font-size:16px;font-weight:500;color:var(--mp-text-secondary);">/month</span></div>
+      <div class="plan-desc">Everything in Standard plus premium tools and upgradeable portal billing.</div>
+      <div class="feature-list">
+        <div class="feature">Includes Trading Cards, Leaderboard, and Trading Calendar</div>
+        <div class="feature">Manage upgrades, downgrades, and cancellations in Stripe Portal</div>
+      </div>
+      <button class="plan-button" type="button" data-plan-id="pro" data-price-id="price_1TEtLbPYE7k13i1ByCkSo2UR">GET PRO</button>
+      <div class="plan-meta">Best fit if you want premium research surfaces and full billing controls.</div>
+    </article>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/billing-config.js"></script>
+<script id="__pricing_env">window.__pricing_env = { SUPABASE_URL: '', SUPABASE_ANON: '' };</script>
+<script>
+(function(){
+  var env = window.__pricing_env || {};
+  var SUPABASE_URL = env.SUPABASE_URL || '';
+  var SUPABASE_ANON_KEY = env.SUPABASE_ANON || '';
+  if((!SUPABASE_URL || !SUPABASE_ANON_KEY) && /pricing\.html$/i.test(window.location.pathname)){
+    window.location.replace('/pricing' + window.location.search + window.location.hash);
+    return;
+  }
+  var BILLING = window.MP_BILLING || { plans: [] };
+  var supabase = (window.supabase && SUPABASE_URL && SUPABASE_ANON_KEY)
+    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    : null;
+  var buttons = Array.prototype.slice.call(document.querySelectorAll('.plan-button'));
+
+  function showMessage(type, text){
+    var el = document.getElementById('pricing-message');
+    if(!el) return;
+    el.className = 'banner show ' + type;
+    el.textContent = text;
+  }
+
+  function setButtonsLoading(button){
+    buttons.forEach(function(btn){
+      if(!btn.dataset.defaultText){
+        btn.dataset.defaultText = btn.textContent;
+      }
+      var active = btn === button;
+      btn.disabled = !!button;
+      btn.textContent = active ? 'Loading...' : btn.dataset.defaultText;
+    });
+  }
+
+  function syncPlanLabels(){
+    (BILLING.plans || []).forEach(function(plan){
+      var button = document.querySelector('.plan-button[data-plan-id="' + plan.id + '"]');
+      if(button && plan.priceId){
+        button.dataset.priceId = plan.priceId;
+      }
+    });
+  }
+
+  async function subscribe(priceId, button){
+    showMessage('info', 'Preparing secure checkout...');
+    if(!supabase){
+      showMessage('error', 'Supabase is not configured on this page. Please reload and try again.');
+      setButtonsLoading(null);
+      return;
+    }
+    try {
+      var userResult = await supabase.auth.getUser();
+      var user = userResult && userResult.data ? userResult.data.user : null;
+      if(!user){
+        window.location.href = '/login';
+        return;
+      }
+
+      var res = await fetch(SUPABASE_URL + '/functions/v1/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify({
+          priceId: priceId,
+          userId: user.id,
+          userEmail: user.email
+        })
+      });
+
+      var payload = await res.json().catch(function(){ return {}; });
+      if(!res.ok || !payload.url){
+        throw new Error(payload.error || payload.message || 'Unable to start Stripe Checkout.');
+      }
+
+      window.location.href = payload.url;
+    } catch(err){
+      showMessage('error', err && err.message ? err.message : 'Checkout failed. Please try again.');
+    } finally {
+      setButtonsLoading(null);
+    }
+  }
+
+  window.subscribe = function(priceId){
+    var button = buttons.find(function(btn){ return btn.dataset.priceId === priceId; }) || null;
+    setButtonsLoading(button);
+    subscribe(priceId, button);
+  };
+
+  syncPlanLabels();
+
+  buttons.forEach(function(button){
+    button.addEventListener('click', function(){
+      var priceId = button.dataset.priceId;
+      if(!priceId){
+        showMessage('error', 'This plan is missing a Stripe Price ID.');
+        return;
+      }
+      window.subscribe(priceId);
+    });
+  });
+
+  var params = new URLSearchParams(window.location.search);
+  if(params.get('canceled') === 'true'){
+    showMessage('info', 'Checkout was canceled. Choose a plan to continue.');
+  }
+})();
+</script>
+</body>
+</html>
