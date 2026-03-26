@@ -4560,7 +4560,6 @@ async function loadData(){
     renderNarrativeCards();
     renderSectorNarrativeCards();
     renderMarketWideCards();
-    renderTrapsCards();
     populateNHTTickerSelect();
     loadTradingCalendarLive();
     loadNHT(nhtTicker);
@@ -4578,7 +4577,9 @@ async function loadData(){
     fillMarketNarrative();
     loadSectorsFromSummaries();
     loadMarketWideFromSummaries();
-    loadSupportedData();
+    // Load supported BEFORE traps so we can exclude overlapping tickers
+    await loadSupportedData();
+    renderTrapsCards();
     // Pre-load leaderboard data so it's ready when tab is clicked
     if(typeof loadLeaderboard==='function') loadLeaderboard();
   } catch(err){
@@ -5003,10 +5004,12 @@ function renderTrapsCards(){
   var el=document.getElementById('nf-list-traps');
   if(!el) return;
 
-  // Try to derive traps from live DATA
+  // Try to derive traps from live DATA — exclude tickers that are in active_supported
+  var supportedTickers=new Set(SUPPORTED_DATA.map(function(s){return s.ticker;}));
   var traps=[];
   if(DATA.length>0){
     DATA.forEach(function(r){
+      if(supportedTickers.has(r.ticker)) return; // supported takes priority — can't be both
       var v=(r.prism_verdict||r.story_verdict||'').toLowerCase();
       if(v.indexOf('trap')>=0||v.indexOf('disconnect')>=0||v.indexOf('fading')>=0||v.indexOf('hype')>=0){
         traps.push(r);
@@ -5055,9 +5058,15 @@ function renderSupportedCards(){
   var el=document.getElementById('nf-list-supported');
   if(!el) return;
 
+  // Exclude tickers flagged as traps in DATA — can't be both trap and supported
+  var trapTickers=new Set();
+  DATA.forEach(function(r){
+    var v=(r.prism_verdict||r.story_verdict||'').toLowerCase();
+    if(v.indexOf('trap')>=0||v.indexOf('disconnect')>=0) trapTickers.add(r.ticker);
+  });
   var supported=[];
   if(SUPPORTED_DATA.length>0){
-    supported=SUPPORTED_DATA.slice(0,8);
+    supported=SUPPORTED_DATA.filter(function(r){return !trapTickers.has(r.ticker);}).slice(0,8);
   } else if(DATA.length>0){
     DATA.forEach(function(r){
       var v=(r.prism_verdict||'').toLowerCase();
