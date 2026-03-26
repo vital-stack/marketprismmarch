@@ -4577,8 +4577,8 @@ async function loadData(){
     fillMarketNarrative();
     loadSectorsFromSummaries();
     loadMarketWideFromSummaries();
-    // Load supported BEFORE traps so we can exclude overlapping tickers
-    await loadSupportedData();
+    // Load supported + traps from their actual DB tables, then render
+    await Promise.all([loadSupportedData(), loadTrapsData()]);
     renderTrapsCards();
     // Pre-load leaderboard data so it's ready when tab is clicked
     if(typeof loadLeaderboard==='function') loadLeaderboard();
@@ -5000,30 +5000,50 @@ function renderMarketWideCards(){
 }
 
 // ── Render: Traps tab ──
+// TRAPS_DB_DATA holds rows fetched from the actual narrative_traps table
+var TRAPS_DB_DATA = [];
+
+async function loadTrapsData(){
+  if(!SUPABASE_URL||!SUPABASE_ANON) return;
+  var hdrs={'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Accept':'application/json'};
+  try{
+    // Get latest snapshot_date
+    var dateRes=await fetch(SUPABASE_URL+'/rest/v1/narrative_traps?select=snapshot_date&order=snapshot_date.desc&limit=1',{headers:hdrs});
+    if(!dateRes.ok) return;
+    var dateRows=await dateRes.json();
+    if(!dateRows.length) return;
+    var maxDate=dateRows[0].snapshot_date;
+
+    var cols='ticker,narrative,current_price,fvd_pct,vms,predicted_exhaustion_days,coordination_class,drift_score';
+    var res=await fetch(SUPABASE_URL+'/rest/v1/narrative_traps?select='+cols+'&snapshot_date=eq.'+encodeURIComponent(maxDate)+'&order=fvd_pct.desc&limit=10',{headers:hdrs});
+    if(!res.ok) return;
+    TRAPS_DB_DATA=await res.json();
+    console.log('[MP] narrative_traps loaded for Daily Brief:',TRAPS_DB_DATA.length,'rows');
+  }catch(e){
+    console.warn('[MP] narrative_traps fetch failed:',e);
+  }
+}
+
 function renderTrapsCards(){
   var el=document.getElementById('nf-list-traps');
   if(!el) return;
 
-  // Try to derive traps from live DATA — exclude tickers that are in active_supported
+  // Exclude tickers that are in active_supported
   var supportedTickers=new Set(SUPPORTED_DATA.map(function(s){return s.ticker;}));
-  var traps=[];
-  if(DATA.length>0){
-    DATA.forEach(function(r){
-      if(supportedTickers.has(r.ticker)) return; // supported takes priority — can't be both
-      var v=(r.prism_verdict||r.story_verdict||'').toLowerCase();
-      if(v.indexOf('trap')>=0||v.indexOf('disconnect')>=0||v.indexOf('fading')>=0||v.indexOf('hype')>=0){
-        traps.push(r);
-      }
-    });
-    traps.sort(function(a,b){return(b._confPct||b.confidence_score||0)-(a._confPct||a.confidence_score||0);});
-    traps=traps.slice(0,5);
-  }
+
+  // Use ONLY real traps from narrative_traps table
+  var traps=TRAPS_DB_DATA.filter(function(r){
+    return !supportedTickers.has(r.ticker);
+  }).slice(0,5);
 
   if(traps.length>0){
     el.innerHTML=traps.map(function(r){
       var sc=scorecardMap[r.ticker]||{};
-      sc.forensic_rebuttal=sc.forensic_rebuttal||r.forensic_rebuttal||'';
-      return nfBuildRow('bear', nfLogoHTML(r.ticker), r.ticker, r.sector_name||'', r.story_claim||r.primary_driver||'', 'Narrative Trap', '/ticker/'+encodeURIComponent(r.ticker), {state:'Breaking',_scorecard:sc,_reason:r.forensic_rebuttal||r.primary_driver||'',price:r.price,pricePct:r.price_change_pct});
+      // Enrich with DATA row if available (for sector, price change)
+      var dataRow=DATA.find(function(d){return d.ticker===r.ticker;})||{};
+      var sector=dataRow.sector_name||'';
+      var pricePct=dataRow.price_change_pct||0;
+      return nfBuildRow('bear', nfLogoHTML(r.ticker), r.ticker, sector, r.narrative||'', 'Narrative Trap', '/ticker/'+encodeURIComponent(r.ticker), {state:'Breaking',_scorecard:sc,_reason:r.narrative||'',price:r.current_price,pricePct:pricePct});
     }).join('');
   } else {
     el.innerHTML=NF_DEMO_TRAPS.map(function(d){
@@ -5031,7 +5051,19 @@ function renderTrapsCards(){
     }).join('');
   }
 
-  // Click navigates to ticker page
+  // Update Traps tab badge count
+  var trapsBadge=document.querySelector('[data-nf-tab="traps"]');
+  if(trapsBadge){
+    var countSpan=trapsBadge.querySelector('.nf-tab-count');
+    if(!countSpan){
+      countSpan=document.createElement('span');
+      countSpan.className='nf-tab-count';
+      countSpan.style.cssText='font-size:11px;color:var(--mp-text-tertiary);margin-left:2px;';
+      trapsBadge.insertBefore(countSpan,trapsBadge.querySelector('.info-tip'));
+    }
+    countSpan.textContent='('+traps.length+')';
+  }
+
   el.querySelectorAll('.nc-card').forEach(function(card){
     card.style.cursor='pointer';
   });
