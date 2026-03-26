@@ -5058,15 +5058,10 @@ function renderSupportedCards(){
   var el=document.getElementById('nf-list-supported');
   if(!el) return;
 
-  // Exclude tickers flagged as traps in DATA — can't be both trap and supported
-  var trapTickers=new Set();
-  DATA.forEach(function(r){
-    var v=(r.prism_verdict||r.story_verdict||'').toLowerCase();
-    if(v.indexOf('trap')>=0||v.indexOf('disconnect')>=0) trapTickers.add(r.ticker);
-  });
+  // Supported is the authority — no filtering here. Traps tab excludes supported tickers.
   var supported=[];
   if(SUPPORTED_DATA.length>0){
-    supported=SUPPORTED_DATA.filter(function(r){return !trapTickers.has(r.ticker);}).slice(0,8);
+    supported=SUPPORTED_DATA.slice(0,8);
   } else if(DATA.length>0){
     DATA.forEach(function(r){
       var v=(r.prism_verdict||'').toLowerCase();
