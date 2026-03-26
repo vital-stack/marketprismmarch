@@ -562,6 +562,73 @@ nav {
 @keyframes gp { 0%,100%{opacity:.7;transform:translate(-50%,-55%) scale(1);} 50%{opacity:1;transform:translate(-50%,-55%) scale(1.12);} }
 @keyframes gp2 { 0%,100%{opacity:.4;transform:translate(-50%,-50%) scale(1);} 50%{opacity:.8;transform:translate(-45%,-55%) scale(1.15);} }
 @keyframes gp3 { 0%,100%{opacity:.3;transform:translate(-50%,-50%) scale(1);} 50%{opacity:.6;transform:translate(-55%,-45%) scale(1.1);} }
+
+/* ── SECTION ANIMATED BACKGROUNDS ── */
+@keyframes sec-glow-drift {
+  0%,100% { opacity: 0.5; transform: translate(var(--gx,0), var(--gy,0)) scale(1); }
+  33% { opacity: 0.8; transform: translate(calc(var(--gx,0) + 30px), calc(var(--gy,0) - 20px)) scale(1.08); }
+  66% { opacity: 0.6; transform: translate(calc(var(--gx,0) - 20px), calc(var(--gy,0) + 15px)) scale(1.04); }
+}
+@keyframes sec-orbit-sm {
+  0% { transform: rotate(0deg) translateX(var(--orb-r, 180px)) rotate(0deg); }
+  100% { transform: rotate(360deg) translateX(var(--orb-r, 180px)) rotate(-360deg); }
+}
+@keyframes grid-fade-pulse {
+  0%,100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+@keyframes data-pulse {
+  0%,100% { opacity: 0; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+/* Reusable section background container */
+.sec-anim-bg {
+  position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0;
+}
+/* Section grid overlay */
+.sec-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 70% 60% at var(--grid-cx, 50%) var(--grid-cy, 50%), black 10%, transparent 75%);
+  animation: grid-fade-pulse 8s ease-in-out infinite;
+}
+/* Section animated glows */
+.sec-glow {
+  position: absolute;
+  border-radius: 50%;
+  z-index: 0;
+  animation: sec-glow-drift var(--glow-dur, 10s) ease-in-out infinite;
+}
+/* Section orbiting accent dots */
+.sec-orb-anim {
+  position: absolute;
+  width: var(--orb-size, 5px); height: var(--orb-size, 5px);
+  border-radius: 50%;
+  z-index: 0;
+  animation: sec-orbit-sm var(--orb-dur, 25s) linear infinite;
+}
+/* Scanline effect */
+.sec-scanline {
+  position: absolute;
+  left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--scan-color, rgba(0,174,255,0.15)), transparent);
+  animation: scanline var(--scan-dur, 8s) linear infinite;
+  z-index: 0;
+}
+/* Section particle canvas */
+.sec-particles {
+  position: absolute; inset: 0; z-index: 0;
+  pointer-events: none;
+}
 /* Scroll indicator */
 .scroll-hint {
   position: absolute;
@@ -2623,6 +2690,12 @@ footer {
 <!-- Old Live Signals + Market Radar deleted -->
 <!-- ═══ PROBLEM STATEMENT ═══ -->
 <section class="mp-sec" id="mp-problem">
+  <div class="sec-anim-bg">
+    <div class="sec-grid" style="--grid-cx:30%;--grid-cy:40%;"></div>
+    <div class="sec-glow" style="width:600px;height:600px;top:20%;left:60%;--gx:-50%;--gy:-50%;--glow-dur:10s;background:radial-gradient(circle,rgba(255,77,77,0.07) 0%,rgba(255,184,0,0.03) 40%,transparent 65%);"></div>
+    <div class="sec-glow" style="width:400px;height:400px;top:60%;left:15%;--gx:-50%;--gy:-50%;--glow-dur:14s;background:radial-gradient(circle,rgba(0,174,255,0.06) 0%,transparent 60%);animation-delay:-5s;"></div>
+    <div class="sec-scanline" style="--scan-color:rgba(255,77,77,0.08);--scan-dur:12s;"></div>
+  </div>
   <div class="mp-con">
     <div class="mp-problem-grid">
       <div class="mp-reveal">
@@ -2649,6 +2722,12 @@ footer {
 </section>
 <!-- ═══ TRAP RADAR ═══ -->
 <section class="mp-sec mp-sec-grad-teal" id="mp-trap-radar">
+  <div class="sec-anim-bg">
+    <canvas class="sec-particles" id="particles-trap"></canvas>
+    <div class="sec-grid" style="--grid-cx:70%;--grid-cy:50%;"></div>
+    <div class="sec-orb-anim" style="top:50%;left:50%;--orb-r:220px;--orb-size:4px;--orb-dur:20s;background:#38C8B8;box-shadow:0 0 16px rgba(56,200,184,0.5),0 0 40px rgba(56,200,184,0.15);"></div>
+    <div class="sec-orb-anim" style="top:50%;left:50%;--orb-r:150px;--orb-size:3px;--orb-dur:28s;background:#00AEFF;box-shadow:0 0 12px rgba(0,174,255,0.4),0 0 30px rgba(0,174,255,0.12);animation-direction:reverse;"></div>
+  </div>
   <div class="mp-con">
     <div class="mp-eyebrow">Trap Radar</div>
     <div class="mp-feature-layout">
@@ -2678,6 +2757,12 @@ footer {
 </section>
 <!-- ═══ TRADING CARDS ═══ -->
 <section class="mp-sec mp-sec-grad-violet" id="mp-cards">
+  <div class="sec-anim-bg">
+    <div class="sec-grid" style="--grid-cx:25%;--grid-cy:55%;opacity:0.6;"></div>
+    <div class="sec-glow" style="width:500px;height:500px;top:10%;left:70%;--gx:-50%;--gy:-50%;--glow-dur:12s;background:radial-gradient(circle,rgba(123,97,255,0.09) 0%,rgba(0,174,255,0.03) 45%,transparent 65%);"></div>
+    <div class="sec-glow" style="width:350px;height:350px;top:65%;left:10%;--gx:-50%;--gy:-50%;--glow-dur:16s;background:radial-gradient(circle,rgba(0,222,148,0.05) 0%,transparent 60%);animation-delay:-7s;"></div>
+    <div class="sec-orb-anim" style="top:50%;left:50%;--orb-r:260px;--orb-size:5px;--orb-dur:35s;background:#7B61FF;box-shadow:0 0 18px rgba(123,97,255,0.5),0 0 50px rgba(123,97,255,0.15);"></div>
+  </div>
   <div class="mp-con">
     <div class="mp-eyebrow">Trading Cards</div>
     <div class="mp-feature-layout mp-feature-layout-rev">
@@ -2703,6 +2788,12 @@ footer {
 </section>
 <!-- ═══ LEADERBOARD ═══ -->
 <section class="mp-sec mp-sec-grad-cyan" id="mp-leaderboard">
+  <div class="sec-anim-bg">
+    <div class="sec-grid" style="--grid-cx:60%;--grid-cy:35%;"></div>
+    <div class="sec-glow" style="width:550px;height:550px;top:15%;left:75%;--gx:-50%;--gy:-50%;--glow-dur:11s;background:radial-gradient(circle,rgba(0,174,255,0.08) 0%,rgba(56,200,184,0.03) 40%,transparent 65%);"></div>
+    <div class="sec-scanline" style="--scan-color:rgba(0,174,255,0.06);--scan-dur:10s;animation-delay:-3s;"></div>
+    <div class="sec-orb-anim" style="top:50%;left:50%;--orb-r:200px;--orb-size:4px;--orb-dur:22s;background:#00AEFF;box-shadow:0 0 14px rgba(0,174,255,0.5),0 0 40px rgba(0,174,255,0.15);animation-direction:reverse;"></div>
+  </div>
   <div class="mp-con">
     <div class="mp-eyebrow">Leaderboard</div>
     <div class="mp-feature-layout">
@@ -2732,6 +2823,13 @@ footer {
 </section>
 <!-- ═══ DAILY BRIEF ═══ -->
 <section class="mp-sec mp-sec-grad-green" id="mp-brief">
+  <div class="sec-anim-bg">
+    <canvas class="sec-particles" id="particles-brief"></canvas>
+    <div class="sec-glow" style="width:450px;height:450px;top:30%;left:20%;--gx:-50%;--gy:-50%;--glow-dur:13s;background:radial-gradient(circle,rgba(0,222,148,0.08) 0%,transparent 60%);"></div>
+    <div class="sec-glow" style="width:350px;height:350px;top:55%;left:80%;--gx:-50%;--gy:-50%;--glow-dur:17s;background:radial-gradient(circle,rgba(0,174,255,0.05) 0%,transparent 55%);animation-delay:-9s;"></div>
+    <div class="sec-orb-anim" style="top:50%;left:50%;--orb-r:190px;--orb-size:4px;--orb-dur:18s;background:#00DE94;box-shadow:0 0 14px rgba(0,222,148,0.5),0 0 40px rgba(0,222,148,0.15);"></div>
+    <div class="sec-orb-anim" style="top:50%;left:50%;--orb-r:120px;--orb-size:3px;--orb-dur:26s;background:#FFB800;box-shadow:0 0 10px rgba(255,184,0,0.4),0 0 30px rgba(255,184,0,0.1);animation-direction:reverse;"></div>
+  </div>
   <div class="mp-con">
     <div class="mp-eyebrow">Daily Brief</div>
     <div class="mp-feature-layout mp-feature-layout-rev">
@@ -2764,6 +2862,11 @@ footer {
 </section>
 <!-- ═══ TICKER DEEP DIVE ═══ -->
 <section class="mp-sec" id="mp-ticker">
+  <div class="sec-anim-bg">
+    <div class="sec-grid" style="--grid-cx:50%;--grid-cy:45%;"></div>
+    <div class="sec-glow" style="width:500px;height:500px;top:25%;left:50%;--gx:-50%;--gy:-50%;--glow-dur:9s;background:radial-gradient(circle,rgba(0,174,255,0.07) 0%,rgba(123,97,255,0.03) 40%,transparent 65%);"></div>
+    <div class="sec-scanline" style="--scan-color:rgba(123,97,255,0.07);--scan-dur:9s;"></div>
+  </div>
   <div class="mp-con">
     <div class="mp-eyebrow">Ticker Intelligence</div>
     <div class="mp-feature-layout">
@@ -2795,6 +2898,13 @@ footer {
 </section>
 <!-- ═══ STATS + PROOF POINT (combined) ═══ -->
 <section class="mp-sec mp-sec-stats" id="mp-stats">
+  <div class="sec-anim-bg">
+    <canvas class="sec-particles" id="particles-stats"></canvas>
+    <div class="sec-grid" style="--grid-cx:50%;--grid-cy:50%;animation-duration:6s;"></div>
+    <div class="sec-glow" style="width:700px;height:700px;top:30%;left:50%;--gx:-50%;--gy:-50%;--glow-dur:8s;background:radial-gradient(circle,rgba(0,174,255,0.06) 0%,rgba(0,222,148,0.03) 35%,transparent 60%);"></div>
+    <div class="sec-orb-anim" style="top:50%;left:50%;--orb-r:250px;--orb-size:5px;--orb-dur:30s;background:#00AEFF;box-shadow:0 0 18px rgba(0,174,255,0.5),0 0 50px rgba(0,174,255,0.15);"></div>
+    <div class="sec-orb-anim" style="top:50%;left:50%;--orb-r:170px;--orb-size:3px;--orb-dur:40s;background:#38C8B8;box-shadow:0 0 12px rgba(56,200,184,0.4),0 0 35px rgba(56,200,184,0.12);animation-direction:reverse;"></div>
+  </div>
   <div class="mp-con">
     <div class="mp-stats-grid" style="margin-bottom:48px;">
       <div class="mp-stat"><div class="mp-stat-num">200<span>K+</span></div><div class="mp-stat-lbl">Narratives scored</div></div>
@@ -2852,6 +2962,13 @@ footer {
 <div class="prism-divider"></div>
 <!-- ── DIFFERENTIATION ── -->
 <section class="sec sec-alt" id="differentiation">
+  <div class="sec-anim-bg">
+    <div class="sec-grid" style="--grid-cx:40%;--grid-cy:50%;"></div>
+    <div class="sec-glow" style="width:500px;height:500px;top:10%;left:70%;--gx:-50%;--gy:-50%;--glow-dur:11s;background:radial-gradient(circle,rgba(123,97,255,0.08) 0%,transparent 60%);"></div>
+    <div class="sec-glow" style="width:400px;height:400px;top:60%;left:15%;--gx:-50%;--gy:-50%;--glow-dur:15s;background:radial-gradient(circle,rgba(0,174,255,0.05) 0%,transparent 55%);animation-delay:-6s;"></div>
+    <div class="sec-orb-anim" style="top:50%;left:50%;--orb-r:200px;--orb-size:4px;--orb-dur:24s;background:#7B61FF;box-shadow:0 0 16px rgba(123,97,255,0.5),0 0 40px rgba(123,97,255,0.15);"></div>
+    <div class="sec-scanline" style="--scan-color:rgba(123,97,255,0.06);--scan-dur:11s;"></div>
+  </div>
   <div class="sec-orb sec-orb-violet" style="top:-10%;right:-8%;"></div>
   <div class="con">
     <div class="eyebrow reveal">Why Market Prism</div>
@@ -2884,6 +3001,14 @@ footer {
 <div class="prism-divider"></div>
 <!-- ── FEATURES ── -->
 <section class="sec sec-light" id="features" style="overflow:hidden;">
+  <div class="sec-anim-bg">
+    <canvas class="sec-particles" id="particles-features"></canvas>
+    <div class="sec-grid" style="--grid-cx:55%;--grid-cy:40%;"></div>
+    <div class="sec-glow" style="width:550px;height:550px;top:15%;left:60%;--gx:-50%;--gy:-50%;--glow-dur:10s;background:radial-gradient(circle,rgba(0,174,255,0.07) 0%,rgba(56,200,184,0.03) 40%,transparent 65%);"></div>
+    <div class="sec-glow" style="width:400px;height:400px;top:55%;left:25%;--gx:-50%;--gy:-50%;--glow-dur:14s;background:radial-gradient(circle,rgba(123,97,255,0.06) 0%,transparent 55%);animation-delay:-4s;"></div>
+    <div class="sec-orb-anim" style="top:50%;left:50%;--orb-r:230px;--orb-size:5px;--orb-dur:28s;background:#00AEFF;box-shadow:0 0 18px rgba(0,174,255,0.5),0 0 50px rgba(0,174,255,0.15);"></div>
+    <div class="sec-orb-anim" style="top:50%;left:50%;--orb-r:160px;--orb-size:3px;--orb-dur:36s;background:#00DE94;box-shadow:0 0 12px rgba(0,222,148,0.4),0 0 35px rgba(0,222,148,0.12);animation-direction:reverse;"></div>
+  </div>
   <div class="sec-orb sec-orb-blue" style="top:-10%;right:-5%;"></div>
   <div class="sec-orb sec-orb-violet" style="bottom:5%;left:-8%;"></div>
   <div class="con">
@@ -2921,6 +3046,12 @@ footer {
 <div class="prism-divider"></div>
 <!-- ── HOW IT WORKS ── -->
 <section class="sec sec-alt">
+  <div class="sec-anim-bg">
+    <div class="sec-grid" style="--grid-cx:50%;--grid-cy:50%;"></div>
+    <div class="sec-glow" style="width:450px;height:450px;top:20%;left:80%;--gx:-50%;--gy:-50%;--glow-dur:12s;background:radial-gradient(circle,rgba(56,200,184,0.06) 0%,transparent 55%);"></div>
+    <div class="sec-glow" style="width:400px;height:400px;top:50%;left:10%;--gx:-50%;--gy:-50%;--glow-dur:16s;background:radial-gradient(circle,rgba(0,174,255,0.05) 0%,transparent 55%);animation-delay:-8s;"></div>
+    <div class="sec-scanline" style="--scan-color:rgba(56,200,184,0.06);--scan-dur:7s;animation-delay:-2s;"></div>
+  </div>
   <div class="con">
     <div class="eyebrow reveal">How it works</div>
     <h2 class="reveal">From ticker to full briefing in seconds</h2>
@@ -3809,6 +3940,125 @@ window.MP_DOMAINS   = MP_DOMAINS;
 
   init();
   loop();
+})();
+</script>
+<script>
+// ── Section Particle Systems ──
+// Lightweight particle constellations for key sections, only animate when visible
+(function(){
+  var configs = [
+    { id: 'particles-trap',     count: 40, colors: ['56,200,184','0,174,255'], connDist: 120, speed: 0.2 },
+    { id: 'particles-brief',    count: 35, colors: ['0,222,148','255,184,0','0,174,255'], connDist: 100, speed: 0.15 },
+    { id: 'particles-stats',    count: 50, colors: ['0,174,255','56,200,184','123,97,255'], connDist: 140, speed: 0.25 },
+    { id: 'particles-features', count: 45, colors: ['0,174,255','0,222,148','123,97,255'], connDist: 130, speed: 0.2 }
+  ];
+
+  if(window.innerWidth < 768) {
+    configs.forEach(function(c){ c.count = Math.floor(c.count * 0.4); });
+  }
+
+  configs.forEach(function(cfg){
+    var canvas = document.getElementById(cfg.id);
+    if(!canvas) return;
+    var ctx = canvas.getContext('2d');
+    var dpr = window.devicePixelRatio || 1;
+    var W, H, particles = [], raf = null, running = false;
+
+    function resize(){
+      var rect = canvas.parentElement.getBoundingClientRect();
+      W = rect.width; H = rect.height;
+      canvas.width = W * dpr; canvas.height = H * dpr;
+      canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function initParticles(){
+      resize();
+      particles = [];
+      for(var i = 0; i < cfg.count; i++){
+        particles.push({
+          x: Math.random() * W, y: Math.random() * H,
+          vx: (Math.random() - 0.5) * cfg.speed,
+          vy: (Math.random() - 0.5) * cfg.speed,
+          r: Math.random() * 1.5 + 0.4,
+          opacity: Math.random() * 0.35 + 0.08,
+          color: cfg.colors[Math.floor(Math.random() * cfg.colors.length)]
+        });
+      }
+    }
+
+    function draw(){
+      ctx.clearRect(0, 0, W, H);
+      for(var i = 0; i < particles.length; i++){
+        for(var j = i + 1; j < particles.length; j++){
+          var dx = particles[i].x - particles[j].x;
+          var dy = particles[i].y - particles[j].y;
+          var dist = Math.sqrt(dx * dx + dy * dy);
+          if(dist < cfg.connDist){
+            var alpha = (1 - dist / cfg.connDist) * 0.06;
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = 'rgba(' + particles[i].color + ',' + alpha + ')';
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+        }
+        var p = particles[i];
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(' + p.color + ',' + (p.opacity * 0.6) + ')';
+        ctx.fill();
+      }
+    }
+
+    function update(){
+      for(var i = 0; i < particles.length; i++){
+        var p = particles[i];
+        p.x += p.vx; p.y += p.vy;
+        if(p.x < -10) p.x = W + 10;
+        if(p.x > W + 10) p.x = -10;
+        if(p.y < -10) p.y = H + 10;
+        if(p.y > H + 10) p.y = -10;
+      }
+    }
+
+    function loop(){
+      if(!running) return;
+      update(); draw();
+      raf = requestAnimationFrame(loop);
+    }
+
+    function start(){
+      if(running) return;
+      running = true;
+      if(!particles.length) initParticles();
+      loop();
+    }
+
+    function stop(){
+      running = false;
+      if(raf){ cancelAnimationFrame(raf); raf = null; }
+    }
+
+    // Only animate when section is visible (IntersectionObserver)
+    var observer = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if(entry.isIntersecting) start(); else stop();
+      });
+    }, { threshold: 0.1 });
+
+    observer.observe(canvas.closest('section') || canvas.parentElement.parentElement);
+
+    window.addEventListener('resize', function(){
+      if(running) resize();
+    });
+
+    document.addEventListener('visibilitychange', function(){
+      if(document.hidden) stop();
+      else if(canvas.closest('section') && canvas.closest('section').getBoundingClientRect().top < window.innerHeight) start();
+    });
+  });
 })();
 </script>
 <!-- ── SECTION DOTS NAV ── -->
