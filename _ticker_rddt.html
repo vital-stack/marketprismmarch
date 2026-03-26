@@ -1406,6 +1406,73 @@
     border-radius: 7px;
   }
 
+  /* ── Actionable Signals Strip ── */
+  .signal-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  @media (max-width: 600px) { .signal-strip { grid-template-columns: 1fr; } }
+  .signal-card {
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 14px;
+    border: 1px solid var(--mp-border);
+  }
+  .signal-card-label {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+    font-family: var(--font-body);
+  }
+  .signal-card-value {
+    font-size: 22px;
+    font-weight: 600;
+    font-family: var(--font-body);
+    line-height: 1.2;
+  }
+  .signal-card-sub {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 4px;
+    font-family: var(--font-body);
+  }
+  .signal-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--mp-border);
+    font-size: 13px;
+  }
+  .signal-row:last-child { border-bottom: none; }
+  .signal-row-label { color: var(--text-secondary); }
+  .signal-row-value { font-weight: 500; }
+
+  /* ── What's Missing Callout ── */
+  .missing-callout {
+    background: rgba(255,184,0,0.06);
+    border: 1px solid rgba(255,184,0,0.2);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .missing-callout-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #FFB800;
+    margin-bottom: 8px;
+    font-family: var(--font-body);
+  }
+  .missing-callout-body {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    font-family: var(--font-body);
+  }
+
   /* ── Warranted vs Hype ── */
   .dual-score {
     display: grid;
@@ -2227,14 +2294,29 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
       <!-- ── Left Column (col-span-5) ── -->
       <div class="tk-col-left">
 
-        <!-- Primary Claim -->
+        <!-- Forensic Assessment -->
         <div class="section">
-          <div class="section-label">Primary Narrative Claim</div>
+          <div class="section-label">Forensic Assessment</div>
           <div class="section-body" style="padding:20px;" id="primary-claim-body">
             <div class="skel" style="height:14px;width:90%;margin-bottom:8px;"></div>
             <div class="skel" style="height:14px;width:70%;margin-bottom:12px;"></div>
             <div class="skel" style="height:60px;border-radius:7px;"></div>
           </div>
+        </div>
+
+        <!-- Actionable Signals -->
+        <div class="section">
+          <div class="section-label">Actionable Signals</div>
+          <div class="section-body" style="padding:20px;" id="actionable-signals-body">
+            <div class="skel" style="height:14px;width:80%;margin-bottom:8px;"></div>
+            <div class="skel" style="height:40px;border-radius:7px;"></div>
+          </div>
+        </div>
+
+        <!-- What's Missing -->
+        <div class="section" id="whats-missing-section" style="display:none;">
+          <div class="section-label" style="color:#FFB800;">What's Missing</div>
+          <div class="section-body" style="padding:20px;" id="whats-missing-body"></div>
         </div>
 
         <!-- Narrative History Chart (moved from Chart tab) -->
@@ -2869,7 +2951,7 @@ async function loadHero() {
           <span class="hero-ticker">${esc(r.ticker)}</span>
           ${insightHtml || `<span class="hero-state-badge ${stateClass(r.narrative_state)}">${esc(r.narrative_state || '—')}</span>`}
         </div>
-        <div class="hero-claim">${esc(r.primary_driver || r.story_claim || '')}</div>
+        <div class="hero-claim">${esc(r.story_claim || r.primary_driver || '')}</div>
         ${r.sector_name ? `<div class="hero-sector">${esc(r.sector_name)}</div>` : ''}
       </div>
       <div class="hero-right" id="hero-right">
@@ -4053,6 +4135,9 @@ async function loadNarratives() {
     if (firstBody)   firstBody.classList.add('open');
     if (firstToggle) firstToggle.classList.add('open');
 
+    // Surface material discrepancies and omissions on the Overview tab
+    renderWhatsMissing(rows);
+
   } catch (err) {
     document.getElementById('narr-list').innerHTML =
       `<div class="inline-err">Narratives: ${esc(err.message)}</div>`;
@@ -4208,20 +4293,130 @@ function renderPrimaryClaim(p) {
   const shifted = p.narrative_shifted
     ? '<span class="hero-state-badge badge-breaking" style="font-size:10px;">Narrative shifted</span>' : '';
 
+  // Decay status label
+  const decayLabel = p.decay_status ? p.decay_status.charAt(0).toUpperCase() + p.decay_status.slice(1).toLowerCase() : '';
+  const decayBadge = decayLabel
+    ? `<span class="hero-state-badge ${decayLabel === 'Decaying' ? 'badge-breaking' : decayLabel === 'Fresh' ? 'badge-surging' : 'badge-stable'}" style="font-size:10px;">${decayLabel}</span>` : '';
+
   el.innerHTML = `
-    <div class="claim-title">${esc(p.prevailing_narrative || 'No prevailing narrative found')}</div>
-    <div class="claim-meta">
+    <div class="claim-meta" style="margin-bottom:8px;">
       <span class="hero-state-badge ${phaseBadgeClass(phase)}" style="font-size:10px;">${esc(phase)}</span>
       <span class="verdict-badge ${vCls}" style="font-size:10px;">${esc(verdict)}</span>
+      ${decayBadge}
       ${shifted}
     </div>
+    <div class="claim-title" style="font-size:14px;font-weight:500;">${esc(p.prevailing_narrative || 'No prevailing narrative found')}</div>
     <div class="claim-bullets">
       <div class="claim-bullet"><span class="info-tip" data-tip="How strongly this narrative is driving media coverage (0–100)">Narrative energy<i class="info-icon">i</i></span><strong>${energy}/100</strong></div>
       <div class="claim-bullet"><span class="info-tip" data-tip="Days until media interest in this narrative is likely to fade">Est. exhaustion<i class="info-icon">i</i></span><strong>${exdays}</strong></div>
-      <div class="claim-bullet"><span class="info-tip" data-tip="How likely sources are echoing each other vs. independent reporting">Coordination risk<i class="info-icon">i</i></span><strong>${coord}</strong></div>
+      <div class="claim-bullet"><span class="info-tip" data-tip="How likely sources are echoing each other vs. independent reporting (0–100). High = suspicious.">Coordination risk<i class="info-icon">i</i></span><strong>${coord}</strong></div>
       <div class="claim-bullet"><span class="info-tip" data-tip="Number of distinct storylines currently active for this ticker">Active narratives<i class="info-icon">i</i></span><strong>${p.active_narrative_count ?? '—'}</strong></div>
     </div>
     <div class="claim-summary">${esc(p.pulse_summary || 'Awaiting forensic summary from pipeline.')}</div>`;
+}
+
+// ── Render: Actionable Signals (from ticker_strategy_summary + pulse) ────────
+function renderActionableSignals(strategy, pulse) {
+  const el = document.getElementById('actionable-signals-body');
+  if (!el) return;
+
+  const fmtPctVal = v => v != null ? ((v >= 0 ? '+' : '') + (v * 100).toFixed(2) + '%') : '—';
+  const pctColor = v => v != null ? (v >= 0 ? '#00DE94' : '#FF4D4D') : 'var(--text-secondary)';
+
+  // Strategy returns
+  const posRet = strategy ? strategy.avg_5d_return_after_positive_articles : null;
+  const negRet = strategy ? strategy.avg_5d_return_after_negative_articles : null;
+  const posN = strategy ? strategy.positive_article_count : null;
+  const negN = strategy ? strategy.negative_article_count : null;
+  const totalArticles = strategy ? strategy.article_obs : null;
+
+  // Pulse decay/coordination
+  const decayStatus = pulse ? (pulse.decay_status || '').charAt(0).toUpperCase() + (pulse.decay_status || '').slice(1).toLowerCase() : '—';
+  const exhaustDays = pulse && pulse.nearest_exhaustion_days != null ? Math.round(pulse.nearest_exhaustion_days) + ' days' : '—';
+  const coordScore = pulse && pulse.pulse_coordination != null ? Math.round(pulse.pulse_coordination) : null;
+  const coordLabel = coordScore != null ? (coordScore >= 70 ? 'Suspicious' : coordScore >= 40 ? 'Moderate' : 'Low') : '—';
+  const coordColor = coordScore != null ? (coordScore >= 70 ? '#FF4D4D' : coordScore >= 40 ? '#FFB800' : '#00DE94') : 'var(--text-secondary)';
+
+  // Best entry
+  const entryZone = strategy ? strategy.best_historical_entry_zone : null;
+  const entryRet = strategy ? strategy.avg_5d_return_from_best_entry_zone : null;
+  const entryObs = strategy ? strategy.best_entry_zone_observations : null;
+
+  el.innerHTML = `
+    <div class="signal-strip">
+      <div class="signal-card">
+        <div class="signal-card-label">5d Return on Positive Story</div>
+        <div class="signal-card-value" style="color:${pctColor(posRet)}">${fmtPctVal(posRet)}</div>
+        <div class="signal-card-sub">${posN != null ? posN + ' articles analyzed' : ''}</div>
+      </div>
+      <div class="signal-card">
+        <div class="signal-card-label">5d Return on Negative Story</div>
+        <div class="signal-card-value" style="color:${pctColor(negRet)}">${fmtPctVal(negRet)}</div>
+        <div class="signal-card-sub">${negN != null ? negN + ' articles analyzed' : ''}</div>
+      </div>
+      <div class="signal-card">
+        <div class="signal-card-label">Coordination Level</div>
+        <div class="signal-card-value" style="color:${coordColor}">${coordLabel}</div>
+        <div class="signal-card-sub">${coordScore != null ? coordScore + '/100 · ' : ''}${decayStatus !== '—' ? decayStatus + ' narrative' : ''}</div>
+      </div>
+    </div>
+    <div style="margin-top:4px;">
+      <div class="signal-row">
+        <span class="signal-row-label">Narrative lifecycle</span>
+        <span class="signal-row-value">${esc(decayStatus)}${exhaustDays !== '—' ? ' · ~' + exhaustDays + ' remaining' : ''}</span>
+      </div>
+      ${entryZone ? `<div class="signal-row">
+        <span class="signal-row-label">Best historical entry zone</span>
+        <span class="signal-row-value">${esc(entryZone)}${entryRet != null ? ' · <span style="color:' + pctColor(entryRet) + '">' + fmtPctVal(entryRet) + '</span> avg 5d return' : ''}${entryObs != null ? ' (' + entryObs + ' obs)' : ''}</span>
+      </div>` : ''}
+      ${totalArticles != null ? `<div class="signal-row">
+        <span class="signal-row-label">Total articles analyzed</span>
+        <span class="signal-row-value">${totalArticles}${strategy.history_days ? ' over ' + strategy.history_days + ' days' : ''}</span>
+      </div>` : ''}
+      ${strategy && strategy.most_influential_publication ? `<div class="signal-row">
+        <span class="signal-row-label">Most influential publication</span>
+        <span class="signal-row-value">${esc(strategy.most_influential_publication)}</span>
+      </div>` : ''}
+    </div>`;
+}
+
+// ── Render: What's Missing callout ──────────────────────────────────────────
+function renderWhatsMissing(narrativeRows) {
+  const section = document.getElementById('whats-missing-section');
+  const el = document.getElementById('whats-missing-body');
+  if (!section || !el || !narrativeRows || !narrativeRows.length) return;
+
+  // Collect material discrepancies and omissions
+  const discrepancies = [];
+  const omissions = [];
+  narrativeRows.forEach(function(r) {
+    if (r.material_discrepancy && r.material_discrepancy.length > 10) {
+      discrepancies.push({ text: r.material_discrepancy, source: r.source_outlet || r.analyst_firm || '', date: r.snapshot_date });
+    }
+    if (r.omission_summary && r.omission_summary.length > 10) {
+      omissions.push({ text: r.omission_summary, source: r.source_outlet || r.analyst_firm || '', date: r.snapshot_date });
+    }
+  });
+
+  if (!discrepancies.length && !omissions.length) return;
+
+  // Deduplicate by first 80 chars
+  const seen = new Set();
+  const unique = [];
+  discrepancies.concat(omissions).forEach(function(d) {
+    const key = d.text.slice(0, 80).toLowerCase();
+    if (!seen.has(key)) { seen.add(key); unique.push(d); }
+  });
+
+  if (!unique.length) return;
+
+  section.style.display = '';
+  el.innerHTML = unique.slice(0, 3).map(function(d) {
+    return `<div class="missing-callout" style="margin-bottom:10px;">
+      <div class="missing-callout-body">${esc(d.text)}</div>
+      ${d.source ? '<div style="font-size:11px;color:var(--text-tertiary);margin-top:6px;">Source: ' + esc(d.source) + (d.date ? ' · ' + d.date : '') + '</div>' : ''}
+    </div>`;
+  }).join('');
 }
 
 // ── Render: Warranted vs Hype ─────────────────────────────────────────────────
@@ -4792,16 +4987,13 @@ async function createImage() {
       if (tab.dataset.tab === 'overview' && ALL_SNAPS.length) {
         setTimeout(() => renderChart(), 50);
       }
-      // Lazy-load strategy data on first click
-      if (tab.dataset.tab === 'strategy' && !window._strategyLoaded) {
-        window._strategyLoaded = true;
-        loadStrategyData();
-      }
+      // Strategy data now loads eagerly in refreshAll()
     });
   });
 })();
 
 // ── Strategy Tab ─────────────────────────────────────────────────────────────
+var _strategyRawData = null; // stored for actionable signals strip
 async function loadStrategyData() {
   if (!TICKER) return;
   const loadingEl  = document.getElementById('strategy-loading');
@@ -4813,9 +5005,12 @@ async function loadStrategyData() {
       limit: '1'
     });
     const d = Array.isArray(rows) ? rows[0] : null;
+    _strategyRawData = d;
     if (!d) {
       loadingEl.style.display = 'none';
       nodataEl.style.display = 'block';
+      // Still render actionable signals with pulse-only data
+      renderActionableSignals(null, _tickerPulseData);
       return;
     }
 
@@ -4884,6 +5079,9 @@ async function loadStrategyData() {
     setText('strat-pub-top', d.most_influential_publication);
     setText('strat-pub-pos', d.top_positive_publication);
     setText('strat-pub-neg', d.top_negative_publication);
+
+    // Render actionable signals on overview tab with strategy + pulse data
+    renderActionableSignals(d, _tickerPulseData);
 
     loadingEl.style.display = 'none';
     contentEl.style.display = 'block';
@@ -4978,7 +5176,8 @@ async function refreshAll() {
     loadParallels(),
     loadMoveDrivers(),
     loadSectorIntelligence(heroData),
-    loadStoriesFeed()
+    loadStoriesFeed(),
+    loadStrategyData()
   ]);
 }
 
