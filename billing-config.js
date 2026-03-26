@@ -27,10 +27,12 @@ window.MP_BILLING = (function(){
     beta: 3
   };
 
+  // Temporary testing mode: leave all dashboard tabs unlocked.
+  // Restore the gated tabs below when paid access enforcement is needed again.
   var lockedTabs = {
-    cards: 'pro',
-    calendar: 'pro',
-    leaderboard: 'pro'
+    // cards: 'pro',
+    // calendar: 'pro',
+    // leaderboard: 'pro'
   };
 
   function normalize(value){
