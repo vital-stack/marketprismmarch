@@ -2150,6 +2150,60 @@
     border-radius: 3px;
     border: 1px solid rgba(255,255,255,0.06);
   }
+
+  /* Fundamentals tab */
+  .fund-tf-btn {
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 16px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.04);
+    color: var(--mp-text-tertiary);
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .fund-tf-btn:hover { border-color: rgba(255,255,255,0.14); color: var(--mp-text-secondary); }
+  .fund-tf-btn.active { background: rgba(59,130,246,0.15); border-color: rgba(59,130,246,0.3); color: #3b82f6; }
+  .fund-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-body);
+    font-size: 13px;
+  }
+  .fund-table thead th {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #6b7280;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    white-space: nowrap;
+  }
+  .fund-table tbody tr {
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    transition: background .15s;
+  }
+  .fund-table tbody tr:hover { background: rgba(255,255,255,0.02); }
+  .fund-table tbody tr.fund-row-total {
+    border-top: 1px solid rgba(255,255,255,0.08);
+    font-weight: 600;
+  }
+  .fund-table tbody tr.fund-row-total td { color: var(--mp-text-primary); }
+  .fund-table td {
+    padding: 10px 16px;
+    white-space: nowrap;
+    color: var(--mp-text-secondary);
+  }
+  .fund-table td:first-child {
+    color: var(--mp-text-primary);
+    font-weight: 400;
+  }
+  .fund-item-indent { padding-left: 32px !important; color: var(--mp-text-secondary) !important; font-weight: 400 !important; }
+  .fund-val-pos { color: #00DE94; }
+  .fund-val-neg { color: #FF4D4D; }
 </style>
   <!-- Env vars injected by Vercel — do not edit this line -->
   <script>
@@ -2247,6 +2301,7 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
     <button class="tk-tab" data-tab="history">History</button>
     <button class="tk-tab" data-tab="strategy">Trading Strategy</button>
     <button class="tk-tab" data-tab="financials">Live Market Snapshot</button>
+    <button class="tk-tab" data-tab="fundamentals">Fundamentals</button>
   </div>
 
   <!-- Action bar -->
@@ -2823,6 +2878,121 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
 
     </div><!-- /fin-content -->
   </div><!-- /tab-financials -->
+
+  <!-- ═══ TAB: FUNDAMENTALS ═══ -->
+  <div class="tk-tab-panel" id="tab-fundamentals">
+    <!-- Loading skeleton -->
+    <div id="fund-loading">
+      <div class="section">
+        <div class="section-label">Balance Sheet</div>
+        <div class="section-body" style="padding:20px;">
+          <div class="skel" style="height:14px;width:40%;margin-bottom:10px;"></div>
+          <div class="skel" style="height:14px;width:60%;margin-bottom:10px;"></div>
+          <div class="skel" style="height:14px;width:50%;margin-bottom:10px;"></div>
+          <div class="skel" style="height:14px;width:45%;"></div>
+        </div>
+      </div>
+    </div>
+    <!-- No data message -->
+    <div id="fund-nodata" style="display:none;">
+      <div class="section">
+        <div class="section-body" style="padding:24px;text-align:center;color:var(--mp-text-tertiary);">
+          No fundamentals data available for this ticker.
+        </div>
+      </div>
+    </div>
+    <!-- Content -->
+    <div id="fund-content" style="display:none;">
+
+      <!-- Timeframe toggle -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;">
+        <button class="fund-tf-btn active" data-tf="quarterly" onclick="switchFundTimeframe('quarterly')">Quarterly</button>
+        <button class="fund-tf-btn" data-tf="annual" onclick="switchFundTimeframe('annual')">Annual</button>
+      </div>
+
+      <!-- SECTION 1: Key Metrics (latest period) -->
+      <div class="section">
+        <div class="section-label" id="fund-period-label">Balance Sheet</div>
+        <div class="section-body" style="padding:20px;">
+          <div class="strat-insights-grid" style="grid-template-columns:repeat(4,1fr);">
+            <div class="strat-insight-card">
+              <div class="strat-insight-label">Total Assets</div>
+              <div class="strat-insight-value" id="fund-total-assets" style="color:#FFFFFF;font-size:18px;">—</div>
+            </div>
+            <div class="strat-insight-card">
+              <div class="strat-insight-label">Total Liabilities</div>
+              <div class="strat-insight-value" id="fund-total-liabilities" style="color:#FF4D4D;font-size:18px;">—</div>
+            </div>
+            <div class="strat-insight-card">
+              <div class="strat-insight-label">Total Equity</div>
+              <div class="strat-insight-value" id="fund-total-equity" style="color:#00DE94;font-size:18px;">—</div>
+            </div>
+            <div class="strat-insight-card">
+              <div class="strat-insight-label">Debt / Equity</div>
+              <div class="strat-insight-value" id="fund-de-ratio" style="color:#00AEFF;font-size:18px;">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 2: Assets breakdown -->
+      <div class="section">
+        <div class="section-label">Assets</div>
+        <div class="section-body" style="padding:0;overflow:hidden;">
+          <table class="fund-table" id="fund-assets-table">
+            <thead><tr>
+              <th style="text-align:left;">Item</th>
+              <th style="text-align:right;" class="fund-col-1"></th>
+              <th style="text-align:right;" class="fund-col-2"></th>
+              <th style="text-align:right;" class="fund-col-3"></th>
+              <th style="text-align:right;" class="fund-col-4"></th>
+            </tr></thead>
+            <tbody id="fund-assets-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SECTION 3: Liabilities breakdown -->
+      <div class="section">
+        <div class="section-label">Liabilities</div>
+        <div class="section-body" style="padding:0;overflow:hidden;">
+          <table class="fund-table" id="fund-liabilities-table">
+            <thead><tr>
+              <th style="text-align:left;">Item</th>
+              <th style="text-align:right;" class="fund-col-1"></th>
+              <th style="text-align:right;" class="fund-col-2"></th>
+              <th style="text-align:right;" class="fund-col-3"></th>
+              <th style="text-align:right;" class="fund-col-4"></th>
+            </tr></thead>
+            <tbody id="fund-liabilities-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SECTION 4: Equity breakdown -->
+      <div class="section">
+        <div class="section-label">Shareholders' Equity</div>
+        <div class="section-body" style="padding:0;overflow:hidden;">
+          <table class="fund-table" id="fund-equity-table">
+            <thead><tr>
+              <th style="text-align:left;">Item</th>
+              <th style="text-align:right;" class="fund-col-1"></th>
+              <th style="text-align:right;" class="fund-col-2"></th>
+              <th style="text-align:right;" class="fund-col-3"></th>
+              <th style="text-align:right;" class="fund-col-4"></th>
+            </tr></thead>
+            <tbody id="fund-equity-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Data source -->
+      <div style="text-align:right;padding:8px 0;font-size:11px;color:var(--mp-text-muted);">
+        Data: Massive.com (Polygon.io) · SEC Filings
+      </div>
+
+    </div><!-- /fund-content -->
+  </div><!-- /tab-fundamentals -->
 
   <!-- Chart tab removed — chart now embedded in Overview -->
 
@@ -5023,6 +5193,11 @@ async function createImage() {
         window._financialsLoaded = true;
         loadFinancialsData();
       }
+      // Lazy-load fundamentals on first click
+      if (tab.dataset.tab === 'fundamentals' && !window._fundamentalsLoaded) {
+        window._fundamentalsLoaded = true;
+        loadFundamentalsData('quarterly');
+      }
     });
   });
 })();
@@ -5331,6 +5506,161 @@ async function loadFinancialsData() {
     nodataEl.style.display = 'block';
     nodataEl.querySelector('.section-body').innerHTML = '<div style="padding:24px;text-align:center;color:var(--mp-text-tertiary);">No live financial data available for this ticker.<br><span style="font-size:11px;color:var(--mp-text-muted);margin-top:8px;display:inline-block;">' + esc(err.message) + '</span></div>';
   }
+}
+
+// ── Fundamentals Tab (Balance Sheet from Massive/Polygon) ───────────────────
+var _fundData = {};
+function switchFundTimeframe(tf) {
+  document.querySelectorAll('.fund-tf-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.tf === tf);
+  });
+  loadFundamentalsData(tf);
+}
+
+async function loadFundamentalsData(timeframe) {
+  if (!TICKER) return;
+  const loadingEl = document.getElementById('fund-loading');
+  const nodataEl  = document.getElementById('fund-nodata');
+  const contentEl = document.getElementById('fund-content');
+
+  // Show loading on subsequent calls
+  if (window._fundamentalsLoaded && _fundData[timeframe]) {
+    renderFundamentals(_fundData[timeframe], timeframe);
+    return;
+  }
+
+  loadingEl.style.display = 'block';
+  nodataEl.style.display = 'none';
+  contentEl.style.display = 'none';
+
+  try {
+    const limit = timeframe === 'annual' ? 4 : 8;
+    const res = await fetch('/api/ticker-fundamentals?ticker=' + encodeURIComponent(TICKER) + '&timeframe=' + timeframe + '&limit=' + limit);
+    if (!res.ok) {
+      const errText = await res.text().catch(function() { return ''; });
+      throw new Error('API returned ' + res.status + ': ' + errText.slice(0, 200));
+    }
+    const data = await res.json();
+    if (!data.results || !data.results.length) throw new Error('No balance sheet data');
+
+    _fundData[timeframe] = data.results;
+    loadingEl.style.display = 'none';
+    contentEl.style.display = 'block';
+    renderFundamentals(data.results, timeframe);
+  } catch (err) {
+    console.warn('[Fundamentals] Load failed:', err);
+    loadingEl.style.display = 'none';
+    nodataEl.style.display = 'block';
+    var ndBody = nodataEl.querySelector('.section-body');
+    if (ndBody) ndBody.innerHTML = '<div style="padding:24px;text-align:center;color:var(--mp-text-tertiary);">No fundamentals data available for this ticker.<br><span style="font-size:11px;color:var(--mp-text-muted);margin-top:8px;display:inline-block;">' + esc(err.message) + '</span></div>';
+  }
+}
+
+function renderFundamentals(periods, timeframe) {
+  var latest = periods[0];
+  var show = periods.slice(0, 4);
+
+  function fmtB(v) {
+    if (v == null) return '—';
+    var neg = v < 0;
+    var abs = Math.abs(v);
+    var str;
+    if (abs >= 1e12) str = '$' + (abs / 1e12).toFixed(1) + 'T';
+    else if (abs >= 1e9) str = '$' + (abs / 1e9).toFixed(1) + 'B';
+    else if (abs >= 1e6) str = '$' + (abs / 1e6).toFixed(1) + 'M';
+    else str = '$' + abs.toLocaleString();
+    return neg ? '(' + str + ')' : str;
+  }
+
+  function valClass(v) {
+    if (v == null) return '';
+    return v < 0 ? 'fund-val-neg' : '';
+  }
+
+  function periodLabel(p) {
+    if (p.timeframe === 'annual') return 'FY' + p.fiscal_year;
+    return 'Q' + p.fiscal_quarter + ' ' + p.fiscal_year;
+  }
+
+  // Period label
+  document.getElementById('fund-period-label').textContent = 'Balance Sheet — ' + periodLabel(latest) + ' (ended ' + latest.period_end + ')';
+
+  // Key metrics
+  document.getElementById('fund-total-assets').textContent = fmtB(latest.total_assets);
+  document.getElementById('fund-total-liabilities').textContent = fmtB(latest.total_liabilities);
+  document.getElementById('fund-total-equity').textContent = fmtB(latest.total_equity);
+  var deRatio = (latest.total_equity && latest.total_equity !== 0) ? (latest.total_liabilities / latest.total_equity).toFixed(2) + 'x' : '—';
+  document.getElementById('fund-de-ratio').textContent = deRatio;
+  var deEl = document.getElementById('fund-de-ratio');
+  var deVal = latest.total_equity ? latest.total_liabilities / latest.total_equity : 0;
+  deEl.style.color = deVal > 3 ? '#FF4D4D' : deVal > 1.5 ? '#FFB800' : '#00AEFF';
+
+  // Column headers
+  show.forEach(function(p, i) {
+    var cols = document.querySelectorAll('.fund-col-' + (i + 1));
+    cols.forEach(function(c) { c.textContent = periodLabel(p); });
+  });
+  // Hide unused columns
+  for (var i = show.length; i < 4; i++) {
+    document.querySelectorAll('.fund-col-' + (i + 1)).forEach(function(c) { c.textContent = ''; });
+  }
+
+  function buildRows(items, tbodyId) {
+    var tbody = document.getElementById(tbodyId);
+    tbody.innerHTML = items.map(function(item) {
+      var isTotal = item.total || false;
+      var indent = item.indent || false;
+      var cls = isTotal ? ' class="fund-row-total"' : '';
+      var tdCls = indent ? ' class="fund-item-indent"' : '';
+      var cells = '<td' + tdCls + '>' + item.label + '</td>';
+      show.forEach(function(p) {
+        var v = p[item.key];
+        cells += '<td style="text-align:right;" class="' + valClass(v) + '">' + fmtB(v) + '</td>';
+      });
+      // Fill empty columns
+      for (var j = show.length; j < 4; j++) cells += '<td></td>';
+      return '<tr' + cls + '>' + cells + '</tr>';
+    }).join('');
+  }
+
+  // Assets
+  buildRows([
+    {label: 'Cash & Equivalents', key: 'cash_and_equivalents', indent: true},
+    {label: 'Short-Term Investments', key: 'short_term_investments', indent: true},
+    {label: 'Receivables', key: 'receivables', indent: true},
+    {label: 'Inventories', key: 'inventories', indent: true},
+    {label: 'Other Current Assets', key: 'other_current_assets', indent: true},
+    {label: 'Total Current Assets', key: 'total_current_assets', total: true},
+    {label: 'Property, Plant & Equipment', key: 'property_plant_equipment_net', indent: true},
+    {label: 'Goodwill', key: 'goodwill', indent: true},
+    {label: 'Intangible Assets', key: 'intangible_assets_net', indent: true},
+    {label: 'Other Non-Current Assets', key: 'other_assets', indent: true},
+    {label: 'Total Assets', key: 'total_assets', total: true}
+  ], 'fund-assets-tbody');
+
+  // Liabilities
+  buildRows([
+    {label: 'Accounts Payable', key: 'accounts_payable', indent: true},
+    {label: 'Accrued & Other Current', key: 'accrued_and_other_current_liabilities', indent: true},
+    {label: 'Short-Term Debt', key: 'debt_current', indent: true},
+    {label: 'Deferred Revenue', key: 'deferred_revenue_current', indent: true},
+    {label: 'Total Current Liabilities', key: 'total_current_liabilities', total: true},
+    {label: 'Long-Term Debt & Leases', key: 'long_term_debt_and_capital_lease_obligations', indent: true},
+    {label: 'Other Non-Current Liabilities', key: 'other_noncurrent_liabilities', indent: true},
+    {label: 'Total Liabilities', key: 'total_liabilities', total: true}
+  ], 'fund-liabilities-tbody');
+
+  // Equity
+  buildRows([
+    {label: 'Common Stock', key: 'common_stock', indent: true},
+    {label: 'Additional Paid-In Capital', key: 'additional_paid_in_capital', indent: true},
+    {label: 'Retained Earnings', key: 'retained_earnings_deficit', indent: true},
+    {label: 'Accumulated OCI', key: 'accumulated_other_comprehensive_income', indent: true},
+    {label: 'Treasury Stock', key: 'treasury_stock', indent: true},
+    {label: 'Noncontrolling Interest', key: 'noncontrolling_interest', indent: true},
+    {label: 'Total Equity', key: 'total_equity', total: true},
+    {label: 'Total Liabilities & Equity', key: 'total_liabilities_and_equity', total: true}
+  ], 'fund-equity-tbody');
 }
 
 // Exchange ID to name mapping (Polygon/Massive)
