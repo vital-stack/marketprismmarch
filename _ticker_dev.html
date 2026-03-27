@@ -91,6 +91,52 @@
     padding: 22px 18px 18px;
     border-bottom: 1px solid var(--mp-border);
   }
+
+  /* Prism triangle animation */
+  @keyframes prismShift {
+    0%   { stop-color: #00AEFF; }
+    16%  { stop-color: #7B61FF; }
+    33%  { stop-color: #FF4D4D; }
+    50%  { stop-color: #FFB800; }
+    66%  { stop-color: #00DE94; }
+    83%  { stop-color: #38C8B8; }
+    100% { stop-color: #00AEFF; }
+  }
+  @keyframes prismShift2 {
+    0%   { stop-color: #38C8B8; }
+    16%  { stop-color: #00AEFF; }
+    33%  { stop-color: #7B61FF; }
+    50%  { stop-color: #FF4D4D; }
+    66%  { stop-color: #FFB800; }
+    83%  { stop-color: #00DE94; }
+    100% { stop-color: #38C8B8; }
+  }
+  @keyframes prismShine {
+    0%   { opacity: 0; transform: translateX(-120%) rotate(25deg); }
+    40%  { opacity: 0; }
+    50%  { opacity: 0.4; }
+    60%  { opacity: 0; }
+    100% { opacity: 0; transform: translateX(120%) rotate(25deg); }
+  }
+  .prism-logo { position: relative; display: inline-flex; }
+  .prism-logo svg .prism-stop-1 { animation: prismShift 4s ease-in-out infinite; }
+  .prism-logo svg .prism-stop-2 { animation: prismShift2 4s ease-in-out infinite; }
+  .prism-shine {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .prism-shine::after {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 40%; height: 200%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+    transform: rotate(25deg);
+    animation: prismShine 3s ease-in-out infinite;
+  }
   .sidebar-section-lbl {
     font-family: var(--font-body); font-size:11px; font-weight:500; letter-spacing: .08em;
     text-transform: uppercase; color: rgba(255,255,255,0.35);
@@ -1051,6 +1097,21 @@
   }
   .narr-cite-count { font-weight: 500; color: var(--text-secondary); }
   .narr-outlet { font-size: 11px; color: var(--text-tertiary); }
+  .narr-reach {
+    font-size: 10px;
+    font-weight: 500;
+    color: #00AEFF;
+    background: rgba(0,174,255,0.08);
+    border: 1px solid rgba(0,174,255,0.15);
+    padding: 1px 7px;
+    border-radius: 3px;
+    letter-spacing: .02em;
+  }
+  .narr-src-reach {
+    font-size: 10px;
+    color: rgba(0,174,255,0.7);
+    margin-left: 4px;
+  }
   .narr-date   { font-size: 11px; font-family: var(--font-body); color: var(--text-tertiary); }
   .narr-price-at {
     font-size: 11px;
@@ -1782,10 +1843,11 @@
   }
   .narr-claim-text {
     font-family: 'Instrument Serif', 'DM Serif Display', Georgia, serif;
-    font-size: 18px;
+    font-size: 24px;
     font-weight: 400;
+    letter-spacing: 0.01em;
     color: var(--mp-text-primary);
-    line-height: 1.4;
+    line-height: 1.45;
     margin-bottom: 14px;
   }
 
@@ -2396,13 +2458,18 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
 <div class="app-layout">
   <aside class="sidebar" id="sidebar">
     <a href="/" class="sidebar-logo">
-      <svg width="24" height="24" viewBox="0 0 40 52" fill="none">
-        <defs><linearGradient id="sng2" x1="20" y1="0" x2="20" y2="52" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#7DD3FC"/><stop offset="50%" stop-color="#60A5FA"/><stop offset="100%" stop-color="#4A80C7"/></linearGradient></defs>
-        <polygon points="20,2 26,13 14,13" fill="url(#sng2)"/>
-        <path d="M14,16 L4,28 L10,28 L20,20 L30,28 L36,28 L26,16 Z" fill="url(#sng2)" opacity="0.85"/>
-        <path d="M9,31 L2,41 L8,41 L20,33 L32,41 L38,41 L31,31 Z" fill="url(#sng2)" opacity="0.7"/>
-        <polygon points="20,38 25,44 20,50 15,44" fill="url(#sng2)"/>
-      </svg>
+      <div class="prism-logo">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <defs>
+            <linearGradient id="prismG" x1="12" y1="2" x2="12" y2="22" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" class="prism-stop-1" stop-color="#00AEFF"/>
+              <stop offset="100%" class="prism-stop-2" stop-color="#38C8B8"/>
+            </linearGradient>
+          </defs>
+          <path d="M12 3L22 21H2L12 3Z" fill="none" stroke="url(#prismG)" stroke-width="1.8" stroke-linejoin="round"/>
+        </svg>
+        <div class="prism-shine"></div>
+      </div>
       <span>Market Prism</span>
     </a>
     <div class="sidebar-section-lbl">Intelligence</div>
@@ -4319,6 +4386,78 @@ async function loadMoveDrivers() {
 }
 
 // ── Trending Narratives ───────────────────────────────────────────────────────
+// ── Publication Reach Lookup (estimated monthly unique visitors in millions) ──
+var PUB_REACH = {
+  'Bloomberg':120,'bloomberg':120,'Bloomberg News':120,
+  'WSJ':90,'Wall Street Journal':90,'The Wall Street Journal':90,
+  'CNBC':80,'cnbc':80,
+  'Reuters':70,'reuters':70,
+  'Yahoo Finance':65,'Yahoo':65,'yahoo':65,
+  'MarketWatch':50,'marketwatch':50,
+  'Forbes':45,'forbes':45,
+  'Business Insider':40,'Insider':40,
+  'TradingView':40,'tradingview':40,
+  'Investopedia':35,'investopedia':35,
+  'The Motley Fool':30,'Motley Fool':30,
+  'Financial Times':28,'FT':28,
+  'Barron\'s':20,'Barrons':20,"Barron's":20,
+  'Seeking Alpha':15,'SeekingAlpha':15,'seekingalpha':15,
+  'Benzinga':12,'benzinga':12,
+  'Zacks':10,'zacks':10,'Zacks Investment Research':10,
+  'TheStreet':8,'thestreet':8,
+  'Investor\'s Business Daily':8,"Investor's Business Daily":8,'IBD':8,
+  'The Globe and Mail':6,'Globe and Mail':6,
+  'GuruFocus':3,'gurufocus':3,
+  'TipRanks':5,'tipranks':5,
+  'Coinpedia Fintech News':2,'Coinpedia':2,
+  'InvestorPlace':4,'investorplace':4,
+  'Kiplinger':3,'kiplinger':3,
+  'MoneyWise':2,'moneywise':2,
+  '24/7 Wall St.':3,'24/7 Wall St':3,
+  'The Street':8,
+  'openPR.com':1,'openPR':1,
+  'MEXC':1,
+  'Bitget':1,
+  'MarketBeat':4,'marketbeat':4,
+  'StockAnalysis':3,
+  'Nasdaq':15,'nasdaq':15,
+  'AP':60,'Associated Press':60,
+  'New York Times':80,'NYT':80,'NY Times':80,
+  'Washington Post':50,'WaPo':50,
+  'Los Angeles Times':25,'LA Times':25,
+  'The Chronicle Journal':1,
+  'Snowball':1,'SnowballFi':1
+};
+
+function getReach(outlet) {
+  if (!outlet) return null;
+  if (PUB_REACH[outlet]) return PUB_REACH[outlet];
+  // Try partial match
+  var lower = outlet.toLowerCase();
+  for (var k in PUB_REACH) {
+    if (lower.indexOf(k.toLowerCase()) !== -1 || k.toLowerCase().indexOf(lower) !== -1) return PUB_REACH[k];
+  }
+  return null;
+}
+
+function fmtReach(millions) {
+  if (millions >= 1000) return (millions / 1000).toFixed(1) + 'B';
+  return millions + 'M';
+}
+
+function calcNarrativeReach(citations) {
+  var total = 0;
+  var seen = new Set();
+  (citations || []).forEach(function(c) {
+    var outlet = c.source_outlet;
+    if (!outlet || seen.has(outlet)) return;
+    seen.add(outlet);
+    var r = getReach(outlet);
+    if (r) total += r;
+  });
+  return total;
+}
+
 async function loadNarratives() {
   if (!TICKER) return;
   try {
@@ -4509,6 +4648,7 @@ async function loadNarratives() {
           return `<div class="narr-source-row">
             <div class="narr-source-meta">
               ${c.source_outlet ? `<span class="narr-src-outlet">${esc(c.source_outlet)}</span>` : ''}
+              ${(() => { var sr = getReach(c.source_outlet); return sr ? `<span class="narr-src-reach">${fmtReach(sr)} readers</span>` : ''; })()}
               ${c.analyst_firm  ? `<span class="narr-src-analyst">· ${esc(c.analyst_firm)}</span>` : ''}
               ${c.verdict ? `<span class="narr-verdict ${cVCls}" style="font-size:9px;padding:1px 5px;">${esc(c.verdict)}</span>` : ''}
             </div>
@@ -4535,6 +4675,12 @@ async function loadNarratives() {
                 const outlets = [...new Set((n.allCitations||[n]).map(c => c.source_outlet).filter(Boolean))];
                 return outlets.length > 0
                   ? `<span class="narr-outlet">${outlets.map(o => esc(o)).join(', ')}</span>`
+                  : '';
+              })()}
+              ${(() => {
+                const reach = calcNarrativeReach(n.allCitations || [n]);
+                return reach > 0
+                  ? `<span class="narr-reach" title="Estimated combined monthly readership of citing publications">~${fmtReach(reach)} reach</span>`
                   : '';
               })()}
               ${n.narrative_type ? `<span class="narr-outlet">· ${esc(n.narrative_type)}</span>` : ''}
@@ -4918,57 +5064,32 @@ function renderHeatmap(p) {
     </div>`;
 }
 
-// ── Export Report (PDF via jsPDF) ─────────────────────────────────────────────
+// ── Export Report (PDF via jsPDF + html2canvas) ──────────────────────────────
 function exportReport() {
   var btn = document.querySelector('.action-btn[onclick="exportReport()"]');
-  if (btn) btn.disabled = true;
+  if (btn) { btn.disabled = true; btn.textContent = 'Generating...'; }
 
-  function doExport() {
+  async function doExport() {
+    // Ensure html2canvas is loaded
+    if (typeof html2canvas === 'undefined') {
+      await new Promise(function(resolve, reject) {
+        var s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        s.onload = resolve;
+        s.onerror = function() { reject(new Error('Failed to load html2canvas')); };
+        document.head.appendChild(s);
+      });
+    }
+
     var jsPDF = window.jspdf.jsPDF;
     var doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    var pw = 210, ph = 297, mx = 18, mxr = pw - 18, cw = pw - 36;
+    var pw = 210, ph = 297, mx = 14, cw = pw - 28;
     var y = 0;
 
-    // Colors
-    var bg = [8,11,17], surface = [12,16,24], cyan = [0,174,255], green = [0,222,148], red = [255,77,77], amber = [255,184,0], white = [255,255,255], muted = [160,168,176], secondary = [180,185,192];
-    var violet = [123,97,255], teal = [56,200,184];
+    var bg = [8,11,17], surface = [12,16,24], cyan = [0,174,255], green = [0,222,148], red = [255,77,77], white = [255,255,255], muted = [160,168,176], secondary = [180,185,192];
 
-    // Helpers
-    function checkPage(need) { if (y + need > ph - 20) { doc.addPage(); drawPageBg(); y = 18; } return y; }
     function drawPageBg() { doc.setFillColor(bg[0],bg[1],bg[2]); doc.rect(0,0,pw,ph,'F'); }
-    function roundRect(x,yy,w,h,rad,fill,stroke) {
-      doc.setFillColor(fill[0],fill[1],fill[2]);
-      if (stroke) { doc.setDrawColor(stroke[0],stroke[1],stroke[2]); doc.setLineWidth(0.3); doc.roundedRect(x,yy,w,h,rad,rad,'FD'); }
-      else doc.roundedRect(x,yy,w,h,rad,rad,'F');
-    }
-    function sectionHead(title, accentColor) {
-      checkPage(18);
-      doc.setFillColor(accentColor[0],accentColor[1],accentColor[2]);
-      doc.rect(mx,y,2,8,'F');
-      doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(white[0],white[1],white[2]);
-      doc.text(title, mx+6, y+6);
-      y += 14;
-    }
-    function kvRow(label, value, valColor) {
-      checkPage(8);
-      doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(muted[0],muted[1],muted[2]);
-      doc.text(label, mx+4, y);
-      doc.setFont('helvetica','bold'); doc.setFontSize(9.5);
-      var vc = valColor || white; doc.setTextColor(vc[0],vc[1],vc[2]);
-      var valX = mx+52, maxValW = mxr-valX-2;
-      var valLines = doc.splitTextToSize(String(value||'—'), maxValW);
-      valLines.forEach(function(line,i) { if (i>0) checkPage(5); doc.text(line,valX,y); if (i<valLines.length-1) y+=5; });
-      y += 6;
-    }
-    function textBlock(txt, color, fontSize) {
-      if (!txt) return;
-      checkPage(12);
-      doc.setFont('helvetica','normal'); doc.setFontSize(fontSize||9);
-      var c = color || secondary; doc.setTextColor(c[0],c[1],c[2]);
-      var split = doc.splitTextToSize(txt, cw-8);
-      split.forEach(function(line) { checkPage(5); doc.text(line, mx+4, y); y+=4.5; });
-      y += 3;
-    }
+    function checkPage(need) { if (y + need > ph - 20) { doc.addPage(); drawPageBg(); y = 14; } return y; }
 
     var t = TICKER;
     var r = _tickerHeroData || {};
@@ -4976,298 +5097,207 @@ function exportReport() {
     var date = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
     var dateShort = new Date().toISOString().slice(0,10);
 
-    // ── Page 1 background ──
-    drawPageBg();
+    // Capture a DOM element as image and add to PDF
+    async function captureSection(selector, label) {
+      var el = typeof selector === 'string' ? document.querySelector(selector) : selector;
+      if (!el || el.offsetHeight < 5) return;
 
-    // ── Header bar ──
-    doc.setFillColor(surface[0],surface[1],surface[2]);
-    doc.rect(0,0,pw,44,'F');
-    doc.setFillColor(cyan[0],cyan[1],cyan[2]);
-    doc.rect(0,44,pw,0.8,'F');
+      try {
+        var canvas = await html2canvas(el, {
+          backgroundColor: '#080B11',
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          logging: false
+        });
 
-    doc.setFont('helvetica','bold'); doc.setFontSize(22); doc.setTextColor(white[0],white[1],white[2]);
-    doc.text('MARKET PRISM', mx, 18);
-    doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(cyan[0],cyan[1],cyan[2]);
-    doc.text('NARRATIVE INTELLIGENCE REPORT', mx, 26);
+        var imgData = canvas.toDataURL('image/png');
+        var imgW = cw;
+        var imgH = (canvas.height / canvas.width) * imgW;
 
-    doc.setFont('helvetica','bold'); doc.setFontSize(28); doc.setTextColor(white[0],white[1],white[2]);
-    doc.text(t, mxr, 20, {align:'right'});
-    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(muted[0],muted[1],muted[2]);
-    doc.text(date, mxr, 28, {align:'right'});
-    if (r.sector_name) {
-      doc.setFontSize(9); doc.setTextColor(cyan[0],cyan[1],cyan[2]);
-      doc.text(r.sector_name, mxr, 35, {align:'right'});
+        // If image is taller than a page, scale down
+        var maxH = ph - 40;
+        if (imgH > maxH) {
+          imgH = maxH;
+          imgW = (canvas.width / canvas.height) * imgH;
+        }
+
+        checkPage(imgH + (label ? 10 : 4));
+
+        // Optional section label
+        if (label) {
+          doc.setFillColor(cyan[0],cyan[1],cyan[2]);
+          doc.rect(mx, y, 2, 6, 'F');
+          doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(white[0],white[1],white[2]);
+          doc.text(label, mx + 5, y + 5);
+          y += 10;
+        }
+
+        doc.addImage(imgData, 'PNG', mx, y, imgW, imgH);
+        y += imgH + 6;
+      } catch(e) {
+        console.warn('[PDF] Failed to capture:', selector, e);
+      }
     }
 
-    y = 52;
+    // ── Page 1: Header ──
+    drawPageBg();
 
-    // ── Verdict banner ──
+    // Header bar
+    doc.setFillColor(surface[0],surface[1],surface[2]);
+    doc.rect(0, 0, pw, 48, 'F');
+    doc.setFillColor(cyan[0],cyan[1],cyan[2]);
+    doc.rect(0, 48, pw, 0.8, 'F');
+
+    // Try to add company logo
+    var logoImg = document.querySelector('.hero-logo img, .hero-logo-wrap img');
+    if (logoImg && logoImg.src) {
+      try {
+        var logoCanvas = await html2canvas(logoImg.parentElement || logoImg, { backgroundColor: null, scale: 2, useCORS: true, allowTaint: true, logging: false });
+        doc.addImage(logoCanvas.toDataURL('image/png'), 'PNG', mx, 6, 10, 10);
+      } catch(_) {}
+    }
+
+    doc.setFont('helvetica','bold'); doc.setFontSize(26); doc.setTextColor(white[0],white[1],white[2]);
+    doc.text(t, mx + 14, 16);
+
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(cyan[0],cyan[1],cyan[2]);
+    doc.text('MARKET PRISM  ·  NARRATIVE INTELLIGENCE REPORT', mx, 28);
+
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(muted[0],muted[1],muted[2]);
+    doc.text(date, mx, 36);
+
+    if (r.sector_name) {
+      doc.setFontSize(9); doc.setTextColor(secondary[0],secondary[1],secondary[2]);
+      doc.text(r.sector_name, mx, 43);
+    }
+
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(cyan[0],cyan[1],cyan[2]);
+    doc.text('marketprism.app', pw - mx, 36, {align:'right'});
+
+    var prc = r.price != null ? '$'+Number(r.price).toFixed(2) : '';
+    var pctVal = r.price_change_pct || 0;
+    var chgTxt = pctVal !== 0 ? ((pctVal > 0 ? '+' : '') + Number(pctVal).toFixed(2) + '%') : '';
+    var chgColor = pctVal > 0 ? green : pctVal < 0 ? red : muted;
+
+    if (prc) {
+      doc.setFont('helvetica','bold'); doc.setFontSize(22); doc.setTextColor(white[0],white[1],white[2]);
+      doc.text(prc, pw - mx, 16, {align:'right'});
+    }
+    if (chgTxt) {
+      doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(chgColor[0],chgColor[1],chgColor[2]);
+      doc.text(chgTxt, pw - mx, 26, {align:'right'});
+    }
+
+    y = 56;
+
+    // Verdict — small inline badge, not a massive banner
     var verdict = r.prism_verdict || p.prevailing_verdict || 'Monitoring';
     var isTrap = verdict.toLowerCase().indexOf('trap') !== -1;
-    var isSupported = verdict.toLowerCase().indexOf('supported') !== -1 || verdict.toLowerCase().indexOf('verified') !== -1;
+    var isSupported = verdict.toLowerCase().indexOf('supported') !== -1;
     var vColor = isTrap ? red : isSupported ? green : cyan;
+
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(vColor[0],vColor[1],vColor[2]);
+    var verdictW = doc.getTextWidth(verdict.toUpperCase()) + 10;
     var vBg = isTrap ? [30,12,12] : isSupported ? [10,28,20] : [10,20,32];
+    doc.setFillColor(vBg[0],vBg[1],vBg[2]);
+    doc.setDrawColor(vColor[0],vColor[1],vColor[2]); doc.setLineWidth(0.3);
+    doc.roundedRect(mx, y, verdictW, 8, 2, 2, 'FD');
+    doc.text(verdict.toUpperCase(), mx + verdictW/2, y + 5.5, {align:'center'});
+    var badgeX = mx + verdictW + 4;
 
-    roundRect(mx, y, cw, 16, 3, vBg, [vColor[0],vColor[1],vColor[2]]);
-    doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(vColor[0],vColor[1],vColor[2]);
-    doc.text(verdict.toUpperCase(), pw/2, y+10, {align:'center'});
-    y += 22;
-
-    // ── Insight tags from hero badges ──
-    var insightTags = [];
+    // Insight badges (High Hype Gap, #2 Most Overvalued, etc.)
     var heroBadges = document.querySelectorAll('.hero-insight-badges .hero-insight-badge');
     heroBadges.forEach(function(el) {
       var label = el.textContent.trim();
+      if (!label) return;
       var style = el.getAttribute('style') || '';
       var c = cyan;
       if (style.indexOf('FF4D4D') !== -1 || style.indexOf('red') !== -1) c = red;
       else if (style.indexOf('00DE94') !== -1 || style.indexOf('green') !== -1) c = green;
-      else if (style.indexOf('FFB800') !== -1 || style.indexOf('amber') !== -1) c = amber;
-      else if (style.indexOf('7B61FF') !== -1) c = violet;
-      if (label) insightTags.push({label:label, c:c});
+      else if (style.indexOf('FFB800') !== -1 || style.indexOf('amber') !== -1) c = [255,184,0];
+      else if (style.indexOf('7B61FF') !== -1) c = [123,97,255];
+      else if (style.indexOf('38C8B8') !== -1) c = [56,200,184];
+
+      doc.setFont('helvetica','bold'); doc.setFontSize(7);
+      var tw = doc.getTextWidth(label) + 8;
+      // Wrap to next line if needed
+      if (badgeX + tw > pw - mx) { y += 10; badgeX = mx; }
+      var tagBg = [Math.round(c[0]*0.12 + bg[0]*0.88), Math.round(c[1]*0.12 + bg[1]*0.88), Math.round(c[2]*0.12 + bg[2]*0.88)];
+      doc.setFillColor(tagBg[0], tagBg[1], tagBg[2]);
+      doc.setDrawColor(c[0], c[1], c[2]); doc.setLineWidth(0.2);
+      doc.roundedRect(badgeX, y, tw, 7, 2, 2, 'FD');
+      doc.setTextColor(c[0], c[1], c[2]);
+      doc.text(label, badgeX + tw/2, y + 4.8, {align:'center'});
+      badgeX += tw + 3;
     });
 
-    if (insightTags.length) {
-      var tagX = mx;
-      insightTags.slice(0,5).forEach(function(tag) {
-        var tw = doc.getTextWidth(tag.label)*0.38 + 10;
-        if (tagX + tw > mxr) { y += 9; tagX = mx; }
-        roundRect(tagX, y, tw, 7, 2, [tag.c[0]*0.12+bg[0]*(1-0.12), tag.c[1]*0.12+bg[1]*(1-0.12), tag.c[2]*0.12+bg[2]*(1-0.12)]);
-        doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(tag.c[0],tag.c[1],tag.c[2]);
-        doc.text(tag.label, tagX+tw/2, y+4.8, {align:'center'});
-        tagX += tw + 3;
-      });
-      y += 13;
+    y += 14;
+
+    // ── Capture live sections from the page ──
+
+    // The Narrative (strength ring)
+    await captureSection('#narr-strength-body', 'The Narrative');
+
+    // What's Driving the Price
+    var driversSection = document.querySelector('#drivers-body');
+    if (driversSection && driversSection.textContent.trim() && driversSection.textContent.indexOf('No driver') === -1) {
+      await captureSection(driversSection.closest('.section') || driversSection, "What's Driving the Price");
     }
 
-    // ── OVERVIEW & PRICE ──
-    sectionHead('Overview & Price', cyan);
-    roundRect(mx, y, cw, 28, 3, surface);
-    var prc = r.price != null ? '$'+Number(r.price).toFixed(2) : '—';
-    var pctVal = r.price_change_pct || 0;
-    var chgTxt = (pctVal > 0 ? '+' : '') + Number(pctVal).toFixed(2) + '%';
-    var chgColor = pctVal > 0 ? green : pctVal < 0 ? red : muted;
-
-    doc.setFont('helvetica','bold'); doc.setFontSize(20); doc.setTextColor(white[0],white[1],white[2]);
-    doc.text(prc, mx+8, y+12);
-    doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor(chgColor[0],chgColor[1],chgColor[2]);
-    doc.text(chgTxt, mx+8, y+22);
-
-    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(muted[0],muted[1],muted[2]);
-    doc.text('State', mx+100, y+8); doc.text('Fair Value', mx+140, y+8);
-    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(white[0],white[1],white[2]);
-    doc.text(r.narrative_state || '—', mx+100, y+15);
-    doc.text(r.fair_value != null ? '$'+Number(r.fair_value).toFixed(2) : '—', mx+140, y+15);
-    y += 34;
-
-    kvRow('Primary Driver', r.story_claim || r.primary_driver || '—');
-    if (r.stock_type) kvRow('Stock Type', r.stock_type);
-    y += 4;
-
-    // ── NARRATIVE DIAGNOSIS ──
-    sectionHead('Narrative Diagnosis', cyan);
-    kvRow('Story Claim', r.story_claim || '—');
-    kvRow('Narrative State', r.narrative_state || '—',
-      r.narrative_state === 'Surging' ? green : r.narrative_state === 'Breaking' ? red : r.narrative_state === 'Fragile' ? amber : white);
-    kvRow('Verdict', verdict, vColor);
-    if (r.narrative_trend) kvRow('Narrative Trend', r.narrative_trend,
-      r.narrative_trend === 'Rising' ? green : r.narrative_trend === 'Collapsing' ? red : r.narrative_trend === 'Weakening' ? amber : white);
-    if (p.prevailing_narrative) {
-      y += 2;
-      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(muted[0],muted[1],muted[2]);
-      doc.text('Prevailing Narrative:', mx+4, y); y += 5;
-      textBlock(p.prevailing_narrative, secondary, 8.5);
-    }
-    y += 4;
-
-    // ── DIAGNOSIS METRICS ──
-    // Read from diag strip in DOM
-    var diagCells = document.querySelectorAll('#diag-strip .diag-cell');
-    if (diagCells.length) {
-      sectionHead('Diagnosis Metrics', cyan);
-      roundRect(mx, y, cw, 22, 3, surface);
-      var statW = cw / Math.min(diagCells.length, 4);
-      var dIdx = 0;
-      diagCells.forEach(function(c) {
-        if (dIdx >= 4) return;
-        var label = (c.querySelector('.diag-label')?.textContent || '').trim();
-        var val = (c.querySelector('.diag-val')?.textContent || '').trim();
-        if (!label) return;
-        var sx = mx + 4 + dIdx * statW;
-        doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(muted[0],muted[1],muted[2]);
-        doc.text(label, sx, y+7);
-        doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(white[0],white[1],white[2]);
-        doc.text(val, sx, y+16);
-        dIdx++;
-      });
-      y += 28;
-      // Remaining diag cells as kvRows
-      dIdx = 0;
-      diagCells.forEach(function(c) {
-        dIdx++;
-        if (dIdx <= 4) return;
-        var label = (c.querySelector('.diag-label')?.textContent || '').trim();
-        var val = (c.querySelector('.diag-val')?.textContent || '').trim();
-        if (label && val) kvRow(label, val);
-      });
-      y += 4;
+    // Warranted vs Hype
+    var wvhSection = document.querySelector('#warranted-body');
+    if (wvhSection && wvhSection.querySelector('.tug-bar-wrap')) {
+      await captureSection(wvhSection, 'Warranted vs Hype');
     }
 
-    // ── WARRANTED VS HYPE ──
-    var wvhWarranted = document.querySelector('.wvh-val.wvh-warranted')?.textContent?.trim();
-    var wvhHype = document.querySelector('.wvh-val.wvh-hype')?.textContent?.trim();
-    if (wvhWarranted || wvhHype) {
-      sectionHead('Warranted vs Hype', cyan);
-      roundRect(mx, y, cw, 22, 3, surface);
-      // Warranted
-      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(muted[0],muted[1],muted[2]);
-      doc.text('WARRANTED', mx+20, y+7);
-      var wVal = parseInt(wvhWarranted) || 0;
-      var wColor = wVal >= 65 ? green : wVal >= 40 ? amber : red;
-      doc.setFont('helvetica','bold'); doc.setFontSize(18); doc.setTextColor(wColor[0],wColor[1],wColor[2]);
-      doc.text(wvhWarranted || '—', mx+25, y+18);
-      // Hype
-      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(muted[0],muted[1],muted[2]);
-      doc.text('HYPE', mx+80, y+7);
-      var hVal = parseInt(wvhHype) || 0;
-      var hColor = hVal >= 65 ? red : hVal >= 40 ? amber : green;
-      doc.setFont('helvetica','bold'); doc.setFontSize(18); doc.setTextColor(hColor[0],hColor[1],hColor[2]);
-      doc.text(wvhHype || '—', mx+82, y+18);
-      y += 28;
-
-      // Bars from DOM
-      var barItems = document.querySelectorAll('.wvh-bar-row');
-      barItems.forEach(function(row) {
-        var lbl = row.querySelector('.wvh-bar-label')?.textContent?.trim();
-        var valEl = row.querySelector('.wvh-bar-val');
-        var val = valEl?.textContent?.trim();
-        if (lbl && val) kvRow(lbl, val);
-      });
-      // Narrative gap text
-      var gapText = document.querySelector('.wvh-note')?.textContent?.trim();
-      if (gapText) textBlock(gapText, muted, 8);
-      y += 4;
+    // Forensic Analysis (metrics strip)
+    var metricsEl = document.querySelector('#metrics-strip');
+    if (metricsEl && metricsEl.children.length) {
+      await captureSection(metricsEl.closest('.section') || metricsEl, 'Forensic Analysis');
     }
 
-    // ── FORENSIC ANALYSIS ──
-    var forensicText = document.getElementById('forensic-text')?.textContent?.trim();
-    sectionHead('Forensic Analysis', amber);
-    // Forensic stats row from scorecard
-    var scCoord = p.worst_coordination || p.pulse_coordination;
-    var scEnergy = p.avg_energy_remaining || p.prevailing_energy;
-    if (scCoord != null || scEnergy != null) {
-      roundRect(mx, y, cw, 18, 3, surface);
-      var fStats = [
-        {label:'Coordination', val:p.pulse_coordination != null ? Math.round(p.pulse_coordination) : '—', c:p.pulse_coordination>=60?red:white},
-        {label:'Energy', val:scEnergy != null ? Math.round(scEnergy)+'%' : '—', c:scEnergy>=85?cyan:scEnergy<=15?red:white},
-        {label:'Health Score', val:p.pulse_health_score != null ? Math.round(p.pulse_health_score) : '—', c:p.pulse_health_score>=70?green:p.pulse_health_score>=40?amber:red},
-        {label:'Net Sentiment', val:p.net_sentiment != null ? Math.round(p.net_sentiment) : '—', c:p.net_sentiment>0?green:p.net_sentiment<0?red:white}
-      ];
-      var fsW = cw/4;
-      fStats.forEach(function(s, i) {
-        var sx = mx+4+i*fsW;
-        doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(muted[0],muted[1],muted[2]);
-        doc.text(s.label, sx, y+6);
-        doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(s.c[0],s.c[1],s.c[2]);
-        doc.text(String(s.val), sx, y+14);
-      });
-      y += 24;
-    }
-    textBlock(forensicText || r.forensic_rebuttal || r.mda_snippet || 'No forensic analysis available.', forensicText ? secondary : muted);
-    y += 4;
-
-    // ── FUNDAMENTALS & METRICS ──
-    var metricCells = document.querySelectorAll('#metrics-strip .metric-cell');
-    if (metricCells.length) {
-      sectionHead('Fundamentals & Metrics', green);
-      roundRect(mx, y, cw, 22, 3, surface);
-      var fmStats = [];
-      metricCells.forEach(function(c) {
-        var label = (c.querySelector('.metric-label')?.textContent || '').trim();
-        var val = (c.querySelector('.metric-value')?.textContent || '').trim();
-        if (label && val) fmStats.push({label:label, val:val});
-      });
-      if (!fmStats.length) fmStats.push({label:'Data', val:'Limited data available'});
-      var fmW = cw / Math.min(fmStats.length, 4);
-      fmStats.slice(0,4).forEach(function(s, i) {
-        var fx = mx+4+i*fmW;
-        doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(muted[0],muted[1],muted[2]);
-        doc.text(s.label, fx, y+7);
-        doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(white[0],white[1],white[2]);
-        doc.text(s.val, fx, y+16);
-      });
-      y += 28;
-      if (fmStats.length > 4) {
-        fmStats.slice(4).forEach(function(s) { kvRow(s.label, s.val); });
-        y += 2;
-      }
-      y += 4;
+    // Sector Intelligence
+    var sectorEl = document.querySelector('#sector-body');
+    if (sectorEl && sectorEl.textContent.trim().indexOf('No sector') === -1) {
+      await captureSection(sectorEl.closest('.section') || sectorEl, 'Sector Intelligence');
     }
 
-    // ── SECTOR INTELLIGENCE ──
-    var sectorBlocks = document.querySelectorAll('#sector-body .si-block');
-    if (sectorBlocks.length) {
-      sectionHead('Sector Intelligence', teal);
-      if (r.sector_name) kvRow('Sector', r.sector_name, cyan);
-      sectorBlocks.forEach(function(b) {
-        var lbl = (b.querySelector('.si-label')?.textContent || '').trim();
-        var val = (b.querySelector('.si-val')?.textContent || '').trim();
-        if (lbl && val) kvRow(lbl, val);
-      });
-      y += 4;
+    // Trending Narratives (from Narratives tab — make visible temporarily)
+    var narrPanel = document.getElementById('tab-narratives');
+    var narrList = document.getElementById('narr-list');
+    if (narrPanel && narrList && narrList.children.length) {
+      narrPanel.style.display = 'block';
+      narrPanel.style.position = 'absolute';
+      narrPanel.style.left = '-9999px';
+      await captureSection(narrList.closest('.narr-section') || narrList, 'Trending Narratives');
+      narrPanel.style.display = '';
+      narrPanel.style.position = '';
+      narrPanel.style.left = '';
     }
 
-    // ── NARRATIVE RUNWAY ──
-    var runwayRows = document.querySelectorAll('.narr-item');
-    if (runwayRows.length) {
-      sectionHead('Narrative Runway', amber);
-      runwayRows.forEach(function(item) {
-        var claim = item.querySelector('.narr-claim-text')?.textContent?.trim();
-        var evidence = item.querySelector('.narr-ev')?.textContent?.trim();
-        var energy = item.querySelector('.narr-energy')?.textContent?.trim();
-        var status = item.querySelector('.narr-status')?.textContent?.trim();
-        if (claim) {
-          checkPage(14);
-          textBlock(claim, white, 9);
-          var meta = [];
-          if (evidence) meta.push('Evidence: '+evidence);
-          if (energy) meta.push('Energy: '+energy);
-          if (status) meta.push('Status: '+status);
-          if (meta.length) textBlock(meta.join('  |  '), muted, 8);
-          y += 2;
-        }
-      });
-      y += 4;
-    }
-
-    // ── STORY LIFECYCLE ──
+    // Story Lifecycle
     var lcBody = document.getElementById('lc-body');
-    var lifecycle = lcBody?.textContent?.trim().replace(/\s+/g,' ');
-    if (lifecycle) {
-      sectionHead('Story Lifecycle', amber);
-      kvRow('Current State', r.narrative_state || '—',
-        r.narrative_state==='Surging'?green:r.narrative_state==='Breaking'?red:white);
-      if (p.nearest_exhaustion_days != null) kvRow('Est. Exhaustion', p.nearest_exhaustion_days+' days',
-        p.nearest_exhaustion_days<=7?red:p.nearest_exhaustion_days<=21?amber:white);
-      if (p.direction_forecast) kvRow('Direction Forecast', p.direction_forecast);
-      textBlock(lifecycle, secondary, 8.5);
-      y += 4;
+    if (lcBody && lcBody.textContent.trim()) {
+      var lcSection = lcBody.closest('.section') || lcBody;
+      var lcPanel = document.getElementById('tab-narratives');
+      if (lcPanel) { lcPanel.style.display = 'block'; lcPanel.style.position = 'absolute'; lcPanel.style.left = '-9999px'; }
+      await captureSection(lcSection, 'Story Lifecycle');
+      if (lcPanel) { lcPanel.style.display = ''; lcPanel.style.position = ''; lcPanel.style.left = ''; }
     }
 
-    // ── PREREQUISITES ──
-    var prBody = document.getElementById('pr-body');
-    var prereqs = prBody?.textContent?.trim().replace(/\s+/g,' ');
-    if (prereqs) {
-      sectionHead('Prerequisite Check', violet);
-      textBlock(prereqs, secondary, 8.5);
-      y += 4;
-    }
-
-    // ── PULSE SUMMARY ──
+    // Pulse Summary text
     if (p.pulse_summary) {
-      sectionHead('Pulse Summary', cyan);
-      textBlock(p.pulse_summary, secondary, 9);
-      y += 4;
+      checkPage(20);
+      doc.setFillColor(cyan[0],cyan[1],cyan[2]);
+      doc.rect(mx, y, 2, 6, 'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(white[0],white[1],white[2]);
+      doc.text('Pulse Summary', mx + 5, y + 5);
+      y += 10;
+      doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(secondary[0],secondary[1],secondary[2]);
+      var summaryLines = doc.splitTextToSize(p.pulse_summary, cw - 4);
+      summaryLines.forEach(function(line) { checkPage(5); doc.text(line, mx + 2, y); y += 4.5; });
+      y += 6;
     }
 
     // ── Footer on all pages ──
@@ -5275,29 +5305,29 @@ function exportReport() {
     for (var pg = 1; pg <= pageCount; pg++) {
       doc.setPage(pg);
       doc.setFillColor(surface[0],surface[1],surface[2]);
-      doc.rect(0,ph-12,pw,12,'F');
+      doc.rect(0, ph - 14, pw, 14, 'F');
       doc.setFillColor(cyan[0],cyan[1],cyan[2]);
-      doc.rect(0,ph-12,pw,0.4,'F');
+      doc.rect(0, ph - 14, pw, 0.4, 'F');
       doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(muted[0],muted[1],muted[2]);
-      doc.text('Generated by Market Prism  ·  '+date, mx, ph-7);
+      doc.text('Generated by Market Prism  ·  ' + date, mx, ph - 8);
       doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(cyan[0],cyan[1],cyan[2]);
-      doc.text('marketprism.co', mx, ph-3);
+      doc.text('marketprism.app', mx, ph - 4);
       doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(muted[0],muted[1],muted[2]);
-      doc.text('Page '+pg+' / '+pageCount, mxr, ph-5, {align:'right'});
+      doc.text('Page ' + pg + ' / ' + pageCount, pw - mx, ph - 6, {align:'right'});
     }
 
-    doc.save(t+'-market-prism-report-'+dateShort+'.pdf');
-    if (btn) btn.disabled = false;
+    doc.save(t + '-market-prism-report-' + dateShort + '.pdf');
+    if (btn) { btn.disabled = false; btn.textContent = 'Export Report'; }
   }
 
-  // Load jsPDF if not already loaded
+  // Load jsPDF then run
   if (window.jspdf) {
-    doExport();
+    doExport().catch(function(e) { console.error('[PDF]', e); alert('PDF export failed: ' + e.message); if (btn) { btn.disabled = false; btn.textContent = 'Export Report'; } });
   } else {
     var script = document.createElement('script');
     script.src = 'https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js';
-    script.onload = doExport;
-    script.onerror = function() { alert('Failed to load PDF library. Please try again.'); if (btn) btn.disabled = false; };
+    script.onload = function() { doExport().catch(function(e) { console.error('[PDF]', e); alert('PDF export failed: ' + e.message); if (btn) { btn.disabled = false; btn.textContent = 'Export Report'; } }); };
+    script.onerror = function() { alert('Failed to load PDF library.'); if (btn) { btn.disabled = false; btn.textContent = 'Export Report'; } };
     document.head.appendChild(script);
   }
 }
