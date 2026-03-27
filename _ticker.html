@@ -1051,6 +1051,21 @@
   }
   .narr-cite-count { font-weight: 500; color: var(--text-secondary); }
   .narr-outlet { font-size: 11px; color: var(--text-tertiary); }
+  .narr-reach {
+    font-size: 10px;
+    font-weight: 500;
+    color: #00AEFF;
+    background: rgba(0,174,255,0.08);
+    border: 1px solid rgba(0,174,255,0.15);
+    padding: 1px 7px;
+    border-radius: 3px;
+    letter-spacing: .02em;
+  }
+  .narr-src-reach {
+    font-size: 10px;
+    color: rgba(0,174,255,0.7);
+    margin-left: 4px;
+  }
   .narr-date   { font-size: 11px; font-family: var(--font-body); color: var(--text-tertiary); }
   .narr-price-at {
     font-size: 11px;
@@ -4320,6 +4335,78 @@ async function loadMoveDrivers() {
 }
 
 // ── Trending Narratives ───────────────────────────────────────────────────────
+// ── Publication Reach Lookup (estimated monthly unique visitors in millions) ──
+var PUB_REACH = {
+  'Bloomberg':120,'bloomberg':120,'Bloomberg News':120,
+  'WSJ':90,'Wall Street Journal':90,'The Wall Street Journal':90,
+  'CNBC':80,'cnbc':80,
+  'Reuters':70,'reuters':70,
+  'Yahoo Finance':65,'Yahoo':65,'yahoo':65,
+  'MarketWatch':50,'marketwatch':50,
+  'Forbes':45,'forbes':45,
+  'Business Insider':40,'Insider':40,
+  'TradingView':40,'tradingview':40,
+  'Investopedia':35,'investopedia':35,
+  'The Motley Fool':30,'Motley Fool':30,
+  'Financial Times':28,'FT':28,
+  'Barron\'s':20,'Barrons':20,"Barron's":20,
+  'Seeking Alpha':15,'SeekingAlpha':15,'seekingalpha':15,
+  'Benzinga':12,'benzinga':12,
+  'Zacks':10,'zacks':10,'Zacks Investment Research':10,
+  'TheStreet':8,'thestreet':8,
+  'Investor\'s Business Daily':8,"Investor's Business Daily":8,'IBD':8,
+  'The Globe and Mail':6,'Globe and Mail':6,
+  'GuruFocus':3,'gurufocus':3,
+  'TipRanks':5,'tipranks':5,
+  'Coinpedia Fintech News':2,'Coinpedia':2,
+  'InvestorPlace':4,'investorplace':4,
+  'Kiplinger':3,'kiplinger':3,
+  'MoneyWise':2,'moneywise':2,
+  '24/7 Wall St.':3,'24/7 Wall St':3,
+  'The Street':8,
+  'openPR.com':1,'openPR':1,
+  'MEXC':1,
+  'Bitget':1,
+  'MarketBeat':4,'marketbeat':4,
+  'StockAnalysis':3,
+  'Nasdaq':15,'nasdaq':15,
+  'AP':60,'Associated Press':60,
+  'New York Times':80,'NYT':80,'NY Times':80,
+  'Washington Post':50,'WaPo':50,
+  'Los Angeles Times':25,'LA Times':25,
+  'The Chronicle Journal':1,
+  'Snowball':1,'SnowballFi':1
+};
+
+function getReach(outlet) {
+  if (!outlet) return null;
+  if (PUB_REACH[outlet]) return PUB_REACH[outlet];
+  // Try partial match
+  var lower = outlet.toLowerCase();
+  for (var k in PUB_REACH) {
+    if (lower.indexOf(k.toLowerCase()) !== -1 || k.toLowerCase().indexOf(lower) !== -1) return PUB_REACH[k];
+  }
+  return null;
+}
+
+function fmtReach(millions) {
+  if (millions >= 1000) return (millions / 1000).toFixed(1) + 'B';
+  return millions + 'M';
+}
+
+function calcNarrativeReach(citations) {
+  var total = 0;
+  var seen = new Set();
+  (citations || []).forEach(function(c) {
+    var outlet = c.source_outlet;
+    if (!outlet || seen.has(outlet)) return;
+    seen.add(outlet);
+    var r = getReach(outlet);
+    if (r) total += r;
+  });
+  return total;
+}
+
 async function loadNarratives() {
   if (!TICKER) return;
   try {
@@ -4510,6 +4597,7 @@ async function loadNarratives() {
           return `<div class="narr-source-row">
             <div class="narr-source-meta">
               ${c.source_outlet ? `<span class="narr-src-outlet">${esc(c.source_outlet)}</span>` : ''}
+              ${(() => { var sr = getReach(c.source_outlet); return sr ? `<span class="narr-src-reach">${fmtReach(sr)} readers</span>` : ''; })()}
               ${c.analyst_firm  ? `<span class="narr-src-analyst">· ${esc(c.analyst_firm)}</span>` : ''}
               ${c.verdict ? `<span class="narr-verdict ${cVCls}" style="font-size:9px;padding:1px 5px;">${esc(c.verdict)}</span>` : ''}
             </div>
@@ -4536,6 +4624,12 @@ async function loadNarratives() {
                 const outlets = [...new Set((n.allCitations||[n]).map(c => c.source_outlet).filter(Boolean))];
                 return outlets.length > 0
                   ? `<span class="narr-outlet">${outlets.map(o => esc(o)).join(', ')}</span>`
+                  : '';
+              })()}
+              ${(() => {
+                const reach = calcNarrativeReach(n.allCitations || [n]);
+                return reach > 0
+                  ? `<span class="narr-reach" title="Estimated combined monthly readership of citing publications">~${fmtReach(reach)} reach</span>`
                   : '';
               })()}
               ${n.narrative_type ? `<span class="narr-outlet">· ${esc(n.narrative_type)}</span>` : ''}
