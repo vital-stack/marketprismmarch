@@ -2204,6 +2204,7 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
     <button class="tk-tab" data-tab="narratives">Narratives</button>
     <button class="tk-tab" data-tab="history">History</button>
     <button class="tk-tab" data-tab="strategy">Trading Strategy</button>
+    <button class="tk-tab" data-tab="financials">Financials</button>
   </div>
 
   <!-- Action bar -->
@@ -2622,6 +2623,143 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
 
     </div><!-- /strategy-content -->
   </div><!-- /tab-strategy -->
+
+  <!-- ═══ TAB: FINANCIALS ═══ -->
+  <div class="tk-tab-panel" id="tab-financials">
+    <!-- Loading skeleton -->
+    <div id="fin-loading">
+      <div class="section">
+        <div class="section-label">Ticker Financials</div>
+        <div class="section-body" style="padding:20px;">
+          <div class="skel" style="height:14px;width:40%;margin-bottom:10px;"></div>
+          <div class="skel" style="height:14px;width:60%;margin-bottom:10px;"></div>
+          <div class="skel" style="height:14px;width:50%;"></div>
+        </div>
+      </div>
+    </div>
+    <!-- No data message -->
+    <div id="fin-nodata" style="display:none;">
+      <div class="section">
+        <div class="section-body" style="padding:24px;text-align:center;color:var(--mp-text-tertiary);">
+          No live financial data available for this ticker.
+        </div>
+      </div>
+    </div>
+    <!-- Content -->
+    <div id="fin-content" style="display:none;">
+
+      <!-- SECTION 1: Live Snapshot -->
+      <div class="section">
+        <div class="section-label">Live Market Snapshot</div>
+        <div class="section-body" style="padding:20px;">
+          <div class="fin-updated" id="fin-updated" style="font-size:11px;color:var(--mp-text-muted);margin-bottom:16px;"></div>
+          <div class="strat-insights-grid" style="grid-template-columns:repeat(3,1fr);">
+            <div class="strat-insight-card">
+              <div class="strat-insight-label">Price</div>
+              <div class="strat-insight-value" id="fin-price" style="color:#FFFFFF;font-size:20px;">—</div>
+              <div class="strat-insight-sub" id="fin-change"></div>
+            </div>
+            <div class="strat-insight-card">
+              <div class="strat-insight-label">Day Change</div>
+              <div class="strat-insight-value" id="fin-change-val" style="font-size:20px;">—</div>
+              <div class="strat-insight-sub" id="fin-change-pct"></div>
+            </div>
+            <div class="strat-insight-card">
+              <div class="strat-insight-label">Prev Close</div>
+              <div class="strat-insight-value" id="fin-prev-close" style="color:#FFFFFF;font-size:20px;">—</div>
+              <div class="strat-insight-sub">Prior session</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 2: Day Range -->
+      <div class="section">
+        <div class="section-label">Today's Session</div>
+        <div class="section-body" style="padding:20px;">
+          <div class="strat-insights-grid" style="grid-template-columns:repeat(4,1fr);">
+            <div class="strat-insight-card">
+              <div class="strat-insight-label">Open</div>
+              <div class="strat-insight-value" id="fin-open" style="color:#FFFFFF;font-size:18px;">—</div>
+            </div>
+            <div class="strat-insight-card">
+              <div class="strat-insight-label">High</div>
+              <div class="strat-insight-value" id="fin-high" style="color:#00DE94;font-size:18px;">—</div>
+            </div>
+            <div class="strat-insight-card">
+              <div class="strat-insight-label">Low</div>
+              <div class="strat-insight-value" id="fin-low" style="color:#FF4D4D;font-size:18px;">—</div>
+            </div>
+            <div class="strat-insight-card">
+              <div class="strat-insight-label">Volume</div>
+              <div class="strat-insight-value" id="fin-volume" style="color:#00AEFF;font-size:18px;">—</div>
+            </div>
+          </div>
+          <!-- Day range bar -->
+          <div style="margin-top:20px;">
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--mp-text-muted);margin-bottom:6px;">
+              <span id="fin-range-low">Low</span>
+              <span style="color:var(--mp-text-secondary);">Day Range</span>
+              <span id="fin-range-high">High</span>
+            </div>
+            <div style="position:relative;height:6px;border-radius:3px;background:rgba(255,255,255,0.06);">
+              <div id="fin-range-fill" style="position:absolute;top:0;left:0;height:100%;border-radius:3px;background:linear-gradient(90deg,#FF4D4D,#FFB800,#00DE94);transition:width .3s;"></div>
+              <div id="fin-range-marker" style="position:absolute;top:-3px;width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid var(--mp-obsidian);box-shadow:0 0 6px rgba(255,255,255,0.3);transition:left .3s;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 3: Quote -->
+      <div class="section">
+        <div class="section-label">Last Quote</div>
+        <div class="section-body" style="padding:20px;">
+          <div class="strat-insights-grid" style="grid-template-columns:repeat(2,1fr);">
+            <div class="strat-insight-card">
+              <div class="strat-insight-label">Bid</div>
+              <div class="strat-insight-value" id="fin-bid" style="color:#00DE94;font-size:18px;">—</div>
+            </div>
+            <div class="strat-insight-card">
+              <div class="strat-insight-label">Ask</div>
+              <div class="strat-insight-value" id="fin-ask" style="color:#FF4D4D;font-size:18px;">—</div>
+            </div>
+          </div>
+          <div id="fin-spread" style="text-align:center;margin-top:12px;font-size:12px;color:var(--mp-text-tertiary);"></div>
+        </div>
+      </div>
+
+      <!-- SECTION 4: Previous Day -->
+      <div class="section">
+        <div class="section-label">Previous Session</div>
+        <div class="section-body" style="padding:20px;">
+          <div class="strat-insights-grid" style="grid-template-columns:repeat(4,1fr);">
+            <div class="strat-insight-card">
+              <div class="strat-insight-label">Open</div>
+              <div class="strat-insight-value" id="fin-prev-open" style="color:#FFFFFF;font-size:16px;">—</div>
+            </div>
+            <div class="strat-insight-card">
+              <div class="strat-insight-label">High</div>
+              <div class="strat-insight-value" id="fin-prev-high" style="color:#FFFFFF;font-size:16px;">—</div>
+            </div>
+            <div class="strat-insight-card">
+              <div class="strat-insight-label">Low</div>
+              <div class="strat-insight-value" id="fin-prev-low" style="color:#FFFFFF;font-size:16px;">—</div>
+            </div>
+            <div class="strat-insight-card">
+              <div class="strat-insight-label">Volume</div>
+              <div class="strat-insight-value" id="fin-prev-vol" style="color:#FFFFFF;font-size:16px;">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 5: Data source -->
+      <div style="text-align:right;padding:8px 0;font-size:11px;color:var(--mp-text-muted);">
+        Data: Massive.com (Polygon.io) · <span id="fin-source"></span>
+      </div>
+
+    </div><!-- /fin-content -->
+  </div><!-- /tab-financials -->
 
   <!-- Chart tab removed — chart now embedded in Overview -->
 
@@ -4817,6 +4955,11 @@ async function createImage() {
         window._strategyLoaded = true;
         loadStrategyData();
       }
+      // Lazy-load financials on first click
+      if (tab.dataset.tab === 'financials' && !window._financialsLoaded) {
+        window._financialsLoaded = true;
+        loadFinancialsData();
+      }
     });
   });
 })();
@@ -5018,6 +5161,103 @@ setInterval(() => refreshAll(), 5 * 60 * 1000);
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) { refreshAll(); fetchLivePrice(); }
 });
+
+// ── Financials Tab (Live from Massive/Polygon) ──────────────────────────────
+async function loadFinancialsData() {
+  if (!TICKER) return;
+  const loadingEl = document.getElementById('fin-loading');
+  const nodataEl  = document.getElementById('fin-nodata');
+  const contentEl = document.getElementById('fin-content');
+
+  try {
+    const res = await fetch('/api/live-quote?ticker=' + encodeURIComponent(TICKER));
+    if (!res.ok) throw new Error('API returned ' + res.status);
+    const d = await res.json();
+    if (!d || !d.price) throw new Error('No price data');
+
+    const fmtP = (v) => v != null ? '$' + Number(v).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) : '—';
+    const fmtV = (v) => {
+      if (v == null) return '—';
+      if (v >= 1e9) return (v/1e9).toFixed(2) + 'B';
+      if (v >= 1e6) return (v/1e6).toFixed(2) + 'M';
+      if (v >= 1e3) return (v/1e3).toFixed(1) + 'K';
+      return v.toLocaleString();
+    };
+
+    // Price & change
+    document.getElementById('fin-price').textContent = fmtP(d.price);
+    const chgColor = d.change > 0 ? '#00DE94' : d.change < 0 ? '#FF4D4D' : 'var(--mp-text-secondary)';
+    const chgSign = d.change > 0 ? '+' : '';
+    document.getElementById('fin-change-val').textContent = d.change != null ? chgSign + d.change.toFixed(2) : '—';
+    document.getElementById('fin-change-val').style.color = chgColor;
+    document.getElementById('fin-change-pct').innerHTML = d.changePct != null ? '<span style="color:' + chgColor + '">' + chgSign + d.changePct.toFixed(2) + '%</span>' : '';
+    document.getElementById('fin-change').innerHTML = d.changePct != null ? '<span style="color:' + chgColor + '">' + chgSign + d.changePct.toFixed(2) + '% today</span>' : '';
+
+    // Prev close
+    document.getElementById('fin-prev-close').textContent = fmtP(d.prevClose);
+
+    // Day range
+    document.getElementById('fin-open').textContent = fmtP(d.open);
+    document.getElementById('fin-high').textContent = fmtP(d.high);
+    document.getElementById('fin-low').textContent = fmtP(d.low);
+    document.getElementById('fin-volume').textContent = fmtV(d.volume);
+
+    // Range bar
+    if (d.high != null && d.low != null && d.high !== d.low) {
+      const range = d.high - d.low;
+      const pct = Math.max(0, Math.min(100, ((d.price - d.low) / range) * 100));
+      document.getElementById('fin-range-fill').style.width = pct + '%';
+      document.getElementById('fin-range-marker').style.left = 'calc(' + pct + '% - 6px)';
+      document.getElementById('fin-range-low').textContent = fmtP(d.low);
+      document.getElementById('fin-range-high').textContent = fmtP(d.high);
+    }
+
+    // Bid / Ask
+    document.getElementById('fin-bid').textContent = fmtP(d.bid);
+    document.getElementById('fin-ask').textContent = fmtP(d.ask);
+    if (d.bid != null && d.ask != null) {
+      const spread = (d.ask - d.bid).toFixed(2);
+      const spreadPct = ((d.ask - d.bid) / d.ask * 100).toFixed(3);
+      document.getElementById('fin-spread').textContent = 'Spread: $' + spread + ' (' + spreadPct + '%)';
+    }
+
+    // Previous day (from snapshot prevDay if available — use current API data)
+    document.getElementById('fin-prev-open').textContent = '—';
+    document.getElementById('fin-prev-high').textContent = '—';
+    document.getElementById('fin-prev-low').textContent = '—';
+    document.getElementById('fin-prev-vol').textContent = '—';
+
+    // Now fetch the full snapshot for previous day detail
+    try {
+      const snapRes = await fetch('/api/ticker-snapshot?ticker=' + encodeURIComponent(TICKER));
+      if (snapRes.ok) {
+        const snapData = await snapRes.json();
+        const prev = snapData.prevDay || {};
+        if (prev.o) document.getElementById('fin-prev-open').textContent = fmtP(prev.o);
+        if (prev.h) document.getElementById('fin-prev-high').textContent = fmtP(prev.h);
+        if (prev.l) document.getElementById('fin-prev-low').textContent = fmtP(prev.l);
+        if (prev.v) document.getElementById('fin-prev-vol').textContent = fmtV(prev.v);
+      }
+    } catch(_) {}
+
+    // Timestamp
+    if (d.timestamp) {
+      const ts = d.timestamp > 1e15 ? d.timestamp / 1e6 : d.timestamp > 1e12 ? d.timestamp / 1e3 : d.timestamp;
+      const dt = new Date(ts);
+      document.getElementById('fin-updated').textContent = 'Updated: ' + dt.toLocaleString('en-US', {hour:'numeric',minute:'2-digit',second:'2-digit',hour12:true,month:'short',day:'numeric'});
+    }
+
+    // Source badge
+    document.getElementById('fin-source').textContent = 'Source: ' + (d.source || 'api').replace(/_/g,' ');
+
+    loadingEl.style.display = 'none';
+    contentEl.style.display = 'block';
+  } catch (err) {
+    console.warn('[Financials] Load failed:', err);
+    loadingEl.style.display = 'none';
+    nodataEl.style.display = 'block';
+  }
+}
 
 // ── Live Price via Polygon ────────────────────────────────────────────────────
 var _liveQuoteTimer = null;
