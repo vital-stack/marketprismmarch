@@ -1679,16 +1679,16 @@
     .tk-tab { padding: 14px 18px; font-size: 12px; }
   }
 
-  /* ── Full-width split layout — 2 columns (content + feed) ── */
+  /* ── Full-width split layout — 3 columns ── */
   .tk-main-split {
     display: grid;
-    grid-template-columns: 1fr 320px;
+    grid-template-columns: 5fr 4fr 3fr;
     gap: 24px;
     align-items: start;
   }
   @media (max-width: 1200px) {
-    .tk-main-split { grid-template-columns: 1fr; }
-    .tk-col-right { order: -1; }
+    .tk-main-split { grid-template-columns: 1fr 1fr; }
+    .tk-col-right { grid-column: 1 / -1; }
   }
   @media (max-width: 800px) {
     .tk-main-split { grid-template-columns: 1fr; }
@@ -1697,163 +1697,6 @@
   .tk-col-mid { min-width: 0; }
   .tk-col-right { min-width: 0; }
   .tk-content-col { min-width: 0; }
-
-  /* ── Narrative Strength Ring ── */
-  .narr-strength-wrap {
-    display: flex;
-    align-items: flex-start;
-    gap: 28px;
-    padding: 24px;
-  }
-  .narr-ring-main {
-    position: relative;
-    flex-shrink: 0;
-    width: 160px;
-    height: 160px;
-  }
-  .narr-ring-main svg { width: 160px; height: 160px; }
-  .narr-ring-center {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    text-align: center;
-  }
-  .narr-ring-score {
-    font-family: var(--font-display);
-    font-size: 42px;
-    font-weight: 400;
-    letter-spacing: -0.025em;
-    line-height: 1;
-    color: #fff;
-  }
-  .narr-ring-label {
-    font-family: var(--font-body);
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: .08em;
-    color: var(--mp-text-muted);
-    margin-top: 4px;
-  }
-  .narr-ring-right {
-    flex: 1;
-    min-width: 0;
-  }
-  .narr-mini-rings {
-    display: flex;
-    gap: 20px;
-    margin-bottom: 16px;
-  }
-  .narr-mini-ring {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-  }
-  .narr-mini-ring svg { width: 64px; height: 64px; }
-  .narr-mini-ring-center {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-family: var(--font-body);
-    font-size: 16px;
-    font-weight: 600;
-    color: #fff;
-  }
-  .narr-mini-label {
-    font-family: var(--font-body);
-    font-size: 11px;
-    color: var(--mp-text-tertiary);
-    text-transform: uppercase;
-    letter-spacing: .06em;
-  }
-  .narr-phase-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 12px;
-  }
-  .narr-summary-text {
-    font-family: var(--font-body);
-    font-size: 13px;
-    line-height: 1.6;
-    color: var(--mp-text-secondary);
-  }
-  .narr-claim-text {
-    font-family: 'Instrument Serif', 'DM Serif Display', Georgia, serif;
-    font-size: 18px;
-    font-weight: 400;
-    color: var(--mp-text-primary);
-    line-height: 1.4;
-    margin-bottom: 14px;
-  }
-
-  /* ── Warranted vs Hype tug-of-war bar ── */
-  .tug-bar-wrap { padding: 20px; }
-  .tug-labels {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 8px;
-  }
-  .tug-label {
-    font-family: var(--font-body);
-    font-size: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-  }
-  .tug-bar-track {
-    height: 10px;
-    border-radius: 5px;
-    background: rgba(255,255,255,0.06);
-    position: relative;
-    overflow: hidden;
-  }
-  .tug-bar-fill {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    border-radius: 5px;
-    transition: width .4s;
-  }
-  .tug-bar-marker {
-    position: absolute;
-    top: -3px;
-    width: 4px;
-    height: 16px;
-    border-radius: 2px;
-    background: #fff;
-    box-shadow: 0 0 8px rgba(255,255,255,0.4);
-    transition: left .4s;
-  }
-  .tug-detail-row {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 12px;
-    gap: 12px;
-  }
-  .tug-detail {
-    flex: 1;
-    text-align: center;
-    padding: 8px;
-    border-radius: 8px;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.04);
-  }
-  .tug-detail-label {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-    color: var(--mp-text-muted);
-    margin-bottom: 2px;
-  }
-  .tug-detail-val {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--mp-text-primary);
-  }
 
   /* ── Stories Feed (right column) ── */
   .tk-feed {
@@ -2498,50 +2341,20 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
   <div class="tk-tab-panel active" id="tab-overview">
     <div class="tk-main-split">
 
-      <!-- ── Main Content Column ── -->
+      <!-- ── Left Column (col-span-5) ── -->
       <div class="tk-col-left">
 
-        <!-- 1. THE NARRATIVE — Strength Ring + Claim + Summary -->
+        <!-- Primary Claim -->
         <div class="section">
-          <div class="section-label">The Narrative</div>
-          <div class="section-body" id="narr-strength-body">
-            <div class="narr-strength-wrap">
-              <div class="narr-ring-main" id="narr-ring-main">
-                <div class="skel" style="width:160px;height:160px;border-radius:50%;"></div>
-              </div>
-              <div class="narr-ring-right">
-                <div class="narr-claim-text" id="narr-claim-text">
-                  <div class="skel" style="height:16px;width:90%;margin-bottom:8px;"></div>
-                  <div class="skel" style="height:16px;width:70%;"></div>
-                </div>
-                <div class="narr-phase-row" id="narr-phase-row"></div>
-                <div class="narr-mini-rings" id="narr-mini-rings">
-                  <div class="skel" style="width:64px;height:64px;border-radius:50%;"></div>
-                  <div class="skel" style="width:64px;height:64px;border-radius:50%;"></div>
-                  <div class="skel" style="width:64px;height:64px;border-radius:50%;"></div>
-                </div>
-                <div class="narr-summary-text" id="narr-summary-text">
-                  <div class="skel" style="height:12px;width:95%;margin-bottom:6px;"></div>
-                  <div class="skel" style="height:12px;width:80%;"></div>
-                </div>
-              </div>
-            </div>
+          <div class="section-label">Primary Narrative Claim</div>
+          <div class="section-body" style="padding:20px;" id="primary-claim-body">
+            <div class="skel" style="height:14px;width:90%;margin-bottom:8px;"></div>
+            <div class="skel" style="height:14px;width:70%;margin-bottom:12px;"></div>
+            <div class="skel" style="height:60px;border-radius:7px;"></div>
           </div>
         </div>
 
-        <!-- 2. WHAT'S DRIVING THE PRICE (moved from History tab) -->
-        <div class="section">
-          <div class="section-label">What's Driving the Price</div>
-          <div class="section-body">
-            <div class="drivers-pad" id="drivers-body">
-              <div class="skel" style="height:13px;width:60%;margin-bottom:6px;"></div>
-              <div class="skel" style="height:13px;width:80%;margin-bottom:6px;"></div>
-              <div class="skel" style="height:13px;width:50%;"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 3. PRICE & NARRATIVES CHART -->
+        <!-- Narrative History Chart (moved from Chart tab) -->
         <div class="section">
           <div class="section-label">Price &amp; Narratives</div>
           <div class="section-body">
@@ -2595,18 +2408,7 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
           </div>
         </div>
 
-        <!-- 4. WARRANTED VS HYPE (tug-of-war bar) -->
-        <div class="section">
-          <div class="section-label">Warranted vs Hype</div>
-          <div class="section-body" id="warranted-body">
-            <div class="tug-bar-wrap">
-              <div class="skel" style="height:10px;margin-bottom:14px;border-radius:99px;"></div>
-              <div class="skel" style="height:30px;border-radius:8px;"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 5. FORENSIC ANALYSIS -->
+        <!-- Forensic Analysis (news cards) -->
         <div class="section">
           <div class="section-label">Forensic Analysis</div>
           <div class="section-body">
@@ -2619,7 +2421,46 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
           </div>
         </div>
 
-        <!-- 6. SECTOR INTELLIGENCE -->
+      </div><!-- /tk-col-left -->
+
+      <!-- ── Middle Column (col-span-4) ── -->
+      <div class="tk-col-mid">
+
+        <!-- Warranted vs Hype -->
+        <div class="section">
+          <div class="section-label">Warranted vs Hype</div>
+          <div class="section-body" style="padding:20px;" id="warranted-body">
+            <div class="skel" style="height:44px;margin-bottom:14px;"></div>
+            <div class="skel" style="height:5px;margin-bottom:10px;border-radius:99px;"></div>
+            <div class="skel" style="height:5px;margin-bottom:10px;border-radius:99px;"></div>
+            <div class="skel" style="height:5px;border-radius:99px;"></div>
+          </div>
+        </div>
+
+        <!-- Narrative Heatmap (Runway) -->
+        <div class="section">
+          <div class="section-label">Narrative Runway</div>
+          <div class="section-body" id="heatmap-body">
+            <div style="padding:14px;"><div class="skel" style="height:80px;border-radius:7px;"></div></div>
+          </div>
+        </div>
+
+        <!-- Diagnosis Strip (Event/Trade stats) -->
+        <div class="section">
+          <div class="section-label">Forensic Multiples</div>
+          <div id="diag-strip" class="diag-strip">
+            <div class="diag-cell"><div class="diag-label">Phase</div><div class="diag-val"><div class="skel" style="width:70px;height:20px;border-radius:99px;"></div></div></div>
+            <div class="diag-cell"><div class="diag-label">Fragility</div><div class="diag-val"><div class="skel" style="width:50px;height:17px;"></div></div></div>
+            <div class="diag-cell"><div class="diag-label">Energy</div><div class="diag-val"><div class="skel" style="width:50px;height:17px;"></div></div></div>
+            <div class="diag-cell"><div class="diag-label">Exhaustion</div><div class="diag-val"><div class="skel" style="width:40px;height:17px;"></div></div></div>
+            <div class="diag-cell"><div class="diag-label">Net Pressure</div><div class="diag-val"><div class="skel" style="width:40px;height:17px;"></div></div></div>
+            <div class="diag-cell"><div class="diag-label">Health</div><div class="diag-val"><div class="skel" style="width:50px;height:17px;"></div></div></div>
+            <div class="diag-cell"><div class="diag-label">Direction</div><div class="diag-val"><div class="skel" style="width:60px;height:17px;"></div></div></div>
+            <div class="diag-cell"><div class="diag-label">Fair Value Gap</div><div class="diag-val"><div class="skel" style="width:50px;height:17px;"></div></div></div>
+          </div>
+        </div>
+
+        <!-- Sector Intelligence -->
         <div class="section">
           <div class="section-label">
             Sector Intelligence
@@ -2641,9 +2482,9 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
           </div>
         </div>
 
-      </div><!-- /tk-col-left -->
+      </div><!-- /tk-col-mid -->
 
-      <!-- ── Right Column: Story Feed (sticky) ── -->
+      <!-- ── Right Column (col-span-3): Story Feed ── -->
       <div class="tk-col-right">
         <div class="tk-feed" id="tk-feed">
           <div class="tk-feed-header">
@@ -2734,6 +2575,18 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
 
   <!-- ═══ TAB: HISTORY ═══ -->
   <div class="tk-tab-panel" id="tab-history">
+    <!-- What's Moving It -->
+    <div class="section">
+      <div class="section-label">What's Moving It</div>
+      <div class="section-body">
+        <div class="drivers-pad" id="drivers-body">
+          <div class="skel" style="height:13px;width:60%;margin-bottom:6px;"></div>
+          <div class="skel" style="height:13px;width:80%;margin-bottom:6px;"></div>
+          <div class="skel" style="height:13px;width:50%;"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- What Happened Last Time -->
     <div class="section">
       <div class="section-label">
@@ -4724,122 +4577,81 @@ function renderDiagStrip(p) {
     </div>`;
 }
 
-// ── Render: Narrative Strength Ring ───────────────────────────────────────────
-function buildRingSVG(pct, size, stroke, color, bgOpacity) {
-  var r = (size - stroke) / 2;
-  var circ = 2 * Math.PI * r;
-  var offset = circ - (Math.max(0, Math.min(100, pct)) / 100) * circ;
-  return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '">'
-    + '<circle cx="' + (size/2) + '" cy="' + (size/2) + '" r="' + r + '" fill="none" stroke="rgba(255,255,255,' + (bgOpacity || 0.06) + ')" stroke-width="' + stroke + '"/>'
-    + '<circle cx="' + (size/2) + '" cy="' + (size/2) + '" r="' + r + '" fill="none" stroke="' + color + '" stroke-width="' + stroke + '" stroke-linecap="round" stroke-dasharray="' + circ.toFixed(2) + '" stroke-dashoffset="' + offset.toFixed(2) + '" transform="rotate(-90 ' + (size/2) + ' ' + (size/2) + ')" style="transition:stroke-dashoffset .6s ease;"/>'
-    + '</svg>';
-}
-
-function scoreColor(v) {
-  if (v >= 70) return '#00DE94';
-  if (v >= 40) return '#FFB800';
-  return '#FF4D4D';
-}
-
+// ── Render: Primary Claim ─────────────────────────────────────────────────────
 function renderPrimaryClaim(p) {
-  var el = document.getElementById('narr-strength-body');
+  const el = document.getElementById('primary-claim-body');
   if (!el || !p) return;
 
-  var phase   = phaseFromPulse(p);
-  var verdict = p.prevailing_verdict || 'Monitoring';
-  var vCls    = verdict === 'Narrative Trap' ? 'verdict-trap'
+  const phase   = phaseFromPulse(p);
+  const verdict = p.prevailing_verdict || 'Monitoring';
+  const vCls    = verdict === 'Narrative Trap' ? 'verdict-trap'
     : verdict === 'Structurally Supported' ? 'verdict-supported'
     : 'verdict-monitoring';
+  const energy  = p.prevailing_energy != null ? Math.round(p.prevailing_energy) : '—';
+  const exdays  = p.nearest_exhaustion_days != null ? Math.round(p.nearest_exhaustion_days) + 'd' : '—';
+  const coord   = p.pulse_coordination != null ? Math.round(p.pulse_coordination) + '/100' : '—';
+  const shifted = p.narrative_shifted
+    ? '<span class="hero-state-badge badge-breaking" style="font-size:10px;">Narrative shifted</span>' : '';
 
-  // Compute sub-scores
-  var momentum   = Math.round(p.prevailing_energy != null ? p.prevailing_energy : (p.avg_energy_remaining || 50));
-  var credibility = Math.round(p.pulse_health_score != null ? p.pulse_health_score : (p.pulse_vms || 50));
-  var coordRaw   = Math.round(p.pulse_coordination || 0);
-  var fragRaw    = fragility(p) || 0;
-  var risk       = Math.round(Math.min(100, (coordRaw * 0.6) + (fragRaw * 0.4)));
-
-  // Overall narrative strength = weighted combination
-  var overall = Math.round((momentum * 0.35) + (credibility * 0.35) + ((100 - risk) * 0.30));
-  var overallColor = scoreColor(overall);
-
-  // Exhaustion
-  var exdays = p.nearest_exhaustion_days != null ? Math.round(p.nearest_exhaustion_days) + ' days' : 'unknown';
-  var shifted = p.narrative_shifted ? ' <span class="hero-state-badge badge-breaking" style="font-size:10px;">Shifted</span>' : '';
-
-  // Summary sentence
-  var summary = '';
-  if (overall >= 70) summary = 'This narrative has strong momentum and credible evidence backing. ';
-  else if (overall >= 45) summary = 'Narrative shows moderate strength — watch for shifts. ';
-  else summary = 'Weak narrative signal — the story may be losing relevance. ';
-
-  if (risk >= 65) summary += 'High coordination risk suggests sources may be echoing each other rather than independently reporting.';
-  else if (momentum >= 70 && credibility < 45) summary += 'Strong media attention but weak evidence — could be hype-driven.';
-  else if (p.nearest_exhaustion_days != null && p.nearest_exhaustion_days <= 7) summary += 'Estimated exhaustion within ' + exdays + ' — narrative is likely fading soon.';
-  else summary += (p.pulse_summary || '');
-
-  el.innerHTML = '<div class="narr-strength-wrap">'
-    + '<div class="narr-ring-main">'
-    +   buildRingSVG(overall, 160, 10, overallColor, 0.06)
-    +   '<div class="narr-ring-center">'
-    +     '<div class="narr-ring-score" style="color:' + overallColor + ';">' + overall + '</div>'
-    +     '<div class="narr-ring-label">Strength</div>'
-    +   '</div>'
-    + '</div>'
-    + '<div class="narr-ring-right">'
-    +   '<div class="narr-claim-text">' + esc(p.prevailing_narrative || 'No prevailing narrative found') + '</div>'
-    +   '<div class="narr-phase-row">'
-    +     '<span class="hero-state-badge ' + phaseBadgeClass(phase) + '" style="font-size:10px;">' + esc(phase) + '</span>'
-    +     '<span class="verdict-badge ' + vCls + '" style="font-size:10px;">' + esc(verdict) + '</span>'
-    +     shifted
-    +     (p.nearest_exhaustion_days != null ? '<span style="font-size:11px;color:var(--mp-text-muted);margin-left:4px;">~' + exdays + ' remaining</span>' : '')
-    +   '</div>'
-    +   '<div class="narr-mini-rings">'
-    +     '<div class="narr-mini-ring"><div style="position:relative;">' + buildRingSVG(momentum, 64, 5, scoreColor(momentum), 0.06) + '<div class="narr-mini-ring-center">' + momentum + '</div></div><div class="narr-mini-label">Momentum</div></div>'
-    +     '<div class="narr-mini-ring"><div style="position:relative;">' + buildRingSVG(credibility, 64, 5, scoreColor(credibility), 0.06) + '<div class="narr-mini-ring-center">' + credibility + '</div></div><div class="narr-mini-label">Credibility</div></div>'
-    +     '<div class="narr-mini-ring"><div style="position:relative;">' + buildRingSVG(100 - risk, 64, 5, scoreColor(100 - risk), 0.06) + '<div class="narr-mini-ring-center">' + risk + '</div></div><div class="narr-mini-label">Risk</div></div>'
-    +   '</div>'
-    +   '<div class="narr-summary-text">' + esc(summary) + '</div>'
-    + '</div>'
-    + '</div>';
+  el.innerHTML = `
+    <div class="claim-title">${esc(p.prevailing_narrative || 'No prevailing narrative found')}</div>
+    <div class="claim-meta">
+      <span class="hero-state-badge ${phaseBadgeClass(phase)}" style="font-size:10px;">${esc(phase)}</span>
+      <span class="verdict-badge ${vCls}" style="font-size:10px;">${esc(verdict)}</span>
+      ${shifted}
+    </div>
+    <div class="claim-bullets">
+      <div class="claim-bullet"><span class="info-tip" data-tip="How strongly this narrative is driving media coverage (0–100)">Narrative energy<i class="info-icon">i</i></span><strong>${energy}/100</strong></div>
+      <div class="claim-bullet"><span class="info-tip" data-tip="Days until media interest in this narrative is likely to fade">Est. exhaustion<i class="info-icon">i</i></span><strong>${exdays}</strong></div>
+      <div class="claim-bullet"><span class="info-tip" data-tip="How likely sources are echoing each other vs. independent reporting">Coordination risk<i class="info-icon">i</i></span><strong>${coord}</strong></div>
+      <div class="claim-bullet"><span class="info-tip" data-tip="Number of distinct storylines currently active for this ticker">Active narratives<i class="info-icon">i</i></span><strong>${p.active_narrative_count ?? '—'}</strong></div>
+    </div>
+    <div class="claim-summary">${esc(p.pulse_summary || 'Awaiting forensic summary from pipeline.')}</div>`;
 }
 
-// ── Render: Warranted vs Hype (tug-of-war bar) ──────────────────────────────
+// ── Render: Warranted vs Hype ─────────────────────────────────────────────────
 function renderWarranted(p) {
-  var el = document.getElementById('warranted-body');
+  const el = document.getElementById('warranted-body');
   if (!el || !p) return;
 
-  var evidence  = Math.round(p.pulse_vms != null ? p.pulse_vms : 50);
-  var frag      = fragility(p) || 50;
-  var valStr    = Math.min(100, Math.round(Math.abs(p.fvd_pct || 0)));
-  var pressure  = Math.min(100, Math.round(Math.abs(p.pulse_drift || 0)));
-  var warranted = Math.round((evidence * 0.45) + ((100 - frag) * 0.25) + ((100 - valStr) * 0.20) + ((100 - pressure) * 0.10));
-  var hype      = 100 - warranted;
+  const evidence  = Math.round(p.pulse_vms ?? 50);
+  const frag      = fragility(p) ?? 50;
+  const valStr    = Math.min(100, Math.round(Math.abs(p.fvd_pct ?? 0)));
+  const pressure  = Math.min(100, Math.round(Math.abs(p.pulse_drift ?? 0)));
+  const warranted = Math.round((evidence * 0.45) + ((100 - frag) * 0.25) + ((100 - valStr) * 0.20) + ((100 - pressure) * 0.10));
+  const hype      = 100 - warranted;
 
-  var gradColor = warranted >= 60
-    ? 'linear-gradient(90deg, #00DE94 0%, #00AEFF ' + warranted + '%, rgba(255,77,77,0.3) 100%)'
-    : 'linear-gradient(90deg, rgba(0,222,148,0.3) 0%, #FFB800 ' + warranted + '%, #FF4D4D 100%)';
+  function barFill(v) {
+    return v >= 65 ? 'fill-green' : v >= 40 ? 'fill-amber' : 'fill-red';
+  }
 
-  var summary = warranted >= 60
-    ? 'Price movement appears evidence-backed rather than hype-driven.'
-    : 'Narrative looks looser than price action implies — caution warranted.';
-
-  el.innerHTML = '<div class="tug-bar-wrap">'
-    + '<div class="tug-labels">'
-    +   '<span class="tug-label" style="color:#00DE94;">Warranted ' + warranted + '</span>'
-    +   '<span class="tug-label" style="color:#FF4D4D;">Hype ' + hype + '</span>'
-    + '</div>'
-    + '<div class="tug-bar-track">'
-    +   '<div class="tug-bar-fill" style="width:100%;background:' + gradColor + ';"></div>'
-    +   '<div class="tug-bar-marker" style="left:calc(' + warranted + '% - 2px);"></div>'
-    + '</div>'
-    + '<div class="tug-detail-row">'
-    +   '<div class="tug-detail"><div class="tug-detail-label">Evidence</div><div class="tug-detail-val">' + evidence + '</div></div>'
-    +   '<div class="tug-detail"><div class="tug-detail-label">Fragility</div><div class="tug-detail-val">' + frag + '</div></div>'
-    +   '<div class="tug-detail"><div class="tug-detail-label">Val. Stretch</div><div class="tug-detail-val">' + valStr + '</div></div>'
-    +   '<div class="tug-detail"><div class="tug-detail-label">Pressure</div><div class="tug-detail-val">' + pressure + '</div></div>'
-    + '</div>'
-    + '<div class="narr-summary-text" style="margin-top:12px;">' + esc(summary) + '</div>'
-    + '</div>';
+  el.innerHTML = `
+    <div class="dual-score">
+      <div class="score-block">
+        <div class="score-block-label">Warranted</div>
+        <div class="score-block-num" style="color:#fff">${warranted}</div>
+      </div>
+      <div class="dual-divider"></div>
+      <div class="score-block">
+        <div class="score-block-label">Hype</div>
+        <div class="score-block-num" style="color:#fff">${hype}</div>
+      </div>
+    </div>
+    <div class="score-bar-row">
+      <div class="score-bar-top"><span class="info-tip" data-tip="How vulnerable the narrative is to reversal or collapse">Fragility<i class="info-icon">i</i></span><strong>${frag}</strong></div>
+      <div class="score-bar-track"><div class="score-bar-fill ${barFill(100 - frag)}" style="width:${frag}%"></div></div>
+    </div>
+    <div class="score-bar-row">
+      <div class="score-bar-top"><span class="info-tip" data-tip="How far the current price has moved from estimated fair value">Valuation stretch<i class="info-icon">i</i></span><strong>${valStr}</strong></div>
+      <div class="score-bar-track"><div class="score-bar-fill ${barFill(100 - valStr)}" style="width:${valStr}%"></div></div>
+    </div>
+    <div class="score-bar-row">
+      <div class="score-bar-top"><span class="info-tip" data-tip="How much the prevailing narrative is shifting sentiment directionally">Narrative pressure<i class="info-icon">i</i></span><strong>${pressure}</strong></div>
+      <div class="score-bar-track"><div class="score-bar-fill ${barFill(100 - pressure)}" style="width:${pressure}%"></div></div>
+    </div>
+    <div class="claim-summary" style="margin-top:10px;">
+      ${warranted >= 60 ? 'Move looks more evidence-backed than hype-driven.' : 'Narrative looks looser than the price action implies.'}
+    </div>`;
 }
 
 // ── Render: Narrative Heatmap ─────────────────────────────────────────────────
@@ -5544,8 +5356,10 @@ async function refreshAll() {
   _tickerPulseData = pulse;
   const fairValue = heroData?.fair_value ?? pulse?.fair_value ?? null;
 
+  renderDiagStrip(pulse);
   renderPrimaryClaim(pulse);
   renderWarranted(pulse);
+  renderHeatmap(pulse);
 
   // Fire leaderboard badge enrichment (non-blocking)
   enrichLeaderboardBadges();
