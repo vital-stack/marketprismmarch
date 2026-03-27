@@ -5046,19 +5046,20 @@ function exportReport() {
 
     y = 56;
 
-    // Verdict banner
+    // Verdict — small inline badge, not a massive banner
     var verdict = r.prism_verdict || p.prevailing_verdict || 'Monitoring';
     var isTrap = verdict.toLowerCase().indexOf('trap') !== -1;
     var isSupported = verdict.toLowerCase().indexOf('supported') !== -1;
     var vColor = isTrap ? red : isSupported ? green : cyan;
-    var vBg = isTrap ? [30,12,12] : isSupported ? [10,28,20] : [10,20,32];
 
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(vColor[0],vColor[1],vColor[2]);
+    var verdictW = doc.getTextWidth(verdict.toUpperCase()) + 10;
+    var vBg = isTrap ? [30,12,12] : isSupported ? [10,28,20] : [10,20,32];
     doc.setFillColor(vBg[0],vBg[1],vBg[2]);
-    doc.setDrawColor(vColor[0],vColor[1],vColor[2]); doc.setLineWidth(0.4);
-    doc.roundedRect(mx, y, cw, 12, 3, 3, 'FD');
-    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(vColor[0],vColor[1],vColor[2]);
-    doc.text(verdict.toUpperCase(), pw/2, y + 8, {align:'center'});
-    y += 18;
+    doc.setDrawColor(vColor[0],vColor[1],vColor[2]); doc.setLineWidth(0.3);
+    doc.roundedRect(mx, y, verdictW, 8, 2, 2, 'FD');
+    doc.text(verdict.toUpperCase(), mx + verdictW/2, y + 5.5, {align:'center'});
+    y += 14;
 
     // ── Capture live sections from the page ──
 
