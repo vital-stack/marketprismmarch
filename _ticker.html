@@ -5059,6 +5059,34 @@ function exportReport() {
     doc.setDrawColor(vColor[0],vColor[1],vColor[2]); doc.setLineWidth(0.3);
     doc.roundedRect(mx, y, verdictW, 8, 2, 2, 'FD');
     doc.text(verdict.toUpperCase(), mx + verdictW/2, y + 5.5, {align:'center'});
+    var badgeX = mx + verdictW + 4;
+
+    // Insight badges (High Hype Gap, #2 Most Overvalued, etc.)
+    var heroBadges = document.querySelectorAll('.hero-insight-badges .hero-insight-badge');
+    heroBadges.forEach(function(el) {
+      var label = el.textContent.trim();
+      if (!label) return;
+      var style = el.getAttribute('style') || '';
+      var c = cyan;
+      if (style.indexOf('FF4D4D') !== -1 || style.indexOf('red') !== -1) c = red;
+      else if (style.indexOf('00DE94') !== -1 || style.indexOf('green') !== -1) c = green;
+      else if (style.indexOf('FFB800') !== -1 || style.indexOf('amber') !== -1) c = [255,184,0];
+      else if (style.indexOf('7B61FF') !== -1) c = [123,97,255];
+      else if (style.indexOf('38C8B8') !== -1) c = [56,200,184];
+
+      doc.setFont('helvetica','bold'); doc.setFontSize(7);
+      var tw = doc.getTextWidth(label) + 8;
+      // Wrap to next line if needed
+      if (badgeX + tw > pw - mx) { y += 10; badgeX = mx; }
+      var tagBg = [Math.round(c[0]*0.12 + bg[0]*0.88), Math.round(c[1]*0.12 + bg[1]*0.88), Math.round(c[2]*0.12 + bg[2]*0.88)];
+      doc.setFillColor(tagBg[0], tagBg[1], tagBg[2]);
+      doc.setDrawColor(c[0], c[1], c[2]); doc.setLineWidth(0.2);
+      doc.roundedRect(badgeX, y, tw, 7, 2, 2, 'FD');
+      doc.setTextColor(c[0], c[1], c[2]);
+      doc.text(label, badgeX + tw/2, y + 4.8, {align:'center'});
+      badgeX += tw + 3;
+    });
+
     y += 14;
 
     // ── Capture live sections from the page ──
