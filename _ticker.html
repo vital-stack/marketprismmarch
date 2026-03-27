@@ -2738,7 +2738,7 @@ async function loadHero() {
       'sector_trap_flag','sector_trap_name','days_to_options_expiry','next_options_expiry'
     ].join(',');
 
-    const [rows, healthRows, snapRows, tradeRows, scorecardRows] = await Promise.all([
+    const [rows, healthRows, snapRows, tradeRows, scorecardRows, cvRows] = await Promise.all([
       sbFetch('v_dash_daily_story', { select: cols, ticker: `eq.${TICKER}`, order: 'snapshot_date.desc', limit: '1' }),
       sbFetch('v_dash_narrative_health', {
         select: 'narrative_health,narrative_trend,attention_trend',
@@ -2761,6 +2761,13 @@ async function loadHero() {
       // Fetch this ticker's scorecard for leaderboard-style badges
       sbFetch('narrative_scorecard', {
         select: 'ticker,fvd_pct,vms,coordination_score,decay_rate,suspicion_score,energy_remaining,verdict,narrative',
+        ticker: `eq.${TICKER}`,
+        order:  'snapshot_date.desc',
+        limit:  '1'
+      }).catch(() => []),
+      // Fetch financials from claim_verifications (most recent earnings data)
+      sbFetch('claim_verifications', {
+        select: 'sec_revenue,sec_eps,sec_gross_margin,sec_net_margin,sec_operating_margin,benzinga_eps_actual,benzinga_eps_estimate,benzinga_eps_surprise_pct,benzinga_revenue_actual,benzinga_revenue_surprise_pct,benzinga_fiscal_period,pe_ratio,form_type,filing_date,period_of_report,vms_score',
         ticker: `eq.${TICKER}`,
         order:  'snapshot_date.desc',
         limit:  '1'
@@ -2899,30 +2906,40 @@ async function loadHero() {
       return '$' + v.toFixed(0);
     };
 
-    const eps        = r.benzinga_eps_actual ?? r.sec_eps;
-    const epsEst     = r.benzinga_eps_estimate;
-    const epsSurp    = r.benzinga_eps_surprise_pct;
+    // Use claim_verifications for financial data, fall back to v_dash_daily_story
+    const cv = (cvRows || [])[0] || {};
+
+    const eps        = cv.benzinga_eps_actual ?? cv.sec_eps ?? r.benzinga_eps_actual ?? r.sec_eps;
+    const epsEst     = cv.benzinga_eps_estimate ?? r.benzinga_eps_estimate;
+    const epsSurp    = cv.benzinga_eps_surprise_pct ?? r.benzinga_eps_surprise_pct;
     const epsSurpCls = epsSurp > 0 ? 'color:var(--accent-surging)' : epsSurp < 0 ? 'color:var(--accent-breaking)' : '';
     const epsSurpTxt = epsSurp != null ? (epsSurp > 0 ? '+' : '') + epsSurp.toFixed(1) + '%' : '—';
 
-    const rev        = r.benzinga_revenue_actual ?? r.sec_revenue;
-    const revGrowth  = r.revenue_growth_pct;
-    const revGrowCls = revGrowth > 0 ? 'color:var(--accent-surging)' : revGrowth < 0 ? 'color:var(--accent-breaking)' : '';
+    const rev        = cv.benzinga_revenue_actual ?? cv.sec_revenue ?? r.benzinga_revenue_actual ?? r.sec_revenue;
+    const revSurp    = cv.benzinga_revenue_surprise_pct;
+    const revSurpCls = revSurp > 0 ? 'color:var(--accent-surging)' : revSurp < 0 ? 'color:var(--accent-breaking)' : '';
 
-    const filedLbl   = r.form_type && r.filing_date
-      ? `${r.form_type} · ${new Date(r.filing_date).toLocaleDateString('en-US',{month:'short',year:'numeric'})}`
-      : r.form_type || '—';
+    const cvFormType = cv.form_type || r.form_type;
+    const cvFilingDate = cv.filing_date || r.filing_date;
+    const filedLbl   = cvFormType && cvFilingDate
+      ? `${cvFormType} · ${new Date(cvFilingDate).toLocaleDateString('en-US',{month:'short',year:'numeric'})}`
+      : cvFormType || '—';
+    const fiscalPeriod = cv.benzinga_fiscal_period ? cv.benzinga_fiscal_period : '';
+
+    const grossMargin = cv.sec_gross_margin ?? r.sec_gross_margin;
+    const netMargin   = cv.sec_net_margin ?? r.sec_net_margin;
+    const peRatio     = cv.pe_ratio ?? r.pe_ratio;
 
     document.getElementById('metrics-strip').innerHTML = `
       <div class="metric-cell">
         <div class="metric-label">Revenue</div>
         <div class="metric-value">${fmtRevenue(rev)}</div>
-        <div class="metric-sub">${revGrowth != null ? `<span style="${revGrowCls}">${revGrowth > 0 ? '+' : ''}${revGrowth.toFixed(1)}% YoY</span>` : filedLbl}</div>
+        <div class="metric-sub">${revSurp != null ? `<span style="${revSurpCls}">${revSurp > 0 ? '+' : ''}${(revSurp * 100).toFixed(1)}% surprise</span>` : filedLbl}</div>
       </div>
       <div class="metric-cell">
         <div class="metric-label">EPS</div>
         <div class="metric-value">${eps != null ? '$' + eps.toFixed(2) : '—'}</div>
-        <div class="metric-sub">${epsEst != null ? 'Est. $' + epsEst.toFixed(2) : 'Reported'}</div>
+        <div class="metric-sub">${epsEst != null ? 'Est. $' + epsEst.toFixed(2) : 'Reported'}${fiscalPeriod ? ' · ' + fiscalPeriod : ''}</div>
       </div>
       <div class="metric-cell">
         <div class="metric-label">EPS Surprise</div>
@@ -2931,8 +2948,8 @@ async function loadHero() {
       </div>
       <div class="metric-cell">
         <div class="metric-label">Gross Margin</div>
-        <div class="metric-value">${r.sec_gross_margin != null ? r.sec_gross_margin.toFixed(1) + '%' : '—'}</div>
-        <div class="metric-sub">${r.sec_net_margin != null ? 'Net ' + r.sec_net_margin.toFixed(1) + '%' : 'From SEC filing'}</div>
+        <div class="metric-value">${grossMargin != null ? grossMargin.toFixed(1) + '%' : '—'}</div>
+        <div class="metric-sub">${netMargin != null ? 'Net ' + netMargin.toFixed(1) + '%' : 'From SEC filing'}</div>
       </div>
       <div class="metric-cell">
         <div class="metric-label">Earnings In</div>
@@ -2941,7 +2958,7 @@ async function loadHero() {
       </div>
       <div class="metric-cell">
         <div class="metric-label">P/E Ratio</div>
-        <div class="metric-value">${r.pe_ratio != null ? r.pe_ratio.toFixed(1) + 'x' : '—'}</div>
+        <div class="metric-value">${peRatio != null ? peRatio.toFixed(1) + 'x' : '—'}</div>
         <div class="metric-sub">${esc(r.institutional_positioning || 'Institutional')}</div>
       </div>`;
 
