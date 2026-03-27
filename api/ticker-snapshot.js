@@ -2,7 +2,7 @@ module.exports = async (req, res) => {
   try {
     const url = new URL(req.url, 'http://localhost');
     const ticker = (url.searchParams.get('ticker') || '').replace(/[^A-Za-z0-9.\-]/g, '').toUpperCase();
-    const apiKey = process.env.MASSIVE_API_KEY || process.env.POLYGON_API_KEY || '';
+    const apiKey = process.env.MASSIVE_API_KEY || process.env.MASSIVE_API || process.env.POLYGON_API_KEY || '';
 
     if (!ticker) {
       res.statusCode = 400;
