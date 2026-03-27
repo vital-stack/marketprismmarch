@@ -6247,7 +6247,7 @@ async function fetchMassivePrices(ticker){
 async function fetchNarrativeScorecard(ticker){
   if(!SUPABASE_URL||!SUPABASE_ANON)return [];
   var hdrs={'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Accept':'application/json'};
-  var cols='ticker,snapshot_date,narrative,synopsis,verdict,advanced_verdict,verdict_confidence,current_price,fair_value,fvd_pct,p_mean_reversion_30d,p_continuation_30d,p_volatility_expansion,scenario_primary,scenario_primary_pct,predicted_exhaustion_days,energy_remaining,days_to_earnings,earnings_warning,nearest_opex_date,narrative_status,current_sentiment,npi_band,source_outlet';
+  var cols='ticker,snapshot_date,narrative,synopsis,verdict,advanced_verdict,verdict_confidence,current_price,fair_value,fvd_pct,p_mean_reversion_30d,p_continuation_30d,p_volatility_expansion,scenario_primary,scenario_primary_pct,predicted_exhaustion_days,energy_remaining,days_to_earnings,earnings_warning,nearest_opex_date,narrative_status,current_sentiment,npi_band,source_outlet,narrative_tone';
   var url=SUPABASE_URL+'/rest/v1/narrative_scorecard?select='+cols+'&ticker=eq.'+encodeURIComponent(ticker)+'&order=snapshot_date.desc&limit=800';
   try{
     var r=await fetch(url,{headers:hdrs});
@@ -6320,17 +6320,21 @@ function normalizeEventDate(value){
 // ── Transform scorecard rows into chart events ───────────────────────────────
 function scorecardToEvents(rows){
   return rows.map(function(r){
-    var verdict=(r.advanced_verdict||r.verdict||'').toLowerCase();
+    // Fix 3: use narrative_tone as primary classifier; fall back to verdict keyword matching for MIXED/missing
     var type='neutral';
-    if(verdict.indexOf('trap')!==-1)type='bear';
-    else if(verdict.indexOf('supported')!==-1||verdict.indexOf('bull')!==-1||verdict.indexOf('surg')!==-1)type='bull';
-    else if(verdict.indexOf('bear')!==-1||verdict.indexOf('fragile')!==-1||verdict.indexOf('collaps')!==-1)type='bear';
-    if(r.nearest_opex_date===r.snapshot_date)type='opex';
-    var label=r.synopsis||r.narrative||r.verdict||'';
+    if(r.narrative_tone==='BULLISH')type='bull';
+    else if(r.narrative_tone==='BEARISH')type='bear';
+    else{
+      var verdict=(r.advanced_verdict||r.verdict||'').toLowerCase();
+      if(verdict.indexOf('trap')!==-1||verdict.indexOf('bear')!==-1||verdict.indexOf('fragile')!==-1||verdict.indexOf('collaps')!==-1)type='bear';
+      else if(verdict.indexOf('supported')!==-1||verdict.indexOf('bull')!==-1||verdict.indexOf('surg')!==-1)type='bull';
+    }
+    if(r.nearest_opex_date&&r.nearest_opex_date===r.snapshot_date)type='opex';
+    var label=r.narrative||r.synopsis||r.verdict||'';
     if(label.length>140)label=label.substring(0,137)+'…';
     return {
       date:r.snapshot_date,
-      dateLabel:fmtDateShort(r.snapshot_date),
+      dateLabel:r.snapshot_date, // Fix 2: raw ISO date — consistent YYYY-MM-DD
       type:type,
       label:label,
       verdict:r.advanced_verdict||r.verdict||'',
@@ -6368,7 +6372,7 @@ function benzingaToEvents(rows, series, ticker) {
     byQuarter[key] = {
       date: dateIso,
       date_iso: dateIso,
-      dateLabel: fmtDateShort(dateIso),
+      dateLabel: dateIso, // Fix 2: raw ISO date
       type: 'earnings',
       label: 'Quarterly earnings'
         + (row.fiscal_period ? ' · ' + row.fiscal_period : '')
@@ -6432,40 +6436,22 @@ async function loadNHT(ticker){
         o:row.price_open||row.price_close,h:row.price_high||row.price_close,l:row.price_low||row.price_close,c:row.price_close,v:0
       };
     });
-    var mappedEvents=(model.events||[]).map(function(ev){
-      var dateIso=ev.date_iso||ev.snapshot_date||ev.date||'';
-      return {
-        date_iso:dateIso,
-        date:dateIso,
-        dateLabel:ev.date||fmtDateShort(dateIso),
-        type:ev.type||'neutral',
-        label:ev.label||'Narrative update',
-        verdict:ev.verdict||'',
-        price:ev.price||0,
-        ticker:nhtTicker
-      };
+    // Fix 1: scorecard is the single source of truth for narrative events
+    // Fix 4: collapse consecutive rows with identical label (same narrative, different dates)
+    var scorecardEvents=scorecardToEvents(scorecardRows);
+    scorecardEvents.sort(function(a,b){return (a.date||'').localeCompare(b.date||'');});
+    scorecardEvents=scorecardEvents.filter(function(ev,i,arr){
+      if(i===0)return true;
+      return ev.label!==arr[i-1].label; // drop consecutive duplicate narratives
     });
-    // Always merge scorecard events (richer data) instead of only using as fallback
-    if(scorecardRows.length){
-      var scorecardEvents=scorecardToEvents(scorecardRows).map(function(ev){
-        ev.date_iso=ev.date;
-        return ev;
-      });
-      // Merge: prefer scorecard events for dates not already covered by narrative_analyses
-      var coveredDates={};
-      mappedEvents.forEach(function(ev){coveredDates[ev.date]=true;});
-      scorecardEvents.forEach(function(ev){
-        if(!coveredDates[ev.date]){
-          mappedEvents.push(ev);
-          coveredDates[ev.date]=true;
-        }
-      });
-    }
+    scorecardEvents=scorecardEvents.map(function(ev){ev.date_iso=ev.date;return ev;});
+    var earningsEvents=benzingaToEvents(results[3]||[],series,nhtTicker);
+    console.log('[EARNINGS EVENTS]', earningsEvents, '[RAW BENZINGA]', results[3]);
     var opexEvents=generateOpexEvents(series).map(function(ev){
       return {
         date_iso:ev.date_iso,
         date:ev.date_iso,
-        dateLabel:ev.date,
+        dateLabel:ev.date_iso, // Fix 2: consistent ISO date
         type:ev.type,
         label:ev.label,
         verdict:ev.verdict||'',
@@ -6473,9 +6459,7 @@ async function loadNHT(ticker){
         ticker:nhtTicker
       };
     });
-    var earningsEvents=benzingaToEvents(results[3]||[],series,nhtTicker);
-    console.log('[EARNINGS EVENTS]', earningsEvents, '[RAW BENZINGA]', results[3]);
-    nhtEventsCache=dedupeEvents(mappedEvents.concat(earningsEvents,opexEvents));
+    nhtEventsCache=dedupeEvents(scorecardEvents.concat(earningsEvents,opexEvents));
     console.log('STAGE 4: nhtEventsCache after dedupe:', nhtEventsCache);
     nhtHealthCache=(results[2]||[]).map(function(r){
       return {date:r.snapshot_date,sentiment:r.sentiment_score,trend:r.narrative_trend,attention:r.attention_trend,health:r.narrative_health};
@@ -6695,20 +6679,22 @@ function renderNHT(){
         callbacks:{
           title:function(ctx){
             var i=ctx[0].dataIndex;
+            // Fix 5: show date of first matching event (or price label)
             var ev=filtered.find(function(e){return e.idx===i;});
             return ev?ev.dateLabel:(prices[i]?prices[i].dateLabel:'');
           },
           label:function(ctx){
             if(ctx.datasetIndex>0)return null; // skip sentiment overlay
             var i=ctx.dataIndex;
-            var ev=filtered.find(function(e){return e.idx===i;});
+            // Fix 5: show ALL events at this index, not just the first
+            var evs=filtered.filter(function(e){return e.idx===i;});
             var val=typeof ctx.raw==='object'?ctx.raw.c:ctx.raw;
             var lines=['$'+(val||0).toFixed(2)];
-            if(ev){
+            evs.forEach(function(ev){
               lines.push(ev.label);
               if(ev.verdict)lines.push('Verdict: '+ev.verdict);
               if(ev.scenario)lines.push('Scenario: '+ev.scenario+' ('+ev.scenarioPct.toFixed(0)+'%)');
-            }
+            });
             return lines;
           }
         },
@@ -8892,7 +8878,7 @@ function generateOpexEvents(series){
       var pt = nearestPricePoint(series, ds);
       events.push({
         date_iso: ds,
-        date: fmtShortDate(ds),
+        date: ds, // Fix 2: raw ISO date
         type: 'opex',
         label: 'Monthly options expiration (OPEX)',
         price: pt ? pt.price_close : null
@@ -8903,40 +8889,12 @@ function generateOpexEvents(series){
   return events;
 }
 
+// Fix 1: fetchLiveNarrativeEvents is no longer used for narrative_scorecard data.
+// narrative_scorecard is now fetched exclusively via fetchNarrativeScorecard (limit 800) in loadNHT,
+// which is the single source of truth. This function is retained as a no-op so ensureLiveNarrativeHistory
+// (which calls it) still works — it returns an empty array; the real events are built in loadNHT.
 async function fetchLiveNarrativeEvents(ticker, prices){
-  var scorecardRows = await restFetch('narrative_scorecard', {
-    select:'ticker,snapshot_date,narrative,synopsis,verdict,advanced_verdict,verdict_confidence,current_price,fair_value,fvd_pct,scenario_primary,scenario_primary_pct,predicted_exhaustion_days,energy_remaining,current_sentiment,nearest_opex_date',
-    ticker:'eq.' + ticker,
-    order:'snapshot_date.desc',
-    limit:'250'
-  }).catch(function(){ return []; });
-
-  var scorecardEvents = scorecardToEvents(scorecardRows || []).map(function(ev){
-    return Object.assign({}, ev, { date_iso: ev.date });
-  });
-
-  var analysesRows = await restFetch('narrative_analyses', {
-    select:'ticker,snapshot_date,narrative_text,verdict,sentiment_score,narrative_type',
-    ticker:'eq.' + ticker,
-    order:'snapshot_date.desc',
-    limit:'250'
-  }).catch(function(){ return []; });
-
-  var analysisEvents = (analysesRows || []).map(function(row){
-    var pt = nearestPricePoint(prices, row.snapshot_date);
-    return {
-      date_iso: row.snapshot_date,
-      date: fmtShortDate(row.snapshot_date),
-      type: classifyNarrativeEvent(row),
-      label: row.narrative_text || 'Narrative update',
-      verdict: row.verdict || '',
-      price: pt ? pt.price_close : null
-    };
-  });
-
-  return dedupeEvents(scorecardEvents.concat(analysisEvents)).sort(function(a, b){
-    return (a.date_iso || '').localeCompare(b.date_iso || '');
-  });
+  return [];
 }
 
 function buildNarrativeRanges(model){
