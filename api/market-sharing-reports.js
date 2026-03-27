@@ -2,10 +2,10 @@ const resolveTemplate = require('./_resolve-template');
 
 module.exports = (req, res) => {
   try {
-    const supabaseUrl  = process.env.SUPABASE_URL  || '';
+    const supabaseUrl = process.env.SUPABASE_URL || '';
     const supabaseAnon = process.env.SUPABASE_ANON || '';
 
-    let html = resolveTemplate('_heatmap.html');
+    let html = resolveTemplate('_market_sharing_reports.html');
 
     html = html.replace(
       "window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '' };",
@@ -15,6 +15,6 @@ module.exports = (req, res) => {
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.status(200).send(html);
   } catch (err) {
-    res.status(500).send('Heatmap error: ' + err.message);
+    res.status(500).send('Market sharing reports error: ' + err.message);
   }
 };

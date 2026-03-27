@@ -1,0 +1,71 @@
+name: Generate Market Prism Blog Post
+
+on:
+  schedule:
+    - cron: '0 12 * * 1-5'   # 7am ET (12:00 UTC) Monday–Friday
+  workflow_dispatch:           # manual trigger from GitHub Actions UI
+    inputs:
+      ticker:
+        description: 'Ticker to write about (leave blank to auto-pick hottest signal)'
+        required: false
+        default: ''
+      sentiment:
+        description: 'Story angle — bull, bear, or leave blank for auto'
+        type: choice
+        required: false
+        default: 'auto'
+        options:
+          - auto
+          - bull
+          - bear
+      topic:
+        description: 'Free-form topic e.g. "How to Spot Market Manipulation" (overrides ticker + sentiment)'
+        required: false
+        default: ''
+      dry_run:
+        description: 'Dry run — generate but do not publish'
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  generate-blog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install anthropic supabase yfinance python-dotenv
+
+      - name: Generate blog post
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_ANON }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          ARGS=""
+          if [ -n "${{ github.event.inputs.topic }}" ]; then
+            ARGS="--topic \"${{ github.event.inputs.topic }}\""
+          else
+            if [ -n "${{ github.event.inputs.ticker }}" ]; then
+              ARGS="--ticker ${{ github.event.inputs.ticker }}"
+            fi
+            if [ "${{ github.event.inputs.sentiment }}" != "auto" ] && [ -n "${{ github.event.inputs.sentiment }}" ]; then
+              ARGS="$ARGS --sentiment ${{ github.event.inputs.sentiment }}"
+            fi
+          fi
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            ARGS="$ARGS --dry-run"
+          fi
+          eval python generate_mp_blog.py $ARGS

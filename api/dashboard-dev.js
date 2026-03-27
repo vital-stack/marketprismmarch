@@ -7,7 +7,7 @@ module.exports = (req, res) => {
     const anthropicKey = process.env.ANTHROPIC_KEY || '';
     const massiveApi   = process.env.MASSIVE_API   || '';
 
-    let html = resolveTemplate('_template.html');
+    let html = resolveTemplate('_template_dev.html');
 
     const scholarEnabled = process.env.ANTHROPIC_API_KEY ? 'true' : '';
 
@@ -19,6 +19,6 @@ module.exports = (req, res) => {
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.status(200).send(html);
   } catch (err) {
-    res.status(500).send('Dashboard error: ' + err.message);
+    res.status(500).send('Dashboard-dev error: ' + err.message);
   }
 };

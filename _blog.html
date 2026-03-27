@@ -4,6 +4,24 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Blog — Market Prism</title>
+<meta name="description" content="Forensic narrative intelligence on equity markets. Market Prism Research publishes institutional-grade analysis on narrative mechanics, valuation, and structural market dynamics.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://marketprism.app/blog">
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Market Prism">
+<meta property="og:title" content="Intelligence Journal — Market Prism">
+<meta property="og:description" content="Forensic narrative intelligence on equity markets. Institutional-grade analysis on narrative mechanics, valuation, and structural market dynamics.">
+<meta property="og:url" content="https://marketprism.app/blog">
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@marketprism">
+<meta name="twitter:title" content="Intelligence Journal — Market Prism">
+<meta name="twitter:description" content="Forensic narrative intelligence on equity markets.">
+<!-- Schema.org Blog -->
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Blog","name":"Market Prism Intelligence Journal","description":"Forensic narrative intelligence and institutional-grade market analysis.","url":"https://marketprism.app/blog","publisher":{"@type":"Organization","name":"Market Prism","url":"https://marketprism.app"}}
+</script>
 <script id="__env_script">window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '' };</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -139,8 +157,9 @@ nav {
   border-radius: 4px;
   border: 1px solid rgba(232,232,227,0.2);
   background: rgba(255,255,255,0.04);
-  display: inline-block;
+  display: block;
   margin-bottom: 14px;
+  width: fit-content;
 }
 .featured-title {
   font-family: var(--font-d);
@@ -412,24 +431,26 @@ nav {
 </div>
 
 <!-- ── FEATURED POST ── -->
-<div class="con-wide">
-  <div class="featured-post">
+<div class="con-wide" id="featured-wrap">
+  <div class="featured-post" id="featured-post" style="display:none">
     <div class="featured-img">
-      <span class="featured-img-placeholder">MP</span>
+      <img id="featured-img-el" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:14px;" alt="">
+      <span class="featured-img-placeholder" id="featured-ticker">MP</span>
     </div>
     <div>
-      <span class="featured-tag">Research</span>
-      <div class="featured-title">Why Narrative Decay Predicts Price Reversals Better Than Momentum</div>
-      <div class="featured-excerpt">Our patent-pending narrative half-life model has outperformed traditional momentum signals by 340bps over 18 months. Here's the structural reason why stories collapse before prices do — and how to position for it.</div>
+      <span class="featured-tag" id="featured-tag">Research</span>
+      <a class="featured-title" id="featured-title" href="#" style="text-decoration:none;color:inherit;"></a>
+      <div class="featured-excerpt" id="featured-excerpt"></div>
       <div class="featured-meta">
-        <span>Market Prism Research</span>
+        <span id="featured-author">Market Prism Research</span>
         <span class="featured-meta-sep"></span>
-        <span>March 15, 2026</span>
+        <span id="featured-date"></span>
         <span class="featured-meta-sep"></span>
-        <span>12 min read</span>
+        <span id="featured-read">5 min read</span>
       </div>
     </div>
   </div>
+  <div id="featured-loading" style="padding:48px 0;text-align:center;color:var(--tx3);font-size:14px;">Loading latest intelligence...</div>
 </div>
 
 <!-- ── POST GRID ── -->
@@ -438,92 +459,15 @@ nav {
     <div class="posts-section-head">
       <div class="posts-section-title">Latest</div>
       <div class="posts-filter">
-        <button class="posts-filter-btn active">All</button>
-        <button class="posts-filter-btn">Research</button>
-        <button class="posts-filter-btn">Product</button>
-        <button class="posts-filter-btn">Market Intel</button>
+        <button class="posts-filter-btn active" onclick="filterPosts('all',this)">All</button>
+        <button class="posts-filter-btn" onclick="filterPosts('Research',this)">Research</button>
+        <button class="posts-filter-btn" onclick="filterPosts('Market Intel',this)">Market Intel</button>
       </div>
     </div>
-    <div class="posts-grid">
-      <a class="post-card" href="#">
-        <div class="post-card-img"><span class="post-card-glyph">01</span></div>
-        <div class="post-card-body">
-          <div class="post-card-tag">Market Intel</div>
-          <div class="post-card-title">The AI Capex Cliff: When Narrative Meets Cash Flow Reality</div>
-          <div class="post-card-excerpt">Semiconductor narratives are running at maximum energy. Our forensic analysis shows three structural cracks forming in the demand story that consensus hasn't priced.</div>
-          <div class="post-card-meta">
-            <span>March 12, 2026</span>
-            <span class="post-card-meta-sep"></span>
-            <span>8 min read</span>
-          </div>
-        </div>
-      </a>
-      <a class="post-card" href="#">
-        <div class="post-card-img"><span class="post-card-glyph">02</span></div>
-        <div class="post-card-body">
-          <div class="post-card-tag">Product</div>
-          <div class="post-card-title">Introducing Market Scholar: Polymathic AI for Narrative Intelligence</div>
-          <div class="post-card-excerpt">Today we're launching Market Scholar — an AI that thinks about markets the way a Renaissance scholar would, drawing connections across history, psychology, and structure.</div>
-          <div class="post-card-meta">
-            <span>March 8, 2026</span>
-            <span class="post-card-meta-sep"></span>
-            <span>5 min read</span>
-          </div>
-        </div>
-      </a>
-      <a class="post-card" href="#">
-        <div class="post-card-img"><span class="post-card-glyph">03</span></div>
-        <div class="post-card-body">
-          <div class="post-card-tag">Research</div>
-          <div class="post-card-title">Coordination Detection: How Aligned Narratives Create Fragility</div>
-          <div class="post-card-excerpt">When multiple sell-side analysts converge on the same thesis within a narrow window, it's not confirmation — it's a fragility signal. Here's the data.</div>
-          <div class="post-card-meta">
-            <span>March 1, 2026</span>
-            <span class="post-card-meta-sep"></span>
-            <span>10 min read</span>
-          </div>
-        </div>
-      </a>
-      <a class="post-card" href="#">
-        <div class="post-card-img"><span class="post-card-glyph">04</span></div>
-        <div class="post-card-body">
-          <div class="post-card-tag">Market Intel</div>
-          <div class="post-card-title">Defense Sector Narrative Map: Who Benefits From the Next Budget Cycle</div>
-          <div class="post-card-excerpt">A forensic breakdown of how defense spending narratives propagate through the supply chain — from prime contractors to niche sub-components.</div>
-          <div class="post-card-meta">
-            <span>Feb 24, 2026</span>
-            <span class="post-card-meta-sep"></span>
-            <span>7 min read</span>
-          </div>
-        </div>
-      </a>
-      <a class="post-card" href="#">
-        <div class="post-card-img"><span class="post-card-glyph">05</span></div>
-        <div class="post-card-body">
-          <div class="post-card-tag">Product</div>
-          <div class="post-card-title">How We Built the Narrative Heatmap: Design Decisions and Trade-offs</div>
-          <div class="post-card-excerpt">A behind-the-scenes look at how we compress 169 tickers and seven analytical dimensions into a single visual surface you can read in three seconds.</div>
-          <div class="post-card-meta">
-            <span>Feb 18, 2026</span>
-            <span class="post-card-meta-sep"></span>
-            <span>6 min read</span>
-          </div>
-        </div>
-      </a>
-      <a class="post-card" href="#">
-        <div class="post-card-img"><span class="post-card-glyph">06</span></div>
-        <div class="post-card-body">
-          <div class="post-card-tag">Research</div>
-          <div class="post-card-title">SEC Filing Forensics: What Text-vs-Table Divergence Reveals</div>
-          <div class="post-card-excerpt">Management teams tell one story in prose and another in their tables. Our layer 3 analysis measures this divergence and uses it as a credibility signal.</div>
-          <div class="post-card-meta">
-            <span>Feb 10, 2026</span>
-            <span class="post-card-meta-sep"></span>
-            <span>9 min read</span>
-          </div>
-        </div>
-      </a>
+    <div class="posts-grid" id="posts-grid">
+      <!-- populated by JS -->
     </div>
+    <div id="posts-empty" style="display:none;grid-column:1/-1;text-align:center;padding:40px;color:var(--tx3);font-size:14px;">No articles match this filter.</div>
   </div>
 </div>
 
@@ -545,6 +489,135 @@ nav {
     <a href="/">Market Prism</a> · Patent Pending: 63/971,470 & 63/971,478 · &copy; 2025–2026
   </div>
 </div>
+
+
+<script>
+// ── Supabase config ──────────────────────────────────────────────────────────
+var SUPABASE_URL  = window.__env && window.__env.SUPABASE_URL  ? window.__env.SUPABASE_URL  : '';
+var SUPABASE_ANON = window.__env && window.__env.SUPABASE_ANON ? window.__env.SUPABASE_ANON : '';
+
+var ALL_POSTS = [];
+var ACTIVE_FILTER = 'all';
+
+function fmtDate(iso) {
+  if (!iso) return '';
+  var d = new Date(iso);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function readTime(body) {
+  if (!body) return '5 min read';
+  var words = body.trim().split(/\s+/).length;
+  return Math.max(3, Math.round(words / 200)) + ' min read';
+}
+
+function renderFeatured(post) {
+  document.getElementById('featured-loading').style.display = 'none';
+  var el = document.getElementById('featured-post');
+  el.style.display = 'grid';
+  document.getElementById('featured-ticker').textContent = post.ticker || 'MP';
+  document.getElementById('featured-tag').textContent = post.tag || 'Research';
+  var titleEl = document.getElementById('featured-title');
+  titleEl.textContent = post.title || '';
+  titleEl.href = '/blog/' + post.slug;
+  document.getElementById('featured-excerpt').textContent = post.excerpt || '';
+  document.getElementById('featured-author').textContent = post.author || 'Market Prism Research';
+  document.getElementById('featured-date').textContent = fmtDate(post.published_at);
+  document.getElementById('featured-read').textContent = readTime(post.body);
+  // Update page meta for SEO
+  if (post.title) document.title = post.title + ' — Market Prism Intelligence Journal';
+  var desc = post.excerpt || '';
+  var ogDesc = document.querySelector('meta[property="og:description"]');
+  var twDesc = document.querySelector('meta[name="twitter:description"]');
+  var metaDesc = document.querySelector('meta[name="description"]');
+  if (ogDesc && desc) ogDesc.setAttribute('content', desc);
+  if (twDesc && desc) twDesc.setAttribute('content', desc);
+  if (metaDesc && desc) metaDesc.setAttribute('content', desc);
+  // Set featured image if available
+  var imgEl = document.getElementById('featured-img-el');
+  if (imgEl && post.image_url) {
+    imgEl.src = post.image_url;
+    imgEl.style.display = 'block';
+    document.getElementById('featured-ticker').style.display = 'none';
+  }
+}
+
+function renderCards(posts) {
+  var grid = document.getElementById('posts-grid');
+  var empty = document.getElementById('posts-empty');
+  var filtered = ACTIVE_FILTER === 'all' 
+    ? posts 
+    : posts.filter(function(p){ return p.tag === ACTIVE_FILTER; });
+  if (!filtered.length) {
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  grid.innerHTML = filtered.map(function(post, i) {
+    var num = String(i + 1).padStart(2, '0');
+    var date = fmtDate(post.published_at);
+    var read = readTime(post.body);
+    var tag = post.tag || 'Research';
+    var excerpt = post.excerpt || '';
+    var imgHtml = post.image_url
+      ? '<img src="' + post.image_url + '" style="width:100%;height:100%;object-fit:cover;" alt="">'
+      : '<span class="post-card-glyph">' + num + '</span>';
+    return '<a class="post-card" href="/blog/' + post.slug + '">'
+      + '<div class="post-card-img">' + imgHtml + '</div>'
+      + '<div class="post-card-body">'
+      + '<div class="post-card-tag">' + tag + '</div>'
+      + '<div class="post-card-title">' + (post.title || '') + '</div>'
+      + '<div class="post-card-excerpt">' + excerpt + '</div>'
+      + '<div class="post-card-meta">'
+      + '<span>' + date + '</span>'
+      + '<span class="post-card-meta-sep"></span>'
+      + '<span>' + read + '</span>'
+      + '</div></div></a>';
+  }).join('');
+}
+
+function filterPosts(tag, btn) {
+  ACTIVE_FILTER = tag;
+  document.querySelectorAll('.posts-filter-btn').forEach(function(b){ b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  renderCards(ALL_POSTS.slice(1)); // skip featured
+}
+
+async function loadBlog() {
+  if (!SUPABASE_URL || !SUPABASE_ANON) {
+    document.getElementById('featured-loading').textContent = 'Blog configuration not set.';
+    return;
+  }
+  try {
+    var url = SUPABASE_URL + '/rest/v1/blog_posts'
+      + '?select=id,ticker,slug,title,excerpt,tag,author,published_at,body,image_url'
+      + '&status=eq.published'
+      + '&order=published_at.desc'
+      + '&limit=20';
+    var res = await fetch(url, {
+      headers: {
+        'apikey': SUPABASE_ANON,
+        'Authorization': 'Bearer ' + SUPABASE_ANON,
+      }
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var posts = await res.json();
+    ALL_POSTS = posts;
+    if (!posts.length) {
+      document.getElementById('featured-loading').textContent = 'No articles published yet.';
+      return;
+    }
+    renderFeatured(posts[0]);
+    renderCards(posts.slice(1));
+  } catch(e) {
+    document.getElementById('featured-loading').textContent = 'Failed to load articles.';
+    console.error('[MP Blog]', e);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadBlog);
+</script>
 
 </body>
 </html>
