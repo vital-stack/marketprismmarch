@@ -5170,10 +5170,17 @@ async function loadFinancialsData() {
   const contentEl = document.getElementById('fin-content');
 
   try {
+    console.log('[Financials] Fetching live quote for', TICKER);
     const res = await fetch('/api/live-quote?ticker=' + encodeURIComponent(TICKER));
-    if (!res.ok) throw new Error('API returned ' + res.status);
+    console.log('[Financials] live-quote status:', res.status);
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      console.warn('[Financials] live-quote error body:', errText);
+      throw new Error('API returned ' + res.status + ': ' + errText.slice(0, 200));
+    }
     const d = await res.json();
-    if (!d || !d.price) throw new Error('No price data');
+    console.log('[Financials] live-quote data:', d);
+    if (!d || !d.price) throw new Error('No price data in response');
 
     const fmtP = (v) => v != null ? '$' + Number(v).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) : '—';
     const fmtV = (v) => {
@@ -5256,6 +5263,7 @@ async function loadFinancialsData() {
     console.warn('[Financials] Load failed:', err);
     loadingEl.style.display = 'none';
     nodataEl.style.display = 'block';
+    nodataEl.querySelector('.section-body').innerHTML = '<div style="padding:24px;text-align:center;color:var(--mp-text-tertiary);">No live financial data available for this ticker.<br><span style="font-size:11px;color:var(--mp-text-muted);margin-top:8px;display:inline-block;">' + esc(err.message) + '</span></div>';
   }
 }
 
