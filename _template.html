@@ -828,8 +828,12 @@ body{
 .snap-co{font-size:11px;color:var(--mp-text-tertiary);margin-top:1px;}
 .snap-price{font-family:var(--font-mono);font-size:13px;font-weight:500;color:var(--mp-text-primary);}
 .snap-chg{font-family:var(--font-mono);font-size:12px;}
-.snap-state{font-family:var(--font-mono);font-size:10px;padding:3px 10px;border-radius:4px;border:1px solid rgba(255,255,255,0.08);letter-spacing:.04em;white-space:nowrap;background:rgba(255,255,255,0.04);color:var(--mp-text-secondary);}
-.snap-verdict{font-size:10px;padding:3px 10px;border-radius:4px;border:1px solid rgba(255,255,255,0.08);white-space:nowrap;font-family:var(--font-mono);background:rgba(255,255,255,0.04);color:var(--mp-text-secondary);}
+.snap-state{font-family:var(--font-body);font-size:11px;padding:3px 10px;border-radius:4px;border:1px solid rgba(255,255,255,0.08);letter-spacing:.04em;white-space:nowrap;background:rgba(255,255,255,0.04);color:var(--mp-text-secondary);}
+.snap-verdict{font-family:var(--font-body);font-size:11px;padding:3px 10px;border-radius:4px;border:1px solid rgba(255,255,255,0.08);letter-spacing:.02em;white-space:nowrap;background:rgba(255,255,255,0.04);color:var(--mp-text-secondary);}
+.verdict-trap{color:#38C8B8;border-color:rgba(56,200,184,0.25);background:rgba(56,200,184,0.08);}
+.verdict-supported{color:#00DE94;border-color:rgba(0,222,148,0.25);background:rgba(0,222,148,0.08);}
+.verdict-monitoring{color:#00AEFF;border-color:rgba(0,174,255,0.25);background:rgba(0,174,255,0.08);}
+.verdict-neutral{color:var(--mp-text-secondary);border-color:rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);}
 .snap-driver{font-size:13px;color:var(--mp-text-primary);max-width:280px;line-height:1.5;}
 .snap-sector{font-size:11px;color:var(--mp-text-tertiary);font-style:italic;max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .snap-tags{display:flex;flex-wrap:wrap;gap:4px;max-width:460px;align-items:center;}
@@ -3688,7 +3692,7 @@ body{
               <th>Ticker</th>
               <th class="r">Price</th>
               <th class="r">Change</th>
-              <th>State</th>
+              <th>Verdict</th>
               <th>Tags</th>
               <th></th>
             </tr>
@@ -5459,6 +5463,7 @@ function ncTruthRingSVG(val, color){
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function esc(s){return s?(s+'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):'';  }
 function stateClass(s){return {'Breaking':'badge-breaking','Surging':'badge-surging','Fragile':'badge-fragile','Stable':'badge-stable'}[s]||'badge-stable';}
+function verdictClass(v){var l=(v||'').toLowerCase();if(l.indexOf('trap')!==-1||l.indexOf('disconnect')!==-1)return 'verdict-trap';if(l.indexOf('supported')!==-1||l.indexOf('verified')!==-1)return 'verdict-supported';if(l.indexOf('monitor')!==-1)return 'verdict-monitoring';return 'verdict-neutral';}
 function pipClass(v){return v==='Narrative Trap'?'pip-trap':v==='Structurally Supported'?'pip-supported':'pip-monitoring';}
 function fmtPrice(p){return p>=100?p.toFixed(2):p.toFixed(3);}
 function fmtDelta(d){
@@ -6133,7 +6138,7 @@ function renderSnap(){
   if(arr.length===0){tbody.innerHTML='<tr><td colspan="6" class="empty-state" style="padding:32px;text-align:center;color:var(--mp-text-tertiary);">No tickers match.</td></tr>';lm.style.display='none';return;}
   tbody.innerHTML=slice.map(function(r){
     var delta=fmtDelta(r.price_change_pct);
-    var sc=stateClass(r.narrative_state);
+    var sc=verdictClass(r.verdict||r.prism_verdict||'');
     var ec=r.days_to_earnings!=null&&r.days_to_earnings<=14?' earnings-soon':'';
     // Build expanded tags with max 6 visible + overflow
     var allTags=getTickerInsightTags(r);
@@ -6157,7 +6162,7 @@ function renderSnap(){
       +'<td><div style="display:flex;align-items:center;gap:8px;">'+logoHTML(r.ticker,'sm')+'<div class="snap-sym">'+r.ticker+'</div></div></td>'
       +'<td class="r"><div class="snap-price">$'+fmtPrice(r.price)+'</div></td>'
       +'<td class="r"><div class="snap-chg '+delta.cls+'">'+delta.txt+'</div></td>'
-      +'<td><span class="snap-state '+sc+'">'+esc(r.narrative_state)+'</span></td>'
+      +'<td><span class="snap-verdict '+sc+'">'+esc(r.verdict||r.prism_verdict||'—')+'</span></td>'
       +'<td><div class="snap-tags">'+tagsHTML+'</div></td>'
       +'<td class="r"><a href="/ticker/'+encodeURIComponent(r.ticker)+'" class="snap-cta" onclick="event.stopPropagation();">View Analysis <span style="font-size:13px;">→</span></a></td>'
     +'</tr>';
