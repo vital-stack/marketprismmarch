@@ -133,9 +133,10 @@ module.exports = async (req, res) => {
           `${metaTags}\n${webPageSchema}\n${breadcrumbSchema}\n${feedLinks}\n</head>`
         );
 
-        // 3. Append AEO block + Related Links before </body>
+        // 3. Append AEO block inside main content (before </main>) so it
+        //    inherits the page layout and sits below all tab content
         const aeoHtml = buildAEOBlock(safeTicker, data);
-        html = html.replace('</body>', `${aeoHtml}\n</body>`);
+        html = html.replace('</main>', `${aeoHtml}\n</main>`);
 
       } catch (seoErr) {
         // Non-fatal — page still works without SEO/AEO
