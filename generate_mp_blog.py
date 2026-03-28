@@ -577,6 +577,12 @@ def main():
 
     if result.get("success"):
         print(f"\n✓ Done. Slug: {result['slug']}\n")
+        # Write slug to file for downstream steps (e.g. indexing ping)
+        slug_file = os.environ.get("GITHUB_OUTPUT", "")
+        if slug_file:
+            with open(slug_file, "a") as f:
+                f.write(f"slug={result['slug']}\n")
+                f.write(f"dry_run={'true' if args.dry_run else 'false'}\n")
     else:
         print(f"\n✗ Failed.\n")
         sys.exit(1)
