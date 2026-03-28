@@ -226,6 +226,12 @@ def generate_article_image(ticker: str, title: str, excerpt: str, slug: str) -> 
                 "Match the visual metaphor to the article's specific narrative (e.g. trade war = flags + handshakes, "
                 "manipulation = blindfolds + hidden eyes, momentum = speed/motion blur). "
                 "NO generic stock chart imagery, NO line graphs, NO candlestick patterns. "
+                "CRITICAL SAFETY RULES for DALL-E compliance: "
+                "NO real people (no CEOs, politicians, public figures by name or likeness). "
+                "NO real company logos or trademarked brand imagery. "
+                "NO real country flags used in violent or negative contexts. "
+                "NO weapons, violence, or gore. "
+                "Use anonymous/generic figures, symbolic representations, and abstract metaphors instead. "
                 "Output ONLY the DALL-E prompt, max 120 words."
             ),
             messages=[{"role": "user", "content": (
@@ -239,14 +245,39 @@ def generate_article_image(ticker: str, title: str, excerpt: str, slug: str) -> 
         image_prompt = prompt_response.content[0].text.strip()
         print(f"  → Image prompt: {image_prompt[:80]}...")
 
-        # Step 2: DALL-E 3 renders it
+        # Step 2: DALL-E 3 renders it (with fallback on content policy rejection)
+        dalle_payload = {"model": "dall-e-3", "prompt": image_prompt, "n": 1, "size": "1792x1024", "quality": "hd", "style": "vivid"}
         response = req_lib.post(
             "https://api.openai.com/v1/images/generations",
             headers={"Authorization": f"Bearer {openai_key}", "Content-Type": "application/json"},
-            json={"model": "dall-e-3", "prompt": image_prompt, "n": 1, "size": "1792x1024", "quality": "hd", "style": "vivid"},
+            json=dalle_payload,
             timeout=60,
         )
-        response.raise_for_status()
+
+        if response.status_code == 400:
+            error_detail = response.json().get("error", {}).get("message", response.text[:300])
+            print(f"  ⚠ DALL-E rejected prompt: {error_detail}")
+            print(f"  → Retrying with simplified fallback prompt...")
+            # Fallback: strip the prompt down to safe abstract imagery
+            fallback_prompt = (
+                f"Abstract editorial illustration for a financial analysis article titled \"{title}\". "
+                "Bold mixed-media collage style with vivid color accents, halftone textures, geometric shapes, "
+                "and ink splatter effects. Dramatic lighting, cinematic composition. "
+                "No real people, no logos, no text, no charts."
+            )
+            dalle_payload["prompt"] = fallback_prompt
+            response = req_lib.post(
+                "https://api.openai.com/v1/images/generations",
+                headers={"Authorization": f"Bearer {openai_key}", "Content-Type": "application/json"},
+                json=dalle_payload,
+                timeout=60,
+            )
+            response.raise_for_status()
+
+        elif response.status_code != 200:
+            print(f"  ⚠ DALL-E error {response.status_code}: {response.text[:300]}")
+            response.raise_for_status()
+
         dalle_url = response.json()["data"][0]["url"]
         print(f"  ✓ Image generated from DALL-E")
 
