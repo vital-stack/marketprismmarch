@@ -82,7 +82,7 @@ window.MP_BILLING = (function(){
       return true;
     }
     var status = normalize(subscription && subscription.status);
-    if(status && status !== 'active'){
+    if(['active', 'trialing'].indexOf(status) === -1){
       return false;
     }
     var current = getAccessLevel(subscription);
