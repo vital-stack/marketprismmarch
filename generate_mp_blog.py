@@ -214,9 +214,27 @@ def generate_article_image(ticker: str, title: str, excerpt: str, slug: str) -> 
         # Step 1: Claude writes the image prompt
         prompt_response = claude.messages.create(
             model=MODEL,
-            max_tokens=150,
-            system="You write image generation prompts for a forensic financial intelligence publication. Style: dark, cinematic, institutional. Deep navy/black backgrounds, electric blue and teal accents. Abstract data visualizations, fragmented market structures, architectural financial metaphors. NO charts with arrows, NO stock photo cliches, NO people. Output ONLY the prompt, max 100 words.",
-            messages=[{"role": "user", "content": "Write a DALL-E 3 prompt for an article header image. Ticker: " + ticker + ". Title: " + title + ". Excerpt: " + excerpt[:200] + ". Make it abstract and forensic, not literal."}],
+            max_tokens=200,
+            system=(
+                "You write image generation prompts for a bold financial intelligence publication. "
+                "Style references: editorial mixed-media collage, conceptual photography, striking visual metaphors. "
+                "Think: textured surfaces, bold single-color accent pops (vivid yellow, deep red, electric blue, etc.), "
+                "gritty realism, halftone/risograph overlays, ink splatter, geometric shapes, photojournalistic drama. "
+                "People ARE allowed — use symbolic figures (suited executives, traders, silhouettes) when thematically relevant. "
+                "Vary compositions: sometimes close-up hands/objects, sometimes wide cinematic scenes, sometimes collage mashups. "
+                "Each image MUST feel unique — never repeat the same dark-abstract-data look. "
+                "Match the visual metaphor to the article's specific narrative (e.g. trade war = flags + handshakes, "
+                "manipulation = blindfolds + hidden eyes, momentum = speed/motion blur). "
+                "NO generic stock chart imagery, NO line graphs, NO candlestick patterns. "
+                "Output ONLY the DALL-E prompt, max 120 words."
+            ),
+            messages=[{"role": "user", "content": (
+                "Write a DALL-E 3 prompt for an article header image.\n"
+                f"Full article title: \"{title}\"\n"
+                f"Ticker: {ticker}\n"
+                f"Excerpt: {excerpt[:300]}\n"
+                "Create a vivid, conceptual visual metaphor that captures the specific story — not generic finance imagery."
+            )}],
         )
         image_prompt = prompt_response.content[0].text.strip()
         print(f"  → Image prompt: {image_prompt[:80]}...")
@@ -225,7 +243,7 @@ def generate_article_image(ticker: str, title: str, excerpt: str, slug: str) -> 
         response = req_lib.post(
             "https://api.openai.com/v1/images/generations",
             headers={"Authorization": f"Bearer {openai_key}", "Content-Type": "application/json"},
-            json={"model": "dall-e-3", "prompt": image_prompt, "n": 1, "size": "1792x1024", "quality": "standard", "style": "vivid"},
+            json={"model": "dall-e-3", "prompt": image_prompt, "n": 1, "size": "1792x1024", "quality": "hd", "style": "vivid"},
             timeout=60,
         )
         response.raise_for_status()
