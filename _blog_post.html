@@ -6,7 +6,7 @@
 <title>Market Prism — Intelligence Journal</title>
 <meta name="description" content="">
 <meta name="robots" content="index, follow">
-<link rel="canonical" id="canonical-url" href="https://marketprism.app/blog">
+<link rel="canonical" id="canonical-url" href="https://marketprism.co/blog">
 <!-- Open Graph -->
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="Market Prism">
@@ -303,8 +303,8 @@ nav {
         Intelligence Journal
       </a>
       <div class="article-eyebrow" id="article-eyebrow">Market Intel</div>
-      <div class="article-title" id="article-title"></div>
-      <img id="article-hero-img" style="display:none;width:100%;aspect-ratio:16/6;object-fit:cover;border-radius:12px;margin-bottom:28px;" alt="">
+      <h1 class="article-title" id="article-title"></h1>
+      <img id="article-hero-img" loading="lazy" style="display:none;width:100%;aspect-ratio:16/6;object-fit:cover;border-radius:12px;margin-bottom:28px;" alt="">
       <div class="article-meta">
         <span id="article-author">Market Prism Research</span>
         <span class="article-meta-sep"></span>
@@ -336,6 +336,21 @@ nav {
 
 <div id="article-error" style="display:none" class="con">
   <div class="state-msg">Article not found. <a href="/blog" style="color:var(--blue)">Back to Journal</a></div>
+</div>
+
+<!-- ── INTERNAL LINKS ── -->
+<div id="internal-links" style="display:none">
+  <div class="con" style="padding-top:0;padding-bottom:48px;">
+    <div style="border-top:1px solid var(--border);padding-top:32px;">
+      <div style="font-family:var(--font-d);font-size:18px;color:var(--tx1);margin-bottom:16px;">Continue Reading</div>
+      <div style="display:flex;flex-wrap:wrap;gap:12px;">
+        <a href="/blog" style="font-size:13px;color:var(--blue);text-decoration:none;padding:8px 16px;border:1px solid var(--border);border-radius:8px;transition:all .15s;">Browse All Articles</a>
+        <a href="/dashboard" style="font-size:13px;color:var(--blue);text-decoration:none;padding:8px 16px;border:1px solid var(--border);border-radius:8px;transition:all .15s;">Open Dashboard</a>
+        <a href="/methodology" style="font-size:13px;color:var(--blue);text-decoration:none;padding:8px 16px;border:1px solid var(--border);border-radius:8px;transition:all .15s;">Our Methodology</a>
+        <a href="/" style="font-size:13px;color:var(--blue);text-decoration:none;padding:8px 16px;border:1px solid var(--border);border-radius:8px;transition:all .15s;">Market Prism Home</a>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ── FOOTER ── -->
@@ -453,8 +468,12 @@ async function loadArticle() {
 
     var post = posts[0];
 
-    // Update page title
-    document.title = post.title + ' — Market Prism';
+    // Update page title: [Ticker] Narrative Analysis — [Date] | Market Prism
+    var ticker = post.ticker || '';
+    var dateShort = post.published_at ? new Date(post.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+    document.title = (ticker && ticker !== 'MP')
+      ? ticker + ' Narrative Analysis \u2014 ' + dateShort + ' | Market Prism'
+      : post.title + ' | Market Prism';
 
     // Populate header
     document.getElementById('article-eyebrow').textContent = post.tag || 'Research';
@@ -467,10 +486,10 @@ async function loadArticle() {
     document.getElementById('article-body').innerHTML = markdownToHtml(post.body || '');
 
     // Inject SEO meta
-    var pageUrl = 'https://marketprism.app/blog/' + post.slug;
-    document.title = post.title + ' — Market Prism';
+    var pageUrl = 'https://marketprism.co/blog/' + post.slug;
     var setMeta = function(sel, val) { var el = document.querySelector(sel); if(el && val) el.setAttribute('content', val); };
-    setMeta('meta[name="description"]', post.excerpt || '');
+    var desc160 = (post.body || post.excerpt || '').replace(/[#*|\n]+/g, ' ').trim().substring(0, 160);
+    setMeta('meta[name="description"]', desc160);
     setMeta('meta[property="og:title"]', post.title);
     setMeta('meta[property="og:description"]', post.excerpt || '');
     setMeta('meta[property="og:url"]', pageUrl);
@@ -487,7 +506,7 @@ async function loadArticle() {
       "description": post.excerpt || '',
       "datePublished": post.published_at,
       "author": {"@type": "Organization", "name": post.author || 'Market Prism Research'},
-      "publisher": {"@type": "Organization", "name": "Market Prism", "url": "https://marketprism.app"},
+      "publisher": {"@type": "Organization", "name": "Market Prism", "url": "https://marketprism.co"},
       "url": pageUrl,
       "mainEntityOfPage": pageUrl
     };
@@ -502,16 +521,27 @@ async function loadArticle() {
       if (heroWrap) { heroWrap.src = post.image_url; heroWrap.style.display = 'block'; }
     }
     // Wire up share buttons
-    var pageUrl = 'https://marketprism.app/blog/' + post.slug;
+    var pageUrl = 'https://marketprism.co/blog/' + post.slug;
     var shareTitle = encodeURIComponent(post.title || '');
     var shareUrl = encodeURIComponent(pageUrl);
     var xEl = document.getElementById('share-x');
     var redditEl = document.getElementById('share-reddit');
     if (xEl) xEl.href = 'https://twitter.com/intent/tweet?text=' + shareTitle + '&url=' + shareUrl + '&via=marketprism';
     if (redditEl) redditEl.href = 'https://www.reddit.com/submit?url=' + shareUrl + '&title=' + shareTitle;
-    // Show article
+    // Show article + internal links
     document.getElementById('article-loading').style.display = 'none';
     document.getElementById('article-wrap').style.display = 'block';
+    var internalLinks = document.getElementById('internal-links');
+    if (internalLinks) internalLinks.style.display = 'block';
+    // If ticker page exists, add direct ticker link
+    if (ticker && ticker !== 'MP') {
+      var tickerLink = document.createElement('a');
+      tickerLink.href = '/ticker/' + ticker;
+      tickerLink.textContent = 'View ' + ticker + ' Signal Card';
+      tickerLink.style.cssText = 'font-size:13px;color:var(--blue);text-decoration:none;padding:8px 16px;border:1px solid var(--border);border-radius:8px;transition:all .15s;';
+      var linksWrap = document.querySelector('#internal-links div div div:last-child');
+      if (linksWrap) linksWrap.prepend(tickerLink);
+    }
 
   } catch(e) {
     console.error('[MP Blog Post]', e);

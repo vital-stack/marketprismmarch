@@ -44,9 +44,10 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install anthropic supabase yfinance python-dotenv
+          pip install anthropic supabase yfinance python-dotenv cryptography
 
       - name: Generate blog post
+        id: generate
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -69,3 +70,10 @@ jobs:
             ARGS="$ARGS --dry-run"
           fi
           eval python generate_mp_blog.py $ARGS
+
+      - name: Ping Google Indexing API
+        if: steps.generate.outputs.slug != '' && steps.generate.outputs.dry_run != 'true'
+        env:
+          GOOGLE_INDEXING_SA_JSON: ${{ secrets.GOOGLE_INDEXING_SA_JSON }}
+        run: |
+          python ping_google_indexing.py "${{ steps.generate.outputs.slug }}"
