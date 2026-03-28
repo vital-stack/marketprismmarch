@@ -113,10 +113,24 @@ module.exports = async (req, res) => {
           url: `https://marketprism.co/ticker/${safeTicker}`,
         })}</script>`;
 
+        // Breadcrumb schema
+        const breadcrumbSchema = `<script type="application/ld+json">${JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://marketprism.co" },
+            { "@type": "ListItem", "position": 2, "name": "Dashboard", "item": "https://marketprism.co/dashboard" },
+            { "@type": "ListItem", "position": 3, "name": safeTicker, "item": `https://marketprism.co/ticker/${safeTicker}` }
+          ]
+        })}</script>`;
+
+        // RSS autodiscovery
+        const feedLinks = `<link rel="alternate" type="application/rss+xml" title="Market Prism Intelligence Journal" href="https://marketprism.co/feed.xml">\n<link rel="alternate" type="application/atom+xml" title="Market Prism Intelligence Journal (Atom)" href="https://marketprism.co/atom.xml">`;
+
         // Inject meta tags before </head>
         html = html.replace(
           '</head>',
-          `${metaTags}\n${webPageSchema}\n</head>`
+          `${metaTags}\n${webPageSchema}\n${breadcrumbSchema}\n${feedLinks}\n</head>`
         );
 
         // 3. Append AEO block + Related Links before </body>
