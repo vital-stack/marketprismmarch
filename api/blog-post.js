@@ -73,7 +73,7 @@ module.exports = async (req, res) => {
 
             // Replace canonical
             html = html.replace(
-              '<link rel="canonical" id="canonical-url" href="https://marketprism.app/blog">',
+              '<link rel="canonical" id="canonical-url" href="https://marketprism.co/blog">',
               `<link rel="canonical" id="canonical-url" href="${escAttr(pageUrl)}">`
             );
 
@@ -87,15 +87,35 @@ module.exports = async (req, res) => {
             html = html.replace('content="" id="tw-title"', `content="${escAttr(seoTitle)}" id="tw-title"`);
             html = html.replace('content="" id="tw-desc"', `content="${escAttr(desc160)}" id="tw-desc"`);
 
-            // Inject server-side JSON-LD: Article + FAQPage
+            // ── og:article:* tags for news aggregators ──
+            const ogArticleTags = [
+              `<meta property="og:type" content="article">`,
+              `<meta property="article:published_time" content="${escAttr(publishedAt)}">`,
+              `<meta property="article:modified_time" content="${escAttr(publishedAt)}">`,
+              `<meta property="article:author" content="${escAttr(author)}">`,
+              `<meta property="article:section" content="${escAttr(tag)}">`,
+            ];
+            if (ticker && ticker !== 'MP') {
+              ogArticleTags.push(`<meta property="article:tag" content="${escAttr(ticker)}">`);
+            }
+            ogArticleTags.push(`<meta property="article:tag" content="market analysis">`);
+            ogArticleTags.push(`<meta property="article:tag" content="narrative intelligence">`);
+
+            // ── RSS/Atom autodiscovery ──
+            const feedLinks = [
+              `<link rel="alternate" type="application/rss+xml" title="Market Prism Intelligence Journal" href="https://marketprism.co/feed.xml">`,
+              `<link rel="alternate" type="application/atom+xml" title="Market Prism Intelligence Journal (Atom)" href="https://marketprism.co/atom.xml">`,
+            ];
+
+            // ── NewsArticle schema (Google News compatible) ──
             const articleSchema = {
               "@context": "https://schema.org",
-              "@type": "Article",
+              "@type": "NewsArticle",
               "headline": title,
               "description": desc160,
               "datePublished": publishedAt,
               "dateModified": publishedAt,
-              "author": { "@type": "Organization", "name": author },
+              "author": { "@type": "Organization", "name": author, "url": "https://marketprism.co" },
               "publisher": {
                 "@type": "Organization",
                 "name": "Market Prism",
@@ -104,10 +124,57 @@ module.exports = async (req, res) => {
               },
               "url": pageUrl,
               "mainEntityOfPage": { "@type": "WebPage", "@id": pageUrl },
-              "image": imageUrl
+              "image": imageUrl,
+              "articleSection": tag,
+              "inLanguage": "en-US",
+              "isAccessibleForFree": true,
+            };
+            if (ticker && ticker !== 'MP') {
+              articleSchema.about = {
+                "@type": "Corporation",
+                "tickerSymbol": ticker,
+              };
+              articleSchema.keywords = [ticker, tag, 'narrative analysis', 'market intelligence'].join(', ');
+            }
+
+            // ── Speakable schema (AI voice answers / Google Assistant) ──
+            const speakableSchema = {
+              "@context": "https://schema.org",
+              "@type": "WebPage",
+              "speakable": {
+                "@type": "SpeakableSpecification",
+                "cssSelector": [".article-title", ".article-body p:first-child"]
+              },
+              "url": pageUrl
             };
 
-            // Generate 3 FAQ questions based on ticker and tag
+            // ── Breadcrumb schema ──
+            const breadcrumbSchema = {
+              "@context": "https://schema.org",
+              "@type": "BreadcrumbList",
+              "itemListElement": [
+                {
+                  "@type": "ListItem",
+                  "position": 1,
+                  "name": "Home",
+                  "item": "https://marketprism.co"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 2,
+                  "name": "Intelligence Journal",
+                  "item": "https://marketprism.co/blog"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 3,
+                  "name": title,
+                  "item": pageUrl
+                }
+              ]
+            };
+
+            // ── FAQ schema ──
             const faqQuestions = generateFAQ(ticker, tag, title);
             const faqSchema = {
               "@context": "https://schema.org",
@@ -119,11 +186,20 @@ module.exports = async (req, res) => {
               }))
             };
 
-            const schemaScript = `<script type="application/ld+json">${JSON.stringify(articleSchema)}</script>\n`
-              + `<script type="application/ld+json">${JSON.stringify(faqSchema)}</script>`;
+            // Build all schema scripts
+            const schemaScripts = [
+              `<script type="application/ld+json">${JSON.stringify(articleSchema)}</script>`,
+              `<script type="application/ld+json">${JSON.stringify(speakableSchema)}</script>`,
+              `<script type="application/ld+json">${JSON.stringify(breadcrumbSchema)}</script>`,
+              `<script type="application/ld+json">${JSON.stringify(faqSchema)}</script>`,
+            ].join('\n');
 
-            // Inject before closing </head>
-            html = html.replace('<!-- Article schema injected by JS after load -->', schemaScript);
+            // Inject schemas where the comment placeholder is
+            html = html.replace('<!-- Article schema injected by JS after load -->', schemaScripts);
+
+            // Inject og:article tags + feed links before </head>
+            const headInjection = ogArticleTags.join('\n') + '\n' + feedLinks.join('\n');
+            html = html.replace('</head>', `${headInjection}\n</head>`);
           }
         }
       } catch (fetchErr) {

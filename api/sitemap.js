@@ -13,27 +13,34 @@ module.exports = async (req, res) => {
     ];
 
     let blogEntries = [];
+    let tickers = [];
 
-    if (supabaseUrl && supabaseAnon) {
-      try {
-        const apiUrl = `${supabaseUrl}/rest/v1/blog_posts`
-          + `?status=eq.published`
-          + `&select=slug,published_at`
-          + `&order=published_at.desc`
-          + `&limit=500`;
+    const headers = supabaseUrl && supabaseAnon ? {
+      'apikey': supabaseAnon,
+      'Authorization': `Bearer ${supabaseAnon}`,
+    } : null;
 
-        const response = await fetch(apiUrl, {
-          headers: {
-            'apikey': supabaseAnon,
-            'Authorization': `Bearer ${supabaseAnon}`,
-          },
-        });
+    if (headers) {
+      // Fetch blog posts and active tickers in parallel
+      const [blogRes, tickerRes] = await Promise.all([
+        fetch(`${supabaseUrl}/rest/v1/blog_posts?status=eq.published&select=slug,published_at&order=published_at.desc&limit=500`, { headers }),
+        fetch(`${supabaseUrl}/rest/v1/narrative_scorecard?select=ticker,snapshot_date&order=snapshot_date.desc&limit=200`, { headers }),
+      ]).catch(() => [null, null]);
 
-        if (response.ok) {
-          blogEntries = await response.json();
+      if (blogRes && blogRes.ok) {
+        blogEntries = await blogRes.json();
+      }
+
+      if (tickerRes && tickerRes.ok) {
+        const rows = await tickerRes.json();
+        // Deduplicate to unique tickers
+        const seen = new Set();
+        for (const r of rows) {
+          if (r.ticker && !seen.has(r.ticker)) {
+            seen.add(r.ticker);
+            tickers.push({ ticker: r.ticker, date: r.snapshot_date });
+          }
         }
-      } catch (fetchErr) {
-        console.error('[sitemap] Supabase fetch failed:', fetchErr.message);
       }
     }
 
@@ -60,6 +67,38 @@ module.exports = async (req, res) => {
       xml += '    <changefreq>monthly</changefreq>\n';
       xml += '    <priority>0.7</priority>\n';
       xml += '  </url>\n';
+    }
+
+    // Ticker pages + programmatic SEO pages
+    for (const t of tickers) {
+      const ticker = t.ticker;
+      const tickerLower = ticker.toLowerCase();
+      const lastmod = t.date
+        ? new Date(t.date).toISOString().split('T')[0]
+        : '';
+
+      // Main ticker page
+      xml += '  <url>\n';
+      xml += `    <loc>${siteUrl}/ticker/${ticker}</loc>\n`;
+      if (lastmod) xml += `    <lastmod>${lastmod}</lastmod>\n`;
+      xml += '    <changefreq>daily</changefreq>\n';
+      xml += '    <priority>0.8</priority>\n';
+      xml += '  </url>\n';
+
+      // SEO pages
+      const seoPages = [
+        `/why-is-${tickerLower}-stock-down`,
+        `/is-${tickerLower}-overvalued`,
+        `/should-i-buy-${tickerLower}`,
+      ];
+      for (const seoPath of seoPages) {
+        xml += '  <url>\n';
+        xml += `    <loc>${siteUrl}${seoPath}</loc>\n`;
+        if (lastmod) xml += `    <lastmod>${lastmod}</lastmod>\n`;
+        xml += '    <changefreq>daily</changefreq>\n';
+        xml += '    <priority>0.6</priority>\n';
+        xml += '  </url>\n';
+      }
     }
 
     xml += '</urlset>\n';

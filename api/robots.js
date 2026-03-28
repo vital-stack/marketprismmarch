@@ -4,6 +4,7 @@ module.exports = (req, res) => {
     'Allow: /',
     '',
     'Sitemap: https://marketprism.co/sitemap.xml',
+    'Sitemap: https://marketprism.co/news-sitemap.xml',
     '',
   ].join('\n');
 

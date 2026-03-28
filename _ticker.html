@@ -3849,13 +3849,17 @@ function drawChart(snaps, narrs) {
     ctx.fillText((p >= 100 ? '$' + p.toFixed(0) : '$' + p.toFixed(2)), PAD.left - 4, y + 3);
   }
 
-  // X axis labels
+  // X axis labels — skip last label if too close to previous to prevent overlap
   ctx.textAlign = 'center';
   const every = Math.max(1, Math.floor(N / 6));
+  let lastRenderedIdx = -Infinity;
   snaps.forEach((s, i) => {
     if (i % every !== 0 && i !== N-1) return;
+    // Skip last label if it would overlap the previous rendered label
+    if (i === N-1 && (i - lastRenderedIdx) < every * 0.6) return;
     const d = new Date(s.snapshot_date);
     ctx.fillText(d.toLocaleDateString('en-US', { month:'short', day:'numeric' }), xOf(i), H - PAD.bottom + 14);
+    lastRenderedIdx = i;
   });
 
   // Area fill under price
