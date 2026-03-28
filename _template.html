@@ -286,6 +286,66 @@ body{
 .daily-title-italic{font-family:'Instrument Serif',var(--font-display),Georgia,serif;font-size:clamp(32px,3.8vw,50px);font-weight:400;font-style:italic;color:#4DC8F0;line-height:1.1;letter-spacing:-0.025em;margin-bottom:20px;display:block;}
 .daily-desc{font-family:var(--font-body);font-size:13.5px;font-weight:300;color:#fff;line-height:1.7;margin-bottom:24px;max-width:100%;}
 .daily-desc strong{font-weight:500;color:#fff;}
+.billing-flash{
+  display:none;
+  margin:0 auto 20px;
+  max-width:760px;
+  padding:14px 16px;
+  background:var(--mp-surface);
+  border:1px solid var(--mp-border);
+  border-radius:16px;
+  font-size:13px;
+  color:var(--mp-text-primary);
+}
+.billing-flash.show{display:block;}
+.billing-flash.success{border-color:rgba(0,222,148,0.24);color:#98f5ca;}
+.billing-flash.error{border-color:rgba(255,77,77,0.24);color:#ffabab;}
+.billing-overview{
+  max-width:760px;
+  margin:0 auto 28px;
+  background:
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px),
+    var(--mp-surface);
+  background-size:48px 48px,48px 48px,auto;
+  border:1px solid var(--mp-border);
+  border-radius:16px;
+  padding:20px;
+  position:relative;
+  filter:drop-shadow(0 4px 12px rgba(0,0,0,0.4));
+}
+.billing-overview::before{
+  content:'';
+  position:absolute;
+  left:0;right:0;top:0;
+  height:2px;
+  border-radius:16px 16px 0 0;
+  background:var(--billing-accent,#00AEFF);
+}
+.billing-overview-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px;flex-wrap:wrap;}
+.billing-overview-kicker{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:rgba(255,255,255,0.5);margin-bottom:10px;}
+.billing-overview-title{font-family:'Instrument Serif',var(--font-display),Georgia,serif;font-size:24px;font-weight:400;letter-spacing:-0.02em;color:var(--mp-text-primary);}
+.billing-overview-copy{font-size:13px;color:var(--mp-text-secondary);margin-top:6px;max-width:520px;line-height:1.6;}
+.billing-status-badge{display:inline-flex;align-items:center;justify-content:center;min-height:30px;padding:6px 12px;border-radius:999px;border:1px solid rgba(255,255,255,0.08);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;}
+.billing-status-badge.active{color:#9ef0c6;border-color:rgba(0,222,148,0.24);background:rgba(0,222,148,0.10);}
+.billing-status-badge.trialing{color:#b9f1ff;border-color:rgba(77,200,240,0.28);background:rgba(77,200,240,0.12);}
+.billing-status-badge.canceled{color:#ffb4b4;border-color:rgba(255,77,77,0.24);background:rgba(255,77,77,0.10);}
+.billing-status-badge.past_due{color:#ffd27d;border-color:rgba(255,184,0,0.24);background:rgba(255,184,0,0.10);}
+.billing-status-badge.inactive{color:#8dd8ff;border-color:rgba(0,174,255,0.24);background:rgba(0,174,255,0.10);}
+.billing-meta-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.06);}
+.billing-meta-label{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,0.4);margin-bottom:8px;}
+.billing-meta-value{font-size:16px;font-weight:600;color:var(--mp-text-primary);line-height:1.4;}
+.billing-meta-sub{font-size:13px;color:var(--mp-text-secondary);line-height:1.5;}
+.billing-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px;}
+.billing-action{min-height:42px;padding:10px 16px;border-radius:12px;border:1px solid rgba(255,255,255,0.10);background:rgba(255,255,255,0.04);color:var(--mp-text-primary);font-size:13px;font-weight:600;text-decoration:none;cursor:pointer;transition:border-color .2s,transform .2s,background .2s;}
+.billing-action:hover{border-color:var(--mp-border-hover);background:rgba(255,255,255,0.06);transform:translateY(-2px);}
+.billing-action.primary{background:linear-gradient(135deg,rgba(0,174,255,0.85),rgba(0,174,255,0.55));border-color:rgba(0,174,255,0.35);}
+.billing-action.primary:hover{background:linear-gradient(135deg,rgba(0,174,255,0.95),rgba(0,174,255,0.68));}
+.billing-action:disabled{opacity:.6;cursor:not-allowed;transform:none;}
+.billing-lock-note{margin-top:16px;padding:14px 16px;border-radius:14px;border:1px solid rgba(255,184,0,0.18);background:rgba(255,184,0,0.06);font-size:13px;color:#ffd27d;}
+.nav-item-locked{opacity:.82;}
+.nav-item-lock{margin-left:auto;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#FFB800;}
+@media (max-width: 900px){.billing-meta-grid{grid-template-columns:1fr;}}
 .debrief-prose{display:flex;flex-direction:column;gap:14px;}
 .dp-block{padding:16px 18px;background:var(--mp-surface);border:1px solid var(--mp-border);overflow-wrap:break-word;word-wrap:break-word;min-width:0;}
 .dp-block.overnight{}
@@ -3395,6 +3455,37 @@ body{
         </p>
       </div>
 
+      <div class="billing-flash" id="billing-flash" role="status" aria-live="polite"></div>
+      <section class="billing-overview" id="billing-overview" style="--billing-accent:#00AEFF;">
+        <div class="billing-overview-head">
+          <div>
+            <div class="billing-overview-kicker">Subscription Overview</div>
+            <div class="billing-overview-title" id="billing-plan-name">Checking your plan...</div>
+            <div class="billing-overview-copy" id="billing-plan-copy">We’re syncing your Stripe-backed subscription details from Supabase.</div>
+          </div>
+          <span class="billing-status-badge inactive" id="billing-status-badge">Loading</span>
+        </div>
+        <div class="billing-meta-grid">
+          <div>
+            <div class="billing-meta-label">Current Plan</div>
+            <div class="billing-meta-value" id="billing-meta-plan">Loading...</div>
+            <div class="billing-meta-sub">Mapped from your stored plan or Stripe price.</div>
+          </div>
+          <div>
+            <div class="billing-meta-label">Renewal Date</div>
+            <div class="billing-meta-value" id="billing-meta-renewal">Loading...</div>
+            <div class="billing-meta-sub" id="billing-meta-renewal-copy">We’ll show the next renewal or end date once your record loads.</div>
+          </div>
+          <div>
+            <div class="billing-meta-label">Premium Tools</div>
+            <div class="billing-meta-value" id="billing-meta-access">Checking...</div>
+            <div class="billing-meta-sub" id="billing-meta-access-copy">Pro unlocks Trading Cards, Leaderboard, and Trading Calendar.</div>
+          </div>
+        </div>
+        <div class="billing-actions" id="billing-actions"></div>
+        <div class="billing-lock-note" id="billing-lock-note" style="display:none;">Upgrade to Pro to access this feature. <a href="/pricing" style="color:#fff;">View plans</a></div>
+      </section>
+
       <!-- 1) MARKET NARRATIVE SUMMARY -->
       <div class="nf-summary" id="nf-summary" style="margin-bottom:24px;">
         <div class="nf-sum-header">
@@ -3946,6 +4037,7 @@ body{
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/billing-config.js"></script>
 <!-- Env vars injected by Vercel API handler — do not edit this line -->
 <script id="__env_script">window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '', SCHOLAR_ENABLED: '', ANTHROPIC_KEY: '', MASSIVE_API: '' };</script>
 <script>
@@ -4004,6 +4096,11 @@ document.querySelectorAll('.page-header p').forEach(function(p,i){
 var TABS = ['daily','discover','sector','marketwide','snapshots','memes','narrative','cards','calendar','trapradar','leaderboard'];
 var TAB_TITLES = {daily:'Daily Brief',discover:'Discover',sector:'Sector Pulse',marketwide:'Market-Wide',snapshots:'Ticker Snapshots',memes:'Market Sharing',narrative:'Narrative History',cards:'Trading Cards',calendar:'Trading Calendar',trapradar:'Trap Radar',leaderboard:'Leaderboard'};
 function switchTab(id, btn){
+  var requiredPlan = (BILLING.lockedTabs || {})[id];
+  if(requiredPlan && !BILLING.hasAccess(CURRENT_SUBSCRIPTION, requiredPlan)){
+    setBillingFlash('error', 'Upgrade to Pro to access this feature.');
+    return;
+  }
   TABS.forEach(function(t){
     document.getElementById('tab-'+t).classList.toggle('active', t===id);
   });
@@ -4032,6 +4129,9 @@ var SUPA = (window.supabase && SUPABASE_URL && SUPABASE_ANON)
   : null;
 var CURRENT_USER = null;
 var AUTH_READY = null;
+var BILLING = window.MP_BILLING || {lockedTabs:{},getPlanName:function(){return 'No Active Plan';},getAccessLevel:function(){return 'none';},hasAccess:function(){return false;}};
+var CURRENT_SUBSCRIPTION = null;
+var BILLING_PORTAL_BUSY = false;
 var LIVE_NHT_CACHE = {};
 var LIVE_NHT_CACHE_TTL_MS = 60 * 1000;
 var LIVE_EARNINGS_ROWS = [];
@@ -4065,6 +4165,246 @@ function redirectToLogin(){
     window.location.href = '/login';
   }
 }
+
+function getEdgeFunctionHeaders(token){
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer ' + (token || SUPABASE_ANON)
+  };
+}
+
+function setBillingFlash(type, text){
+  var flash = document.getElementById('billing-flash');
+  if(!flash) return;
+  if(!text){
+    flash.className = 'billing-flash';
+    flash.textContent = '';
+    return;
+  }
+  flash.className = 'billing-flash show ' + type;
+  flash.textContent = text;
+}
+
+function formatBillingDate(value){
+  if(!value) return 'Not available';
+  var date = new Date(value);
+  if(isNaN(date.getTime())) return 'Not available';
+  return date.toLocaleDateString(undefined, { year:'numeric', month:'long', day:'numeric' });
+}
+
+function normalizeSubscriptionStatus(status){
+  var normalized = String(status || '').trim().toLowerCase();
+  if(!normalized) return 'inactive';
+  return normalized.replace(/[^a-z]+/g, '_');
+}
+
+function getSubscriptionAccent(status){
+  if(status === 'active') return '#00DE94';
+  if(status === 'trialing') return '#4DC8F0';
+  if(status === 'past_due') return '#FFB800';
+  if(status === 'canceled') return '#FF4D4D';
+  return '#00AEFF';
+}
+
+function renderBillingActions(subscription){
+  var actions = document.getElementById('billing-actions');
+  if(!actions) return;
+  if(subscription && subscription.user_id === 'beta'){
+    actions.innerHTML = '<a class="billing-action primary" href="/pricing">View Plans</a>';
+    return;
+  }
+  var hasActive = normalizeSubscriptionStatus(subscription && subscription.status) === 'active';
+  if(hasActive){
+    actions.innerHTML = '<button class="billing-action primary" id="manage-subscription-btn" type="button">Manage Subscription</button>'
+      + '<a class="billing-action" href="/pricing">Change Plan</a>';
+    var manageBtn = document.getElementById('manage-subscription-btn');
+    if(manageBtn){
+      manageBtn.disabled = BILLING_PORTAL_BUSY;
+      manageBtn.textContent = BILLING_PORTAL_BUSY ? 'Loading...' : 'Manage Subscription';
+      manageBtn.addEventListener('click', function(){
+        openBillingPortal();
+      });
+    }
+    return;
+  }
+  actions.innerHTML = '<a class="billing-action primary" href="/pricing">Choose a Plan</a>';
+}
+
+function applyPlanAccessGating(subscription){
+  var lockedTabs = BILLING.lockedTabs || {};
+  var hasAnyLocks = false;
+  Object.keys(lockedTabs).forEach(function(tabId){
+    var navItem = document.querySelector('.nav-item[data-tab="' + tabId + '"]');
+    var requiredPlan = lockedTabs[tabId];
+    var unlocked = BILLING.hasAccess(subscription, requiredPlan);
+    if(navItem){
+      navItem.classList.toggle('nav-item-locked', !unlocked);
+      navItem.dataset.locked = unlocked ? 'false' : 'true';
+      var lock = navItem.querySelector('.nav-item-lock');
+      if(!unlocked && !lock){
+        lock = document.createElement('span');
+        lock.className = 'nav-item-lock';
+        lock.textContent = 'Pro';
+        navItem.appendChild(lock);
+      }
+      if(unlocked && lock){
+        lock.remove();
+      }
+    }
+    if(!unlocked) hasAnyLocks = true;
+  });
+  var note = document.getElementById('billing-lock-note');
+  if(note){
+    note.style.display = hasAnyLocks ? '' : 'none';
+  }
+}
+
+function renderSubscriptionOverview(subscription){
+  CURRENT_SUBSCRIPTION = subscription || null;
+  var planNameEl = document.getElementById('billing-plan-name');
+  var planCopyEl = document.getElementById('billing-plan-copy');
+  var statusEl = document.getElementById('billing-status-badge');
+  var metaPlanEl = document.getElementById('billing-meta-plan');
+  var metaRenewalEl = document.getElementById('billing-meta-renewal');
+  var metaRenewalCopyEl = document.getElementById('billing-meta-renewal-copy');
+  var metaAccessEl = document.getElementById('billing-meta-access');
+  var metaAccessCopyEl = document.getElementById('billing-meta-access-copy');
+  var cardEl = document.getElementById('billing-overview');
+
+  var status = normalizeSubscriptionStatus(subscription && subscription.status);
+  var humanPlan = BILLING.getPlanName(subscription);
+  var accessLevel = BILLING.getAccessLevel(subscription);
+  var hasPro = BILLING.hasAccess(subscription, 'pro');
+  var renewalDate = subscription && (subscription.current_period_end || subscription.cancel_at || subscription.ended_at);
+
+  if(cardEl){
+    cardEl.style.setProperty('--billing-accent', getSubscriptionAccent(status));
+  }
+  if(planNameEl){
+    planNameEl.textContent = humanPlan;
+  }
+  if(planCopyEl){
+    planCopyEl.textContent = status === 'active'
+      ? 'Your subscription is active and connected to Stripe checkout plus the billing portal.'
+      : subscription && subscription.user_id === 'beta'
+        ? 'Beta access is active. Premium tabs stay unlocked while beta access is enabled.'
+        : 'No active subscription found. Choose a plan to unlock paid billing and premium dashboard tools.';
+  }
+  if(statusEl){
+    statusEl.className = 'billing-status-badge ' + status;
+    statusEl.textContent = status === 'past_due' ? 'Past Due' : status === 'canceled' ? 'Canceled' : status === 'active' ? 'Active' : 'Inactive';
+  }
+  if(metaPlanEl){
+    metaPlanEl.textContent = humanPlan;
+  }
+  if(metaRenewalEl){
+    metaRenewalEl.textContent = formatBillingDate(renewalDate);
+  }
+  if(metaRenewalCopyEl){
+    metaRenewalCopyEl.textContent = renewalDate
+      ? (status === 'canceled' ? 'This subscription is set to end on the date above.' : 'Stripe will use this date for the next renewal boundary.')
+      : 'Choose a plan and this card will show the next renewal date.';
+  }
+  if(metaAccessEl){
+    metaAccessEl.textContent = hasPro || accessLevel === 'beta' ? 'Unlocked' : 'Upgrade Needed';
+  }
+  if(metaAccessCopyEl){
+    metaAccessCopyEl.textContent = hasPro || accessLevel === 'beta'
+      ? 'Trading Cards, Leaderboard, and Trading Calendar are available on this account.'
+      : 'Upgrade to Pro to access Trading Cards, Leaderboard, and Trading Calendar.';
+  }
+  renderBillingActions(subscription);
+  applyPlanAccessGating(subscription);
+
+  if(window.__billingPendingSuccess){
+    setBillingFlash('success', 'Subscription activated! Welcome to ' + humanPlan + '.');
+    window.__billingPendingSuccess = false;
+  }
+}
+
+async function getSubscription(){
+  var user = await ensureDashboardAuth();
+  if(!user) return null;
+  if(user.id === 'beta'){
+    return { user_id: 'beta', status: 'active', plan_id: 'beta', price_id: '', current_period_end: null };
+  }
+  if(!SUPA) throw new Error('Supabase not configured');
+
+  var activeResult = await SUPA.from('subscriptions')
+    .select('*')
+    .eq('user_id', user.id)
+    .in('status', ['active', 'trialing'])
+    .single();
+
+  if(!activeResult.error && activeResult.data){
+    return activeResult.data;
+  }
+  if(activeResult.error && activeResult.error.code !== 'PGRST116'){
+    throw activeResult.error;
+  }
+
+  var fallbackResult = await SUPA.from('subscriptions')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('current_period_end', { ascending: false })
+    .limit(1);
+
+  if(fallbackResult.error) throw fallbackResult.error;
+  return fallbackResult.data && fallbackResult.data[0] ? fallbackResult.data[0] : null;
+}
+
+async function loadSubscriptionStatus(){
+  try {
+    renderSubscriptionOverview(null);
+    var subscription = await getSubscription();
+    renderSubscriptionOverview(subscription);
+  } catch(err){
+    console.error('Subscription load error:', err);
+    setBillingFlash('error', err && err.message ? err.message : 'Unable to load subscription details.');
+    renderSubscriptionOverview(null);
+  }
+}
+
+async function openBillingPortal(){
+  if(BILLING_PORTAL_BUSY) return;
+  if(!SUPA){
+    setBillingFlash('error', 'Supabase not configured.');
+    return;
+  }
+  BILLING_PORTAL_BUSY = true;
+  renderBillingActions(CURRENT_SUBSCRIPTION);
+  setBillingFlash('', '');
+  try {
+    var authResult = await SUPA.auth.getUser();
+    var user = authResult && authResult.data ? authResult.data.user : null;
+    if(!user){
+      redirectToLogin();
+      return;
+    }
+    var sessionResult = await SUPA.auth.getSession();
+    var session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+    if(!session || !session.access_token){
+      redirectToLogin();
+      return;
+    }
+    var res = await fetch(SUPABASE_URL + '/functions/v1/create-portal-session', {
+      method: 'POST',
+      headers: getEdgeFunctionHeaders(session.access_token),
+      body: JSON.stringify({ userId: user.id })
+    });
+    var payload = await res.json().catch(function(){ return {}; });
+    if(!res.ok || !payload.url){
+      throw new Error(payload.error || payload.message || 'Unable to open billing portal.');
+    }
+    window.location.href = payload.url;
+  } catch(err){
+    setBillingFlash('error', err && err.message ? err.message : 'Unable to open billing portal.');
+  } finally {
+    BILLING_PORTAL_BUSY = false;
+    renderBillingActions(CURRENT_SUBSCRIPTION);
+  }
+}
+window.openBillingPortal = openBillingPortal;
 
 function ensureDashboardAuth(){
   if(AUTH_READY) return AUTH_READY;
@@ -4111,6 +4451,7 @@ function ensureDashboardAuth(){
           return;
         }
         if(event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED'){
+          loadSubscriptionStatus();
           tcLoadQueued();
         }
       });
@@ -10121,11 +10462,13 @@ setInterval(bootNarrativeHistory, 60 * 1000);
 
 ensureDashboardAuth().then(function(user){
   if(!user) return;
+  loadSubscriptionStatus();
   loadData();
 });
 setInterval(function(){
   ensureDashboardAuth().then(function(user){
     if(!user) return;
+    loadSubscriptionStatus();
     loadData();
   });
 },5*60*1000);
@@ -10134,6 +10477,7 @@ document.addEventListener('visibilitychange',function(){
   bootNarrativeHistory();
   ensureDashboardAuth().then(function(user){
     if(!user) return;
+    loadSubscriptionStatus();
     loadData();
   });
 });
@@ -11438,4 +11782,3 @@ window.switchTab=function(id,btn){
 </script>
 </body>
 </html>
-
