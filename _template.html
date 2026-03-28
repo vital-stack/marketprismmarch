@@ -1468,7 +1468,6 @@ body{
   .sharing-tab{font-size:11px;padding:6px 10px;}
   /* Scholar */
   .scholar-panel{right:8px;left:8px;width:auto;max-width:100%;bottom:80px;}
-  .scholar-fab{right:16px;bottom:16px;}
   /* Daily brief */
   .daily-hero-grid{grid-template-columns:1fr;gap:20px;}
   .daily-title{font-size:24px;}
@@ -1525,10 +1524,8 @@ body{
   .daily-cal-days{grid-template-columns:1fr;}
   /* Heatmap */
   .dhm-grid{grid-template-columns:repeat(auto-fill,minmax(40px,1fr));}
-  /* Scholar */
-  .scholar-fab-label{display:none;}
-  .scholar-fab{width:48px;height:48px;padding:0;border-radius:50%;gap:0;}
-  .scholar-panel{bottom:72px;}
+  /* Scholar — label stays visible on mobile bar (handled by 600px rule) */
+  .scholar-panel{bottom:44px;}
   /* Filter bar stacked */
   .filter-bar{flex-direction:column;align-items:stretch;}
   .filter-sep{display:none;}
@@ -2702,10 +2699,28 @@ body{
   padding:4px 14px 2px;letter-spacing:0.03em;opacity:0.6;
 }
 
-/* Mobile adjustments */
+/* Mobile: Scholar FAB becomes full-width bottom bar */
 @media(max-width:600px){
-  .scholar-fab{bottom:16px;right:16px;width:50px;height:50px;}
-  .scholar-panel{bottom:78px;right:12px;left:12px;width:auto;max-width:none;max-height:calc(100vh - 100px);}
+  .scholar-fab{
+    bottom:0;right:0;left:0;
+    width:100%;height:44px;
+    border-radius:0;
+    padding:0 16px;gap:8px;
+    justify-content:center;
+    animation:none;
+    border-left:none;border-right:none;border-bottom:none;
+    border-top:1px solid rgba(255,255,255,0.08);
+    background:rgba(10,15,20,0.92);
+    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    box-shadow:0 -4px 24px rgba(0,0,0,0.3);
+  }
+  .scholar-fab-label{display:flex !important;flex-direction:row;align-items:center;gap:6px;}
+  .scholar-fab-title{font-size:13px;color:#F5F7FA;}
+  .scholar-fab-sub{font-size:8px;margin-top:0;color:#00AEFF;}
+  .scholar-fab svg{width:20px;height:20px;}
+  .scholar-fab:hover{transform:none;}
+  .scholar-fab.open{width:44px;height:44px;position:fixed;bottom:0;right:0;left:auto;border-radius:0;border-top:1px solid rgba(255,255,255,0.08);border-left:1px solid rgba(255,255,255,0.08);}
+  .scholar-panel{bottom:44px;right:0;left:0;width:auto;max-width:none;max-height:calc(100vh - 56px);border-radius:16px 16px 0 0;}
 }
 /* ── PASSWORD GATE ── */
 .pw-gate{
