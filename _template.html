@@ -4068,46 +4068,59 @@ body{
          TAB: TICKER SNAPSHOTS
     ═══════════════════════════════════════ -->
     <div class="tab-panel" id="tab-snapshots">
-      <div class="page-header">
-        <div class="ph-eyebrow">Ticker Intelligence</div>
-        <h1>Every ticker at a glance.</h1>
-        <span class="ph-italic">Price, narrative, verdict.</span>
-        <p>Condensed view of all tracked instruments — price action, narrative state, and forensic verdict in one sortable table.</p>
-      </div>
-      <div class="snap-filter-row">
-        <span class="filter-label">Sort by</span>
-        <button class="chip active" onclick="sortSnap('ticker',this)">Ticker A→Z</button>
-        <button class="chip" onclick="sortSnap('chg-desc',this)">Top movers ↑</button>
-        <button class="chip" onclick="sortSnap('chg-asc',this)">Top movers ↓</button>
-        <button class="chip" onclick="sortSnap('overvalued',this)">Overvalued</button>
-        <button class="chip" onclick="sortSnap('undervalued',this)">Under Fair Value</button>
-        <button class="chip" onclick="sortSnap('high-energy',this)">High Energy</button>
-        <button class="chip" onclick="sortSnap('fading',this)">Narrative Fading</button>
-        <button class="chip" onclick="sortSnap('coordinated',this)">Coordinated</button>
-        <button class="chip" onclick="sortSnap('traps',this)">Narrative Trap</button>
-        <button class="chip" onclick="sortSnap('supported',this)">Structurally Supportive</button>
-        <button class="chip" onclick="sortSnap('sec-conflict',this)">SEC Conflict</button>
-        <button class="chip" onclick="sortSnap('bearish-tone',this)">Bearish Tone</button>
-        <button class="chip" onclick="sortSnap('analyst-cited',this)">Analyst Cited</button>
-        <div class="filter-sep"></div>
-        <select class="filter-select" id="snap-sector-select" onchange="filterSnapSector(this.value)">
-          <option value="">All sectors</option>
-        </select>
-        <div class="search-wrap">
-          <input class="search-input" id="snap-search" placeholder="Ticker…" oninput="renderSnap()">
-        </div>
+      <!-- HERO -->
+      <div style="margin-bottom:20px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#00AEFF;margin-bottom:6px;">Ticker Intelligence</div>
+        <div style="font-family:'Instrument Serif',var(--font-display),Georgia,serif;font-size:clamp(24px,2.5vw,34px);font-weight:400;letter-spacing:-.025em;margin-bottom:4px;">Every ticker at a glance.<br><em style="color:#00AEFF;font-style:italic;">Price, narrative, verdict.</em></div>
+        <div style="font-size:13px;color:var(--mp-text-secondary);">Condensed view of all tracked instruments — price action, narrative state, and forensic verdict in one sortable table.</div>
       </div>
 
-      <div class="snapshots-table-wrap">
+      <!-- CONTROL BAR -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+        <input id="snap-search" placeholder="Filter ticker or sector…" oninput="renderSnap()" style="background:var(--mp-surface2);border:1px solid var(--mp-border);border-radius:6px;padding:7px 12px;font-size:13px;color:var(--mp-text-primary);font-family:var(--font-body);outline:none;width:200px;">
+        <select class="filter-select" id="snap-verdict-select" onchange="snapVerdict=this.value;snapShowing=50;renderSnap();" style="background:var(--mp-surface2);border:1px solid var(--mp-border);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--mp-text-secondary);font-family:var(--font-body);outline:none;">
+          <option value="">All verdicts</option>
+          <option value="Narrative Trap">Narrative Trap</option>
+          <option value="Structurally Supported">Structurally Supported</option>
+          <option value="Monitoring">Monitoring</option>
+          <option value="Omission Cascade">Omission Cascade</option>
+          <option value="Regime Uncertainty">Regime Uncertainty</option>
+          <option value="Overvalued Stable">Overvalued Stable</option>
+          <option value="Exhausted Narrative">Exhausted Narrative</option>
+        </select>
+        <select class="filter-select" id="snap-state-select" onchange="snapState=this.value;snapShowing=50;renderSnap();" style="background:var(--mp-surface2);border:1px solid var(--mp-border);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--mp-text-secondary);font-family:var(--font-body);outline:none;">
+          <option value="">All states</option>
+          <option value="Breaking">Breaking</option>
+          <option value="Surging">Surging</option>
+          <option value="Stable">Stable</option>
+          <option value="Fragile">Fragile</option>
+        </select>
+        <select class="filter-select" id="snap-sector-select" onchange="filterSnapSector(this.value)" style="background:var(--mp-surface2);border:1px solid var(--mp-border);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--mp-text-secondary);font-family:var(--font-body);outline:none;">
+          <option value="">All sectors</option>
+        </select>
+        <div style="flex:1;"></div>
+        <span style="font-size:11px;color:var(--mp-text-muted);">Sort:</span>
+        <button class="chip active" onclick="sortSnap('ticker',this)">Ticker A→Z</button>
+        <button class="chip" onclick="sortSnap('chg-desc',this)">Top movers ↑</button>
+        <button class="chip" onclick="sortSnap('overvalued',this)">Overvalued</button>
+        <button class="chip" onclick="sortSnap('traps',this)">Traps</button>
+        <button class="chip" onclick="sortSnap('supported',this)">Supported</button>
+      </div>
+
+      <!-- TABLE -->
+      <div style="flex:1;overflow:auto;border:1px solid var(--mp-border);border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,.4);">
         <table class="snap-table">
           <thead>
             <tr>
-              <th>Ticker</th>
-              <th class="r">Price</th>
-              <th class="r">Change</th>
+              <th style="width:90px;">Ticker</th>
+              <th class="r" style="width:100px;">Price</th>
+              <th class="r" style="width:80px;">Change</th>
               <th>Verdict</th>
               <th>Tags</th>
-              <th></th>
+              <th style="width:90px;">FVD%</th>
+              <th style="width:100px;">PRISM</th>
+              <th>Sector</th>
+              <th style="width:100px;"></th>
             </tr>
           </thead>
           <tbody id="snap-tbody"></tbody>
@@ -6785,7 +6798,7 @@ function renderLoveHate(){
   document.querySelectorAll('.lh-hate-rows').forEach(function(el){el.innerHTML=hateHTML;});
 }
 // ── TICKER SNAPSHOTS ─────────────────────────────────────────────────────────
-var snapSort='ticker', snapSector='', snapShowing=50;
+var snapSort='ticker', snapSector='', snapShowing=50, snapVerdict='', snapState='';
 function sortSnap(s,btn){
   snapSort=s;
   document.querySelectorAll('#tab-snapshots .chip').forEach(function(c){c.classList.remove('active');});
@@ -6801,7 +6814,9 @@ function getSnapData(){
   var sv=(document.getElementById('snap-search')||{}).value||'';
   var arr=DATA.filter(function(r){
     if(snapSector&&r.sector_name!==snapSector)return false;
-    if(sv&&!r.ticker.toLowerCase().includes(sv.toLowerCase()))return false;
+    if(sv&&!r.ticker.toLowerCase().includes(sv.toLowerCase())&&!(r.sector_name||'').toLowerCase().includes(sv.toLowerCase()))return false;
+    if(snapVerdict&&(r.prism_verdict||r.verdict||'')!==snapVerdict)return false;
+    if(snapState&&(r.narrative_state||'')!==snapState)return false;
     return true;
   });
   if(snapSort==='chg-desc')arr=arr.slice().sort(function(a,b){return(b.price_change_pct||0)-(a.price_change_pct||0);});
@@ -6930,27 +6945,39 @@ function renderSnap(){
   var tbody=document.getElementById('snap-tbody');
   var lm=document.getElementById('snap-load-more');
   var slice=arr.slice(0,snapShowing);
-  if(arr.length===0){tbody.innerHTML='<tr><td colspan="6" class="empty-state" style="padding:32px;text-align:center;color:var(--mp-text-tertiary);">No tickers match.</td></tr>';lm.style.display='none';return;}
+  if(arr.length===0){tbody.innerHTML='<tr><td colspan="9" class="empty-state" style="padding:32px;text-align:center;color:var(--mp-text-tertiary);">No tickers match.</td></tr>';lm.style.display='none';return;}
   tbody.innerHTML=slice.map(function(r){
     var delta=fmtDelta(r.price_change_pct);
     var sc=verdictClass(r.verdict||r.prism_verdict||'');
-    var ec=r.days_to_earnings!=null&&r.days_to_earnings<=14?' earnings-soon':'';
-    // Build expanded tags with max 6 visible + overflow
+    // Build 2 primary tags
     var allTags=getTickerInsightTags(r);
-    var insight=allTags.filter(function(t){return !t.sector;});
-    var visible=insight.slice(0,2);
+    var visible=allTags.filter(function(t){return !t.sector;}).slice(0,2);
     var tagsHTML=visible.map(function(t){
       var cls='snap-tag'+(t.priority?' snap-tag-priority':'')+(t.muted?' snap-tag-muted':'');
-      var ttip=t.tooltip?' title="'+esc(t.tooltip)+'"':'';
-      return '<span class="'+cls+'" style="background:'+t.bg+';color:'+t.color+';border-color:'+t.border+';"'+ttip+'>'+esc(t.label)+'</span>';
+      return '<span class="'+cls+'" style="background:'+t.bg+';color:'+t.color+';border-color:'+t.border+';">'+esc(t.label)+'</span>';
     }).join('');
+    // FVD%
+    var fvd=r.fvd_pct!=null?r.fvd_pct:(r.source_fvd_pct||null);
+    var fvdHTML='<span style="color:var(--mp-text-muted);">\u2014</span>';
+    if(fvd!=null){
+      if(fvd>100)fvdHTML='<span style="color:#FF4D4D;font-size:12px;font-weight:600;">+'+Math.abs(fvd).toFixed(0)+'%</span>';
+      else if(fvd>0)fvdHTML='<span style="color:#FF4D4D;font-size:12px;font-weight:600;">+'+fvd.toFixed(1)+'%</span>';
+      else fvdHTML='<span style="color:#00DE94;font-size:12px;font-weight:600;">'+fvd.toFixed(1)+'%</span>';
+    }
+    // PRISM
+    var prism=r.prism_verdict||r.verdict||'';
+    var prismCls=prism==='STABLE'||prism.indexOf('Supported')!==-1?'stable':prism==='MONITORING'||prism.indexOf('Monitoring')!==-1?'monitoring':'decaying';
+    var prismHTML='<span style="display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px;background:'+(prismCls==='stable'?'#00DE94':prismCls==='monitoring'?'#FFB800':'#FF4D4D')+'"></span><span style="font-size:12px;">'+esc(prism.split(' ')[0]||'\u2014')+'</span>';
     return '<tr onclick="window.location.href=\'/ticker/'+encodeURIComponent(r.ticker)+'\'" style="cursor:pointer;">'
-      +'<td><div style="display:flex;align-items:center;gap:8px;">'+logoHTML(r.ticker,'sm')+'<div class="snap-sym">'+r.ticker+'</div></div></td>'
+      +'<td><div style="display:flex;align-items:center;gap:8px;">'+logoHTML(r.ticker,'sm')+'<div><span class="snap-sym">'+r.ticker+'</span></div></div></td>'
       +'<td class="r"><div class="snap-price">$'+fmtPrice(r.price)+'</div></td>'
       +'<td class="r"><div class="snap-chg '+delta.cls+'">'+delta.txt+'</div></td>'
-      +'<td><span class="snap-verdict '+sc+'">'+esc(r.verdict||r.prism_verdict||'—')+'</span></td>'
+      +'<td><span class="snap-verdict '+sc+'">'+esc(r.verdict||r.prism_verdict||'\u2014')+'</span></td>'
       +'<td><div class="snap-tags">'+tagsHTML+'</div></td>'
-      +'<td class="r"><a href="/ticker/'+encodeURIComponent(r.ticker)+'" class="snap-cta" onclick="event.stopPropagation();">View Analysis <span style="font-size:13px;">→</span></a></td>'
+      +'<td>'+fvdHTML+'</td>'
+      +'<td>'+prismHTML+'</td>'
+      +'<td><span style="font-size:11px;color:var(--mp-text-tertiary);">'+esc(r.sector_name||'\u2014')+'</span>'+(r.sector_trap_flag?'<span style="display:inline-block;font-size:10px;font-weight:700;color:#FFB800;background:rgba(255,184,0,.08);padding:1px 5px;border-radius:3px;border:1px solid rgba(255,184,0,.2);margin-left:4px;">\u26A0 Trap</span>':'')+'</td>'
+      +'<td class="r"><a href="/ticker/'+encodeURIComponent(r.ticker)+'" class="snap-cta" onclick="event.stopPropagation();">View \u2192</a></td>'
     +'</tr>';
   }).join('');
   lm.style.display=snapShowing<arr.length?'block':'none';
