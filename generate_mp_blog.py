@@ -56,12 +56,29 @@ ARTICLE STRUCTURE — ALWAYS FOLLOW THIS
 7. Closing observation — one definitive sentence. Not a prediction. A structural conclusion.
 
 EVIDENCE STANDARDS
-- Every claim must be anchored by a verifiable signal: short interest, options skew, 
+- Every claim must be anchored by a verifiable signal: short interest, options skew,
   analyst revision direction, revenue trajectory, institutional flow, or insider activity
 - Cite sources explicitly: filing type, date, data provider
 - Revenue/EPS figures: always state the reporting period
 - Forward estimates: label as estimates requiring independent verification
 - Never assert narrative direction without naming the signal that demonstrates it
+
+QUANTITATIVE ACCURACY — CRITICAL
+- Every specific number in this article — revenue figures, growth rates, market caps,
+  P/E ratios, short interest — must be sourced from live data provided in the prompt
+  or from verifiable public filings. Never use a number from training data memory.
+  If you cannot verify a figure from the data provided, write "data pending verification"
+  as a placeholder. Do not estimate or interpolate.
+- When citing a company's current or most recent financial results, always confirm which
+  fiscal period the number belongs to and state it explicitly (e.g. "FY2026 ending
+  January 2026" or "Q3 FY2025"). Never reference a prior-year figure as current-year.
+- If the article references a company that has reported earnings within the last 6 months,
+  only use financial figures from the live data provided or explicitly sourced filings —
+  never reconstruct earnings figures from memory.
+- After drafting, perform a self-check: for every quantitative claim, confirm the source
+  and the exact figure match what was provided in the prompt data. If any figure cannot
+  be traced to provided data or a named source, replace it with "data pending verification"
+  or remove the claim entirely. Flag any discrepancy before outputting.
 
 DATA TABLE STANDARDS
 Every article includes one data table containing:
@@ -346,6 +363,16 @@ named regulatory cases, documented market events, or academic research where rel
 Do not use internal scores or platform names.
 Do not use emoji or decorative characters.
 
+QUANTITATIVE ACCURACY — MANDATORY
+- Every specific number — revenue figures, growth rates, market caps, P/E ratios —
+  must be sourced from verifiable public filings or documented market events.
+  Never use a number from training data memory without explicit source attribution.
+  If you cannot verify a figure, write "data pending verification" as a placeholder.
+- When citing financial results, always state which fiscal period the number belongs to.
+  Never reference a prior-year figure as current-year.
+- After completing your draft, re-read every quantitative claim and verify it has a
+  named source with filing type and date. Remove or flag any figure that cannot be verified.
+
 Output the article title on the first line as: ## [Title Here]
 Then the article body. Nothing else.
 """}],
@@ -469,6 +496,17 @@ Do NOT mention scores, ratings, internal metrics, or Market Prism by name in the
 Translate all signal intelligence into plain analytical language.
 Do NOT use emoji or decorative characters.
 Do NOT construct URLs — only use URLs provided in the headlines above.
+
+QUANTITATIVE ACCURACY — MANDATORY
+- Use ONLY the financial figures provided in LIVE MARKET DATA above. Do not supplement
+  with numbers from memory or training data. If a figure you need is not provided above,
+  write "data pending verification" as a placeholder.
+- For every revenue, earnings, or growth figure: explicitly state which fiscal period it
+  belongs to (e.g. "FY2026 ending January 2026"). Never cite a prior-year figure as the
+  current year's result.
+- After completing your draft, re-read every quantitative claim and verify it traces back
+  to either the LIVE MARKET DATA section above or a named public source with filing type
+  and date. Remove or flag any figure that cannot be verified.
 
 Output the article title on the first line as: ## [Title Here]
 Then the article body. Nothing else.
