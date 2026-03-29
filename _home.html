@@ -167,6 +167,8 @@ body {
   overflow: hidden;
   display: flex;
   align-items: center;
+  position: relative;
+  z-index: 1;
 }
 .ticker-live {
   display: flex;
@@ -1029,7 +1031,7 @@ h1 em {
   z-index: 10;
 }
 .sec-alt {
-  background: var(--deep);
+  background: rgba(14,19,25,0.85);
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
 }
@@ -1056,7 +1058,7 @@ h1 em {
 }
 /* Light sections */
 .sec-light {
-  background: var(--bg);
+  background: rgba(11,15,20,0.88);
   color: var(--tx1);
 }
 .sec-light h2 { color: var(--tx1); }
@@ -1465,11 +1467,12 @@ h2 {
 .cta-sec {
   scroll-snap-align: start;
   min-height: 100vh;
-  background: var(--bg);
+  background: rgba(11,15,20,0.85);
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
+  z-index: 1;
   overflow: hidden;
   padding: 120px 0;
 }
@@ -1584,8 +1587,9 @@ h2 {
   align-items: center;
   justify-content: center;
   border-bottom: none;
-  background: var(--deep);
+  background: transparent;
   position: relative;
+  z-index: 1;
   overflow: hidden;
   padding: 120px 0;
 }
@@ -1659,9 +1663,11 @@ h2 {
 /* ── FOOTER ── */
 footer {
   scroll-snap-align: end;
-  background: var(--deep);
+  background: rgba(14,19,25,0.9);
   border-top: 1px solid var(--border);
   padding: 52px 40px 28px;
+  position: relative;
+  z-index: 1;
   max-width: none;
 }
 .footer-inner {
@@ -1675,7 +1681,7 @@ footer {
   margin-bottom: 44px;
 }
 .footer-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
-.footer-brand-name { font-family: var(--font-d); font-size: 16px; color: var(--tx1); }
+.footer-brand-name { font-family: 'Poppins', var(--font-body); font-size: 16px; font-weight: 600; letter-spacing: 0.04em; color: var(--tx1); }
 .footer-tagline { font-size: 13px; color: var(--tx3); line-height: 1.7; }
 .footer-col-lbl {
   font-family: var(--font-m);
@@ -2235,7 +2241,7 @@ footer {
   .mp-agents-grid { grid-template-columns: 1fr !important; }
 }
 /* ═══ NEW: Problem-first sections ═══ */
-.mp-sec{padding:100px 0;position:relative;overflow:hidden;border-bottom:1px solid rgba(255,255,255,0.06);width:100%;max-width:100vw;box-sizing:border-box;}
+.mp-sec{padding:100px 0;position:relative;overflow:hidden;border-bottom:1px solid rgba(255,255,255,0.06);width:100%;max-width:100vw;box-sizing:border-box;z-index:1;}
 .mp-sec-grad-teal{background:linear-gradient(150deg,rgba(6,18,25,0.92) 0%,rgba(8,12,18,0.92) 50%,rgba(6,20,17,0.92) 100%);}
 .mp-sec-grad-teal::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 55% 60% at 100% 30%,rgba(56,200,184,0.07) 0%,transparent 65%);}
 .mp-sec-grad-violet{background:linear-gradient(145deg,rgba(8,10,18,0.92) 0%,rgba(10,9,22,0.92) 100%);}
@@ -2350,6 +2356,7 @@ footer {
 </style>
 </head>
 <body>
+<canvas id="bg-constellation" style="position:fixed;inset:0;z-index:0;pointer-events:none;"></canvas>
 <!-- ── TICKER ── -->
 <div class="ticker-wrap">
   <div class="ticker-live">
@@ -3062,10 +3069,9 @@ footer {
     <div class="footer-grid">
       <div>
         <div class="footer-brand">
-          <svg width="20" height="20" viewBox="0 0 40 44" fill="none">
-            <defs><linearGradient id="fg" x1="6" y1="40" x2="34" y2="4" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#00AEFF"/><stop offset="100%" stop-color="#00DE94"/></linearGradient></defs>
-            <path d="M20 4 L4 40 L10 40 L20 18 L30 40 L36 40 Z" fill="url(#fg)"/>
-            <path d="M20 4 L20 18" stroke="#080B11" stroke-width="2.5"/>
+          <svg width="20" height="20" viewBox="0 0 64 64" fill="none">
+            <defs><linearGradient id="fTL" x1="10" y1="12" x2="32" y2="42" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#00C9A7"/><stop offset="50%" stop-color="#00AEFF"/><stop offset="100%" stop-color="#3B82F6"/></linearGradient><linearGradient id="fTR" x1="54" y1="12" x2="32" y2="42" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#E040A0"/><stop offset="40%" stop-color="#7B61FF"/><stop offset="100%" stop-color="#3B82F6"/></linearGradient><linearGradient id="fBL" x1="8" y1="58" x2="32" y2="30" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#FF6B9D"/><stop offset="40%" stop-color="#FFB800"/><stop offset="100%" stop-color="#00AEFF"/></linearGradient><linearGradient id="fBR" x1="56" y1="58" x2="32" y2="30" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#FF4D6A"/><stop offset="50%" stop-color="#C084FC"/><stop offset="100%" stop-color="#3B82F6"/></linearGradient><linearGradient id="fC" x1="20" y1="28" x2="44" y2="48" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#FFFDE8"/><stop offset="50%" stop-color="#A5F3FC"/><stop offset="100%" stop-color="#C4B5FD"/></linearGradient></defs>
+            <path d="M32 6 L10 38 L32 38 Z" fill="url(#fTL)" opacity="0.92"/><path d="M32 6 L54 38 L32 38 Z" fill="url(#fTR)" opacity="0.92"/><path d="M10 38 L24 58 L32 38 Z" fill="url(#fBL)" opacity="0.88"/><path d="M54 38 L40 58 L32 38 Z" fill="url(#fBR)" opacity="0.88"/><path d="M24 58 L32 38 L40 58 Z" fill="url(#fC)" opacity="0.7"/><path d="M32 22 L22 38 L32 50 L42 38 Z" fill="url(#fC)" opacity="0.35"/>
           </svg>
           <span class="footer-brand-name">Market Prism</span>
         </div>
@@ -3839,6 +3845,155 @@ window.MP_DOMAINS   = MP_DOMAINS;
       }
     });
   }
+})();
+</script>
+<script>
+// ── Full-page Background Constellation ──
+// Poly-lines with nodes that slowly shift color as user scrolls
+(function(){
+  var canvas = document.getElementById('bg-constellation');
+  if(!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var dpr = window.devicePixelRatio || 1;
+  var W, H, nodes = [];
+  var NODE_COUNT = 60;
+  var LINK_DIST = 180;
+  var scrollPct = 0;
+  var raf;
+
+  // Color palettes to transition through (RGB strings)
+  var palettes = [
+    { r: 0,   g: 174, b: 255 },  // cyan/blue
+    { r: 0,   g: 222, b: 148 },  // green/teal
+    { r: 123, g: 97,  b: 255 },  // violet
+    { r: 56,  g: 200, b: 184 },  // teal
+    { r: 255, g: 184, b: 0   },  // amber
+    { r: 224, g: 64,  b: 160 },  // pink
+    { r: 0,   g: 174, b: 255 }   // back to cyan
+  ];
+
+  function lerpColor(a, b, t){
+    return {
+      r: Math.round(a.r + (b.r - a.r) * t),
+      g: Math.round(a.g + (b.g - a.g) * t),
+      b: Math.round(a.b + (b.b - a.b) * t)
+    };
+  }
+
+  function getScrollColor(offset){
+    var t = (scrollPct + offset) % 1;
+    var seg = t * (palettes.length - 1);
+    var idx = Math.floor(seg);
+    var frac = seg - idx;
+    if(idx >= palettes.length - 1) idx = palettes.length - 2;
+    var c = lerpColor(palettes[idx], palettes[idx + 1], frac);
+    return c.r + ',' + c.g + ',' + c.b;
+  }
+
+  function resize(){
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function init(){
+    resize();
+    nodes = [];
+    for(var i = 0; i < NODE_COUNT; i++){
+      nodes.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        vx: (Math.random() - 0.5) * 0.2,
+        vy: (Math.random() - 0.5) * 0.2,
+        r: Math.random() * 2 + 0.8,
+        phase: Math.random()
+      });
+    }
+  }
+
+  function draw(){
+    ctx.clearRect(0, 0, W, H);
+
+    // Draw connections
+    for(var i = 0; i < nodes.length; i++){
+      var ni = nodes[i];
+      var ci = getScrollColor(ni.phase * 0.3);
+      for(var j = i + 1; j < nodes.length; j++){
+        var nj = nodes[j];
+        var dx = ni.x - nj.x;
+        var dy = ni.y - nj.y;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        if(dist < LINK_DIST){
+          var alpha = (1 - dist / LINK_DIST) * 0.06;
+          ctx.beginPath();
+          ctx.moveTo(ni.x, ni.y);
+          ctx.lineTo(nj.x, nj.y);
+          ctx.strokeStyle = 'rgba(' + ci + ',' + alpha + ')';
+          ctx.lineWidth = 0.6;
+          ctx.stroke();
+        }
+      }
+    }
+
+    // Draw nodes with glow
+    for(var k = 0; k < nodes.length; k++){
+      var n = nodes[k];
+      var c = getScrollColor(n.phase * 0.3);
+      var pulse = 0.3 + Math.sin(Date.now() * 0.001 + n.phase * 6.28) * 0.15;
+
+      // Outer glow
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r + 3, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(' + c + ',' + (pulse * 0.06) + ')';
+      ctx.fill();
+
+      // Core dot
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(' + c + ',' + (pulse * 0.5) + ')';
+      ctx.fill();
+    }
+  }
+
+  function update(){
+    for(var i = 0; i < nodes.length; i++){
+      var n = nodes[i];
+      n.x += n.vx;
+      n.y += n.vy;
+      if(n.x < -20) n.x = W + 20;
+      if(n.x > W + 20) n.x = -20;
+      if(n.y < -20) n.y = H + 20;
+      if(n.y > H + 20) n.y = -20;
+    }
+  }
+
+  function loop(){
+    update();
+    draw();
+    raf = requestAnimationFrame(loop);
+  }
+
+  // Track scroll position for color transitions
+  window.addEventListener('scroll', function(){
+    var docH = document.documentElement.scrollHeight - window.innerHeight;
+    scrollPct = docH > 0 ? window.scrollY / docH : 0;
+  }, {passive: true});
+
+  if(window.innerWidth < 768) NODE_COUNT = 30;
+
+  window.addEventListener('resize', resize);
+
+  document.addEventListener('visibilitychange', function(){
+    if(document.hidden){ if(raf) cancelAnimationFrame(raf); }
+    else { raf = requestAnimationFrame(loop); }
+  });
+
+  init();
+  loop();
 })();
 </script>
 </body>
