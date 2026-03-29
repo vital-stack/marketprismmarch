@@ -892,16 +892,16 @@ body{
 .snap-price{font-family:var(--font-mono);font-size:13px;font-weight:500;color:var(--mp-text-primary);}
 .snap-chg{font-family:var(--font-mono);font-size:12px;}
 .snap-state{font-family:var(--font-body);font-size:11px;padding:3px 10px;border-radius:4px;border:1px solid rgba(255,255,255,0.08);letter-spacing:.04em;white-space:nowrap;background:rgba(255,255,255,0.04);color:var(--mp-text-secondary);}
-.snap-verdict{font-family:var(--font-body);font-size:11px;padding:3px 10px;border-radius:4px;border:1px solid rgba(255,255,255,0.08);letter-spacing:.02em;white-space:nowrap;background:rgba(255,255,255,0.04);color:var(--mp-text-secondary);}
-.verdict-trap{color:#38C8B8;border-color:rgba(56,200,184,0.25);background:rgba(56,200,184,0.08);}
-.verdict-supported{color:#00DE94;border-color:rgba(0,222,148,0.25);background:rgba(0,222,148,0.08);}
-.verdict-monitoring{color:#00AEFF;border-color:rgba(0,174,255,0.25);background:rgba(0,174,255,0.08);}
-.verdict-neutral{color:var(--mp-text-secondary);border-color:rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);}
+.snap-verdict{font-family:var(--font-body);font-size:11px;padding:3px 10px;border-radius:4px;border:1px solid rgba(255,255,255,0.06);letter-spacing:.02em;white-space:nowrap;background:rgba(255,255,255,0.03);color:var(--mp-text-tertiary);}
+.verdict-trap{color:rgba(56,200,184,0.6);border-color:rgba(56,200,184,0.12);background:rgba(56,200,184,0.04);}
+.verdict-supported{color:rgba(0,222,148,0.6);border-color:rgba(0,222,148,0.12);background:rgba(0,222,148,0.04);}
+.verdict-monitoring{color:rgba(0,174,255,0.5);border-color:rgba(0,174,255,0.10);background:rgba(0,174,255,0.04);}
+.verdict-neutral{color:var(--mp-text-tertiary);border-color:rgba(255,255,255,0.06);background:rgba(255,255,255,0.03);}
 .snap-driver{font-size:13px;color:var(--mp-text-primary);max-width:280px;line-height:1.5;}
 .snap-sector{font-size:11px;color:var(--mp-text-tertiary);font-style:italic;max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .snap-tags{display:flex;flex-wrap:wrap;gap:4px;max-width:460px;align-items:center;}
-.snap-tag{font-family:var(--font-body);font-size:10px;font-weight:500;padding:3px 8px;border-radius:99px;white-space:nowrap;letter-spacing:0.02em;border:1px solid rgba(255,255,255,0.10);background:rgba(255,255,255,0.04);color:var(--mp-text-secondary);opacity:0.7;}
-.snap-tag-priority{font-weight:600;opacity:0.95;letter-spacing:0.03em;}
+.snap-tag{font-family:var(--font-body);font-size:10px;font-weight:500;padding:3px 8px;border-radius:99px;white-space:nowrap;letter-spacing:0.02em;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.03);color:var(--mp-text-tertiary);opacity:0.6;}
+.snap-tag-priority{font-weight:600;opacity:0.7;letter-spacing:0.03em;}
 .snap-tag-muted{opacity:0.5;font-style:italic;}
 .snap-tag-more{font-family:var(--font-body);font-size:10px;font-weight:500;padding:3px 8px;border-radius:99px;white-space:nowrap;letter-spacing:0.02em;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:var(--mp-text-tertiary);cursor:default;position:relative;opacity:0.6;}
 .snap-tag-more:hover{opacity:1;}
@@ -6552,35 +6552,35 @@ function humanizeSnake(s){
 function getTickerInsightTags(r){
   var tags=[];
   // ── Priority 1: SEC Conflict (material_discrepancy) ──
-  if(r._na_discrepancy===true) tags.push({label:'SEC Conflict',color:'rgba(255,184,0,0.9)',bg:'rgba(255,184,0,0.08)',border:'rgba(255,184,0,0.20)',priority:true});
+  if(r._na_discrepancy===true) tags.push({label:'SEC Conflict',color:'rgba(255,184,0,0.55)',bg:'rgba(255,184,0,0.04)',border:'rgba(255,184,0,0.10)',priority:true});
   // ── Priority 2: Narrative tone (skip MIXED) ──
   var tone=(r._na_tone||'').toUpperCase();
-  if(tone==='BEARISH') tags.push({label:'Bearish',color:'rgba(255,77,77,0.7)',bg:'rgba(255,77,77,0.05)',border:'rgba(255,77,77,0.12)'});
-  else if(tone==='BULLISH') tags.push({label:'Bullish',color:'rgba(0,222,148,0.7)',bg:'rgba(0,222,148,0.05)',border:'rgba(0,222,148,0.12)'});
+  if(tone==='BEARISH') tags.push({label:'Bearish',color:'rgba(255,77,77,0.45)',bg:'rgba(255,77,77,0.03)',border:'rgba(255,77,77,0.08)'});
+  else if(tone==='BULLISH') tags.push({label:'Bullish',color:'rgba(0,222,148,0.45)',bg:'rgba(0,222,148,0.03)',border:'rgba(0,222,148,0.08)'});
   // ── Priority 3: Verdict from narrative_analyses (full label) ──
   var naVerdict=(r._na_verdict||'').trim();
   if(naVerdict&&naVerdict!=='—'){
     var vLow=naVerdict.toLowerCase();
-    var vColor=vLow.indexOf('trap')!==-1||vLow.indexOf('air pocket')!==-1?'rgba(255,77,77,0.6)':vLow.indexOf('support')!==-1||vLow.indexOf('verified')!==-1?'rgba(0,222,148,0.6)':'rgba(0,174,255,0.6)';
-    var vBg=vLow.indexOf('trap')!==-1||vLow.indexOf('air pocket')!==-1?'rgba(255,77,77,0.04)':vLow.indexOf('support')!==-1||vLow.indexOf('verified')!==-1?'rgba(0,222,148,0.04)':'rgba(0,174,255,0.04)';
-    var vBorder=vLow.indexOf('trap')!==-1||vLow.indexOf('air pocket')!==-1?'rgba(255,77,77,0.10)':vLow.indexOf('support')!==-1||vLow.indexOf('verified')!==-1?'rgba(0,222,148,0.10)':'rgba(0,174,255,0.10)';
+    var vColor=vLow.indexOf('trap')!==-1||vLow.indexOf('air pocket')!==-1?'rgba(255,77,77,0.4)':vLow.indexOf('support')!==-1||vLow.indexOf('verified')!==-1?'rgba(0,222,148,0.4)':'rgba(0,174,255,0.4)';
+    var vBg=vLow.indexOf('trap')!==-1||vLow.indexOf('air pocket')!==-1?'rgba(255,77,77,0.03)':vLow.indexOf('support')!==-1||vLow.indexOf('verified')!==-1?'rgba(0,222,148,0.03)':'rgba(0,174,255,0.03)';
+    var vBorder=vLow.indexOf('trap')!==-1||vLow.indexOf('air pocket')!==-1?'rgba(255,77,77,0.08)':vLow.indexOf('support')!==-1||vLow.indexOf('verified')!==-1?'rgba(0,222,148,0.08)':'rgba(0,174,255,0.08)';
     tags.push({label:naVerdict,color:vColor,bg:vBg,border:vBorder});
   } else {
     // Fallback to existing prism_verdict
     var v=(r.prism_verdict||r.verdict||'').toLowerCase();
-    if(v.indexOf('trap')!==-1) tags.push({label:'Narrative Trap',color:'rgba(255,77,77,0.6)',bg:'rgba(255,77,77,0.04)',border:'rgba(255,77,77,0.10)'});
-    else if(v.indexOf('supported')!==-1||v.indexOf('verified')!==-1) tags.push({label:'Fundamentally Supported',color:'rgba(0,222,148,0.6)',bg:'rgba(0,222,148,0.04)',border:'rgba(0,222,148,0.10)'});
-    else if(v.indexOf('disconnect')!==-1) tags.push({label:'Fundamental Disconnect',color:'rgba(255,77,77,0.55)',bg:'rgba(255,77,77,0.04)',border:'rgba(255,77,77,0.10)'});
-    else if(v.indexOf('uncertainty')!==-1) tags.push({label:'Regime Uncertainty',color:'rgba(255,184,0,0.6)',bg:'rgba(255,184,0,0.04)',border:'rgba(255,184,0,0.10)'});
-    else if(v.indexOf('air pocket')!==-1) tags.push({label:'Air Pocket Short',color:'rgba(255,77,77,0.6)',bg:'rgba(255,77,77,0.04)',border:'rgba(255,77,77,0.10)'});
-    else if(v) tags.push({label:v.replace(/\b\w/g,function(c){return c.toUpperCase();}),color:'rgba(0,174,255,0.5)',bg:'rgba(0,174,255,0.04)',border:'rgba(0,174,255,0.10)'});
+    if(v.indexOf('trap')!==-1) tags.push({label:'Narrative Trap',color:'rgba(255,77,77,0.4)',bg:'rgba(255,77,77,0.03)',border:'rgba(255,77,77,0.08)'});
+    else if(v.indexOf('supported')!==-1||v.indexOf('verified')!==-1) tags.push({label:'Fundamentally Supported',color:'rgba(0,222,148,0.4)',bg:'rgba(0,222,148,0.03)',border:'rgba(0,222,148,0.08)'});
+    else if(v.indexOf('disconnect')!==-1) tags.push({label:'Fundamental Disconnect',color:'rgba(255,77,77,0.35)',bg:'rgba(255,77,77,0.03)',border:'rgba(255,77,77,0.08)'});
+    else if(v.indexOf('uncertainty')!==-1) tags.push({label:'Regime Uncertainty',color:'rgba(255,184,0,0.4)',bg:'rgba(255,184,0,0.03)',border:'rgba(255,184,0,0.08)'});
+    else if(v.indexOf('air pocket')!==-1) tags.push({label:'Air Pocket Short',color:'rgba(255,77,77,0.4)',bg:'rgba(255,77,77,0.03)',border:'rgba(255,77,77,0.08)'});
+    else if(v) tags.push({label:v.replace(/\b\w/g,function(c){return c.toUpperCase();}),color:'rgba(0,174,255,0.35)',bg:'rgba(0,174,255,0.03)',border:'rgba(0,174,255,0.08)'});
   }
   // ── Priority 4: Omission Risk ──
-  if(r._na_omission!=null&&r._na_omission>=50) tags.push({label:'Omission Risk',color:'rgba(255,184,0,0.6)',bg:'rgba(255,184,0,0.04)',border:'rgba(255,184,0,0.10)'});
+  if(r._na_omission!=null&&r._na_omission>=50) tags.push({label:'Omission Risk',color:'rgba(255,184,0,0.4)',bg:'rgba(255,184,0,0.03)',border:'rgba(255,184,0,0.08)'});
   // ── Priority 4b: Urgency Signal ──
-  if(r._na_urgency!=null&&r._na_urgency>0) tags.push({label:'Urgency Signal',color:'rgba(255,77,77,0.55)',bg:'rgba(255,77,77,0.04)',border:'rgba(255,77,77,0.10)'});
+  if(r._na_urgency!=null&&r._na_urgency>0) tags.push({label:'Urgency Signal',color:'rgba(255,77,77,0.4)',bg:'rgba(255,77,77,0.03)',border:'rgba(255,77,77,0.08)'});
   // ── Priority 4c: Fear/Greed ──
-  if(r._na_fear_greed!=null&&r._na_fear_greed>0) tags.push({label:'Fear/Greed',color:'rgba(255,184,0,0.55)',bg:'rgba(255,184,0,0.04)',border:'rgba(255,184,0,0.10)'});
+  if(r._na_fear_greed!=null&&r._na_fear_greed>0) tags.push({label:'Fear/Greed',color:'rgba(255,184,0,0.4)',bg:'rgba(255,184,0,0.03)',border:'rgba(255,184,0,0.08)'});
   // ── Priority 5: Analyst citation ──
   if(r._na_analyst) tags.push({label:'Analyst: '+r._na_analyst,color:'rgba(160,168,176,0.7)',bg:'rgba(255,255,255,0.04)',border:'rgba(255,255,255,0.08)'});
   // ── Priority 6: Macro theme (skip Company_Specific) ──
@@ -6602,20 +6602,20 @@ function getTickerInsightTags(r){
   // ── Priority 9: Existing scorecard-derived tags ──
   var fvd=r.fvd_pct;
   if(fvd!=null){
-    if(fvd<-20) tags.push({label:'Below Fair Value',color:'rgba(0,222,148,0.6)',bg:'rgba(0,222,148,0.05)',border:'rgba(0,222,148,0.12)'});
-    else if(fvd<-5) tags.push({label:'Under Fair Value',color:'rgba(0,222,148,0.55)',bg:'rgba(0,222,148,0.04)',border:'rgba(0,222,148,0.10)'});
-    else if(fvd>100) tags.push({label:'High Hype Gap',color:'rgba(255,77,77,0.6)',bg:'rgba(255,77,77,0.05)',border:'rgba(255,77,77,0.12)'});
-    else if(fvd>30) tags.push({label:'Overvalued',color:'rgba(255,77,77,0.55)',bg:'rgba(255,77,77,0.04)',border:'rgba(255,77,77,0.10)'});
+    if(fvd<-20) tags.push({label:'Below Fair Value',color:'rgba(0,222,148,0.4)',bg:'rgba(0,222,148,0.03)',border:'rgba(0,222,148,0.08)'});
+    else if(fvd<-5) tags.push({label:'Under Fair Value',color:'rgba(0,222,148,0.35)',bg:'rgba(0,222,148,0.03)',border:'rgba(0,222,148,0.08)'});
+    else if(fvd>100) tags.push({label:'High Hype Gap',color:'rgba(255,77,77,0.4)',bg:'rgba(255,77,77,0.03)',border:'rgba(255,77,77,0.08)'});
+    else if(fvd>30) tags.push({label:'Overvalued',color:'rgba(255,77,77,0.35)',bg:'rgba(255,77,77,0.03)',border:'rgba(255,77,77,0.08)'});
   }
-  if(r.coordination_score!=null&&r.coordination_score>=60||(r.coordination_class&&r.coordination_class.toLowerCase().indexOf('coordinated')!==-1)) tags.push({label:'Coordinated Narrative',color:'rgba(255,77,77,0.6)',bg:'rgba(255,77,77,0.04)',border:'rgba(255,77,77,0.10)'});
-  if(r.suspicion_score!=null&&r.suspicion_score>=50||(r.suspicion_class&&r.suspicion_class.toLowerCase().indexOf('high')!==-1)) tags.push({label:'Manipulation Risk',color:'rgba(123,97,255,0.6)',bg:'rgba(123,97,255,0.04)',border:'rgba(123,97,255,0.12)'});
+  if(r.coordination_score!=null&&r.coordination_score>=60||(r.coordination_class&&r.coordination_class.toLowerCase().indexOf('coordinated')!==-1)) tags.push({label:'Coordinated Narrative',color:'rgba(255,77,77,0.4)',bg:'rgba(255,77,77,0.03)',border:'rgba(255,77,77,0.08)'});
+  if(r.suspicion_score!=null&&r.suspicion_score>=50||(r.suspicion_class&&r.suspicion_class.toLowerCase().indexOf('high')!==-1)) tags.push({label:'Manipulation Risk',color:'rgba(123,97,255,0.4)',bg:'rgba(123,97,255,0.03)',border:'rgba(123,97,255,0.08)'});
   var energy=r.energy_remaining;
   if(energy!=null){
     if(energy>=85) tags.push({label:'High Energy',color:'rgba(160,168,176,0.7)',bg:'rgba(255,255,255,0.04)',border:'rgba(255,255,255,0.08)'});
     else if(energy<=15) tags.push({label:'Story Exhausted',color:'rgba(160,168,176,0.7)',bg:'rgba(255,255,255,0.04)',border:'rgba(255,255,255,0.08)'});
   }
   var decay=r.decay_rate;
-  if(decay!=null&&decay>=0.05) tags.push({label:'Narrative Fading',color:'rgba(255,184,0,0.6)',bg:'rgba(255,184,0,0.04)',border:'rgba(255,184,0,0.10)'});
+  if(decay!=null&&decay>=0.05) tags.push({label:'Narrative Fading',color:'rgba(255,184,0,0.4)',bg:'rgba(255,184,0,0.03)',border:'rgba(255,184,0,0.08)'});
   // ── Priority 10: Sector tags (lowest priority filler) ──
   (SECTOR_MAP[r.ticker]||[]).forEach(function(s){tags.push({label:s,color:'rgba(160,168,176,0.7)',bg:'rgba(255,255,255,0.04)',border:'rgba(255,255,255,0.08)',sector:true});});
   // Deduplicate by label
@@ -6636,21 +6636,12 @@ function renderSnap(){
     // Build expanded tags with max 6 visible + overflow
     var allTags=getTickerInsightTags(r);
     var insight=allTags.filter(function(t){return !t.sector;});
-    var sector=allTags.filter(function(t){return t.sector;});
-    var ordered=insight.concat(sector);
-    var visible=ordered.slice(0,6);
-    var hidden=ordered.slice(6);
+    var visible=insight.slice(0,2);
     var tagsHTML=visible.map(function(t){
       var cls='snap-tag'+(t.priority?' snap-tag-priority':'')+(t.muted?' snap-tag-muted':'');
       var ttip=t.tooltip?' title="'+esc(t.tooltip)+'"':'';
       return '<span class="'+cls+'" style="background:'+t.bg+';color:'+t.color+';border-color:'+t.border+';"'+ttip+'>'+esc(t.label)+'</span>';
     }).join('');
-    if(hidden.length>0){
-      var hiddenHTML=hidden.map(function(t){
-        return '<span class="snap-tag" style="background:'+t.bg+';color:'+t.color+';border-color:'+t.border+';">'+(t.tooltip?'<span title="'+esc(t.tooltip)+'">':'')+esc(t.label)+(t.tooltip?'</span>':'')+'</span>';
-      }).join('');
-      tagsHTML+='<span class="snap-tag-more">+'+hidden.length+' more<span class="snap-tag-overflow">'+hiddenHTML+'</span></span>';
-    }
     return '<tr onclick="window.location.href=\'/ticker/'+encodeURIComponent(r.ticker)+'\'" style="cursor:pointer;">'
       +'<td><div style="display:flex;align-items:center;gap:8px;">'+logoHTML(r.ticker,'sm')+'<div class="snap-sym">'+r.ticker+'</div></div></td>'
       +'<td class="r"><div class="snap-price">$'+fmtPrice(r.price)+'</div></td>'
