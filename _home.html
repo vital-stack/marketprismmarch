@@ -3813,7 +3813,7 @@ window.MP_DOMAINS   = MP_DOMAINS;
     for(var i=0;i<NODE_COUNT;i++){
       nodes.push({
         x:Math.random()*W, y:Math.random()*H,
-        vx:(Math.random()-0.5)*0.35, vy:(Math.random()-0.5)*0.35,
+        vx:(Math.random()-0.5)*0.12, vy:(Math.random()-0.5)*0.12,
         r:Math.random()*2+0.6, phase:Math.random(),
         baseAlpha:Math.random()*0.3+0.2
       });
@@ -3822,7 +3822,7 @@ window.MP_DOMAINS   = MP_DOMAINS;
 
   // Spawn a traveling light pulse along an edge
   function spawnPulse(a,b,color){
-    pulses.push({ ax:a.x,ay:a.y, bx:b.x,by:b.y, t:0, speed:0.008+Math.random()*0.012, color:color, life:1 });
+    pulses.push({ ax:a.x,ay:a.y, bx:b.x,by:b.y, t:0, speed:0.003+Math.random()*0.005, color:color, life:1 });
   }
 
   // Spawn a bloom flare at a position
@@ -3913,9 +3913,9 @@ window.MP_DOMAINS   = MP_DOMAINS;
         mouseBoost=prox*0.5;
         sizeBoost=prox*4;
         // Push nodes gently away from cursor
-        var pushF=prox*0.3;
-        n.vx+=ndx/nDist*pushF*0.1;
-        n.vy+=ndy/nDist*pushF*0.1;
+        var pushF=prox*0.15;
+        n.vx+=ndx/nDist*pushF*0.05;
+        n.vy+=ndy/nDist*pushF*0.05;
       }
 
       // Outer halo
@@ -3945,7 +3945,7 @@ window.MP_DOMAINS   = MP_DOMAINS;
     for(var i=0;i<nodes.length;i++){
       var n=nodes[i];
       // Dampen velocity
-      n.vx*=0.998; n.vy*=0.998;
+      n.vx*=0.995; n.vy*=0.995;
       n.x+=n.vx; n.y+=n.vy;
       if(n.x<-30)n.x=W+30; if(n.x>W+30)n.x=-30;
       if(n.y<-30)n.y=H+30; if(n.y>H+30)n.y=-30;
