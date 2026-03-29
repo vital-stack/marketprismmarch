@@ -2547,7 +2547,7 @@ footer {
 </div>
 <!-- ── HERO ── -->
 <div class="hero">
-  <canvas class="hero-particles" id="hero-particles"></canvas>
+  <!-- hero particles now handled by full-page bg-constellation -->
   <div class="hero-grid-bg"></div>
   <div class="hero-glow"></div>
   <div class="hero-glow-2"></div>
@@ -3723,143 +3723,7 @@ window.mpLogoUrl    = mpLogoUrl;
 window.mpLogoImg    = mpLogoImg;
 window.MP_DOMAINS   = MP_DOMAINS;
 </script>
-<script>
-// ── Hero Particle Constellation ──
-// Subtle floating dots connected by faint lines — drifting slowly
-(function(){
-  var canvas = document.getElementById('hero-particles');
-  if(!canvas) return;
-  var ctx = canvas.getContext('2d');
-  var dpr = window.devicePixelRatio || 1;
-  var W, H, particles = [];
-  var PARTICLE_COUNT = 80;
-  var CONNECTION_DIST = 160;
-  var MOUSE = { x: -1000, y: -1000 };
-  var MOUSE_RADIUS = 200;
-  var raf;
-
-  function resize(){
-    var rect = canvas.parentElement.getBoundingClientRect();
-    W = rect.width;
-    H = rect.height;
-    canvas.width = W * dpr;
-    canvas.height = H * dpr;
-    canvas.style.width = W + 'px';
-    canvas.style.height = H + 'px';
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  }
-
-  function init(){
-    resize();
-    particles = [];
-    for(var i = 0; i < PARTICLE_COUNT; i++){
-      var colors = ['0,174,255','0,222,148','123,97,255'];
-      particles.push({
-        x: Math.random() * W,
-        y: Math.random() * H,
-        vx: (Math.random() - 0.5) * 0.3,
-        vy: (Math.random() - 0.5) * 0.3,
-        r: Math.random() * 1.8 + 0.5,
-        opacity: Math.random() * 0.4 + 0.1,
-        color: colors[Math.floor(Math.random() * colors.length)]
-      });
-    }
-  }
-
-  function draw(){
-    ctx.clearRect(0, 0, W, H);
-
-    // Draw connections
-    for(var i = 0; i < particles.length; i++){
-      for(var j = i + 1; j < particles.length; j++){
-        var dx = particles[i].x - particles[j].x;
-        var dy = particles[i].y - particles[j].y;
-        var dist = Math.sqrt(dx * dx + dy * dy);
-        if(dist < CONNECTION_DIST){
-          var alpha = (1 - dist / CONNECTION_DIST) * 0.08;
-          ctx.beginPath();
-          ctx.moveTo(particles[i].x, particles[i].y);
-          ctx.lineTo(particles[j].x, particles[j].y);
-          ctx.strokeStyle = 'rgba(' + particles[i].color + ',' + alpha + ')';
-          ctx.lineWidth = 0.5;
-          ctx.stroke();
-        }
-      }
-
-      // Mouse proximity — brighten nearby connections
-      var mdx = particles[i].x - MOUSE.x;
-      var mdy = particles[i].y - MOUSE.y;
-      var mDist = Math.sqrt(mdx * mdx + mdy * mdy);
-      if(mDist < MOUSE_RADIUS){
-        var mAlpha = (1 - mDist / MOUSE_RADIUS) * 0.15;
-        ctx.beginPath();
-        ctx.arc(particles[i].x, particles[i].y, particles[i].r + 1, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(' + particles[i].color + ',' + mAlpha + ')';
-        ctx.fill();
-      }
-    }
-
-    // Draw particles with individual colors
-    for(var k = 0; k < particles.length; k++){
-      var p = particles[k];
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(' + p.color + ',' + (p.opacity * 0.7) + ')';
-      ctx.fill();
-    }
-  }
-
-  function update(){
-    for(var i = 0; i < particles.length; i++){
-      var p = particles[i];
-      p.x += p.vx;
-      p.y += p.vy;
-
-      // Wrap around edges
-      if(p.x < -10) p.x = W + 10;
-      if(p.x > W + 10) p.x = -10;
-      if(p.y < -10) p.y = H + 10;
-      if(p.y > H + 10) p.y = -10;
-    }
-  }
-
-  function loop(){
-    update();
-    draw();
-    raf = requestAnimationFrame(loop);
-  }
-
-  // Mouse tracking (relative to hero)
-  canvas.parentElement.addEventListener('mousemove', function(e){
-    var rect = canvas.parentElement.getBoundingClientRect();
-    MOUSE.x = e.clientX - rect.left;
-    MOUSE.y = e.clientY - rect.top;
-  });
-  canvas.parentElement.addEventListener('mouseleave', function(){
-    MOUSE.x = -1000;
-    MOUSE.y = -1000;
-  });
-
-  // Reduce particle count on mobile
-  if(window.innerWidth < 768) PARTICLE_COUNT = 35;
-
-  window.addEventListener('resize', function(){
-    resize();
-  });
-
-  // Pause when not visible
-  document.addEventListener('visibilitychange', function(){
-    if(document.hidden){
-      if(raf) cancelAnimationFrame(raf);
-    } else {
-      loop();
-    }
-  });
-
-  init();
-  loop();
-})();
-</script>
+<!-- Hero particles now unified into full-page bg-constellation -->
 <!-- ── SECTION DOTS NAV ── -->
 <nav class="section-dots" id="section-dots" aria-label="Section navigation"></nav>
 <script>
@@ -3908,152 +3772,211 @@ window.MP_DOMAINS   = MP_DOMAINS;
 })();
 </script>
 <script>
-// ── Full-page Background Constellation ──
-// Poly-lines with nodes that slowly shift color as user scrolls
+// ── Full-page Constellation Network ──
+// Dense poly-line mesh with traveling light pulses, mouse interaction,
+// scroll-driven color shifts, and periodic bloom flares
 (function(){
   var canvas = document.getElementById('bg-constellation');
   if(!canvas) return;
   var ctx = canvas.getContext('2d');
-  var dpr = window.devicePixelRatio || 1;
-  var W, H, nodes = [];
-  var NODE_COUNT = 60;
-  var LINK_DIST = 180;
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var W, H, nodes = [], pulses = [], flares = [];
+  var NODE_COUNT = 120;
+  var LINK_DIST = 200;
+  var MOUSE = { x: -9999, y: -9999 };
+  var MOUSE_RADIUS = 280;
   var scrollPct = 0;
-  var raf;
+  var raf, now = 0;
 
-  // Color palettes to transition through (RGB strings)
   var palettes = [
-    { r: 0,   g: 174, b: 255 },  // cyan/blue
-    { r: 0,   g: 222, b: 148 },  // green/teal
-    { r: 123, g: 97,  b: 255 },  // violet
-    { r: 56,  g: 200, b: 184 },  // teal
-    { r: 255, g: 184, b: 0   },  // amber
-    { r: 224, g: 64,  b: 160 },  // pink
-    { r: 0,   g: 174, b: 255 }   // back to cyan
+    { r:0,  g:174, b:255 }, { r:0,  g:222, b:148 }, { r:123,g:97, b:255 },
+    { r:56, g:200, b:184 }, { r:255,g:184, b:0   }, { r:224,g:64, b:160 },
+    { r:0,  g:174, b:255 }
   ];
 
-  function lerpColor(a, b, t){
-    return {
-      r: Math.round(a.r + (b.r - a.r) * t),
-      g: Math.round(a.g + (b.g - a.g) * t),
-      b: Math.round(a.b + (b.b - a.b) * t)
-    };
-  }
-
-  function getScrollColor(offset){
-    var t = (scrollPct + offset) % 1;
-    var seg = t * (palettes.length - 1);
-    var idx = Math.floor(seg);
-    var frac = seg - idx;
-    if(idx >= palettes.length - 1) idx = palettes.length - 2;
-    var c = lerpColor(palettes[idx], palettes[idx + 1], frac);
-    return c.r + ',' + c.g + ',' + c.b;
+  function lerp(a,b,t){ return a+(b-a)*t; }
+  function lerpC(a,b,t){ return { r:Math.round(lerp(a.r,b.r,t)), g:Math.round(lerp(a.g,b.g,t)), b:Math.round(lerp(a.b,b.b,t)) }; }
+  function scrollColor(off){
+    var t=((scrollPct+off)%1+1)%1, seg=t*(palettes.length-1), idx=Math.min(Math.floor(seg),palettes.length-2);
+    var c=lerpC(palettes[idx],palettes[idx+1],seg-idx); return c.r+','+c.g+','+c.b;
   }
 
   function resize(){
-    W = window.innerWidth;
-    H = window.innerHeight;
-    canvas.width = W * dpr;
-    canvas.height = H * dpr;
-    canvas.style.width = W + 'px';
-    canvas.style.height = H + 'px';
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    W=window.innerWidth; H=window.innerHeight;
+    canvas.width=W*dpr; canvas.height=H*dpr;
+    canvas.style.width=W+'px'; canvas.style.height=H+'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
   }
 
   function init(){
-    resize();
-    nodes = [];
-    for(var i = 0; i < NODE_COUNT; i++){
+    resize(); nodes=[]; pulses=[]; flares=[];
+    for(var i=0;i<NODE_COUNT;i++){
       nodes.push({
-        x: Math.random() * W,
-        y: Math.random() * H,
-        vx: (Math.random() - 0.5) * 0.2,
-        vy: (Math.random() - 0.5) * 0.2,
-        r: Math.random() * 2 + 0.8,
-        phase: Math.random()
+        x:Math.random()*W, y:Math.random()*H,
+        vx:(Math.random()-0.5)*0.35, vy:(Math.random()-0.5)*0.35,
+        r:Math.random()*2+0.6, phase:Math.random(),
+        baseAlpha:Math.random()*0.3+0.2
       });
     }
   }
 
-  function draw(){
-    ctx.clearRect(0, 0, W, H);
+  // Spawn a traveling light pulse along an edge
+  function spawnPulse(a,b,color){
+    pulses.push({ ax:a.x,ay:a.y, bx:b.x,by:b.y, t:0, speed:0.008+Math.random()*0.012, color:color, life:1 });
+  }
 
-    // Draw connections
-    for(var i = 0; i < nodes.length; i++){
-      var ni = nodes[i];
-      var ci = getScrollColor(ni.phase * 0.3);
-      for(var j = i + 1; j < nodes.length; j++){
-        var nj = nodes[j];
-        var dx = ni.x - nj.x;
-        var dy = ni.y - nj.y;
-        var dist = Math.sqrt(dx * dx + dy * dy);
-        if(dist < LINK_DIST){
-          var alpha = (1 - dist / LINK_DIST) * 0.06;
+  // Spawn a bloom flare at a position
+  function spawnFlare(x,y,color){
+    flares.push({ x:x,y:y, r:0, maxR:40+Math.random()*60, alpha:0.25, color:color, decay:0.985 });
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+
+    // ── Connections ──
+    var edgeCount=0;
+    for(var i=0;i<nodes.length;i++){
+      var ni=nodes[i], ci=scrollColor(ni.phase*0.3);
+      for(var j=i+1;j<nodes.length;j++){
+        var nj=nodes[j];
+        var dx=ni.x-nj.x, dy=ni.y-nj.y, dist=Math.sqrt(dx*dx+dy*dy);
+        if(dist<LINK_DIST){
+          var fade=1-dist/LINK_DIST;
+          var alpha=fade*0.12;
+
+          // Mouse proximity boost
+          var mx=(ni.x+nj.x)/2, my=(ni.y+nj.y)/2;
+          var mdx=mx-MOUSE.x, mdy=my-MOUSE.y, mDist=Math.sqrt(mdx*mdx+mdy*mdy);
+          if(mDist<MOUSE_RADIUS) alpha+=((1-mDist/MOUSE_RADIUS)*0.18);
+
           ctx.beginPath();
-          ctx.moveTo(ni.x, ni.y);
-          ctx.lineTo(nj.x, nj.y);
-          ctx.strokeStyle = 'rgba(' + ci + ',' + alpha + ')';
-          ctx.lineWidth = 0.6;
+          ctx.moveTo(ni.x,ni.y); ctx.lineTo(nj.x,nj.y);
+          ctx.strokeStyle='rgba('+ci+','+alpha+')';
+          ctx.lineWidth=fade*1.2;
           ctx.stroke();
+          edgeCount++;
+
+          // Randomly spawn pulses along edges
+          if(Math.random()<0.0004 && pulses.length<30){
+            spawnPulse(ni,nj,ci);
+          }
         }
       }
     }
 
-    // Draw nodes with glow
-    for(var k = 0; k < nodes.length; k++){
-      var n = nodes[k];
-      var c = getScrollColor(n.phase * 0.3);
-      var pulse = 0.3 + Math.sin(Date.now() * 0.001 + n.phase * 6.28) * 0.15;
+    // ── Traveling pulses ──
+    for(var p=pulses.length-1;p>=0;p--){
+      var pl=pulses[p];
+      pl.t+=pl.speed;
+      if(pl.t>1){ pulses.splice(p,1); continue; }
+      var px=lerp(pl.ax,pl.bx,pl.t), py=lerp(pl.ay,pl.by,pl.t);
+      var pa=Math.sin(pl.t*Math.PI)*0.7;
 
-      // Outer glow
-      ctx.beginPath();
-      ctx.arc(n.x, n.y, n.r + 3, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(' + c + ',' + (pulse * 0.06) + ')';
+      // Pulse glow
+      var grd=ctx.createRadialGradient(px,py,0,px,py,8);
+      grd.addColorStop(0,'rgba('+pl.color+','+pa*0.6+')');
+      grd.addColorStop(1,'rgba('+pl.color+',0)');
+      ctx.beginPath(); ctx.arc(px,py,8,0,Math.PI*2);
+      ctx.fillStyle=grd; ctx.fill();
+
+      // Bright core
+      ctx.beginPath(); ctx.arc(px,py,1.5,0,Math.PI*2);
+      ctx.fillStyle='rgba(255,255,255,'+pa*0.8+')';
       ctx.fill();
+    }
+
+    // ── Bloom flares ──
+    for(var f=flares.length-1;f>=0;f--){
+      var fl=flares[f];
+      fl.r=lerp(fl.r,fl.maxR,0.04);
+      fl.alpha*=fl.decay;
+      if(fl.alpha<0.005){ flares.splice(f,1); continue; }
+      var fgrd=ctx.createRadialGradient(fl.x,fl.y,0,fl.x,fl.y,fl.r);
+      fgrd.addColorStop(0,'rgba('+fl.color+','+fl.alpha*0.5+')');
+      fgrd.addColorStop(0.4,'rgba('+fl.color+','+fl.alpha*0.15+')');
+      fgrd.addColorStop(1,'rgba('+fl.color+',0)');
+      ctx.beginPath(); ctx.arc(fl.x,fl.y,fl.r,0,Math.PI*2);
+      ctx.fillStyle=fgrd; ctx.fill();
+    }
+
+    // ── Nodes ──
+    for(var k=0;k<nodes.length;k++){
+      var n=nodes[k];
+      var c=scrollColor(n.phase*0.3);
+      var pulse=n.baseAlpha+Math.sin(now*0.0012+n.phase*6.28)*0.15;
+
+      // Mouse proximity — expand + brighten
+      var ndx=n.x-MOUSE.x, ndy=n.y-MOUSE.y, nDist=Math.sqrt(ndx*ndx+ndy*ndy);
+      var mouseBoost=0, sizeBoost=0;
+      if(nDist<MOUSE_RADIUS){
+        var prox=1-nDist/MOUSE_RADIUS;
+        mouseBoost=prox*0.5;
+        sizeBoost=prox*4;
+        // Push nodes gently away from cursor
+        var pushF=prox*0.3;
+        n.vx+=ndx/nDist*pushF*0.1;
+        n.vy+=ndy/nDist*pushF*0.1;
+      }
+
+      // Outer halo
+      var haloR=n.r+6+sizeBoost;
+      var hgrd=ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,haloR);
+      hgrd.addColorStop(0,'rgba('+c+','+(pulse*0.12+mouseBoost*0.15)+')');
+      hgrd.addColorStop(1,'rgba('+c+',0)');
+      ctx.beginPath(); ctx.arc(n.x,n.y,haloR,0,Math.PI*2);
+      ctx.fillStyle=hgrd; ctx.fill();
 
       // Core dot
-      ctx.beginPath();
-      ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(' + c + ',' + (pulse * 0.5) + ')';
+      ctx.beginPath(); ctx.arc(n.x,n.y,n.r+sizeBoost*0.3,0,Math.PI*2);
+      ctx.fillStyle='rgba('+c+','+(pulse*0.8+mouseBoost)+')';
       ctx.fill();
+
+      // Bright center pip
+      if(pulse>0.35 || mouseBoost>0.1){
+        ctx.beginPath(); ctx.arc(n.x,n.y,Math.max(0.5,n.r*0.4),0,Math.PI*2);
+        ctx.fillStyle='rgba(255,255,255,'+(pulse*0.3+mouseBoost*0.5)+')';
+        ctx.fill();
+      }
     }
   }
 
   function update(){
-    for(var i = 0; i < nodes.length; i++){
-      var n = nodes[i];
-      n.x += n.vx;
-      n.y += n.vy;
-      if(n.x < -20) n.x = W + 20;
-      if(n.x > W + 20) n.x = -20;
-      if(n.y < -20) n.y = H + 20;
-      if(n.y > H + 20) n.y = -20;
+    now=Date.now();
+    for(var i=0;i<nodes.length;i++){
+      var n=nodes[i];
+      // Dampen velocity
+      n.vx*=0.998; n.vy*=0.998;
+      n.x+=n.vx; n.y+=n.vy;
+      if(n.x<-30)n.x=W+30; if(n.x>W+30)n.x=-30;
+      if(n.y<-30)n.y=H+30; if(n.y>H+30)n.y=-30;
+    }
+    // Random bloom flare
+    if(Math.random()<0.003 && flares.length<5){
+      var fn=nodes[Math.floor(Math.random()*nodes.length)];
+      spawnFlare(fn.x,fn.y,scrollColor(fn.phase*0.3));
     }
   }
 
-  function loop(){
-    update();
-    draw();
-    raf = requestAnimationFrame(loop);
-  }
+  function loop(){ update(); draw(); raf=requestAnimationFrame(loop); }
 
-  // Track scroll position for color transitions
-  window.addEventListener('scroll', function(){
-    var docH = document.documentElement.scrollHeight - window.innerHeight;
-    scrollPct = docH > 0 ? window.scrollY / docH : 0;
-  }, {passive: true});
+  // Mouse tracking (page-wide)
+  document.addEventListener('mousemove',function(e){ MOUSE.x=e.clientX; MOUSE.y=e.clientY; },{passive:true});
+  document.addEventListener('mouseleave',function(){ MOUSE.x=-9999; MOUSE.y=-9999; });
 
-  if(window.innerWidth < 768) NODE_COUNT = 30;
+  window.addEventListener('scroll',function(){
+    var docH=document.documentElement.scrollHeight-window.innerHeight;
+    scrollPct=docH>0?window.scrollY/docH:0;
+  },{passive:true});
 
-  window.addEventListener('resize', resize);
+  if(window.innerWidth<768) NODE_COUNT=50;
+  window.addEventListener('resize',resize);
 
-  document.addEventListener('visibilitychange', function(){
+  document.addEventListener('visibilitychange',function(){
     if(document.hidden){ if(raf) cancelAnimationFrame(raf); }
-    else { raf = requestAnimationFrame(loop); }
+    else { raf=requestAnimationFrame(loop); }
   });
 
-  init();
-  loop();
+  init(); loop();
 })();
 </script>
 </body>
