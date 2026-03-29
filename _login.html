@@ -372,6 +372,12 @@ body::before{
     clearMsg();
   };
 
+  // Auto-switch tab from URL hash (e.g. /login#register)
+  var hash = window.location.hash.replace('#','');
+  if(['beta','signin','register','reset'].indexOf(hash) !== -1){
+    switchAuthTab(hash);
+  }
+
   // ── Message helpers ──
   function showMsg(type, text){
     var el = document.getElementById('auth-message');
