@@ -384,7 +384,7 @@ body{
 .daily-sent-cursor{position:absolute;top:-3px;width:2px;height:10px;background:var(--mp-text-primary);transform:translateX(-50%);border-radius:1px;}
 .daily-sent-val{font-family:var(--font-mono);font-size:11px;font-weight:500;color:#00AEFF;white-space:nowrap;}
 /* Daily pulse strip */
-.daily-pulse-strip{display:grid;grid-template-columns:repeat(8,1fr);gap:0;background:var(--mp-surface);border:1px solid var(--mp-border);margin-bottom:28px;}
+.daily-pulse-strip{display:grid;grid-template-columns:repeat(8,1fr);gap:0;background:var(--mp-surface);border:1px solid var(--mp-border);}
 .dpi{padding:14px 14px;border-right:1px solid var(--mp-border);position:relative;transition:background 0.12s;cursor:pointer;}
 .dpi:last-child{border-right:none;}
 .dpi:hover{background:var(--mp-surface2);}
@@ -433,7 +433,7 @@ body{
 .daily-ntx strong{font-weight:500;color:var(--mp-text-secondary);}
 .daily-nag{font-family:var(--font-mono);font-size:11px;color:var(--mp-text-tertiary);flex-shrink:0;padding-top:2px;}
 /* Daily calendar strip */
-.daily-cal-days{display:grid;grid-template-columns:repeat(5,1fr);gap:0;background:var(--mp-border);border:1px solid var(--mp-border);border-radius:10px;overflow:hidden;margin-bottom:28px;}
+.daily-cal-days{display:grid;grid-template-columns:repeat(5,1fr);gap:0;background:var(--mp-border);border:1px solid var(--mp-border);border-radius:10px;overflow:hidden;}
 .daily-cd{background:var(--mp-surface);padding:14px 14px 13px;border-right:1px solid var(--mp-border);transition:background 0.12s;}
 .daily-cd:last-child{border-right:none;}
 .daily-cd:hover{background:var(--mp-surface2);}
@@ -468,14 +468,15 @@ body{
 /* ── DAILY BRIEF — 2-column grid layout ── */
 .daily-grid{display:grid;grid-template-columns:1fr 300px;gap:0;align-items:start;}
 .daily-content{display:flex;flex-direction:column;gap:24px;min-width:0;}
-.daily-rail{border-left:1px solid var(--mp-border);padding:32px 18px 18px;display:flex;flex-direction:column;gap:16px;background:var(--mp-surface);position:sticky;top:52px;max-height:calc(100vh - 52px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.1) transparent;}
+.daily-block{display:flex;flex-direction:column;}
+.daily-rail{border-left:1px solid var(--mp-border);padding:24px 18px;display:flex;flex-direction:column;gap:16px;background:var(--mp-surface);position:sticky;top:52px;max-height:calc(100vh - 52px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.1) transparent;}
 @media(max-width:1100px){.daily-grid{grid-template-columns:1fr;}.daily-rail{border-left:none;border-top:1px solid var(--mp-border);position:static;max-height:none;padding:20px 0;}}
 /* Rail sections */
-.dr-section{margin-bottom:4px;}
+.dr-section{margin-bottom:0;}
 .dr-eyebrow{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mp-text-muted);margin-bottom:10px;display:flex;align-items:center;gap:6px;padding-top:0;}
 .dr-eyebrow::after{content:'';flex:1;height:1px;background:var(--mp-border);}
 /* Quick stats */
-.dr-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.dr-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .dr-stat{background:var(--mp-surface2);border:1px solid var(--mp-border);border-radius:10px;padding:10px 12px;}
 .dr-stat-val{font-size:20px;font-weight:700;}
 .dr-stat-lbl{font-size:10px;color:var(--mp-text-muted);margin-top:2px;text-transform:uppercase;letter-spacing:.04em;}
@@ -483,7 +484,7 @@ body{
 .dr-stat.surge .dr-stat-val{color:#00DE94;}
 .dr-stat.break .dr-stat-val{color:#FFB800;}
 /* Regime badge */
-.dr-regime{padding:8px 12px;border-radius:10px;border:1px solid var(--mp-border);background:var(--mp-surface2);margin-bottom:14px;}
+.dr-regime{padding:8px 12px;border-radius:10px;border:1px solid var(--mp-border);background:var(--mp-surface2);}
 .dr-regime-lbl{font-size:10px;color:var(--mp-text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}
 .dr-regime-val{font-size:14px;font-weight:600;color:#FFB800;}
 .dr-regime-detail{font-size:11px;color:var(--mp-text-muted);margin-top:3px;}
@@ -495,7 +496,8 @@ body{
 .dr-sl-fill{height:100%;border-radius:2px;}
 .dr-sl-score{font-size:12px;font-weight:600;min-width:22px;text-align:right;}
 /* Upcoming earnings in rail */
-.dr-earn-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--mp-surface2);border:1px solid var(--mp-border);border-radius:10px;margin-bottom:6px;}
+#dr-earnings{display:flex;flex-direction:column;gap:6px;}
+.dr-earn-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--mp-surface2);border:1px solid var(--mp-border);border-radius:10px;}
 .dr-earn-date{font-size:11px;color:var(--mp-text-muted);min-width:48px;flex-shrink:0;}
 .dr-earn-main{flex:1;}
 .dr-earn-ticker{font-size:13px;font-weight:700;}
@@ -3146,7 +3148,7 @@ body{
 /* ── Split Layout ── */
 .nf-split{
   display:grid;grid-template-columns:1fr 2fr;gap:16px;
-  margin-bottom:28px;align-items:stretch;
+  align-items:stretch;
 }
 @media(max-width:900px){.nf-split{grid-template-columns:1fr;}}
 
@@ -3195,7 +3197,7 @@ body{
 }
 /* ── Featured Trading Cards in Summary ── */
 .nf-sum-cards-section{
-  margin-top:16px;flex:1;display:flex;flex-direction:column;
+  flex:1;display:flex;flex-direction:column;
 }
 .nf-sum-cards-label{
   font-family:var(--font-body);font-size:10px;font-weight:600;
@@ -3809,7 +3811,7 @@ body{
       </div>
 
       <!-- 2) TODAY'S BIGGEST NARRATIVES -->
-      <div class="nf-feed" style="margin-bottom:24px;">
+      <div class="nf-feed">
         <div class="nf-feed-header">
           <span class="nf-feed-title">Today's Biggest Narratives</span>
           <span class="nf-feed-date" id="nf-feed-date"></span>
@@ -3841,7 +3843,7 @@ body{
       </div>
 
       <!-- 3) TRADING CARDS OF THE DAY -->
-      <div class="nf-sum-cards-section" style="margin-bottom:24px;">
+      <div class="nf-sum-cards-section">
         <div class="nf-sum-cards-label">Trading Cards of the Day</div>
         <div class="nf-sum-cards" id="nf-sum-cards">
           <!-- Populated by JS -->
@@ -3849,6 +3851,7 @@ body{
       </div>
 
       <!-- MARKET PULSE -->
+      <div class="daily-block">
       <div class="daily-section-eyebrow">Market Pulse · Real-time</div>
       <div class="daily-section-head">
         <div class="daily-section-title">Live market indicators.</div>
@@ -3864,8 +3867,10 @@ body{
         <div class="dpi"><div class="dpi-tk">GLD</div><div class="dpi-px">2,181</div><div class="dpi-ch"><span class="chg-arrow-up">&#9650;</span> 0.09%</div><svg class="dpi-spk" viewBox="0 0 60 20" width="56" height="18"><polyline points="0,13 10,12 20,11 30,10 40,10 50,9 60,9" fill="none" stroke="#00AEFF" stroke-width="1.2" stroke-linecap="round"/></svg></div>
         <div class="dpi"><div class="dpi-tk">OIL</div><div class="dpi-px">71.42</div><div class="dpi-ch"><span class="chg-arrow-dn">&#9660;</span> 0.83%</div><svg class="dpi-spk" viewBox="0 0 60 20" width="56" height="18"><polyline points="0,8 10,9 20,11 30,12 40,14 50,15 60,16" fill="none" stroke="#38C8B8" stroke-width="1.2" stroke-linecap="round"/></svg></div>
       </div>
+      </div><!-- /daily-block pulse -->
 
       <!-- CALENDAR -->
+      <div class="daily-block">
       <div class="daily-section-eyebrow">This Week · Market Events</div>
       <div class="daily-section-head">
         <div class="daily-section-title">Know what's coming.</div>
@@ -3877,6 +3882,7 @@ body{
         <div class="daily-cd"><div class="daily-cd-hd"><div class="daily-cd-l">Mon</div><div class="daily-cd-d">Mar 23</div></div><div class="daily-ces"><div class="daily-ce empty"><div class="daily-cedot"></div>Light calendar</div></div></div>
         <div class="daily-cd"><div class="daily-cd-hd"><div class="daily-cd-l">Tue</div><div class="daily-cd-d">Mar 24</div></div><div class="daily-ces"><div class="daily-ce earn"><div class="daily-cedot"></div>Consumer Conf 10am</div><div class="daily-ce earn"><div class="daily-cedot"></div>S&P Flash PMI</div></div></div>
       </div>
+      </div><!-- /daily-block calendar -->
 
     </div><!-- /daily-content -->
 
