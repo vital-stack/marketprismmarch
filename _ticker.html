@@ -1927,23 +1927,75 @@
     .tk-tab { padding: 14px 18px; font-size: 12px; }
   }
 
-  /* ── Full-width split layout — 2 columns (content + feed) ── */
+  /* ── Page grid — main + sidebar ── */
   .tk-main-split {
     display: grid;
-    grid-template-columns: 1fr 320px;
+    grid-template-columns: 1fr 300px;
     gap: 24px;
     align-items: start;
   }
   @media (max-width: 1200px) {
     .tk-main-split { grid-template-columns: 1fr; }
   }
-  @media (max-width: 800px) {
-    .tk-main-split { grid-template-columns: 1fr; }
-  }
-  .tk-col-left { min-width: 0; }
+  .tk-col-left { min-width: 0; display: flex; flex-direction: column; gap: 20px; }
   .tk-col-mid { min-width: 0; }
   .tk-col-right { min-width: 0; }
   .tk-content-col { min-width: 0; }
+  /* Sidebar */
+  .tk-sidebar { display: flex; flex-direction: column; gap: 16px; }
+  .tk-sidebar .section { margin-bottom: 0; }
+  /* Sidebar card styles */
+  .tk-sb-card {
+    background: var(--mp-surface);
+    border: 1px solid var(--mp-border);
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    overflow: hidden;
+    position: relative;
+    animation: fadeUp .35s ease both;
+  }
+  .tk-sb-card::before {
+    content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 0;
+    background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+  .tk-sb-card > * { position: relative; z-index: 1; }
+  .tk-sb-hdr { padding: 14px 16px; border-bottom: 1px solid var(--mp-border); display: flex; justify-content: space-between; align-items: center; }
+  .tk-sb-title { font-family: var(--font-display); font-size: 15px; font-weight: 400; }
+  .tk-sb-meta { font-size: 11px; color: var(--mp-text-muted); }
+  /* Exhaustion hero */
+  .tk-exhaust-hero { padding: 20px; text-align: center; background: linear-gradient(135deg, rgba(91,142,201,0.05), transparent); border-bottom: 1px solid var(--mp-border); }
+  .tk-exhaust-days { font-family: var(--font-display); font-size: 56px; color: var(--mp-blue); line-height: 1; }
+  .tk-exhaust-lbl { font-size: 11px; color: var(--mp-text-muted); text-transform: uppercase; letter-spacing: .07em; margin-top: 4px; }
+  .tk-exhaust-sub { font-size: 13px; color: var(--mp-text-secondary); margin-top: 8px; line-height: 1.5; }
+  /* Sidebar stat grid */
+  .tk-sb-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 16px; }
+  .tk-sb-stat { background: var(--mp-surface2); border: 1px solid var(--mp-border); border-radius: 10px; padding: 12px; }
+  .tk-sb-stat-val { font-size: 18px; font-weight: 600; }
+  .tk-sb-stat-lbl { font-size: 10px; color: var(--mp-text-muted); margin-top: 3px; text-transform: uppercase; letter-spacing: .04em; }
+  /* Signal labels */
+  .tk-signal-block { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+  .tk-signal-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--mp-surface2); border: 1px solid var(--mp-border); border-radius: 10px; }
+  .tk-signal-label { font-size: 12px; font-weight: 600; }
+  .tk-signal-conf { font-size: 11px; color: var(--mp-text-muted); }
+  /* PRISM block */
+  .tk-prism-block { padding: 16px; }
+  .tk-prism-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--mp-border); }
+  .tk-prism-row:last-child { border-bottom: none; }
+  .tk-prism-lbl { font-size: 13px; color: var(--mp-text-secondary); }
+  .tk-prism-val { font-size: 13px; font-weight: 600; }
+  .tk-prism-bar-wrap { display: flex; align-items: center; gap: 6px; }
+  .tk-prism-track { width: 40px; height: 3px; background: var(--mp-surface2); border-radius: 2px; overflow: hidden; }
+  .tk-prism-fill { height: 100%; border-radius: 2px; }
+  /* Intel summary */
+  .tk-intel-qa { padding: 16px 18px; display: flex; flex-direction: column; gap: 14px; }
+  .tk-intel-q { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .tk-intel-a { font-size: 13px; color: var(--mp-text-secondary); line-height: 1.6; }
+  /* Freeze alert */
+  .tk-freeze-alert { margin: 12px 16px; padding: 10px 12px; background: rgba(217,162,0,0.07); border: 1px solid rgba(217,162,0,0.2); border-radius: 10px; font-size: 12px; color: var(--mp-amber); line-height: 1.5; }
+  /* Story feed at bottom (full width) */
+  .tk-feed-bottom { margin-top: 0; }
+  .tk-feed-bottom .tk-feed { position: static; max-height: none; overflow: visible; }
 
   /* ── Narrative Strength Ring ── */
   .narr-strength-wrap {
@@ -2546,6 +2598,11 @@
   [data-theme="light"] .metric-cell { background: #FFFFFF; }
   [data-theme="light"] .si-block { background: #FFFFFF; }
   [data-theme="light"] .earnings-summary { background: #F3F4F8; }
+  [data-theme="light"] .tk-sb-card { background: #fff; border-color: rgba(0,0,0,0.08); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  [data-theme="light"] .tk-sb-card::before { background-image: linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px); }
+  [data-theme="light"] .tk-sb-stat { background: #F3F4F8; border-color: rgba(0,0,0,0.06); }
+  [data-theme="light"] .tk-signal-item { background: #F3F4F8; border-color: rgba(0,0,0,0.06); }
+  [data-theme="light"] .tk-exhaust-hero { background: linear-gradient(135deg, rgba(91,142,201,0.05), transparent); }
 
   /* ── MOBILE RESPONSIVE ── */
   @media (max-width: 768px) {
@@ -3227,23 +3284,98 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
           </div>
         </div>
 
-      </div><!-- /tk-col-left -->
-
-      <!-- ── Right Column: Story Feed (sticky) ── -->
-      <div class="tk-col-right">
-        <div class="tk-feed" id="tk-feed">
-          <div class="tk-feed-header">
-            <span class="tk-feed-ticker" id="tk-feed-ticker">&mdash;</span>
-            <span class="tk-feed-title">Story Feed</span>
-            <button class="tk-feed-refresh" id="tk-feed-refresh" title="Refresh stories">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-            </button>
-          </div>
-          <div class="tk-feed-list" id="tk-feed-list">
-            <div class="tk-feed-empty">Loading stories...</div>
+        <!-- 8. STORY FEED (moved from right column) -->
+        <div class="tk-feed-bottom">
+          <div class="section">
+            <div class="section-label">
+              Active Narratives
+              <span class="section-label-sub">Story Feed</span>
+            </div>
+            <div class="section-body">
+              <div class="tk-feed" id="tk-feed" style="position:static;max-height:none;overflow:visible;">
+                <div class="tk-feed-header" style="padding:12px 20px;">
+                  <span class="tk-feed-ticker" id="tk-feed-ticker">&mdash;</span>
+                  <span class="tk-feed-title">Latest Stories</span>
+                  <button class="tk-feed-refresh" id="tk-feed-refresh" title="Refresh stories">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                  </button>
+                </div>
+                <div class="tk-feed-list" id="tk-feed-list">
+                  <div class="tk-feed-empty">Loading stories...</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div><!-- /tk-col-right -->
+
+      </div><!-- /tk-col-left -->
+
+      <!-- ── Right Sidebar ── -->
+      <div class="tk-sidebar">
+
+        <!-- Exhaustion Countdown -->
+        <div class="tk-sb-card" id="tk-exhaust-card">
+          <div class="tk-exhaust-hero">
+            <div class="tk-exhaust-days" id="tk-exhaust-days">—</div>
+            <div class="tk-exhaust-lbl">Days to Narrative Exhaustion</div>
+            <div class="tk-exhaust-sub" id="tk-exhaust-sub">Loading…</div>
+          </div>
+          <div style="padding:12px 16px;border-top:1px solid var(--mp-border);display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-size:13px;color:var(--mp-text-muted);">PRISM verdict</div>
+            <div style="font-size:13px;font-weight:600;" id="tk-sb-verdict">—</div>
+          </div>
+        </div>
+
+        <!-- Pulse Metrics -->
+        <div class="tk-sb-card" id="tk-pulse-card">
+          <div class="tk-sb-hdr">
+            <div class="tk-sb-title">Pulse Metrics</div>
+            <div class="tk-sb-meta">ticker_pulse</div>
+          </div>
+          <div class="tk-sb-stats" id="tk-sb-stats">
+            <div class="tk-sb-stat"><div class="tk-sb-stat-val" id="tk-sb-sentiment">—</div><div class="tk-sb-stat-lbl">Net Sentiment</div></div>
+            <div class="tk-sb-stat"><div class="tk-sb-stat-val" id="tk-sb-health">—</div><div class="tk-sb-stat-lbl">Health Score</div></div>
+            <div class="tk-sb-stat"><div class="tk-sb-stat-val" id="tk-sb-fvd">—</div><div class="tk-sb-stat-lbl">FVD%</div></div>
+            <div class="tk-sb-stat"><div class="tk-sb-stat-val" id="tk-sb-active">—</div><div class="tk-sb-stat-lbl">Active Narr.</div></div>
+            <div class="tk-sb-stat"><div class="tk-sb-stat-val" id="tk-sb-coord">—</div><div class="tk-sb-stat-lbl">Coordinated</div></div>
+            <div class="tk-sb-stat"><div class="tk-sb-stat-val" id="tk-sb-traps">—</div><div class="tk-sb-stat-lbl">Trap Count</div></div>
+          </div>
+          <div style="padding:0 16px 14px;" id="tk-sb-pulse-extra"></div>
+        </div>
+
+        <!-- Signal Labels -->
+        <div class="tk-sb-card" id="tk-signal-card">
+          <div class="tk-sb-hdr">
+            <div class="tk-sb-title">Signal Labels</div>
+            <div class="tk-sb-meta">trade_classifications</div>
+          </div>
+          <div class="tk-signal-block" id="tk-signal-block">
+            <div style="font-size:11px;color:var(--mp-text-muted);padding:8px;">Loading…</div>
+          </div>
+        </div>
+
+        <!-- PRISM Scores -->
+        <div class="tk-sb-card" id="tk-prism-card">
+          <div class="tk-sb-hdr">
+            <div class="tk-sb-title">PRISM Scores</div>
+            <div class="tk-sb-meta">ticker_pulse</div>
+          </div>
+          <div class="tk-prism-block" id="tk-prism-block">
+            <div style="font-size:11px;color:var(--mp-text-muted);">Loading…</div>
+          </div>
+        </div>
+
+        <!-- Intelligence Summary -->
+        <div class="tk-sb-card" id="tk-intel-card">
+          <div class="tk-sb-hdr">
+            <div class="tk-sb-title" id="tk-intel-title">Intelligence Summary</div>
+          </div>
+          <div class="tk-intel-qa" id="tk-intel-qa">
+            <div style="font-size:11px;color:var(--mp-text-muted);">Loading…</div>
+          </div>
+        </div>
+
+      </div><!-- /tk-sidebar -->
 
     </div><!-- /tk-main-split -->
   </div><!-- /tab-overview -->
@@ -5498,6 +5630,65 @@ function renderWarranted(p) {
     + '</div>';
 }
 
+// ── Render: Sidebar panels ───────────────────────────────────────────────────
+function renderSidebar(p, h) {
+  if (!p) return;
+  // Exhaustion
+  var exDays = p.nearest_exhaustion_days != null ? Math.round(p.nearest_exhaustion_days) : null;
+  var exEl = document.getElementById('tk-exhaust-days');
+  if (exEl) exEl.textContent = exDays != null ? exDays : '\u2014';
+  var exSub = document.getElementById('tk-exhaust-sub');
+  if (exSub) exSub.textContent = 'Energy: ' + (p.prevailing_energy != null ? Math.round(p.prevailing_energy) + '%' : '\u2014') + ' \u00B7 ' + (p.decay_status || 'Unknown') + ' regime';
+  var vEl = document.getElementById('tk-sb-verdict');
+  if (vEl) {
+    var v = p.prevailing_verdict || 'Monitoring';
+    vEl.textContent = v;
+    vEl.style.color = v === 'Narrative Trap' ? 'var(--mp-red)' : v === 'Structurally Supported' ? 'var(--mp-green)' : 'var(--mp-blue)';
+  }
+  // Pulse Metrics
+  var s = function(id, val) { var e = document.getElementById(id); if (e) e.textContent = val; };
+  s('tk-sb-sentiment', p.net_sentiment != null ? Math.round(p.net_sentiment) : '\u2014');
+  s('tk-sb-health', p.pulse_health_score != null ? Math.round(p.pulse_health_score) : '\u2014');
+  var fvdVal = p.fvd_pct != null ? (p.fvd_pct > 0 ? '+' : '') + p.fvd_pct.toFixed(1) + '%' : '\u2014';
+  var fvdEl = document.getElementById('tk-sb-fvd');
+  if (fvdEl) { fvdEl.textContent = fvdVal; fvdEl.style.color = p.fvd_pct > 5 ? 'var(--mp-amber)' : p.fvd_pct < -5 ? 'var(--mp-green)' : ''; }
+  s('tk-sb-active', p.active_narrative_count != null ? p.active_narrative_count : '\u2014');
+  var coordEl = document.getElementById('tk-sb-coord');
+  if (coordEl) { coordEl.textContent = p.coordinated_count != null ? p.coordinated_count : '\u2014'; coordEl.style.color = p.coordinated_count > 0 ? 'var(--mp-blue)' : ''; }
+  s('tk-sb-traps', p.trap_count != null ? p.trap_count : '0');
+  // Extra pulse rows
+  var extraEl = document.getElementById('tk-sb-pulse-extra');
+  if (extraEl) {
+    var dir = p.direction_forecast || '\u2014';
+    var dirColor = dir.indexOf('BULL') !== -1 ? 'var(--mp-green)' : dir.indexOf('BEAR') !== -1 ? 'var(--mp-red)' : 'var(--mp-text-secondary)';
+    extraEl.innerHTML = '<div style="display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid var(--mp-border);"><span style="font-size:13px;color:var(--mp-text-secondary);">Direction</span><span style="font-size:13px;font-weight:600;color:' + dirColor + ';">' + esc(dir) + '</span></div>';
+  }
+  // PRISM Scores
+  var prismEl = document.getElementById('tk-prism-block');
+  if (prismEl) {
+    var pressure = Math.min(100, Math.round(Math.abs(p.pulse_drift || 0)));
+    var energy = Math.round(p.avg_energy_remaining || 0);
+    var reversal = Math.round(Math.min(100, (fragility(p) || 0) * 0.6 + pressure * 0.4));
+    var frag = fragility(p) || 0;
+    prismEl.innerHTML = ''
+      + buildPrismRow('Net Pressure', pressure, pressure > 50 ? 'var(--mp-amber)' : 'var(--mp-blue)')
+      + buildPrismRow('Residual Energy', energy, 'var(--mp-blue)')
+      + buildPrismRow('Reversal Risk', reversal, 'var(--mp-amber)')
+      + buildPrismRow('Fragility', frag, frag > 50 ? 'var(--mp-red)' : 'var(--mp-green)');
+  }
+  // Intel Summary
+  var intelEl = document.getElementById('tk-intel-qa');
+  var intelTitle = document.getElementById('tk-intel-title');
+  if (intelTitle) intelTitle.textContent = TICKER + ' Intelligence Summary';
+  if (intelEl && p.pulse_summary) {
+    intelEl.innerHTML = '<div><div class="tk-intel-q">Why is ' + esc(TICKER) + ' moving?</div><div class="tk-intel-a">' + esc(p.pulse_summary) + '</div></div>';
+  }
+}
+function buildPrismRow(label, val, color) {
+  var pct = Math.min(100, Math.max(0, val));
+  return '<div class="tk-prism-row"><div class="tk-prism-lbl">' + label + '</div><div class="tk-prism-bar-wrap"><div class="tk-prism-track"><div class="tk-prism-fill" style="width:' + pct + '%;background:' + color + ';"></div></div><div class="tk-prism-val" style="color:' + color + ';">' + val + '</div></div></div>';
+}
+
 // ── Render: Narrative Heatmap ─────────────────────────────────────────────────
 function renderHeatmap(p) {
   const el = document.getElementById('heatmap-body');
@@ -6294,6 +6485,7 @@ async function refreshAll() {
 
   renderPrimaryClaim(pulse);
   renderWarranted(pulse);
+  renderSidebar(pulse, heroData);
 
   // Fire leaderboard badge enrichment (non-blocking)
   enrichLeaderboardBadges();
