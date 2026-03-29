@@ -14,57 +14,63 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --mp-obsidian: #0b1017;
-    --mp-deep: #0f1520;
-    --mp-surface: #141d27;
-    --mp-border: rgba(255,255,255,0.07);
+    --mp-obsidian: #080B11;
+    --mp-deep: #0C1018;
+    --mp-surface: #0C1018;
+    --mp-surface2: #111927;
+    --mp-border: rgba(255,255,255,0.06);
     --mp-border-mid: rgba(255,255,255,0.10);
-    --mp-blue: #3b82f6;
-    --mp-blue-glow: rgba(59,130,246,0.10);
-    --mp-cyan: #3b82f6;
-    --mp-teal: #22c55e;
-    --mp-prism-4: #22c55e;
-    --mp-prism-5: #ef4444;
+    --mp-border-hover: rgba(255,255,255,0.14);
+    --mp-blue: #5b8ec9;
+    --mp-blue-glow: rgba(91,142,201,0.08);
+    --mp-cyan: #5b8ec9;
+    --mp-teal: #2ba87e;
+    --mp-green: #00B878;
+    --mp-red: #D94444;
+    --mp-amber: #D9A200;
+    --mp-prism-4: #2ba87e;
+    --mp-prism-5: #D94444;
     --mp-text-primary: #E8ECF4;
-    --mp-text-secondary: #9ca3af;
-    --mp-text-tertiary: #6b7280;
+    --mp-text-secondary: rgba(255,255,255,0.6);
+    --mp-text-tertiary: #A0A8B0;
+    --mp-text-muted: rgba(255,255,255,0.3);
     --font-display: 'Instrument Serif', 'DM Serif Display', Georgia, serif;
-    --font-body: 'Geist', 'Inter', 'DM Sans', system-ui, sans-serif;
-    --font-mono: 'Geist Mono', 'Inter', monospace;
+    --font-body: 'Inter', 'DM Sans', system-ui, sans-serif;
+    --font-mono: 'Inter', system-ui, sans-serif;
     /* Legacy mappings for JS-generated inline styles */
-    --accent-breaking: #ef4444;
-    --accent-breaking-bg: rgba(239,68,68,0.08);
-    --accent-surging: #22c55e;
-    --accent-surging-bg: rgba(34,197,94,0.08);
-    --accent-fragile: #ef4444;
-    --accent-fragile-bg: rgba(239,68,68,0.08);
-    --accent-stable: #3b82f6;
-    --accent-stable-bg: rgba(59,130,246,0.08);
-    --accent-trap: #ef4444;
-    --accent-supported: #22c55e;
-    --bg: #0b1017;
-    --surface: #141d27;
-    --surface2: #0f1520;
+    --accent-breaking: #D94444;
+    --accent-breaking-bg: rgba(217,68,68,0.06);
+    --accent-surging: #2ba87e;
+    --accent-surging-bg: rgba(43,168,126,0.06);
+    --accent-fragile: #D94444;
+    --accent-fragile-bg: rgba(217,68,68,0.06);
+    --accent-stable: #5b8ec9;
+    --accent-stable-bg: rgba(91,142,201,0.06);
+    --accent-trap: #D94444;
+    --accent-supported: #2ba87e;
+    --bg: #080B11;
+    --surface: #0C1018;
+    --surface2: #111927;
     --surface3: #1a2433;
-    --border: rgba(255,255,255,0.07);
+    --border: rgba(255,255,255,0.06);
     --border-strong: rgba(255,255,255,0.10);
     --text-primary: #E8ECF4;
-    --text-secondary: #9ca3af;
-    --text-tertiary: #6b7280;
-    --font: 'Geist', 'DM Sans', system-ui, sans-serif;
-    --mono: 'Geist Mono', 'Inter', monospace;
-    --green: #22c55e;
-    --green-mid: #22c55e;
-    --green-bg: rgba(34,197,94,0.08);
-    --green-bd: rgba(34,197,94,0.20);
-    --red: #ef4444;
-    --red-bg: rgba(239,68,68,0.08);
-    --red-bd: rgba(239,68,68,0.20);
-    --amber: #3b82f6;
-    --amber-bg: rgba(59,130,246,0.08);
-    --amber-bd: rgba(59,130,246,0.20);
-    --blue: #3b82f6;
-    --blue-bg: rgba(59,130,246,0.08);
+    --text-secondary: rgba(255,255,255,0.6);
+    --text-tertiary: #A0A8B0;
+    --font: 'Inter', 'DM Sans', system-ui, sans-serif;
+    --mono: 'Inter', system-ui, sans-serif;
+    --green: #2ba87e;
+    --green-mid: #2ba87e;
+    --green-bg: rgba(43,168,126,0.06);
+    --green-bd: rgba(43,168,126,0.15);
+    --red: #D94444;
+    --red-bg: rgba(217,68,68,0.06);
+    --red-bd: rgba(217,68,68,0.15);
+    --amber: #D9A200;
+    --amber-bg: rgba(217,162,0,0.06);
+    --amber-bd: rgba(217,162,0,0.15);
+    --blue: #5b8ec9;
+    --blue-bg: rgba(91,142,201,0.06);
   }
 
   html { font-size: 16px; }
@@ -258,41 +264,57 @@
   }
   @keyframes badge-in { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
 
-  /* ── Section ── */
-  .section { margin-bottom: 28px; overflow: hidden; }
+  /* ── Section (card pattern) ── */
+  .section {
+    margin-bottom: 20px;
+    overflow: hidden;
+    background: var(--mp-surface);
+    border: 1px solid var(--mp-border);
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    position: relative;
+    transition: border-color .2s;
+    animation: fadeUp .35s ease both;
+  }
+  .section:hover { border-color: var(--mp-border-hover); }
+  .section::before {
+    content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 0;
+    background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+  .section > * { position: relative; z-index: 1; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
   .section-label {
-    font-size: 9px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: #6b7280;
-    margin-bottom: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--mp-border);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    font-family: var(--mono);
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    color: var(--mp-text-primary);
+    text-transform: none;
   }
   .section-label-sub {
-    font-size: 10px;
+    font-family: var(--font-body);
+    font-size: 11px;
     font-weight: 400;
     text-transform: none;
     letter-spacing: 0;
     color: var(--mp-text-tertiary);
   }
   .section-body {
-    background: var(--mp-surface);
-    border: 1px solid var(--mp-border);
-    border-radius: 12px;
+    background: transparent;
+    border: none;
+    border-radius: 0;
     overflow: hidden;
     width: 100%;
-    transition: all 0.4s cubic-bezier(0.16,1,0.3,1);
     position: relative;
   }
-  .section-body::before {
-    display: none;
-  }
   .section-body:hover {
-    border-color: rgba(255,255,255,0.12);
+    border-color: transparent;
   }
 
   /* ── Skeleton ── */
@@ -303,34 +325,47 @@
   }
   @keyframes skel-pulse { 0%,100% { opacity:1; } 50% { opacity:0.45; } }
 
-  /* ── Metrics strip ── */
+  /* ── Metrics strip (forensic analysis) ── */
   .metrics-strip {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    border-top: 1px solid var(--mp-border);
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--mp-border);
   }
   @media (max-width: 700px) { .metrics-strip { grid-template-columns: repeat(3, 1fr); } }
   @media (max-width: 440px) { .metrics-strip { grid-template-columns: repeat(2, 1fr); } }
   .metric-cell {
-    padding: 12px 16px;
-    border-right: 1px solid var(--mp-border);
+    padding: 16px 18px;
+    background: var(--mp-surface);
   }
   .metric-cell:last-child { border-right: none; }
   .metric-label {
-    font-size: 9px;
+    font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 0.10em;
-    color: #6b7280;
-    margin-bottom: 3px;
-    font-family: var(--mono);
+    letter-spacing: 0.05em;
+    color: var(--mp-text-muted);
+    margin-bottom: 5px;
+    font-family: var(--font-body);
   }
   .metric-value {
-    font-size: 15px;
-    font-weight: 500;
-    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 600;
+    font-family: var(--font-body);
     color: var(--text-primary);
   }
-  .metric-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 1px; }
+  .metric-sub { font-size: 11px; color: var(--mp-text-muted); margin-top: 3px; }
+  /* Forensic detail rows */
+  .forensic-detail { padding: 14px 18px; }
+  .forensic-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--mp-border);
+  }
+  .forensic-row:last-child { border-bottom: none; }
+  .forensic-row-label { font-size: 13px; color: var(--mp-text-secondary); }
+  .forensic-row-val { font-size: 13px; font-weight: 500; }
 
   /* ── Chart ── */
   .chart-controls {
@@ -371,7 +406,7 @@
   .chart-outer {
     position: relative;
     padding: 10px 14px 0;
-    height: 210px;
+    height: 380px;
   }
   .chart-outer canvas { display: block; width: 100%; height: 100%; }
   .chart-bottom-bar {
@@ -836,17 +871,18 @@
 
   /* ── Sector Intelligence ── */
   .si-header {
-    padding: 14px 18px 10px;
+    padding: 10px 20px 14px;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
     gap: 12px;
     flex-wrap: wrap;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--mp-border);
   }
   .si-sector-name {
-    font-size: 14px;
-    font-weight: 500;
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 400;
     color: var(--text-primary);
   }
   .si-meta {
@@ -856,14 +892,14 @@
     flex-wrap: wrap;
   }
   .si-cagr {
-    font-size: 11px;
-    font-family: var(--mono);
-    font-weight: 500;
-    padding: 2px 8px;
-    border-radius: 99px;
-    background: rgba(34,197,94,0.08);
-    color: #22c55e;
-    border: 1px solid rgba(34,197,94,0.20);
+    font-size: 13px;
+    font-family: var(--font-body);
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 20px;
+    background: rgba(43,168,126,0.06);
+    color: var(--mp-green);
+    border: 1px solid rgba(43,168,126,0.15);
   }
   .si-framework {
     font-size: 11px;
@@ -873,6 +909,47 @@
     background: var(--surface2);
     color: var(--text-tertiary);
     border: 1px solid var(--border);
+  }
+  /* SWOT grid */
+  .si-swot-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--mp-border);
+  }
+  .si-swot-cell {
+    padding: 14px 18px;
+    background: var(--mp-surface);
+  }
+  .si-swot-lbl {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    margin-bottom: 6px;
+  }
+  .si-swot-lbl.s { color: var(--mp-green); }
+  .si-swot-lbl.w { color: var(--mp-red); }
+  .si-swot-lbl.o { color: var(--mp-blue); }
+  .si-swot-lbl.t { color: var(--mp-amber); }
+  .si-swot-text {
+    font-size: 13px;
+    color: var(--mp-text-secondary);
+    line-height: 1.6;
+  }
+  .si-themes-bar {
+    padding: 12px 18px;
+    background: var(--mp-surface2);
+    border-top: 1px solid var(--mp-border);
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .si-theme-tag {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 3px;
   }
   .si-trap-badge {
     font-size: 10px;
@@ -897,18 +974,21 @@
     padding: 14px 18px;
   }
   .si-block-label {
-    font-size: 9px;
+    font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 0.10em;
-    color: #6b7280;
-    margin-bottom: 5px;
-    font-weight: 500;
-    font-family: var(--mono);
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+    font-weight: 700;
+    font-family: var(--font-body);
   }
+  .si-block-label.lbl-strengths { color: var(--mp-green); }
+  .si-block-label.lbl-weaknesses { color: var(--mp-red); }
+  .si-block-label.lbl-threats { color: var(--mp-amber); }
+  .si-block-label.lbl-emerging { color: var(--mp-blue); }
   .si-block-text {
-    font-size: 12px;
-    color: var(--text-secondary);
-    line-height: 1.55;
+    font-size: 13px;
+    color: var(--mp-text-secondary);
+    line-height: 1.6;
   }
   .si-contrarian {
     padding: 14px 18px;
@@ -1869,71 +1949,91 @@
   .narr-strength-wrap {
     display: flex;
     align-items: flex-start;
-    gap: 28px;
-    padding: 24px;
+    gap: 24px;
+    padding: 20px;
   }
   .narr-ring-main {
     position: relative;
     flex-shrink: 0;
-    width: 160px;
-    height: 160px;
+    width: 100px;
+    height: 100px;
   }
-  .narr-ring-main svg { width: 160px; height: 160px; }
+  .narr-ring-main svg { width: 100px; height: 100px; }
   .narr-ring-center {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     text-align: center;
+    width: 70px;
+    overflow: hidden;
   }
   .narr-ring-score {
-    font-family: var(--font-display);
-    font-size: 42px;
-    font-weight: 400;
+    font-family: var(--font-body);
+    font-size: 26px;
+    font-weight: 700;
     letter-spacing: -0.025em;
     line-height: 1;
     color: #fff;
   }
   .narr-ring-label {
     font-family: var(--font-body);
-    font-size: 11px;
+    font-size: 9px;
     text-transform: uppercase;
-    letter-spacing: .08em;
+    letter-spacing: .06em;
     color: var(--mp-text-muted);
-    margin-top: 4px;
+    margin-top: 3px;
   }
   .narr-ring-right {
     flex: 1;
     min-width: 0;
   }
-  .narr-mini-rings {
+  .narr-badges-row {
     display: flex;
-    gap: 20px;
-    margin-bottom: 16px;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .narr-badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  .narr-badge.emerging { background: rgba(43,168,126,0.08); color: var(--mp-green); }
+  .narr-badge.monitoring { background: rgba(91,142,201,0.06); color: var(--mp-blue); }
+  .narr-badge.days { background: rgba(217,162,0,0.06); color: var(--mp-amber); }
+  .narr-mini-rings {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 0;
+    margin-top: 14px;
   }
   .narr-mini-ring {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
+    background: var(--mp-surface2);
+    border: 1px solid var(--mp-border);
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
   }
-  .narr-mini-ring svg { width: 64px; height: 64px; }
-  .narr-mini-ring-center {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+  .narr-mini-ring-val {
     font-family: var(--font-body);
-    font-size: 16px;
+    font-size: 20px;
     font-weight: 600;
-    color: #fff;
+    display: block;
   }
+  .narr-mini-ring svg { display: none; }
+  .narr-mini-ring-center { display: none; }
   .narr-mini-label {
     font-family: var(--font-body);
-    font-size: 11px;
-    color: var(--mp-text-tertiary);
+    font-size: 10px;
+    color: var(--mp-text-muted);
     text-transform: uppercase;
-    letter-spacing: .06em;
+    letter-spacing: .05em;
+    margin-top: 3px;
   }
   .narr-phase-row {
     display: flex;
@@ -1941,12 +2041,40 @@
     gap: 8px;
     margin-bottom: 12px;
   }
+  .narr-claim-text {
+    font-size: 14px;
+    color: var(--mp-text-secondary);
+    line-height: 1.7;
+    margin-bottom: 10px;
+  }
+  .narr-claim-text strong { color: var(--mp-text-primary); }
   .narr-summary-text {
     font-family: var(--font-body);
     font-size: 13px;
     line-height: 1.6;
     color: var(--mp-text-secondary);
   }
+  /* ── What's Moving It ── */
+  .movers-row {
+    padding: 0 20px 16px;
+    display: flex;
+    gap: 10px;
+  }
+  .mover-pill {
+    flex: 1;
+    background: var(--mp-surface2);
+    border: 1px solid var(--mp-border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .mover-pill-label { font-size: 13px; color: var(--mp-text-secondary); }
+  .mover-pill-sub { font-size: 11px; color: var(--mp-text-muted); }
+  .mover-pill-val { font-size: 14px; font-weight: 600; }
+  .mover-pill-val.pos { color: var(--mp-green); }
+  .mover-pill-val.neg { color: var(--mp-red); }
   .narr-claim-text {
     font-family: 'Instrument Serif', 'DM Serif Display', Georgia, serif;
     font-size: 24px;
@@ -1966,15 +2094,15 @@
   }
   .tug-label {
     font-family: var(--font-body);
-    font-size: 12px;
-    font-weight: 600;
+    font-size: 11px;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: .06em;
   }
   .tug-bar-track {
     height: 10px;
     border-radius: 5px;
-    background: rgba(255,255,255,0.06);
+    background: var(--mp-surface2);
     position: relative;
     overflow: hidden;
   }
@@ -1989,13 +2117,45 @@
   .tug-bar-marker {
     position: absolute;
     top: -3px;
-    width: 4px;
+    width: 3px;
     height: 16px;
     border-radius: 2px;
     background: #fff;
-    box-shadow: 0 0 8px rgba(255,255,255,0.4);
+    box-shadow: 0 0 8px rgba(255,255,255,0.3);
     transition: left .4s;
   }
+  .tug-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .tug-stat-item {
+    background: var(--mp-surface2);
+    border: 1px solid var(--mp-border);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+  .tug-stat-val {
+    font-size: 18px;
+    font-weight: 600;
+  }
+  .tug-stat-lbl {
+    font-size: 10px;
+    color: var(--mp-text-muted);
+    margin-top: 2px;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+  }
+  .tug-note {
+    font-size: 13px;
+    color: var(--mp-text-secondary);
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--mp-border);
+    line-height: 1.5;
+  }
+  .tug-note strong { color: var(--mp-text-primary); }
   .tug-detail-row {
     display: flex;
     justify-content: space-between;
@@ -2292,6 +2452,37 @@
     text-overflow: ellipsis;
   }
 
+  /* ── Earnings History ── */
+  .earnings-rows { display: flex; flex-direction: column; }
+  .earnings-row {
+    padding: 13px 20px;
+    border-bottom: 1px solid var(--mp-border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .earnings-row:last-child { border-bottom: none; }
+  .er-period { font-size: 11px; font-weight: 700; color: var(--mp-text-muted); width: 26px; }
+  .er-date { font-size: 13px; color: var(--mp-text-secondary); flex: 1; }
+  .er-date-sub { font-size: 11px; color: var(--mp-text-muted); }
+  .er-eps { text-align: right; }
+  .er-eps-val { font-size: 14px; font-weight: 600; display: block; }
+  .er-eps-est { font-size: 10px; color: var(--mp-text-muted); }
+  .er-surprise {
+    font-size: 12px; font-weight: 600;
+    padding: 2px 8px; border-radius: 4px;
+    white-space: nowrap;
+  }
+  .er-surprise.beat { background: rgba(43,168,126,0.08); color: var(--mp-green); }
+  .er-surprise.miss { background: rgba(217,68,68,0.08); color: var(--mp-red); }
+  .earnings-summary {
+    padding: 10px 20px;
+    background: var(--mp-surface2);
+    border-top: 1px solid var(--mp-border);
+    font-size: 13px;
+    color: var(--mp-text-secondary);
+  }
+
   /* ── LIGHT THEME ── */
   [data-theme="light"] {
     --mp-obsidian: #F8F9FC;
@@ -2299,47 +2490,62 @@
     --mp-surface: #FFFFFF;
     --mp-border: rgba(0,0,0,0.08);
     --mp-border-mid: rgba(0,0,0,0.12);
-    --mp-blue: #3b82f6;
-    --mp-blue-glow: rgba(59,130,246,0.08);
-    --mp-cyan: #3b82f6;
-    --mp-teal: #22c55e;
-    --mp-prism-4: #22c55e;
-    --mp-prism-5: #ef4444;
+    --mp-blue: #5b8ec9;
+    --mp-blue-glow: rgba(91,142,201,0.08);
+    --mp-cyan: #5b8ec9;
+    --mp-teal: #2ba87e;
+    --mp-green: #00A06B;
+    --mp-red: #CC3D3D;
+    --mp-amber: #B38600;
+    --mp-prism-4: #2ba87e;
+    --mp-prism-5: #CC3D3D;
     --mp-text-primary: #111827;
     --mp-text-secondary: #6B7280;
     --mp-text-tertiary: #9CA3AF;
+    --mp-text-muted: rgba(0,0,0,0.3);
+    --mp-surface2: #F3F4F8;
     --bg: #F8F9FC;
     --surface: #FFFFFF;
-    --surface2: #FFFFFF;
+    --surface2: #F3F4F8;
     --surface3: #F3F4F8;
     --border: rgba(0,0,0,0.08);
     --border-strong: rgba(0,0,0,0.12);
     --text-primary: #111827;
     --text-secondary: #5A6072;
     --text-tertiary: #8B90A0;
-    --accent-breaking: #ef4444;
-    --accent-breaking-bg: rgba(239,68,68,0.08);
-    --accent-surging: #22c55e;
-    --accent-surging-bg: rgba(34,197,94,0.08);
-    --accent-fragile: #ef4444;
-    --accent-fragile-bg: rgba(239,68,68,0.08);
-    --accent-stable: #3b82f6;
-    --accent-stable-bg: rgba(59,130,246,0.08);
-    --accent-trap: #ef4444;
-    --accent-supported: #22c55e;
-    --green: #22c55e;
-    --red: #ef4444;
-    --amber: #3b82f6;
-    --blue: #3b82f6;
+    --accent-breaking: #CC3D3D;
+    --accent-breaking-bg: rgba(204,61,61,0.06);
+    --accent-surging: #2ba87e;
+    --accent-surging-bg: rgba(43,168,126,0.06);
+    --accent-fragile: #CC3D3D;
+    --accent-fragile-bg: rgba(204,61,61,0.06);
+    --accent-stable: #5b8ec9;
+    --accent-stable-bg: rgba(91,142,201,0.06);
+    --accent-trap: #CC3D3D;
+    --accent-supported: #2ba87e;
+    --green: #2ba87e;
+    --red: #CC3D3D;
+    --amber: #B38600;
+    --blue: #5b8ec9;
   }
   [data-theme="light"] body { background: var(--bg); color: var(--text-primary); }
   [data-theme="light"] .sidebar { background: #FFFFFF; border-color: rgba(0,0,0,0.08); }
   [data-theme="light"] .sidebar-logo span { color: var(--text-primary); }
   [data-theme="light"] .section-body { background: #FFFFFF; }
-  [data-theme="light"] .section-body:hover { border-color: rgba(0,174,255,0.15); }
+  [data-theme="light"] .section { background: #FFFFFF; border-color: rgba(0,0,0,0.08); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  [data-theme="light"] .section:hover { border-color: rgba(0,0,0,0.12); }
+  [data-theme="light"] .section::before { background-image: linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px); }
+  [data-theme="light"] .section-label { border-bottom-color: rgba(0,0,0,0.06); color: var(--text-primary); }
+  [data-theme="light"] .section-body:hover { border-color: transparent; }
   [data-theme="light"] .ticker-hero::after { background: radial-gradient(circle, rgba(0,174,255,0.04) 0%, transparent 65%); }
   [data-theme="light"] .chart-tip { background: #FFFFFF; color: var(--text-primary); }
   [data-theme="light"] .diag-cell { background: #FFFFFF; }
+  [data-theme="light"] .tug-stat-item { background: #F3F4F8; border-color: rgba(0,0,0,0.06); }
+  [data-theme="light"] .narr-mini-ring { background: #F3F4F8; border-color: rgba(0,0,0,0.06); }
+  [data-theme="light"] .mover-pill { background: #F3F4F8; border-color: rgba(0,0,0,0.06); }
+  [data-theme="light"] .metric-cell { background: #FFFFFF; }
+  [data-theme="light"] .si-block { background: #FFFFFF; }
+  [data-theme="light"] .earnings-summary { background: #F3F4F8; }
 
   /* ── MOBILE RESPONSIVE ── */
   @media (max-width: 768px) {
@@ -2353,7 +2559,7 @@
     .hero-claim { font-size: 14px; }
     .hero-bias { font-size: 24px; }
     .hero-price { font-size: 24px; }
-    .section-label { font-size:11px; }
+    .section-label { font-size:16px; }
     .tk-main-split { grid-template-columns: 1fr; gap: 16px; }
     .tk-feed { position: static; max-height: none; }
     .tk-col-right { grid-column: auto; }
@@ -2801,6 +3007,9 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
           </div>
         </div>
 
+        <!-- 1b. WHAT'S MOVING IT (populated by renderPrimaryClaim) -->
+        <div id="narr-movers"></div>
+
         <!-- 2. ASK MARKET SCHOLAR — Prominent AI Section -->
         <div class="section scholar-hero-section" id="scholar-hero-section">
           <div class="scholar-hero-inner">
@@ -2888,9 +3097,9 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
             <div class="chart-bottom-bar">
               <div class="chart-legend">
                 <div class="legend-item"><div class="leg-line" style="background:var(--text-primary);"></div> Price</div>
-                <div class="legend-item"><div class="leg-dot" style="background:#22c55e;"></div> Bullish Sentiment</div>
-                <div class="legend-item"><div class="leg-dot" style="background:#ef4444;"></div> Bearish Sentiment</div>
-                <div class="legend-item"><div class="leg-line" style="background:#3b82f6;opacity:0.7;border-top:2px dashed #3b82f6;height:0;width:14px;"></div> Narrative energy</div>
+                <div class="legend-item"><div class="leg-dot" style="background:#2ba87e;"></div> Bullish Sentiment</div>
+                <div class="legend-item"><div class="leg-dot" style="background:#D94444;"></div> Bearish Sentiment</div>
+                <div class="legend-item"><div class="leg-line" style="background:#5b8ec9;opacity:0.7;border-top:2px dashed #5b8ec9;height:0;width:14px;"></div> Narrative energy</div>
               </div>
             </div>
             <div class="bear-stories-wrap" id="bear-stories-wrap" style="display:none;">
@@ -2949,6 +3158,18 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
                 <div class="si-block"><div class="skel" style="height:10px;width:60%;margin-bottom:6px;"></div><div class="skel" style="height:12px;"></div><div class="skel" style="height:12px;width:85%;margin-top:4px;"></div></div>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- 7. EARNINGS HISTORY -->
+        <div class="section" id="earnings-section" style="display:none;">
+          <div class="section-label">
+            Earnings History
+            <span class="section-label-sub" id="earnings-sub"></span>
+          </div>
+          <div class="section-body">
+            <div class="earnings-rows" id="earnings-rows"></div>
+            <div class="earnings-summary" id="earnings-summary"></div>
           </div>
         </div>
 
@@ -3644,7 +3865,7 @@ async function loadHero() {
     const isBull = r.price_change_pct > 0 || verdict === 'Structurally Supported' || h.narrative_trend === 'Rising';
     const isBear = verdict === 'Narrative Trap' || h.narrative_trend === 'Collapsing';
     const biasColor = isBear ? 'var(--red)' : isBull ? 'var(--mp-teal)' : 'var(--mp-text-secondary)';
-    const sentBorder = isBear ? '#ef4444' : isBull ? '#22c55e' : '#3b82f6';
+    const sentBorder = isBear ? '#D94444' : isBull ? '#2ba87e' : '#5b8ec9';
     const sentGlow = isBear ? 'rgba(239,68,68,0.10)' : isBull ? 'rgba(34,197,94,0.10)' : 'rgba(59,130,246,0.10)';
     const conf = tc.primary_confidence != null ? Math.round(tc.primary_confidence) : null;
     const shortTf = tc.shortest_timeframe || '';
@@ -3899,9 +4120,11 @@ async function loadSectorIntelligence(heroRow) {
     const opps        = s?.['Opportunities']     || null;
     const framework   = s?.['SP Framework\nMatch'] || r.sp_framework_match   || null;
 
+    const labelCls = (l) => l === 'Strengths' ? 'lbl-strengths' : l === 'Weaknesses' ? 'lbl-weaknesses' : l === 'Threats' ? 'lbl-threats' : 'lbl-emerging';
+    const labelIcon = (l) => l === 'Strengths' ? '\u2B06' : l === 'Weaknesses' ? '\u2B07' : l === 'Threats' ? '\u26A0' : '\u2192';
     const makeBlock = (label, text) => text
       ? `<div class="si-block">
-          <div class="si-block-label">${label}</div>
+          <div class="si-block-label ${labelCls(label)}">${labelIcon(label)} ${label}</div>
           <div class="si-block-text">${esc(text)}</div>
          </div>` : '';
 
@@ -4230,7 +4453,7 @@ function drawChart(snaps, narrs) {
     const cy = yOf(s.price_close);
     ctx.beginPath();
     ctx.arc(cx, cy, 5, 0, Math.PI*2);
-    ctx.fillStyle   = n.isBear ? '#ef4444' : '#22c55e';
+    ctx.fillStyle   = n.isBear ? '#D94444' : '#2ba87e';
     ctx.fill();
     ctx.strokeStyle = isLight() ? '#FFFFFF' : '#0A0E1A'; ctx.lineWidth = 1.5; ctx.stroke();
     dotHits.push({ cx, cy, n });
@@ -5123,9 +5346,9 @@ function buildRingSVG(pct, size, stroke, color, bgOpacity) {
 }
 
 function scoreColor(v) {
-  if (v >= 70) return '#00DE94';
-  if (v >= 40) return '#FFB800';
-  return '#FF4D4D';
+  if (v >= 70) return '#5b8ec9';
+  if (v >= 40) return '#D9A200';
+  return '#D94444';
 }
 
 function renderPrimaryClaim(p) {
@@ -5166,28 +5389,39 @@ function renderPrimaryClaim(p) {
 
   el.innerHTML = '<div class="narr-strength-wrap">'
     + '<div class="narr-ring-main">'
-    +   buildRingSVG(overall, 160, 10, overallColor, 0.06)
+    +   buildRingSVG(overall, 100, 8, overallColor, 0.06)
     +   '<div class="narr-ring-center">'
     +     '<div class="narr-ring-score" style="color:' + overallColor + ';">' + overall + '</div>'
     +     '<div class="narr-ring-label">Strength</div>'
     +   '</div>'
     + '</div>'
     + '<div class="narr-ring-right">'
+    +   '<div class="narr-badges-row">'
+    +     '<div class="narr-badge ' + (phase.indexOf('Emerging') >= 0 || phase.indexOf('Breakout') >= 0 ? 'emerging' : 'monitoring') + '">' + esc(phase) + '</div>'
+    +     '<div class="narr-badge monitoring">' + esc(verdict) + '</div>'
+    +     (p.nearest_exhaustion_days != null ? '<div class="narr-badge days">~' + exdays + ' remaining</div>' : '')
+    +   '</div>'
     +   '<div class="narr-claim-text">' + esc(p.prevailing_narrative || 'No prevailing narrative found') + '</div>'
-    +   '<div class="narr-phase-row">'
-    +     '<span class="hero-state-badge ' + phaseBadgeClass(phase) + '" style="font-size:10px;">' + esc(phase) + '</span>'
-    +     '<span class="verdict-badge ' + vCls + '" style="font-size:10px;">' + esc(verdict) + '</span>'
-    +     shifted
-    +     (p.nearest_exhaustion_days != null ? '<span style="font-size:11px;color:var(--mp-text-muted);margin-left:4px;">~' + exdays + ' remaining</span>' : '')
-    +   '</div>'
-    +   '<div class="narr-mini-rings">'
-    +     '<div class="narr-mini-ring"><div style="position:relative;">' + buildRingSVG(momentum, 64, 5, scoreColor(momentum), 0.06) + '<div class="narr-mini-ring-center">' + momentum + '</div></div><div class="narr-mini-label">Momentum</div></div>'
-    +     '<div class="narr-mini-ring"><div style="position:relative;">' + buildRingSVG(credibility, 64, 5, scoreColor(credibility), 0.06) + '<div class="narr-mini-ring-center">' + credibility + '</div></div><div class="narr-mini-label">Credibility</div></div>'
-    +     '<div class="narr-mini-ring"><div style="position:relative;">' + buildRingSVG(100 - risk, 64, 5, scoreColor(100 - risk), 0.06) + '<div class="narr-mini-ring-center">' + risk + '</div></div><div class="narr-mini-label">Risk</div></div>'
-    +   '</div>'
     +   '<div class="narr-summary-text">' + esc(summary) + '</div>'
     + '</div>'
+    + '</div>'
+    + '<div class="narr-mini-rings" style="padding:0 20px 16px;">'
+    +   '<div class="narr-mini-ring"><span class="narr-mini-ring-val" style="color:' + scoreColor(momentum) + ';">' + momentum + '</span><div class="narr-mini-label">Energy</div></div>'
+    +   '<div class="narr-mini-ring"><span class="narr-mini-ring-val" style="color:' + scoreColor(credibility) + ';">' + credibility + '</span><div class="narr-mini-label">Credibility</div></div>'
+    +   '<div class="narr-mini-ring"><span class="narr-mini-ring-val" style="color:' + scoreColor(100 - risk) + ';">' + risk + '</span><div class="narr-mini-label">Pressure</div></div>'
     + '</div>';
+
+  // Render "What's Moving It" pills below the narrative
+  var moversEl = document.getElementById('narr-movers');
+  if (moversEl && p) {
+    var bearFatigue = Math.round(fragility(p) || 0);
+    var bullMomentum = momentum;
+    moversEl.innerHTML = '<div style="padding:0 20px 4px;font-size:11px;color:var(--mp-text-muted);text-transform:uppercase;letter-spacing:.06em;border-top:1px solid var(--mp-border);padding-top:14px;">What\'s Moving It</div>'
+      + '<div class="movers-row">'
+      +   '<div class="mover-pill"><div><div class="mover-pill-label">Narrative fatigue</div><div class="mover-pill-sub">Bearish</div></div><div class="mover-pill-val neg">\u2013' + bearFatigue + '%</div></div>'
+      +   '<div class="mover-pill"><div><div class="mover-pill-label">Narrative momentum</div><div class="mover-pill-sub">Bullish</div></div><div class="mover-pill-val pos">+' + bullMomentum + '%</div></div>'
+      + '</div>';
+  }
 }
 
 // ── Render: Warranted vs Hype (tug-of-war bar) ──────────────────────────────
@@ -5203,29 +5437,33 @@ function renderWarranted(p) {
   var hype      = 100 - warranted;
 
   var gradColor = warranted >= 60
-    ? 'linear-gradient(90deg, #00DE94 0%, #00AEFF ' + warranted + '%, rgba(255,77,77,0.3) 100%)'
-    : 'linear-gradient(90deg, rgba(0,222,148,0.3) 0%, #FFB800 ' + warranted + '%, #FF4D4D 100%)';
+    ? 'linear-gradient(90deg, var(--mp-green) 0%, var(--mp-blue) ' + warranted + '%, rgba(217,68,68,0.3) 100%)'
+    : 'linear-gradient(90deg, rgba(43,168,126,0.3) 0%, var(--mp-amber) ' + warranted + '%, var(--mp-red) 100%)';
+
+  var reversalRisk = Math.round(Math.min(100, frag * 0.6 + pressure * 0.4));
+  var fragPct = Math.round(frag);
 
   var summary = warranted >= 60
-    ? 'Price movement appears evidence-backed rather than hype-driven.'
-    : 'Narrative looks looser than price action implies — caution warranted.';
+    ? 'Price movement appears <strong>evidence-backed rather than hype-driven</strong>.'
+    : 'Narrative looks <strong>looser than price action implies</strong> \u2014 caution warranted.';
+  summary += ' Reversal risk: <strong style="color:var(--mp-amber);">' + reversalRisk + '%</strong> \u00B7 Fragility: <strong style="color:var(--mp-blue);">' + fragPct + '%</strong>';
 
   el.innerHTML = '<div class="tug-bar-wrap">'
     + '<div class="tug-labels">'
-    +   '<span class="tug-label" style="color:#00DE94;">Warranted ' + warranted + '</span>'
-    +   '<span class="tug-label" style="color:#FF4D4D;">Hype ' + hype + '</span>'
+    +   '<span class="tug-label" style="color:var(--mp-green);">WARRANTED ' + warranted + '</span>'
+    +   '<span class="tug-label" style="color:var(--mp-red);">HYPE ' + hype + '</span>'
     + '</div>'
     + '<div class="tug-bar-track">'
     +   '<div class="tug-bar-fill" style="width:100%;background:' + gradColor + ';"></div>'
     +   '<div class="tug-bar-marker" style="left:calc(' + warranted + '% - 2px);"></div>'
     + '</div>'
-    + '<div class="tug-detail-row">'
-    +   '<div class="tug-detail"><div class="tug-detail-label">Evidence</div><div class="tug-detail-val">' + evidence + '</div></div>'
-    +   '<div class="tug-detail"><div class="tug-detail-label">Fragility</div><div class="tug-detail-val">' + frag + '</div></div>'
-    +   '<div class="tug-detail"><div class="tug-detail-label">Val. Stretch</div><div class="tug-detail-val">' + valStr + '</div></div>'
-    +   '<div class="tug-detail"><div class="tug-detail-label">Pressure</div><div class="tug-detail-val">' + pressure + '</div></div>'
+    + '<div class="tug-stats-grid">'
+    +   '<div class="tug-stat-item"><div class="tug-stat-val" style="color:var(--mp-green);">' + evidence + '</div><div class="tug-stat-lbl">Evidence</div></div>'
+    +   '<div class="tug-stat-item"><div class="tug-stat-val" style="color:var(--mp-blue);">' + (100 - frag) + '</div><div class="tug-stat-lbl">Tractability</div></div>'
+    +   '<div class="tug-stat-item"><div class="tug-stat-val" style="color:var(--mp-amber);">' + valStr + '</div><div class="tug-stat-lbl">Val. Stretch</div></div>'
+    +   '<div class="tug-stat-item"><div class="tug-stat-val" style="color:var(--mp-red);">' + pressure + '</div><div class="tug-stat-lbl">Pressure</div></div>'
     + '</div>'
-    + '<div class="narr-summary-text" style="margin-top:12px;">' + esc(summary) + '</div>'
+    + '<div class="tug-note">' + summary + '</div>'
     + '</div>';
 }
 
@@ -5909,6 +6147,56 @@ async function loadStrategyData() {
   }
 }
 
+// ── Earnings History ─────────────────────────────────────────────────────────
+async function loadEarnings() {
+  if (!TICKER) return;
+  try {
+    var rows = await sbFetch('benzinga_earnings', {
+      select: 'ticker,date,date_confirmed,fiscal_period,fiscal_year,time,eps,eps_est,eps_surprise,eps_surprise_pct,revenue,revenue_est,revenue_surprise,revenue_surprise_pct',
+      ticker: 'eq.' + TICKER,
+      order: 'date.desc',
+      limit: '8'
+    }).catch(function() { return []; });
+    if (!rows || !rows.length) return;
+
+    var section = document.getElementById('earnings-section');
+    var rowsEl  = document.getElementById('earnings-rows');
+    var subEl   = document.getElementById('earnings-sub');
+    var summEl  = document.getElementById('earnings-summary');
+    if (!section || !rowsEl) return;
+
+    section.style.display = '';
+    if (subEl) subEl.textContent = rows.length + ' quarters';
+
+    var beats = 0;
+    rowsEl.innerHTML = rows.slice(0, 6).map(function(r) {
+      var surprise = r.eps_surprise_pct != null ? r.eps_surprise_pct : (r.eps != null && r.eps_est != null && r.eps_est !== 0 ? ((r.eps - r.eps_est) / Math.abs(r.eps_est)) * 100 : null);
+      var isBeat = surprise != null && surprise > 0;
+      if (isBeat) beats++;
+      var period = r.fiscal_period || '';
+      var fy = r.fiscal_year || '';
+      var d = r.date ? new Date(r.date).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '\u2014';
+      var timeStr = r.time === 'amc' ? 'After Close' : r.time === 'bmo' ? 'Before Open' : '';
+      return '<div class="earnings-row">'
+        + '<div class="er-period">' + esc(period) + '</div>'
+        + '<div class="er-date"><div>' + d + (timeStr ? ' \u00B7 ' + timeStr : '') + '</div><div class="er-date-sub">FY ' + fy + (r.date_confirmed === 'confirmed' ? ' \u00B7 Confirmed' : '') + '</div></div>'
+        + '<div class="er-eps"><span class="er-eps-val" style="color:' + (isBeat ? 'var(--mp-green)' : surprise != null && surprise < 0 ? 'var(--mp-red)' : 'var(--mp-text-primary)') + ';">'
+        +   (r.eps != null ? '$' + r.eps.toFixed(2) + ' actual' : '\u2014')
+        + '</span><span class="er-eps-est">' + (r.eps_est != null ? 'vs $' + r.eps_est.toFixed(2) + ' est.' : '') + '</span></div>'
+        + (surprise != null ? '<div class="er-surprise ' + (isBeat ? 'beat' : 'miss') + '">' + (isBeat ? '+' : '') + surprise.toFixed(1) + '% ' + (isBeat ? 'Beat' : 'Miss') + '</div>' : '')
+        + '</div>';
+    }).join('');
+
+    if (summEl) {
+      summEl.innerHTML = beats > 0
+        ? '\uD83D\uDCC8 <strong>' + beats + '-for-' + Math.min(rows.length, 6) + ' earnings beats</strong> in recent quarters.'
+        : 'Earnings history loaded for ' + Math.min(rows.length, 6) + ' quarters.';
+    }
+  } catch(e) {
+    // Silent fail - earnings is optional
+  }
+}
+
 // ── Stories Feed ──────────────────────────────────────────────────────────────
 async function loadStoriesFeed() {
   if (!TICKER) return;
@@ -5988,7 +6276,8 @@ async function refreshAll() {
     loadParallels(),
     loadMoveDrivers(),
     loadSectorIntelligence(heroData),
-    loadStoriesFeed()
+    loadStoriesFeed(),
+    loadEarnings()
   ]);
 }
 
