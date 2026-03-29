@@ -547,21 +547,19 @@
   .lc-energy { font-size: 12px; font-family: var(--font-body); color: var(--text-tertiary); }
   .lc-track {
     height: 7px;
-    background: var(--surface2);
+    background: linear-gradient(90deg, #00DE94 0%, #38C8B8 30%, #00AEFF 55%, rgba(255,255,255,0.9) 78%, #FF4D4D 100%);
     border-radius: 99px;
     overflow: hidden;
     margin-bottom: 7px;
+    position: relative;
   }
-  .lc-fill {
+  .lc-unfill {
     height: 100%;
-    border-radius: 99px;
+    background: var(--surface2);
+    border-radius: 0 99px 99px 0;
+    float: right;
     transition: width 0.9s cubic-bezier(0.16,1,0.3,1);
   }
-  .lc-fill-birth    { background: linear-gradient(90deg,rgba(255,255,255,0.4),rgba(255,255,255,0.25)); }
-  .lc-fill-growth   { background: linear-gradient(90deg,rgba(255,255,255,0.35),rgba(255,255,255,0.2)); }
-  .lc-fill-maturity { background: linear-gradient(90deg,rgba(255,255,255,0.25),rgba(255,255,255,0.15)); }
-  .lc-fill-decline  { background: linear-gradient(90deg,rgba(255,255,255,0.15),rgba(255,255,255,0.08)); }
-  .lc-fill-death    { background: var(--border-strong); }
   .lc-markers {
     display: flex;
     justify-content: space-between;
@@ -4726,10 +4724,6 @@ async function loadLifecycle() {
 
     const stages    = ['Birth', 'Growth', 'Maturity', 'Decline', 'Death'];
     const activeIdx = stages.indexOf(stage);
-    const fillCls   = {
-      Birth: 'lc-fill-birth', Growth: 'lc-fill-growth', Maturity: 'lc-fill-maturity',
-      Decline: 'lc-fill-decline', Death: 'lc-fill-death'
-    }[stage] || 'lc-fill-maturity';
     const barPct = pct != null ? Math.max(2, Math.round(pct)) : 0;
 
     // Sentiment delta direction
@@ -4742,7 +4736,7 @@ async function loadLifecycle() {
         <div class="lc-stage">${esc(stage)}</div>
         <div class="lc-energy">${pct != null ? Math.round(pct) + '% health' : '—'}</div>
       </div>
-      <div class="lc-track"><div class="lc-fill ${fillCls}" style="width:${barPct}%;"></div></div>
+      <div class="lc-track"><div class="lc-unfill" style="width:${100 - barPct}%;"></div></div>
       <div class="lc-markers">
         ${stages.map((s,i) => `<div class="lc-marker ${i === activeIdx ? 'active' : ''}">${s}</div>`).join('')}
       </div>
