@@ -464,6 +464,61 @@ body{
 .daily-narr-track{flex:1;height:6px;background:var(--mp-surface2);border-radius:3px;overflow:hidden;}
 .daily-narr-fill{height:100%;border-radius:3px;transition:width 0.6s cubic-bezier(0.16,1,0.3,1);}
 .daily-narr-count{font-family:var(--font-mono);font-size:11px;color:var(--mp-text-tertiary);width:24px;flex-shrink:0;}
+/* ── DAILY BRIEF — 2-column grid layout ── */
+.daily-grid{display:grid;grid-template-columns:1fr 300px;gap:0;align-items:start;}
+.daily-content{display:flex;flex-direction:column;gap:24px;min-width:0;}
+.daily-rail{border-left:1px solid var(--mp-border);padding:0 18px;display:flex;flex-direction:column;gap:16px;background:var(--mp-surface);position:sticky;top:52px;max-height:calc(100vh - 52px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.1) transparent;}
+@media(max-width:1100px){.daily-grid{grid-template-columns:1fr;}.daily-rail{border-left:none;border-top:1px solid var(--mp-border);position:static;max-height:none;padding:20px 0;}}
+/* Rail sections */
+.dr-section{margin-bottom:4px;}
+.dr-eyebrow{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mp-text-muted);margin-bottom:10px;display:flex;align-items:center;gap:6px;padding-top:14px;}
+.dr-eyebrow::after{content:'';flex:1;height:1px;background:var(--mp-border);}
+/* Quick stats */
+.dr-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.dr-stat{background:var(--mp-surface2);border:1px solid var(--mp-border);border-radius:10px;padding:10px 12px;}
+.dr-stat-val{font-size:20px;font-weight:700;}
+.dr-stat-lbl{font-size:10px;color:var(--mp-text-muted);margin-top:2px;text-transform:uppercase;letter-spacing:.04em;}
+.dr-stat.trap .dr-stat-val{color:#FF4D4D;}
+.dr-stat.surge .dr-stat-val{color:#00DE94;}
+.dr-stat.break .dr-stat-val{color:#FFB800;}
+/* Regime badge */
+.dr-regime{padding:8px 12px;border-radius:10px;border:1px solid var(--mp-border);background:var(--mp-surface2);margin-bottom:14px;}
+.dr-regime-lbl{font-size:10px;color:var(--mp-text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}
+.dr-regime-val{font-size:14px;font-weight:600;color:#FFB800;}
+.dr-regime-detail{font-size:11px;color:var(--mp-text-muted);margin-top:3px;}
+/* Sector momentum */
+.dr-sector-list{display:flex;flex-direction:column;gap:4px;padding:0;}
+.dr-sl-item{display:flex;align-items:center;gap:8px;padding:5px 0;}
+.dr-sl-name{font-size:12px;color:var(--mp-text-secondary);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dr-sl-bar{width:50px;height:4px;background:var(--mp-obsidian);border-radius:2px;overflow:hidden;}
+.dr-sl-fill{height:100%;border-radius:2px;}
+.dr-sl-score{font-size:12px;font-weight:600;min-width:22px;text-align:right;}
+/* Upcoming earnings in rail */
+.dr-earn-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--mp-surface2);border:1px solid var(--mp-border);border-radius:10px;margin-bottom:6px;}
+.dr-earn-date{font-size:11px;color:var(--mp-text-muted);min-width:48px;flex-shrink:0;}
+.dr-earn-main{flex:1;}
+.dr-earn-ticker{font-size:13px;font-weight:700;}
+.dr-earn-name{font-size:11px;color:var(--mp-text-muted);}
+.dr-earn-eps{text-align:right;}
+.dr-earn-eps-val{font-size:13px;font-weight:600;}
+.dr-earn-eps-lbl{font-size:10px;color:var(--mp-text-muted);}
+/* Hero banner card style */
+.daily-hero-banner{background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,.4);overflow:hidden;position:relative;margin-bottom:0;}
+.daily-hero-banner::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:48px 48px;}
+.daily-hero-banner>*{position:relative;z-index:1;}
+.dhb-inner{padding:32px 36px;}
+.dhb-dateline{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#00AEFF;margin-bottom:12px;display:flex;align-items:center;gap:10px;}
+.dhb-dateline .sep{color:var(--mp-text-muted);}
+.dhb-h{font-family:'Instrument Serif',var(--font-display),Georgia,serif;font-size:clamp(28px,3vw,42px);font-weight:400;letter-spacing:-.025em;line-height:1.1;margin-bottom:4px;}
+.dhb-h em{color:#4DC8F0;font-style:italic;display:block;font-size:clamp(32px,3.8vw,50px);}
+.dhb-context{font-size:13px;color:var(--mp-text-secondary);margin-top:10px;padding:10px 14px;background:rgba(255,255,255,.04);border-radius:6px;border-left:3px solid #00AEFF;line-height:1.6;}
+.dhb-context strong{color:#FFB800;}
+/* Narrative summary card style */
+.daily-narr-card{background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,.4);overflow:hidden;position:relative;}
+.daily-narr-card::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:48px 48px;}
+.daily-narr-card>*{position:relative;z-index:1;}
 /* Mobile responsiveness for daily */
 @media(max-width:900px){.daily-hero-grid{grid-template-columns:1fr;gap:24px;}.daily-hero-centered{margin-bottom:20px;}.daily-intel-grid{grid-template-columns:1fr;}}
 @media(max-width:768px){.daily-pulse-strip{grid-template-columns:repeat(4,1fr);}.daily-cal-days{grid-template-columns:repeat(3,1fr);}}
@@ -1777,6 +1832,15 @@ body{
 /* Daily movers */
 [data-theme="light"] .daily-mover-tk{color:var(--mp-text-primary);}
 [data-theme="light"] .daily-mover-claim{color:var(--mp-text-secondary);}
+[data-theme="light"] .daily-hero-banner{background:#fff;border-color:rgba(0,0,0,0.08);box-shadow:0 2px 8px rgba(0,0,0,0.06);}
+[data-theme="light"] .daily-hero-banner::before{background-image:linear-gradient(rgba(0,0,0,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,0.03) 1px,transparent 1px);}
+[data-theme="light"] .dhb-context{background:rgba(0,0,0,0.03);border-left-color:#0080C0;color:var(--mp-text-secondary);}
+[data-theme="light"] .daily-narr-card{background:#fff;border-color:rgba(0,0,0,0.08);box-shadow:0 2px 8px rgba(0,0,0,0.06);}
+[data-theme="light"] .daily-narr-card::before{background-image:linear-gradient(rgba(0,0,0,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,0.03) 1px,transparent 1px);}
+[data-theme="light"] .daily-rail{background:#fff;border-left-color:rgba(0,0,0,0.06);}
+[data-theme="light"] .dr-stat{background:var(--mp-surface2);border-color:rgba(0,0,0,0.06);}
+[data-theme="light"] .dr-regime{background:var(--mp-surface2);border-color:rgba(0,0,0,0.06);}
+[data-theme="light"] .dr-earn-row{background:var(--mp-surface2);border-color:rgba(0,0,0,0.06);}
 /* Trading cards */
 [data-theme="light"] .trading-cards-header span{color:var(--mp-text-secondary);}
 [data-theme="light"] .card-scene{filter:drop-shadow(0 4px 12px rgba(0,0,0,0.12));}
@@ -3607,32 +3671,41 @@ body{
          TAB: DAILY BRIEF
     ═══════════════════════════════════════ -->
     <div class="tab-panel active" id="tab-daily">
+    <div class="daily-grid">
+    <div class="daily-content">
 
-      <!-- HERO — centered -->
-      <div class="daily-hero-centered">
-        <div class="daily-tag" style="justify-content:center;">Market Prism · Daily Intelligence · <span id="daily-date-tag"></span></div>
-        <div class="daily-title" style="text-align:center;">Your market briefing.</div>
-        <span class="daily-title-italic" style="text-align:center;">Every morning.</span>
-        <p class="daily-desc" id="daily-desc" style="text-align:center;max-width:640px;margin-left:auto;margin-right:auto;">
-          Generated at 06:42 ET — <strong>FOMC day</strong>. Fed holds as expected. Attention shifts to whether the AI capex cycle can sustain earnings in a slowing macro environment.
-        </p>
+      <!-- HERO BANNER -->
+      <div class="daily-hero-banner">
+        <div class="dhb-inner">
+          <div class="dhb-dateline">
+            <span>Market Prism</span><span class="sep">·</span>
+            <span>Daily Intelligence</span><span class="sep">·</span>
+            <span id="daily-date-tag"></span>
+          </div>
+          <div class="dhb-h">Your market briefing.<em>Every morning.</em></div>
+          <div class="dhb-context" id="daily-desc">
+            Generated at 06:42 ET — <strong>FOMC day</strong>. Fed holds as expected. Attention shifts to whether the AI capex cycle can sustain earnings in a slowing macro environment.
+          </div>
+        </div>
       </div>
 
       <!-- 1) MARKET NARRATIVE SUMMARY -->
-      <div class="nf-summary" id="nf-summary" style="margin-bottom:24px;">
-        <div class="nf-sum-header">
+      <div class="daily-narr-card" id="nf-summary" style="margin-bottom:0;">
+        <div class="nf-sum-header" style="padding:14px 20px;border-bottom:1px solid var(--mp-border);margin-bottom:0;">
           <span class="nf-sum-dot"></span>
           <span class="nf-sum-label">Market Narrative Summary</span>
           <span class="nf-sum-time" id="nf-sum-time">Generated 06:42 ET</span>
         </div>
-        <div class="nf-sum-body" id="nf-sum-body">
-          <p style="color:var(--mp-text-tertiary);">Loading market narrative…</p>
+        <div style="padding:16px 20px;">
+          <div class="nf-sum-body" id="nf-sum-body">
+            <p style="color:var(--mp-text-tertiary);">Loading market narrative…</p>
+          </div>
+          <div class="nf-sum-narrative">
+            <div class="nf-sum-nar-label">Dominant Narrative</div>
+            <p id="nf-sum-dominant">Loading…</p>
+          </div>
+          <div class="nf-sum-tags" id="nf-sum-tags"></div>
         </div>
-        <div class="nf-sum-narrative">
-          <div class="nf-sum-nar-label">Dominant Narrative</div>
-          <p id="nf-sum-dominant">Loading…</p>
-        </div>
-        <div class="nf-sum-tags" id="nf-sum-tags"></div>
       </div>
 
       <!-- 2) TODAY'S BIGGEST NARRATIVES -->
@@ -3705,6 +3778,46 @@ body{
         <div class="daily-cd"><div class="daily-cd-hd"><div class="daily-cd-l">Tue</div><div class="daily-cd-d">Mar 24</div></div><div class="daily-ces"><div class="daily-ce earn"><div class="daily-cedot"></div>Consumer Conf 10am</div><div class="daily-ce earn"><div class="daily-cedot"></div>S&P Flash PMI</div></div></div>
       </div>
 
+    </div><!-- /daily-content -->
+
+    <!-- ── RIGHT RAIL ── -->
+    <div class="daily-rail">
+      <!-- Signal Summary -->
+      <div class="dr-section">
+        <div class="dr-eyebrow">Signal Summary</div>
+        <div class="dr-stats" id="dr-stats">
+          <div class="dr-stat trap"><div class="dr-stat-val" id="dr-traps">—</div><div class="dr-stat-lbl">Active Traps</div></div>
+          <div class="dr-stat surge"><div class="dr-stat-val" id="dr-surging">—</div><div class="dr-stat-lbl">Surging</div></div>
+          <div class="dr-stat break"><div class="dr-stat-val" id="dr-breaking">—</div><div class="dr-stat-lbl">Breaking</div></div>
+          <div class="dr-stat"><div class="dr-stat-val" id="dr-supported" style="color:#00DE94;">—</div><div class="dr-stat-lbl">Supported</div></div>
+        </div>
+      </div>
+
+      <!-- Market Regime -->
+      <div class="dr-regime" id="dr-regime">
+        <div class="dr-regime-lbl">Market Regime</div>
+        <div class="dr-regime-val" id="dr-regime-val">Loading…</div>
+        <div class="dr-regime-detail" id="dr-regime-detail"></div>
+      </div>
+
+      <!-- Sector Momentum -->
+      <div class="dr-section">
+        <div class="dr-eyebrow">Sector Momentum</div>
+        <div class="dr-sector-list" id="dr-sector-list">
+          <div style="font-size:11px;color:var(--mp-text-muted);">Loading sectors…</div>
+        </div>
+      </div>
+
+      <!-- Upcoming Earnings -->
+      <div class="dr-section">
+        <div class="dr-eyebrow">Upcoming Earnings</div>
+        <div id="dr-earnings">
+          <div style="font-size:11px;color:var(--mp-text-muted);">Loading earnings…</div>
+        </div>
+      </div>
+    </div><!-- /daily-rail -->
+
+    </div><!-- /daily-grid -->
     </div>
 
     <!-- ══════════════════════════════════════
@@ -5060,6 +5173,57 @@ async function loadData(){
           +'<span class="daily-mover-claim">'+esc(claim)+'</span>'
           +'<span class="daily-mover-chg"><span class="'+(isUp?'chg-arrow-up':'chg-arrow-dn')+'">'+(isUp?'\u25B2':'\u25BC')+'</span> '+Math.abs(pct).toFixed(2)+'%</span>'
         +'</a>';
+      }).join('');
+    }
+    // ── Populate Daily Brief right rail ──
+    // Regime badge
+    var drRegimeVal=document.getElementById('dr-regime-val');
+    var drRegimeDetail=document.getElementById('dr-regime-detail');
+    if(drRegimeVal){
+      var trapRatio=DATA.length>0?(DATA.filter(function(r){return r.prism_verdict==='Narrative Trap';}).length/DATA.length):0;
+      drRegimeVal.textContent=trapRatio>0.15?'\u26A0 Elevated Volatility':trapRatio>0.08?'Cautious':'Stable';
+      drRegimeVal.style.color=trapRatio>0.15?'#FFB800':trapRatio>0.08?'#00AEFF':'#00DE94';
+      if(drRegimeDetail)drRegimeDetail.textContent=DATA.length+' tickers tracked \u00B7 '+DATA.filter(function(r){return r.prism_verdict==='Narrative Trap';}).length+' traps active';
+    }
+    // Upcoming earnings in rail
+    var drEarnings=document.getElementById('dr-earnings');
+    if(drEarnings&&DATA.length>0){
+      var withEarnings=DATA.filter(function(r){return r.days_to_earnings!=null&&r.days_to_earnings<=30;}).sort(function(a,b){return(a.days_to_earnings||999)-(b.days_to_earnings||999);}).slice(0,5);
+      if(withEarnings.length){
+        drEarnings.innerHTML=withEarnings.map(function(r){
+          return '<div class="dr-earn-row">'
+            +'<div class="dr-earn-date">'+r.days_to_earnings+'d</div>'
+            +'<div class="dr-earn-main"><div class="dr-earn-ticker">'+esc(r.ticker)+'</div><div class="dr-earn-name">'+esc(r.sector_name||'')+'</div></div>'
+          +'</div>';
+        }).join('');
+      } else {
+        drEarnings.innerHTML='<div style="font-size:11px;color:var(--mp-text-muted);">No upcoming earnings in next 30 days.</div>';
+      }
+    }
+    var drTraps=document.getElementById('dr-traps');
+    var drSurging=document.getElementById('dr-surging');
+    var drBreaking=document.getElementById('dr-breaking');
+    var drSupported=document.getElementById('dr-supported');
+    if(drTraps)drTraps.textContent=DATA.filter(function(r){return r.prism_verdict==='Narrative Trap';}).length;
+    if(drSurging)drSurging.textContent=DATA.filter(function(r){return r.narrative_state==='Surging';}).length;
+    if(drBreaking)drBreaking.textContent=DATA.filter(function(r){return r.narrative_state==='Breaking';}).length;
+    if(drSupported)drSupported.textContent=DATA.filter(function(r){return r.prism_verdict==='Structurally Supported';}).length;
+    // Sector momentum in rail
+    var drSectorList=document.getElementById('dr-sector-list');
+    if(drSectorList&&DATA.length>0){
+      var sectorMap={};
+      DATA.forEach(function(r){
+        var s=r.sector_name;if(!s)return;
+        if(!sectorMap[s])sectorMap[s]={count:0,traps:0,totalChg:0};
+        sectorMap[s].count++;
+        sectorMap[s].totalChg+=Math.abs(r.price_change_pct||0);
+        if(r.prism_verdict==='Narrative Trap')sectorMap[s].traps++;
+      });
+      var sectorArr=Object.keys(sectorMap).map(function(s){return{name:s,score:Math.min(100,Math.round(sectorMap[s].totalChg/sectorMap[s].count*20)),traps:sectorMap[s].traps};});
+      sectorArr.sort(function(a,b){return b.score-a.score;});
+      drSectorList.innerHTML=sectorArr.slice(0,12).map(function(s){
+        var c=s.score>=75?'#00DE94':s.score>=65?'#00AEFF':s.traps>0?'#FF4D4D':'var(--mp-text-muted)';
+        return '<div class="dr-sl-item"><div class="dr-sl-name">'+esc(s.name)+(s.traps>0?' <span style="color:#FF4D4D;font-size:10px;">\u26A0'+s.traps+'</span>':'')+'</div><div class="dr-sl-bar"><div class="dr-sl-fill" style="width:'+s.score+'%;background:'+c+';"></div></div><div class="dr-sl-score" style="color:'+c+';">'+s.score+'</div></div>';
       }).join('');
     }
     // Narrative breakdown
