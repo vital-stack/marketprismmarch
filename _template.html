@@ -6651,14 +6651,19 @@ function renderTrapChart(){
 
   var maxMom=Math.max.apply(null,rows.map(function(r){return r.momentum;}).concat([1]));
 
-  // Status → bar color
-  function barColor(state){
-    if(state==='Breaking') return 'rgba(0,222,148,0.7)';
-    if(state==='Surging') return 'rgba(0,174,255,0.65)';
-    if(state==='Fragile') return 'rgba(255,77,77,0.6)';
-    if(state==='Cooling') return 'rgba(255,184,0,0.5)';
-    return 'rgba(56,200,184,0.45)';
-  }
+  // Gradient bar colors: green → teal → blue → white → pink/red
+  var gradientColors=[
+    'rgba(0,222,148,0.85)',   // green
+    'rgba(0,200,168,0.8)',    // green-teal
+    'rgba(0,174,255,0.75)',   // cyan-blue
+    'rgba(56,200,184,0.7)',   // teal
+    'rgba(56,180,210,0.65)',  // teal-blue
+    'rgba(80,160,230,0.6)',   // mid-blue
+    'rgba(130,160,240,0.55)', // blue-lavender
+    'rgba(180,170,230,0.5)',  // lavender
+    'rgba(200,140,200,0.5)',  // mauve
+    'rgba(220,120,160,0.5)'   // rose
+  ];
 
   // Limit to top 10 sectors
   var top=rows.slice(0,10);
@@ -6666,10 +6671,11 @@ function renderTrapChart(){
     var h=maxMom>0?Math.round((r.momentum/maxMom)*100):0;
     if(r.momentum>0&&h<8)h=8;
     if(h===0)h=5;
+    var bc=gradientColors[i]||gradientColors[gradientColors.length-1];
     return '<div class="trap-col" style="animation-delay:'+(i*0.06)+'s">'
       +'<span class="trap-col-pct">'+r.momentum+'</span>'
       +'<div class="trap-vbar-pair">'
-        +'<div class="trap-vbar-a" style="height:'+h+'px;background:'+barColor(r.state)+';animation-delay:'+(i*0.06)+'s;border-radius:3px 3px 0 0;"></div>'
+        +'<div class="trap-vbar-a" style="height:'+h+'px;background:'+bc+';animation-delay:'+(i*0.06)+'s;border-radius:3px 3px 0 0;"></div>'
       +'</div>'
     +'</div>';
   }).join('')+'</div>';
