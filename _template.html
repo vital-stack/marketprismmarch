@@ -491,25 +491,25 @@ body{
   background:rgba(255,255,255,0.04);
   box-shadow:0 0 20px rgba(255,255,255,0.02);
 }
-.stat-card:nth-child(1){animation-delay:0.05s;}
-.stat-card:nth-child(2){animation-delay:0.12s;}
-.stat-card:nth-child(3){animation-delay:0.19s;}
-.stat-card:nth-child(4){animation-delay:0.26s;}
+.stat-card.sc-1{animation-delay:0.05s;}
+.stat-card.sc-2{animation-delay:0.12s;}
+.stat-card.sc-3{animation-delay:0.19s;}
+.stat-card.sc-4{animation-delay:0.26s;}
 .stat-card::before{
   content:'';position:absolute;top:0;left:0;right:0;height:2px;
   background:var(--stat-accent,linear-gradient(90deg,transparent,rgba(255,255,255,0.06),transparent));
   opacity:0.5;
 }
 .stat-card::after{display:none;}
-/* Per-stat color accents — muted */
-.stat-card:nth-child(1){--stat-accent:linear-gradient(90deg,rgba(0,255,255,0.5),rgba(0,174,255,0.5));border-color:rgba(0,255,255,0.08);}
-.stat-card:nth-child(1) .stat-num{color:#fff;}
-.stat-card:nth-child(2){--stat-accent:linear-gradient(90deg,rgba(0,174,255,0.5),rgba(0,255,255,0.5));border-color:rgba(0,174,255,0.08);}
-.stat-card:nth-child(2) .stat-num{color:#fff;}
-.stat-card:nth-child(3){--stat-accent:linear-gradient(90deg,rgba(0,174,255,0.5),rgba(0,255,255,0.5));border-color:rgba(0,174,255,0.08);}
-.stat-card:nth-child(3) .stat-num{color:#fff;}
-.stat-card:nth-child(4){--stat-accent:linear-gradient(90deg,rgba(0,255,82,0.5),rgba(0,222,148,0.5));border-color:rgba(0,255,82,0.08);}
-.stat-card:nth-child(4) .stat-num{color:#fff;}
+/* Per-stat color accents — explicit classes instead of nth-child */
+.stat-card.sc-1{--stat-accent:linear-gradient(90deg,rgba(0,255,255,0.5),rgba(0,174,255,0.5));border-color:rgba(0,255,255,0.08);}
+.stat-card.sc-1 .stat-num{color:#fff;}
+.stat-card.sc-2{--stat-accent:linear-gradient(90deg,rgba(0,174,255,0.5),rgba(0,255,255,0.5));border-color:rgba(0,174,255,0.08);}
+.stat-card.sc-2 .stat-num{color:#fff;}
+.stat-card.sc-3{--stat-accent:linear-gradient(90deg,rgba(0,174,255,0.5),rgba(0,255,255,0.5));border-color:rgba(0,174,255,0.08);}
+.stat-card.sc-3 .stat-num{color:#fff;}
+.stat-card.sc-4{--stat-accent:linear-gradient(90deg,rgba(0,255,82,0.5),rgba(0,222,148,0.5));border-color:rgba(0,255,82,0.08);}
+.stat-card.sc-4 .stat-num{color:#fff;}
 .stat-card:hover{
   border-color:rgba(255,255,255,0.12);
   box-shadow:0 20px 60px rgba(0,0,0,0.4);
@@ -1649,10 +1649,10 @@ body{
 [data-theme="light"] .stat-card.stat-highlight{background:rgba(0,0,0,0.02);box-shadow:0 0 12px rgba(0,0,0,0.03);}
 [data-theme="light"] .stat-card::before{background:var(--stat-accent,linear-gradient(90deg,transparent,rgba(0,0,0,0.06),transparent));}
 [data-theme="light"] .stat-num,
-[data-theme="light"] .stat-card:nth-child(1) .stat-num,
-[data-theme="light"] .stat-card:nth-child(2) .stat-num,
-[data-theme="light"] .stat-card:nth-child(3) .stat-num,
-[data-theme="light"] .stat-card:nth-child(4) .stat-num{color:var(--mp-text-primary);}
+[data-theme="light"] .stat-card.sc-1 .stat-num,
+[data-theme="light"] .stat-card.sc-2 .stat-num,
+[data-theme="light"] .stat-card.sc-3 .stat-num,
+[data-theme="light"] .stat-card.sc-4 .stat-num{color:var(--mp-text-primary);}
 [data-theme="light"] .stat-label{color:var(--mp-text-secondary);}
 /* Filter chips */
 [data-theme="light"] .chip:hover{border-color:rgba(0,0,0,0.2);color:var(--mp-text-primary);}
@@ -3604,19 +3604,19 @@ body{
         <p>Every story driving price action — live signal cards, forensic analysis, and narrative state tracking across the full coverage universe.</p>
       </div>
       <div class="stats-row">
-        <div class="stat-card">
+        <div class="stat-card sc-1">
           <span class="stat-num" id="stat-total">—</span>
           <span class="stat-label">Tickers</span>
         </div>
-        <div class="stat-card">
+        <div class="stat-card sc-2">
           <span class="stat-num" id="stat-traps">—</span>
           <span class="stat-label">Traps</span>
         </div>
-        <div class="stat-card stat-highlight">
+        <div class="stat-card sc-3 stat-highlight">
           <span class="stat-num" id="stat-breaking">—</span>
           <span class="stat-label">Breaking</span>
         </div>
-        <div class="stat-card stat-highlight">
+        <div class="stat-card sc-4 stat-highlight">
           <span class="stat-num" id="stat-surging">—</span>
           <span class="stat-label">Surging</span>
         </div>
@@ -4110,9 +4110,12 @@ if(nfFeedDate) nfFeedDate.textContent = new Date().toLocaleDateString('en-US',{m
 document.querySelectorAll('.page-header p').forEach(function(p,i){
   if(i===0) return;
 });
-// ── Tab switching ─────────────────────────────────────────────────────────────
+// ── Tab switching (hook-based — sections register via onTabSwitch) ────────────
 var TABS = ['daily','discover','sector','marketwide','snapshots','memes','narrative','cards','calendar','trapradar','leaderboard'];
 var TAB_TITLES = {daily:'Daily Brief',discover:'Discover',sector:'Sector Pulse',marketwide:'Market-Wide',snapshots:'Ticker Snapshots',memes:'Market Sharing',narrative:'Narrative History',cards:'Trading Cards',calendar:'Trading Calendar',trapradar:'Trap Radar',leaderboard:'Leaderboard'};
+var _tabHooks = [];
+/** Register a callback to run after any tab switch. fn(id) */
+function onTabSwitch(fn){ if(typeof fn==='function') _tabHooks.push(fn); }
 function switchTab(id, btn){
   var requiredPlan = (BILLING.lockedTabs || {})[id];
   if(requiredPlan && !BILLING.hasAccess(CURRENT_SUBSCRIPTION, requiredPlan)){
@@ -4120,7 +4123,8 @@ function switchTab(id, btn){
     return;
   }
   TABS.forEach(function(t){
-    document.getElementById('tab-'+t).classList.toggle('active', t===id);
+    var el = document.getElementById('tab-'+t);
+    if(el) el.classList.toggle('active', t===id);
   });
   document.querySelectorAll('.nav-item[data-tab]').forEach(function(b){
     b.classList.toggle('active', b.dataset.tab===id);
@@ -4133,6 +4137,8 @@ function switchTab(id, btn){
   if(id==='calendar'&&typeof calendarBoot==='function')setTimeout(calendarBoot,50);
   if(id==='trapradar'&&typeof initTrapRadar==='function')setTimeout(initTrapRadar,50);
   if(id==='marketwide'&&typeof renderMarketWidePage==='function')setTimeout(renderMarketWidePage,50);
+  // Run all registered tab hooks (sections register their own init via onTabSwitch)
+  for(var h=0;h<_tabHooks.length;h++){ try{_tabHooks[h](id);}catch(e){console.warn('Tab hook error:',e);} }
   // Close mobile flyout menu after tab switch
   var nav=document.getElementById('side-nav');
   var ov=document.getElementById('nav-overlay');
@@ -4889,11 +4895,12 @@ async function loadData(){
     var _withEnergy=DATA.filter(function(r){return r.energy_remaining!=null;}).length;
     var _withCoord=DATA.filter(function(r){return r.coordination_class!=null;}).length;
     console.log('[MP] DATA enrichment: '+DATA.length+' total, '+_withFvd+' with fvd_pct, '+_withEnergy+' with energy, '+_withCoord+' with coordination_class, scorecardMap size: '+Object.keys(scorecardMap).length);
-    // stats
-    document.getElementById('stat-total').textContent    = DATA.length;
-    document.getElementById('stat-traps').textContent    = DATA.filter(function(r){return r.prism_verdict==='Narrative Trap';}).length;
-    document.getElementById('stat-breaking').textContent = DATA.filter(function(r){return r.narrative_state==='Breaking';}).length;
-    document.getElementById('stat-surging').textContent  = DATA.filter(function(r){return r.narrative_state==='Surging';}).length;
+    // stats — guarded so removing the Discover tab doesn't throw errors
+    var _el;
+    _el=document.getElementById('stat-total');    if(_el) _el.textContent = DATA.length;
+    _el=document.getElementById('stat-traps');    if(_el) _el.textContent = DATA.filter(function(r){return r.prism_verdict==='Narrative Trap';}).length;
+    _el=document.getElementById('stat-breaking'); if(_el) _el.textContent = DATA.filter(function(r){return r.narrative_state==='Breaking';}).length;
+    _el=document.getElementById('stat-surging');  if(_el) _el.textContent = DATA.filter(function(r){return r.narrative_state==='Surging';}).length;
     // Daily brief stats
     var dailySig=document.getElementById('daily-signals');if(dailySig)dailySig.textContent=DATA.length;
     var bullCount=DATA.filter(function(r){return r.direction_forecast&&r.direction_forecast.indexOf('BULL')!==-1;}).length;
@@ -4940,8 +4947,8 @@ async function loadData(){
         +'</div>';
       }).join('');
     }
-    document.getElementById('nav-badge-discover').textContent = DATA.length;
-    document.getElementById('nav-badge-snapshots').textContent = DATA.length;
+    _el=document.getElementById('nav-badge-discover'); if(_el) _el.textContent = DATA.length;
+    _el=document.getElementById('nav-badge-snapshots'); if(_el) _el.textContent = DATA.length;
     // sector dropdowns
     var sects=[...new Set(DATA.map(function(r){return r.sector_name;}).filter(Boolean))].sort();
     ['sector-select','snap-sector-select'].forEach(function(id){
@@ -11461,8 +11468,7 @@ window.mmSearch=function(q){
     }
   }
 };
-var _origST=window.switchTab;
-window.switchTab=function(id,btn){_origST(id,btn);if(id==='mindmap'){setTimeout(function(){if(!mmInited){mmInit();}else{mmW=document.getElementById('mm-stage').offsetWidth;mmCvs.width=mmW;mmDraw();}},60);}};
+onTabSwitch(function(id){if(id==='mindmap'){setTimeout(function(){if(!mmInited){mmInit();}else{var stage=document.getElementById('mm-stage');if(stage){mmW=stage.offsetWidth;mmCvs.width=mmW;mmDraw();}}},60);}});
 })();
 </script>
 
@@ -11764,11 +11770,9 @@ function updateLBDate(){
 }
 updateLBDate();
 
-var _origST2=window.switchTab;
-window.switchTab=function(id,btn){
-  _origST2(id,btn);
+onTabSwitch(function(id){
   if(id==='leaderboard') setTimeout(loadLeaderboard,50);
-};
+});
 })();
 
 // ── Info tooltip hover handler ──
