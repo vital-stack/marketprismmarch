@@ -7,8 +7,11 @@ module.exports = async (req, res) => {
     // Static pages
     const staticPages = [
       { loc: '/', priority: '1.0', changefreq: 'daily' },
+      { loc: '/dashboard', priority: '0.9', changefreq: 'daily' },
       { loc: '/blog', priority: '0.9', changefreq: 'daily' },
-      { loc: '/dashboard', priority: '0.8', changefreq: 'daily' },
+      { loc: '/heatmap', priority: '0.8', changefreq: 'daily' },
+      { loc: '/daily', priority: '0.8', changefreq: 'daily' },
+      { loc: '/pricing', priority: '0.7', changefreq: 'monthly' },
       { loc: '/methodology', priority: '0.6', changefreq: 'monthly' },
     ];
 
