@@ -2394,65 +2394,151 @@
   }
 
   /* ── Strategy Tab Styles ── */
-  .strat-badge {
-    font-family: var(--font-body);
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    padding: 3px 10px;
-    border-radius: 4px;
-    display: inline-block;
-  }
-  .strat-insights-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
+  /* ── STRATEGY TAB — Narrative Response Intelligence ── */
+  .behavior-hero {
+    background: linear-gradient(135deg, rgba(123,97,255,0.08) 0%, rgba(0,174,255,0.04) 100%);
+    border: 1px solid rgba(123,97,255,0.18);
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    padding: 20px 24px;
     margin-bottom: 20px;
+    display: flex; align-items: center; gap: 20px;
+    animation: fadeUp .3s ease both;
+    position: relative; overflow: hidden;
   }
+  .behavior-hero::before {
+    content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 0;
+    background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+  .behavior-hero > * { position: relative; z-index: 1; }
+  .bh-icon { font-size: 32px; flex-shrink: 0; }
+  .bh-content { flex: 1; }
+  .bh-label { font-size: 11px; color: var(--mp-text-muted); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 6px; }
+  .bh-behavior { font-family: var(--font-display); font-size: 20px; color: #7B61FF; margin-bottom: 8px; letter-spacing: -0.02em; }
+  .bh-summary { font-size: 13px; color: rgba(255,255,255,0.7); line-height: 1.6; }
+  .bh-confidence {
+    flex-shrink: 0; text-align: center;
+    background: rgba(0,222,148,0.08); border: 1px solid rgba(0,222,148,0.15);
+    border-radius: 10px; padding: 16px 22px;
+  }
+  .bh-conf-val { font-family: var(--font-body); font-size: 24px; font-weight: 600; color: #00DE94; }
+  .bh-conf-lbl { font-size: 11px; color: var(--mp-text-muted); margin-top: 4px; }
   @media (max-width: 768px) {
-    .strat-insights-grid { grid-template-columns: repeat(2, 1fr); }
+    .behavior-hero { flex-direction: column; text-align: center; }
+    .bh-confidence { width: 100%; }
   }
-  .strat-insight-card {
-    background: var(--mp-surface);
-    border: 1px solid var(--mp-border);
-    border-radius: 12px;
-    padding: 16px;
-    transition: border-color 0.2s;
+
+  /* Returns 3-col cards */
+  .returns-summary { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 20px; animation: fadeUp .35s ease both; }
+  @media (max-width: 768px) { .returns-summary { grid-template-columns: 1fr; } }
+  .ret-card {
+    background: var(--mp-surface); border: 1px solid var(--mp-border); border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4); padding: 20px;
+    transition: border-color .2s, transform .15s; position: relative; overflow: hidden;
   }
-  .strat-insight-card:hover { border-color: var(--mp-border-hover); }
-  .strat-insight-label {
-    font-family: var(--font-body);
-    font-size: 11px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: #6b7280;
-    margin-bottom: 6px;
+  .ret-card:hover { border-color: rgba(255,255,255,0.14); transform: translateY(-4px); }
+  .ret-card::before {
+    content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
   }
-  .strat-insight-value {
-    font-family: var(--font-body);
-    font-size: 22px;
-    font-weight: 600;
-    line-height: 1.2;
+  .ret-card::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+  .ret-card.positive::after { background: #00DE94; }
+  .ret-card.negative::after { background: #FF4D4D; }
+  .ret-card.neutral::after  { background: rgba(255,255,255,0.12); }
+  .rc-label { font-size: 11px; color: var(--mp-text-muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; position: relative; }
+  .rc-return { font-family: var(--font-body); font-size: 28px; font-weight: 600; margin-bottom: 4px; letter-spacing: -0.02em; position: relative; }
+  .rc-return.pos { color: #00DE94; }
+  .rc-return.neg { color: #FF4D4D; }
+  .rc-count { font-size: 11px; color: var(--mp-text-muted); position: relative; }
+  .rc-insight { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--mp-border); font-size: 13px; color: rgba(255,255,255,0.7); line-height: 1.6; position: relative; }
+
+  /* Zone section */
+  .zone-section {
+    background: var(--mp-surface); border: 1px solid var(--mp-border); border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4); overflow: hidden; margin-bottom: 20px;
+    animation: fadeUp .4s ease both; position: relative;
   }
-  .strat-insight-sub {
-    font-family: var(--font-body);
-    font-size: 11px;
-    color: rgba(255,255,255,0.4);
-    margin-top: 4px;
+  .zone-section::before {
+    content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 0;
+    background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
   }
-  .strat-meta-tag {
-    font-family: var(--font-body);
-    font-size: 11px;
-    font-weight: 500;
-    color: rgba(255,255,255,0.6);
-    background: rgba(255,255,255,0.06);
-    border: 1px solid var(--mp-border);
-    border-radius: 4px;
-    padding: 3px 10px;
-    letter-spacing: 0.04em;
+  .zone-section > * { position: relative; z-index: 1; }
+  .zone-header { padding: 16px 20px; border-bottom: 1px solid var(--mp-border); display: flex; justify-content: space-between; align-items: center; }
+  .zone-title { font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: rgba(255,255,255,0.7); }
+  .zone-body { display: grid; grid-template-columns: 1fr 1fr 1fr; }
+  @media (max-width: 768px) { .zone-body { grid-template-columns: 1fr; } }
+  .zone-cell { padding: 20px; border-right: 1px solid var(--mp-border); }
+  .zone-cell:last-child { border-right: none; }
+  .zc-label { font-size: 11px; color: var(--mp-text-muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+  .zc-val { font-family: var(--font-body); font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+  .zc-sub { font-size: 13px; color: #A0A8B0; }
+  .current-zone-bar { padding: 14px 20px; background: #111927; border-top: 1px solid var(--mp-border); display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .czb-label { font-size: 13px; color: var(--mp-text-muted); white-space: nowrap; }
+  .czb-zones { display: flex; gap: 6px; flex: 1; min-width: 0; }
+  @media (max-width: 768px) { .czb-zones { flex-wrap: wrap; } }
+  .czb-zone { flex: 1; text-align: center; padding: 8px 4px; border-radius: 6px; border: 1px solid var(--mp-border); font-size: 11px; color: var(--mp-text-muted); min-width: 0; }
+  .czb-zone.active-zone { border-color: rgba(0,222,148,0.4); background: rgba(0,222,148,0.08); color: #00DE94; font-weight: 600; }
+  .cz-pip { display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: currentColor; margin-right: 4px; vertical-align: middle; }
+
+  /* Breakdown grid — theme + publication cards */
+  .breakdown-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; animation: fadeUp .45s ease both; }
+  @media (max-width: 768px) { .breakdown-grid { grid-template-columns: 1fr; } }
+  .breakdown-card {
+    background: var(--mp-surface); border: 1px solid var(--mp-border); border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4); overflow: hidden;
+    transition: border-color .2s, transform .15s; position: relative;
   }
+  .breakdown-card:hover { border-color: rgba(255,255,255,0.14); transform: translateY(-4px); }
+  .breakdown-card::before {
+    content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 0;
+    background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+  .breakdown-card > * { position: relative; z-index: 1; }
+  .bk-header { padding: 14px 18px; border-bottom: 1px solid var(--mp-border); display: flex; justify-content: space-between; align-items: center; }
+  .bk-title { font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: rgba(255,255,255,0.7); }
+  .bk-count { font-size: 11px; color: var(--mp-text-muted); }
+  .theme-row, .pub-row { display: flex; align-items: center; gap: 10px; padding: 12px 18px; border-bottom: 1px solid var(--mp-border); }
+  .theme-row:last-child, .pub-row:last-child { border-bottom: none; }
+  .tr-name { flex: 1; font-size: 13px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tr-articles { font-size: 11px; color: #A0A8B0; width: 60px; text-align: right; flex-shrink: 0; }
+  .tr-return { font-family: var(--font-body); font-size: 14px; font-weight: 600; width: 60px; text-align: right; flex-shrink: 0; }
+  .tr-return.pos { color: #00DE94; }
+  .tr-return.neg { color: #FF4D4D; }
+  .tr-bar-wrap { width: 60px; height: 5px; background: #111927; border-radius: 3px; overflow: hidden; flex-shrink: 0; }
+  .tr-bar { height: 100%; border-radius: 3px; }
+  .pr-name { flex: 1; font-size: 13px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pr-hit { font-family: var(--font-body); font-size: 14px; font-weight: 700; width: 44px; text-align: right; flex-shrink: 0; }
+  .pr-articles { font-size: 11px; color: var(--mp-text-muted); width: 52px; text-align: right; flex-shrink: 0; }
+  .pr-bar-wrap { width: 80px; flex-shrink: 0; }
+  .pr-bar-track { height: 5px; background: #111927; border-radius: 3px; overflow: hidden; }
+  .pr-bar-fill { height: 100%; border-radius: 3px; }
+  .pr-skew { font-size: 11px; color: var(--mp-text-muted); width: 80px; text-align: right; flex-shrink: 0; }
+  .pr-skew.bearish-skew { color: #FF4D4D; }
+  .insight-footer { padding: 12px 18px; font-size: 13px; color: rgba(255,255,255,0.7); background: #111927; border-top: 1px solid var(--mp-border); line-height: 1.6; }
+
+  /* Strategy summary + data note */
+  .strategy-summary {
+    background: #111927; border: 1px solid var(--mp-border); border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4); padding: 20px 22px; margin-bottom: 20px;
+    animation: fadeUp .5s ease both; position: relative; overflow: hidden;
+  }
+  .strategy-summary::before {
+    content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+  .strategy-summary > * { position: relative; }
+  .ss-label { font-size: 11px; color: var(--mp-text-muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
+  .ss-text { font-size: 13px; color: rgba(255,255,255,0.7); line-height: 1.7; }
+  .ss-text strong { color: #FFFFFF; }
+  .strat-data-note { padding: 12px 16px; background: rgba(0,174,255,0.04); border: 1px solid rgba(0,174,255,0.1); border-radius: 8px; font-size: 13px; color: var(--mp-text-muted); display: flex; gap: 10px; line-height: 1.6; }
+  .strat-data-note strong { color: #00AEFF; }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
   /* Trades table */
   .fin-trades-table {
@@ -3001,112 +3087,105 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
         </div>
       </div>
     </div>
-    <!-- Strategy content -->
+    <!-- Strategy content (populated by loadStrategyData) -->
     <div id="strategy-content" style="display:none;">
 
-      <!-- SECTION 1: Header + Key Stats -->
-      <div class="section">
-        <div class="section-label" style="justify-content:space-between;align-items:center;">
-          Trading Strategy
-          <span id="strat-confidence-badge" class="strat-badge"></span>
+      <!-- Behavior Hero -->
+      <div class="behavior-hero" id="strat-hero">
+        <div class="bh-icon" id="strat-hero-icon"></div>
+        <div class="bh-content">
+          <div class="bh-label">Narrative Behavior Profile</div>
+          <div class="bh-behavior" id="strat-hero-behavior">—</div>
+          <div class="bh-summary" id="strat-hero-summary">—</div>
         </div>
-        <div class="section-body" style="padding:16px;">
-          <div id="strat-meta" style="display:flex;gap:12px;flex-wrap:wrap;"></div>
-        </div>
-      </div>
-
-      <!-- SECTION 2: Strategy Summary -->
-      <div class="section">
-        <div class="section-label">Strategy Summary</div>
-        <div class="section-body" style="padding:16px;">
-          <p id="strat-summary" style="font-family:var(--font-body);font-size:14px;color:rgba(255,255,255,0.7);line-height:1.6;margin:0;">—</p>
+        <div class="bh-confidence">
+          <div class="bh-conf-val" id="strat-conf-val">—</div>
+          <div class="bh-conf-lbl">Strategy<br>Confidence</div>
         </div>
       </div>
 
-      <!-- SECTION 3: Narrative Returns by Sentiment -->
-      <div class="section">
-        <div class="section-label">Narrative Returns by Sentiment</div>
-      </div>
-      <div class="strat-insights-grid" style="grid-template-columns:repeat(3,1fr);">
-        <div class="strat-insight-card">
-          <div class="strat-insight-label">Avg 5d Return · Positive</div>
-          <div class="strat-insight-value" id="strat-ret-pos" style="color:#00DE94;">—</div>
-          <div class="strat-insight-sub" id="strat-ret-pos-n"></div>
+      <!-- Returns by Sentiment — 3-col -->
+      <div class="returns-summary" id="strat-returns-row">
+        <div class="ret-card positive">
+          <div class="rc-label">After Positive Articles</div>
+          <div class="rc-return" id="strat-ret-pos">—</div>
+          <div class="rc-count" id="strat-ret-pos-n"></div>
+          <div class="rc-insight" id="strat-ret-pos-insight"></div>
         </div>
-        <div class="strat-insight-card">
-          <div class="strat-insight-label">Avg 5d Return · Negative</div>
-          <div class="strat-insight-value" id="strat-ret-neg" style="color:#FF4D4D;">—</div>
-          <div class="strat-insight-sub" id="strat-ret-neg-n"></div>
+        <div class="ret-card negative">
+          <div class="rc-label">After Negative Articles</div>
+          <div class="rc-return" id="strat-ret-neg">—</div>
+          <div class="rc-count" id="strat-ret-neg-n"></div>
+          <div class="rc-insight" id="strat-ret-neg-insight"></div>
         </div>
-        <div class="strat-insight-card">
-          <div class="strat-insight-label">Avg 5d Return · Neutral</div>
-          <div class="strat-insight-value" id="strat-ret-neu" style="color:#00AEFF;">—</div>
-          <div class="strat-insight-sub" id="strat-ret-neu-n"></div>
+        <div class="ret-card neutral">
+          <div class="rc-label">After Neutral Articles</div>
+          <div class="rc-return" id="strat-ret-neu">—</div>
+          <div class="rc-count" id="strat-ret-neu-n"></div>
+          <div class="rc-insight" id="strat-ret-neu-insight"></div>
         </div>
       </div>
 
-      <!-- SECTION 4: Best Entry Zone -->
-      <div class="section">
-        <div class="section-label">Best Historical Entry Zone</div>
-        <div class="section-body" style="padding:16px;">
-          <div class="strat-insights-grid" style="grid-template-columns:repeat(3,1fr);margin:0;">
-            <div class="strat-insight-card">
-              <div class="strat-insight-label">Zone</div>
-              <div class="strat-insight-value" id="strat-entry-zone" style="color:#FFB800;font-size:16px;">—</div>
-            </div>
-            <div class="strat-insight-card">
-              <div class="strat-insight-label">Avg Price in Zone</div>
-              <div class="strat-insight-value" id="strat-entry-price" style="color:#FFFFFF;font-size:16px;">—</div>
-            </div>
-            <div class="strat-insight-card">
-              <div class="strat-insight-label">Avg 5d Return from Zone</div>
-              <div class="strat-insight-value" id="strat-entry-return" style="color:#00DE94;font-size:16px;">—</div>
-              <div class="strat-insight-sub" id="strat-entry-obs"></div>
-            </div>
+      <!-- Best Historical Entry Zone -->
+      <div class="zone-section">
+        <div class="zone-header">
+          <div class="zone-title">Best Historical Entry Zone</div>
+          <div id="strat-zone-meta" style="font-size:11px;color:var(--mp-text-muted);"></div>
+        </div>
+        <div class="zone-body">
+          <div class="zone-cell">
+            <div class="zc-label">Best Zone</div>
+            <div class="zc-val" id="strat-entry-zone" style="color:#00DE94;">—</div>
+            <div class="zc-sub" id="strat-entry-zone-desc"></div>
+          </div>
+          <div class="zone-cell">
+            <div class="zc-label">Avg Entry Price in Zone</div>
+            <div class="zc-val" id="strat-entry-price">—</div>
+            <div class="zc-sub" id="strat-entry-obs"></div>
+          </div>
+          <div class="zone-cell">
+            <div class="zc-label">Avg 5d Return from Zone</div>
+            <div class="zc-val" id="strat-entry-return" style="color:#00DE94;">—</div>
+            <div class="zc-sub">Best risk-adjusted entry</div>
           </div>
         </div>
-      </div>
-
-      <!-- SECTION 5: Influential Themes -->
-      <div class="section">
-        <div class="section-label">Key Themes</div>
-        <div class="section-body" style="padding:16px;">
-          <div style="display:flex;flex-direction:column;gap:12px;">
-            <div style="display:flex;align-items:center;gap:10px;">
-              <span class="strat-meta-tag" style="min-width:120px;text-align:center;">Most Influential</span>
-              <span id="strat-theme-top" style="font-family:var(--font-body);font-size:13px;color:rgba(255,255,255,0.7);">—</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:10px;">
-              <span class="strat-meta-tag" style="min-width:120px;text-align:center;border-color:rgba(0,222,148,0.3);color:#00DE94;">Top Positive</span>
-              <span id="strat-theme-pos" style="font-family:var(--font-body);font-size:13px;color:rgba(255,255,255,0.7);">—</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:10px;">
-              <span class="strat-meta-tag" style="min-width:120px;text-align:center;border-color:rgba(255,77,77,0.3);color:#FF4D4D;">Top Negative</span>
-              <span id="strat-theme-neg" style="font-family:var(--font-body);font-size:13px;color:rgba(255,255,255,0.7);">—</span>
-            </div>
-          </div>
+        <div class="current-zone-bar" id="strat-zone-bar">
+          <div class="czb-label">Price zones today:</div>
+          <div class="czb-zones" id="strat-zone-pips"></div>
+          <div id="strat-zone-price" style="font-size:13px;color:#00AEFF;white-space:nowrap;flex-shrink:0;font-weight:500;"></div>
         </div>
       </div>
 
-      <!-- SECTION 6: Influential Publications -->
-      <div class="section">
-        <div class="section-label">Key Publications</div>
-        <div class="section-body" style="padding:16px;">
-          <div style="display:flex;flex-direction:column;gap:12px;">
-            <div style="display:flex;align-items:center;gap:10px;">
-              <span class="strat-meta-tag" style="min-width:120px;text-align:center;">Most Influential</span>
-              <span id="strat-pub-top" style="font-family:var(--font-body);font-size:13px;color:rgba(255,255,255,0.7);">—</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:10px;">
-              <span class="strat-meta-tag" style="min-width:120px;text-align:center;border-color:rgba(0,222,148,0.3);color:#00DE94;">Top Positive</span>
-              <span id="strat-pub-pos" style="font-family:var(--font-body);font-size:13px;color:rgba(255,255,255,0.7);">—</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:10px;">
-              <span class="strat-meta-tag" style="min-width:120px;text-align:center;border-color:rgba(255,77,77,0.3);color:#FF4D4D;">Top Negative</span>
-              <span id="strat-pub-neg" style="font-family:var(--font-body);font-size:13px;color:rgba(255,255,255,0.7);">—</span>
-            </div>
+      <!-- Theme + Publication Breakdown -->
+      <div class="breakdown-grid">
+        <div class="breakdown-card">
+          <div class="bk-header">
+            <div class="bk-title">Narrative Themes</div>
+            <div class="bk-count">5d return after articles by theme</div>
           </div>
+          <div id="strat-theme-rows"></div>
+          <div class="insight-footer" id="strat-theme-insight"></div>
         </div>
+        <div class="breakdown-card">
+          <div class="bk-header">
+            <div class="bk-title">Publication Signal Quality</div>
+            <div class="bk-count">10d directional hit rate by source</div>
+          </div>
+          <div id="strat-pub-rows"></div>
+          <div class="insight-footer" id="strat-pub-insight"></div>
+        </div>
+      </div>
+
+      <!-- Strategy Summary -->
+      <div class="strategy-summary">
+        <div class="ss-label">Strategy Summary</div>
+        <div class="ss-text" id="strat-summary">—</div>
+      </div>
+
+      <!-- Data note -->
+      <div class="strat-data-note">
+        <div>&#x1F4BE;</div>
+        <div id="strat-data-note-text"><strong>All data real, zero fabricated.</strong></div>
       </div>
 
     </div><!-- /strategy-content -->
@@ -3264,7 +3343,7 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
 
       <!-- SECTION 6: Data source -->
       <div style="text-align:right;padding:8px 0;font-size:11px;color:var(--mp-text-muted);">
-        Data: Massive.com (Polygon.io) · <span id="fin-source"></span>
+        Data: Polygon.io · <span id="fin-source"></span>
       </div>
 
     </div><!-- /fin-content -->
@@ -3354,7 +3433,7 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
 
       <!-- Data source -->
       <div style="text-align:right;padding:8px 0;font-size:11px;color:var(--mp-text-muted);">
-        Data: Massive.com (Polygon.io) · SEC EDGAR
+        Data: Polygon.io · SEC EDGAR
       </div>
 
     </div><!-- /fund-content -->
@@ -5576,98 +5655,256 @@ async function createImage() {
   });
 })();
 
-// ── Strategy Tab ─────────────────────────────────────────────────────────────
+// ── Strategy Tab — Narrative Response Intelligence ──────────────────────────
 async function loadStrategyData() {
   if (!TICKER) return;
-  const loadingEl  = document.getElementById('strategy-loading');
-  const nodataEl   = document.getElementById('strategy-nodata');
-  const contentEl  = document.getElementById('strategy-content');
+  const loadingEl = document.getElementById('strategy-loading');
+  const nodataEl  = document.getElementById('strategy-nodata');
+  const contentEl = document.getElementById('strategy-content');
+  const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val || '—'; };
+  const setHTML = (id, val) => { const el = document.getElementById(id); if (el) el.innerHTML = val || ''; };
+  const fmtPct = v => v != null ? ((v >= 0 ? '+' : '') + (v * 100).toFixed(2) + '%') : '—';
+  const fmtUsd = v => v != null ? '$' + Number(v).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) : '—';
+  const signCls = v => v != null ? (v >= 0 ? 'pos' : 'neg') : '';
+
   try {
-    const rows = await sbFetch('ticker_strategy_summary', {
-      ticker: `eq.${TICKER}`,
-      limit: '1'
-    });
-    const d = Array.isArray(rows) ? rows[0] : null;
+    // Fetch strategy summary + article_outcomes breakdowns in parallel
+    const [summaryRows, themeRows, pubRows] = await Promise.all([
+      sbFetch('ticker_strategy_summary', { ticker: `eq.${TICKER}`, limit: '1' }),
+      sbFetch('rpc/strategy_theme_breakdown', { ticker_param: TICKER }).catch(() => []),
+      sbFetch('rpc/strategy_pub_breakdown',   { ticker_param: TICKER }).catch(() => [])
+    ]);
+
+    const d = Array.isArray(summaryRows) ? summaryRows[0] : null;
     if (!d) {
       loadingEl.style.display = 'none';
       nodataEl.style.display = 'block';
       return;
     }
 
-    const fmtPct = v => v != null ? ((v >= 0 ? '+' : '') + (v * 100).toFixed(2) + '%') : '—';
-    const fmtUsd = v => v != null ? '$' + Number(v).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) : '—';
-    const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val || '—'; };
+    // ── Behavior Hero ──
+    const behaviorIcons = { 'contrarian': '🔄', 'momentum': '🚀', 'mixed': '⚖️', 'reactive': '⚡' };
+    const behavior = (d.narrative_behavior || '').toLowerCase();
+    setText('strat-hero-icon', behaviorIcons[behavior] || '📊');
+    setText('strat-hero-behavior', d.narrative_behavior || 'Unknown behavior');
+
+    // Build hero summary from available data
+    const posRet = d.avg_5d_return_after_positive_articles;
+    const negRet = d.avg_5d_return_after_negative_articles;
+    const neuRet = d.avg_5d_return_after_neutral_articles;
+    const posN = d.positive_article_count || 0;
+    const negN = d.negative_article_count || 0;
+    const neuN = d.neutral_article_count || 0;
+    const totalN = posN + negN + neuN;
+
+    let heroSummary = TICKER + ' is a <strong>' + esc(d.narrative_behavior || 'unclassified') + '</strong> ticker. ';
+    if (negRet != null) heroSummary += 'Bearish articles precede average ' + fmtPct(negRet) + ' 5-day returns';
+    if (posRet != null) heroSummary += ' while bullish articles precede ' + fmtPct(posRet) + ' 5-day returns. ';
+    if (d.most_influential_publication) heroSummary += 'Most impactful publication: <strong>' + esc(d.most_influential_publication) + '</strong>.';
+    setHTML('strat-hero-summary', heroSummary);
 
     // Confidence badge
-    const confMap = {
-      'HIGH':   { color: '#00DE94', bg: 'rgba(0,222,148,0.12)' },
-      'MEDIUM': { color: '#FFB800', bg: 'rgba(255,184,0,0.12)' },
-      'LOW':    { color: '#FF4D4D', bg: 'rgba(255,77,77,0.12)' }
-    };
-    const badge = document.getElementById('strat-confidence-badge');
     const conf = (d.strategy_confidence || '').toUpperCase();
-    const cm = confMap[conf] || { color: '#6b7280', bg: 'rgba(107,114,128,0.12)' };
-    badge.textContent = conf || 'UNKNOWN';
-    badge.style.color = cm.color;
-    badge.style.background = cm.bg;
-    badge.style.border = '1px solid ' + cm.color;
+    const confEl = document.getElementById('strat-conf-val');
+    if (confEl) {
+      confEl.textContent = conf || 'UNKNOWN';
+      const confColors = { 'HIGH': '#00DE94', 'MEDIUM': '#FFB800', 'LOW': '#FF4D4D' };
+      confEl.style.color = confColors[conf] || '#6b7280';
+      // Also color the parent badge container
+      const confWrap = confEl.parentElement;
+      if (confWrap) {
+        const c = confColors[conf] || '#6b7280';
+        confWrap.style.background = c.replace(')', ',0.08)').replace('rgb', 'rgba');
+        confWrap.style.borderColor = c.replace(')', ',0.15)').replace('rgb', 'rgba');
+      }
+    }
 
-    // Meta tags: price, drawdown, history, articles, narrative behavior
-    const metaEl = document.getElementById('strat-meta');
-    const metaTags = [
-      d.latest_price_usd != null ? 'Price: ' + fmtUsd(d.latest_price_usd) : null,
-      d.latest_drawdown_vs_60d_peak != null ? 'Drawdown vs 60d peak: ' + fmtPct(d.latest_drawdown_vs_60d_peak) : null,
-      d.history_days != null ? d.history_days + ' days history' : null,
-      d.article_obs != null ? d.article_obs + ' articles' : null,
-      d.narrative_behavior ? d.narrative_behavior : null
-    ].filter(Boolean);
-    metaEl.innerHTML = metaTags.map(t => '<span class="strat-meta-tag">' + t.replace(/</g,'&lt;') + '</span>').join('');
+    // ── Returns by Sentiment ──
+    const retData = [
+      { id: 'pos', val: posRet, n: posN, label: 'positive' },
+      { id: 'neg', val: negRet, n: negN, label: 'negative' },
+      { id: 'neu', val: neuRet, n: neuN, label: 'neutral' }
+    ];
+    retData.forEach(r => {
+      const retEl = document.getElementById('strat-ret-' + r.id);
+      if (retEl) {
+        retEl.textContent = fmtPct(r.val);
+        retEl.className = 'rc-return ' + signCls(r.val);
+      }
+      setText('strat-ret-' + r.id + '-n', r.n ? r.n + ' articles resolved' : '');
+      // Auto-generate insight text
+      const insightEl = document.getElementById('strat-ret-' + r.id + '-insight');
+      if (insightEl && r.val != null) {
+        if (r.label === 'positive' && r.val < 0) insightEl.innerHTML = '⚠️ Positive coverage <em>fades</em> for ' + TICKER + '. Buying on bullish articles has historically lost money over 5 days.';
+        else if (r.label === 'positive' && r.val >= 0) insightEl.innerHTML = '✅ Positive coverage aligns with price — ' + TICKER + ' tends to follow through on bullish press.';
+        else if (r.label === 'negative' && r.val > 0) insightEl.innerHTML = '✅ Negative coverage precedes <em>rallies</em>. ' + TICKER + ' historically bounces after bearish press — classic contrarian pattern.';
+        else if (r.label === 'negative' && r.val <= 0) insightEl.innerHTML = '🔻 Negative coverage aligns with downside — ' + TICKER + ' follows the bearish narrative.';
+        else if (r.label === 'neutral' && r.val < 0) insightEl.innerHTML = '🔻 Neutral coverage coincides with steady downside drift. High noise, low signal.';
+        else if (r.label === 'neutral') insightEl.innerHTML = '⚖️ Neutral coverage has minimal directional impact.';
+      }
+    });
 
-    // Strategy summary
-    setText('strat-summary', d.strategy_summary || 'No summary available.');
-
-    // Narrative returns by sentiment
-    setText('strat-ret-pos', fmtPct(d.avg_5d_return_after_positive_articles));
-    setText('strat-ret-pos-n', d.positive_article_count != null ? d.positive_article_count + ' articles' : '');
-    setText('strat-ret-neg', fmtPct(d.avg_5d_return_after_negative_articles));
-    setText('strat-ret-neg-n', d.negative_article_count != null ? d.negative_article_count + ' articles' : '');
-    setText('strat-ret-neu', fmtPct(d.avg_5d_return_after_neutral_articles));
-    setText('strat-ret-neu-n', d.neutral_article_count != null ? d.neutral_article_count + ' articles' : '');
-
-    // Color the return values by sign
-    const colorBySign = (id, v) => {
-      const el = document.getElementById(id);
-      if (el && v != null) el.style.color = v >= 0 ? '#00DE94' : '#FF4D4D';
+    // ── Best Entry Zone ──
+    const bestZone = d.best_historical_entry_zone || '—';
+    setText('strat-entry-zone', bestZone);
+    // Zone description
+    const zoneDescs = {
+      'near_high': 'Within 5% of 60-day peak',
+      'dip': '5–10% below 60-day peak',
+      'pullback': '10–20% below 60-day peak',
+      'deep_pullback': 'More than 20% below 60-day peak'
     };
-    colorBySign('strat-ret-pos', d.avg_5d_return_after_positive_articles);
-    colorBySign('strat-ret-neg', d.avg_5d_return_after_negative_articles);
-    colorBySign('strat-ret-neu', d.avg_5d_return_after_neutral_articles);
-
-    // Best entry zone
-    setText('strat-entry-zone', d.best_historical_entry_zone);
+    setText('strat-entry-zone-desc', zoneDescs[bestZone] || '');
     setText('strat-entry-price', fmtUsd(d.avg_price_in_best_entry_zone_usd));
-    setText('strat-entry-return', fmtPct(d.avg_5d_return_from_best_entry_zone));
-    colorBySign('strat-entry-return', d.avg_5d_return_from_best_entry_zone);
-    setText('strat-entry-obs', d.best_entry_zone_observations != null ? d.best_entry_zone_observations + ' observations' : '');
+    const entryObs = d.best_entry_zone_observations;
+    setText('strat-entry-obs', entryObs != null ? entryObs + ' historical observations' : '');
+    const entryRetEl = document.getElementById('strat-entry-return');
+    if (entryRetEl) {
+      entryRetEl.textContent = fmtPct(d.avg_5d_return_from_best_entry_zone);
+      entryRetEl.style.color = d.avg_5d_return_from_best_entry_zone >= 0 ? '#00DE94' : '#FF4D4D';
+    }
+    setText('strat-zone-meta', 'ticker_strategy_summary · ' + (entryObs || '—') + ' observations');
 
-    // Themes
-    setText('strat-theme-top', d.most_influential_theme);
-    setText('strat-theme-pos', d.top_positive_theme);
-    setText('strat-theme-neg', d.top_negative_theme);
+    // Current zone bar — derive from drawdown
+    const drawdown = d.latest_drawdown_vs_60d_peak;
+    const zones = [
+      { key: 'near_high', label: 'near_high (>–5%)', min: -0.05 },
+      { key: 'dip', label: 'dip (–5 to –10%)', min: -0.10 },
+      { key: 'pullback', label: 'pullback (–10 to –20%)', min: -0.20 },
+      { key: 'deep_pullback', label: 'deep pullback (<–20%)', min: -Infinity }
+    ];
+    let currentZone = 'near_high';
+    if (drawdown != null) {
+      if (drawdown < -0.20) currentZone = 'deep_pullback';
+      else if (drawdown < -0.10) currentZone = 'pullback';
+      else if (drawdown < -0.05) currentZone = 'dip';
+    }
+    const zoneBar = document.getElementById('strat-zone-pips');
+    if (zoneBar) {
+      zoneBar.innerHTML = zones.map(z => {
+        const isCurrent = z.key === currentZone;
+        const isBest = z.key === bestZone;
+        let extra = '';
+        if (isCurrent && isBest) extra = '<div style="font-size:10px;margin-top:3px;">✅ BEST ZONE · YOU ARE HERE</div>';
+        else if (isCurrent) extra = '<div style="font-size:10px;margin-top:3px;">📍 YOU ARE HERE</div>';
+        else if (isBest) extra = '<div style="font-size:10px;margin-top:3px;">✅ BEST ZONE</div>';
+        return '<div class="czb-zone' + (isCurrent ? ' active-zone' : '') + '">' +
+          (isCurrent ? '<span class="cz-pip"></span>' : '') + esc(z.label) + extra + '</div>';
+      }).join('');
+    }
+    const zonePriceEl = document.getElementById('strat-zone-price');
+    if (zonePriceEl && d.latest_price_usd != null) {
+      zonePriceEl.textContent = fmtUsd(d.latest_price_usd) + (drawdown != null ? ' · ' + fmtPct(drawdown) + ' from 60d peak' : '');
+    }
 
-    // Publications
-    setText('strat-pub-top', d.most_influential_publication);
-    setText('strat-pub-pos', d.top_positive_publication);
-    setText('strat-pub-neg', d.top_negative_publication);
+    // ── Theme Breakdown (from article_outcomes RPC or fallback to summary) ──
+    const themeContainer = document.getElementById('strat-theme-rows');
+    if (themeContainer) {
+      const themes = Array.isArray(themeRows) && themeRows.length > 0 ? themeRows : [];
+      if (themes.length > 0) {
+        const maxAbs = Math.max(...themes.map(t => Math.abs(t.avg_return_5d || 0)), 0.01);
+        themeContainer.innerHTML = themes.slice(0, 8).map(t => {
+          const ret = t.avg_return_5d || 0;
+          const barW = Math.min(Math.abs(ret) / maxAbs * 100, 100);
+          const barColor = ret >= 0 ? '#00DE94' : '#FF4D4D';
+          return '<div class="theme-row">' +
+            '<div class="tr-name">' + esc(t.thematic_theme || 'unclassified') + '</div>' +
+            '<div class="tr-articles">' + (t.article_count || 0) + ' art.</div>' +
+            '<div class="tr-bar-wrap"><div class="tr-bar" style="width:' + barW + '%;background:' + barColor + ';"></div></div>' +
+            '<div class="tr-return ' + signCls(ret) + '">' + fmtPct(ret) + '</div>' +
+            '</div>';
+        }).join('');
+      } else {
+        // Fallback: show summary fields
+        const fallbackThemes = [
+          { name: d.most_influential_theme, label: 'Most Influential' },
+          { name: d.top_positive_theme, label: 'Top Positive' },
+          { name: d.top_negative_theme, label: 'Top Negative' }
+        ].filter(t => t.name);
+        themeContainer.innerHTML = fallbackThemes.map(t =>
+          '<div class="theme-row"><div class="tr-name">' + esc(t.name) + '</div><div class="tr-articles" style="color:var(--mp-text-muted);">' + esc(t.label) + '</div></div>'
+        ).join('') || '<div class="theme-row"><div class="tr-name" style="color:var(--mp-text-muted);">No theme data available</div></div>';
+      }
+    }
+    // Theme insight
+    const themeInsight = document.getElementById('strat-theme-insight');
+    if (themeInsight) {
+      if (d.top_negative_theme) {
+        themeInsight.innerHTML = '⚠️ <strong style="color:#FFB800;">' + esc(d.top_negative_theme) + '</strong> is the most reliably bearish theme for ' + TICKER + '. When this dominates the feed, expect downside.';
+      } else {
+        themeInsight.innerHTML = 'Theme breakdown based on resolved 5-day returns after article publication.';
+      }
+    }
+
+    // ── Publication Breakdown (from article_outcomes RPC or fallback) ──
+    const pubContainer = document.getElementById('strat-pub-rows');
+    if (pubContainer) {
+      const pubs = Array.isArray(pubRows) && pubRows.length > 0 ? pubRows : [];
+      if (pubs.length > 0) {
+        pubContainer.innerHTML = pubs.slice(0, 8).map(p => {
+          const hitRate = p.hit_rate != null ? (p.hit_rate * 100).toFixed(1) + '%' : '—';
+          const hitVal = p.hit_rate || 0;
+          const hitColor = hitVal >= 0.5 ? '#00DE94' : hitVal >= 0.2 ? '#FFB800' : '#FF4D4D';
+          const barW = Math.min(hitVal * 100, 100);
+          const bearN = p.bearish_count || 0;
+          const bullN = p.bullish_count || 0;
+          let skewText = 'mixed';
+          let skewCls = '';
+          if (bearN > bullN * 1.5) { skewText = bearN + ' bearish'; skewCls = ' bearish-skew'; }
+          else if (bullN > bearN * 1.5) { skewText = bullN + ' bullish'; }
+          return '<div class="pub-row">' +
+            '<div class="pr-name"' + (hitVal >= 0.5 ? ' style="color:#00DE94;"' : '') + '>' + esc(p.publication_name) + (hitVal >= 0.5 ? ' ⭐' : '') + '</div>' +
+            '<div class="pr-bar-wrap"><div class="pr-bar-track"><div class="pr-bar-fill" style="width:' + barW + '%;background:' + hitColor + ';"></div></div></div>' +
+            '<div class="pr-hit" style="color:' + hitColor + ';">' + hitRate + '</div>' +
+            '<div class="pr-articles">' + (p.article_count || 0) + ' art.</div>' +
+            '<div class="pr-skew' + skewCls + '">' + esc(skewText) + '</div>' +
+            '</div>';
+        }).join('');
+      } else {
+        // Fallback
+        const fallbackPubs = [
+          { name: d.most_influential_publication, label: 'Most Influential' },
+          { name: d.top_positive_publication, label: 'Top Positive' },
+          { name: d.top_negative_publication, label: 'Top Negative' }
+        ].filter(p => p.name);
+        pubContainer.innerHTML = fallbackPubs.map(p =>
+          '<div class="pub-row"><div class="pr-name">' + esc(p.name) + '</div><div class="pr-articles" style="color:var(--mp-text-muted);">' + esc(p.label) + '</div></div>'
+        ).join('') || '<div class="pub-row"><div class="pr-name" style="color:var(--mp-text-muted);">No publication data available</div></div>';
+      }
+    }
+    // Publication insight
+    const pubInsight = document.getElementById('strat-pub-insight');
+    if (pubInsight) {
+      if (d.most_influential_publication) {
+        pubInsight.innerHTML = '📰 <strong style="color:#00AEFF;">' + esc(d.most_influential_publication) + '</strong> is the most impactful source for ' + TICKER + ' based on historical 5-day returns after coverage.';
+      } else {
+        pubInsight.innerHTML = 'Publication accuracy based on 10-day directional hit rate with minimum 3 articles.';
+      }
+    }
+
+    // ── Strategy Summary ──
+    const summaryEl = document.getElementById('strat-summary');
+    if (summaryEl && d.strategy_summary) {
+      // Highlight key values in the summary
+      let summaryHtml = esc(d.strategy_summary)
+        .replace(/(near_high|dip|pullback|deep_pullback)/g, '<strong>$1</strong>')
+        .replace(/([+-]\d+\.\d+%)/g, function(m) { return '<strong style="color:' + (m.startsWith('+') ? '#00DE94' : '#FF4D4D') + ';">' + m + '</strong>'; });
+      summaryEl.innerHTML = summaryHtml;
+    }
+
+    // ── Data Note ──
+    const noteEl = document.getElementById('strat-data-note-text');
+    if (noteEl) {
+      noteEl.innerHTML = '<strong>All data real, zero fabricated:</strong> ticker_strategy_summary (1 row/ticker aggregate) · article_outcomes (' + totalN + ' articles resolved) · All returns 5-day realized.';
+    }
 
     loadingEl.style.display = 'none';
     contentEl.style.display = 'block';
   } catch (err) {
     console.error('[Strategy] Load failed:', err);
     loadingEl.style.display = 'none';
-    nodataEl.querySelector('.section-body').innerHTML =
-      '<div style="padding:24px;text-align:center;color:#FF4D4D;font-size:13px;">Strategy load error: ' +
-      (err.message || err) + '</div>';
+    const errBody = nodataEl.querySelector('.section-body');
+    if (errBody) errBody.innerHTML = '<div style="padding:24px;text-align:center;color:#FF4D4D;font-size:13px;">Strategy load error: ' + (err.message || err) + '</div>';
     nodataEl.style.display = 'block';
   }
 }
@@ -5772,7 +6009,7 @@ document.addEventListener('visibilitychange', () => {
   if (!document.hidden) { refreshAll(); fetchLivePrice(); }
 });
 
-// ── Financials Tab (Live from Massive/Polygon) ──────────────────────────────
+// ── Financials Tab (Live from Polygon) ───────────────────────────────────────
 async function loadFinancialsData() {
   if (!TICKER) return;
   const loadingEl = document.getElementById('fin-loading');
@@ -5880,7 +6117,7 @@ async function loadFinancialsData() {
   }
 }
 
-// ── Fundamentals Tab (SEC EDGAR Filings from Massive/Polygon) ────────────────
+// ── Fundamentals Tab (SEC EDGAR Filings from Polygon) ────────────────────────
 var _allFilings = [];
 var _currentFilter = 'all';
 
@@ -5990,7 +6227,7 @@ function renderFilings(filings, filter) {
   }).join('');
 }
 
-// Exchange ID to name mapping (Polygon/Massive)
+// Exchange ID to name mapping (Polygon)
 const EXCHANGE_MAP = {1:'NYSE',2:'ARCA',3:'BATS',4:'ISE',5:'EDGA',6:'EDGX',7:'IEXG',8:'PSX',9:'BYX',10:'NSX',11:'IEX',12:'BX',13:'C2',14:'MIAX',15:'PEARL',17:'NOM',19:'MEMX',21:'LTSE',62:'FINRA',63:'FINRA',64:'FINRA',0:'OTC'};
 function exchangeName(id) { return EXCHANGE_MAP[id] || 'Exch ' + id; }
 
