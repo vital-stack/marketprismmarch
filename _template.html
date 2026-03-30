@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <!-- Google tag (gtag.js) -->
@@ -19,7 +19,7 @@
 <meta name="twitter:site" content="@marketprism">
 <meta name="twitter:title" content="AI Stock Dashboard — Market Prism">
 <link rel="icon" type="image/png" href="/assets/Market-Prism-Favicon.png">
-<script>try{if(localStorage.getItem('mp-theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+<script>try{if(localStorage.getItem('mp-theme')==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}</script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&family=Anton&family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -100,18 +100,18 @@
   --font-mono:'Inter','DM Sans',system-ui,sans-serif;
 }
 [data-theme="dark"]{
-  --mp-obsidian:#080B11;
-  --mp-deep:#0C0D14;
-  --mp-surface:#12131C;
-  --mp-surface2:#181922;
-  --mp-border:rgba(255,255,255,0.06);
-  --mp-border-mid:rgba(255,255,255,0.10);
+  --mp-obsidian:#0B1120;
+  --mp-deep:#0F1628;
+  --mp-surface:#152035;
+  --mp-surface2:#1A2840;
+  --mp-border:rgba(255,255,255,0.07);
+  --mp-border-mid:rgba(255,255,255,0.12);
   --mp-blue-glow:rgba(0,174,255,0.10);
   --mp-text-primary:#F5F7FA;
   --mp-text-secondary:#D1D5DB;
   --mp-text-tertiary:#9CA3AF;
   --mp-text-muted:rgba(255,255,255,0.35);
-  --mp-card-shadow:0 4px 12px rgba(0,0,0,0.4);
+  --mp-card-shadow:0 4px 16px rgba(0,0,0,0.3);
 }
 html{font-size:16px;}
 body{
@@ -124,7 +124,7 @@ body{
   -webkit-font-smoothing:antialiased;
   overflow-x:hidden;
 }
-[data-theme="dark"] body{background:#080B11;}
+[data-theme="dark"] body{background:linear-gradient(165deg, #0B1120 0%, #0E1830 30%, #0A1525 60%, #0B1120 100%);background-attachment:fixed;}
 /* ── LAYOUT ── */
 .app{display:flex;min-height:100vh;}
 /* ── SIDE NAV ── */
@@ -149,6 +149,7 @@ body{
 [data-theme="light"] .nav-logo-img.logo-dark{display:block;}
 @keyframes prism-hue{0%{filter:hue-rotate(0deg);}100%{filter:hue-rotate(360deg);}}
 .nav-logo span{
+  display:none;
   font-family:'Inter',var(--font-body);
   font-size:17px;letter-spacing:0.12em;font-weight:600;text-transform:uppercase;
   color:var(--mp-text-primary);
@@ -270,7 +271,7 @@ body{
   padding:0 36px;height:56px;
   display:flex;align-items:center;justify-content:space-between;gap:16px;
 }
-[data-theme="dark"] .topbar{background:rgba(8,9,15,0.85);}
+[data-theme="dark"] .topbar{background:rgba(11,17,32,0.88);backdrop-filter:blur(40px);}
 .topbar-title{font-family:var(--font-mono);font-size:12px;font-weight:400;letter-spacing:.10em;text-transform:uppercase;
   color:var(--mp-text-secondary);
 }
@@ -1848,7 +1849,7 @@ body{
 [data-theme="light"] body{background:var(--mp-obsidian);color:var(--mp-text-primary);}
 [data-theme="light"] .topbar{background:rgba(255,255,255,.92);border-color:var(--mp-border);backdrop-filter:blur(40px);}
 [data-theme="light"] .mobile-topbar{background:rgba(255,255,255,.96);}
-[data-theme="light"] .nav-logo span{color:var(--mp-text-primary);}
+[data-theme="light"] .nav-logo span{color:var(--mp-text-primary);display:none;}
 /* Nav */
 [data-theme="light"] .nav-item:hover{background:rgba(0,174,255,0.04);color:var(--mp-text-primary);}
 [data-theme="light"] .nav-item.active{background:rgba(0,174,255,0.08);color:#00AEFF;font-weight:600;border-left-color:#00AEFF;}
@@ -3687,6 +3688,184 @@ body{
 @keyframes lb-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 [data-theme="light"] .lb-refresh-btn{background:rgba(0,0,0,0.04);border-color:rgba(0,0,0,0.1);color:var(--mp-text-secondary);}
 [data-theme="light"] .lb-refresh-btn:hover{background:rgba(0,0,0,0.08);color:var(--mp-text-primary);}
+
+/* ══════════════════════════════════════════════════════════════════
+   DEV OVERRIDES
+   ══════════════════════════════════════════════════════════════════ */
+
+/* 1. "Every morning." — static brand light blue, no animation */
+.dhb-h em{
+  background:none !important;
+  -webkit-background-clip:unset !important;
+  background-clip:unset !important;
+  -webkit-text-fill-color:#4DC8F0 !important;
+  color:#4DC8F0 !important;
+  animation:none !important;
+}
+
+/* 2. "Today's Biggest Narratives" — same light blue serif as "Every morning" */
+.nf-feed-title{
+  font-family:'Instrument Serif','DM Serif Display',Georgia,serif !important;
+  font-size:clamp(28px,3vw,42px) !important;
+  font-weight:400 !important;
+  color:#4DC8F0 !important;
+  letter-spacing:-0.025em !important;
+  font-style:italic !important;
+}
+
+/* Remove any box/card behind the narratives feed area */
+.nf-feed{
+  background:none !important;
+  border:none !important;
+  box-shadow:none !important;
+  padding:0 !important;
+}
+.nf-feed::before{display:none !important;}
+.nf-feed-header{
+  background:none !important;
+  margin:0 0 8px 0 !important;
+  padding:0 !important;
+  border:none !important;
+  border-radius:0 !important;
+}
+
+/* 3. Tabs — blue pill style */
+.nf-tabs{
+  border-bottom:none !important;
+  gap:8px !important;
+  padding:0 !important;
+  margin-bottom:16px !important;
+}
+.nf-tab{
+  background:rgba(0,174,255,0.10) !important;
+  border:1px solid rgba(0,174,255,0.20) !important;
+  border-radius:20px !important;
+  padding:8px 18px !important;
+  color:#8892B0 !important;
+  font-size:13px !important;
+  font-weight:500 !important;
+  transition:all .2s !important;
+}
+.nf-tab:hover{
+  background:rgba(0,174,255,0.18) !important;
+  color:#4DC8F0 !important;
+  border-color:rgba(0,174,255,0.30) !important;
+}
+.nf-tab.active{
+  background:rgba(0,174,255,0.25) !important;
+  color:#FFFFFF !important;
+  border-color:rgba(77,200,240,0.40) !important;
+  font-weight:600 !important;
+}
+
+/* ── Right sidebar: all stat numbers white, bars branded gradient ── */
+.dr-stat-val{color:#FFFFFF !important;}
+.dr-stat.trap .dr-stat-val{color:#FFFFFF !important;}
+.dr-stat.surge .dr-stat-val{color:#FFFFFF !important;}
+.dr-stat.break .dr-stat-val{color:#FFFFFF !important;}
+.dr-regime-val{color:#FFFFFF !important;}
+.dr-sl-score{color:#FFFFFF !important;}
+.dr-sl-fill{background:linear-gradient(90deg, #00AEFF, #00DE94) !important;}
+.dr-sl-bar{background:rgba(255,255,255,0.06) !important;}
+
+/* ── Apple glass effect on all content boxes — thicker bevel ── */
+.daily-hero-banner,
+.daily-narr-card,
+.nc-card,
+.disc-stat-tile,
+.disc-nc,
+.disc-lookup,
+.stat-card,
+.mw-stat,
+.mw-card,
+.dr-stat,
+.dr-regime,
+.dr-earn-row,
+.snap-card,
+.trap-card,
+.sector-card,
+.lb-card{
+  background:rgba(12,18,35,0.60) !important;
+  backdrop-filter:blur(28px) saturate(1.5) !important;
+  -webkit-backdrop-filter:blur(28px) saturate(1.5) !important;
+  border:1.5px solid rgba(255,255,255,0.10) !important;
+  box-shadow:
+    0 4px 24px rgba(0,0,0,0.30),
+    inset 0 1px 0 rgba(255,255,255,0.12),
+    inset 0 -1px 0 rgba(255,255,255,0.04) !important;
+  border-radius:16px !important;
+}
+.daily-hero-banner:hover,
+.nc-card:hover,
+.disc-nc:hover,
+.disc-stat-tile:hover,
+.stat-card:hover,
+.mw-card:hover,
+.lb-card:hover{
+  border-color:rgba(255,255,255,0.18) !important;
+  box-shadow:
+    0 8px 40px rgba(0,0,0,0.40),
+    inset 0 1px 0 rgba(255,255,255,0.15),
+    inset 0 -1px 0 rgba(255,255,255,0.05) !important;
+}
+/* Sidebar stats — smaller glass */
+.dr-stat,
+.dr-regime,
+.dr-earn-row{
+  border-radius:12px !important;
+}
+
+/* 1. Remove glass/border from nf-feed — it's just a container */
+.nf-feed{
+  background:none !important;
+  backdrop-filter:none !important;-webkit-backdrop-filter:none !important;
+  border:none !important;
+  box-shadow:none !important;
+}
+
+/* 5. Hide Trading Cards section entirely */
+.nf-sum-cards-section{display:none !important;}
+
+/* Glass shine sweep on all cards */
+@keyframes glass-shine{
+  0%{left:-60%;}
+  50%{left:100%;}
+  100%{left:100%;}
+}
+.daily-hero-banner::after,
+.daily-narr-card::after,
+.nc-card::after,
+.disc-stat-tile::after,
+.disc-nc::after,
+.stat-card::after,
+.mw-stat::after,
+.mw-card::after,
+.dr-stat::after,
+.dr-regime::after,
+.lb-card::after{
+  content:'' !important;
+  position:absolute !important;
+  top:0 !important;left:-60% !important;
+  width:60% !important;height:1.5px !important;
+  background:linear-gradient(90deg,transparent,rgba(0,174,255,0.35),rgba(0,222,148,0.25),rgba(255,255,255,0.15),transparent) !important;
+  animation:glass-shine 10s ease-in-out infinite !important;
+  z-index:2 !important;
+  pointer-events:none !important;
+}
+/* Stagger the shine timing so cards don't all sweep at once */
+.daily-narr-card::after{animation-delay:1s !important;}
+.nc-card::after{animation-delay:2s !important;}
+.nc-card:nth-child(2)::after{animation-delay:3s !important;}
+.nc-card:nth-child(3)::after{animation-delay:4s !important;}
+.disc-stat-tile::after{animation-delay:0.5s !important;}
+.mw-card::after{animation-delay:1.5s !important;}
+.dr-stat::after{animation-delay:0.3s !important;}
+.lb-card::after{animation-delay:2.5s !important;}
+
+/* Constellation canvas styling */
+#dash-constellation{position:fixed;top:0;left:224px;right:0;bottom:0;pointer-events:none;z-index:0;}
+@media(max-width:1100px){#dash-constellation{left:0;}}
+
 </style>
 </head>
 <body>
@@ -3846,6 +4025,7 @@ body{
 <div class="main">
   <!-- Ambient effects -->
   <div class="ambient-glow"></div>
+  <canvas id="dash-constellation"></canvas>
   <div class="grid-bg"></div>
   <div class="scan-line"></div>
   <!-- Top bar -->
@@ -12608,5 +12788,122 @@ onTabSwitch(function(id){
   <div style="font-family:Inter,system-ui,sans-serif;font-size:11px;font-weight:600;color:var(--mp-text-tertiary,#6b7280);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;">Disclaimer</div>
   <div style="font-family:Inter,system-ui,sans-serif;font-size:11px;line-height:1.6;color:var(--mp-text-muted);">Market Prism is a data analytics and research platform providing narrative intelligence and market insights for informational and educational purposes only. Nothing on this platform constitutes investment advice, a recommendation to buy or sell any security, or an offer to provide financial advisory services. All content, signals, scores, and classifications — including but not limited to "Narrative Trap," "Fundamental Disconnect," and "Momentum Confirmed" — are generated using proprietary models and historical data. Past results are not indicative of future performance. Users should conduct their own due diligence and consult a licensed financial advisor before making any investment decisions. Market Prism and its operators, affiliates, or data providers are not responsible for any financial losses incurred through use of this platform. By using this site, you agree that all investment decisions are made solely at your own risk.</div>
 </footer>
+<!-- Constellation particle animation (slower than homepage) -->
+<script>
+(function(){
+  var canvas = document.getElementById('dash-constellation');
+  if(!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var W, H, nodes = [], pulses = [];
+  var NODE_COUNT = 80;
+  var LINK_DIST = 180;
+  var MOUSE = { x: -9999, y: -9999 };
+  var MOUSE_RADIUS = 250;
+  var now = 0;
+
+  var palettes = [
+    { r:0, g:174, b:255 }, { r:0, g:222, b:148 }, { r:77, g:200, b:240 },
+    { r:0, g:174, b:255 }
+  ];
+
+  function lerp(a,b,t){ return a+(b-a)*t; }
+  function lerpC(a,b,t){ return { r:Math.round(lerp(a.r,b.r,t)), g:Math.round(lerp(a.g,b.g,t)), b:Math.round(lerp(a.b,b.b,t)) }; }
+  function scrollColor(off){
+    var t=((off)%1+1)%1, seg=t*(palettes.length-1), idx=Math.min(Math.floor(seg),palettes.length-2);
+    var c=lerpC(palettes[idx],palettes[idx+1],seg-idx); return c.r+','+c.g+','+c.b;
+  }
+
+  function resize(){
+    W=window.innerWidth; H=document.documentElement.scrollHeight;
+    canvas.width=W*dpr; canvas.height=H*dpr;
+    canvas.style.width=W+'px'; canvas.style.height=H+'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    canvas.style.position='absolute';
+    canvas.style.height=H+'px';
+  }
+
+  function init(){
+    resize(); nodes=[]; pulses=[];
+    for(var i=0;i<NODE_COUNT;i++){
+      nodes.push({
+        x:Math.random()*W, y:Math.random()*H,
+        vx:(Math.random()-0.5)*0.04, vy:(Math.random()-0.5)*0.04,
+        r:Math.random()*1.5+0.5, phase:Math.random(),
+        baseAlpha:Math.random()*0.2+0.1
+      });
+    }
+  }
+
+  function spawnPulse(a,b,color){
+    pulses.push({ ax:a.x,ay:a.y, bx:b.x,by:b.y, t:0, speed:0.001+Math.random()*0.002, color:color, life:1 });
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    var scrollY=window.scrollY;
+    for(var i=0;i<nodes.length;i++){
+      var ni=nodes[i], ci=scrollColor(ni.phase*0.3);
+      for(var j=i+1;j<nodes.length;j++){
+        var nj=nodes[j];
+        var dx=ni.x-nj.x, dy=ni.y-nj.y, dist=Math.sqrt(dx*dx+dy*dy);
+        if(dist<LINK_DIST){
+          var fade=1-dist/LINK_DIST;
+          var alpha=fade*0.06;
+          var mx=(ni.x+nj.x)/2, my=(ni.y+nj.y)/2;
+          var mdx=mx-MOUSE.x, mdy=my-(MOUSE.y+scrollY);
+          var mDist=Math.sqrt(mdx*mdx+mdy*mdy);
+          if(mDist<MOUSE_RADIUS) alpha+=((1-mDist/MOUSE_RADIUS)*0.10);
+          ctx.beginPath();
+          ctx.moveTo(ni.x,ni.y); ctx.lineTo(nj.x,nj.y);
+          ctx.strokeStyle='rgba('+ci+','+alpha+')';
+          ctx.lineWidth=fade*0.8;
+          ctx.stroke();
+          if(Math.random()<0.0001 && pulses.length<15) spawnPulse(ni,nj,ci);
+        }
+      }
+    }
+    for(var p=pulses.length-1;p>=0;p--){
+      var pl=pulses[p];
+      pl.t+=pl.speed;
+      if(pl.t>1){ pulses.splice(p,1); continue; }
+      var px=lerp(pl.ax,pl.bx,pl.t), py=lerp(pl.ay,pl.by,pl.t);
+      var pa=Math.sin(pl.t*Math.PI)*0.4;
+      ctx.beginPath(); ctx.arc(px,py,1.2,0,Math.PI*2);
+      ctx.fillStyle='rgba(255,255,255,'+pa*0.6+')';
+      ctx.fill();
+    }
+    for(var k=0;k<nodes.length;k++){
+      var n=nodes[k];
+      var c=scrollColor(n.phase*0.3);
+      var pulse=n.baseAlpha+Math.sin(now*0.0006+n.phase*6.28)*0.08;
+      ctx.beginPath(); ctx.arc(n.x,n.y,n.r,0,Math.PI*2);
+      ctx.fillStyle='rgba('+c+','+pulse*0.5+')';
+      ctx.fill();
+    }
+  }
+
+  function update(){
+    now=Date.now();
+    for(var i=0;i<nodes.length;i++){
+      var n=nodes[i];
+      n.vx*=0.998; n.vy*=0.998;
+      n.x+=n.vx; n.y+=n.vy;
+      if(n.x<-30)n.x=W+30; if(n.x>W+30)n.x=-30;
+      if(n.y<-30)n.y=H+30; if(n.y>H+30)n.y=-30;
+    }
+  }
+
+  function loop(){ update(); draw(); requestAnimationFrame(loop); }
+  document.addEventListener('mousemove',function(e){ MOUSE.x=e.clientX; MOUSE.y=e.clientY; },{passive:true});
+  document.addEventListener('mouseleave',function(){ MOUSE.x=-9999; MOUSE.y=-9999; });
+  if(window.innerWidth<768) NODE_COUNT=40;
+  window.addEventListener('resize',function(){ resize(); });
+  document.addEventListener('visibilitychange',function(){
+    if(!document.hidden) requestAnimationFrame(loop);
+  });
+  init(); loop();
+})();
+</script>
 </body>
 </html>
