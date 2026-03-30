@@ -583,7 +583,7 @@ body{
 [data-theme="dark"] .disc-stat-tile::before{opacity:1;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:48px 48px;}
 .disc-stat-tile>*{position:relative;}
 .disc-st-num{font-size:36px;font-weight:700;letter-spacing:-.03em;line-height:1;margin-bottom:4px;}
-.disc-st-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mp-text-muted);}
+.disc-st-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--mp-text-tertiary);}
 .disc-stat-tile.trap .disc-st-num{color:#FF4D4D;}
 .disc-stat-tile.breaking .disc-st-num{color:#FFB800;}
 .disc-stat-tile.surging .disc-st-num{color:#00DE94;}
@@ -715,50 +715,36 @@ body{
 .page-header p{font-size:14px;color:var(--mp-text-secondary);letter-spacing:0.01em;font-weight:400;line-height:1.65;max-width:520px;}
 /* ── STAT CARDS ── */
 .stats-row{display:flex;gap:12px;margin-bottom:24px;}
+/* ── UNIFIED STAT CARDS — matches Discover tile pattern ── */
 .stat-card{
   flex:1;background:var(--mp-surface);
   border:1px solid var(--mp-border);
-  border-radius:16px;padding:18px 20px 16px;
+  border-radius:16px;padding:20px 22px;
   position:relative;overflow:hidden;
-  transition:all 0.5s cubic-bezier(0.16,1,0.3,1);
+  box-shadow:var(--mp-card-shadow);
+  transition:border-color .2s;
+  cursor:pointer;
   animation:fadeInScale 0.6s cubic-bezier(0.16,1,0.3,1) both;
 }
-.stat-card.stat-highlight{
-  background:rgba(255,255,255,0.04);
-  box-shadow:0 0 20px rgba(255,255,255,0.02);
-}
+.stat-card::before{display:none;}
+.stat-card::after{display:none;}
 .stat-card.sc-1{animation-delay:0.05s;}
 .stat-card.sc-2{animation-delay:0.12s;}
 .stat-card.sc-3{animation-delay:0.19s;}
 .stat-card.sc-4{animation-delay:0.26s;}
-.stat-card::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:2px;
-  background:var(--stat-accent,linear-gradient(90deg,transparent,rgba(255,255,255,0.06),transparent));
-  opacity:0.5;
-}
-.stat-card::after{display:none;}
-/* Per-stat color accents — explicit classes instead of nth-child */
-.stat-card.sc-1{--stat-accent:linear-gradient(90deg,rgba(160,168,176,0.2),rgba(160,168,176,0.1));border-color:var(--mp-border);}
-.stat-card.sc-1 .stat-num{color:var(--mp-text-primary);}
-.stat-card.sc-2{--stat-accent:linear-gradient(90deg,rgba(160,168,176,0.2),rgba(160,168,176,0.1));border-color:var(--mp-border);}
-.stat-card.sc-2 .stat-num{color:var(--mp-text-primary);}
-.stat-card.sc-3{--stat-accent:linear-gradient(90deg,rgba(160,168,176,0.2),rgba(160,168,176,0.1));border-color:var(--mp-border);}
-.stat-card.sc-3 .stat-num{color:var(--mp-text-primary);}
-.stat-card.sc-4{--stat-accent:linear-gradient(90deg,rgba(160,168,176,0.2),rgba(160,168,176,0.1));border-color:var(--mp-border);}
-.stat-card.sc-4 .stat-num{color:var(--mp-text-primary);}
-.stat-card:hover{
-  border-color:var(--mp-border-mid);
-  box-shadow:0 8px 24px rgba(0,0,0,0.08);
-  transform:translateY(-4px);
-}
-[data-theme="dark"] .stat-card:hover{box-shadow:0 20px 60px rgba(0,0,0,0.4);}
+.stat-card:hover{border-color:var(--mp-border-mid);}
+[data-theme="dark"] .stat-card:hover{border-color:rgba(255,255,255,0.12);}
+[data-theme="light"] .stat-card{background:#fff;border-color:rgba(0,0,0,0.08);box-shadow:0 2px 8px rgba(0,0,0,0.06);}
 .stat-num{
-  font-family:var(--font-mono);font-size:36px;font-weight:400;
+  font-family:var(--font-body);font-size:36px;font-weight:700;
   color:var(--mp-text-primary);display:block;margin-bottom:6px;
-  letter-spacing:-0.03em;
-  animation:numberTick 0.8s cubic-bezier(0.16,1,0.3,1) both;
+  letter-spacing:-0.03em;line-height:1;
 }
-.stat-label{font-size:10px;color:var(--mp-text-secondary);text-transform:uppercase;letter-spacing:.12em;font-family:var(--font-mono);font-weight:400;}
+.stat-label{font-size:10px;color:var(--mp-text-tertiary);text-transform:uppercase;letter-spacing:.08em;font-family:var(--font-body);font-weight:600;}
+/* Severity — indicated by number text color only, no borders */
+.stat-card.stat-severe .stat-num{color:#FF4D4D;}
+.stat-card.stat-moderate .stat-num{color:#FFB800;}
+.stat-card.stat-low .stat-num{color:#00DE94;}
 /* ── FILTER BAR ── */
 .filter-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
 .filter-label{font-size:10px;color:var(--mp-text-tertiary);text-transform:uppercase;letter-spacing:.07em;white-space:nowrap;font-family:var(--font-mono);}
@@ -1061,11 +1047,14 @@ body{
   display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;
 }
 .mw-stat{
-  background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:12px;
-  padding:16px 18px;display:flex;flex-direction:column;gap:4px;
+  background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:16px;
+  padding:20px 22px;display:flex;flex-direction:column;gap:6px;
+  box-shadow:var(--mp-card-shadow);transition:border-color .2s;cursor:pointer;position:relative;overflow:hidden;
 }
-.mw-stat-num{font-size:28px;font-weight:600;color:var(--mp-text-primary);font-family:var(--font-body);}
-.mw-stat-lbl{font-size:11px;color:var(--mp-text-secondary);text-transform:uppercase;letter-spacing:0.06em;}
+.mw-stat:hover{border-color:var(--mp-border-mid);}
+[data-theme="light"] .mw-stat{background:#fff;border-color:rgba(0,0,0,0.08);box-shadow:0 2px 8px rgba(0,0,0,0.06);}
+.mw-stat-num{font-size:36px;font-weight:700;color:var(--mp-text-primary);font-family:var(--font-body);line-height:1;letter-spacing:-0.03em;}
+.mw-stat-lbl{font-size:10px;color:var(--mp-text-tertiary);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;}
 .mw-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
 .mw-card{
   background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:16px;
@@ -4469,15 +4458,15 @@ body{
         <p>AI-detected hype gaps, coordination signals, and exhaustion timelines — the stories most likely to unravel.</p>
       </div>
       <div class="stats-row">
-        <div class="stat-card" style="border-top:2px solid #FF4D4D;">
+        <div class="stat-card stat-severe">
           <span class="stat-num" id="trap-stat-severe">—</span>
           <span class="stat-label">Severe</span>
         </div>
-        <div class="stat-card" style="border-top:2px solid #FFB800;">
+        <div class="stat-card stat-moderate">
           <span class="stat-num" id="trap-stat-moderate">—</span>
           <span class="stat-label">Moderate</span>
         </div>
-        <div class="stat-card" style="border-top:2px solid #00DE94;">
+        <div class="stat-card stat-low">
           <span class="stat-num" id="trap-stat-low">—</span>
           <span class="stat-label">Low Risk</span>
         </div>
