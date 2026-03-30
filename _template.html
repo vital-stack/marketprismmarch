@@ -1879,8 +1879,12 @@ body{
 [data-theme="light"] .snap-table tr:hover td{background:rgba(0,0,0,.02);}
 [data-theme="light"] .snap-state,
 [data-theme="light"] .snap-verdict{background:rgba(0,0,0,0.04);border-color:rgba(0,0,0,0.08);}
-[data-theme="light"] .snap-tag{background:rgba(0,0,0,0.03);border-color:rgba(0,0,0,0.10);}
-[data-theme="light"] .snap-tag-more{background:rgba(0,0,0,0.03);border-color:rgba(0,0,0,0.08);}
+[data-theme="light"] .snap-tag{background:rgba(0,0,0,0.04) !important;border-color:rgba(0,0,0,0.12) !important;color:var(--mp-text-secondary) !important;opacity:1;}
+[data-theme="light"] .snap-tag-priority{opacity:1;}
+[data-theme="light"] .snap-tag-muted{opacity:0.8;}
+[data-theme="light"] .snap-tag-more{background:rgba(0,0,0,0.04);border-color:rgba(0,0,0,0.10);color:var(--mp-text-secondary);opacity:1;}
+[data-theme="light"] .snap-state{color:var(--mp-text-secondary);}
+[data-theme="light"] .snap-verdict{color:var(--mp-text-secondary);}
 [data-theme="light"] .snap-tag-overflow{background:#fff;border-color:rgba(0,0,0,0.10);box-shadow:0 8px 24px rgba(0,0,0,0.12);}
 /* Heatmap */
 [data-theme="light"] .discover-heatmap-wrap:hover{border-color:rgba(0,0,0,0.10);box-shadow:0 8px 24px rgba(0,0,0,0.06);}
@@ -6898,6 +6902,18 @@ function humanizeSnake(s){
   if(!s)return '';
   return s.replace(/_/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();}).replace(/\bAi\b/,'AI').replace(/\bApi\b/,'API');
 }
+function boostTagForLight(t){
+  if(document.documentElement.getAttribute('data-theme')!=='light') return t;
+  // Swap low-alpha dark-bg colors for solid light-mode equivalents
+  var m=t.color.match(/rgba\(\s*(\d+),\s*(\d+),\s*(\d+),\s*[\d.]+\)/);
+  if(m){
+    var r=+m[1],g=+m[2],b=+m[3];
+    t.color='rgba('+r+','+g+','+b+',0.85)';
+    t.bg='rgba('+r+','+g+','+b+',0.08)';
+    t.border='rgba('+r+','+g+','+b+',0.25)';
+  }
+  return t;
+}
 function getTickerInsightTags(r){
   var tags=[];
   // ── Priority 1: SEC Conflict (material_discrepancy) ──
@@ -6985,6 +7001,7 @@ function renderSnap(){
     var allTags=getTickerInsightTags(r);
     var visible=allTags.filter(function(t){return !t.sector;}).slice(0,2);
     var tagsHTML=visible.map(function(t){
+      t=boostTagForLight(t);
       var cls='snap-tag'+(t.priority?' snap-tag-priority':'')+(t.muted?' snap-tag-muted':'');
       return '<span class="'+cls+'" style="background:'+t.bg+';color:'+t.color+';border-color:'+t.border+';">'+esc(t.label)+'</span>';
     }).join('');
