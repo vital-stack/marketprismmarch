@@ -429,6 +429,25 @@ async function callEdgeFn(body) {
   return res.json();
 }
 
+/* ── Client-Side Cache (5-min TTL) ── */
+const CACHE_TTL = 5 * 60 * 1000;
+const CACHE_PREFIX = 'ms_score_';
+
+function getCachedScore(ticker) {
+  try {
+    const raw = localStorage.getItem(CACHE_PREFIX + ticker.toUpperCase());
+    if (!raw) return null;
+    const { data, ts } = JSON.parse(raw);
+    if (Date.now() - ts > CACHE_TTL) { localStorage.removeItem(CACHE_PREFIX + ticker.toUpperCase()); return null; }
+    return data;
+  } catch (e) { return null; }
+}
+
+function setCachedScore(ticker, data) {
+  try { localStorage.setItem(CACHE_PREFIX + ticker.toUpperCase(), JSON.stringify({ data, ts: Date.now() })); }
+  catch (e) { /* quota exceeded */ }
+}
+
 /* ── Verdict Color Map ── */
 const VERDICT_MAP = {
   'Structurally Supported':       { color: '#00DE94', bg: 'rgba(0,222,148,0.12)', dir: 'LONG' },
@@ -527,14 +546,29 @@ function showError(msg) { const el = document.getElementById('error'); el.textCo
 function showLoading(text) { hideAll(); document.getElementById('loading-text').innerHTML = text; document.getElementById('loading').classList.add('visible'); }
 
 /* ── Single Score ── */
+let lastFromCache = false;
+
 async function scoreSingle() {
   const ticker = document.getElementById('ticker-input').value.trim().toUpperCase();
   if (!ticker) return;
+
+  // Check cache first
+  const cached = getCachedScore(ticker);
+  if (cached) {
+    hideAll();
+    lastFromCache = true;
+    document.getElementById('result').innerHTML = buildScoreCard(cached);
+    document.getElementById('result').classList.add('visible');
+    return;
+  }
+
+  lastFromCache = false;
   showLoading('Analyzing <strong>' + ticker + '</strong>... (~5 seconds)');
   document.getElementById('score-btn').disabled = true;
   try {
     const data = await callEdgeFn({ ticker });
     if (data.current_price === 0) { hideAll(); showError('Ticker "' + ticker + '" was not found or has no price data.'); return; }
+    setCachedScore(ticker, data);
     hideAll();
     document.getElementById('result').innerHTML = buildScoreCard(data);
     document.getElementById('result').classList.add('visible');
@@ -548,11 +582,33 @@ async function scoreBatch() {
   if (!raw) return;
   const tickers = raw.split(/[,\s\n]+/).filter(Boolean).slice(0, 20);
   if (!tickers.length) return;
-  showLoading('Analyzing <strong>' + tickers.length + ' tickers</strong>... (~' + Math.max(5, tickers.length * 2) + ' seconds)');
+
+  // Split into cached vs uncached
+  const cachedResults = [];
+  const uncachedTickers = [];
+  tickers.forEach(t => {
+    const c = getCachedScore(t);
+    if (c) cachedResults.push(c);
+    else uncachedTickers.push(t);
+  });
+
+  // All cached — render immediately
+  if (!uncachedTickers.length) {
+    lastFromCache = true;
+    batchData = cachedResults;
+    hideAll(); renderBatchTable();
+    document.getElementById('batch-results').classList.add('visible');
+    return;
+  }
+
+  lastFromCache = false;
+  showLoading('Analyzing <strong>' + uncachedTickers.length + ' tickers</strong>' + (cachedResults.length ? ' (' + cachedResults.length + ' cached)' : '') + '... (~' + Math.max(5, uncachedTickers.length * 2) + ' seconds)');
   document.getElementById('batch-btn').disabled = true;
   try {
-    const data = await callEdgeFn({ tickers });
-    batchData = Array.isArray(data) ? data : (data.results || []);
+    const data = await callEdgeFn({ tickers: uncachedTickers });
+    const freshResults = Array.isArray(data) ? data : (data.results || []);
+    freshResults.forEach(r => { if (r && r.ticker) setCachedScore(r.ticker, r); });
+    batchData = cachedResults.concat(freshResults);
     hideAll(); renderBatchTable();
     document.getElementById('batch-results').classList.add('visible');
   } catch (e) { hideAll(); showError('Batch scoring failed: ' + (e.message || e)); }
@@ -828,6 +884,7 @@ function buildScoreCard(d) {
         <span>${d.snapshot_date}</span>
         ${d.agent_latency_ms ? `<span>${(d.agent_latency_ms / 1000).toFixed(1)}s analysis</span>` : ''}
         ${d.data_quality && d.data_quality !== 'good' ? `<span style="color:var(--mp-amber)">Data: ${d.data_quality}</span>` : ''}
+        ${lastFromCache ? `<span style="color:var(--mp-teal)">cached</span>` : ''}
         <span style="margin-left:auto;color:var(--mp-text-muted)">SRS ${d.srs} · ACS ${d.acs} · CVS ${d.cvs}</span>
       </div>
     </div>
