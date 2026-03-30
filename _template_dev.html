@@ -77,24 +77,26 @@
 .narr-history{animation:slideUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.2s both;}
 .love-hate{animation:slideUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.3s both;}
 :root{
-  --mp-obsidian:#F8F9FC;
-  --mp-deep:#FFFFFF;
-  --mp-surface:#FFFFFF;
-  --mp-surface2:#F3F4F8;
-  --mp-border:rgba(0,0,0,0.08);
-  --mp-border-mid:rgba(0,0,0,0.12);
+  /* ── HYBRID: Light page + Navy cards ── */
+  --mp-obsidian:#F0F2F7;
+  --mp-deep:#F0F2F7;
+  --mp-surface:#1B2340;
+  --mp-surface2:#232B4A;
+  --mp-border:rgba(255,255,255,0.08);
+  --mp-border-mid:rgba(255,255,255,0.12);
+  --mp-border-hover:rgba(255,255,255,0.20);
   --mp-blue:#00AEFF;
-  --mp-blue-glow:rgba(0,174,255,0.08);
+  --mp-blue-glow:rgba(0,174,255,0.12);
   --mp-cyan:#4DC8F0;
   --mp-teal:#00DE94;
   --mp-violet:#7B61FF;
   --mp-red:#FF4D4D;
   --mp-amber:#FFB800;
-  --mp-text-primary:#111827;
-  --mp-text-secondary:#4B5563;
-  --mp-text-tertiary:#6B7280;
-  --mp-text-muted:rgba(0,0,0,0.40);
-  --mp-card-shadow:0 4px 20px rgba(0,0,0,0.08);
+  --mp-text-primary:#FFFFFF;
+  --mp-text-secondary:#C8CEE0;
+  --mp-text-tertiary:#8892B0;
+  --mp-text-muted:rgba(255,255,255,0.35);
+  --mp-card-shadow:0 4px 24px rgba(27,35,64,0.18);
   --font-display:'Instrument Serif','DM Serif Display',Georgia,serif;
   --font-body:'Inter','DM Sans',system-ui,sans-serif;
   --font-mono:'Inter','DM Sans',system-ui,sans-serif;
@@ -116,8 +118,8 @@
 html{font-size:16px;}
 body{
   font-family:var(--font-body);
-  background:#F8F9FC;
-  color:var(--mp-text-primary);
+  background:#F0F2F7;
+  color:#1B2340;
   min-height:100vh;
   line-height:1.5;
   font-weight:400;
@@ -130,8 +132,8 @@ body{
 /* ── SIDE NAV ── */
 .side-nav{
   position:fixed;top:0;left:0;width:224px;height:100vh;
-  background:#FFFFFF;
-  border-right:1px solid rgba(0,0,0,0.08);
+  background:#1B2340;
+  border-right:1px solid rgba(255,255,255,0.06);
   display:flex;flex-direction:column;z-index:100;overflow-y:auto;
 }
 [data-theme="dark"] .side-nav{background:var(--mp-deep);border-right-color:var(--mp-border);}
@@ -174,9 +176,9 @@ body{
   cursor:pointer;border:none;background:none;width:100%;text-align:left;
   position:relative;
 }
-.nav-item:hover{background:rgba(0,174,255,0.04);color:var(--mp-text-primary);}
+.nav-item:hover{background:rgba(255,255,255,0.06);color:#FFFFFF;}
 .nav-item.active{
-  background:rgba(0,174,255,0.08);
+  background:rgba(0,174,255,0.15);
   color:#00AEFF;font-weight:600;
   border-left:2px solid #00AEFF;
 }
@@ -193,7 +195,7 @@ body{
 .nav-item-badge{
   margin-left:auto;font-family:var(--font-mono);font-size:10px;font-weight:500;
   padding:2px 8px;border-radius:10px;
-  background:rgba(0,0,0,0.05);color:var(--mp-text-tertiary);
+  background:rgba(255,255,255,0.08);color:var(--mp-text-tertiary);
   border:1px solid rgba(0,0,0,0.08);
 }
 .nav-item-badge.blue{background:rgba(0,174,255,0.08);color:#00AEFF;border-color:rgba(0,174,255,0.15);}
@@ -260,14 +262,14 @@ body{
 /* topbar */
 .topbar{
   position:sticky;top:0;z-index:50;
-  background:rgba(255,255,255,0.92);backdrop-filter:blur(40px) saturate(1.2);
-  border-bottom:1px solid var(--mp-border);
+  background:rgba(240,242,247,0.92);backdrop-filter:blur(40px) saturate(1.2);
+  border-bottom:1px solid rgba(0,0,0,0.06);
   padding:0 36px;height:56px;
   display:flex;align-items:center;justify-content:space-between;gap:16px;
 }
 [data-theme="dark"] .topbar{background:rgba(8,9,15,0.85);}
-.topbar-title{font-family:var(--font-mono);font-size:12px;font-weight:400;letter-spacing:.10em;text-transform:uppercase;
-  color:var(--mp-text-secondary);
+.topbar-title{font-family:var(--font-body);font-size:12px;font-weight:500;letter-spacing:.10em;text-transform:uppercase;
+  color:#1B2340;
 }
 .topbar-right{display:flex;align-items:center;gap:10px;}
 .topbar-date{font-family:var(--font-mono);font-size:11px;color:var(--mp-text-tertiary);}
@@ -3693,6 +3695,99 @@ body{
 @keyframes lb-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 [data-theme="light"] .lb-refresh-btn{background:rgba(0,0,0,0.04);border-color:rgba(0,0,0,0.1);color:var(--mp-text-secondary);}
 [data-theme="light"] .lb-refresh-btn:hover{background:rgba(0,0,0,0.08);color:var(--mp-text-primary);}
+
+/* ══════════════════════════════════════════════════════════════════
+   HYBRID THEME: Elements on LIGHT page background need navy text
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Section titles/eyebrows sit on light bg — need dark text */
+.daily-section-eyebrow{color:#6B7280 !important;}
+.daily-section-title{color:#1B2340 !important;}
+.daily-section-sub{color:#8892B0 !important;}
+.daily-tag{color:#6B7280 !important;}
+.daily-title{color:#1B2340 !important;}
+.daily-desc{color:#4B5563 !important;}
+
+/* Feed title outside cards */
+.nf-feed-title{color:#1B2340 !important;}
+.nf-feed-date{color:#8892B0 !important;}
+.nf-sum-cards-label{color:#1B2340 !important;}
+
+/* Sidebar rail — transparent bg, sits on light page */
+.daily-rail{background:transparent !important;}
+.dr-eyebrow{color:#6B7280 !important;}
+.dr-section{color:#1B2340;}
+
+/* Sidebar stat boxes — navy with colored values */
+.dr-stat{background:#1B2340 !important;border:1px solid rgba(255,255,255,0.06) !important;border-radius:12px !important;box-shadow:0 2px 12px rgba(27,35,64,0.12) !important;}
+.dr-stat-val{color:#FFFFFF !important;font-size:24px !important;font-weight:700 !important;}
+.dr-stat.trap .dr-stat-val{color:#FF4D4D !important;}
+.dr-stat.surge .dr-stat-val{color:#00DE94 !important;}
+.dr-stat.break .dr-stat-val{color:#FFB800 !important;}
+.dr-stat-lbl{color:#8892B0 !important;font-weight:600 !important;}
+
+/* Sidebar regime, sector, earnings — on light bg */
+.dr-regime-val{color:#1B2340 !important;}
+.dr-regime-sub{color:#6B7280 !important;}
+.dr-sector-tk{color:#1B2340 !important;}
+.dr-sector-score{color:#1B2340 !important;}
+.dr-earn-ticker{color:#1B2340 !important;}
+.dr-earn-name{color:#6B7280 !important;}
+
+/* Topbar elements on light bg */
+.topbar-date{color:#6B7280 !important;font-family:var(--font-body) !important;}
+.topbar-email{color:#6B7280 !important;}
+.topbar-logout{color:#6B7280 !important;border-color:rgba(0,0,0,0.08) !important;background:rgba(0,0,0,0.03) !important;}
+.topbar-logout:hover{background:rgba(0,0,0,0.06) !important;color:#1B2340 !important;}
+.topbar-search{background:#FFFFFF !important;border-color:rgba(0,0,0,0.08) !important;color:#1B2340 !important;}
+.topbar-search:focus{border-color:rgba(0,174,255,0.3) !important;box-shadow:0 0 0 3px rgba(0,174,255,0.08) !important;}
+.topbar-search::placeholder{color:#8892B0 !important;}
+
+/* Scholar bar on light topbar */
+.scholar-bar{background:#FFFFFF !important;border-color:rgba(0,0,0,0.08) !important;box-shadow:0 1px 3px rgba(0,0,0,0.04) !important;}
+.scholar-bar:hover{border-color:rgba(0,174,255,0.15) !important;}
+.scholar-bar:focus-within{border-color:rgba(0,174,255,0.3) !important;box-shadow:0 0 0 3px rgba(0,174,255,0.08) !important;}
+.scholar-bar-input{color:#1B2340 !important;}
+.scholar-bar-input::placeholder{color:#8892B0 !important;}
+.scholar-bar-label{color:#8892B0 !important;border-color:rgba(0,0,0,0.08) !important;background:rgba(0,0,0,0.03) !important;}
+
+/* Nav logo text — gradient on navy */
+.nav-logo span{
+  background:linear-gradient(135deg, #4DC8F0, #00DE94, #7B61FF, #4DC8F0) !important;
+  -webkit-background-clip:text !important;background-clip:text !important;
+  -webkit-text-fill-color:transparent !important;
+}
+
+/* Nav section labels */
+.nav-section-lbl{color:#8892B0 !important;}
+.nav-section-lbl::after{background:rgba(255,255,255,0.06) !important;}
+.nav-promo{background:rgba(255,255,255,0.04) !important;border-color:rgba(255,255,255,0.08) !important;}
+.nav-promo-title{color:#FFFFFF !important;}
+.nav-promo-desc{color:#8892B0 !important;}
+.nav-bottom{border-top-color:rgba(255,255,255,0.06) !important;}
+.nav-bottom a{color:#8892B0 !important;}
+.nav-upgrade{color:#8892B0 !important;}
+
+/* Theme toggle on light topbar */
+.theme-toggle{border-color:rgba(0,0,0,0.08) !important;color:#1B2340 !important;}
+.theme-toggle:hover{background:rgba(0,0,0,0.04) !important;}
+
+/* Hero gradient text still works on navy cards */
+.daily-title-italic,.dhb-h em{
+  background:linear-gradient(135deg, #4DC8F0, #00DE94, #7B61FF, #4DC8F0) !important;
+  background-size:300% 300% !important;
+  -webkit-background-clip:text !important;background-clip:text !important;
+  -webkit-text-fill-color:transparent !important;
+  animation:mp-gradient-text 6s ease infinite !important;
+}
+
+/* Card grid overlays — visible on navy */
+.daily-hero-banner::before,
+.daily-narr-card::before{opacity:1 !important;}
+
+/* Ambient glow — subtle on light bg */
+.ambient-glow{opacity:0.3 !important;}
+
 </style>
 </head>
 <body>
