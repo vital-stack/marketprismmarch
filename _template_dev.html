@@ -3768,10 +3768,9 @@ body{
 .dr-sl-fill{background:linear-gradient(90deg, #00AEFF, #00DE94) !important;}
 .dr-sl-bar{background:rgba(255,255,255,0.06) !important;}
 
-/* ── Apple glass effect on all content boxes ── */
+/* ── Apple glass effect on all content boxes — thicker bevel ── */
 .daily-hero-banner,
 .daily-narr-card,
-.nf-feed,
 .nc-card,
 .disc-stat-tile,
 .disc-nc,
@@ -3786,14 +3785,14 @@ body{
 .trap-card,
 .sector-card,
 .lb-card{
-  background:rgba(12,18,35,0.65) !important;
-  backdrop-filter:blur(24px) saturate(1.4) !important;
-  -webkit-backdrop-filter:blur(24px) saturate(1.4) !important;
-  border:1px solid rgba(255,255,255,0.08) !important;
+  background:rgba(12,18,35,0.60) !important;
+  backdrop-filter:blur(28px) saturate(1.5) !important;
+  -webkit-backdrop-filter:blur(28px) saturate(1.5) !important;
+  border:1.5px solid rgba(255,255,255,0.10) !important;
   box-shadow:
-    0 4px 24px rgba(0,0,0,0.25),
-    inset 0 0.5px 0 rgba(255,255,255,0.10),
-    inset 0 -0.5px 0 rgba(255,255,255,0.03) !important;
+    0 4px 24px rgba(0,0,0,0.30),
+    inset 0 1px 0 rgba(255,255,255,0.12),
+    inset 0 -1px 0 rgba(255,255,255,0.04) !important;
   border-radius:16px !important;
 }
 .daily-hero-banner:hover,
@@ -3803,11 +3802,11 @@ body{
 .stat-card:hover,
 .mw-card:hover,
 .lb-card:hover{
-  border-color:rgba(255,255,255,0.14) !important;
+  border-color:rgba(255,255,255,0.18) !important;
   box-shadow:
-    0 8px 40px rgba(0,0,0,0.35),
-    inset 0 0.5px 0 rgba(255,255,255,0.12),
-    inset 0 -0.5px 0 rgba(255,255,255,0.04) !important;
+    0 8px 40px rgba(0,0,0,0.40),
+    inset 0 1px 0 rgba(255,255,255,0.15),
+    inset 0 -1px 0 rgba(255,255,255,0.05) !important;
 }
 /* Sidebar stats — smaller glass */
 .dr-stat,
@@ -3815,6 +3814,21 @@ body{
 .dr-earn-row{
   border-radius:12px !important;
 }
+
+/* 1. Remove glass/border from nf-feed — it's just a container */
+.nf-feed{
+  background:none !important;
+  backdrop-filter:none !important;-webkit-backdrop-filter:none !important;
+  border:none !important;
+  box-shadow:none !important;
+}
+
+/* 5. Hide Trading Cards section entirely */
+.nf-sum-cards-section{display:none !important;}
+
+/* Constellation canvas styling */
+#dash-constellation{position:fixed;top:0;left:224px;right:0;bottom:0;pointer-events:none;z-index:0;}
+@media(max-width:1100px){#dash-constellation{left:0;}}
 
 </style>
 </head>
@@ -3975,6 +3989,7 @@ body{
 <div class="main">
   <!-- Ambient effects -->
   <div class="ambient-glow"></div>
+  <canvas id="dash-constellation"></canvas>
   <div class="grid-bg"></div>
   <div class="scan-line"></div>
   <!-- Top bar -->
@@ -12737,5 +12752,122 @@ onTabSwitch(function(id){
   <div style="font-family:Inter,system-ui,sans-serif;font-size:11px;font-weight:600;color:var(--mp-text-tertiary,#6b7280);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;">Disclaimer</div>
   <div style="font-family:Inter,system-ui,sans-serif;font-size:11px;line-height:1.6;color:var(--mp-text-muted);">Market Prism is a data analytics and research platform providing narrative intelligence and market insights for informational and educational purposes only. Nothing on this platform constitutes investment advice, a recommendation to buy or sell any security, or an offer to provide financial advisory services. All content, signals, scores, and classifications — including but not limited to "Narrative Trap," "Fundamental Disconnect," and "Momentum Confirmed" — are generated using proprietary models and historical data. Past results are not indicative of future performance. Users should conduct their own due diligence and consult a licensed financial advisor before making any investment decisions. Market Prism and its operators, affiliates, or data providers are not responsible for any financial losses incurred through use of this platform. By using this site, you agree that all investment decisions are made solely at your own risk.</div>
 </footer>
+<!-- Constellation particle animation (slower than homepage) -->
+<script>
+(function(){
+  var canvas = document.getElementById('dash-constellation');
+  if(!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var W, H, nodes = [], pulses = [];
+  var NODE_COUNT = 80;
+  var LINK_DIST = 180;
+  var MOUSE = { x: -9999, y: -9999 };
+  var MOUSE_RADIUS = 250;
+  var now = 0;
+
+  var palettes = [
+    { r:0, g:174, b:255 }, { r:0, g:222, b:148 }, { r:77, g:200, b:240 },
+    { r:0, g:174, b:255 }
+  ];
+
+  function lerp(a,b,t){ return a+(b-a)*t; }
+  function lerpC(a,b,t){ return { r:Math.round(lerp(a.r,b.r,t)), g:Math.round(lerp(a.g,b.g,t)), b:Math.round(lerp(a.b,b.b,t)) }; }
+  function scrollColor(off){
+    var t=((off)%1+1)%1, seg=t*(palettes.length-1), idx=Math.min(Math.floor(seg),palettes.length-2);
+    var c=lerpC(palettes[idx],palettes[idx+1],seg-idx); return c.r+','+c.g+','+c.b;
+  }
+
+  function resize(){
+    W=window.innerWidth; H=document.documentElement.scrollHeight;
+    canvas.width=W*dpr; canvas.height=H*dpr;
+    canvas.style.width=W+'px'; canvas.style.height=H+'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    canvas.style.position='absolute';
+    canvas.style.height=H+'px';
+  }
+
+  function init(){
+    resize(); nodes=[]; pulses=[];
+    for(var i=0;i<NODE_COUNT;i++){
+      nodes.push({
+        x:Math.random()*W, y:Math.random()*H,
+        vx:(Math.random()-0.5)*0.04, vy:(Math.random()-0.5)*0.04,
+        r:Math.random()*1.5+0.5, phase:Math.random(),
+        baseAlpha:Math.random()*0.2+0.1
+      });
+    }
+  }
+
+  function spawnPulse(a,b,color){
+    pulses.push({ ax:a.x,ay:a.y, bx:b.x,by:b.y, t:0, speed:0.001+Math.random()*0.002, color:color, life:1 });
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    var scrollY=window.scrollY;
+    for(var i=0;i<nodes.length;i++){
+      var ni=nodes[i], ci=scrollColor(ni.phase*0.3);
+      for(var j=i+1;j<nodes.length;j++){
+        var nj=nodes[j];
+        var dx=ni.x-nj.x, dy=ni.y-nj.y, dist=Math.sqrt(dx*dx+dy*dy);
+        if(dist<LINK_DIST){
+          var fade=1-dist/LINK_DIST;
+          var alpha=fade*0.06;
+          var mx=(ni.x+nj.x)/2, my=(ni.y+nj.y)/2;
+          var mdx=mx-MOUSE.x, mdy=my-(MOUSE.y+scrollY);
+          var mDist=Math.sqrt(mdx*mdx+mdy*mdy);
+          if(mDist<MOUSE_RADIUS) alpha+=((1-mDist/MOUSE_RADIUS)*0.10);
+          ctx.beginPath();
+          ctx.moveTo(ni.x,ni.y); ctx.lineTo(nj.x,nj.y);
+          ctx.strokeStyle='rgba('+ci+','+alpha+')';
+          ctx.lineWidth=fade*0.8;
+          ctx.stroke();
+          if(Math.random()<0.0001 && pulses.length<15) spawnPulse(ni,nj,ci);
+        }
+      }
+    }
+    for(var p=pulses.length-1;p>=0;p--){
+      var pl=pulses[p];
+      pl.t+=pl.speed;
+      if(pl.t>1){ pulses.splice(p,1); continue; }
+      var px=lerp(pl.ax,pl.bx,pl.t), py=lerp(pl.ay,pl.by,pl.t);
+      var pa=Math.sin(pl.t*Math.PI)*0.4;
+      ctx.beginPath(); ctx.arc(px,py,1.2,0,Math.PI*2);
+      ctx.fillStyle='rgba(255,255,255,'+pa*0.6+')';
+      ctx.fill();
+    }
+    for(var k=0;k<nodes.length;k++){
+      var n=nodes[k];
+      var c=scrollColor(n.phase*0.3);
+      var pulse=n.baseAlpha+Math.sin(now*0.0006+n.phase*6.28)*0.08;
+      ctx.beginPath(); ctx.arc(n.x,n.y,n.r,0,Math.PI*2);
+      ctx.fillStyle='rgba('+c+','+pulse*0.5+')';
+      ctx.fill();
+    }
+  }
+
+  function update(){
+    now=Date.now();
+    for(var i=0;i<nodes.length;i++){
+      var n=nodes[i];
+      n.vx*=0.998; n.vy*=0.998;
+      n.x+=n.vx; n.y+=n.vy;
+      if(n.x<-30)n.x=W+30; if(n.x>W+30)n.x=-30;
+      if(n.y<-30)n.y=H+30; if(n.y>H+30)n.y=-30;
+    }
+  }
+
+  function loop(){ update(); draw(); requestAnimationFrame(loop); }
+  document.addEventListener('mousemove',function(e){ MOUSE.x=e.clientX; MOUSE.y=e.clientY; },{passive:true});
+  document.addEventListener('mouseleave',function(){ MOUSE.x=-9999; MOUSE.y=-9999; });
+  if(window.innerWidth<768) NODE_COUNT=40;
+  window.addEventListener('resize',function(){ resize(); });
+  document.addEventListener('visibilitychange',function(){
+    if(!document.hidden) requestAnimationFrame(loop);
+  });
+  init(); loop();
+})();
+</script>
 </body>
 </html>
