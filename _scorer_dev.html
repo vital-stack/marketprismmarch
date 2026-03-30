@@ -580,10 +580,19 @@ body::before {
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 /* ── Environment ── */
-window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '', SCORER_API_URL: '' };
-const API_BASE = () => window.__env.SCORER_API_URL || 'http://localhost:8000';
+window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '' };
+
+/* ── Supabase Client ── */
+let SUPA = null;
+function getSupa() {
+  if (!SUPA && window.__env.SUPABASE_URL && window.__env.SUPABASE_ANON) {
+    SUPA = window.supabase.createClient(window.__env.SUPABASE_URL, window.__env.SUPABASE_ANON);
+  }
+  return SUPA;
+}
 
 /* ── Verdict Color Map ── */
 const VERDICT_MAP = {
@@ -616,18 +625,28 @@ let sortAsc = true;
 async function checkHealth() {
   const dot = document.getElementById('health-dot');
   const label = document.getElementById('health-label');
+  const client = getSupa();
+  if (!client) {
+    dot.className = 'dot err';
+    label.textContent = 'Supabase not configured';
+    return;
+  }
   try {
-    const res = await fetch(API_BASE() + '/health', { signal: AbortSignal.timeout(5000) });
-    if (res.ok) {
+    const { data, error } = await client.functions.invoke('score-stock', {
+      body: { health_check: true }
+    });
+    if (error) throw error;
+    dot.className = 'dot ok';
+    label.textContent = 'Edge Function connected';
+  } catch (e) {
+    // Edge function exists but may not support health_check — still means it's reachable
+    if (e && e.message && e.message.includes('FunctionsHttpError')) {
       dot.className = 'dot ok';
-      label.textContent = 'API connected';
+      label.textContent = 'Edge Function connected';
     } else {
       dot.className = 'dot err';
-      label.textContent = 'API error (' + res.status + ')';
+      label.textContent = 'Edge Function unreachable';
     }
-  } catch (e) {
-    dot.className = 'dot err';
-    label.textContent = 'API unreachable';
   }
 }
 
@@ -666,13 +685,17 @@ async function scoreSingle() {
   const ticker = document.getElementById('ticker-input').value.trim().toUpperCase();
   if (!ticker) return;
 
-  showLoading('Scoring <strong>' + ticker + '</strong> (~5 seconds)');
+  const client = getSupa();
+  if (!client) { showError('Supabase not configured'); return; }
+
+  showLoading('Analyzing <strong>' + ticker + '</strong>... (~5 seconds)');
   document.getElementById('score-btn').disabled = true;
 
   try {
-    const res = await fetch(API_BASE() + '/score/' + encodeURIComponent(ticker), { method: 'POST' });
-    if (!res.ok) throw new Error('API returned ' + res.status);
-    const data = await res.json();
+    const { data, error } = await client.functions.invoke('score-stock', {
+      body: { ticker }
+    });
+    if (error) throw error;
 
     if (data.current_price === 0) {
       hideAll();
@@ -685,7 +708,7 @@ async function scoreSingle() {
     document.getElementById('result').classList.add('visible');
   } catch (e) {
     hideAll();
-    showError('Failed to score ' + ticker + ': ' + e.message);
+    showError('Failed to score ' + ticker + ': ' + (e.message || e));
   } finally {
     document.getElementById('score-btn').disabled = false;
   }
@@ -699,17 +722,17 @@ async function scoreBatch() {
   const tickers = raw.split(/[,\s\n]+/).filter(Boolean).slice(0, 20);
   if (!tickers.length) return;
 
-  showLoading('Scoring <strong>' + tickers.length + ' tickers</strong> (~' + Math.max(5, tickers.length * 2) + ' seconds)');
+  const client = getSupa();
+  if (!client) { showError('Supabase not configured'); return; }
+
+  showLoading('Analyzing <strong>' + tickers.length + ' tickers</strong>... (~' + Math.max(5, tickers.length * 2) + ' seconds)');
   document.getElementById('batch-btn').disabled = true;
 
   try {
-    const res = await fetch(API_BASE() + '/score/batch', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tickers, max_concurrent: 5 })
+    const { data, error } = await client.functions.invoke('score-stock', {
+      body: { tickers }
     });
-    if (!res.ok) throw new Error('API returned ' + res.status);
-    const data = await res.json();
+    if (error) throw error;
 
     // data may be an array or an object with results key
     batchData = Array.isArray(data) ? data : (data.results || []);
@@ -719,7 +742,7 @@ async function scoreBatch() {
     document.getElementById('batch-results').classList.add('visible');
   } catch (e) {
     hideAll();
-    showError('Batch scoring failed: ' + e.message);
+    showError('Batch scoring failed: ' + (e.message || e));
   } finally {
     document.getElementById('batch-btn').disabled = false;
   }
@@ -918,7 +941,10 @@ document.getElementById('ticker-input').addEventListener('keydown', function(e) 
 });
 
 /* ── Init ── */
-checkHealth();
+window.addEventListener('DOMContentLoaded', function() {
+  getSupa();
+  checkHealth();
+});
 </script>
 </body>
 </html>
