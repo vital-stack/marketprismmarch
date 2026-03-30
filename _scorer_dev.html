@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Score Any Stock — Market Prism Dev</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & Vars ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --mp-obsidian:    #080B11;
+  --mp-surface:     #0C1018;
+  --mp-surface2:    #111927;
+  --mp-border:      rgba(255,255,255,0.06);
+  --mp-border-hover:rgba(255,255,255,0.14);
+  --mp-text-primary:#FFFFFF;
+  --mp-text-secondary:rgba(255,255,255,0.7);
+  --mp-text-tertiary:#A0A8B0;
+  --mp-text-muted:  rgba(255,255,255,0.3);
+  --mp-cyan:        #00AEFF;
+  --mp-teal:        #38C8B8;
+  --mp-green:       #00DE94;
+  --mp-red:         #FF4D4D;
+  --mp-amber:       #FFB800;
+  --mp-violet:      #7B61FF;
+  --font-display:   'Instrument Serif', 'DM Serif Display', Georgia, serif;
+  --font-body:      'Inter', 'DM Sans', system-ui, sans-serif;
+}
+
+body {
+  background: var(--mp-obsidian);
+  color: var(--mp-text-primary);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ── Ambient Grid BG ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
+  background-size: 64px 64px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Layout ── */
+.page-wrap {
+  position: relative;
+  z-index: 1;
+  max-width: 940px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+/* ── Header ── */
+.page-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+.page-header h1 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(28px, 3.2vw, 42px);
+  letter-spacing: -0.025em;
+  margin-bottom: 4px;
+}
+.page-header h1 em {
+  color: #4DC8F0;
+  font-style: italic;
+}
+.page-header .subtitle {
+  color: var(--mp-text-tertiary);
+  font-size: 14px;
+}
+
+/* ── Health Indicator ── */
+.health-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--mp-text-tertiary);
+  margin-top: 8px;
+}
+.health-dot .dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--mp-text-muted);
+  transition: background 0.3s;
+}
+.health-dot .dot.ok { background: var(--mp-green); box-shadow: 0 0 6px rgba(0,222,148,0.5); }
+.health-dot .dot.err { background: var(--mp-red); box-shadow: 0 0 6px rgba(255,77,77,0.5); }
+
+/* ── Mode Toggle ── */
+.mode-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 24px;
+}
+.mode-btn {
+  background: var(--mp-surface);
+  border: 1px solid var(--mp-border);
+  color: var(--mp-text-tertiary);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 24px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.mode-btn:first-child { border-radius: 8px 0 0 8px; }
+.mode-btn:last-child  { border-radius: 0 8px 8px 0; border-left: none; }
+.mode-btn.active {
+  background: rgba(0,174,255,0.12);
+  border-color: var(--mp-cyan);
+  color: var(--mp-cyan);
+}
+
+/* ── Search Area ── */
+.search-section {
+  margin-bottom: 32px;
+}
+.search-row {
+  display: flex;
+  gap: 12px;
+  max-width: 560px;
+  margin: 0 auto;
+}
+.search-input {
+  flex: 1;
+  background: var(--mp-surface);
+  border: 1px solid var(--mp-border);
+  border-radius: 12px;
+  color: var(--mp-text-primary);
+  font-family: var(--font-body);
+  font-size: 16px;
+  padding: 12px 16px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.search-input:focus {
+  border-color: var(--mp-cyan);
+  box-shadow: 0 0 0 3px rgba(0,174,255,0.15);
+}
+.search-input::placeholder { color: var(--mp-text-muted); }
+
+.score-btn {
+  background: linear-gradient(135deg, #00AEFF, #0090DD);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px 28px;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+  white-space: nowrap;
+}
+.score-btn:hover { opacity: 0.9; }
+.score-btn:active { transform: scale(0.97); }
+.score-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Batch Input ── */
+.batch-section { display: none; margin-bottom: 32px; }
+.batch-section.visible { display: block; }
+.batch-textarea {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  display: block;
+  background: var(--mp-surface);
+  border: 1px solid var(--mp-border);
+  border-radius: 12px;
+  color: var(--mp-text-primary);
+  font-family: var(--font-body);
+  font-size: 14px;
+  padding: 12px 16px;
+  outline: none;
+  resize: vertical;
+  min-height: 60px;
+  transition: border-color 0.2s;
+}
+.batch-textarea:focus {
+  border-color: var(--mp-cyan);
+  box-shadow: 0 0 0 3px rgba(0,174,255,0.15);
+}
+.batch-textarea::placeholder { color: var(--mp-text-muted); }
+.batch-hint {
+  text-align: center;
+  color: var(--mp-text-muted);
+  font-size: 12px;
+  margin-top: 8px;
+}
+.batch-actions {
+  text-align: center;
+  margin-top: 12px;
+}
+
+/* ── Loading ── */
+.loading-wrap {
+  display: none;
+  text-align: center;
+  padding: 48px 0;
+}
+.loading-wrap.visible { display: block; }
+.loading-spinner {
+  width: 40px; height: 40px;
+  border: 3px solid var(--mp-border);
+  border-top-color: var(--mp-cyan);
+  border-radius: 50%;
+  margin: 0 auto 16px;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text {
+  color: var(--mp-text-secondary);
+  font-size: 14px;
+}
+.loading-text strong { color: var(--mp-cyan); }
+
+/* ── Error ── */
+.error-msg {
+  display: none;
+  text-align: center;
+  padding: 24px;
+  background: rgba(255,77,77,0.08);
+  border: 1px solid rgba(255,77,77,0.2);
+  border-radius: 12px;
+  color: var(--mp-red);
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+.error-msg.visible { display: block; }
+
+/* ── Score Card ── */
+.result-section { display: none; }
+.result-section.visible { display: block; animation: fadeInUp 0.5s cubic-bezier(0.16,1,0.3,1) both; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.score-card {
+  background: var(--mp-surface);
+  border: 1px solid var(--mp-border);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+.score-card:hover {
+  border-color: var(--mp-border-hover);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+.score-card .accent-bar {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+}
+
+/* ── Verdict Header ── */
+.verdict-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.verdict-left h2 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 28px;
+  letter-spacing: -0.025em;
+  margin-bottom: 4px;
+}
+.verdict-left .ticker-meta {
+  color: var(--mp-text-tertiary);
+  font-size: 13px;
+}
+.verdict-right {
+  text-align: right;
+}
+.verdict-badge {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 6px 16px;
+  border-radius: 8px;
+  margin-bottom: 6px;
+}
+.direction-tag {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  padding: 3px 10px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+/* ── Price Section ── */
+.price-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: rgba(255,255,255,0.02);
+  border-radius: 12px;
+  border: 1px solid var(--mp-border);
+}
+.price-item label {
+  display: block;
+  font-size: 11px;
+  color: var(--mp-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+.price-item .val {
+  font-size: 20px;
+  font-weight: 600;
+}
+.price-item .val.green { color: var(--mp-green); }
+.price-item .val.red   { color: var(--mp-red); }
+.price-item .val.cyan  { color: var(--mp-cyan); }
+
+/* ── Score Bars ── */
+.score-bars {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.bar-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+}
+.bar-label .name {
+  color: var(--mp-text-secondary);
+  font-weight: 500;
+}
+.bar-label .value {
+  color: var(--mp-text-primary);
+  font-weight: 600;
+  font-size: 14px;
+}
+.bar-track {
+  height: 6px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.8s cubic-bezier(0.16,1,0.3,1);
+}
+
+/* ── Stat Grid ── */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.stat-cell {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--mp-border);
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+}
+.stat-cell label {
+  display: block;
+  font-size: 11px;
+  color: var(--mp-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+.stat-cell .val {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* ── Narrative Section ── */
+.narrative-section {
+  padding: 16px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--mp-border);
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+.narrative-section h3 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+.narrative-section p {
+  color: var(--mp-text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.narrative-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 12px;
+}
+.narrative-meta .tag {
+  font-size: 12px;
+  color: var(--mp-text-tertiary);
+}
+.narrative-meta .tag strong {
+  color: var(--mp-text-primary);
+}
+
+/* ── Meta Footer ── */
+.meta-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--mp-text-muted);
+  padding-top: 12px;
+  border-top: 1px solid var(--mp-border);
+}
+
+/* ── Batch Table ── */
+.batch-results { display: none; }
+.batch-results.visible { display: block; animation: fadeInUp 0.5s cubic-bezier(0.16,1,0.3,1) both; }
+
+.batch-table-wrap {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid var(--mp-border);
+}
+.batch-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.batch-table th {
+  background: var(--mp-surface2);
+  color: var(--mp-text-tertiary);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--mp-border);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+.batch-table th:hover { color: var(--mp-text-primary); }
+.batch-table th .sort-arrow { font-size: 10px; margin-left: 4px; opacity: 0.4; }
+.batch-table th.sorted .sort-arrow { opacity: 1; color: var(--mp-cyan); }
+.batch-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--mp-border);
+  white-space: nowrap;
+}
+.batch-table tr {
+  background: var(--mp-surface);
+  transition: background 0.15s;
+  cursor: pointer;
+}
+.batch-table tr:hover { background: var(--mp-surface2); }
+.batch-table .ticker-col { font-weight: 600; font-size: 14px; }
+
+/* ── Batch Expanded Row ── */
+.batch-expanded {
+  display: none;
+}
+.batch-expanded.visible {
+  display: table-row;
+}
+.batch-expanded td {
+  padding: 20px;
+  background: var(--mp-surface2);
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .page-wrap { padding: 20px 16px 48px; }
+  .score-bars { grid-template-columns: 1fr; }
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .price-section { grid-template-columns: 1fr; }
+  .verdict-header { flex-direction: column; }
+  .verdict-right { text-align: left; }
+  .search-row { flex-direction: column; }
+  .score-btn { width: 100%; }
+}
+@media (max-width: 480px) {
+  .stat-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="page-wrap">
+
+  <!-- Header -->
+  <header class="page-header">
+    <h1>Score <em>Any Stock</em></h1>
+    <p class="subtitle">On-demand narrative scoring — dev testing tool</p>
+    <div class="health-dot" id="health">
+      <span class="dot" id="health-dot"></span>
+      <span id="health-label">Checking API...</span>
+    </div>
+  </header>
+
+  <!-- Mode Toggle -->
+  <div class="mode-toggle">
+    <button class="mode-btn active" onclick="setMode('single')" id="mode-single">Single</button>
+    <button class="mode-btn" onclick="setMode('batch')" id="mode-batch">Batch</button>
+  </div>
+
+  <!-- Single Search -->
+  <div class="search-section" id="single-section">
+    <div class="search-row">
+      <input class="search-input" id="ticker-input" type="text" placeholder="Enter ticker (e.g. AAPL)" autocomplete="off" spellcheck="false">
+      <button class="score-btn" id="score-btn" onclick="scoreSingle()">Score</button>
+    </div>
+  </div>
+
+  <!-- Batch Search -->
+  <div class="batch-section" id="batch-section">
+    <textarea class="batch-textarea" id="batch-input" placeholder="AAPL, TSLA, MSFT, NVDA, GOOG" rows="2"></textarea>
+    <p class="batch-hint">Comma-separated tickers (max 20)</p>
+    <div class="batch-actions">
+      <button class="score-btn" id="batch-btn" onclick="scoreBatch()">Score All</button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-wrap" id="loading">
+    <div class="loading-spinner"></div>
+    <p class="loading-text" id="loading-text">Scoring <strong>...</strong> (~5 seconds)</p>
+  </div>
+
+  <!-- Error -->
+  <div class="error-msg" id="error"></div>
+
+  <!-- Single Result -->
+  <div class="result-section" id="result"></div>
+
+  <!-- Batch Results -->
+  <div class="batch-results" id="batch-results"></div>
+
+</div>
+
+<script>
+/* ── Environment ── */
+window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '', SCORER_API_URL: '' };
+const API_BASE = () => window.__env.SCORER_API_URL || 'http://localhost:8000';
+
+/* ── Verdict Color Map ── */
+const VERDICT_MAP = {
+  'Structurally Supported':       { color: '#00DE94', bg: 'rgba(0,222,148,0.12)', dir: 'LONG' },
+  'Accumulate':                   { color: '#7BE89A', bg: 'rgba(123,232,154,0.12)', dir: 'LONG' },
+  'Low Risk':                     { color: '#7BE89A', bg: 'rgba(123,232,154,0.12)', dir: 'LONG' },
+  'High Conviction Continuation': { color: '#00DE94', bg: 'rgba(0,222,148,0.12)', dir: 'LONG' },
+  'Monitoring':                   { color: '#A0A8B0', bg: 'rgba(160,168,176,0.12)', dir: 'HOLD' },
+  'Elevated Risk':                { color: '#FFB800', bg: 'rgba(255,184,0,0.12)', dir: 'HOLD' },
+  'Exhausted Narrative':          { color: '#FF8C00', bg: 'rgba(255,140,0,0.12)', dir: 'HOLD' },
+  'Air Pocket Short':             { color: '#FF4D4D', bg: 'rgba(255,77,77,0.12)', dir: 'SHORT' },
+  'Drift Compression Short':      { color: '#FF4D4D', bg: 'rgba(255,77,77,0.12)', dir: 'SHORT' },
+  'Narrative Risk':               { color: '#FF4D4D', bg: 'rgba(255,77,77,0.12)', dir: 'SHORT' },
+  'Narrative Trap':               { color: '#CC2222', bg: 'rgba(204,34,34,0.12)', dir: 'SHORT' },
+};
+
+const DIR_COLORS = {
+  'LONG':  { color: '#00DE94', bg: 'rgba(0,222,148,0.15)' },
+  'SHORT': { color: '#FF4D4D', bg: 'rgba(255,77,77,0.15)' },
+  'HOLD':  { color: '#A0A8B0', bg: 'rgba(160,168,176,0.15)' },
+};
+
+/* ── State ── */
+let currentMode = 'single';
+let batchData = [];
+let sortCol = null;
+let sortAsc = true;
+
+/* ── Health Check ── */
+async function checkHealth() {
+  const dot = document.getElementById('health-dot');
+  const label = document.getElementById('health-label');
+  try {
+    const res = await fetch(API_BASE() + '/health', { signal: AbortSignal.timeout(5000) });
+    if (res.ok) {
+      dot.className = 'dot ok';
+      label.textContent = 'API connected';
+    } else {
+      dot.className = 'dot err';
+      label.textContent = 'API error (' + res.status + ')';
+    }
+  } catch (e) {
+    dot.className = 'dot err';
+    label.textContent = 'API unreachable';
+  }
+}
+
+/* ── Mode Toggle ── */
+function setMode(mode) {
+  currentMode = mode;
+  document.getElementById('mode-single').classList.toggle('active', mode === 'single');
+  document.getElementById('mode-batch').classList.toggle('active', mode === 'batch');
+  document.getElementById('single-section').style.display = mode === 'single' ? 'block' : 'none';
+  document.getElementById('batch-section').classList.toggle('visible', mode === 'batch');
+  hideAll();
+}
+
+function hideAll() {
+  document.getElementById('loading').classList.remove('visible');
+  document.getElementById('error').classList.remove('visible');
+  document.getElementById('result').classList.remove('visible');
+  document.getElementById('batch-results').classList.remove('visible');
+}
+
+function showError(msg) {
+  const el = document.getElementById('error');
+  el.textContent = msg;
+  el.classList.add('visible');
+}
+
+function showLoading(text) {
+  hideAll();
+  const el = document.getElementById('loading');
+  document.getElementById('loading-text').innerHTML = text;
+  el.classList.add('visible');
+}
+
+/* ── Single Score ── */
+async function scoreSingle() {
+  const ticker = document.getElementById('ticker-input').value.trim().toUpperCase();
+  if (!ticker) return;
+
+  showLoading('Scoring <strong>' + ticker + '</strong> (~5 seconds)');
+  document.getElementById('score-btn').disabled = true;
+
+  try {
+    const res = await fetch(API_BASE() + '/score/' + encodeURIComponent(ticker), { method: 'POST' });
+    if (!res.ok) throw new Error('API returned ' + res.status);
+    const data = await res.json();
+
+    if (data.current_price === 0) {
+      hideAll();
+      showError('Ticker "' + ticker + '" was not found or has no price data.');
+      return;
+    }
+
+    hideAll();
+    document.getElementById('result').innerHTML = buildScoreCard(data);
+    document.getElementById('result').classList.add('visible');
+  } catch (e) {
+    hideAll();
+    showError('Failed to score ' + ticker + ': ' + e.message);
+  } finally {
+    document.getElementById('score-btn').disabled = false;
+  }
+}
+
+/* ── Batch Score ── */
+async function scoreBatch() {
+  const raw = document.getElementById('batch-input').value.trim().toUpperCase();
+  if (!raw) return;
+
+  const tickers = raw.split(/[,\s\n]+/).filter(Boolean).slice(0, 20);
+  if (!tickers.length) return;
+
+  showLoading('Scoring <strong>' + tickers.length + ' tickers</strong> (~' + Math.max(5, tickers.length * 2) + ' seconds)');
+  document.getElementById('batch-btn').disabled = true;
+
+  try {
+    const res = await fetch(API_BASE() + '/score/batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tickers, max_concurrent: 5 })
+    });
+    if (!res.ok) throw new Error('API returned ' + res.status);
+    const data = await res.json();
+
+    // data may be an array or an object with results key
+    batchData = Array.isArray(data) ? data : (data.results || []);
+
+    hideAll();
+    renderBatchTable();
+    document.getElementById('batch-results').classList.add('visible');
+  } catch (e) {
+    hideAll();
+    showError('Batch scoring failed: ' + e.message);
+  } finally {
+    document.getElementById('batch-btn').disabled = false;
+  }
+}
+
+/* ── Build Score Card HTML ── */
+function buildScoreCard(d) {
+  const vm = VERDICT_MAP[d.verdict] || { color: '#A0A8B0', bg: 'rgba(160,168,176,0.12)', dir: 'HOLD' };
+  const dir = d.trade_direction || vm.dir || 'HOLD';
+  const dc = DIR_COLORS[dir] || DIR_COLORS.HOLD;
+
+  const fvd = d.fair_value_deviation_pct;
+  const fvdColor = fvd == null ? 'var(--mp-text-muted)' : (fvd > 0 ? 'var(--mp-red)' : 'var(--mp-green)');
+  const fvdLabel = fvd == null ? 'N/A' : ((fvd > 0 ? '+' : '') + fvd.toFixed(1) + '%');
+
+  const fv = d.fair_value != null ? '$' + d.fair_value.toFixed(2) : 'N/A';
+  const cp = '$' + d.current_price.toFixed(2);
+
+  const bars = [
+    { name: 'VMS — Verification Match', val: d.vms, color: scoreColor(d.vms, false) },
+    { name: 'CCP — Composite Confidence', val: d.ccp, color: scoreColor(d.ccp, false) },
+    { name: 'NRS — Narrative Risk', val: d.nrs, color: scoreColor(d.nrs, true) },
+    { name: 'ACS — Analyst Credibility', val: d.acs, color: scoreColor(d.acs, false) },
+    { name: 'SRS — Source Reliability', val: d.srs, color: scoreColor(d.srs, false) },
+    { name: 'CVS — Claim Verifiability', val: d.cvs, color: scoreColor(d.cvs, false) },
+  ];
+
+  const barsHtml = bars.map(b => `
+    <div class="bar-item">
+      <div class="bar-label"><span class="name">${b.name}</span><span class="value">${b.val}</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${b.val}%;background:${b.color}"></div></div>
+    </div>
+  `).join('');
+
+  const npiVal = d.npi != null ? d.npi : '—';
+  const mcapStr = d.market_cap ? formatMcap(d.market_cap) : '—';
+
+  return `
+    <div class="score-card">
+      <div class="accent-bar" style="background:${vm.color}"></div>
+      <div class="verdict-header">
+        <div class="verdict-left">
+          <h2>${d.ticker}</h2>
+          <div class="ticker-meta">${d.sector || 'Unknown Sector'} &middot; ${d.snapshot_date}</div>
+        </div>
+        <div class="verdict-right">
+          <div class="verdict-badge" style="color:${vm.color};background:${vm.bg}">${d.verdict}</div><br>
+          <span class="direction-tag" style="color:${dc.color};background:${dc.bg}">${dir}</span>
+        </div>
+      </div>
+
+      <div class="price-section">
+        <div class="price-item">
+          <label>Current Price</label>
+          <div class="val cyan">${cp}</div>
+        </div>
+        <div class="price-item">
+          <label>Fair Value</label>
+          <div class="val">${fv}</div>
+        </div>
+        <div class="price-item">
+          <label>Fair Value Dev.</label>
+          <div class="val" style="color:${fvdColor}">${fvdLabel}</div>
+        </div>
+      </div>
+
+      <div class="score-bars">${barsHtml}</div>
+
+      <div class="stat-grid">
+        <div class="stat-cell"><label>HDS</label><div class="val">${d.hds.toFixed(2)}</div></div>
+        <div class="stat-cell"><label>NPI</label><div class="val">${npiVal}</div></div>
+        <div class="stat-cell"><label>Overreaction</label><div class="val">${d.overreaction_ratio}</div></div>
+        <div class="stat-cell"><label>Drift</label><div class="val">${d.drift_score}</div></div>
+        <div class="stat-cell"><label>Coordination</label><div class="val">${d.coordination_score}</div></div>
+        <div class="stat-cell"><label>Market Cap</label><div class="val" style="font-size:14px">${mcapStr}</div></div>
+        <div class="stat-cell"><label>Latency</label><div class="val" style="font-size:14px">${d.agent_latency_ms ? d.agent_latency_ms + 'ms' : '—'}</div></div>
+        <div class="stat-cell"><label>Data Quality</label><div class="val" style="font-size:12px;color:${d.data_quality === 'good' ? 'var(--mp-green)' : 'var(--mp-amber)'}">${d.data_quality || '—'}</div></div>
+      </div>
+
+      ${d.narrative_summary ? `
+      <div class="narrative-section">
+        <h3>Narrative Summary</h3>
+        <p>${d.narrative_summary}</p>
+        <div class="narrative-meta">
+          ${d.macro_theme ? `<span class="tag">Theme: <strong>${d.macro_theme}</strong></span>` : ''}
+          <span class="tag">Drift: <strong>${d.drift_score}</strong></span>
+          <span class="tag">Coordination: <strong>${d.coordination_score}</strong></span>
+        </div>
+      </div>` : ''}
+
+      <div class="meta-footer">
+        <span>Snapshot: ${d.snapshot_date}</span>
+        ${d.agent_latency_ms ? `<span>Agent: ${d.agent_latency_ms}ms</span>` : ''}
+        ${d.data_quality && d.data_quality !== 'good' ? `<span style="color:var(--mp-amber)">Data issues: ${d.data_quality}</span>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+/* ── Batch Table ── */
+function renderBatchTable() {
+  if (!batchData.length) {
+    document.getElementById('batch-results').innerHTML = '<p style="text-align:center;color:var(--mp-text-muted);padding:24px;">No results returned.</p>';
+    return;
+  }
+
+  const cols = [
+    { key: 'ticker', label: 'Ticker' },
+    { key: 'current_price', label: 'Price' },
+    { key: 'verdict', label: 'Verdict' },
+    { key: 'ccp', label: 'CCP' },
+    { key: 'nrs', label: 'NRS' },
+    { key: 'vms', label: 'VMS' },
+    { key: 'fair_value_deviation_pct', label: 'FVD%' },
+    { key: 'trade_direction', label: 'Dir' },
+  ];
+
+  if (sortCol) {
+    batchData.sort((a, b) => {
+      let va = a[sortCol], vb = b[sortCol];
+      if (va == null) va = -Infinity;
+      if (vb == null) vb = -Infinity;
+      if (typeof va === 'string') return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+      return sortAsc ? va - vb : vb - va;
+    });
+  }
+
+  let html = '<div class="batch-table-wrap"><table class="batch-table"><thead><tr>';
+  cols.forEach(c => {
+    const sorted = sortCol === c.key;
+    const arrow = sorted ? (sortAsc ? '&#9650;' : '&#9660;') : '&#9650;';
+    html += `<th class="${sorted ? 'sorted' : ''}" onclick="sortBatch('${c.key}')">${c.label}<span class="sort-arrow">${arrow}</span></th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  batchData.forEach((d, i) => {
+    const vm = VERDICT_MAP[d.verdict] || { color: '#A0A8B0' };
+    const dir = d.trade_direction || 'HOLD';
+    const dc = DIR_COLORS[dir] || DIR_COLORS.HOLD;
+    const fvd = d.fair_value_deviation_pct;
+    const fvdStr = fvd == null ? '—' : ((fvd > 0 ? '+' : '') + fvd.toFixed(1) + '%');
+    const fvdColor = fvd == null ? 'var(--mp-text-muted)' : (fvd > 0 ? 'var(--mp-red)' : 'var(--mp-green)');
+
+    html += `<tr onclick="toggleExpand(${i})">
+      <td class="ticker-col">${d.ticker}</td>
+      <td>$${d.current_price.toFixed(2)}</td>
+      <td style="color:${vm.color}">${d.verdict}</td>
+      <td>${d.ccp}</td>
+      <td style="color:${scoreColor(d.nrs, true)}">${d.nrs}</td>
+      <td>${d.vms}</td>
+      <td style="color:${fvdColor}">${fvdStr}</td>
+      <td style="color:${dc.color}">${dir}</td>
+    </tr>`;
+    html += `<tr class="batch-expanded" id="expand-${i}"><td colspan="8">${buildScoreCard(d)}</td></tr>`;
+  });
+
+  html += '</tbody></table></div>';
+  document.getElementById('batch-results').innerHTML = html;
+}
+
+function sortBatch(col) {
+  if (sortCol === col) { sortAsc = !sortAsc; }
+  else { sortCol = col; sortAsc = true; }
+  renderBatchTable();
+  document.getElementById('batch-results').classList.add('visible');
+}
+
+function toggleExpand(i) {
+  const row = document.getElementById('expand-' + i);
+  if (row) row.classList.toggle('visible');
+}
+
+/* ── Helpers ── */
+function scoreColor(val, inverted) {
+  // inverted: high = bad (like NRS)
+  if (inverted) {
+    if (val <= 30) return 'var(--mp-green)';
+    if (val <= 60) return 'var(--mp-amber)';
+    return 'var(--mp-red)';
+  }
+  if (val >= 70) return 'var(--mp-green)';
+  if (val >= 40) return 'var(--mp-amber)';
+  return 'var(--mp-red)';
+}
+
+function formatMcap(n) {
+  if (n >= 1e12) return '$' + (n / 1e12).toFixed(1) + 'T';
+  if (n >= 1e9)  return '$' + (n / 1e9).toFixed(1) + 'B';
+  if (n >= 1e6)  return '$' + (n / 1e6).toFixed(0) + 'M';
+  return '$' + n.toLocaleString();
+}
+
+/* ── Keyboard ── */
+document.getElementById('ticker-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') scoreSingle();
+});
+
+/* ── Init ── */
+checkHealth();
+</script>
+</body>
+</html>
