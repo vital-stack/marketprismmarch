@@ -279,13 +279,81 @@ body::before {
 .batch-expanded.visible { display: table-row; }
 .batch-expanded td { padding: 20px; background: var(--mp-surface2); }
 
+/* ── Price Strip ── */
+.price-strip {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 1px; background: var(--mp-border);
+  border-top: 1px solid var(--mp-border); border-bottom: 1px solid var(--mp-border);
+}
+.price-strip .diag-cell { background: var(--mp-surface); padding: 16px 18px; }
+
+/* ── SEC Financials ── */
+.sec-section { padding: 24px 28px; border-top: 1px solid var(--mp-border); }
+.sec-section h3 {
+  font-family: var(--font-display); font-weight: 400; font-size: 18px; margin-bottom: 14px;
+}
+.sec-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+}
+.sec-cell {
+  background: rgba(255,255,255,0.02); border: 1px solid var(--mp-border);
+  border-radius: 10px; padding: 12px; text-align: center;
+}
+.sec-cell label { display: block; font-size: 10px; color: var(--mp-text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.sec-cell .val { font-size: 18px; font-weight: 600; }
+
+/* ── Sentiment & Headlines ── */
+.sentiment-section { padding: 24px 28px; border-top: 1px solid var(--mp-border); }
+.sentiment-section h3 {
+  font-family: var(--font-display); font-weight: 400; font-size: 18px; margin-bottom: 14px;
+}
+.sentiment-header {
+  display: flex; align-items: center; gap: 16px; margin-bottom: 16px; flex-wrap: wrap;
+}
+.sentiment-ring-wrap { flex-shrink: 0; position: relative; width: 64px; height: 64px; }
+.sentiment-ring-wrap svg { width: 64px; height: 64px; }
+.sentiment-ring-center {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.sentiment-ring-val { font-size: 18px; font-weight: 700; line-height: 1; }
+.sentiment-stats { display: flex; gap: 20px; }
+.sentiment-stats .ss-item { font-size: 13px; color: var(--mp-text-tertiary); }
+.sentiment-stats .ss-item strong { color: var(--mp-text-primary); }
+
+.headlines-list { list-style: none; }
+.headlines-list li {
+  padding: 10px 0; border-bottom: 1px solid var(--mp-border);
+  font-size: 13px; color: var(--mp-text-secondary); line-height: 1.5;
+}
+.headlines-list li:last-child { border-bottom: none; }
+.headline-source {
+  font-size: 11px; color: var(--mp-text-muted); margin-top: 2px;
+}
+
+/* ── Claim Quality ── */
+.claim-section { padding: 24px 28px; border-top: 1px solid var(--mp-border); }
+.claim-section h3 {
+  font-family: var(--font-display); font-weight: 400; font-size: 18px; margin-bottom: 14px;
+}
+.claim-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+.claim-pill {
+  font-size: 12px; padding: 4px 12px; border-radius: 6px;
+  border: 1px solid var(--mp-border);
+}
+.claim-pill.good { color: var(--mp-green); border-color: rgba(0,222,148,0.2); background: rgba(0,222,148,0.06); }
+.claim-pill.bad { color: var(--mp-red); border-color: rgba(255,77,77,0.2); background: rgba(255,77,77,0.06); }
+.claim-pill.neutral { color: var(--mp-text-tertiary); }
+
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .page-wrap { padding: 20px 16px 48px; }
   .sc-narrative { flex-direction: column; align-items: center; }
   .sc-mini-rings { grid-template-columns: 1fr 1fr 1fr; }
   .diag-strip { grid-template-columns: repeat(2, 1fr); }
+  .price-strip { grid-template-columns: repeat(2, 1fr); }
   .wh-stats { grid-template-columns: repeat(2, 1fr); }
+  .sec-grid { grid-template-columns: repeat(2, 1fr); }
   .sc-hero { flex-direction: column; }
   .sc-hero-right { text-align: left; }
   .search-row { flex-direction: column; }
@@ -294,7 +362,9 @@ body::before {
 @media (max-width: 480px) {
   .sc-mini-rings { grid-template-columns: 1fr; }
   .diag-strip { grid-template-columns: 1fr 1fr; }
+  .price-strip { grid-template-columns: 1fr 1fr; }
   .wh-stats { grid-template-columns: 1fr 1fr; }
+  .sec-grid { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -396,6 +466,19 @@ function formatMcap(n) {
   if (n >= 1e9)  return '$' + (n / 1e9).toFixed(1) + 'B';
   if (n >= 1e6)  return '$' + (n / 1e6).toFixed(0) + 'M';
   return '$' + n.toLocaleString();
+}
+function formatRevenue(n) {
+  if (n >= 1e12) return '$' + (n / 1e12).toFixed(2) + 'T';
+  if (n >= 1e9)  return '$' + (n / 1e9).toFixed(1) + 'B';
+  if (n >= 1e6)  return '$' + (n / 1e6).toFixed(0) + 'M';
+  if (n >= 1e3)  return '$' + (n / 1e3).toFixed(0) + 'K';
+  return '$' + n.toFixed(0);
+}
+function formatVolume(n) {
+  if (n >= 1e9)  return (n / 1e9).toFixed(1) + 'B';
+  if (n >= 1e6)  return (n / 1e6).toFixed(1) + 'M';
+  if (n >= 1e3)  return (n / 1e3).toFixed(0) + 'K';
+  return n.toString();
 }
 
 /* ── Ring SVG Builder ── */
@@ -516,6 +599,13 @@ function buildScoreCard(d) {
   }
 
   const mcapStr = d.market_cap ? formatMcap(d.market_cap) : '—';
+  const shortName = d.short_name || d.ticker;
+  const sectorLabel = [d.sector, d.industry].filter(Boolean).join(' · ') || 'Unknown Sector';
+
+  // Price change from 30d
+  const pChange30d = d.price_30d_before ? (((d.current_price - d.price_30d_before) / d.price_30d_before) * 100) : null;
+  const pChange30dStr = pChange30d != null ? ((pChange30d > 0 ? '+' : '') + pChange30d.toFixed(1) + '%') : null;
+  const pChange30dColor = pChange30d == null ? '' : (pChange30d >= 0 ? '#00DE94' : '#FF4D4D');
 
   return `
     <div class="score-card">
@@ -524,8 +614,8 @@ function buildScoreCard(d) {
       <!-- Hero Header -->
       <div class="sc-hero">
         <div class="sc-hero-left">
-          <h2>${d.ticker}</h2>
-          <div class="meta">${d.sector || 'Unknown Sector'} · ${cp}${d.market_cap ? ' · ' + mcapStr : ''}</div>
+          <h2>${d.ticker}${shortName !== d.ticker ? ' <span style="font-size:18px;color:var(--mp-text-tertiary);font-family:var(--font-body);font-weight:400">' + shortName + '</span>' : ''}</h2>
+          <div class="meta">${sectorLabel} · ${cp}${pChange30dStr ? ' <span style="color:' + pChange30dColor + '">' + pChange30dStr + ' (30d)</span>' : ''}${d.market_cap ? ' · ' + mcapStr : ''}</div>
         </div>
         <div class="sc-hero-right">
           <div class="sc-verdict-badge" style="color:${vm.color};background:${vm.bg}">${d.verdict}</div><br>
@@ -649,12 +739,91 @@ function buildScoreCard(d) {
         </div>
       </div>
 
+      <!-- Price Strip -->
+      ${d.price_high || d.price_low || d.volume_day ? `
+      <div class="price-strip">
+        <div class="diag-cell">
+          <div class="diag-label">Current Price</div>
+          <div class="diag-val" style="color:var(--mp-cyan)">${cp}</div>
+          <div class="diag-sub">${d.snapshot_date}</div>
+        </div>
+        ${d.price_high ? `<div class="diag-cell">
+          <div class="diag-label">Day High</div>
+          <div class="diag-val">$${d.price_high.toFixed(2)}</div>
+          <div class="diag-sub">${d.price_low ? 'Low $' + d.price_low.toFixed(2) : ''}</div>
+        </div>` : ''}
+        ${d.volume_day ? `<div class="diag-cell">
+          <div class="diag-label">Volume</div>
+          <div class="diag-val">${formatVolume(d.volume_day)}</div>
+          <div class="diag-sub">Today's volume</div>
+        </div>` : ''}
+        ${pChange30dStr ? `<div class="diag-cell">
+          <div class="diag-label">30-Day Move</div>
+          <div class="diag-val" style="color:${pChange30dColor}">${pChange30dStr}</div>
+          <div class="diag-sub">From $${d.price_30d_before.toFixed(2)}</div>
+        </div>` : ''}
+      </div>` : ''}
+
+      <!-- SEC Financials -->
+      ${d.filing_found ? `
+      <div class="sec-section">
+        <h3>SEC Financials</h3>
+        <div class="sec-grid">
+          ${d.sec_eps != null ? `<div class="sec-cell"><label>EPS</label><div class="val">$${d.sec_eps.toFixed(2)}</div></div>` : ''}
+          ${d.sec_revenue != null ? `<div class="sec-cell"><label>Revenue</label><div class="val">${formatRevenue(d.sec_revenue)}</div></div>` : ''}
+          ${d.sec_margin != null ? `<div class="sec-cell"><label>Gross Margin</label><div class="val">${d.sec_margin.toFixed(1)}%</div></div>` : ''}
+          ${d.sec_net_income != null ? `<div class="sec-cell"><label>Net Income</label><div class="val">${formatRevenue(d.sec_net_income)}</div></div>` : ''}
+          ${d.pe_ratio != null ? `<div class="sec-cell"><label>P/E Ratio</label><div class="val">${d.pe_ratio.toFixed(1)}</div></div>` : ''}
+          ${d.form_type ? `<div class="sec-cell"><label>Filing</label><div class="val" style="font-size:14px">${d.form_type}</div></div>` : ''}
+          ${d.revenue_growth_yoy != null ? `<div class="sec-cell"><label>Rev Growth YoY</label><div class="val" style="color:${d.revenue_growth_yoy >= 0 ? '#00DE94' : '#FF4D4D'}">${d.revenue_growth_yoy > 0 ? '+' : ''}${d.revenue_growth_yoy.toFixed(1)}%</div></div>` : ''}
+          ${d.eps_ttm != null ? `<div class="sec-cell"><label>EPS TTM</label><div class="val">$${d.eps_ttm.toFixed(2)}</div></div>` : ''}
+          ${d.fcf_per_share != null ? `<div class="sec-cell"><label>FCF/Share</label><div class="val">$${d.fcf_per_share.toFixed(2)}</div></div>` : ''}
+        </div>
+        ${d.period_of_report ? `<div style="font-size:11px;color:var(--mp-text-muted);margin-top:10px">Period: ${d.period_of_report}</div>` : ''}
+      </div>` : ''}
+
+      <!-- Claim Quality Indicators -->
+      <div class="claim-section">
+        <h3>Claim Quality</h3>
+        <div class="claim-pills">
+          <span class="claim-pill ${d.has_numeric_anchor ? 'good' : 'bad'}">${d.has_numeric_anchor ? '✓' : '✗'} Data-Backed</span>
+          <span class="claim-pill ${d.has_source_ref ? 'good' : 'bad'}">${d.has_source_ref ? '✓' : '✗'} Source Cited</span>
+          <span class="claim-pill ${d.has_timeframe ? 'good' : 'bad'}">${d.has_timeframe ? '✓' : '✗'} Timeframe Given</span>
+          <span class="claim-pill ${!d.has_vague_language ? 'good' : 'bad'}">${!d.has_vague_language ? '✓' : '✗'} Precise Language</span>
+          ${d.hype_adjective_count != null ? `<span class="claim-pill ${d.hype_adjective_count === 0 ? 'good' : 'bad'}">${d.hype_adjective_count} Hype Words</span>` : ''}
+          ${d.numeric_anchor_count != null ? `<span class="claim-pill neutral">${d.numeric_anchor_count} Data Points</span>` : ''}
+        </div>
+      </div>
+
+      <!-- Sentiment & Headlines -->
+      ${d.sentiment != null || (d.top_headlines && d.top_headlines.length) ? `
+      <div class="sentiment-section">
+        <h3>Market Sentiment</h3>
+        <div class="sentiment-header">
+          ${d.sentiment != null ? `
+          <div class="sentiment-ring-wrap">
+            ${buildRingSVG(d.sentiment, 100, d.sentiment >= 60 ? '#00DE94' : d.sentiment >= 40 ? '#D9A200' : '#FF4D4D', 64)}
+            <div class="sentiment-ring-center">
+              <div class="sentiment-ring-val" style="color:${d.sentiment >= 60 ? '#00DE94' : d.sentiment >= 40 ? '#D9A200' : '#FF4D4D'}">${Math.round(d.sentiment)}</div>
+            </div>
+          </div>` : ''}
+          <div class="sentiment-stats">
+            ${d.article_count ? `<div class="ss-item"><strong>${d.article_count}</strong> articles</div>` : ''}
+            ${d.sentiment != null ? `<div class="ss-item">Sentiment <strong style="color:${d.sentiment >= 60 ? '#00DE94' : d.sentiment >= 40 ? '#D9A200' : '#FF4D4D'}">${d.sentiment >= 60 ? 'Bullish' : d.sentiment >= 40 ? 'Neutral' : 'Bearish'}</strong></div>` : ''}
+          </div>
+        </div>
+        ${d.top_headlines && d.top_headlines.length ? `
+        <ul class="headlines-list">
+          ${d.top_headlines.slice(0, 6).map((h, i) => `<li>${h}${d.sources && d.sources[i] ? '<div class="headline-source">' + d.sources[i] + '</div>' : ''}</li>`).join('')}
+        </ul>` : ''}
+      </div>` : ''}
+
       <!-- Footer -->
       <div class="sc-footer">
         <span>${d.snapshot_date}</span>
         ${d.agent_latency_ms ? `<span>${(d.agent_latency_ms / 1000).toFixed(1)}s analysis</span>` : ''}
         ${d.data_quality && d.data_quality !== 'good' ? `<span style="color:var(--mp-amber)">Data: ${d.data_quality}</span>` : ''}
-        <span style="margin-left:auto;color:var(--mp-text-muted)">Source Reliability ${d.srs} · Analyst Credibility ${d.acs} · Claim Verifiability ${d.cvs}</span>
+        <span style="margin-left:auto;color:var(--mp-text-muted)">SRS ${d.srs} · ACS ${d.acs} · CVS ${d.cvs}</span>
       </div>
     </div>
   `;
