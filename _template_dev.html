@@ -5596,8 +5596,11 @@ function nfBuildRow(dir, logoHtml, ticker, sector, headline, verdict, href, extr
 
   // Image panel: pass ticker/narrative/sector for DALL-E generation via edge function
   var imgPanelId='nc-img-'+ticker+'-'+Math.random().toString(36).substr(2,5);
-  var pillKeywords=[ticker,sector].concat((headline||'').split(/\s+/).filter(function(w){return w.length>4;}).slice(0,2)).filter(Boolean);
-  var pillsHTML='<div class="nc-img-pills">'+pillKeywords.slice(0,4).map(function(k){return '<span class="nc-img-pill">'+esc(k)+'</span>';}).join('')+'</div>';
+  var pillKeywords=[ticker,sector].filter(Boolean);
+  var pillsHTML='<div class="nc-img-pills">'+pillKeywords.slice(0,3).map(function(k){return '<span class="nc-img-pill">'+esc(k)+'</span>';}).join('')+'</div>';
+  // Store narrative data in JS map (avoids HTML attribute escaping issues)
+  if(typeof window._ncImgData==='undefined') window._ncImgData={};
+  window._ncImgData[imgPanelId]={ticker:ticker,narrative:(headline||'').slice(0,300),sector:sector||''};
 
   return '<a class="nc-card '+dirCls+'" '+(href?'href="'+href+'"':'')+'>'
     +'<div class="nc-card-grid">'
@@ -5628,7 +5631,7 @@ function nfBuildRow(dir, logoHtml, ticker, sector, headline, verdict, href, extr
         +'</div>'
         +(signals.length?'<div class="nc-signals">'+signals.map(function(s){return '<span class="nc-signal" style="color:'+s.color+';border-color:'+s.border+';">'+esc(s.label)+'</span>';}).join('')+'</div>':'')
       +'</div>'
-      +'<div class="nc-img-panel" id="'+imgPanelId+'" data-img-ticker="'+esc(ticker)+'" data-img-narrative="'+esc((headline||'').slice(0,300))+'" data-img-sector="'+esc(sector||'')+'">'
+      +'<div class="nc-img-panel" id="'+imgPanelId+'">'
         +pillsHTML
       +'</div>'
     +'</div>'
@@ -5933,14 +5936,16 @@ function renderTrapsCards(){
 
 // ── DALL-E 3 image loader for narrative card image panels (via edge function) ──
 function loadNarrativeCardImages(){
-  var panels=document.querySelectorAll('.nc-img-panel[data-img-ticker]');
-  if(!SUPABASE_URL) return;
+  var imgData=window._ncImgData||{};
+  var panels=document.querySelectorAll('.nc-img-panel');
+  if(!SUPABASE_URL||!panels.length) return;
   var edgeUrl=SUPABASE_URL+'/functions/v1/generate-narrative-image';
   panels.forEach(function(panel){
-    var ticker=panel.getAttribute('data-img-ticker');
-    if(!ticker) return;
-    var narrative=panel.getAttribute('data-img-narrative')||'';
-    var sector=panel.getAttribute('data-img-sector')||'';
+    var d=imgData[panel.id];
+    if(!d||!d.ticker) return;
+    var ticker=d.ticker;
+    var narrative=d.narrative||'';
+    var sector=d.sector||'';
     fetch(edgeUrl,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
