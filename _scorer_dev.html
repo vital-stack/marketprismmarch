@@ -814,7 +814,12 @@ function buildScoreCard(d) {
         </div>
         ${d.top_headlines && d.top_headlines.length ? `
         <ul class="headlines-list">
-          ${d.top_headlines.slice(0, 6).map((h, i) => `<li>${h}${d.sources && d.sources[i] ? '<div class="headline-source">' + d.sources[i] + '</div>' : ''}</li>`).join('')}
+          ${d.top_headlines.slice(0, 6).map((h, i) => {
+            const url = d.article_urls && d.article_urls[i] ? d.article_urls[i] : null;
+            const title = url ? `<a href="${url}" target="_blank" rel="noopener" style="color:var(--mp-text-secondary);text-decoration:none;transition:color 0.15s" onmouseover="this.style.color='var(--mp-cyan)'" onmouseout="this.style.color='var(--mp-text-secondary)'">${h}</a>` : h;
+            const source = d.sources && d.sources[i] ? d.sources[i] : '';
+            return `<li>${title}${source ? '<div class="headline-source">' + source + '</div>' : ''}</li>`;
+          }).join('')}
         </ul>` : ''}
       </div>` : ''}
 
