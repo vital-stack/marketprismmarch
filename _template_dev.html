@@ -3826,6 +3826,42 @@ body{
 /* 5. Hide Trading Cards section entirely */
 .nf-sum-cards-section{display:none !important;}
 
+/* Glass shine sweep on all cards */
+@keyframes glass-shine{
+  0%{left:-60%;}
+  50%{left:100%;}
+  100%{left:100%;}
+}
+.daily-hero-banner::after,
+.daily-narr-card::after,
+.nc-card::after,
+.disc-stat-tile::after,
+.disc-nc::after,
+.stat-card::after,
+.mw-stat::after,
+.mw-card::after,
+.dr-stat::after,
+.dr-regime::after,
+.lb-card::after{
+  content:'' !important;
+  position:absolute !important;
+  top:0 !important;left:-60% !important;
+  width:60% !important;height:1.5px !important;
+  background:linear-gradient(90deg,transparent,rgba(0,174,255,0.35),rgba(0,222,148,0.25),rgba(255,255,255,0.15),transparent) !important;
+  animation:glass-shine 10s ease-in-out infinite !important;
+  z-index:2 !important;
+  pointer-events:none !important;
+}
+/* Stagger the shine timing so cards don't all sweep at once */
+.daily-narr-card::after{animation-delay:1s !important;}
+.nc-card::after{animation-delay:2s !important;}
+.nc-card:nth-child(2)::after{animation-delay:3s !important;}
+.nc-card:nth-child(3)::after{animation-delay:4s !important;}
+.disc-stat-tile::after{animation-delay:0.5s !important;}
+.mw-card::after{animation-delay:1.5s !important;}
+.dr-stat::after{animation-delay:0.3s !important;}
+.lb-card::after{animation-delay:2.5s !important;}
+
 /* Constellation canvas styling */
 #dash-constellation{position:fixed;top:0;left:224px;right:0;bottom:0;pointer-events:none;z-index:0;}
 @media(max-width:1100px){#dash-constellation{left:0;}}
