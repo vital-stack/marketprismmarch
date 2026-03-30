@@ -25,26 +25,19 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 /* ── AMBIENT GLOW LAYER ── */
 .ambient-glow{
-  position:fixed;top:0;left:224px;right:0;bottom:0;pointer-events:none;z-index:0;overflow:hidden;opacity:1;
+  position:fixed;top:0;left:224px;right:0;bottom:0;pointer-events:none;z-index:0;overflow:hidden;opacity:0;
 }
+[data-theme="dark"] .ambient-glow{opacity:1;}
 .ambient-glow::before{
-  content:'';position:absolute;top:-20%;right:-10%;width:70vw;height:70vw;
-  background:radial-gradient(circle,rgba(0,174,255,0.12) 0%,rgba(0,222,148,0.05) 35%,transparent 65%);
-  animation:ambientDrift 25s ease-in-out infinite alternate;
+  content:'';position:absolute;top:-40%;right:-20%;width:80vw;height:80vw;
+  background:radial-gradient(circle,rgba(255,255,255,0.018) 0%,rgba(255,255,255,0.006) 40%,transparent 70%);
+  animation:ambientDrift 30s ease-in-out infinite alternate;
 }
 .ambient-glow::after{
-  content:'';position:absolute;bottom:-20%;left:-10%;width:55vw;height:55vw;
-  background:radial-gradient(circle,rgba(0,222,148,0.08) 0%,rgba(0,174,255,0.04) 35%,transparent 65%);
-  animation:ambientDrift2 30s ease-in-out infinite alternate;
+  content:'';position:absolute;bottom:-30%;left:-15%;width:60vw;height:60vw;
+  background:radial-gradient(circle,rgba(255,255,255,0.012) 0%,rgba(255,255,255,0.004) 40%,transparent 70%);
+  animation:ambientDrift2 35s ease-in-out infinite alternate;
 }
-/* Third glow orb */
-.ambient-glow-3{
-  position:fixed;top:30%;left:50%;width:50vw;height:50vw;
-  pointer-events:none;z-index:0;border-radius:50%;
-  background:radial-gradient(circle,rgba(77,200,240,0.07) 0%,transparent 55%);
-  animation:ambientDrift3 35s ease-in-out infinite alternate;
-}
-@keyframes ambientDrift3{0%{transform:translate(-50%,-50%) scale(1);}100%{transform:translate(-40%,-60%) scale(1.15);}}
 @keyframes ambientDrift{0%{transform:translate(0,0) scale(1);}100%{transform:translate(-8%,12%) scale(1.15);}}
 @keyframes ambientDrift2{0%{transform:translate(0,0) scale(1);}100%{transform:translate(10%,-8%) scale(1.1);}}
 /* ── GRID BACKGROUND ── */
@@ -56,7 +49,7 @@
   background-size:64px 64px;
   mask-image:radial-gradient(ellipse 70% 50% at 50% 30%,black 20%,transparent 100%);
   -webkit-mask-image:radial-gradient(ellipse 70% 50% at 50% 30%,black 20%,transparent 100%);
-  opacity:0.7;
+  opacity:0;
 }
 [data-theme="dark"] .grid-bg{opacity:1;}
 /* ── SCAN LINE ── */
@@ -350,9 +343,9 @@ body{
 .daily-tag::before{content:'';width:20px;height:1px;background:var(--mp-text-tertiary);opacity:.5;}
 .daily-title{font-family:'Instrument Serif',var(--font-display),Georgia,serif;font-size:clamp(32px,3.8vw,52px);font-weight:400;color:var(--mp-text-primary);line-height:1.1;letter-spacing:-0.025em;margin-bottom:6px;}
 .daily-title-italic{font-family:'Instrument Serif',var(--font-display),Georgia,serif;font-size:clamp(32px,3.8vw,50px);font-weight:400;font-style:italic;line-height:1.1;letter-spacing:-0.025em;margin-bottom:20px;display:block;
-  background:linear-gradient(135deg,#00AEFF,#4DC8F0,#00DE94,#00AEFF);background-size:300% 300%;
+  background:linear-gradient(135deg,#4DC8F0,#00DE94,#7B61FF,#4DC8F0);background-size:300% 300%;
   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-  animation:mp-gradient-text 16s ease infinite;
+  animation:mp-gradient-text 6s ease infinite;
 }
 @keyframes mp-gradient-text{0%,100%{background-position:0% 50%;}50%{background-position:100% 50%;}}
 .daily-desc{font-family:var(--font-body);font-size:14px;font-weight:400;color:var(--mp-text-primary);line-height:1.7;margin-bottom:24px;max-width:100%;}
@@ -577,9 +570,9 @@ body{
 .disc-hero{margin-bottom:24px;}
 .disc-hero-h{font-family:'Instrument Serif',var(--font-display),Georgia,serif;font-size:clamp(28px,3.2vw,42px);font-weight:400;letter-spacing:-.025em;line-height:1.1;margin-bottom:4px;}
 .disc-hero-h em{font-style:italic;display:block;
-  background:linear-gradient(135deg,#00AEFF,#4DC8F0,#00DE94,#00AEFF);background-size:300% 300%;
+  background:linear-gradient(135deg,#4DC8F0,#00DE94,#7B61FF,#4DC8F0);background-size:300% 300%;
   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-  animation:mp-gradient-text 16s ease infinite;
+  animation:mp-gradient-text 6s ease infinite;
 }
 .disc-hero-sub{font-size:14px;color:var(--mp-text-secondary);line-height:1.6;max-width:560px;margin-bottom:20px;}
 .disc-stats-row{display:grid;grid-template-columns:repeat(4,1fr) 260px;gap:12px;margin-bottom:24px;}
@@ -590,7 +583,7 @@ body{
 [data-theme="dark"] .disc-stat-tile::before{opacity:1;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:48px 48px;}
 .disc-stat-tile>*{position:relative;}
 .disc-st-num{font-size:36px;font-weight:700;letter-spacing:-.03em;line-height:1;margin-bottom:4px;}
-.disc-st-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mp-text-muted);}
+.disc-st-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--mp-text-tertiary);}
 .disc-stat-tile.trap .disc-st-num{color:#FF4D4D;}
 .disc-stat-tile.breaking .disc-st-num{color:#FFB800;}
 .disc-stat-tile.surging .disc-st-num{color:#00DE94;}
@@ -677,13 +670,13 @@ body{
   background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:48px 48px;}
 .daily-hero-banner>*{position:relative;z-index:1;}
 .dhb-inner{padding:32px 36px;}
-.dhb-dateline{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.10em;color:var(--mp-text-secondary);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.dhb-dateline{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#00AEFF;margin-bottom:12px;display:flex;align-items:center;gap:10px;}
 .dhb-dateline .sep{color:var(--mp-text-muted);}
 .dhb-h{font-family:'Instrument Serif',var(--font-display),Georgia,serif;font-size:clamp(28px,3vw,42px);font-weight:400;letter-spacing:-.025em;line-height:1.1;margin-bottom:4px;}
 .dhb-h em{font-style:italic;display:block;font-size:clamp(32px,3.8vw,50px);
-  background:linear-gradient(135deg,#00AEFF,#4DC8F0,#00DE94,#00AEFF);background-size:300% 300%;
+  background:linear-gradient(135deg,#4DC8F0,#00DE94,#7B61FF,#4DC8F0);background-size:300% 300%;
   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-  animation:mp-gradient-text 16s ease infinite;
+  animation:mp-gradient-text 6s ease infinite;
 }
 .dhb-context{font-size:14px;color:var(--mp-text-secondary);margin-top:10px;padding:10px 14px;background:rgba(0,0,0,0.03);border-radius:6px;border-left:3px solid #00AEFF;line-height:1.6;}
 [data-theme="dark"] .dhb-context{background:rgba(255,255,255,.04);}
@@ -715,57 +708,43 @@ body{
   color:var(--mp-text-primary);line-height:1.15;
 }
 .page-header .ph-italic{font-family:'Instrument Serif',var(--font-display),Georgia,serif;font-size:clamp(28px,3vw,38px);font-weight:400;font-style:italic;line-height:1.15;letter-spacing:-.025em;display:block;margin-bottom:14px;
-  background:linear-gradient(135deg,#00AEFF,#4DC8F0,#00DE94,#00AEFF);background-size:300% 300%;
+  background:linear-gradient(135deg,#4DC8F0,#00DE94,#7B61FF,#4DC8F0);background-size:300% 300%;
   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-  animation:mp-gradient-text 16s ease infinite;
+  animation:mp-gradient-text 6s ease infinite;
 }
 .page-header p{font-size:14px;color:var(--mp-text-secondary);letter-spacing:0.01em;font-weight:400;line-height:1.65;max-width:520px;}
 /* ── STAT CARDS ── */
 .stats-row{display:flex;gap:12px;margin-bottom:24px;}
+/* ── UNIFIED STAT CARDS — matches Discover tile pattern ── */
 .stat-card{
   flex:1;background:var(--mp-surface);
   border:1px solid var(--mp-border);
-  border-radius:16px;padding:18px 20px 16px;
+  border-radius:16px;padding:20px 22px;
   position:relative;overflow:hidden;
-  transition:all 0.5s cubic-bezier(0.16,1,0.3,1);
+  box-shadow:var(--mp-card-shadow);
+  transition:border-color .2s;
+  cursor:pointer;
   animation:fadeInScale 0.6s cubic-bezier(0.16,1,0.3,1) both;
 }
-.stat-card.stat-highlight{
-  background:rgba(255,255,255,0.04);
-  box-shadow:0 0 20px rgba(255,255,255,0.02);
-}
+.stat-card::before{display:none;}
+.stat-card::after{display:none;}
 .stat-card.sc-1{animation-delay:0.05s;}
 .stat-card.sc-2{animation-delay:0.12s;}
 .stat-card.sc-3{animation-delay:0.19s;}
 .stat-card.sc-4{animation-delay:0.26s;}
-.stat-card::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:2px;
-  background:var(--stat-accent,linear-gradient(90deg,transparent,rgba(255,255,255,0.06),transparent));
-  opacity:0.5;
-}
-.stat-card::after{display:none;}
-/* Per-stat color accents — explicit classes instead of nth-child */
-.stat-card.sc-1{--stat-accent:linear-gradient(90deg,rgba(160,168,176,0.2),rgba(160,168,176,0.1));border-color:var(--mp-border);}
-.stat-card.sc-1 .stat-num{color:var(--mp-text-primary);}
-.stat-card.sc-2{--stat-accent:linear-gradient(90deg,rgba(160,168,176,0.2),rgba(160,168,176,0.1));border-color:var(--mp-border);}
-.stat-card.sc-2 .stat-num{color:var(--mp-text-primary);}
-.stat-card.sc-3{--stat-accent:linear-gradient(90deg,rgba(160,168,176,0.2),rgba(160,168,176,0.1));border-color:var(--mp-border);}
-.stat-card.sc-3 .stat-num{color:var(--mp-text-primary);}
-.stat-card.sc-4{--stat-accent:linear-gradient(90deg,rgba(160,168,176,0.2),rgba(160,168,176,0.1));border-color:var(--mp-border);}
-.stat-card.sc-4 .stat-num{color:var(--mp-text-primary);}
-.stat-card:hover{
-  border-color:var(--mp-border-mid);
-  box-shadow:0 8px 24px rgba(0,0,0,0.08);
-  transform:translateY(-4px);
-}
-[data-theme="dark"] .stat-card:hover{box-shadow:0 20px 60px rgba(0,0,0,0.4);}
+.stat-card:hover{border-color:var(--mp-border-mid);}
+[data-theme="dark"] .stat-card:hover{border-color:rgba(255,255,255,0.12);}
+[data-theme="light"] .stat-card{background:#fff;border-color:rgba(0,0,0,0.08);box-shadow:0 2px 8px rgba(0,0,0,0.06);}
 .stat-num{
-  font-family:var(--font-mono);font-size:36px;font-weight:400;
+  font-family:var(--font-body);font-size:36px;font-weight:700;
   color:var(--mp-text-primary);display:block;margin-bottom:6px;
-  letter-spacing:-0.03em;
-  animation:numberTick 0.8s cubic-bezier(0.16,1,0.3,1) both;
+  letter-spacing:-0.03em;line-height:1;
 }
-.stat-label{font-size:10px;color:var(--mp-text-secondary);text-transform:uppercase;letter-spacing:.12em;font-family:var(--font-mono);font-weight:400;}
+.stat-label{font-size:10px;color:var(--mp-text-tertiary);text-transform:uppercase;letter-spacing:.08em;font-family:var(--font-body);font-weight:600;}
+/* Severity — indicated by number text color only, no borders */
+.stat-card.stat-severe .stat-num{color:#FF4D4D;}
+.stat-card.stat-moderate .stat-num{color:#FFB800;}
+.stat-card.stat-low .stat-num{color:#00DE94;}
 /* ── FILTER BAR ── */
 .filter-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
 .filter-label{font-size:10px;color:var(--mp-text-tertiary);text-transform:uppercase;letter-spacing:.07em;white-space:nowrap;font-family:var(--font-mono);}
@@ -1068,11 +1047,14 @@ body{
   display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;
 }
 .mw-stat{
-  background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:12px;
-  padding:16px 18px;display:flex;flex-direction:column;gap:4px;
+  background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:16px;
+  padding:20px 22px;display:flex;flex-direction:column;gap:6px;
+  box-shadow:var(--mp-card-shadow);transition:border-color .2s;cursor:pointer;position:relative;overflow:hidden;
 }
-.mw-stat-num{font-size:28px;font-weight:600;color:var(--mp-text-primary);font-family:var(--font-body);}
-.mw-stat-lbl{font-size:11px;color:var(--mp-text-secondary);text-transform:uppercase;letter-spacing:0.06em;}
+.mw-stat:hover{border-color:var(--mp-border-mid);}
+[data-theme="light"] .mw-stat{background:#fff;border-color:rgba(0,0,0,0.08);box-shadow:0 2px 8px rgba(0,0,0,0.06);}
+.mw-stat-num{font-size:36px;font-weight:700;color:var(--mp-text-primary);font-family:var(--font-body);line-height:1;letter-spacing:-0.03em;}
+.mw-stat-lbl{font-size:10px;color:var(--mp-text-tertiary);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;}
 .mw-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
 .mw-card{
   background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:16px;
@@ -3702,146 +3684,30 @@ body{
 [data-theme="light"] .lb-refresh-btn:hover{background:rgba(0,0,0,0.08);color:var(--mp-text-primary);}
 
 /* ══════════════════════════════════════════════════════════════════
-   APPLE GLASS EFFECT — Frosted glassmorphism on all cards
+   DEV OVERRIDES
    ══════════════════════════════════════════════════════════════════ */
 
-/* Base glass mixin — applied to all card-like elements */
-.daily-hero-banner,
-.daily-narr-card,
-.nc-card,
-.disc-stat-tile,
-.disc-nc,
-.disc-lookup,
-.stat-card,
-.mw-stat,
-.mw-card,
-.dr-stat,
-.snap-card,
-.trap-card,
-.sector-card,
-.lb-card{
-  background:rgba(18,19,28,0.55) !important;
-  backdrop-filter:blur(28px) saturate(1.5) !important;
-  -webkit-backdrop-filter:blur(28px) saturate(1.5) !important;
-  border:1px solid rgba(255,255,255,0.08) !important;
-  box-shadow:
-    0 4px 24px rgba(0,0,0,0.25),
-    inset 0 0.5px 0 rgba(255,255,255,0.08) !important;
-}
-.daily-hero-banner:hover,
-.nc-card:hover,
-.disc-nc:hover,
-.disc-stat-tile:hover,
-.stat-card:hover,
-.mw-stat:hover,
-.mw-card:hover,
-.dr-stat:hover,
-.lb-card:hover{
-  border-color:rgba(255,255,255,0.14) !important;
-  box-shadow:
-    0 8px 40px rgba(0,0,0,0.35),
-    inset 0 0.5px 0 rgba(255,255,255,0.10) !important;
+/* 1. "Every morning." — static brand light blue, no animation */
+.dhb-h em{
+  background:none !important;
+  -webkit-background-clip:unset !important;
+  background-clip:unset !important;
+  -webkit-text-fill-color:#4DC8F0 !important;
+  color:#4DC8F0 !important;
+  animation:none !important;
 }
 
-/* Narrative feed — glass container */
-.nf-feed{
-  background:rgba(18,19,28,0.45) !important;
-  backdrop-filter:blur(28px) saturate(1.5) !important;
-  -webkit-backdrop-filter:blur(28px) saturate(1.5) !important;
-  border:1px solid rgba(255,255,255,0.06) !important;
-  box-shadow:0 4px 24px rgba(0,0,0,0.20) !important;
+/* 2. "Today's Biggest Narratives" — same light blue serif as "Every morning" */
+.nf-feed-title{
+  font-family:'Instrument Serif','DM Serif Display',Georgia,serif !important;
+  font-size:clamp(28px,3vw,42px) !important;
+  font-weight:400 !important;
+  color:#4DC8F0 !important;
+  letter-spacing:-0.025em !important;
+  font-style:italic !important;
 }
 
-/* Sidebar stats — smaller glass tiles */
-.dr-stat{
-  background:rgba(24,25,34,0.60) !important;
-  backdrop-filter:blur(20px) saturate(1.4) !important;
-  -webkit-backdrop-filter:blur(20px) saturate(1.4) !important;
-  border-radius:12px !important;
-  padding:12px 14px !important;
-}
-
-/* Light theme glass — inverted for light backgrounds */
-[data-theme="light"] .daily-hero-banner,
-[data-theme="light"] .daily-narr-card,
-[data-theme="light"] .nc-card,
-[data-theme="light"] .disc-stat-tile,
-[data-theme="light"] .disc-nc,
-[data-theme="light"] .stat-card,
-[data-theme="light"] .mw-stat,
-[data-theme="light"] .mw-card,
-[data-theme="light"] .dr-stat,
-[data-theme="light"] .lb-card{
-  background:rgba(255,255,255,0.65) !important;
-  border-color:rgba(255,255,255,0.50) !important;
-  box-shadow:
-    0 4px 24px rgba(0,0,0,0.06),
-    inset 0 0.5px 0 rgba(255,255,255,0.80) !important;
-}
-[data-theme="light"] .nf-feed{
-  background:rgba(255,255,255,0.55) !important;
-  border-color:rgba(255,255,255,0.40) !important;
-}
-
-/* ══════════════════════════════════════════════════════════════════
-   CARD HEADER BARS — Blue accent tab on title rows
-   ══════════════════════════════════════════════════════════════════ */
-
-/* Market Narrative Summary — blue header tab */
-.nf-sum-header{
-  background:linear-gradient(135deg,rgba(0,174,255,0.10),rgba(0,222,148,0.06)) !important;
-  padding:14px 20px !important;
-  border-bottom:1px solid rgba(0,174,255,0.15) !important;
-  margin-bottom:0 !important;
-  border-radius:16px 16px 0 0;
-}
-[data-theme="light"] .nf-sum-header{background:linear-gradient(135deg,rgba(0,174,255,0.06),rgba(0,222,148,0.03)) !important;border-bottom-color:rgba(0,174,255,0.10) !important;}
-
-/* Market-Wide cards — blue header tab */
-.mw-card-header{
-  background:linear-gradient(135deg,rgba(0,174,255,0.10),rgba(0,222,148,0.06));
-  margin:-20px -20px 16px -20px;
-  padding:16px 20px;
-  border-bottom:1px solid rgba(0,174,255,0.15);
-  border-radius:16px 16px 0 0;
-}
-[data-theme="light"] .mw-card-header{background:linear-gradient(135deg,rgba(0,174,255,0.06),rgba(0,222,148,0.03));border-bottom-color:rgba(0,174,255,0.10);}
-
-/* Narrative feed cards (nc-card) — blue header tab */
-.nc-narrative-head{
-  background:linear-gradient(135deg,rgba(0,174,255,0.10),rgba(0,222,148,0.06)) !important;
-  margin:-16px -18px 12px -18px !important;
-  padding:14px 18px !important;
-  border-bottom:1px solid rgba(0,174,255,0.15) !important;
-  border-radius:12px 12px 0 0;
-}
-[data-theme="light"] .nc-narrative-head{background:linear-gradient(135deg,rgba(0,174,255,0.06),rgba(0,222,148,0.03)) !important;border-bottom-color:rgba(0,174,255,0.10) !important;}
-
-/* Discover narrative cards — blue header tab */
-.disc-nc-hdr{
-  background:linear-gradient(135deg,rgba(0,174,255,0.10),rgba(0,222,148,0.06)) !important;
-  border-bottom:1px solid rgba(0,174,255,0.15) !important;
-  border-radius:16px 16px 0 0;
-}
-[data-theme="light"] .disc-nc-hdr{background:linear-gradient(135deg,rgba(0,174,255,0.06),rgba(0,222,148,0.03)) !important;border-bottom-color:rgba(0,174,255,0.10) !important;}
-
-/* Daily hero banner — blue dateline tab */
-.dhb-dateline{
-  background:linear-gradient(135deg,rgba(0,174,255,0.10),rgba(0,222,148,0.06)) !important;
-  margin:-32px -36px 20px -36px !important;
-  padding:14px 36px !important;
-  border-bottom:1px solid rgba(0,174,255,0.15) !important;
-  border-radius:16px 16px 0 0;
-}
-[data-theme="light"] .dhb-dateline{background:linear-gradient(135deg,rgba(0,174,255,0.06),rgba(0,222,148,0.03)) !important;border-bottom-color:rgba(0,174,255,0.10) !important;}
-
-/* Sector cards — blue title tab */
-.sp-card-header,
-.sp-card .sp-card-name{
-  background:linear-gradient(135deg,rgba(0,174,255,0.10),rgba(0,222,148,0.06));
-}
-
-/* Today's Biggest Narratives — REMOVE box, just text on page */
+/* Remove any box/card behind the narratives feed area */
 .nf-feed{
   background:none !important;
   border:none !important;
@@ -3851,49 +3717,41 @@ body{
 .nf-feed::before{display:none !important;}
 .nf-feed-header{
   background:none !important;
-  margin:0 !important;
-  padding:0 0 14px 0 !important;
-  border-bottom:none !important;
+  margin:0 0 8px 0 !important;
+  padding:0 !important;
+  border:none !important;
   border-radius:0 !important;
 }
 
-/* ══════════════════════════════════════════════════════════════════
-   DAILY BRIEF — Light gray page background with dark glass cards
-   ══════════════════════════════════════════════════════════════════ */
-
-/* Page content area only — not sidebar or topbar */
-.page-content{
-  background:#E8EBF2 !important;
-  position:relative;
+/* 3. Tabs — blue pill style */
+.nf-tabs{
+  border-bottom:none !important;
+  gap:8px !important;
+  padding:0 !important;
+  margin-bottom:16px !important;
 }
-
-/* Ambient glows show through the light gray */
-.ambient-glow{mix-blend-mode:multiply;}
-
-/* Text that sits directly on the light gray background (not inside cards) */
-.daily-section-eyebrow{color:#5A6078 !important;}
-.daily-section-title{color:#1B2340 !important;}
-.daily-section-sub{color:#6B7280 !important;}
-.daily-tag{color:#5A6078 !important;}
-.daily-title{color:#1B2340 !important;}
-.daily-desc{color:#4B5563 !important;}
-.nf-feed-title{color:#1B2340 !important;}
-.nf-feed-date{color:#6B7280 !important;}
-.nf-sum-cards-label{color:#1B2340 !important;font-size:15px !important;}
-.nf-tab{color:#5A6078 !important;}
-.nf-tab:hover{color:#1B2340 !important;}
-.nf-tab.active{color:#00AEFF !important;border-bottom-color:#00AEFF !important;}
-.nf-tabs{border-bottom-color:rgba(0,0,0,0.08) !important;}
-
-/* Sidebar rail text on light bg */
-.dr-eyebrow{color:#5A6078 !important;}
-.dr-regime-val{color:#1B2340 !important;}
-.dr-regime-sub{color:#6B7280 !important;}
-.dr-sector-tk{color:#1B2340 !important;}
-.dr-sector-score{color:#1B2340 !important;}
-.dr-earn-ticker{color:#1B2340 !important;}
-.dr-earn-name{color:#6B7280 !important;}
-.dr-earn-eps-val{color:#1B2340 !important;}
+.nf-tab{
+  background:rgba(0,174,255,0.08) !important;
+  border:1px solid rgba(0,174,255,0.15) !important;
+  border-radius:8px !important;
+  border-bottom:none !important;
+  padding:8px 16px !important;
+  color:var(--mp-text-secondary) !important;
+  font-weight:500 !important;
+  transition:all .2s !important;
+}
+.nf-tab:hover{
+  background:rgba(0,174,255,0.15) !important;
+  color:#4DC8F0 !important;
+  border-color:rgba(0,174,255,0.25) !important;
+}
+.nf-tab.active{
+  background:rgba(0,174,255,0.20) !important;
+  color:#4DC8F0 !important;
+  border-color:rgba(0,174,255,0.35) !important;
+  font-weight:600 !important;
+  border-bottom:none !important;
+}
 
 </style>
 </head>
@@ -4054,7 +3912,6 @@ body{
 <div class="main">
   <!-- Ambient effects -->
   <div class="ambient-glow"></div>
-  <div class="ambient-glow-3"></div>
   <div class="grid-bg"></div>
   <div class="scan-line"></div>
   <!-- Top bar -->
@@ -4088,7 +3945,6 @@ body{
       <div class="daily-hero-banner">
         <div class="dhb-inner">
           <div class="dhb-dateline">
-            <span class="nf-sum-dot"></span>
             <span>Market Prism</span><span class="sep">·</span>
             <span>Daily Intelligence</span><span class="sep">·</span>
             <span id="daily-date-tag"></span>
@@ -4673,15 +4529,15 @@ body{
         <p>AI-detected hype gaps, coordination signals, and exhaustion timelines — the stories most likely to unravel.</p>
       </div>
       <div class="stats-row">
-        <div class="stat-card" style="border-top:2px solid #FF4D4D;">
+        <div class="stat-card stat-severe">
           <span class="stat-num" id="trap-stat-severe">—</span>
           <span class="stat-label">Severe</span>
         </div>
-        <div class="stat-card" style="border-top:2px solid #FFB800;">
+        <div class="stat-card stat-moderate">
           <span class="stat-num" id="trap-stat-moderate">—</span>
           <span class="stat-label">Moderate</span>
         </div>
-        <div class="stat-card" style="border-top:2px solid #00DE94;">
+        <div class="stat-card stat-low">
           <span class="stat-num" id="trap-stat-low">—</span>
           <span class="stat-label">Low Risk</span>
         </div>
