@@ -8,6 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
 <style>
 /* ── Reset & Vars ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -344,6 +346,29 @@ body::before {
 .claim-pill.good { color: var(--mp-green); border-color: rgba(0,222,148,0.2); background: rgba(0,222,148,0.06); }
 .claim-pill.bad { color: var(--mp-red); border-color: rgba(255,77,77,0.2); background: rgba(255,77,77,0.06); }
 .claim-pill.neutral { color: var(--mp-text-tertiary); }
+
+/* ── Export Dropdown ── */
+.export-wrap { position: relative; display: inline-block; }
+.export-btn {
+  background: transparent; border: 1px solid var(--mp-border); border-radius: 6px;
+  color: var(--mp-text-tertiary); font-family: var(--font-body); font-size: 11px;
+  padding: 3px 10px; cursor: pointer; transition: all 0.2s;
+}
+.export-btn:hover { border-color: var(--mp-cyan); color: var(--mp-cyan); }
+.export-menu {
+  display: none; position: absolute; bottom: 100%; left: 0; margin-bottom: 6px;
+  background: var(--mp-surface2); border: 1px solid var(--mp-border-hover);
+  border-radius: 8px; overflow: hidden; min-width: 140px; z-index: 10;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+.export-menu.open { display: block; }
+.export-menu button {
+  display: block; width: 100%; background: none; border: none;
+  color: var(--mp-text-secondary); font-family: var(--font-body); font-size: 13px;
+  padding: 10px 14px; text-align: left; cursor: pointer; transition: background 0.15s;
+}
+.export-menu button:hover { background: rgba(0,174,255,0.1); color: var(--mp-cyan); }
+.export-menu button + button { border-top: 1px solid var(--mp-border); }
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
@@ -885,6 +910,13 @@ function buildScoreCard(d) {
         ${d.agent_latency_ms ? `<span>${(d.agent_latency_ms / 1000).toFixed(1)}s analysis</span>` : ''}
         ${d.data_quality && d.data_quality !== 'good' ? `<span style="color:var(--mp-amber)">Data: ${d.data_quality}</span>` : ''}
         ${lastFromCache ? `<span style="color:var(--mp-teal)">cached</span>` : ''}
+        <div class="export-wrap">
+          <button class="export-btn" onclick="toggleExportMenu(event)">Export &#9662;</button>
+          <div class="export-menu">
+            <button onclick="exportCard('jpeg','${d.ticker}')">Save as JPEG</button>
+            <button onclick="exportCard('pdf','${d.ticker}')">Save as PDF</button>
+          </div>
+        </div>
         <span style="margin-left:auto;color:var(--mp-text-muted)">SRS ${d.srs} · ACS ${d.acs} · CVS ${d.cvs}</span>
       </div>
     </div>
@@ -954,6 +986,41 @@ function sortBatch(col) {
 function toggleExpand(i) {
   const row = document.getElementById('expand-' + i);
   if (row) row.classList.toggle('visible');
+}
+
+/* ── Export ── */
+function toggleExportMenu(e) {
+  e.stopPropagation();
+  const menu = e.currentTarget.nextElementSibling;
+  const wasOpen = menu.classList.contains('open');
+  document.querySelectorAll('.export-menu.open').forEach(m => m.classList.remove('open'));
+  if (!wasOpen) menu.classList.add('open');
+}
+document.addEventListener('click', () => document.querySelectorAll('.export-menu.open').forEach(m => m.classList.remove('open')));
+
+async function exportCard(format, ticker) {
+  document.querySelectorAll('.export-menu.open').forEach(m => m.classList.remove('open'));
+  const card = document.querySelector('.score-card');
+  if (!card) return;
+  try {
+    const canvas = await html2canvas(card, { backgroundColor: '#080B11', scale: 2, useCORS: true });
+    if (format === 'jpeg') {
+      const link = document.createElement('a');
+      link.download = ticker + '-score.jpg';
+      link.href = canvas.toDataURL('image/jpeg', 0.95);
+      link.click();
+    } else {
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const pxW = canvas.width;
+      const pxH = canvas.height;
+      const pdfW = pxW * 0.264583;
+      const pdfH = pxH * 0.264583;
+      const jspdf = window.jspdf || window.jsPDF;
+      const doc = new (jspdf.jsPDF || jspdf)({ orientation: pdfW > pdfH ? 'l' : 'p', unit: 'mm', format: [pdfW, pdfH] });
+      doc.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH);
+      doc.save(ticker + '-score.pdf');
+    }
+  } catch (err) { console.error('Export failed:', err); alert('Export failed — see console for details.'); }
 }
 
 /* ── Keyboard + Init ── */
