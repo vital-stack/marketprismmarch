@@ -41,496 +41,265 @@ body {
   min-height: 100vh;
 }
 
-/* ── Ambient Grid BG ── */
 body::before {
   content: '';
-  position: fixed;
-  inset: 0;
+  position: fixed; inset: 0;
   background-image:
     linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
   background-size: 64px 64px;
-  pointer-events: none;
-  z-index: 0;
+  pointer-events: none; z-index: 0;
 }
 
 /* ── Layout ── */
 .page-wrap {
-  position: relative;
-  z-index: 1;
+  position: relative; z-index: 1;
   max-width: 940px;
   margin: 0 auto;
   padding: 32px 24px 64px;
 }
 
 /* ── Header ── */
-.page-header {
-  text-align: center;
-  margin-bottom: 40px;
-}
+.page-header { text-align: center; margin-bottom: 40px; }
 .page-header h1 {
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: clamp(28px, 3.2vw, 42px);
-  letter-spacing: -0.025em;
-  margin-bottom: 4px;
+  font-family: var(--font-display); font-weight: 400;
+  font-size: clamp(28px, 3.2vw, 42px); letter-spacing: -0.025em; margin-bottom: 4px;
 }
-.page-header h1 em {
-  color: #4DC8F0;
-  font-style: italic;
-}
-.page-header .subtitle {
-  color: var(--mp-text-tertiary);
-  font-size: 14px;
-}
+.page-header h1 em { color: #4DC8F0; font-style: italic; }
+.page-header .subtitle { color: var(--mp-text-tertiary); font-size: 14px; }
 
-/* ── Health Indicator ── */
-.health-dot {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--mp-text-tertiary);
-  margin-top: 8px;
-}
-.health-dot .dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: var(--mp-text-muted);
-  transition: background 0.3s;
-}
+/* ── Health ── */
+.health-dot { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--mp-text-tertiary); margin-top: 8px; }
+.health-dot .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--mp-text-muted); transition: background 0.3s; }
 .health-dot .dot.ok { background: var(--mp-green); box-shadow: 0 0 6px rgba(0,222,148,0.5); }
 .health-dot .dot.err { background: var(--mp-red); box-shadow: 0 0 6px rgba(255,77,77,0.5); }
 
 /* ── Mode Toggle ── */
-.mode-toggle {
-  display: flex;
-  justify-content: center;
-  gap: 0;
-  margin-bottom: 24px;
-}
+.mode-toggle { display: flex; justify-content: center; gap: 0; margin-bottom: 24px; }
 .mode-btn {
-  background: var(--mp-surface);
-  border: 1px solid var(--mp-border);
-  color: var(--mp-text-tertiary);
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 500;
-  padding: 8px 24px;
-  cursor: pointer;
-  transition: all 0.2s;
+  background: var(--mp-surface); border: 1px solid var(--mp-border);
+  color: var(--mp-text-tertiary); font-family: var(--font-body);
+  font-size: 13px; font-weight: 500; padding: 8px 24px; cursor: pointer; transition: all 0.2s;
 }
 .mode-btn:first-child { border-radius: 8px 0 0 8px; }
 .mode-btn:last-child  { border-radius: 0 8px 8px 0; border-left: none; }
-.mode-btn.active {
-  background: rgba(0,174,255,0.12);
-  border-color: var(--mp-cyan);
-  color: var(--mp-cyan);
-}
+.mode-btn.active { background: rgba(0,174,255,0.12); border-color: var(--mp-cyan); color: var(--mp-cyan); }
 
-/* ── Search Area ── */
-.search-section {
-  margin-bottom: 32px;
-}
-.search-row {
-  display: flex;
-  gap: 12px;
-  max-width: 560px;
-  margin: 0 auto;
-}
+/* ── Search ── */
+.search-section { margin-bottom: 32px; }
+.search-row { display: flex; gap: 12px; max-width: 560px; margin: 0 auto; }
 .search-input {
-  flex: 1;
-  background: var(--mp-surface);
-  border: 1px solid var(--mp-border);
-  border-radius: 12px;
-  color: var(--mp-text-primary);
-  font-family: var(--font-body);
-  font-size: 16px;
-  padding: 12px 16px;
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  flex: 1; background: var(--mp-surface); border: 1px solid var(--mp-border); border-radius: 12px;
+  color: var(--mp-text-primary); font-family: var(--font-body); font-size: 16px; padding: 12px 16px;
+  outline: none; transition: border-color 0.2s, box-shadow 0.2s;
 }
-.search-input:focus {
-  border-color: var(--mp-cyan);
-  box-shadow: 0 0 0 3px rgba(0,174,255,0.15);
-}
+.search-input:focus { border-color: var(--mp-cyan); box-shadow: 0 0 0 3px rgba(0,174,255,0.15); }
 .search-input::placeholder { color: var(--mp-text-muted); }
-
 .score-btn {
-  background: linear-gradient(135deg, #00AEFF, #0090DD);
-  border: none;
-  border-radius: 12px;
-  color: #fff;
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 600;
-  padding: 12px 28px;
-  cursor: pointer;
-  transition: opacity 0.2s, transform 0.1s;
-  white-space: nowrap;
+  background: linear-gradient(135deg, #00AEFF, #0090DD); border: none; border-radius: 12px;
+  color: #fff; font-family: var(--font-body); font-size: 14px; font-weight: 600;
+  padding: 12px 28px; cursor: pointer; transition: opacity 0.2s, transform 0.1s; white-space: nowrap;
 }
 .score-btn:hover { opacity: 0.9; }
 .score-btn:active { transform: scale(0.97); }
 .score-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* ── Batch Input ── */
+/* ── Batch ── */
 .batch-section { display: none; margin-bottom: 32px; }
 .batch-section.visible { display: block; }
 .batch-textarea {
-  width: 100%;
-  max-width: 560px;
-  margin: 0 auto;
-  display: block;
-  background: var(--mp-surface);
-  border: 1px solid var(--mp-border);
-  border-radius: 12px;
-  color: var(--mp-text-primary);
-  font-family: var(--font-body);
-  font-size: 14px;
-  padding: 12px 16px;
-  outline: none;
-  resize: vertical;
-  min-height: 60px;
-  transition: border-color 0.2s;
+  width: 100%; max-width: 560px; margin: 0 auto; display: block;
+  background: var(--mp-surface); border: 1px solid var(--mp-border); border-radius: 12px;
+  color: var(--mp-text-primary); font-family: var(--font-body); font-size: 14px; padding: 12px 16px;
+  outline: none; resize: vertical; min-height: 60px; transition: border-color 0.2s;
 }
-.batch-textarea:focus {
-  border-color: var(--mp-cyan);
-  box-shadow: 0 0 0 3px rgba(0,174,255,0.15);
-}
+.batch-textarea:focus { border-color: var(--mp-cyan); box-shadow: 0 0 0 3px rgba(0,174,255,0.15); }
 .batch-textarea::placeholder { color: var(--mp-text-muted); }
-.batch-hint {
-  text-align: center;
-  color: var(--mp-text-muted);
-  font-size: 12px;
-  margin-top: 8px;
-}
-.batch-actions {
-  text-align: center;
-  margin-top: 12px;
-}
+.batch-hint { text-align: center; color: var(--mp-text-muted); font-size: 12px; margin-top: 8px; }
+.batch-actions { text-align: center; margin-top: 12px; }
 
 /* ── Loading ── */
-.loading-wrap {
-  display: none;
-  text-align: center;
-  padding: 48px 0;
-}
+.loading-wrap { display: none; text-align: center; padding: 48px 0; }
 .loading-wrap.visible { display: block; }
 .loading-spinner {
-  width: 40px; height: 40px;
-  border: 3px solid var(--mp-border);
-  border-top-color: var(--mp-cyan);
-  border-radius: 50%;
-  margin: 0 auto 16px;
-  animation: spin 0.8s linear infinite;
+  width: 40px; height: 40px; border: 3px solid var(--mp-border);
+  border-top-color: var(--mp-cyan); border-radius: 50%;
+  margin: 0 auto 16px; animation: spin 0.8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-.loading-text {
-  color: var(--mp-text-secondary);
-  font-size: 14px;
-}
+.loading-text { color: var(--mp-text-secondary); font-size: 14px; }
 .loading-text strong { color: var(--mp-cyan); }
 
 /* ── Error ── */
 .error-msg {
-  display: none;
-  text-align: center;
-  padding: 24px;
-  background: rgba(255,77,77,0.08);
-  border: 1px solid rgba(255,77,77,0.2);
-  border-radius: 12px;
-  color: var(--mp-red);
-  font-size: 14px;
-  margin-bottom: 24px;
+  display: none; text-align: center; padding: 24px;
+  background: rgba(255,77,77,0.08); border: 1px solid rgba(255,77,77,0.2);
+  border-radius: 12px; color: var(--mp-red); font-size: 14px; margin-bottom: 24px;
 }
 .error-msg.visible { display: block; }
 
-/* ── Score Card ── */
+/* ── Result ── */
 .result-section { display: none; }
 .result-section.visible { display: block; animation: fadeInUp 0.5s cubic-bezier(0.16,1,0.3,1) both; }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
 
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(24px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
+/* ── Score Card ── */
 .score-card {
-  background: var(--mp-surface);
-  border: 1px solid var(--mp-border);
-  border-radius: 16px;
-  padding: 24px;
-  margin-bottom: 20px;
-  position: relative;
-  overflow: hidden;
+  background: var(--mp-surface); border: 1px solid var(--mp-border); border-radius: 16px;
+  padding: 0; margin-bottom: 20px; position: relative; overflow: hidden;
   transition: border-color 0.2s, box-shadow 0.2s;
-  background-image:
-    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-  background-size: 48px 48px;
 }
-.score-card:hover {
-  border-color: var(--mp-border-hover);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+.score-card:hover { border-color: var(--mp-border-hover); box-shadow: 0 4px 16px rgba(0,0,0,0.5); }
+.score-card .accent-bar { position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+
+/* ── Hero Header ── */
+.sc-hero {
+  padding: 28px 28px 20px;
+  display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px;
 }
-.score-card .accent-bar {
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2px;
+.sc-hero-left h2 {
+  font-family: var(--font-display); font-weight: 400; font-size: 32px;
+  letter-spacing: -0.025em; margin-bottom: 2px;
+}
+.sc-hero-left .meta { color: var(--mp-text-tertiary); font-size: 13px; }
+.sc-hero-right { text-align: right; }
+.sc-verdict-badge {
+  display: inline-block; font-size: 14px; font-weight: 600;
+  padding: 6px 16px; border-radius: 8px; margin-bottom: 6px;
+}
+.sc-direction {
+  font-size: 12px; font-weight: 700; letter-spacing: 0.08em;
+  padding: 3px 12px; border-radius: 4px; display: inline-block;
 }
 
-/* ── Verdict Header ── */
-.verdict-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-bottom: 20px;
+/* ── Narrative Ring + Summary ── */
+.sc-narrative {
+  display: flex; gap: 24px; align-items: flex-start;
+  padding: 0 28px 24px; flex-wrap: wrap;
 }
-.verdict-left h2 {
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: 28px;
-  letter-spacing: -0.025em;
-  margin-bottom: 4px;
+.sc-ring-wrap { flex-shrink: 0; position: relative; width: 110px; height: 110px; }
+.sc-ring-wrap svg { width: 110px; height: 110px; }
+.sc-ring-center {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center;
 }
-.verdict-left .ticker-meta {
-  color: var(--mp-text-tertiary);
-  font-size: 13px;
+.sc-ring-val { font-size: 28px; font-weight: 700; line-height: 1; }
+.sc-ring-lbl { font-size: 10px; color: var(--mp-text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+.sc-narrative-body { flex: 1; min-width: 200px; }
+.sc-narrative-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.sc-nbadge {
+  font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 4px;
+  text-transform: uppercase; letter-spacing: 0.04em;
 }
-.verdict-right {
-  text-align: right;
-}
-.verdict-badge {
-  display: inline-block;
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 600;
-  padding: 6px 16px;
-  border-radius: 8px;
-  margin-bottom: 6px;
-}
-.direction-tag {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  padding: 3px 10px;
-  border-radius: 4px;
-  display: inline-block;
+.sc-narrative-text {
+  font-size: 14px; color: var(--mp-text-secondary); line-height: 1.65;
 }
 
-/* ── Price Section ── */
-.price-section {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 20px;
-  padding: 16px;
-  background: rgba(255,255,255,0.02);
-  border-radius: 12px;
-  border: 1px solid var(--mp-border);
+/* ── Mini Rings Row ── */
+.sc-mini-rings {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 1px; background: var(--mp-border); border-top: 1px solid var(--mp-border);
+  border-bottom: 1px solid var(--mp-border);
 }
-.price-item label {
-  display: block;
-  font-size: 11px;
-  color: var(--mp-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: 4px;
+.sc-mini-cell {
+  background: var(--mp-surface); padding: 18px; text-align: center;
 }
-.price-item .val {
-  font-size: 20px;
-  font-weight: 600;
-}
-.price-item .val.green { color: var(--mp-green); }
-.price-item .val.red   { color: var(--mp-red); }
-.price-item .val.cyan  { color: var(--mp-cyan); }
+.sc-mini-cell svg { width: 60px; height: 60px; margin-bottom: 6px; }
+.sc-mini-val { font-size: 14px; font-weight: 600; }
+.sc-mini-lbl { font-size: 11px; color: var(--mp-text-muted); margin-top: 2px; }
+.sc-mini-sub { font-size: 11px; color: var(--mp-text-tertiary); margin-top: 4px; }
 
-/* ── Score Bars ── */
-.score-bars {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  margin-bottom: 20px;
+/* ── Diagnosis Strip ── */
+.diag-strip {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 1px; background: var(--mp-border);
 }
-.bar-item {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.diag-cell { background: var(--mp-surface); padding: 16px 18px; }
+.diag-label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.35); margin-bottom: 6px;
 }
-.bar-label {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-}
-.bar-label .name {
-  color: var(--mp-text-secondary);
-  font-weight: 500;
-}
-.bar-label .value {
-  color: var(--mp-text-primary);
-  font-weight: 600;
-  font-size: 14px;
-}
-.bar-track {
-  height: 6px;
-  background: rgba(255,255,255,0.06);
-  border-radius: 3px;
-  overflow: hidden;
-}
-.bar-fill {
-  height: 100%;
-  border-radius: 3px;
-  transition: width 0.8s cubic-bezier(0.16,1,0.3,1);
-}
+.diag-val { font-size: 20px; font-weight: 400; line-height: 1.1; margin-bottom: 3px; }
+.diag-sub { font-size: 11px; color: var(--mp-text-tertiary); }
 
-/* ── Stat Grid ── */
-.stat-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  margin-bottom: 20px;
+/* ── Warranted vs Hype ── */
+.wh-section { padding: 24px 28px; }
+.wh-title {
+  font-family: var(--font-display); font-weight: 400; font-size: 18px;
+  margin-bottom: 14px;
 }
-.stat-cell {
-  background: rgba(255,255,255,0.02);
-  border: 1px solid var(--mp-border);
-  border-radius: 10px;
-  padding: 12px;
-  text-align: center;
+.wh-labels { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 12px; font-weight: 600; }
+.wh-bar-track {
+  height: 10px; background: rgba(255,255,255,0.06); border-radius: 5px;
+  overflow: hidden; position: relative; margin-bottom: 16px;
 }
-.stat-cell label {
-  display: block;
-  font-size: 11px;
-  color: var(--mp-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 4px;
+.wh-bar-fill {
+  height: 100%; border-radius: 5px;
+  background: linear-gradient(90deg, var(--mp-green), var(--mp-cyan), var(--mp-amber), var(--mp-red));
+  position: absolute; top: 0; left: 0;
 }
-.stat-cell .val {
-  font-size: 18px;
-  font-weight: 600;
+.wh-marker {
+  position: absolute; top: -3px; width: 4px; height: 16px;
+  background: #fff; border-radius: 2px; box-shadow: 0 0 8px rgba(255,255,255,0.4);
+  transform: translateX(-50%);
 }
-
-/* ── Narrative Section ── */
-.narrative-section {
-  padding: 16px;
-  background: rgba(255,255,255,0.02);
-  border: 1px solid var(--mp-border);
-  border-radius: 12px;
-  margin-bottom: 20px;
+.wh-stats {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
 }
-.narrative-section h3 {
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: 18px;
-  margin-bottom: 10px;
-}
-.narrative-section p {
-  color: var(--mp-text-secondary);
-  font-size: 14px;
-  line-height: 1.6;
-}
-.narrative-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-top: 12px;
-}
-.narrative-meta .tag {
-  font-size: 12px;
-  color: var(--mp-text-tertiary);
-}
-.narrative-meta .tag strong {
-  color: var(--mp-text-primary);
-}
+.wh-stat { text-align: center; }
+.wh-stat-val { font-size: 18px; font-weight: 600; }
+.wh-stat-lbl { font-size: 11px; color: var(--mp-text-muted); margin-top: 2px; }
 
 /* ── Meta Footer ── */
-.meta-footer {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  font-size: 12px;
-  color: var(--mp-text-muted);
-  padding-top: 12px;
+.sc-footer {
+  display: flex; flex-wrap: wrap; gap: 16px; font-size: 12px;
+  color: var(--mp-text-muted); padding: 14px 28px;
   border-top: 1px solid var(--mp-border);
 }
 
 /* ── Batch Table ── */
 .batch-results { display: none; }
 .batch-results.visible { display: block; animation: fadeInUp 0.5s cubic-bezier(0.16,1,0.3,1) both; }
-
-.batch-table-wrap {
-  overflow-x: auto;
-  border-radius: 12px;
-  border: 1px solid var(--mp-border);
-}
-.batch-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
+.batch-table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--mp-border); }
+.batch-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .batch-table th {
-  background: var(--mp-surface2);
-  color: var(--mp-text-tertiary);
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 10px 12px;
-  text-align: left;
-  border-bottom: 1px solid var(--mp-border);
-  white-space: nowrap;
-  cursor: pointer;
-  user-select: none;
+  background: var(--mp-surface2); color: var(--mp-text-tertiary);
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+  padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--mp-border);
+  white-space: nowrap; cursor: pointer; user-select: none;
 }
 .batch-table th:hover { color: var(--mp-text-primary); }
 .batch-table th .sort-arrow { font-size: 10px; margin-left: 4px; opacity: 0.4; }
 .batch-table th.sorted .sort-arrow { opacity: 1; color: var(--mp-cyan); }
-.batch-table td {
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--mp-border);
-  white-space: nowrap;
-}
-.batch-table tr {
-  background: var(--mp-surface);
-  transition: background 0.15s;
-  cursor: pointer;
-}
+.batch-table td { padding: 10px 12px; border-bottom: 1px solid var(--mp-border); white-space: nowrap; }
+.batch-table tr { background: var(--mp-surface); transition: background 0.15s; cursor: pointer; }
 .batch-table tr:hover { background: var(--mp-surface2); }
 .batch-table .ticker-col { font-weight: 600; font-size: 14px; }
-
-/* ── Batch Expanded Row ── */
-.batch-expanded {
-  display: none;
-}
-.batch-expanded.visible {
-  display: table-row;
-}
-.batch-expanded td {
-  padding: 20px;
-  background: var(--mp-surface2);
-}
+.batch-expanded { display: none; }
+.batch-expanded.visible { display: table-row; }
+.batch-expanded td { padding: 20px; background: var(--mp-surface2); }
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .page-wrap { padding: 20px 16px 48px; }
-  .score-bars { grid-template-columns: 1fr; }
-  .stat-grid { grid-template-columns: repeat(2, 1fr); }
-  .price-section { grid-template-columns: 1fr; }
-  .verdict-header { flex-direction: column; }
-  .verdict-right { text-align: left; }
+  .sc-narrative { flex-direction: column; align-items: center; }
+  .sc-mini-rings { grid-template-columns: 1fr 1fr 1fr; }
+  .diag-strip { grid-template-columns: repeat(2, 1fr); }
+  .wh-stats { grid-template-columns: repeat(2, 1fr); }
+  .sc-hero { flex-direction: column; }
+  .sc-hero-right { text-align: left; }
   .search-row { flex-direction: column; }
   .score-btn { width: 100%; }
 }
 @media (max-width: 480px) {
-  .stat-grid { grid-template-columns: 1fr 1fr; }
+  .sc-mini-rings { grid-template-columns: 1fr; }
+  .diag-strip { grid-template-columns: 1fr 1fr; }
+  .wh-stats { grid-template-columns: 1fr 1fr; }
 }
 </style>
 </head>
 <body>
 <div class="page-wrap">
-
-  <!-- Header -->
   <header class="page-header">
     <h1>Score <em>Any Stock</em></h1>
     <p class="subtitle">On-demand narrative scoring — dev testing tool</p>
@@ -540,13 +309,11 @@ body::before {
     </div>
   </header>
 
-  <!-- Mode Toggle -->
   <div class="mode-toggle">
     <button class="mode-btn active" onclick="setMode('single')" id="mode-single">Single</button>
     <button class="mode-btn" onclick="setMode('batch')" id="mode-batch">Batch</button>
   </div>
 
-  <!-- Single Search -->
   <div class="search-section" id="single-section">
     <div class="search-row">
       <input class="search-input" id="ticker-input" type="text" placeholder="Enter ticker (e.g. AAPL)" autocomplete="off" spellcheck="false">
@@ -554,7 +321,6 @@ body::before {
     </div>
   </div>
 
-  <!-- Batch Search -->
   <div class="batch-section" id="batch-section">
     <textarea class="batch-textarea" id="batch-input" placeholder="AAPL, TSLA, MSFT, NVDA, GOOG" rows="2"></textarea>
     <p class="batch-hint">Comma-separated tickers (max 20)</p>
@@ -563,39 +329,27 @@ body::before {
     </div>
   </div>
 
-  <!-- Loading -->
   <div class="loading-wrap" id="loading">
     <div class="loading-spinner"></div>
     <p class="loading-text" id="loading-text">Scoring <strong>...</strong> (~5 seconds)</p>
   </div>
 
-  <!-- Error -->
   <div class="error-msg" id="error"></div>
-
-  <!-- Single Result -->
   <div class="result-section" id="result"></div>
-
-  <!-- Batch Results -->
   <div class="batch-results" id="batch-results"></div>
-
 </div>
 
 <script>
 /* ── Environment ── */
 window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '' };
 
-/* ── Edge Function URL ── */
 const EDGE_FN_URL = 'https://kugfvlagaetiqtdwdfmk.supabase.co/functions/v1/score-stock';
 
 async function callEdgeFn(body) {
   const anonKey = window.__env.SUPABASE_ANON;
   const res = await fetch(EDGE_FN_URL, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + anonKey,
-      'apikey': anonKey
-    },
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + anonKey, 'apikey': anonKey },
     body: JSON.stringify(body)
   });
   if (!res.ok) {
@@ -626,38 +380,55 @@ const DIR_COLORS = {
   'HOLD':  { color: '#A0A8B0', bg: 'rgba(160,168,176,0.15)' },
 };
 
-/* ── State ── */
 let currentMode = 'single';
 let batchData = [];
 let sortCol = null;
 let sortAsc = true;
 
+/* ── Color Helpers ── */
+function scoreColor(v, inv) {
+  if (inv) { return v <= 30 ? '#00DE94' : v <= 60 ? '#D9A200' : '#FF4D4D'; }
+  return v >= 70 ? '#5b8ec9' : v >= 40 ? '#D9A200' : '#D94444';
+}
+
+function formatMcap(n) {
+  if (n >= 1e12) return '$' + (n / 1e12).toFixed(1) + 'T';
+  if (n >= 1e9)  return '$' + (n / 1e9).toFixed(1) + 'B';
+  if (n >= 1e6)  return '$' + (n / 1e6).toFixed(0) + 'M';
+  return '$' + n.toLocaleString();
+}
+
+/* ── Ring SVG Builder ── */
+function buildRingSVG(val, maxVal, color, size) {
+  const r = (size / 2) - 6;
+  const circ = 2 * Math.PI * r;
+  const pct = Math.min(val / maxVal, 1);
+  const offset = circ * (1 - pct);
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="5"/>
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${color}" stroke-width="5"
+      stroke-dasharray="${circ}" stroke-dashoffset="${offset}"
+      stroke-linecap="round" transform="rotate(-90 ${size/2} ${size/2})"
+      style="transition: stroke-dashoffset 1s cubic-bezier(0.16,1,0.3,1)"/>
+  </svg>`;
+}
+
 /* ── Health Check ── */
 async function checkHealth() {
   const dot = document.getElementById('health-dot');
   const label = document.getElementById('health-label');
-  if (!window.__env.SUPABASE_ANON) {
-    dot.className = 'dot err';
-    label.textContent = 'Anon key not configured';
-    return;
-  }
+  if (!window.__env.SUPABASE_ANON) { dot.className = 'dot err'; label.textContent = 'Anon key not configured'; return; }
   try {
     await callEdgeFn({ ticker: 'HEALTH_CHECK' });
-    dot.className = 'dot ok';
-    label.textContent = 'Edge Function connected';
+    dot.className = 'dot ok'; label.textContent = 'Edge Function connected';
   } catch (e) {
-    // Any response (even an error) means the function is reachable
     if (e.message && e.message.includes('Edge Function error')) {
-      dot.className = 'dot ok';
-      label.textContent = 'Edge Function connected';
-    } else {
-      dot.className = 'dot err';
-      label.textContent = 'Edge Function unreachable';
-    }
+      dot.className = 'dot ok'; label.textContent = 'Edge Function connected';
+    } else { dot.className = 'dot err'; label.textContent = 'Edge Function unreachable'; }
   }
 }
 
-/* ── Mode Toggle ── */
+/* ── UI Helpers ── */
 function setMode(mode) {
   currentMode = mode;
   document.getElementById('mode-single').classList.toggle('active', mode === 'single');
@@ -666,172 +437,224 @@ function setMode(mode) {
   document.getElementById('batch-section').classList.toggle('visible', mode === 'batch');
   hideAll();
 }
-
 function hideAll() {
-  document.getElementById('loading').classList.remove('visible');
-  document.getElementById('error').classList.remove('visible');
-  document.getElementById('result').classList.remove('visible');
-  document.getElementById('batch-results').classList.remove('visible');
+  ['loading','error','result','batch-results'].forEach(id => document.getElementById(id).classList.remove('visible'));
 }
-
-function showError(msg) {
-  const el = document.getElementById('error');
-  el.textContent = msg;
-  el.classList.add('visible');
-}
-
-function showLoading(text) {
-  hideAll();
-  const el = document.getElementById('loading');
-  document.getElementById('loading-text').innerHTML = text;
-  el.classList.add('visible');
-}
+function showError(msg) { const el = document.getElementById('error'); el.textContent = msg; el.classList.add('visible'); }
+function showLoading(text) { hideAll(); document.getElementById('loading-text').innerHTML = text; document.getElementById('loading').classList.add('visible'); }
 
 /* ── Single Score ── */
 async function scoreSingle() {
   const ticker = document.getElementById('ticker-input').value.trim().toUpperCase();
   if (!ticker) return;
-
   showLoading('Analyzing <strong>' + ticker + '</strong>... (~5 seconds)');
   document.getElementById('score-btn').disabled = true;
-
   try {
     const data = await callEdgeFn({ ticker });
-
-    if (data.current_price === 0) {
-      hideAll();
-      showError('Ticker "' + ticker + '" was not found or has no price data.');
-      return;
-    }
-
+    if (data.current_price === 0) { hideAll(); showError('Ticker "' + ticker + '" was not found or has no price data.'); return; }
     hideAll();
     document.getElementById('result').innerHTML = buildScoreCard(data);
     document.getElementById('result').classList.add('visible');
-  } catch (e) {
-    hideAll();
-    showError('Failed to score ' + ticker + ': ' + (e.message || e));
-  } finally {
-    document.getElementById('score-btn').disabled = false;
-  }
+  } catch (e) { hideAll(); showError('Failed to score ' + ticker + ': ' + (e.message || e)); }
+  finally { document.getElementById('score-btn').disabled = false; }
 }
 
 /* ── Batch Score ── */
 async function scoreBatch() {
   const raw = document.getElementById('batch-input').value.trim().toUpperCase();
   if (!raw) return;
-
   const tickers = raw.split(/[,\s\n]+/).filter(Boolean).slice(0, 20);
   if (!tickers.length) return;
-
   showLoading('Analyzing <strong>' + tickers.length + ' tickers</strong>... (~' + Math.max(5, tickers.length * 2) + ' seconds)');
   document.getElementById('batch-btn').disabled = true;
-
   try {
     const data = await callEdgeFn({ tickers });
-
-    // data may be an array or an object with results key
     batchData = Array.isArray(data) ? data : (data.results || []);
-
-    hideAll();
-    renderBatchTable();
+    hideAll(); renderBatchTable();
     document.getElementById('batch-results').classList.add('visible');
-  } catch (e) {
-    hideAll();
-    showError('Batch scoring failed: ' + (e.message || e));
-  } finally {
-    document.getElementById('batch-btn').disabled = false;
-  }
+  } catch (e) { hideAll(); showError('Batch scoring failed: ' + (e.message || e)); }
+  finally { document.getElementById('batch-btn').disabled = false; }
 }
 
-/* ── Build Score Card HTML ── */
+/* ── Build Score Card ── */
 function buildScoreCard(d) {
   const vm = VERDICT_MAP[d.verdict] || { color: '#A0A8B0', bg: 'rgba(160,168,176,0.12)', dir: 'HOLD' };
   const dir = d.trade_direction || vm.dir || 'HOLD';
   const dc = DIR_COLORS[dir] || DIR_COLORS.HOLD;
 
-  const fvd = d.fair_value_deviation_pct;
-  const fvdColor = fvd == null ? 'var(--mp-text-muted)' : (fvd > 0 ? 'var(--mp-red)' : 'var(--mp-green)');
-  const fvdLabel = fvd == null ? 'N/A' : ((fvd > 0 ? '+' : '') + fvd.toFixed(1) + '%');
+  // Compute composite strength (like ticker page)
+  const evidence = d.vms || 0;
+  const confidence = d.ccp || 0;
+  const risk = d.nrs || 0;
+  const overall = Math.round((evidence * 0.35) + (confidence * 0.35) + ((100 - risk) * 0.30));
+  const overallColor = scoreColor(overall, false);
 
-  const fv = d.fair_value != null ? '$' + d.fair_value.toFixed(2) : 'N/A';
+  // Warranted vs Hype
+  const tractability = Math.round(100 - (d.drift_score || 0));
+  const warranted = Math.round((evidence * 0.45) + (tractability * 0.25) + (Math.max(0, 100 - Math.abs(d.fair_value_deviation_pct || 0)) * 0.20) + ((100 - (d.coordination_score || 0)) * 0.10));
+  const hype = 100 - warranted;
+
+  // Price data
+  const fvd = d.fair_value_deviation_pct;
+  const fvdColor = fvd == null ? 'var(--mp-text-muted)' : (fvd > 0 ? '#FF4D4D' : '#00DE94');
+  const fvdLabel = fvd == null ? '—' : ((fvd > 0 ? '+' : '') + fvd.toFixed(1) + '%');
+  const fvdStatus = fvd == null ? 'N/A' : (Math.abs(fvd) < 5 ? 'Fair' : fvd > 0 ? 'Overvalued' : 'Undervalued');
+  const fv = d.fair_value != null ? '$' + d.fair_value.toFixed(2) : '—';
   const cp = '$' + d.current_price.toFixed(2);
 
-  const bars = [
-    { name: 'VMS — Verification Match', val: d.vms, color: scoreColor(d.vms, false) },
-    { name: 'CCP — Composite Confidence', val: d.ccp, color: scoreColor(d.ccp, false) },
-    { name: 'NRS — Narrative Risk', val: d.nrs, color: scoreColor(d.nrs, true) },
-    { name: 'ACS — Analyst Credibility', val: d.acs, color: scoreColor(d.acs, false) },
-    { name: 'SRS — Source Reliability', val: d.srs, color: scoreColor(d.srs, false) },
-    { name: 'CVS — Claim Verifiability', val: d.cvs, color: scoreColor(d.cvs, false) },
-  ];
+  // Phase from HDS + NRS
+  const phase = d.hds >= 0.8 ? (risk <= 30 ? 'Emerging' : 'Mature') : (risk >= 60 ? 'Exhausting' : 'Fading');
+  const phaseColor = phase === 'Emerging' ? '#00DE94' : phase === 'Mature' ? '#5b8ec9' : phase === 'Fading' ? '#D9A200' : '#FF4D4D';
 
-  const barsHtml = bars.map(b => `
-    <div class="bar-item">
-      <div class="bar-label"><span class="name">${b.name}</span><span class="value">${b.val}</span></div>
-      <div class="bar-track"><div class="bar-fill" style="width:${b.val}%;background:${b.color}"></div></div>
-    </div>
-  `).join('');
+  // Narrative summary auto-gen if missing
+  let summary = d.narrative_summary || '';
+  if (!summary) {
+    if (overall >= 70) summary = 'This narrative has strong momentum and credible evidence backing. The story is well-supported by fundamentals.';
+    else if (overall >= 45) summary = 'Narrative shows moderate strength — evidence is mixed and the story may be shifting. Watch for directional changes.';
+    else summary = 'Weak narrative signal. The story may be losing relevance or is not well-supported by the underlying data.';
+    if (risk >= 65) summary += ' Elevated narrative risk detected — the gap between media coverage and SEC filings is widening.';
+  }
 
-  const npiVal = d.npi != null ? d.npi : '—';
   const mcapStr = d.market_cap ? formatMcap(d.market_cap) : '—';
 
   return `
     <div class="score-card">
       <div class="accent-bar" style="background:${vm.color}"></div>
-      <div class="verdict-header">
-        <div class="verdict-left">
+
+      <!-- Hero Header -->
+      <div class="sc-hero">
+        <div class="sc-hero-left">
           <h2>${d.ticker}</h2>
-          <div class="ticker-meta">${d.sector || 'Unknown Sector'} &middot; ${d.snapshot_date}</div>
+          <div class="meta">${d.sector || 'Unknown Sector'} · ${cp}${d.market_cap ? ' · ' + mcapStr : ''}</div>
         </div>
-        <div class="verdict-right">
-          <div class="verdict-badge" style="color:${vm.color};background:${vm.bg}">${d.verdict}</div><br>
-          <span class="direction-tag" style="color:${dc.color};background:${dc.bg}">${dir}</span>
-        </div>
-      </div>
-
-      <div class="price-section">
-        <div class="price-item">
-          <label>Current Price</label>
-          <div class="val cyan">${cp}</div>
-        </div>
-        <div class="price-item">
-          <label>Fair Value</label>
-          <div class="val">${fv}</div>
-        </div>
-        <div class="price-item">
-          <label>Fair Value Dev.</label>
-          <div class="val" style="color:${fvdColor}">${fvdLabel}</div>
+        <div class="sc-hero-right">
+          <div class="sc-verdict-badge" style="color:${vm.color};background:${vm.bg}">${d.verdict}</div><br>
+          <span class="sc-direction" style="color:${dc.color};background:${dc.bg}">${dir}</span>
         </div>
       </div>
 
-      <div class="score-bars">${barsHtml}</div>
-
-      <div class="stat-grid">
-        <div class="stat-cell"><label>HDS</label><div class="val">${d.hds.toFixed(2)}</div></div>
-        <div class="stat-cell"><label>NPI</label><div class="val">${npiVal}</div></div>
-        <div class="stat-cell"><label>Overreaction</label><div class="val">${d.overreaction_ratio}</div></div>
-        <div class="stat-cell"><label>Drift</label><div class="val">${d.drift_score}</div></div>
-        <div class="stat-cell"><label>Coordination</label><div class="val">${d.coordination_score}</div></div>
-        <div class="stat-cell"><label>Market Cap</label><div class="val" style="font-size:14px">${mcapStr}</div></div>
-        <div class="stat-cell"><label>Latency</label><div class="val" style="font-size:14px">${d.agent_latency_ms ? d.agent_latency_ms + 'ms' : '—'}</div></div>
-        <div class="stat-cell"><label>Data Quality</label><div class="val" style="font-size:12px;color:${d.data_quality === 'good' ? 'var(--mp-green)' : 'var(--mp-amber)'}">${d.data_quality || '—'}</div></div>
+      <!-- Narrative Ring + Summary -->
+      <div class="sc-narrative">
+        <div class="sc-ring-wrap">
+          ${buildRingSVG(overall, 100, overallColor, 110)}
+          <div class="sc-ring-center">
+            <div class="sc-ring-val" style="color:${overallColor}">${overall}</div>
+            <div class="sc-ring-lbl">Strength</div>
+          </div>
+        </div>
+        <div class="sc-narrative-body">
+          <div class="sc-narrative-badges">
+            <span class="sc-nbadge" style="color:${phaseColor};background:${phaseColor}22">${phase}</span>
+            <span class="sc-nbadge" style="color:${vm.color};background:${vm.bg}">${d.verdict}</span>
+            ${d.macro_theme ? `<span class="sc-nbadge" style="color:var(--mp-cyan);background:rgba(0,174,255,0.12)">${d.macro_theme}</span>` : ''}
+          </div>
+          <p class="sc-narrative-text">${summary}</p>
+        </div>
       </div>
 
-      ${d.narrative_summary ? `
-      <div class="narrative-section">
-        <h3>Narrative Summary</h3>
-        <p>${d.narrative_summary}</p>
-        <div class="narrative-meta">
-          ${d.macro_theme ? `<span class="tag">Theme: <strong>${d.macro_theme}</strong></span>` : ''}
-          <span class="tag">Drift: <strong>${d.drift_score}</strong></span>
-          <span class="tag">Coordination: <strong>${d.coordination_score}</strong></span>
+      <!-- Mini Rings: Evidence / Credibility / Pressure -->
+      <div class="sc-mini-rings">
+        <div class="sc-mini-cell">
+          ${buildRingSVG(evidence, 100, scoreColor(evidence, false), 60)}
+          <div class="sc-mini-val" style="color:${scoreColor(evidence, false)}">${evidence}</div>
+          <div class="sc-mini-lbl">Evidence</div>
+          <div class="sc-mini-sub">Verification quality</div>
         </div>
-      </div>` : ''}
+        <div class="sc-mini-cell">
+          ${buildRingSVG(confidence, 100, scoreColor(confidence, false), 60)}
+          <div class="sc-mini-val" style="color:${scoreColor(confidence, false)}">${confidence}</div>
+          <div class="sc-mini-lbl">Credibility</div>
+          <div class="sc-mini-sub">Composite confidence</div>
+        </div>
+        <div class="sc-mini-cell">
+          ${buildRingSVG(risk, 100, scoreColor(risk, true), 60)}
+          <div class="sc-mini-val" style="color:${scoreColor(risk, true)}">${risk}</div>
+          <div class="sc-mini-lbl">Risk</div>
+          <div class="sc-mini-sub">Narrative risk score</div>
+        </div>
+      </div>
 
-      <div class="meta-footer">
-        <span>Snapshot: ${d.snapshot_date}</span>
-        ${d.agent_latency_ms ? `<span>Agent: ${d.agent_latency_ms}ms</span>` : ''}
-        ${d.data_quality && d.data_quality !== 'good' ? `<span style="color:var(--mp-amber)">Data issues: ${d.data_quality}</span>` : ''}
+      <!-- Diagnosis Strip -->
+      <div class="diag-strip">
+        <div class="diag-cell">
+          <div class="diag-label">Phase</div>
+          <div class="diag-val" style="color:${phaseColor}">${phase}</div>
+          <div class="diag-sub">Lifecycle stage</div>
+        </div>
+        <div class="diag-cell">
+          <div class="diag-label">Drift</div>
+          <div class="diag-val">${d.drift_score}<span style="font-size:12px;color:var(--mp-text-muted)">/100</span></div>
+          <div class="diag-sub">SEC filing divergence</div>
+        </div>
+        <div class="diag-cell">
+          <div class="diag-label">Coordination</div>
+          <div class="diag-val">${d.coordination_score}<span style="font-size:12px;color:var(--mp-text-muted)">/100</span></div>
+          <div class="diag-sub">${d.coordination_score > 50 ? 'Elevated clustering' : 'Independent sources'}</div>
+        </div>
+        <div class="diag-cell">
+          <div class="diag-label">Discipline</div>
+          <div class="diag-val">${d.hds.toFixed(2)}</div>
+          <div class="diag-sub">${d.hds >= 0.7 ? 'Strong discipline' : d.hds >= 0.4 ? 'Moderate' : 'Low discipline'}</div>
+        </div>
+        <div class="diag-cell">
+          <div class="diag-label">Persistence</div>
+          <div class="diag-val">${d.npi != null ? d.npi : '—'}<span style="font-size:12px;color:var(--mp-text-muted)">${d.npi != null ? '/100' : ''}</span></div>
+          <div class="diag-sub">Narrative staying power</div>
+        </div>
+        <div class="diag-cell">
+          <div class="diag-label">Overreaction</div>
+          <div class="diag-val" style="color:${d.overreaction_ratio > 200 ? '#FF4D4D' : d.overreaction_ratio > 100 ? '#D9A200' : '#5b8ec9'}">${d.overreaction_ratio}</div>
+          <div class="diag-sub">${d.overreaction_ratio > 200 ? 'Extreme reaction' : d.overreaction_ratio > 100 ? 'Elevated' : 'Normal range'}</div>
+        </div>
+        <div class="diag-cell">
+          <div class="diag-label">Direction</div>
+          <div class="diag-val" style="color:${dc.color}">${dir}</div>
+          <div class="diag-sub">Forecast direction</div>
+        </div>
+        <div class="diag-cell">
+          <div class="diag-label">Fair Value Gap</div>
+          <div class="diag-val" style="color:${fvdColor}">${fvdLabel}</div>
+          <div class="diag-sub">${fvdStatus}${fv !== '—' ? ' · FV ' + fv : ''}</div>
+        </div>
+      </div>
+
+      <!-- Warranted vs Hype -->
+      <div class="wh-section">
+        <div class="wh-title">Warranted vs Hype</div>
+        <div class="wh-labels">
+          <span style="color:var(--mp-green)">WARRANTED ${warranted}</span>
+          <span style="color:var(--mp-red)">HYPE ${hype}</span>
+        </div>
+        <div class="wh-bar-track">
+          <div class="wh-bar-fill" style="width:100%"></div>
+          <div class="wh-marker" style="left:${warranted}%"></div>
+        </div>
+        <div class="wh-stats">
+          <div class="wh-stat">
+            <div class="wh-stat-val" style="color:var(--mp-green)">${evidence}</div>
+            <div class="wh-stat-lbl">Evidence</div>
+          </div>
+          <div class="wh-stat">
+            <div class="wh-stat-val" style="color:var(--mp-cyan)">${tractability}</div>
+            <div class="wh-stat-lbl">Tractability</div>
+          </div>
+          <div class="wh-stat">
+            <div class="wh-stat-val" style="color:var(--mp-amber)">${Math.abs(d.fair_value_deviation_pct || 0).toFixed(0)}</div>
+            <div class="wh-stat-lbl">Val. Stretch</div>
+          </div>
+          <div class="wh-stat">
+            <div class="wh-stat-val" style="color:var(--mp-red)">${d.drift_score}</div>
+            <div class="wh-stat-lbl">Pressure</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="sc-footer">
+        <span>${d.snapshot_date}</span>
+        ${d.agent_latency_ms ? `<span>${(d.agent_latency_ms / 1000).toFixed(1)}s analysis</span>` : ''}
+        ${d.data_quality && d.data_quality !== 'good' ? `<span style="color:var(--mp-amber)">Data: ${d.data_quality}</span>` : ''}
+        <span style="margin-left:auto;color:var(--mp-text-muted)">Source Reliability ${d.srs} · Analyst Credibility ${d.acs} · Claim Verifiability ${d.cvs}</span>
       </div>
     </div>
   `;
@@ -843,28 +666,24 @@ function renderBatchTable() {
     document.getElementById('batch-results').innerHTML = '<p style="text-align:center;color:var(--mp-text-muted);padding:24px;">No results returned.</p>';
     return;
   }
-
   const cols = [
     { key: 'ticker', label: 'Ticker' },
     { key: 'current_price', label: 'Price' },
     { key: 'verdict', label: 'Verdict' },
-    { key: 'ccp', label: 'CCP' },
-    { key: 'nrs', label: 'NRS' },
-    { key: 'vms', label: 'VMS' },
-    { key: 'fair_value_deviation_pct', label: 'FVD%' },
-    { key: 'trade_direction', label: 'Dir' },
+    { key: 'ccp', label: 'Confidence' },
+    { key: 'nrs', label: 'Risk' },
+    { key: 'vms', label: 'Evidence' },
+    { key: 'fair_value_deviation_pct', label: 'FV Gap' },
+    { key: 'trade_direction', label: 'Direction' },
   ];
-
   if (sortCol) {
     batchData.sort((a, b) => {
       let va = a[sortCol], vb = b[sortCol];
-      if (va == null) va = -Infinity;
-      if (vb == null) vb = -Infinity;
+      if (va == null) va = -Infinity; if (vb == null) vb = -Infinity;
       if (typeof va === 'string') return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
       return sortAsc ? va - vb : vb - va;
     });
   }
-
   let html = '<div class="batch-table-wrap"><table class="batch-table"><thead><tr>';
   cols.forEach(c => {
     const sorted = sortCol === c.key;
@@ -872,7 +691,6 @@ function renderBatchTable() {
     html += `<th class="${sorted ? 'sorted' : ''}" onclick="sortBatch('${c.key}')">${c.label}<span class="sort-arrow">${arrow}</span></th>`;
   });
   html += '</tr></thead><tbody>';
-
   batchData.forEach((d, i) => {
     const vm = VERDICT_MAP[d.verdict] || { color: '#A0A8B0' };
     const dir = d.trade_direction || 'HOLD';
@@ -880,7 +698,6 @@ function renderBatchTable() {
     const fvd = d.fair_value_deviation_pct;
     const fvdStr = fvd == null ? '—' : ((fvd > 0 ? '+' : '') + fvd.toFixed(1) + '%');
     const fvdColor = fvd == null ? 'var(--mp-text-muted)' : (fvd > 0 ? 'var(--mp-red)' : 'var(--mp-green)');
-
     html += `<tr onclick="toggleExpand(${i})">
       <td class="ticker-col">${d.ticker}</td>
       <td>$${d.current_price.toFixed(2)}</td>
@@ -893,14 +710,12 @@ function renderBatchTable() {
     </tr>`;
     html += `<tr class="batch-expanded" id="expand-${i}"><td colspan="8">${buildScoreCard(d)}</td></tr>`;
   });
-
   html += '</tbody></table></div>';
   document.getElementById('batch-results').innerHTML = html;
 }
 
 function sortBatch(col) {
-  if (sortCol === col) { sortAsc = !sortAsc; }
-  else { sortCol = col; sortAsc = true; }
+  if (sortCol === col) sortAsc = !sortAsc; else { sortCol = col; sortAsc = true; }
   renderBatchTable();
   document.getElementById('batch-results').classList.add('visible');
 }
@@ -910,35 +725,9 @@ function toggleExpand(i) {
   if (row) row.classList.toggle('visible');
 }
 
-/* ── Helpers ── */
-function scoreColor(val, inverted) {
-  // inverted: high = bad (like NRS)
-  if (inverted) {
-    if (val <= 30) return 'var(--mp-green)';
-    if (val <= 60) return 'var(--mp-amber)';
-    return 'var(--mp-red)';
-  }
-  if (val >= 70) return 'var(--mp-green)';
-  if (val >= 40) return 'var(--mp-amber)';
-  return 'var(--mp-red)';
-}
-
-function formatMcap(n) {
-  if (n >= 1e12) return '$' + (n / 1e12).toFixed(1) + 'T';
-  if (n >= 1e9)  return '$' + (n / 1e9).toFixed(1) + 'B';
-  if (n >= 1e6)  return '$' + (n / 1e6).toFixed(0) + 'M';
-  return '$' + n.toLocaleString();
-}
-
-/* ── Keyboard ── */
-document.getElementById('ticker-input').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') scoreSingle();
-});
-
-/* ── Init ── */
-window.addEventListener('DOMContentLoaded', function() {
-  checkHealth();
-});
+/* ── Keyboard + Init ── */
+document.getElementById('ticker-input').addEventListener('keydown', function(e) { if (e.key === 'Enter') scoreSingle(); });
+window.addEventListener('DOMContentLoaded', function() { checkHealth(); });
 </script>
 </body>
 </html>
