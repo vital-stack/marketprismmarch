@@ -580,18 +580,29 @@ body::before {
 
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 /* ── Environment ── */
 window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '' };
 
-/* ── Supabase Client ── */
-let SUPA = null;
-function getSupa() {
-  if (!SUPA && window.__env.SUPABASE_URL && window.__env.SUPABASE_ANON) {
-    SUPA = window.supabase.createClient(window.__env.SUPABASE_URL, window.__env.SUPABASE_ANON);
+/* ── Edge Function URL ── */
+const EDGE_FN_URL = 'https://kugfvlagaetiqtdwdfmk.supabase.co/functions/v1/score-stock';
+
+async function callEdgeFn(body) {
+  const anonKey = window.__env.SUPABASE_ANON;
+  const res = await fetch(EDGE_FN_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + anonKey,
+      'apikey': anonKey
+    },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => res.statusText);
+    throw new Error('Edge Function error (' + res.status + '): ' + text);
   }
-  return SUPA;
+  return res.json();
 }
 
 /* ── Verdict Color Map ── */
@@ -625,22 +636,18 @@ let sortAsc = true;
 async function checkHealth() {
   const dot = document.getElementById('health-dot');
   const label = document.getElementById('health-label');
-  const client = getSupa();
-  if (!client) {
+  if (!window.__env.SUPABASE_ANON) {
     dot.className = 'dot err';
-    label.textContent = 'Supabase not configured';
+    label.textContent = 'Anon key not configured';
     return;
   }
   try {
-    const { data, error } = await client.functions.invoke('score-stock', {
-      body: { health_check: true }
-    });
-    if (error) throw error;
+    await callEdgeFn({ ticker: 'HEALTH_CHECK' });
     dot.className = 'dot ok';
     label.textContent = 'Edge Function connected';
   } catch (e) {
-    // Edge function exists but may not support health_check — still means it's reachable
-    if (e && e.message && e.message.includes('FunctionsHttpError')) {
+    // Any response (even an error) means the function is reachable
+    if (e.message && e.message.includes('Edge Function error')) {
       dot.className = 'dot ok';
       label.textContent = 'Edge Function connected';
     } else {
@@ -685,17 +692,11 @@ async function scoreSingle() {
   const ticker = document.getElementById('ticker-input').value.trim().toUpperCase();
   if (!ticker) return;
 
-  const client = getSupa();
-  if (!client) { showError('Supabase not configured'); return; }
-
   showLoading('Analyzing <strong>' + ticker + '</strong>... (~5 seconds)');
   document.getElementById('score-btn').disabled = true;
 
   try {
-    const { data, error } = await client.functions.invoke('score-stock', {
-      body: { ticker }
-    });
-    if (error) throw error;
+    const data = await callEdgeFn({ ticker });
 
     if (data.current_price === 0) {
       hideAll();
@@ -722,17 +723,11 @@ async function scoreBatch() {
   const tickers = raw.split(/[,\s\n]+/).filter(Boolean).slice(0, 20);
   if (!tickers.length) return;
 
-  const client = getSupa();
-  if (!client) { showError('Supabase not configured'); return; }
-
   showLoading('Analyzing <strong>' + tickers.length + ' tickers</strong>... (~' + Math.max(5, tickers.length * 2) + ' seconds)');
   document.getElementById('batch-btn').disabled = true;
 
   try {
-    const { data, error } = await client.functions.invoke('score-stock', {
-      body: { tickers }
-    });
-    if (error) throw error;
+    const data = await callEdgeFn({ tickers });
 
     // data may be an array or an object with results key
     batchData = Array.isArray(data) ? data : (data.results || []);
@@ -942,7 +937,6 @@ document.getElementById('ticker-input').addEventListener('keydown', function(e) 
 
 /* ── Init ── */
 window.addEventListener('DOMContentLoaded', function() {
-  getSupa();
   checkHealth();
 });
 </script>
