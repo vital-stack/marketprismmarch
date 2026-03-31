@@ -4127,6 +4127,7 @@ body{
           <button class="nf-tab" data-nf-tab="market" onclick="switchNFTab('market',this)">Market-Wide</button>
           <button class="nf-tab active" data-nf-tab="traps" onclick="switchNFTab('traps',this)">Traps <span class="info-tip" data-tip="Narrative Traps are tickers where the media story contradicts SEC filings, fundamentals, or fair value — price may be running ahead of reality."><i class="info-icon">i</i></span></button>
           <button class="nf-tab" data-nf-tab="supported" onclick="switchNFTab('supported',this)">Supported <span class="info-tip" data-tip="Structurally Supported tickers have narratives backed by fundamental data — filings, earnings, and institutional positioning align with the prevailing story."><i class="info-icon">i</i></span></button>
+          <button class="nf-tab" data-nf-tab="coordination" onclick="switchNFTab('coordination',this)">Coordination <span class="info-tip" data-tip="Coordination alerts detect when multiple media sources publish suspiciously similar narratives within a short window — a signal of possible coordinated coverage."><i class="info-icon">i</i></span></button>
         </div>
         <div class="nf-scroll">
           <div class="nf-list" id="nf-list-tickers" style="display:none;">
@@ -4142,6 +4143,9 @@ body{
             <!-- Populated by JS -->
           </div>
           <div class="nf-list" id="nf-list-supported" style="display:none;">
+            <!-- Populated by JS -->
+          </div>
+          <div class="nf-list" id="nf-list-coordination" style="display:none;">
             <!-- Populated by JS -->
           </div>
         </div>
@@ -5894,10 +5898,11 @@ async function loadData(){
     fillMarketNarrative();
     loadSectorsFromSummaries();
     loadMarketWideFromSummaries();
-    // Load supported + traps from their actual DB tables, then render
-    await Promise.all([loadSupportedData(), loadTrapsData()]);
+    // Load supported + traps + coordination from their actual DB tables, then render
+    await Promise.all([loadSupportedData(), loadTrapsData(), loadCoordinationData()]);
     renderSupportedCards();
     renderTrapsCards();
+    renderCoordinationCards();
     // Pre-load leaderboard data so it's ready when tab is clicked
     if(typeof loadLeaderboard==='function') loadLeaderboard();
   } catch(err){
@@ -6480,6 +6485,154 @@ function renderSupportedCards(){
   } else {
     el.innerHTML='<div class="empty-state" style="padding:20px;text-align:center;color:var(--mp-text-tertiary);font-size:13px;">No structurally supported signals available.</div>';
   }
+}
+
+// ── Coordination Alerts (from coordination_alerts table) ──
+var COORDINATION_DATA = [];
+var coordSortField = 'coordination_score';
+
+async function loadCoordinationData(){
+  if(!SUPABASE_URL||!SUPABASE_ANON) return;
+  var hdrs={'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Accept':'application/json'};
+  try{
+    var dateRes=await fetch(SUPABASE_URL+'/rest/v1/coordination_alerts?select=snapshot_date&order=snapshot_date.desc&limit=1',{headers:hdrs});
+    if(!dateRes.ok) return;
+    var dateRows=await dateRes.json();
+    if(!dateRows.length) return;
+    var maxDate=dateRows[0].snapshot_date;
+    var cols='ticker,narrative,current_price,coordination_score,coordination_class,sources_within_1hr,identical_phrasing_count,suspicion_score,drift_explanation,collision_class,suspicion_class,macro_theme,srs_band,source_outlet,verdict';
+    var res=await fetch(SUPABASE_URL+'/rest/v1/coordination_alerts?select='+cols+'&snapshot_date=eq.'+encodeURIComponent(maxDate)+'&order=coordination_score.desc&limit=30',{headers:hdrs});
+    if(!res.ok) return;
+    COORDINATION_DATA=await res.json();
+    console.log('[MP] coordination_alerts loaded:',COORDINATION_DATA.length,'rows');
+  }catch(e){
+    console.warn('[MP] coordination_alerts fetch failed:',e);
+  }
+  renderCoordinationCards();
+}
+
+function renderCoordinationCards(){
+  var el=document.getElementById('nf-list-coordination');
+  if(!el) return;
+
+  var rows=COORDINATION_DATA.slice();
+  // Client-side sort
+  rows.sort(function(a,b){
+    return (parseFloat(b[coordSortField])||0)-(parseFloat(a[coordSortField])||0);
+  });
+
+  if(!rows.length){
+    el.innerHTML='<div class="empty-state" style="padding:20px;text-align:center;color:var(--mp-text-tertiary);font-size:13px;">No coordination alerts available.</div>';
+    return;
+  }
+
+  // Sort chips
+  var sortFields=[
+    {key:'coordination_score',label:'Coordination Score'},
+    {key:'suspicion_score',label:'Suspicion Score'},
+    {key:'sources_within_1hr',label:'Sources in 1hr'}
+  ];
+  var sortHTML='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">';
+  sortFields.forEach(function(sf){
+    var isActive=coordSortField===sf.key;
+    sortHTML+='<button class="chip'+(isActive?' active':'')+'" onclick="coordSortField=\''+sf.key+'\';renderCoordinationCards();" style="font-family:Inter,sans-serif;font-size:13px;">'+sf.label+'</button>';
+  });
+  sortHTML+='</div>';
+
+  var cardsHTML=rows.map(function(r){
+    var isCoord=r.coordination_class==='LIKELY_COORDINATED';
+    var accentColor=isCoord?'#FFB800':'#38C8B8';
+    var accentBg=isCoord?'rgba(255,184,0,0.06)':'rgba(56,200,184,0.06)';
+    var accentBorder=isCoord?'rgba(255,184,0,0.25)':'rgba(56,200,184,0.25)';
+    var classLabel=isCoord?'Likely Coordinated':'Suspicious Pattern';
+
+    // Price from DATA array or row
+    var dataRow=DATA.find(function(d){return d.ticker===r.ticker;})||{};
+    var price=r.current_price?parseFloat(r.current_price):(dataRow.current_price?parseFloat(dataRow.current_price):null);
+    var pricePct=dataRow.price_change_pct?parseFloat(dataRow.price_change_pct):0;
+    var priceCls=pricePct>0?'nc-change-up':pricePct<0?'nc-change-dn':'nc-change-flat';
+    var priceSign=pricePct>0?'+':'';
+    var priceHTML=price?'<div class="nc-price-group"><span class="nc-price">$'+price.toFixed(2)+'</span><span class="nc-change '+priceCls+'">'+priceSign+pricePct.toFixed(2)+'%</span></div>':'';
+
+    // Verdict badge
+    var verdict=(r.verdict||'').toLowerCase();
+    var verdictCls='nc-dir-neutral';
+    var verdictLabel=r.verdict||'Neutral';
+    if(verdict.indexOf('bear')>=0||verdict.indexOf('trap')>=0||verdict.indexOf('overvalued')>=0){verdictCls='nc-dir-bear';}
+    else if(verdict.indexOf('bull')>=0||verdict.indexOf('support')>=0){verdictCls='nc-dir-bull';}
+
+    // Metrics
+    var coordScore=r.coordination_score!=null?Math.round(parseFloat(r.coordination_score)):0;
+    var sources1hr=r.sources_within_1hr!=null?r.sources_within_1hr:'—';
+    var identPhrasing=r.identical_phrasing_count!=null?r.identical_phrasing_count:'—';
+    var suspScore=r.suspicion_score!=null?Math.round(parseFloat(r.suspicion_score)):'—';
+
+    // Tags
+    var tags=[];
+    if(r.collision_class) tags.push({label:r.collision_class.replace(/_/g,' '),color:'rgba(255,184,0,0.65)',border:'rgba(255,184,0,0.15)'});
+    if(r.suspicion_class) tags.push({label:r.suspicion_class.replace(/_/g,' '),color:'rgba(255,184,0,0.65)',border:'rgba(255,184,0,0.15)'});
+    if(r.macro_theme) tags.push({label:r.macro_theme.replace(/_/g,' '),color:'rgba(0,174,255,0.65)',border:'rgba(0,174,255,0.15)'});
+    if(r.srs_band) tags.push({label:r.srs_band.replace(/_/g,' '),color:'rgba(0,174,255,0.65)',border:'rgba(0,174,255,0.15)'});
+
+    return '<a class="nc-card" href="/ticker/'+encodeURIComponent(r.ticker)+'" style="border-left-color:'+accentColor+';">'
+      +'<div class="nc-body">'
+        // Header
+        +'<div class="nc-narrative-head">'
+          +nfLogoHTML(r.ticker)
+          +'<div class="nc-tk-group">'
+            +'<span class="nc-ticker">'+esc(r.ticker)+'</span>'
+          +'</div>'
+          +priceHTML
+        +'</div>'
+        // Narrative
+        +'<div class="nc-claim">'+esc(r.narrative||'')+'</div>'
+        // Badges
+        +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;">'
+          +'<span class="nc-direction" style="color:'+accentColor+';border:1px solid '+accentBorder+';background:'+accentBg+';">'+esc(classLabel)+'</span>'
+          +'<span class="nc-direction '+verdictCls+'">'+esc(verdictLabel)+'</span>'
+        +'</div>'
+        // Metric grid
+        +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px;">'
+          +'<div><div style="font-family:Inter,sans-serif;font-size:11px;color:var(--mp-text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Coord Score</div><div style="font-family:Inter,sans-serif;font-size:18px;font-weight:700;color:#fff;">'+coordScore+'</div></div>'
+          +'<div><div style="font-family:Inter,sans-serif;font-size:11px;color:var(--mp-text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Sources 1hr</div><div style="font-family:Inter,sans-serif;font-size:18px;font-weight:700;color:#fff;">'+sources1hr+'</div></div>'
+          +'<div><div style="font-family:Inter,sans-serif;font-size:11px;color:var(--mp-text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Identical</div><div style="font-family:Inter,sans-serif;font-size:18px;font-weight:700;color:#fff;">'+identPhrasing+'</div></div>'
+          +'<div><div style="font-family:Inter,sans-serif;font-size:11px;color:var(--mp-text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Suspicion</div><div style="font-family:Inter,sans-serif;font-size:18px;font-weight:700;color:#fff;">'+suspScore+'</div></div>'
+        +'</div>'
+        // Score bar
+        +'<div style="height:4px;border-radius:2px;background:rgba(255,255,255,0.06);margin-bottom:12px;overflow:hidden;">'
+          +'<div style="height:100%;width:'+coordScore+'%;border-radius:2px;background:linear-gradient(to right,#38C8B8,#00AEFF);transition:width .3s;"></div>'
+        +'</div>'
+        // Callout block
+        +(r.drift_explanation?'<div style="border-left:2px solid #FFB800;padding:10px 14px;font-style:italic;color:var(--mp-text-secondary);font-family:Inter,sans-serif;font-size:13px;line-height:1.55;margin-bottom:12px;background:rgba(255,184,0,0.03);border-radius:0 4px 4px 0;">'+esc(r.drift_explanation)+'</div>':'')
+        // Tags
+        +(tags.length?'<div class="nc-signals">'+tags.map(function(t){return '<span class="nc-signal" style="color:'+t.color+';border-color:'+t.border+';">'+esc(t.label)+'</span>';}).join('')+'</div>':'')
+        // Footer
+        +'<div class="nc-action-row" style="margin-top:10px;">'
+          +'<span class="nc-action-text">'+(r.source_outlet?'Primary outlet: '+esc(r.source_outlet):'')+'</span>'
+          +'<span class="nc-view-link">View \u2192</span>'
+        +'</div>'
+      +'</div>'
+    +'</a>';
+  }).join('');
+
+  el.innerHTML=sortHTML+cardsHTML;
+
+  // Update tab badge count
+  var tabBtn=document.querySelector('[data-nf-tab="coordination"]');
+  if(tabBtn){
+    var countSpan=tabBtn.querySelector('.nf-tab-count');
+    if(!countSpan){
+      countSpan=document.createElement('span');
+      countSpan.className='nf-tab-count';
+      countSpan.style.cssText='font-size:11px;color:var(--mp-text-tertiary);margin-left:2px;';
+      tabBtn.insertBefore(countSpan,tabBtn.querySelector('.info-tip'));
+    }
+    countSpan.textContent='('+rows.length+')';
+  }
+
+  el.querySelectorAll('.nc-card').forEach(function(card){
+    card.style.cursor='pointer';
+  });
 }
 
 // ── Market-Wide full page ──
