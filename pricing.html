@@ -104,6 +104,7 @@ body::before{
 .banner.show{display:block;}
 .banner.info{border-color:rgba(0,174,255,0.24);color:#8dd8ff;}
 .banner.error{border-color:rgba(255,77,77,0.24);color:#ff9e9e;}
+.banner.success{border-color:rgba(0,222,148,0.24);color:#98f5ca;}
 .plans{
   display:grid;
   grid-template-columns:repeat(2,minmax(260px,1fr));
@@ -160,6 +161,8 @@ body::before{
 .plan-button:hover:not(:disabled){transform:translateY(-2px);}
 .plan-button:disabled{cursor:not-allowed;opacity:.65;transform:none;}
 .plan-meta{margin-top:12px;font-size:12px;color:var(--mp-text-tertiary);}
+.plan-card.active-plan{border-color:rgba(0,174,255,0.24);box-shadow:0 12px 28px rgba(0,174,255,0.08);}
+.plan-card.on-trial{border-color:rgba(77,200,240,0.28);box-shadow:0 12px 28px rgba(77,200,240,0.08);}
 @media (max-width: 780px){
   .page{padding:24px 16px 56px;}
   .plans{grid-template-columns:1fr;}
@@ -217,6 +220,7 @@ body::before{
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/billing-config.js"></script>
+<script src="/billing-ui.js"></script>
 <script id="__pricing_env">window.__pricing_env = { SUPABASE_URL: '', SUPABASE_ANON: '' };</script>
 <script>
 (function(){
@@ -228,6 +232,7 @@ body::before{
     return;
   }
   var BILLING = window.MP_BILLING || { plans: [] };
+  var BILLING_UI = window.MP_BILLING_UI || {};
   var supabase = (window.supabase && SUPABASE_URL && SUPABASE_ANON_KEY)
     ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
     : null;
@@ -256,6 +261,74 @@ body::before{
       var button = document.querySelector('.plan-button[data-plan-id="' + plan.id + '"]');
       if(button && plan.priceId){
         button.dataset.priceId = plan.priceId;
+      }
+    });
+  }
+
+  function normalizeSubscriptionStatus(status){
+    if(BILLING_UI.normalizeSubscriptionStatus){
+      return BILLING_UI.normalizeSubscriptionStatus(status);
+    }
+    return String(status || '').trim().toLowerCase();
+  }
+
+  async function getSubscription(){
+    if(!supabase) return null;
+    var userResult = await supabase.auth.getUser();
+    var user = userResult && userResult.data ? userResult.data.user : null;
+    if(!user) return null;
+
+    var activeResult = await supabase.from('subscriptions')
+      .select('*')
+      .eq('user_id', user.id)
+      .in('status', ['active', 'trialing'])
+      .single();
+
+    if(!activeResult.error && activeResult.data){
+      return activeResult.data;
+    }
+    if(activeResult.error && activeResult.error.code !== 'PGRST116'){
+      throw activeResult.error;
+    }
+
+    var fallbackResult = await supabase.from('subscriptions')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('current_period_end', { ascending: false })
+      .limit(1);
+
+    if(fallbackResult.error) throw fallbackResult.error;
+    return fallbackResult.data && fallbackResult.data[0] ? fallbackResult.data[0] : null;
+  }
+
+  function applyPricingState(subscription){
+    var planName = BILLING.getPlanName ? BILLING.getPlanName(subscription) : '';
+    var presentation = BILLING_UI.getPricingPagePresentation
+      ? BILLING_UI.getPricingPagePresentation(subscription, { planName: planName })
+      : null;
+    if(!presentation) return;
+
+    if(presentation.bannerText){
+      showMessage(presentation.bannerType || 'info', presentation.bannerText);
+    }
+
+    buttons.forEach(function(button){
+      var planId = button.dataset.planId;
+      var state = presentation.planStates && presentation.planStates[planId];
+      var card = button.closest('.plan-card');
+      var meta = card ? card.querySelector('.plan-meta') : null;
+      if(!state) return;
+      if(!button.dataset.defaultText){
+        button.dataset.defaultText = button.textContent;
+      }
+      button.textContent = state.buttonText || button.dataset.defaultText;
+      button.disabled = !!state.disabled;
+      if(meta && state.metaText){
+        meta.textContent = state.metaText;
+      }
+      if(card){
+        card.classList.toggle('on-trial', normalizeSubscriptionStatus(subscription && subscription.status) === 'trialing' && planId === 'standard');
+        card.classList.toggle('active-plan', normalizeSubscriptionStatus(subscription && subscription.status) === 'active' && BILLING.getAccessLevel && BILLING.getAccessLevel(subscription) === planId);
       }
     });
   }
@@ -324,6 +397,16 @@ body::before{
   if(params.get('canceled') === 'true'){
     showMessage('info', 'Checkout was canceled. Choose a plan to continue.');
   }
+
+  getSubscription()
+    .then(function(subscription){
+      if(subscription){
+        applyPricingState(subscription);
+      }
+    })
+    .catch(function(err){
+      console.error('Pricing subscription load error:', err);
+    });
 })();
 </script>
 </body>
