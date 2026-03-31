@@ -690,7 +690,7 @@ body{
 .disc-nc-rb-text{font-size:12px;color:var(--mp-text-secondary);line-height:1.6;}
 .disc-nc-rb-claim{font-size:12px;color:var(--mp-text-muted);line-height:1.6;margin-bottom:6px;font-style:italic;}
 /* Hero banner card style */
-.daily-hero-banner{background:linear-gradient(rgba(8,11,17,0.82),rgba(8,11,17,0.82)),url('/assets/daily-brief-bg.jpg.png') center/cover no-repeat;border:1px solid var(--mp-border);border-radius:16px;box-shadow:var(--mp-card-shadow);overflow:hidden;position:relative;margin-bottom:0;}
+.daily-hero-banner{background:linear-gradient(rgba(8,11,17,0.82),rgba(8,11,17,0.82)),url('/assets/daily-brief-bg.png') center/cover no-repeat;border:1px solid var(--mp-border);border-radius:16px;box-shadow:var(--mp-card-shadow);overflow:hidden;position:relative;margin-bottom:0;}
 .daily-hero-banner::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
   background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:48px 48px;}
 .daily-hero-banner>*{position:relative;z-index:1;}
@@ -2043,7 +2043,7 @@ body{
 [data-theme="light"] .disc-nc-rb-toggle{background:rgba(0,0,0,0.02);}
 [data-theme="light"] .disc-nc-rb-toggle:hover{background:rgba(0,0,0,0.04);}
 [data-theme="light"] .disc-nc-rb-body{background:rgba(0,0,0,0.02);}
-[data-theme="light"] .daily-hero-banner{background:linear-gradient(rgba(255,255,255,0.88),rgba(255,255,255,0.88)),url('/assets/daily-brief-bg.jpg.png') center/cover no-repeat;border-color:rgba(0,0,0,0.08);box-shadow:0 2px 8px rgba(0,0,0,0.06);}
+[data-theme="light"] .daily-hero-banner{background:linear-gradient(rgba(255,255,255,0.88),rgba(255,255,255,0.88)),url('/assets/daily-brief-bg.png') center/cover no-repeat;border-color:rgba(0,0,0,0.08);box-shadow:0 2px 8px rgba(0,0,0,0.06);}
 [data-theme="light"] .daily-hero-banner::before{background-image:linear-gradient(rgba(0,0,0,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,0.03) 1px,transparent 1px);}
 [data-theme="light"] .dhb-context{background:rgba(0,0,0,0.03);border-left-color:#00AEFF;color:var(--mp-text-secondary);}
 [data-theme="light"] .daily-narr-card{background:#fff;border-color:rgba(0,0,0,0.08);box-shadow:0 2px 8px rgba(0,0,0,0.06);}
@@ -6037,6 +6037,12 @@ function ncBuildTags(verdict,state,daysToEarnings){
   return tags;
 }
 
+function nfWatermarkHTML(ticker){
+  var domain=DOMAIN_MAP[(ticker||'').toUpperCase()];
+  if(!domain) return '';
+  return '<img src="https://logo.clearbit.com/'+domain+'" alt="" style="position:absolute;right:-10px;top:50%;transform:translateY(-50%);width:120px;height:120px;opacity:0.04;pointer-events:none;object-fit:contain;filter:grayscale(100%);" onerror="this.style.display=\'none\'">';
+}
+
 function nfBuildRow(dir, logoHtml, ticker, sector, headline, verdict, href, extra){
   extra=extra||{};
   var dirCls=dir==='bull'?'nc-bull':dir==='bear'?'nc-bear':'nc-neutral';
@@ -6066,6 +6072,7 @@ function nfBuildRow(dir, logoHtml, ticker, sector, headline, verdict, href, extr
   var signals=nfTopSignals(extra,sc);
 
   return '<a class="nc-card '+dirCls+'" '+(href?'href="'+href+'"':'')+'>'
+    +nfWatermarkHTML(ticker)
     +'<div class="nc-body">'
       // 1. THE NARRATIVE
       +'<div class="nc-narrative-head">'
@@ -6575,6 +6582,7 @@ function renderCoordinationCards(){
     if(r.srs_band) tags.push({label:r.srs_band.replace(/_/g,' '),color:'rgba(0,174,255,0.65)',border:'rgba(0,174,255,0.15)'});
 
     return '<a class="nc-card" href="/ticker/'+encodeURIComponent(r.ticker)+'" style="border-left-color:'+accentColor+';">'
+      +nfWatermarkHTML(r.ticker)
       +'<div class="nc-body">'
         // Header
         +'<div class="nc-narrative-head">'
