@@ -3998,6 +3998,13 @@ body{
       <span class="nav-item-badge teal" id="nav-badge-calendar">New</span>
     </button>
 
+    <div class="nav-section-lbl">Labs</div>
+    <button class="nav-item" data-tab="scorer" onclick="switchTab('scorer',this)" style="position:relative;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"/></svg>
+      Score Any Stock
+      <span class="nav-item-badge" style="background:rgba(255,184,0,0.15);color:#FFB800;border-color:rgba(255,184,0,0.3);font-size:10px;letter-spacing:.06em;">TESTING</span>
+    </button>
+
     <!-- Promo card -->
     <div class="nav-promo" onclick="switchTab('cards',document.querySelector('.nav-item[data-tab=cards]'))">
       <div class="nav-promo-title">
@@ -4673,6 +4680,36 @@ body{
       </div>
     </div>
 
+    <!-- ═══ SCORE ANY STOCK — TESTING ═══ -->
+    <div class="tab-panel" id="tab-scorer">
+      <div class="page-header">
+        <h1>Score any stock.</h1>
+        <span class="ph-italic">Real-time AI forensics.</span>
+        <p>Enter any ticker — our four-agent pipeline scores it live using SEC filings, market data, news sentiment, and AI audit in seconds.</p>
+      </div>
+      <div style="display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:8px;background:rgba(255,184,0,0.08);border:1px solid rgba(255,184,0,0.2);color:#FFB800;font-size:12px;font-weight:600;letter-spacing:.06em;margin-bottom:24px;">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+        TESTING MODE — Results are experimental. Latency ~8-15s per ticker.
+      </div>
+      <!-- Search input -->
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:28px;max-width:480px;">
+        <input id="scorer-input" type="text" placeholder="Enter ticker (e.g. AAPL, NVDA, TSLA)" style="flex:1;background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:10px;padding:14px 18px;font-size:15px;color:var(--mp-text-primary);font-family:var(--font-body);outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor='rgba(0,174,255,0.4)'" onblur="this.style.borderColor='var(--mp-border)'">
+        <button id="scorer-btn" onclick="runScorer()" style="padding:14px 24px;border-radius:10px;border:1px solid rgba(0,174,255,0.3);background:linear-gradient(135deg,rgba(0,174,255,0.12),rgba(123,97,255,0.08));color:#00AEFF;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:var(--font-body);transition:all 0.2s;">Score</button>
+      </div>
+      <!-- Loading state -->
+      <div id="scorer-loading" style="display:none;margin-bottom:20px;">
+        <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-radius:12px;background:var(--mp-surface);border:1px solid var(--mp-border);">
+          <div style="width:18px;height:18px;border:2px solid rgba(0,174,255,0.3);border-top-color:#00AEFF;border-radius:50%;animation:spin 1s linear infinite;"></div>
+          <span style="color:var(--mp-text-secondary);font-size:13px;" id="scorer-status">Running four-agent pipeline...</span>
+        </div>
+      </div>
+      <style>@keyframes spin{to{transform:rotate(360deg);}}</style>
+      <!-- Results -->
+      <div id="scorer-results"></div>
+      <!-- Error -->
+      <div id="scorer-error" style="display:none;padding:16px 20px;border-radius:12px;background:rgba(255,77,77,0.06);border:1px solid rgba(255,77,77,0.15);color:#FF4D4D;font-size:13px;margin-bottom:20px;"></div>
+    </div>
+
   </div>
 </div>
 </div>
@@ -4738,8 +4775,8 @@ document.querySelectorAll('.page-header p').forEach(function(p,i){
   if(i===0) return;
 });
 // ── Tab switching (hook-based — sections register via onTabSwitch) ────────────
-var TABS = ['daily','discover','sector','marketwide','snapshots','memes','narrative','cards','calendar','trapradar','leaderboard'];
-var TAB_TITLES = {daily:'Daily Brief',discover:'Discover',sector:'Sector Pulse',marketwide:'Market-Wide',snapshots:'Ticker Snapshots',memes:'Market Sharing',narrative:'Narrative History',cards:'Trading Cards',calendar:'Trading Calendar',trapradar:'Trap Radar',leaderboard:'Leaderboard'};
+var TABS = ['daily','discover','sector','marketwide','snapshots','memes','narrative','cards','calendar','trapradar','leaderboard','scorer'];
+var TAB_TITLES = {daily:'Daily Brief',discover:'Discover',sector:'Sector Pulse',marketwide:'Market-Wide',snapshots:'Ticker Snapshots',memes:'Market Sharing',narrative:'Narrative History',cards:'Trading Cards',calendar:'Trading Calendar',trapradar:'Trap Radar',leaderboard:'Leaderboard',scorer:'Score Any Stock'};
 var _tabHooks = [];
 /** Register a callback to run after any tab switch. fn(id) */
 function onTabSwitch(fn){ if(typeof fn==='function') _tabHooks.push(fn); }
@@ -4783,6 +4820,101 @@ var AUTH_READY = null;
 var BILLING = window.MP_BILLING || {lockedTabs:{},getPlanName:function(){return 'No Active Plan';},getAccessLevel:function(){return 'none';},hasAccess:function(){return false;}};
 var CURRENT_SUBSCRIPTION = null;
 var BILLING_PORTAL_BUSY = false;
+
+// ── Score Any Stock (Testing) ────────────────────────────────────────────────
+var SCORER_EDGE_URL = 'https://kugfvlagaetiqtdwdfmk.supabase.co/functions/v1/score-stock';
+var SCORER_CACHE_TTL = 5*60*1000;
+var SCORER_CACHE_PFX = 'ms_score_';
+function scorerCache(tk){try{var r=localStorage.getItem(SCORER_CACHE_PFX+tk);if(!r)return null;var o=JSON.parse(r);if(Date.now()-o.ts>SCORER_CACHE_TTL){localStorage.removeItem(SCORER_CACHE_PFX+tk);return null;}return o.data;}catch(e){return null;}}
+function scorerCacheSet(tk,d){try{localStorage.setItem(SCORER_CACHE_PFX+tk,JSON.stringify({data:d,ts:Date.now()}));}catch(e){}}
+var SCORER_VERDICT_MAP={
+  'Structurally Supported':{c:'#00DE94',b:'rgba(0,222,148,0.12)'},'Accumulate':{c:'#7BE89A',b:'rgba(123,232,154,0.12)'},
+  'Low Risk':{c:'#7BE89A',b:'rgba(123,232,154,0.12)'},'High Conviction Continuation':{c:'#00DE94',b:'rgba(0,222,148,0.12)'},
+  'Monitoring':{c:'#A0A8B0',b:'rgba(160,168,176,0.12)'},'Elevated Risk':{c:'#FFB800',b:'rgba(255,184,0,0.12)'},
+  'Narrative Trap':{c:'#FF4D4D',b:'rgba(255,77,77,0.12)'},'Air Pocket Short':{c:'#FF4D4D',b:'rgba(255,77,77,0.12)'},
+  'Drift Compression Short':{c:'#FF4D4D',b:'rgba(255,77,77,0.12)'},'Narrative Risk':{c:'#FF8C00',b:'rgba(255,140,0,0.12)'},
+};
+function fmtNum(v,p){if(v==null)return'—';return(p||'')+Number(v).toLocaleString(undefined,{maximumFractionDigits:2});}
+function runScorer(){
+  var inp=document.getElementById('scorer-input');var tk=(inp.value||'').toUpperCase().trim();if(!tk)return;
+  var btn=document.getElementById('scorer-btn');var load=document.getElementById('scorer-loading');
+  var res=document.getElementById('scorer-results');var err=document.getElementById('scorer-error');
+  var status=document.getElementById('scorer-status');
+  err.style.display='none';
+  // Check cache
+  var cached=scorerCache(tk);
+  if(cached){renderScorerResult(cached);return;}
+  // Show loading
+  btn.disabled=true;btn.textContent='Scoring...';load.style.display='';res.innerHTML='';
+  status.textContent='Running four-agent pipeline on '+tk+'...';
+  var anonKey=SUPABASE_ANON;
+  fetch(SCORER_EDGE_URL,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+anonKey,'apikey':anonKey},body:JSON.stringify({ticker:tk})})
+  .then(function(r){if(!r.ok)return r.text().then(function(t){throw new Error(t);});return r.json();})
+  .then(function(d){scorerCacheSet(tk,d);renderScorerResult(d);})
+  .catch(function(e){err.textContent='Error: '+e.message;err.style.display='';})
+  .finally(function(){btn.disabled=false;btn.textContent='Score';load.style.display='none';});
+}
+function renderScorerResult(d){
+  var res=document.getElementById('scorer-results');
+  var vm=SCORER_VERDICT_MAP[d.verdict]||{c:'#A0A8B0',b:'rgba(160,168,176,0.12)'};
+  var chg=d.price_30d_before&&d.current_price?((d.current_price-d.price_30d_before)/d.price_30d_before*100).toFixed(2):null;
+  var chgC=chg>0?'#00DE94':chg<0?'#FF4D4D':'#A0A8B0';
+  var fvd=d.fair_value_deviation_pct;var fvdC=fvd>30?'#FF4D4D':fvd<-10?'#00DE94':'#A0A8B0';
+  var latency=d.agent_latency_ms?((d.agent_latency_ms/1000).toFixed(1)+'s'):'—';
+  var h='<div style="background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:16px;padding:24px;max-width:700px;">';
+  // Header
+  h+='<div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;flex-wrap:wrap;">';
+  h+='<span style="font-family:var(--font-body);font-size:22px;font-weight:700;color:var(--mp-text-primary);">'+esc(d.ticker)+'</span>';
+  h+='<span style="font-size:20px;color:var(--mp-text-primary);font-weight:600;">$'+fmtNum(d.current_price)+'</span>';
+  if(chg!==null)h+='<span style="font-size:13px;color:'+chgC+';font-weight:600;">'+(chg>0?'+':'')+chg+'% (30d)</span>';
+  h+='<span style="margin-left:auto;font-size:11px;padding:5px 12px;border-radius:6px;font-weight:600;letter-spacing:.04em;background:'+vm.b+';color:'+vm.c+';border:1px solid '+vm.c+'33;">'+esc(d.verdict)+'</span>';
+  if(d.trade_direction)h+='<span style="font-size:11px;padding:4px 10px;border-radius:4px;font-weight:700;letter-spacing:.08em;background:rgba(255,255,255,0.04);border:1px solid var(--mp-border);color:var(--mp-text-secondary);">'+esc(d.trade_direction)+'</span>';
+  h+='</div>';
+  // Narrative summary
+  if(d.narrative_summary)h+='<div style="font-size:14px;line-height:1.6;color:var(--mp-text-secondary);padding:14px 16px;border-radius:10px;background:rgba(255,255,255,0.02);border:1px solid var(--mp-border);margin-bottom:20px;">'+esc(d.narrative_summary)+'</div>';
+  // Score grid
+  h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px;margin-bottom:20px;">';
+  var scores=[['NRS',d.nrs,'Narrative Risk'],['VMS',d.vms,'Verification'],['ACS',d.acs,'Credibility'],['CCP',d.ccp,'Confidence'],['CVS',d.cvs,'Claim Verif.'],['SRS',d.srs,'Source Rating'],['Drift',d.drift_score,'Drift Score']];
+  for(var i=0;i<scores.length;i++){
+    var s=scores[i];var sv=s[1];var sc=sv>=60?'#FF4D4D':sv>=40?'#FFB800':sv>=20?'#A0A8B0':'#00DE94';
+    if(s[0]==='VMS'||s[0]==='ACS'||s[0]==='CCP'||s[0]==='SRS')sc=sv>=70?'#00DE94':sv>=50?'#A0A8B0':sv>=30?'#FFB800':'#FF4D4D';
+    h+='<div style="background:rgba(255,255,255,0.02);border:1px solid var(--mp-border);border-radius:10px;padding:12px;text-align:center;">';
+    h+='<div style="font-size:20px;font-weight:700;color:'+sc+';">'+fmtNum(sv)+'</div>';
+    h+='<div style="font-size:10px;color:var(--mp-text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-top:3px;">'+s[2]+'</div>';
+    h+='</div>';
+  }
+  h+='</div>';
+  // Fair value
+  if(d.fair_value!=null){
+    h+='<div style="display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap;">';
+    h+='<div style="padding:12px 16px;border-radius:10px;background:rgba(255,255,255,0.02);border:1px solid var(--mp-border);"><div style="font-size:10px;color:var(--mp-text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Fair Value</div><div style="font-size:18px;font-weight:700;color:var(--mp-text-primary);">$'+fmtNum(d.fair_value)+'</div></div>';
+    if(fvd!=null)h+='<div style="padding:12px 16px;border-radius:10px;background:rgba(255,255,255,0.02);border:1px solid var(--mp-border);"><div style="font-size:10px;color:var(--mp-text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">FV Deviation</div><div style="font-size:18px;font-weight:700;color:'+fvdC+';">'+(fvd>0?'+':'')+fvd.toFixed(1)+'%</div></div>';
+    h+='</div>';
+  }
+  // Headlines
+  if(d.top_headlines&&d.top_headlines.length>0){
+    h+='<div style="margin-bottom:16px;"><div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--mp-text-muted);margin-bottom:8px;">Top Headlines</div>';
+    for(var j=0;j<Math.min(d.top_headlines.length,5);j++){
+      var url=d.article_urls&&d.article_urls[j]?d.article_urls[j]:'';
+      h+='<div style="font-size:13px;color:var(--mp-text-secondary);padding:6px 0;border-bottom:1px solid var(--mp-border);line-height:1.5;">';
+      if(url)h+='<a href="'+esc(url)+'" target="_blank" rel="noopener" style="color:var(--mp-text-secondary);text-decoration:none;">'+esc(d.top_headlines[j])+'</a>';
+      else h+=esc(d.top_headlines[j]);
+      h+='</div>';
+    }
+    h+='</div>';
+  }
+  // Meta
+  h+='<div style="display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--mp-text-muted);">';
+  if(d.sector)h+='<span>'+esc(d.sector)+'</span>';
+  if(d.form_type)h+='<span>Filing: '+esc(d.form_type)+'</span>';
+  h+='<span>Latency: '+latency+'</span>';
+  if(d.data_quality&&d.data_quality!=='good')h+='<span style="color:#FFB800;">Quality: '+esc(d.data_quality)+'</span>';
+  h+='</div></div>';
+  res.innerHTML=h;
+}
+// Enter key triggers score
+document.addEventListener('DOMContentLoaded',function(){var inp=document.getElementById('scorer-input');if(inp)inp.addEventListener('keydown',function(e){if(e.key==='Enter')runScorer();});});
+
 var LIVE_NHT_CACHE = {};
 var LIVE_NHT_CACHE_TTL_MS = 60 * 1000;
 var LIVE_EARNINGS_ROWS = [];
