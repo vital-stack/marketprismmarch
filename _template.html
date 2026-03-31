@@ -8301,7 +8301,7 @@ async function loadNHT(ticker){
     });
     var earningsEvents=benzingaToEvents(results[3]||[],series,nhtTicker);
     console.log('[EARNINGS EVENTS]', earningsEvents, '[RAW BENZINGA]', results[3]);
-    nhtEventsCache=dedupeEvents(mappedEvents.concat(earningsEvents,opexEvents));
+    nhtEventsCache=dedupeConsecutiveNarratives(dedupeEvents(mappedEvents.concat(earningsEvents,opexEvents)));
     console.log('STAGE 4: nhtEventsCache after dedupe:', nhtEventsCache);
     nhtHealthCache=(results[2]||[]).map(function(r){
       return {date:r.snapshot_date,sentiment:r.sentiment_score,trend:r.narrative_trend,attention:r.attention_trend,health:r.narrative_health};
@@ -10941,6 +10941,27 @@ function dedupeEvents(events){
   });
 }
 
+// Collapse consecutive events with identical or near-identical narrative text.
+// Keeps only the FIRST occurrence when the same narrative runs across multiple days.
+// A narrative is considered "changed" when the first 100 chars differ from the previous.
+function dedupeConsecutiveNarratives(events){
+  if(!events||!events.length) return events;
+  // Sort by date ascending first
+  var sorted=events.slice().sort(function(a,b){return (a.date_iso||'').localeCompare(b.date_iso||'');});
+  var result=[];
+  var lastTextByType={};
+  sorted.forEach(function(ev){
+    // Only dedup story events (bull/bear/neutral), not earnings/opex
+    if(ev.type==='earnings'||ev.type==='opex'){result.push(ev);return;}
+    var normalised=(ev.label||'').substring(0,100).toLowerCase().replace(/[^a-z0-9]/g,'');
+    var prevText=lastTextByType[ev.type]||'';
+    if(normalised===prevText){return;} // skip duplicate
+    lastTextByType[ev.type]=normalised;
+    result.push(ev);
+  });
+  return result;
+}
+
 function generateOpexEvents(series){
   if(!series || !series.length) return [];
   var start = new Date(series[0].snapshot_date + 'T00:00:00');
@@ -10998,7 +11019,7 @@ async function fetchLiveNarrativeEvents(ticker, prices){
     };
   });
 
-  return dedupeEvents(scorecardEvents.concat(analysisEvents)).sort(function(a, b){
+  return dedupeConsecutiveNarratives(dedupeEvents(scorecardEvents.concat(analysisEvents))).sort(function(a, b){
     return (a.date_iso || '').localeCompare(b.date_iso || '');
   });
 }
