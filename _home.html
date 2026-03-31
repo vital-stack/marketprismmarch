@@ -1024,12 +1024,61 @@ h1 em {
 /* ── HERO RIGHT: DASHBOARD PREVIEW ── */
 .hero-right { position: relative; }
 .dash-preview {
-  background: var(--deep);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 16px;
+  position: relative;
+  border-radius: 18px;
   overflow: hidden;
-  box-shadow: 0 32px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(0,174,255,0.04), 0 0 60px rgba(0,174,255,0.04);
+  box-shadow: 0 32px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(0,174,255,0.06), 0 0 60px rgba(0,174,255,0.06);
   animation: float-gentle 6s ease-in-out infinite;
+  aspect-ratio: 16/9.5;
+}
+/* Glass frame + reflection overlay */
+.dash-preview::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  border: 1.5px solid rgba(255,255,255,0.12);
+  background: linear-gradient(165deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.02) 30%, transparent 55%);
+  pointer-events: none;
+  z-index: 3;
+}
+.dash-preview::after {
+  content: '';
+  position: absolute;
+  top: -60%;
+  left: -20%;
+  width: 140%;
+  height: 80%;
+  background: radial-gradient(ellipse, rgba(255,255,255,0.07) 0%, transparent 70%);
+  transform: rotate(-15deg);
+  pointer-events: none;
+  z-index: 4;
+}
+/* Slideshow images */
+.dash-slide {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top left;
+  border-radius: 18px;
+  opacity: 0;
+  animation: dash-cycle 35s ease-in-out infinite;
+}
+.dash-slide:nth-child(1) { animation-delay: 0s; }
+.dash-slide:nth-child(2) { animation-delay: 5s; }
+.dash-slide:nth-child(3) { animation-delay: 10s; }
+.dash-slide:nth-child(4) { animation-delay: 15s; }
+.dash-slide:nth-child(5) { animation-delay: 20s; }
+.dash-slide:nth-child(6) { animation-delay: 25s; }
+.dash-slide:nth-child(7) { animation-delay: 30s; }
+@keyframes dash-cycle {
+  0%   { opacity: 0; transform: scale(1.02); }
+  3%   { opacity: 1; transform: scale(1); }
+  14%  { opacity: 1; transform: scale(1); }
+  17%  { opacity: 0; transform: scale(0.98); }
+  100% { opacity: 0; }
 }
 .dp-titlebar {
   background: var(--surface);
@@ -3026,114 +3075,16 @@ footer {
         </div>
       </div>
     </div>
-    <!-- Right: dashboard preview -->
+    <!-- Right: real dashboard slideshow -->
     <div class="hero-right" style="position:relative;">
-      <div class="float-alert">
-        <div class="fa-row"><span class="fa-dot"></span><span class="fa-lbl">Narrative Trap</span></div>
-        <div class="fa-text">TSLA · Price/fundamentals</div>
-        <div class="fa-sub">Divergence flagged · +47% vs model</div>
-      </div>
       <div class="dash-preview">
-        <div class="dp-titlebar">
-          <span class="dp-dot dp-dot-r"></span>
-          <span class="dp-dot dp-dot-y"></span>
-          <span class="dp-dot dp-dot-g"></span>
-          <span class="dp-titlebar-text">Market Prism — Discover</span>
-        </div>
-        <div class="dp-body">
-          <!-- Stat chips -->
-          <div class="dp-stats">
-            <div class="dp-stat"><div class="dp-stat-val" style="color:var(--blue);">171</div><div class="dp-stat-lbl">Tracked</div></div>
-            <div class="dp-stat"><div class="dp-stat-val" style="color:var(--blue);">12</div><div class="dp-stat-lbl">Breaking</div></div>
-            <div class="dp-stat"><div class="dp-stat-val" style="color:var(--amber);">8</div><div class="dp-stat-lbl">Traps</div></div>
-            <div class="dp-stat"><div class="dp-stat-val">64</div><div class="dp-stat-lbl">Avg Health</div></div>
-          </div>
-          <!-- Mini heatmap -->
-          <div class="dp-heatmap">
-            <div class="dp-hm-cell" style="background:linear-gradient(135deg,#071E28,#040F18);"><span class="dp-hm-tk">LOW</span><span class="dp-hm-sc">83</span></div>
-            <div class="dp-hm-cell" style="background:linear-gradient(135deg,#071E28,#040F18);"><span class="dp-hm-tk">TXN</span><span class="dp-hm-sc">81</span></div>
-            <div class="dp-hm-cell" style="background:linear-gradient(135deg,#071E28,#040F18);"><span class="dp-hm-tk">MOS</span><span class="dp-hm-sc">81</span></div>
-            <div class="dp-hm-cell" style="background:linear-gradient(135deg,#061A24,#040F18);"><span class="dp-hm-tk">IBRX</span><span class="dp-hm-sc">79</span></div>
-            <div class="dp-hm-cell" style="background:linear-gradient(135deg,#061A24,#040F18);"><span class="dp-hm-tk">NFLX</span><span class="dp-hm-sc">79</span></div>
-            <div class="dp-hm-cell" style="background:linear-gradient(135deg,#061A24,#040F18);"><span class="dp-hm-tk">JNJ</span><span class="dp-hm-sc">78</span></div>
-            <div class="dp-hm-cell" style="background:linear-gradient(135deg,#061A24,#040F18);"><span class="dp-hm-tk">CVX</span><span class="dp-hm-sc">78</span></div>
-            <div class="dp-hm-cell" style="background:linear-gradient(135deg,#061A24,#040F18);"><span class="dp-hm-tk">SNPS</span><span class="dp-hm-sc">78</span></div>
-            <div class="dp-hm-cell" style="background:linear-gradient(135deg,#061A24,#040F18);"><span class="dp-hm-tk">ADBE</span><span class="dp-hm-sc">78</span></div>
-            <div class="dp-hm-cell" style="background:linear-gradient(135deg,#061A24,#040F18);"><span class="dp-hm-tk">ACM</span><span class="dp-hm-sc">78</span></div>
-            <div class="dp-hm-cell" style="background:linear-gradient(135deg,#061A24,#040F18);"><span class="dp-hm-tk">XYL</span><span class="dp-hm-sc">77</span></div>
-            <div class="dp-hm-cell" style="background:linear-gradient(135deg,#061A24,#040F18);"><span class="dp-hm-tk">GIS</span><span class="dp-hm-sc">77</span></div>
-            <div class="dp-hm-cell" style="background:linear-gradient(135deg,#061A24,#040F18);"><span class="dp-hm-tk">HAL</span><span class="dp-hm-sc">77</span></div>
-            <div class="dp-hm-cell" style="background:linear-gradient(135deg,#061A24,#040F18);"><span class="dp-hm-tk">TMO</span><span class="dp-hm-sc">77</span></div>
-            <div class="dp-hm-cell" style="background:linear-gradient(135deg,#061A24,#040F18);"><span class="dp-hm-tk">MRK</span><span class="dp-hm-sc">77</span></div>
-            <div class="dp-hm-cell" style="background:linear-gradient(135deg,#061A24,#040F18);"><span class="dp-hm-tk">ABBV</span><span class="dp-hm-sc">77</span></div>
-          </div>
-          <!-- Cards + Feed split -->
-          <div class="dp-split">
-            <!-- Mini card 1 -->
-            <div class="dp-card">
-              <div class="dp-card-accent" style="background:linear-gradient(90deg,var(--teal),transparent);opacity:0.7;"></div>
-              <div class="dp-card-head">
-                <span class="dp-card-ticker">NVDA</span>
-                <span class="dp-card-rarity" style="color:var(--teal);border-color:rgba(0,222,148,.3);background:rgba(0,222,148,.08);">RARE</span>
-              </div>
-              <div class="dp-card-price">$142.50</div>
-              <div class="dp-card-change" style="color:var(--teal);">&#9650; 1.32%</div>
-              <div class="dp-card-claim">Blackwell demand exceeding supply — data center capex cycle accelerating through 2026</div>
-              <div class="dp-card-bar"><div class="dp-card-bar-fill" style="width:78%;background:var(--teal);opacity:0.7;"></div></div>
-            </div>
-            <!-- Mini feed -->
-            <div class="dp-feed">
-              <div class="dp-feed-head">
-                <span class="dp-feed-title"><span class="live-dot"></span>Live Narratives</span>
-                <span class="dp-feed-live">LIVE</span>
-              </div>
-              <div class="dp-feed-item">
-                <div class="dp-fi-top">
-                  <span class="dp-fi-badge" style="background:rgba(56,200,184,.08);color:#38C8B8;border-color:rgba(56,200,184,.2);">TSLA</span>
-                  <span class="dp-fi-claim">Robotaxi narrative re-emerging but delivery numbers still soft</span>
-                </div>
-                <div class="dp-fi-meta">
-                  <span class="dp-fi-price">$378.20</span>
-                  <span class="dp-fi-delta" style="color:#38C8B8;">-1.41%</span>
-                  <span class="dp-fi-verdict" style="background:rgba(56,200,184,.08);color:#38C8B8;border-color:rgba(56,200,184,.2);">Trap</span>
-                </div>
-              </div>
-              <div class="dp-feed-item">
-                <div class="dp-fi-top">
-                  <span class="dp-fi-badge" style="background:rgba(0,222,148,.08);color:var(--teal);border-color:rgba(0,222,148,.2);">PLTR</span>
-                  <span class="dp-fi-claim">AIP deployment accelerating across defense sector</span>
-                </div>
-                <div class="dp-fi-meta">
-                  <span class="dp-fi-price">$98.45</span>
-                  <span class="dp-fi-delta" style="color:var(--teal);">+2.91%</span>
-                  <span class="dp-fi-verdict" style="background:rgba(0,222,148,.08);color:var(--teal);border-color:rgba(0,222,148,.2);">Supported</span>
-                </div>
-              </div>
-              <div class="dp-feed-item">
-                <div class="dp-fi-top">
-                  <span class="dp-fi-badge" style="background:rgba(0,174,255,.08);color:var(--blue);border-color:rgba(0,174,255,.2);">MSFT</span>
-                  <span class="dp-fi-claim">Copilot attach rates beating consensus</span>
-                </div>
-                <div class="dp-fi-meta">
-                  <span class="dp-fi-price">$468.35</span>
-                  <span class="dp-fi-delta" style="color:var(--teal);">+0.89%</span>
-                  <span class="dp-fi-verdict" style="background:rgba(0,222,148,.08);color:var(--teal);border-color:rgba(0,222,148,.2);">Supported</span>
-                </div>
-              </div>
-              <div class="dp-feed-item">
-                <div class="dp-fi-top">
-                  <span class="dp-fi-badge" style="background:rgba(90,184,216,.08);color:#5AB8D8;border-color:rgba(90,184,216,.2);">META</span>
-                  <span class="dp-fi-claim">Reality Labs losses widening — AI pivot narrative under pressure</span>
-                </div>
-                <div class="dp-fi-meta">
-                  <span class="dp-fi-price">$612.80</span>
-                  <span class="dp-fi-delta" style="color:#5AB8D8;">-0.38%</span>
-                  <span class="dp-fi-verdict" style="background:rgba(90,184,216,.08);color:#5AB8D8;border-color:rgba(90,184,216,.2);">Fragile</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <img class="dash-slide" src="assets/screenshots/Screenshot 2026-03-30 214541.png" alt="Trading Cards — Strategy Screener" loading="eager">
+        <img class="dash-slide" src="assets/screenshots/Screenshot 2026-03-30 214643.png" alt="Sector Pulse — Momentum" loading="lazy">
+        <img class="dash-slide" src="assets/screenshots/Screenshot 2026-03-30 214934.png" alt="Narrative History — Timeline" loading="lazy">
+        <img class="dash-slide" src="assets/screenshots/Screenshot 2026-03-30 215042.png" alt="Leaderboard — Rankings" loading="lazy">
+        <img class="dash-slide" src="assets/screenshots/Screenshot 2026-03-30 214810.png" alt="Ticker Snapshots — Table" loading="lazy">
+        <img class="dash-slide" src="assets/screenshots/Screenshot 2026-03-30 215314.png" alt="Trading Calendar" loading="lazy">
+        <img class="dash-slide" src="assets/screenshots/Screenshot 2026-03-30 215413.png" alt="NVDA Ticker Page" loading="lazy">
       </div>
     </div>
   </div>

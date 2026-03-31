@@ -1005,7 +1005,7 @@ body{
   padding:14px 16px 10px;
   display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
 }
-.sector-name{font-family:var(--font-body);font-size:17px;font-weight:600;color:var(--mp-text-primary);margin-bottom:3px;}
+.sector-name{font-family:'Instrument Serif','DM Serif Display',Georgia,serif;font-size:20px;font-weight:400;color:var(--mp-text-primary);margin-bottom:3px;letter-spacing:-0.025em;}
 .sector-sub{font-size:12px;color:var(--mp-text-secondary);}
 .sector-state{
   font-size:11px;font-family:var(--font-body);padding:4px 12px;
@@ -1046,7 +1046,7 @@ body{
 }
 .sector-bar-lbl{font-size:10px;color:var(--mp-text-secondary);min-width:64px;font-family:var(--font-body);}
 .sector-bar-track{flex:1;height:3px;background:rgba(255,255,255,0.04);border-radius:99px;overflow:hidden;}
-.sector-bar-fill{height:100%;border-radius:99px;background:rgba(255,255,255,0.2) !important;}
+.sector-bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#00AEFF,#38C8B8) !important;}
 .sector-bar-pct{font-family:var(--font-body);font-size:10px;color:var(--mp-text-primary);min-width:28px;text-align:right;}
 /* ── MARKET-WIDE ── */
 .mw-summary-row{
@@ -6339,7 +6339,7 @@ function renderMarketWidePage(){
     var tickerCount=t.ticker_count||t.sectors.length;
     var liveNote=tickerCount?'<span class="meta-tag" style="font-size:10px;">'+trapCount+' trap'+(trapCount===1?'':'s')+' \u00B7 '+tickerCount+' tickers</span>':'';
     var momentum=t.momentum||0;
-    var bar_color='rgba(255,255,255,0.2)';
+    var bar_color='linear-gradient(90deg,#00AEFF,#38C8B8)';
 
     return '<div class="sector-card" style="animation-delay:'+(i*0.08)+'s;border-top:2px solid rgba(0,174,255,0.3);">'
       +'<div class="sector-card-header">'
@@ -6999,7 +6999,7 @@ function renderSectors(){
   }
   grid.innerHTML=filtered.map(function(s){
     var sc='badge-stable';
-    var bar_color='rgba(255,255,255,0.2)';
+    var bar_color='linear-gradient(90deg,#00AEFF,#38C8B8)';
     var trapCount=s.live_traps||0;
     var supportedCount=s.live_supported||0;
     var verdict=trapCount>0?'<span class="sector-trap">Trap present</span>':(supportedCount>0?'<span class="sector-ok">Supported</span>':'');
@@ -7021,13 +7021,15 @@ function renderSectors(){
         +'<div><div class="sector-name">'+esc(s.name)+'</div><div class="sector-sub">'+esc(s.sub)+'</div></div>'
         +'<span class="sector-state" style="font-size:11px;padding:4px 10px;border-radius:6px;font-weight:500;letter-spacing:0.04em;text-transform:uppercase;border:1px solid '+sentBorderColor+';color:'+sentTextColor+';background:'+sentBg+';">'+sentLabel+'</span>'
       +'</div>'
+      +'<div class="sector-tickers-row" style="padding:0 16px 10px;border-bottom:1px solid var(--mp-border);">'
+        +'<div class="sector-tickers">'+s.tickers.map(function(t){return '<a href="/ticker/'+encodeURIComponent(t)+'" class="sector-ticker-chip" style="display:inline-flex;align-items:center;gap:4px;text-decoration:none;color:inherit;">'+logoHTML(t,'sm')+t+'</a>';}).join('')+'</div>'
+      +'</div>'
       +'<div class="sector-body">'
         +'<div class="sector-desc">'+esc(s.desc)+'</div>'
         +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">'
           +'<span class="sector-state '+sc+'" style="font-size:10px;padding:2px 8px;">'+s.state.toUpperCase()+'</span>'
           +liveNote
         +'</div>'
-        +'<div class="sector-tickers">'+s.tickers.map(function(t){return '<a href="/ticker/'+encodeURIComponent(t)+'" class="sector-ticker-chip" style="display:inline-flex;align-items:center;gap:4px;text-decoration:none;color:inherit;">'+logoHTML(t,'sm')+t+'</a>';}).join('')+'</div>'
       +'</div>'
       +'<div class="sector-momentum-bar">'
         +'<span class="sector-bar-lbl">Momentum</span>'
