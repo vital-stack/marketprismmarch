@@ -5065,9 +5065,11 @@ function getSubscriptionAccent(status){
 
 function canAccessFeature(requiredPlan){
   if(BILLING_UI.canAccessFeature){
-    return BILLING_UI.canAccessFeature(CURRENT_SUBSCRIPTION, requiredPlan);
+    return BILLING_UI.canAccessFeature(CURRENT_SUBSCRIPTION, requiredPlan, {
+      dashboardAccessOverride: !!BILLING.dashboardAccessOverride
+    });
   }
-  return requiredPlan === 'free';
+  return !!BILLING.dashboardAccessOverride || requiredPlan === 'free';
 }
 
 function renderFeatureLock(requiredPlan, options){

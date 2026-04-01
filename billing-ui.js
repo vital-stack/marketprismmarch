@@ -134,7 +134,9 @@
     };
   }
 
-  function canAccessFeature(subscription, requiredPlan){
+  function canAccessFeature(subscription, requiredPlan, options){
+    var opts = options || {};
+    if(opts.dashboardAccessOverride) return true;
     if(requiredPlan === 'free' || !requiredPlan) return true;
     var status = normalizeSubscriptionStatus(subscription && subscription.status);
     if(status !== 'active' && status !== 'trialing') return false;
