@@ -27,6 +27,10 @@ window.MP_BILLING = (function(){
     beta: 3
   };
 
+  // Temporary global dashboard unlock for testing.
+  // Set to false to restore paid access restrictions.
+  var dashboardAccessOverride = true;
+
   // Temporary testing mode: leave all dashboard tabs unlocked.
   // Restore the gated tabs below when paid access enforcement is needed again.
   var lockedTabs = {
@@ -70,6 +74,9 @@ window.MP_BILLING = (function(){
   }
 
   function getAccessLevel(subscription){
+    if(dashboardAccessOverride){
+      return 'beta';
+    }
     if(subscription && subscription.user_id === 'beta'){
       return 'beta';
     }
@@ -78,6 +85,9 @@ window.MP_BILLING = (function(){
   }
 
   function hasAccess(subscription, requiredPlan){
+    if(dashboardAccessOverride){
+      return true;
+    }
     if(subscription && subscription.user_id === 'beta'){
       return true;
     }
@@ -91,6 +101,7 @@ window.MP_BILLING = (function(){
 
   return {
     plans: plans,
+    dashboardAccessOverride: dashboardAccessOverride,
     lockedTabs: lockedTabs,
     getPlanByPriceId: getPlanByPriceId,
     inferPlan: inferPlan,
