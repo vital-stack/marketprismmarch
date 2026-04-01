@@ -81,6 +81,18 @@ test('canAccessFeature denies standard feature access after trial expires', () =
   assert.equal(canAccessFeature(subscription, 'free'), true);
 });
 
+test('canAccessFeature allows all dashboard features when testing override is enabled', () => {
+  const subscription = {
+    status: 'canceled',
+    plan_id: 'standard_trial'
+  };
+
+  assert.equal(
+    canAccessFeature(subscription, 'pro', { dashboardAccessOverride: true }),
+    true
+  );
+});
+
 test('getFeatureLockPresentation returns standard upgrade copy', () => {
   const presentation = getFeatureLockPresentation('standard', {
     title: 'Narrative History',
