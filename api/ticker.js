@@ -62,10 +62,12 @@ module.exports = async (req, res) => {
 
         const data = {};
 
+        const controller = new AbortController();
+        const seoTimeout = setTimeout(() => controller.abort(), 5000);
         const [scRes, tcRes] = await Promise.all([
-          fetch(`${supabaseUrl}/rest/v1/narrative_scorecard?ticker=eq.${encodeURIComponent(safeTicker)}&order=snapshot_date.desc&limit=1`, { headers }),
-          fetch(`${supabaseUrl}/rest/v1/v_trade_cards?ticker=eq.${encodeURIComponent(safeTicker)}&order=snapshot_date.desc&limit=1`, { headers }),
-        ]);
+          fetch(`${supabaseUrl}/rest/v1/narrative_scorecard?ticker=eq.${encodeURIComponent(safeTicker)}&order=snapshot_date.desc&limit=1`, { headers, signal: controller.signal }),
+          fetch(`${supabaseUrl}/rest/v1/v_trade_cards?ticker=eq.${encodeURIComponent(safeTicker)}&order=snapshot_date.desc&limit=1`, { headers, signal: controller.signal }),
+        ]).finally(() => clearTimeout(seoTimeout));
 
         if (scRes.ok) {
           const rows = await scRes.json();
