@@ -3588,7 +3588,16 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
   </div><!-- /tab-narratives -->
 
   <!-- ═══ TAB: STRATEGY ═══ -->
-  <div class="tk-tab-panel" id="tab-strategy">
+  <div class="tk-tab-panel" id="tab-strategy" style="position:relative;">
+    <!-- Pro gating overlay (hidden by default, shown by JS for non-Pro) -->
+    <div id="strategy-pro-gate" style="display:none;position:absolute;inset:0;z-index:10;display:none;align-items:center;justify-content:center;background:linear-gradient(180deg,transparent 0%,rgba(8,11,17,0.85) 30%,rgba(8,11,17,0.98) 100%);pointer-events:all;">
+      <div style="text-align:center;max-width:480px;padding:40px;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#9CA3AF;margin-bottom:16px;">Pro Feature</div>
+        <div style="font-family:'Instrument Serif',Georgia,serif;font-size:28px;color:#F5F7FA;line-height:1.1;margin-bottom:12px;">Trading Strategy is a Pro feature</div>
+        <div style="font-size:14px;color:#9CA3AF;line-height:1.6;margin-bottom:24px;">Upgrade to Pro for full access to AI-powered trading strategies, historical entry zones, and sentiment-driven return analysis.</div>
+        <a href="/pricing" style="display:inline-flex;align-items:center;padding:12px 24px;border-radius:10px;background:linear-gradient(135deg,rgba(0,174,255,0.85),rgba(0,174,255,0.55));color:#fff;font-size:14px;font-weight:600;text-decoration:none;border:1px solid rgba(0,174,255,0.35);">Upgrade to Pro</a>
+      </div>
+    </div>
     <!-- Loading skeleton -->
     <div id="strategy-loading">
       <div class="section">
@@ -6647,24 +6656,54 @@ async function refreshAll() {
   // Skip gating if billing config not loaded or override is on
   if(!BILLING || BILLING.dashboardAccessOverride){ refreshAll(); return; }
 
-  // Check subscription via Supabase auth
-  var supaUrl = SUPABASE_URL;
-  var supaAnon = SUPABASE_ANON;
+  // Determine subscription — check beta first, then Supabase auth
   var sub = null;
-  try {
-    if(window.supabase && supaUrl && supaAnon){
-      var supa = window.supabase.createClient(supaUrl, supaAnon);
-      var authResult = await supa.auth.getUser();
-      var user = authResult && authResult.data ? authResult.data.user : null;
-      if(user){
-        var res = await supa.from('subscriptions').select('*').eq('user_id', user.id).in('status', ['active','trialing']).single();
-        if(!res.error && res.data) sub = res.data;
-      }
+  var isBeta = localStorage.getItem('mp-beta-access') === 'true';
+  if(isBeta){
+    var betaTier = localStorage.getItem('mp-beta-tier') || 'standard';
+    var betaExpires = localStorage.getItem('mp-beta-expires');
+    if(betaExpires && new Date(betaExpires) < new Date()){
+      localStorage.removeItem('mp-beta-access');
+      localStorage.removeItem('mp-beta-tier');
+      localStorage.removeItem('mp-beta-expires');
+    } else {
+      sub = { user_id: 'beta', status: 'active', plan_id: betaTier, price_id: '' };
     }
-  } catch(e){ console.warn('Ticker gating check failed:', e); }
+  } else {
+    try {
+      if(window.supabase && SUPABASE_URL && SUPABASE_ANON){
+        var supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+        var authResult = await supa.auth.getUser();
+        var user = authResult && authResult.data ? authResult.data.user : null;
+        if(user){
+          var res = await supa.from('subscriptions').select('*').eq('user_id', user.id).in('status', ['active','trialing']).single();
+          if(!res.error && res.data) sub = res.data;
+        }
+      }
+    } catch(e){ console.warn('Ticker gating check failed:', e); }
+  }
 
-  // Pro, beta, or trialing users get unlimited access
-  if(BILLING.hasAccess(sub, 'pro') || (sub && sub.status === 'trialing')){
+  var hasPro = BILLING.hasAccess(sub, 'pro');
+  var isTrialing = sub && sub.status === 'trialing';
+
+  // Gate Trading Strategy tab for non-Pro users
+  if(!hasPro && !isTrialing){
+    var gate = document.getElementById('strategy-pro-gate');
+    var stratPanel = document.getElementById('tab-strategy');
+    if(gate && stratPanel){
+      gate.style.display = 'flex';
+      // Blur content behind the overlay
+      Array.from(stratPanel.children).forEach(function(ch){
+        if(ch.id !== 'strategy-pro-gate'){
+          ch.style.filter = 'blur(6px)';
+          ch.style.pointerEvents = 'none';
+        }
+      });
+    }
+  }
+
+  // Pro or trialing users get unlimited ticker access
+  if(hasPro || isTrialing){
     refreshAll();
     return;
   }
@@ -6675,13 +6714,7 @@ async function refreshAll() {
   var viewed = [];
   try { viewed = JSON.parse(localStorage.getItem(storageKey) || '[]'); } catch(e){ viewed = []; }
 
-  // If this ticker was already viewed, allow it (doesn't count again)
-  if(viewed.indexOf(TICKER) !== -1){
-    refreshAll();
-    return;
-  }
-
-  // If under limit, record and allow
+  if(viewed.indexOf(TICKER) !== -1){ refreshAll(); return; }
   if(viewed.length < 3){
     viewed.push(TICKER);
     localStorage.setItem(storageKey, JSON.stringify(viewed));
@@ -6690,7 +6723,6 @@ async function refreshAll() {
   }
 
   // Over limit — show upgrade overlay
-  var main = document.querySelector('.main-content') || document.querySelector('.page-wrap') || document.body;
   var overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(8,11,17,0.92);backdrop-filter:blur(8px);';
   overlay.innerHTML = '<div style="max-width:480px;text-align:center;padding:40px;">'

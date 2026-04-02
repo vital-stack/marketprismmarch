@@ -5321,7 +5321,9 @@ async function getSubscription(){
   var user = await ensureDashboardAuth();
   if(!user) return null;
   if(user.id === 'beta'){
-    return { user_id: 'beta', status: 'active', plan_id: 'beta', price_id: '', current_period_end: null };
+    var betaTier = (user.betaTier || localStorage.getItem('mp-beta-tier') || 'standard');
+    var betaExpires = localStorage.getItem('mp-beta-expires') || null;
+    return { user_id: 'beta', status: 'active', plan_id: betaTier, price_id: '', current_period_end: betaExpires };
   }
   if(!SUPA) throw new Error('Supabase not configured');
 
@@ -5486,7 +5488,17 @@ function ensureDashboardAuth(){
   AUTH_READY = (async function(){
     // Beta code bypass — no Supabase session needed
     if(localStorage.getItem('mp-beta-access') === 'true'){
-      var betaUser = {email:'beta@marketprism.app',id:'beta'};
+      // Check beta expiry
+      var betaExpires = localStorage.getItem('mp-beta-expires');
+      if(betaExpires && new Date(betaExpires) < new Date()){
+        localStorage.removeItem('mp-beta-access');
+        localStorage.removeItem('mp-beta-tier');
+        localStorage.removeItem('mp-beta-expires');
+        redirectToLogin();
+        return null;
+      }
+      var betaTier = localStorage.getItem('mp-beta-tier') || 'standard';
+      var betaUser = {email:'beta@marketprism.app',id:'beta',betaTier:betaTier};
       applyAuthenticatedUser(betaUser);
       var logoutBtn = document.getElementById('logout-btn');
       if(logoutBtn && !logoutBtn.dataset.bound){

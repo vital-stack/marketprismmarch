@@ -78,6 +78,9 @@ window.MP_BILLING = (function(){
       return 'beta';
     }
     if(subscription && subscription.user_id === 'beta'){
+      var tier = normalize(subscription.plan_id);
+      if(tier === 'pro') return 'pro';
+      if(tier === 'standard') return 'standard';
       return 'beta';
     }
     var plan = inferPlan(subscription && subscription.plan_id, subscription && subscription.price_id);
@@ -86,9 +89,6 @@ window.MP_BILLING = (function(){
 
   function hasAccess(subscription, requiredPlan){
     if(dashboardAccessOverride){
-      return true;
-    }
-    if(subscription && subscription.user_id === 'beta'){
       return true;
     }
     var status = normalize(subscription && subscription.status);

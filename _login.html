@@ -432,17 +432,42 @@ body::before{
   window.handleBetaAccess = function(e){
     e.preventDefault();
     clearMsg();
-    var code = document.getElementById('beta-code').value.trim();
+    var code = document.getElementById('beta-code').value.trim().toLowerCase();
     if(!code){ showMsg('error','Please enter a beta code.'); return; }
-    if(code.toLowerCase() !== 'karma'){
-      showMsg('error','Invalid beta code. Please try again.');
+
+    if(code === 'prismview'){
+      // Premium beta — Pro access for 14 days, no signup required
+      setLoading('btn-beta', true);
+      var expires = new Date(); expires.setDate(expires.getDate() + 14);
+      localStorage.setItem('mp-beta-access', 'true');
+      localStorage.setItem('mp-beta-tier', 'pro');
+      localStorage.setItem('mp-beta-expires', expires.toISOString());
+      showMsg('success','Pro beta access granted for 14 days. Redirecting…');
+      document.getElementById('btn-beta').classList.add('success');
+      setTimeout(function(){ window.location.href = '/dashboard'; }, 600);
       return;
     }
-    setLoading('btn-beta', true);
-    localStorage.setItem('mp-beta-access', 'true');
-    showMsg('success','Beta access granted. Redirecting…');
-    document.getElementById('btn-beta').classList.add('success');
-    setTimeout(function(){ window.location.href = '/dashboard'; }, 600);
+
+    if(code === 'karma'){
+      // Standard beta — requires signup, 7-day access
+      setLoading('btn-beta', true);
+      var expires = new Date(); expires.setDate(expires.getDate() + 7);
+      localStorage.setItem('mp-beta-access', 'true');
+      localStorage.setItem('mp-beta-tier', 'standard');
+      localStorage.setItem('mp-beta-expires', expires.toISOString());
+      showMsg('success','Standard beta access granted for 7 days. Please sign up to continue.');
+      document.getElementById('btn-beta').classList.add('success');
+      // Redirect to register form so they create an account
+      setTimeout(function(){
+        setLoading('btn-beta', false);
+        document.getElementById('form-beta').classList.remove('active');
+        document.getElementById('form-register').classList.add('active');
+        showMsg('info','Create an account to activate your 7-day Standard access.');
+      }, 800);
+      return;
+    }
+
+    showMsg('error','Invalid beta code. Please try again.');
   };
 
   // ── Register ──
