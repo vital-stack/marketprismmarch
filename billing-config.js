@@ -30,6 +30,9 @@ window.MP_BILLING = (function(){
   // Set to true to temporarily unlock all features for testing.
   var dashboardAccessOverride = false;
 
+  // Admin emails — always get full pro access regardless of subscription
+  var adminEmails = ['tara@vtlbranding.com'];
+
   // Temporary testing mode: leave all dashboard tabs unlocked.
   // Restore the gated tabs below when paid access enforcement is needed again.
   var lockedTabs = {
@@ -73,8 +76,15 @@ window.MP_BILLING = (function(){
     return plan ? plan.name : 'No Active Plan';
   }
 
+  function isAdmin(){
+    try {
+      var email = (window._mpCurrentUserEmail || '').toLowerCase().trim();
+      return adminEmails.indexOf(email) !== -1;
+    } catch(e) { return false; }
+  }
+
   function getAccessLevel(subscription){
-    if(dashboardAccessOverride){
+    if(dashboardAccessOverride || isAdmin()){
       return 'beta';
     }
     if(subscription && subscription.user_id === 'beta'){
@@ -88,7 +98,7 @@ window.MP_BILLING = (function(){
   }
 
   function hasAccess(subscription, requiredPlan){
-    if(dashboardAccessOverride){
+    if(dashboardAccessOverride || isAdmin()){
       return true;
     }
     var status = normalize(subscription && subscription.status);

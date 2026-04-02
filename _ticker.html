@@ -6779,6 +6779,7 @@ async function refreshAll() {
         var authResult = await supa.auth.getUser();
         var user = authResult && authResult.data ? authResult.data.user : null;
         if(user){
+          window._mpCurrentUserEmail = (user.email || '').toLowerCase();
           var res = await supa.from('subscriptions').select('*').eq('user_id', user.id).in('status', ['active','trialing']).single();
           if(!res.error && res.data) sub = res.data;
         }
