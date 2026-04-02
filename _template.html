@@ -690,6 +690,7 @@ body{
 .disc-nc-tag.energy{background:rgba(0,174,255,.08);color:#00AEFF;border-color:rgba(0,174,255,.15);}
 .disc-nc-tag.earnings{background:rgba(123,97,255,.08);color:#9B8CFF;border-color:rgba(123,97,255,.2);}
 .disc-nc-tag.neutral{background:rgba(255,255,255,.04);color:var(--mp-text-muted);border-color:var(--mp-border);}
+.disc-nc-tag.no-signal{background:rgba(255,184,0,.06);color:#FFB800;border-color:rgba(255,184,0,.18);font-weight:600;font-size:10px;}
 .disc-nc-view{margin-left:auto;font-size:11px;color:#00AEFF;font-weight:600;text-decoration:none;}
 .disc-nc-rb{border-top:1px solid var(--mp-border);}
 .disc-nc-rb-toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 18px 10px 20px;cursor:pointer;background:rgba(0,0,0,.02);transition:background .15s;user-select:none;}
@@ -5940,6 +5941,15 @@ async function loadData(){
       }
     }catch(e){console.warn('[MP] narrative_analyses fetch failed:',e);}
 
+    // ── Fetch data quality flags for NO_SIGNAL suppression ──
+    var qualityFlagMap={};
+    try{
+      var qfRes=await restFetch('v_beta_data_quality_flags',{select:'ticker,signal_confidence_tier'});
+      if(qfRes&&qfRes.length){
+        qfRes.forEach(function(qf){if(qf.ticker)qualityFlagMap[qf.ticker]=qf;});
+      }
+    }catch(e){console.warn('[MP] data quality flags fetch failed:',e);}
+
     // dedup + merge
     var seen=new Set();
     DATA = rows.filter(function(r){
@@ -5964,6 +5974,11 @@ async function loadData(){
         m._na_upstream=na.upstream_tickers;
         m._na_downstream=na.downstream_tickers;
         m._na_cluster=na.cluster_id;
+      }
+      // Merge data quality flags
+      var qf=qualityFlagMap[m.ticker];
+      if(qf){
+        m._signal_confidence_tier=qf.signal_confidence_tier;
       }
       return m;
     });
@@ -6372,7 +6387,10 @@ function nfActionText(verdict,dir,extra,sc){
 // ── Top signals: pick the 2-3 most meaningful insight tags ──
 function nfTopSignals(extra,sc){
   var signals=[];
-  if(sc.fvd_pct!=null){
+  var qfTier=qualityFlagMap[sc.ticker]&&qualityFlagMap[sc.ticker].signal_confidence_tier;
+  if(qfTier==='NO_SIGNAL'){
+    signals.push({label:'Narrative signal only',color:'rgba(255,184,0,0.6)',border:'rgba(255,184,0,0.12)'});
+  } else if(sc.fvd_pct!=null){
     if(sc.fvd_pct>100) signals.push({label:'High Hype Gap',color:'rgba(255,77,77,0.7)',border:'rgba(255,77,77,0.15)'});
     else if(sc.fvd_pct>30) signals.push({label:'+'+Math.round(sc.fvd_pct)+'% Overvalued',color:'rgba(255,77,77,0.6)',border:'rgba(255,77,77,0.12)'});
     else if(sc.fvd_pct<-20) signals.push({label:Math.round(sc.fvd_pct)+'% Below Fair Value',color:'rgba(0,222,148,0.6)',border:'rgba(0,222,148,0.12)'});
@@ -7239,9 +7257,11 @@ function buildStoryCardHTML(r,idx){
   var isTrap=r.prism_verdict==='Narrative Trap';
   var stCls=isTrap?'trap':stateLabel==='Breaking'?'breaking':stateLabel==='Surging'?'surging':stateLabel==='Fragile'?'fragile':'stable';
   var badgeCls=stCls;
-  var fvd=r.fvd_pct!=null?r.fvd_pct:(r.source_fvd_pct||null);
-  var fvdStr=fvd!=null?(fvd>0?'FVD +'+Math.abs(fvd).toFixed(0)+'% overvalued':'FVD '+fvd.toFixed(0)+'% undervalued'):'';
-  var fvdCls=fvd!=null?(fvd>0?'over':'under'):'';
+  var isNoSignal=r._signal_confidence_tier==='NO_SIGNAL';
+  var fvd=(!isNoSignal&&r.fvd_pct!=null)?r.fvd_pct:((!isNoSignal&&r.source_fvd_pct)?r.source_fvd_pct:null);
+  var fvdStr=isNoSignal?'':fvd!=null?(fvd>0?'FVD +'+Math.abs(fvd).toFixed(0)+'% overvalued':'FVD '+fvd.toFixed(0)+'% undervalued'):'';
+  var fvdCls=isNoSignal?'':fvd!=null?(fvd>0?'over':'under'):'';
+  var noSignalBadge=isNoSignal?'<div class="disc-nc-tag no-signal">\uD83D\uDCE1 Narrative signal only \u2014 no valuation data</div>':'';
   var headline=r.headline_explanation||r.story_claim||r.primary_driver||'';
   var claim=r.story_claim||'';
   var rebuttal=r.forensic_rebuttal||'';
@@ -7287,7 +7307,7 @@ function buildStoryCardHTML(r,idx){
       +'</div>'
     +'</div>':'')
     +'<div class="disc-nc-tags">'
-      +verdictTag+energyTag+sectorTrapTag+earningsTag
+      +verdictTag+energyTag+sectorTrapTag+earningsTag+noSignalBadge
       +'<a href="/ticker/'+encodeURIComponent(r.ticker)+'" class="disc-nc-view" onclick="event.stopPropagation();">View \u2192</a>'
     +'</div>'
     +'<div class="forensic-panel" id="'+cardId+'"></div>'
@@ -9073,7 +9093,10 @@ async function generateReport(){
 
       // ── Insight tags row ──
       var insightTags=[];
-      if(sc.fvd_pct!=null){
+      var _qfTier=qualityFlagMap[sc.ticker]&&qualityFlagMap[sc.ticker].signal_confidence_tier;
+      if(_qfTier==='NO_SIGNAL'){
+        insightTags.push({label:'Narrative signal only',c:[255,184,0]});
+      } else if(sc.fvd_pct!=null){
         if(sc.fvd_pct<-20) insightTags.push({label:'Below Fair Value',c:green});
         else if(sc.fvd_pct<-5) insightTags.push({label:'Under Fair Value',c:green});
         else if(sc.fvd_pct>100) insightTags.push({label:'High Hype Gap',c:red});
