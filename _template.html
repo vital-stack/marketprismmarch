@@ -277,19 +277,6 @@ body{
 }
 .topbar-right{display:flex;align-items:center;gap:10px;}
 .topbar-date{font-family:var(--font-mono);font-size:11px;color:var(--mp-text-tertiary);}
-.topbar-search{
-  font-family:var(--font-mono);font-size:12px;
-  padding:8px 18px;border-radius:8px;
-  border:1px solid var(--mp-border);
-  background:var(--mp-surface);color:var(--mp-text-primary);
-  width:220px;outline:none;
-  transition:all .4s cubic-bezier(0.16,1,0.3,1);
-}
-.topbar-search:focus{
-  border-color:rgba(255,255,255,0.15);
-  width:260px;
-}
-.topbar-search::placeholder{color:var(--mp-text-tertiary);}
 /* ── TOPBAR CENTER — SCHOLAR BAR ── */
 .topbar-center{flex:1;display:flex;justify-content:center;max-width:520px;margin:0 auto;}
 .scholar-bar{
@@ -612,12 +599,6 @@ body{
 .disc-stat-tile.trap .disc-st-num{color:#FFFFFF;}
 .disc-stat-tile.breaking .disc-st-num{color:#FFFFFF;}
 .disc-stat-tile.surging .disc-st-num{color:#FFFFFF;}
-/* ── Quick Lookup (global, all tabs) ── */
-.quick-lookup{background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:16px;padding:18px 22px;box-shadow:var(--mp-card-shadow);max-width:480px;margin-bottom:20px;}
-.quick-lookup-lbl{font-family:var(--font-body);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mp-text-secondary);margin-bottom:8px;}
-.quick-lookup-input{width:100%;background:var(--mp-surface2);border:1px solid var(--mp-border);border-radius:10px;padding:10px 14px;font-size:14px;color:var(--mp-text-primary);font-family:var(--font-body);outline:none;transition:border-color .2s;}
-.quick-lookup-input:focus{border-color:#00AEFF;}
-.quick-lookup-input::placeholder{color:var(--mp-text-tertiary);}
 .disc-lookup{background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:16px;padding:20px 22px;box-shadow:var(--mp-card-shadow);position:relative;overflow:hidden;}
 .disc-lookup>*{position:relative;}
 .disc-lt-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mp-text-muted);margin-bottom:10px;}
@@ -1786,8 +1767,6 @@ body{
   .dhm-summary{flex-wrap:wrap;}
   .dhm-sum-cell{min-width:calc(50% - 1px);}
   /* Topbar search */
-  .topbar-search{width:140px;}
-  .topbar-search:focus{width:180px;}
   /* Love/Hate */
   .love-hate{grid-template-columns:1fr;}
   .lh-col+.lh-col{border-left:none;border-top:1px solid var(--mp-border);}
@@ -1845,8 +1824,6 @@ body{
   .meme-grid{grid-template-columns:1fr;}
   .sector-grid{grid-template-columns:1fr;}
   .topbar-date{display:none;}
-  .topbar-search{width:120px;}
-  .topbar-search:focus{width:150px;}
   .page-header h1{font-size:20px;}
   .page-header p{font-size:10px;}
   .nh-events{grid-template-columns:1fr !important;}
@@ -1920,7 +1897,6 @@ body{
 [data-theme="light"] .chip.active-stable{background:rgba(0,0,0,0.05);border-color:rgba(0,0,0,0.12);}
 /* Search / inputs */
 [data-theme="light"] .search-input:focus,
-[data-theme="light"] .topbar-search:focus{border-color:rgba(0,0,0,0.2);}
 [data-theme="light"] .scholar-bar{border-color:rgba(0,0,0,0.08);background:#F3F4F8;box-shadow:none;}
 [data-theme="light"] .scholar-bar:hover{border-color:rgba(0,0,0,0.12);background:#F0F1F5;box-shadow:none;}
 [data-theme="light"] .scholar-bar:focus-within{border-color:rgba(0,174,255,0.3);box-shadow:0 0 0 3px rgba(0,174,255,0.08);}
@@ -4065,9 +4041,8 @@ body{
     <div class="topbar-title" id="topbar-title">Daily Brief</div>
     <div class="topbar-center">
       <div class="scholar-bar" id="scholar-bar">
-        <span class="scholar-bar-label">AI</span>
-        <svg class="scholar-bar-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 28c-6 0-10-4.5-10-10C6 12 10 6 16 6s10 6 10 12c0 5.5-4 10-10 10z" fill="none" stroke="var(--mp-blue)" stroke-width="1.5" opacity="0.7"/><circle cx="12" cy="15" r="2" fill="var(--mp-blue)" opacity="0.8"/><circle cx="20" cy="15" r="2" fill="var(--mp-blue)" opacity="0.8"/></svg>
-        <input class="scholar-bar-input" id="scholar-bar-input" placeholder="Ask Market Scholar anything..." autocomplete="off">
+        <svg class="scholar-bar-icon" viewBox="0 0 24 24" fill="none" stroke="var(--mp-text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.5;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input class="scholar-bar-input" id="scholar-bar-input" placeholder="Search any ticker… e.g. AAPL, NVDA, TSLA" autocomplete="off">
         <kbd class="scholar-bar-kbd">⌘K</kbd>
       </div>
     </div>
@@ -4076,7 +4051,6 @@ body{
       <span class="topbar-date" id="topbar-user" style="display:none;"></span>
       <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">&#127769;</button>
       <button class="chip" id="logout-btn" style="display:none;">Logout</button>
-      <input class="topbar-search" id="topbar-search" placeholder="Search ticker…">
     </div>
   </div>
   <div class="page-content">
@@ -4086,11 +4060,6 @@ body{
     <div class="tab-panel active" id="tab-daily">
     <div class="daily-grid">
     <div class="daily-content">
-
-      <div class="quick-lookup">
-        <div class="quick-lookup-lbl">Quick Lookup</div>
-        <input class="quick-lookup-input" placeholder="Type a ticker and press Enter…" onkeydown="if(event.key==='Enter'){var v=this.value.trim().toUpperCase();if(v)window.location.href='/ticker/'+encodeURIComponent(v);this.value='';}">
-      </div>
 
       <!-- HERO BANNER -->
       <div class="daily-hero-banner">
@@ -4373,10 +4342,6 @@ body{
         <span class="ph-italic">Sector by sector.</span>
         <p>Signal intensity, narrative breakdown, and momentum ranking across every tracked sector — from AI infrastructure to biotech.</p>
       </div>
-      <div class="quick-lookup">
-        <div class="quick-lookup-lbl">Quick Lookup</div>
-        <input class="quick-lookup-input" placeholder="Type a ticker and press Enter…" onkeydown="if(event.key==='Enter'){var v=this.value.trim().toUpperCase();if(v)window.location.href='/ticker/'+encodeURIComponent(v);this.value='';}">
-      </div>
       <!-- Trap Intensity Chart -->
       <div class="trap-chart-wrap" id="trap-chart-wrap">
         <div class="trap-chart-header">
@@ -4405,10 +4370,6 @@ body{
         <h1>The forces moving everything.</h1>
         <span class="ph-italic">Market-wide narratives.</span>
         <p>Cross-sector macro themes, geopolitical shifts, and structural forces shaping the entire market — tracked and scored in real time.</p>
-      </div>
-      <div class="quick-lookup">
-        <div class="quick-lookup-lbl">Quick Lookup</div>
-        <input class="quick-lookup-input" placeholder="Type a ticker and press Enter…" onkeydown="if(event.key==='Enter'){var v=this.value.trim().toUpperCase();if(v)window.location.href='/ticker/'+encodeURIComponent(v);this.value='';}">
       </div>
 
       <div class="mw-summary-row" id="mw-summary-row">
@@ -4506,10 +4467,6 @@ body{
         <span class="ph-italic">Your narrative edge.</span>
         <p>Build shareable market intelligence — export cards, create custom briefings, and distribute your narrative analysis.</p>
       </div>
-      <div class="quick-lookup">
-        <div class="quick-lookup-lbl">Quick Lookup</div>
-        <input class="quick-lookup-input" placeholder="Type a ticker and press Enter…" onkeydown="if(event.key==='Enter'){var v=this.value.trim().toUpperCase();if(v)window.location.href='/ticker/'+encodeURIComponent(v);this.value='';}">
-      </div>
       <!-- Reports builder (standalone iframe — isolated from dashboard JS) -->
       <iframe id="mp-reports-frame" src="/api/market-sharing-reports" style="width:100%;height:calc(100vh - 220px);border:none;border-radius:12px;display:block;background:var(--mp-surface);"></iframe>
       <!-- Hidden: legacy trading cards (kept so renderMemes doesn't error on missing #meme-grid) -->
@@ -4530,10 +4487,6 @@ body{
         <h1>Price and story.</h1>
         <span class="ph-italic">On the same timeline.</span>
         <p>Every narrative event plotted against price action — see how stories drive moves, when narratives break, and where the market gets it wrong.</p>
-      </div>
-      <div class="quick-lookup">
-        <div class="quick-lookup-lbl">Quick Lookup</div>
-        <input class="quick-lookup-input" placeholder="Type a ticker and press Enter…" onkeydown="if(event.key==='Enter'){var v=this.value.trim().toUpperCase();if(v)window.location.href='/ticker/'+encodeURIComponent(v);this.value='';}">
       </div>
       <div class="nht-ticker-bar">
         <span class="filter-label">Ticker</span>
@@ -4607,10 +4560,6 @@ body{
         <span class="ph-italic">Zone match = today's price vs. best historical entry zone</span>
         <p>Cross-market screener powered by <code style="font-family:inherit;background:rgba(255,255,255,0.05);padding:1px 5px;border-radius:3px;font-size:12px;color:var(--mp-text-tertiary);">ticker_strategy_summary</code> + <code style="font-family:inherit;background:rgba(255,255,255,0.05);padding:1px 5px;border-radius:3px;font-size:12px;color:var(--mp-text-tertiary);">ticker_daily_metrics</code></p>
       </div>
-      <div class="quick-lookup">
-        <div class="quick-lookup-lbl">Quick Lookup</div>
-        <input class="quick-lookup-input" placeholder="Type a ticker and press Enter…" onkeydown="if(event.key==='Enter'){var v=this.value.trim().toUpperCase();if(v)window.location.href='/ticker/'+encodeURIComponent(v);this.value='';}">
-      </div>
 
       <div class="strat-legend">
         <div class="strat-legend-item"><div class="strat-legend-bar" style="background:var(--mp-green)"></div>In best zone now</div>
@@ -4648,10 +4597,6 @@ body{
         <span class="ph-italic">Who's moving markets. What's driving them.</span>
         <p>Live rankings across sources, figures, themes, and signals — pulled daily from the narrative scorecard.</p>
       </div>
-      <div class="quick-lookup">
-        <div class="quick-lookup-lbl">Quick Lookup</div>
-        <input class="quick-lookup-input" placeholder="Type a ticker and press Enter…" onkeydown="if(event.key==='Enter'){var v=this.value.trim().toUpperCase();if(v)window.location.href='/ticker/'+encodeURIComponent(v);this.value='';}">
-      </div>
       <div class="lb-toolbar">
         <span class="lb-toolbar-date" id="lb-date"></span>
         <button class="lb-refresh-btn" id="lb-refresh-btn" onclick="refreshLeaderboard()" title="Refresh leaderboard">
@@ -4675,10 +4620,6 @@ body{
         <h1>Plan around what matters.</h1>
         <span class="ph-italic">Every catalyst mapped.</span>
         <p>Drag signal cards onto calendar dates — plan your trades around FOMC, earnings, OPEX, and every market-moving event.</p>
-      </div>
-      <div class="quick-lookup">
-        <div class="quick-lookup-lbl">Quick Lookup</div>
-        <input class="quick-lookup-input" placeholder="Type a ticker and press Enter…" onkeydown="if(event.key==='Enter'){var v=this.value.trim().toUpperCase();if(v)window.location.href='/ticker/'+encodeURIComponent(v);this.value='';}">
       </div>
       <!-- Signal Cards Carousel -->
       <div class="tc-cal-section tc-cal-signals" style="animation:slideUp .6s cubic-bezier(.16,1,.3,1) .05s both;">
@@ -4742,10 +4683,6 @@ body{
         <span class="ph-italic">Before they snap.</span>
         <p>AI-detected hype gaps, coordination signals, and exhaustion timelines — the stories most likely to unravel.</p>
       </div>
-      <div class="quick-lookup">
-        <div class="quick-lookup-lbl">Quick Lookup</div>
-        <input class="quick-lookup-input" placeholder="Type a ticker and press Enter…" onkeydown="if(event.key==='Enter'){var v=this.value.trim().toUpperCase();if(v)window.location.href='/ticker/'+encodeURIComponent(v);this.value='';}">
-      </div>
       <div class="stats-row">
         <div class="stat-card stat-severe">
           <span class="stat-num" id="trap-stat-severe">—</span>
@@ -4783,10 +4720,6 @@ body{
         <h1>Score any stock.</h1>
         <span class="ph-italic">Real-time AI forensics.</span>
         <p>Enter any ticker — our four-agent pipeline scores it live using SEC filings, market data, news sentiment, and AI audit in seconds.</p>
-      </div>
-      <div class="quick-lookup">
-        <div class="quick-lookup-lbl">Quick Lookup</div>
-        <input class="quick-lookup-input" placeholder="Type a ticker and press Enter…" onkeydown="if(event.key==='Enter'){var v=this.value.trim().toUpperCase();if(v)window.location.href='/ticker/'+encodeURIComponent(v);this.value='';}">
       </div>
       <div style="display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:8px;background:rgba(255,184,0,0.08);border:1px solid rgba(255,184,0,0.2);color:#FFB800;font-size:12px;font-weight:600;letter-spacing:.06em;margin-bottom:24px;">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
@@ -7284,17 +7217,7 @@ document.getElementById('ticker-search').addEventListener('input',function(e){
   _discoverSearchTimer=setTimeout(function(){discoverSearch=val;discoverShowing=25;renderDiscover();},200);
 });
 document.getElementById('discover-load-more-btn').addEventListener('click',function(){discoverShowing+=25;renderDiscover();});
-document.getElementById('topbar-search').addEventListener('input',function(e){
-  var id=document.querySelector('.tab-panel.active').id;
-  if(id==='tab-discover'){discoverSearch=e.target.value;discoverShowing=25;renderDiscover();}
-  else if(id==='tab-snapshots'){document.getElementById('snap-search').value=e.target.value;renderSnap();}
-});
-document.getElementById('topbar-search').addEventListener('keydown',function(e){
-  if(e.key==='Enter'){
-    var val=e.target.value.trim().toUpperCase();
-    if(val) window.location.href='/ticker/'+encodeURIComponent(val);
-  }
-});
+// topbar-search removed — Quick Lookup is now in the scholar bar
 // ── SECTOR PULSE ─────────────────────────────────────────────────────────────
 var SECTOR_STATIC = [
   {name:'AI Infrastructure',sub:'Semiconductors, servers, power',state:'Breaking',cagr:'42%',momentum:88,risk:'medium',desc:'Blackwell demand cycle accelerating across hyperscalers. Supply constraints easing into H2 2025, but China export controls create structural ceiling for key names.',tickers:['NVDA','AMD','SMCI','ARM','AVGO','TSM'],trap:true},
@@ -12297,24 +12220,19 @@ document.addEventListener('visibilitychange',function(){
     });
   }
 
-  // ── Topbar Scholar Bar integration ──
+  // ── Topbar Quick Lookup integration ──
   var barInput = document.getElementById('scholar-bar-input');
   if(barInput){
-    // Enter in bar → open panel + send message
+    // Enter in bar → navigate to ticker page
     barInput.addEventListener('keydown', function(e){
       if(e.key === 'Enter' && this.value.trim()){
         e.preventDefault();
-        var q = this.value.trim();
+        var v = this.value.trim().toUpperCase();
         this.value = '';
-        // Open panel if not already open
-        if(!panel.classList.contains('open')){
-          panel.classList.add('open');
-          fab.classList.add('open');
-        }
-        sendMessage(q);
+        window.location.href = '/ticker/' + encodeURIComponent(v);
       }
     });
-    // Click on bar → focus it (it's already an input, but ensure feel)
+    // Click on bar → focus it
     var scholarBar = document.getElementById('scholar-bar');
     if(scholarBar){
       scholarBar.addEventListener('click', function(){ barInput.focus(); });
