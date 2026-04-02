@@ -11121,14 +11121,41 @@ function dedupeConsecutiveNarratives(events){
   // Sort by date ascending first
   var sorted=events.slice().sort(function(a,b){return (a.date_iso||'').localeCompare(b.date_iso||'');});
   var result=[];
-  var lastTextByType={};
+  // Extract the dominant theme keyword(s) from a narrative label
+  function themeKey(label){
+    var t=(label||'').toLowerCase();
+    // Common narrative themes — extract the core topic
+    var themes=['sec ','china','tariff','ai ','artificial intelligence','gpu','data center',
+      'earnings','revenue','margin','debt','buyback','insider','acquisition','merger',
+      'regulation','antitrust','competition','partnership','contract','guidance',
+      'downgrade','upgrade','analyst','valuation','overvalued','undervalued',
+      'supply chain','inventory','demand','growth','decline','layoff','restructur',
+      'dividend','cash flow','profitab','lawsuit','litigation','patent','fda',
+      'inflation','interest rate','fed ','fomc','oil','energy','crypto','bitcoin',
+      'elon','musk','jensen','nike','adidas','retail','consumer','autonomous','robot'];
+    var found=[];
+    for(var i=0;i<themes.length;i++){
+      if(t.indexOf(themes[i])!==-1) found.push(themes[i].trim());
+    }
+    // If no theme matched, fall back to first 3 significant words
+    if(!found.length){
+      var words=t.replace(/[^a-z0-9 ]/g,'').split(/\s+/).filter(function(w){return w.length>3;});
+      found=words.slice(0,3);
+    }
+    return found.sort().join('|');
+  }
+  var recentThemes={}; // theme → last seen date_iso (across ALL types)
   sorted.forEach(function(ev){
-    // Only dedup story events (bull/bear/neutral), not earnings/opex
+    // Always keep earnings/opex events
     if(ev.type==='earnings'||ev.type==='opex'){result.push(ev);return;}
-    var normalised=(ev.label||'').substring(0,100).toLowerCase().replace(/[^a-z0-9]/g,'');
-    var prevText=lastTextByType[ev.type]||'';
-    if(normalised===prevText){return;} // skip duplicate
-    lastTextByType[ev.type]=normalised;
+    var tk=themeKey(ev.label);
+    var lastDate=recentThemes[tk]||'';
+    // Skip if same theme appeared within the last 3 days
+    if(lastDate && ev.date_iso){
+      var daysDiff=(new Date(ev.date_iso)-new Date(lastDate))/(1000*60*60*24);
+      if(daysDiff<3){return;}
+    }
+    recentThemes[tk]=ev.date_iso;
     result.push(ev);
   });
   return result;
