@@ -3645,10 +3645,6 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
           <div class="bh-behavior" id="strat-hero-behavior">—</div>
           <div class="bh-summary" id="strat-hero-summary">—</div>
         </div>
-        <div class="bh-confidence">
-          <div class="bh-conf-val" id="strat-conf-val">—</div>
-          <div class="bh-conf-lbl">Strategy<br>Confidence</div>
-        </div>
       </div>
 
       <!-- Returns by Sentiment — 3-col -->
@@ -6311,20 +6307,6 @@ async function loadStrategyData() {
     setHTML('strat-hero-summary', heroSummary);
 
     // Confidence badge
-    const conf = (d.strategy_confidence || '').toUpperCase();
-    const confEl = document.getElementById('strat-conf-val');
-    if (confEl) {
-      confEl.textContent = conf || 'UNKNOWN';
-      const confColors = { 'HIGH': '#00DE94', 'MEDIUM': '#FFB800', 'LOW': '#FF4D4D' };
-      confEl.style.color = confColors[conf] || '#6b7280';
-      // Also color the parent badge container
-      const confWrap = confEl.parentElement;
-      if (confWrap) {
-        const c = confColors[conf] || '#6b7280';
-        confWrap.style.background = c.replace(')', ',0.08)').replace('rgb', 'rgba');
-        confWrap.style.borderColor = c.replace(')', ',0.15)').replace('rgb', 'rgba');
-      }
-    }
 
     // ── Returns by Sentiment ──
     const retData = [
