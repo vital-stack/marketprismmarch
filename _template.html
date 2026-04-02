@@ -4800,10 +4800,11 @@ body{
             <span class="help-account-label">Renewal Date</span>
             <span class="help-account-value" id="help-renewal-date">Loading...</span>
           </div>
+          <div id="help-flash" style="display:none;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:12px;"></div>
           <div class="help-actions">
-            <button class="help-btn primary" id="help-manage-btn" onclick="openBillingPortal()">Manage Subscription</button>
+            <button class="help-btn primary" id="help-manage-btn" onclick="helpOpenPortal(this)">Manage Subscription</button>
             <a class="help-btn secondary" href="/pricing">Change Plan</a>
-            <button class="help-btn danger" id="help-cancel-btn" onclick="openBillingPortal()">Cancel Subscription</button>
+            <button class="help-btn danger" id="help-cancel-btn" onclick="helpOpenPortal(this)">Cancel Subscription</button>
           </div>
         </div>
 
@@ -5396,6 +5397,48 @@ function populateHelpTab(){
   if(cancelBtn) cancelBtn.style.display = hasActive ? '' : 'none';
 }
 onTabSwitch(function(id){ if(id === 'help') populateHelpTab(); });
+
+function setHelpFlash(type, msg){
+  var el = document.getElementById('help-flash');
+  if(!el) return;
+  if(!msg){ el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  el.style.background = type === 'error' ? 'rgba(255,77,77,0.08)' : 'rgba(0,174,255,0.08)';
+  el.style.border = '1px solid ' + (type === 'error' ? 'rgba(255,77,77,0.2)' : 'rgba(0,174,255,0.2)');
+  el.style.color = type === 'error' ? '#FF4D4D' : '#00AEFF';
+  el.textContent = msg;
+}
+
+async function helpOpenPortal(btn){
+  var origText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Loading…';
+  setHelpFlash('', '');
+  try {
+    if(!SUPA) throw new Error('Billing system not configured. Please try again later.');
+    var authResult = await SUPA.auth.getUser();
+    var user = authResult && authResult.data ? authResult.data.user : null;
+    if(!user){ redirectToLogin(); return; }
+    var sessionResult = await SUPA.auth.getSession();
+    var session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+    if(!session || !session.access_token){ redirectToLogin(); return; }
+    var res = await fetch(SUPABASE_URL + '/functions/v1/create-portal-session', {
+      method: 'POST',
+      headers: getEdgeFunctionHeaders(session.access_token),
+      body: JSON.stringify({ userId: user.id })
+    });
+    var payload = await res.json().catch(function(){ return {}; });
+    if(!res.ok || !payload.url){
+      throw new Error(payload.error || payload.message || 'Unable to open billing portal.');
+    }
+    window.location.href = payload.url;
+  } catch(err){
+    setHelpFlash('error', err && err.message ? err.message : 'Unable to open billing portal. Please try again.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = origText;
+  }
+}
 
 async function openBillingPortal(){
   if(BILLING_PORTAL_BUSY) return;
