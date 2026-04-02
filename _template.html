@@ -5578,6 +5578,7 @@ var TRADE_CLASS_MAP = {};
 var PREDICTION_MAP  = {};
 var snapshotMap     = {};
 var scorecardMap    = {};
+var qualityFlagMap  = {};
 var LOVE_HATE_DATA  = [];
 var DOMAIN_MAP = {
   NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadcom.com',
@@ -5942,7 +5943,7 @@ async function loadData(){
     }catch(e){console.warn('[MP] narrative_analyses fetch failed:',e);}
 
     // ── Fetch data quality flags for NO_SIGNAL suppression ──
-    var qualityFlagMap={};
+    qualityFlagMap={};
     try{
       var qfRes=await restFetch('v_beta_data_quality_flags',{select:'ticker,signal_confidence_tier'});
       if(qfRes&&qfRes.length){
