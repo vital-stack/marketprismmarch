@@ -160,28 +160,6 @@ body::before{
   background:linear-gradient(135deg,rgba(0,222,148,0.85),rgba(0,222,148,0.65));
   box-shadow:0 4px 16px rgba(0,222,148,0.2);
 }
-.legacy-access{
-  margin-top:8px;padding-top:2px;
-  display:flex;align-items:center;justify-content:space-between;gap:12px;
-}
-.legacy-note{
-  font-family:var(--font-mono);font-size:10px;letter-spacing:0.04em;
-  color:var(--mp-text-tertiary);line-height:1.5;
-}
-.legacy-btn{
-  border:1px solid var(--mp-border-mid);
-  background:rgba(255,255,255,0.03);
-  color:var(--mp-text-secondary);
-  border-radius:9px;padding:8px 12px;cursor:pointer;
-  font-family:var(--font-mono);font-size:10px;text-transform:uppercase;
-  letter-spacing:0.08em;transition:border-color 0.2s,color 0.2s,background 0.2s;
-  white-space:nowrap;
-}
-.legacy-btn:hover{
-  color:var(--mp-text-primary);
-  border-color:rgba(255,255,255,0.18);
-  background:rgba(255,255,255,0.05);
-}
 /* Message */
 .auth-message{
   padding:10px 14px;border-radius:8px;
@@ -294,10 +272,6 @@ body::before{
         <input class="form-input" id="signin-password" type="password" placeholder="Enter your password" required autocomplete="current-password">
       </div>
       <button class="btn-submit" type="submit" id="btn-signin">Sign In</button>
-      <div class="legacy-access">
-        <div class="legacy-note">Legacy access available for the original admin account.</div>
-        <button class="legacy-btn" type="button" onclick="fillLegacyAccess()">Use Legacy Access</button>
-      </div>
     </form>
 
     <!-- Register Form -->
@@ -328,7 +302,8 @@ body::before{
   </div>
 
   <div class="login-footer">
-    Market Prism &middot; Polymathic Intelligence &middot; <a href="/">Home</a>
+    Market Prism &middot; Polymathic Intelligence &middot; <a href="/">Home</a><br>
+    <a href="/terms">Terms of Service</a> &middot; <a href="/privacy">Privacy Policy</a>
   </div>
 </div>
 
@@ -419,13 +394,6 @@ body::before{
       showMsg('error', err.message || 'Sign in failed. Check your credentials.');
       setLoading('btn-signin', false);
     }
-  };
-
-  window.fillLegacyAccess = function(){
-    document.getElementById('signin-email').value = 'admin@admin.com';
-    document.getElementById('signin-password').value = 'KARMA';
-    showMsg('info','Legacy credentials loaded. Sign in to continue.');
-    document.getElementById('signin-password').focus();
   };
 
   // ── Beta Access ──

@@ -13,6 +13,7 @@ module.exports = (req, res) => {
     );
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
     res.status(200).send(html);
   } catch (err) {
     res.status(500).send('Index error: ' + err.message);

@@ -11,6 +11,8 @@ module.exports = async (req, res) => {
       { loc: '/casestudies', priority: '0.8', changefreq: 'weekly' },
       { loc: '/pricing', priority: '0.7', changefreq: 'monthly' },
       { loc: '/methodology', priority: '0.6', changefreq: 'monthly' },
+      { loc: '/terms', priority: '0.3', changefreq: 'yearly' },
+      { loc: '/privacy', priority: '0.3', changefreq: 'yearly' },
     ];
 
     let blogEntries = [];
