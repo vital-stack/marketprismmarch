@@ -88,7 +88,6 @@
     line-height: 1.5;
     font-weight: 400;
     overflow-x: hidden;
-    opacity: 0; transition: opacity 0.2s;
   }
 
   /* ── App Layout + Sidebar ── */
@@ -3993,45 +3992,8 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
   </main>
 </div>
 <script>
-// ── AUTH GUARD: redirect to login if not authenticated ──
-(async function enforceAuth() {
-  try {
-    // Check beta access first (no external deps needed)
-    var betaAccess = localStorage.getItem('mp-beta-access');
-    if (betaAccess === 'true') {
-      var betaExpires = localStorage.getItem('mp-beta-expires');
-      if (betaExpires && Date.now() > parseInt(betaExpires)) {
-        localStorage.removeItem('mp-beta-access');
-        localStorage.removeItem('mp-beta-expires');
-        localStorage.removeItem('mp-beta-tier');
-        window.location.href = '/login';
-        return;
-      }
-      document.body.style.opacity = '1';
-      return;
-    }
-    // Wait for Supabase library to load (external CDN script)
-    var _url = (window.__env && window.__env.SUPABASE_URL) || '';
-    var _anon = (window.__env && window.__env.SUPABASE_ANON) || '';
-    if (_url && _anon) {
-      // Poll for supabase lib (max 3 seconds)
-      for (var _i = 0; _i < 30 && !window.supabase; _i++) {
-        await new Promise(function(r){ setTimeout(r, 100); });
-      }
-      if (window.supabase) {
-        var _client = window.supabase.createClient(_url, _anon);
-        var sess = await _client.auth.getSession();
-        if (sess && sess.data && sess.data.session) {
-          window._mpCurrentUserEmail = (sess.data.session.user && sess.data.session.user.email || '').toLowerCase();
-          document.body.style.opacity = '1';
-          return;
-        }
-      }
-    }
-    window.location.href = '/login';
-  } catch(e) {
-    window.location.href = '/login';
-  }
+// Ticker pages rely on existing plan-based gating (line ~6764)
+// No hard redirect — page loads for all users, premium features gated inline
 })();
 </script>
 <script>
@@ -4164,11 +4126,11 @@ async function loadHero() {
       }),
       // Fetch financials from claim_verifications (most recent earnings data)
       sbFetch('claim_verifications', {
-        select: 'sec_revenue,sec_eps,sec_gross_margin,sec_net_margin,sec_operating_margin,benzinga_eps_actual,benzinga_eps_estimate,benzinga_eps_surprise_pct,benzinga_revenue_actual,benzinga_revenue_surprise_pct,benzinga_fiscal_period,pe_ratio,form_type,filing_date,period_of_report,vms_score',
+        select: 'sec_revenue,sec_eps,sec_gross_margin,sec_net_margin,sec_operating_margin,benzinga_eps_actual,benzinga_eps_estimate,benzinga_eps_surprise_pct,benzinga_revenue_actual,benzinga_revenue_surprise_pct,benzinga_fiscal_period,form_type,filing_date,period_of_report,vms_score',
         ticker: `eq.${TICKER}`,
         order:  'snapshot_date.desc',
         limit:  '1'
-      })
+      }).catch(function(){ return []; })
     ]);
 
     if (!rows.length) {
@@ -4325,7 +4287,7 @@ async function loadHero() {
 
     const grossMargin = cv.sec_gross_margin ?? r.sec_gross_margin;
     const netMargin   = cv.sec_net_margin ?? r.sec_net_margin;
-    const peRatio     = cv.pe_ratio ?? r.pe_ratio;
+    const peRatio     = r.pe_ratio;
 
     document.getElementById('metrics-strip').innerHTML = `
       <div class="metric-cell">
@@ -6316,8 +6278,8 @@ async function loadStrategyData() {
     // Fetch strategy summary + article_outcomes breakdowns in parallel
     const [summaryRows, themeRows, pubRows] = await Promise.all([
       sbFetch('ticker_strategy_summary', { ticker: `eq.${TICKER}`, limit: '1' }),
-      sbFetch('rpc/strategy_theme_breakdown', { ticker_param: TICKER }),
-      sbFetch('rpc/strategy_pub_breakdown',   { ticker_param: TICKER })
+      sbFetch('rpc/strategy_theme_breakdown', { ticker_param: TICKER }).catch(function(){ return []; }),
+      sbFetch('rpc/strategy_pub_breakdown',   { ticker_param: TICKER }).catch(function(){ return []; })
     ]);
 
     const d = Array.isArray(summaryRows) ? summaryRows[0] : null;
