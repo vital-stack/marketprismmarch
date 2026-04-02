@@ -27,16 +27,16 @@ window.MP_BILLING = (function(){
     beta: 3
   };
 
-  // Temporary global dashboard unlock for testing.
-  // Set to false to restore paid access restrictions.
-  var dashboardAccessOverride = true;
+  // Set to true to temporarily unlock all features for testing.
+  var dashboardAccessOverride = false;
 
   // Temporary testing mode: leave all dashboard tabs unlocked.
   // Restore the gated tabs below when paid access enforcement is needed again.
   var lockedTabs = {
     cards: 'pro',
     calendar: 'pro',
-    leaderboard: 'pro'
+    leaderboard: 'pro',
+    trapradar: 'pro'
   };
 
   function normalize(value){

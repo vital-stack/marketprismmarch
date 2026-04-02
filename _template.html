@@ -413,6 +413,32 @@ body{
 .feature-lock-button:hover{border-color:var(--mp-border-hover);background:rgba(255,255,255,0.06);transform:translateY(-2px);}
 .feature-lock-button.primary{background:linear-gradient(135deg,rgba(0,174,255,0.85),rgba(0,174,255,0.55));border-color:rgba(0,174,255,0.35);}
 .feature-lock-button.primary:hover{background:linear-gradient(135deg,rgba(0,174,255,0.95),rgba(0,174,255,0.68));}
+/* ── Help & Account page ── */
+.help-page{max-width:720px;padding-bottom:60px;}
+.help-section{background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:16px;padding:24px;margin-bottom:20px;box-shadow:var(--mp-card-shadow);}
+.help-section-title{font-family:var(--font-display);font-size:20px;font-weight:400;letter-spacing:-0.02em;margin-bottom:16px;color:var(--mp-text-primary);}
+.help-account-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--mp-border);}
+.help-account-row:last-child{border-bottom:none;}
+.help-account-label{font-size:13px;color:var(--mp-text-tertiary);min-width:120px;}
+.help-account-value{font-size:14px;font-weight:600;color:var(--mp-text-primary);}
+.help-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px;}
+.help-btn{display:inline-flex;align-items:center;justify-content:center;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;font-family:var(--font-body);cursor:pointer;transition:all .2s;text-decoration:none;border:1px solid var(--mp-border);}
+.help-btn.primary{background:linear-gradient(135deg,rgba(0,174,255,0.85),rgba(0,174,255,0.55));border-color:rgba(0,174,255,0.35);color:#fff;}
+.help-btn.primary:hover{background:linear-gradient(135deg,rgba(0,174,255,0.95),rgba(0,174,255,0.68));}
+.help-btn.danger{background:rgba(255,77,77,0.08);border-color:rgba(255,77,77,0.25);color:#FF4D4D;}
+.help-btn.danger:hover{background:rgba(255,77,77,0.15);}
+.help-btn.secondary{background:var(--mp-surface2);color:var(--mp-text-primary);}
+.help-btn.secondary:hover{border-color:var(--mp-border-hover);}
+.help-faq-item{border-bottom:1px solid var(--mp-border);padding:16px 0;}
+.help-faq-item:last-child{border-bottom:none;}
+.help-faq-q{font-size:14px;font-weight:600;color:var(--mp-text-primary);margin-bottom:6px;}
+.help-faq-a{font-size:13px;color:var(--mp-text-secondary);line-height:1.6;}
+.help-contact{text-align:center;padding:24px;color:var(--mp-text-secondary);font-size:13px;}
+.help-contact a{color:#00AEFF;text-decoration:none;}
+.help-contact a:hover{text-decoration:underline;}
+/* ── Pro preview overlay ── */
+.pro-preview-overlay{position:absolute;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,transparent 0%,rgba(8,11,17,0.85) 40%,rgba(8,11,17,0.98) 100%);pointer-events:all;}
+[data-theme="light"] .pro-preview-overlay{background:linear-gradient(180deg,transparent 0%,rgba(248,249,252,0.85) 40%,rgba(248,249,252,0.98) 100%);}
 .daily-rail .billing-flash,
 .daily-rail .billing-overview{max-width:none;margin:0 0 18px;}
 .daily-rail .billing-overview{padding:18px 18px 16px;border-radius:18px;}
@@ -4016,6 +4042,10 @@ body{
     </div>
   </div>
   <div class="nav-bottom">
+    <button class="nav-item" data-tab="help" onclick="switchTab('help',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Help & Account
+    </button>
     <a href="/pricing" class="nav-upgrade">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
       Upgrade plan
@@ -4741,6 +4771,83 @@ body{
       <div id="scorer-error" style="display:none;padding:16px 20px;border-radius:12px;background:rgba(255,77,77,0.06);border:1px solid rgba(255,77,77,0.15);color:#FF4D4D;font-size:13px;margin-bottom:20px;"></div>
     </div>
 
+    <!-- ══════════════════════════════════════
+         TAB: HELP & ACCOUNT
+    ═══════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-help">
+      <div class="page-header">
+        <h1>Help & Account</h1>
+        <span class="ph-italic">Manage your subscription and get answers.</span>
+      </div>
+      <div class="help-page">
+
+        <!-- Account & Subscription -->
+        <div class="help-section">
+          <div class="help-section-title">Your Subscription</div>
+          <div class="help-account-row">
+            <span class="help-account-label">Plan</span>
+            <span class="help-account-value" id="help-plan-name">Loading...</span>
+          </div>
+          <div class="help-account-row">
+            <span class="help-account-label">Status</span>
+            <span class="help-account-value" id="help-plan-status">Loading...</span>
+          </div>
+          <div class="help-account-row">
+            <span class="help-account-label">Email</span>
+            <span class="help-account-value" id="help-user-email">Loading...</span>
+          </div>
+          <div class="help-account-row">
+            <span class="help-account-label">Renewal Date</span>
+            <span class="help-account-value" id="help-renewal-date">Loading...</span>
+          </div>
+          <div class="help-actions">
+            <button class="help-btn primary" id="help-manage-btn" onclick="openBillingPortal()">Manage Subscription</button>
+            <a class="help-btn secondary" href="/pricing">Change Plan</a>
+            <button class="help-btn danger" id="help-cancel-btn" onclick="openBillingPortal()">Cancel Subscription</button>
+          </div>
+        </div>
+
+        <!-- FAQ -->
+        <div class="help-section">
+          <div class="help-section-title">Frequently Asked Questions</div>
+          <div class="help-faq-item">
+            <div class="help-faq-q">How do I cancel my subscription?</div>
+            <div class="help-faq-a">Click "Cancel Subscription" above or "Manage Subscription" to open the Stripe billing portal. From there you can cancel immediately or at the end of your billing period. You will retain access until your current period ends.</div>
+          </div>
+          <div class="help-faq-item">
+            <div class="help-faq-q">How do I upgrade or change my plan?</div>
+            <div class="help-faq-a">Click "Change Plan" above to visit the pricing page, or use "Manage Subscription" to switch plans directly through Stripe. Changes take effect immediately and are prorated.</div>
+          </div>
+          <div class="help-faq-item">
+            <div class="help-faq-q">What happens when my free trial ends?</div>
+            <div class="help-faq-a">When your 7-day trial ends, your payment method on file will be charged for the plan you selected. You can cancel anytime before the trial ends to avoid being charged.</div>
+          </div>
+          <div class="help-faq-item">
+            <div class="help-faq-q">What is included in the Standard plan?</div>
+            <div class="help-faq-a">Standard ($15/mo) includes Daily Brief, Sector Pulse, Market-Wide, Ticker Snapshots, Discover, Narrative History, and up to 3 ticker detail pages per day.</div>
+          </div>
+          <div class="help-faq-item">
+            <div class="help-faq-q">What is included in the Pro plan?</div>
+            <div class="help-faq-a">Pro ($25/mo) includes everything in Standard plus Trading Cards, Leaderboard, Trading Calendar, Trap Radar, and unlimited ticker detail pages.</div>
+          </div>
+          <div class="help-faq-item">
+            <div class="help-faq-q">Where does Market Prism get its data?</div>
+            <div class="help-faq-a">Our AI pipeline analyzes SEC EDGAR filings, real-time market data feeds, news sources, and proprietary narrative scoring models. All signals are generated by AI — no human editorial bias.</div>
+          </div>
+          <div class="help-faq-item">
+            <div class="help-faq-q">How do I update my payment method?</div>
+            <div class="help-faq-a">Click "Manage Subscription" to open the Stripe billing portal where you can update your card, view invoices, and manage payment details.</div>
+          </div>
+        </div>
+
+        <!-- Contact -->
+        <div class="help-section help-contact">
+          Need more help? Contact us at <a href="mailto:support@marketprism.co">support@marketprism.co</a>
+        </div>
+
+      </div>
+    </div>
+
   </div>
 </div>
 </div>
@@ -4807,17 +4914,12 @@ document.querySelectorAll('.page-header p').forEach(function(p,i){
   if(i===0) return;
 });
 // ── Tab switching (hook-based — sections register via onTabSwitch) ────────────
-var TABS = ['daily','discover','sector','marketwide','snapshots','memes','narrative','cards','calendar','trapradar','leaderboard','scorer'];
-var TAB_TITLES = {daily:'Daily Brief',discover:'Discover',sector:'Sector Pulse',marketwide:'Market-Wide',snapshots:'Ticker Snapshots',memes:'Market Sharing',narrative:'Narrative History',cards:'Trading Cards',calendar:'Trading Calendar',trapradar:'Trap Radar',leaderboard:'Leaderboard',scorer:'Score Any Stock'};
+var TABS = ['daily','discover','sector','marketwide','snapshots','memes','narrative','cards','calendar','trapradar','leaderboard','scorer','help'];
+var TAB_TITLES = {daily:'Daily Brief',discover:'Discover',sector:'Sector Pulse',marketwide:'Market-Wide',snapshots:'Ticker Snapshots',memes:'Market Sharing',narrative:'Narrative History',cards:'Trading Cards',calendar:'Trading Calendar',trapradar:'Trap Radar',leaderboard:'Leaderboard',scorer:'Score Any Stock',help:'Help & Account'};
 var _tabHooks = [];
 /** Register a callback to run after any tab switch. fn(id) */
 function onTabSwitch(fn){ if(typeof fn==='function') _tabHooks.push(fn); }
 function switchTab(id, btn){
-  var requiredPlan = (BILLING.lockedTabs || {})[id];
-  if(requiredPlan && !BILLING.hasAccess(CURRENT_SUBSCRIPTION, requiredPlan)){
-    setBillingFlash('error', 'Upgrade to Pro to access this feature.');
-    return;
-  }
   TABS.forEach(function(t){
     var el = document.getElementById('tab-'+t);
     if(el) el.classList.toggle('active', t===id);
@@ -4827,6 +4929,36 @@ function switchTab(id, btn){
   });
   var tt = document.getElementById('topbar-title');
   if(tt) tt.textContent = TAB_TITLES[id]||id;
+  // Pro preview gating — show tab content blurred with upgrade overlay
+  var requiredPlan = (BILLING.lockedTabs || {})[id];
+  var tabEl = document.getElementById('tab-'+id);
+  if(tabEl){
+    var existingOverlay = tabEl.querySelector('.pro-preview-overlay');
+    if(existingOverlay) existingOverlay.remove();
+    if(requiredPlan && !BILLING.hasAccess(CURRENT_SUBSCRIPTION, requiredPlan)){
+      tabEl.style.position = 'relative';
+      tabEl.style.minHeight = '60vh';
+      var overlay = document.createElement('div');
+      overlay.className = 'pro-preview-overlay';
+      overlay.innerHTML = renderFeatureLock(requiredPlan);
+      tabEl.appendChild(overlay);
+      // Blur the actual content behind
+      Array.from(tabEl.children).forEach(function(ch){
+        if(!ch.classList.contains('pro-preview-overlay')){
+          ch.style.filter = 'blur(6px)';
+          ch.style.pointerEvents = 'none';
+          ch.style.userSelect = 'none';
+        }
+      });
+    } else {
+      // Remove blur if switching to an unlocked tab
+      Array.from(tabEl.children).forEach(function(ch){
+        ch.style.filter = '';
+        ch.style.pointerEvents = '';
+        ch.style.userSelect = '';
+      });
+    }
+  }
   if(id==='discover'&&typeof initStoryStream==='function')setTimeout(initStoryStream,100);
   if(id==='narrative'&&typeof renderNHT==='function')setTimeout(renderNHT,50);
   if(id==='cards'&&typeof renderCardsGallery==='function'){TCG_RENDERED=false;setTimeout(renderCardsGallery,50);}
@@ -5226,6 +5358,44 @@ async function loadSubscriptionStatus(){
     renderSubscriptionOverview(null);
   }
 }
+
+// ── Help & Account tab population ─────────────────────────────────────────────
+function populateHelpTab(){
+  var sub = CURRENT_SUBSCRIPTION;
+  var planEl = document.getElementById('help-plan-name');
+  var statusEl = document.getElementById('help-plan-status');
+  var emailEl = document.getElementById('help-user-email');
+  var renewalEl = document.getElementById('help-renewal-date');
+  var manageBtn = document.getElementById('help-manage-btn');
+  var cancelBtn = document.getElementById('help-cancel-btn');
+  if(!planEl) return;
+
+  var humanPlan = BILLING.getPlanName(sub);
+  var status = normalizeSubscriptionStatus(sub && sub.status);
+  var presentation = BILLING_UI.getSubscriptionPresentation
+    ? BILLING_UI.getSubscriptionPresentation(sub, { planName: humanPlan })
+    : null;
+
+  planEl.textContent = humanPlan;
+  statusEl.textContent = presentation ? presentation.statusLabel : (status || 'Inactive');
+  statusEl.style.color = getSubscriptionAccent(status);
+
+  // Email
+  if(emailEl){
+    emailEl.textContent = (CURRENT_USER && CURRENT_USER.email) ? CURRENT_USER.email : '—';
+  }
+
+  // Renewal
+  if(renewalEl){
+    renewalEl.textContent = presentation ? presentation.renewalDateText : 'Not available';
+  }
+
+  // Show/hide buttons based on subscription state
+  var hasActive = status === 'active' || status === 'trialing';
+  if(manageBtn) manageBtn.style.display = hasActive ? '' : 'none';
+  if(cancelBtn) cancelBtn.style.display = hasActive ? '' : 'none';
+}
+onTabSwitch(function(id){ if(id === 'help') populateHelpTab(); });
 
 async function openBillingPortal(){
   if(BILLING_PORTAL_BUSY) return;

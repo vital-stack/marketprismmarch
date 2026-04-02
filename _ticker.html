@@ -3059,6 +3059,8 @@
 window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadcom.com',QCOM:'qualcomm.com',TSM:'tsmc.com',MRVL:'marvell.com',AMAT:'appliedmaterials.com',LRCX:'lamresearch.com',TXN:'ti.com',SNPS:'synopsys.com',CDNS:'cadence.com',MU:'micron.com',ARM:'arm.com',SMCI:'supermicro.com',AAPL:'apple.com',MSFT:'microsoft.com',GOOGL:'google.com',META:'meta.com',AMZN:'amazon.com',ADBE:'adobe.com',CRM:'salesforce.com',ORCL:'oracle.com',NFLX:'netflix.com',INTU:'intuit.com',NOW:'servicenow.com',WDAY:'workday.com',PANW:'paloaltonetworks.com',CRWD:'crowdstrike.com',PLTR:'palantir.com',IBM:'ibm.com',HPQ:'hp.com',DELL:'dell.com',MSTR:'microstrategy.com',SHOP:'shopify.com',SNOW:'snowflake.com',SQ:'squareup.com',SPOT:'spotify.com',RDDT:'reddit.com',SNAP:'snap.com',RBLX:'roblox.com',TTWO:'take2games.com',COIN:'coinbase.com',HOOD:'robinhood.com',SOFI:'sofi.com',DASH:'doordash.com',UBER:'uber.com',ABNB:'airbnb.com',BKNG:'booking.com',OPEN:'opendoor.com',PTON:'onepeloton.com',GME:'gamestop.com',DJT:'tmtgcorp.com',JPM:'jpmorganchase.com',GS:'goldmansachs.com',V:'visa.com',MA:'mastercard.com',WFC:'wellsfargo.com',BAC:'bankofamerica.com',MS:'morganstanley.com',PYPL:'paypal.com',OWL:'blueowl.com',COST:'costco.com',WMT:'walmart.com',TGT:'target.com',HD:'homedepot.com',LOW:'lowes.com',MCD:'mcdonalds.com',SBUX:'starbucks.com',NKE:'nike.com',CMG:'chipotle.com',KO:'coca-cola.com',PEP:'pepsico.com',GIS:'generalmills.com',KHC:'kraftheinzcompany.com',MDLZ:'mondelezinternational.com',TSN:'tysonfoods.com',BUD:'ab-inbev.com',BYND:'beyondmeat.com',KVUE:'kenvue.com',JNJ:'jnj.com',LLY:'lilly.com',PFE:'pfizer.com',MRK:'merck.com',ABBV:'abbvie.com',UNH:'unitedhealthgroup.com',DHR:'danaher.com',TMO:'thermofisher.com',ABT:'abbott.com',NVO:'novonordisk.com',HIMS:'forhims.com',IBRX:'immunitybio.com',NBIS:'nebius.com',TSLA:'tesla.com',GM:'gm.com',F:'ford.com',RIVN:'rivian.com',NIO:'nio.com',LCID:'lucidmotors.com',TM:'toyota.com',HMC:'honda.com',RACE:'ferrari.com',UAL:'united.com',UPS:'ups.com',XOM:'exxonmobil.com',CVX:'chevron.com',COP:'conocophillips.com',EOG:'eogresources.com',OXY:'oxy.com',HAL:'halliburton.com',SLB:'slb.com',VST:'vistraenergy.com',CEG:'constellation.com',NEE:'nexteraenergy.com',DUK:'duke-energy.com',SO:'southerncompany.com',ENPH:'enphase.com',FSLR:'firstsolar.com',OKLO:'oklo.com',SMR:'nuscalepower.com',CCJ:'cameco.com',LEU:'centrusenergy.com',FCX:'fcx.com',NEM:'newmont.com',GOLD:'barrick.com',AA:'alcoa.com',CLF:'clevelandcliffs.com',MP:'mpcorp.com',SCCO:'southerncoppercorp.com',BHP:'bhp.com',RIO:'riotinto.com',VALE:'vale.com',MOS:'mosaicco.com',BG:'bunge.com',ADM:'adm.com',GE:'ge.com',CAT:'caterpillar.com',DE:'deere.com',EMR:'emerson.com',VRT:'vertiv.com',RTX:'rtx.com',LMT:'lockheedmartin.com',BA:'boeing.com',URI:'unitedrentals.com',PWR:'quanta.com',MLM:'martinmarietta.com',VMC:'vulcanmaterials.com',WM:'wm.com',ACM:'aecom.com',J:'jacobs.com',TTEK:'tetratech.com',STN:'stantec.com',AMT:'americantower.com',PLD:'prologis.com',DHI:'dhi.com',AWK:'amwater.com',WTRG:'essentialutilities.com',CWT:'californiawater.com',AWR:'gswater.com',XYL:'xylem.com',PNR:'pentair.com',ECL:'ecolab.com',APD:'airproducts.com',LIN:'linde.com',VEOEY:'veolia.com',DIS:'disney.com',CMCSA:'comcast.com',SONY:'sony.com',VZ:'verizon.com',TMUS:'t-mobile.com',STX:'seagate.com',WDC:'westerndigital.com',ASTS:'ast-science.com',SPY:'ssga.com'};
 </script>
 <script id="__env_script">window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '', TICKER: '' };</script>
+<script src="/billing-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     // Apply saved theme immediately to prevent flash (light is default)
     (function(){
@@ -6639,7 +6641,69 @@ async function refreshAll() {
   ]);
 }
 
-refreshAll();
+// ── Ticker view gating (Standard plan: 3 unique tickers/day) ──────────────────
+(async function(){
+  var BILLING = window.MP_BILLING;
+  // Skip gating if billing config not loaded or override is on
+  if(!BILLING || BILLING.dashboardAccessOverride){ refreshAll(); return; }
+
+  // Check subscription via Supabase auth
+  var supaUrl = SUPABASE_URL;
+  var supaAnon = SUPABASE_ANON;
+  var sub = null;
+  try {
+    if(window.supabase && supaUrl && supaAnon){
+      var supa = window.supabase.createClient(supaUrl, supaAnon);
+      var authResult = await supa.auth.getUser();
+      var user = authResult && authResult.data ? authResult.data.user : null;
+      if(user){
+        var res = await supa.from('subscriptions').select('*').eq('user_id', user.id).in('status', ['active','trialing']).single();
+        if(!res.error && res.data) sub = res.data;
+      }
+    }
+  } catch(e){ console.warn('Ticker gating check failed:', e); }
+
+  // Pro, beta, or trialing users get unlimited access
+  if(BILLING.hasAccess(sub, 'pro') || (sub && sub.status === 'trialing')){
+    refreshAll();
+    return;
+  }
+
+  // Standard plan: enforce 3 unique tickers per day
+  var today = new Date().toISOString().slice(0,10);
+  var storageKey = 'mp-ticker-views-' + today;
+  var viewed = [];
+  try { viewed = JSON.parse(localStorage.getItem(storageKey) || '[]'); } catch(e){ viewed = []; }
+
+  // If this ticker was already viewed, allow it (doesn't count again)
+  if(viewed.indexOf(TICKER) !== -1){
+    refreshAll();
+    return;
+  }
+
+  // If under limit, record and allow
+  if(viewed.length < 3){
+    viewed.push(TICKER);
+    localStorage.setItem(storageKey, JSON.stringify(viewed));
+    refreshAll();
+    return;
+  }
+
+  // Over limit — show upgrade overlay
+  var main = document.querySelector('.main-content') || document.querySelector('.page-wrap') || document.body;
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(8,11,17,0.92);backdrop-filter:blur(8px);';
+  overlay.innerHTML = '<div style="max-width:480px;text-align:center;padding:40px;">'
+    + '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#9CA3AF;margin-bottom:16px;">Daily Limit Reached</div>'
+    + '<div style="font-family:\'Instrument Serif\',Georgia,serif;font-size:32px;color:#F5F7FA;line-height:1.1;margin-bottom:16px;">Upgrade to Pro for unlimited ticker access</div>'
+    + '<div style="font-size:14px;color:#9CA3AF;line-height:1.6;margin-bottom:24px;">You\'ve viewed 3 ticker pages today on the Standard plan. Pro members get unlimited access to all ticker detail pages, plus Trading Cards, Leaderboard, Trading Calendar, and Trap Radar.</div>'
+    + '<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">'
+    + '<a href="/pricing" style="display:inline-flex;align-items:center;padding:12px 24px;border-radius:10px;background:linear-gradient(135deg,rgba(0,174,255,0.85),rgba(0,174,255,0.55));color:#fff;font-size:14px;font-weight:600;text-decoration:none;border:1px solid rgba(0,174,255,0.35);">Upgrade to Pro</a>'
+    + '<a href="/dashboard" style="display:inline-flex;align-items:center;padding:12px 24px;border-radius:10px;background:rgba(255,255,255,0.04);color:#F5F7FA;font-size:14px;font-weight:600;text-decoration:none;border:1px solid rgba(255,255,255,0.1);">Back to Dashboard</a>'
+    + '</div>'
+    + '</div>';
+  document.body.appendChild(overlay);
+})();
 
 // Story feed refresh button
 document.getElementById('tk-feed-refresh')?.addEventListener('click', async function() {
