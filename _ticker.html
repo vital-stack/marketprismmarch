@@ -2034,8 +2034,9 @@
     flex-shrink: 0;
     width: 100px;
     height: 100px;
+    overflow: visible;
   }
-  .narr-ring-main svg { width: 100px; height: 100px; }
+  .narr-ring-main svg { width: 100px; height: 100px; display: block; }
   .narr-ring-center {
     position: absolute;
     top: 50%;
@@ -5750,14 +5751,12 @@ function renderDiagStrip(p) {
 
 // ── Render: Narrative Strength Ring ───────────────────────────────────────────
 function buildRingSVG(pct, size, stroke, color, bgOpacity) {
-  var pad = stroke / 2 + 1;
-  var svgSize = size + pad * 2;
-  var cx = svgSize / 2;
-  var cy = svgSize / 2;
   var r = (size - stroke) / 2;
+  var cx = size / 2;
+  var cy = size / 2;
   var circ = 2 * Math.PI * r;
   var offset = circ - (Math.max(0, Math.min(100, pct)) / 100) * circ;
-  return '<svg width="' + svgSize + '" height="' + svgSize + '" viewBox="0 0 ' + svgSize + ' ' + svgSize + '" style="margin:-' + pad + 'px;">'
+  return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '">'
     + '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="rgba(255,255,255,' + (bgOpacity || 0.06) + ')" stroke-width="' + stroke + '"/>'
     + '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="' + color + '" stroke-width="' + stroke + '" stroke-linecap="round" stroke-dasharray="' + circ.toFixed(2) + '" stroke-dashoffset="' + offset.toFixed(2) + '" transform="rotate(-90 ' + cx + ' ' + cy + ')" style="transition:stroke-dashoffset .6s ease;"/>'
     + '</svg>';
