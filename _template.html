@@ -6128,7 +6128,7 @@ async function loadData(){
     loadSectorsFromSummaries();
     loadMarketWideFromSummaries();
     // Load supported + traps + coordination from their actual DB tables, then render
-    await Promise.allSettled([loadSupportedData(), loadTrapsData(), loadCoordinationData()]);
+    await Promise.all([loadSupportedData(), loadTrapsData(), loadCoordinationData()]);
     renderSupportedCards();
     renderTrapsCards();
     renderCoordinationCards();
@@ -8471,13 +8471,12 @@ async function loadNHT(ticker){
   if(loadEl)loadEl.style.display='';
   // Fetch all data in parallel (each catches its own errors)
   try {
-    var settled=await Promise.allSettled([
+    var results=await Promise.all([
       ensureLiveNarrativeHistory(nhtTicker).catch(function(e){console.warn('Narrative history fetch failed:',e);return null;}),
       fetchNarrativeScorecard(nhtTicker).catch(function(e){console.warn('Scorecard fetch failed:',e);return [];}),
       fetchNarrativeHealth(nhtTicker).catch(function(e){console.warn('Health fetch failed:',e);return [];}),
       fetchBenzingaEarnings(nhtTicker).catch(function(e){console.warn('Benzinga earnings fetch failed:',e);return [];})
     ]);
-    var results=settledValues(settled, [null, [], [], []]);
     var model=results[0]||{series:[],events:[],price:0,ytd:0};
     var series=(model.series||[]).filter(function(row){return row && row.snapshot_date && row.price_close!=null;});
     nhtPriceCache=series.map(function(row){
@@ -10031,12 +10030,12 @@ async function renderLeaderboardCards(){
   var scDate = await latestDateLB('narrative_scorecard');
   var scFilter = scDate ? '&snapshot_date=eq.'+encodeURIComponent(scDate) : '&order=snapshot_date.desc';
 
-  var _lbSettled = await Promise.allSettled([
+  var _lbSettled = await Promise.all([
     fetch(SUPABASE_URL+'/rest/v1/narrative_scorecard?select=ticker,fvd_pct,vms,verdict'+scFilter+'&fvd_pct=lt.0&order=fvd_pct.asc&limit=5',{headers:hdrs}).catch(function(){return null;}),
     fetch(SUPABASE_URL+'/rest/v1/narrative_scorecard?select=ticker,fvd_pct,vms,verdict'+scFilter+'&fvd_pct=gt.0&order=fvd_pct.desc&limit=5',{headers:hdrs}).catch(function(){return null;}),
     fetch(SUPABASE_URL+'/rest/v1/v_dash_daily_story?select=ticker,days_to_earnings,guidance_direction,narrative_state,prism_verdict&days_to_earnings=lte.21&days_to_earnings=gt.0&order=days_to_earnings.asc&limit=5',{headers:hdrs}).catch(function(){return null;}),
   ]);
-  var [rUnder, rOver, rEarnings] = settledValues(_lbSettled, [null, null, null]);
+  var [rUnder, rOver, rEarnings] = _lbSettled;
 
   var underRows=[], overRows=[], earnRows=[];
   try{ if(rUnder&&rUnder.ok) underRows=await rUnder.json(); }catch(_){}
@@ -11017,79 +11016,28 @@ function calendarBoot(){
   });
 }
 
-// ── ENTERPRISE: In-memory fetch cache ──
-var _mpCache = {};
-function cachedFetch(key, fetchFn, ttlMs) {
-  var c = _mpCache[key];
-  if (c && Date.now() - c.ts < ttlMs) return Promise.resolve(c.data);
-  return fetchFn().then(function(data) {
-    _mpCache[key] = { data: data, ts: Date.now() };
-    return data;
+function restFetch(table, params){
+  var qs = Object.keys(params || {}).filter(function(key){
+    var value = params[key];
+    return value !== undefined && value !== null && value !== '';
+  }).map(function(key){
+    return encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
+  }).join('&');
+  return fetch(SUPABASE_URL + '/rest/v1/' + table + (qs ? '?' + qs : ''), {
+    headers: {
+      'apikey': SUPABASE_ANON,
+      'Authorization': 'Bearer ' + SUPABASE_ANON,
+      'Accept': 'application/json'
+    }
+  }).then(async function(res){
+    if(!res.ok){
+      var body = await res.text().catch(function(){ return ''; });
+      throw new Error('[' + table + '] ' + res.status + ' ' + body.slice(0, 160));
+    }
+    return res.json();
   });
 }
 
-// ── ENTERPRISE: Resilient fetch with timeout + retry ──
-function restFetch(table, params, opts) {
-  opts = opts || {};
-  var retries = opts.retries !== undefined ? opts.retries : 2;
-  var timeoutMs = opts.timeout || 15000;
-  var cacheTtl = opts.cacheTtl || 0;
-
-  function doFetch() {
-    var qs = Object.keys(params || {}).filter(function(key) {
-      var value = params[key];
-      return value !== undefined && value !== null && value !== '';
-    }).map(function(key) {
-      return encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
-    }).join('&');
-
-    var controller = new AbortController();
-    var timer = setTimeout(function() { controller.abort(); }, timeoutMs);
-    var url = SUPABASE_URL + '/rest/v1/' + table + (qs ? '?' + qs : '');
-
-    return fetch(url, {
-      headers: {
-        'apikey': SUPABASE_ANON,
-        'Authorization': 'Bearer ' + SUPABASE_ANON,
-        'Accept': 'application/json'
-      },
-      signal: controller.signal
-    }).then(async function(res) {
-      clearTimeout(timer);
-      if (!res.ok) {
-        var body = await res.text().catch(function() { return ''; });
-        throw new Error('[' + table + '] ' + res.status + ' ' + body.slice(0, 160));
-      }
-      return res.json();
-    }).catch(function(err) {
-      clearTimeout(timer);
-      throw err;
-    });
-  }
-
-  function attempt(n) {
-    return doFetch().catch(function(err) {
-      if (n > 0 && (err.name === 'AbortError' || (err.message && /5\d\d/.test(err.message)))) {
-        var delay = (retries - n + 1) * 1500;
-        return new Promise(function(r) { setTimeout(r, delay); }).then(function() { return attempt(n - 1); });
-      }
-      throw err;
-    });
-  }
-
-  if (cacheTtl > 0) {
-    var cacheKey = table + '|' + JSON.stringify(params || {});
-    return cachedFetch(cacheKey, function() { return attempt(retries); }, cacheTtl);
-  }
-  return attempt(retries);
-}
-
-// ── ENTERPRISE: Extract fulfilled values from allSettled results ──
-function settledValues(results, defaults) {
-  return results.map(function(r, i) {
-    return r.status === 'fulfilled' ? r.value : (defaults && defaults[i] !== undefined ? defaults[i] : []);
-  });
-}
 
 async function authedRestFetch(table, params){
   var session = null;
@@ -11931,10 +11879,10 @@ async function loadTradingCalendarLive(){
   });
 
   var topRows = LIVE_EARNINGS_ROWS.slice(0, 5);
-  var _psSettled = await Promise.allSettled(topRows.map(function(row){
+  var _psSettled = await Promise.all(topRows.map(function(row){
     return fetchPriceHistory(row.ticker, 30).catch(function(){ return []; });
   }));
-  var priceSeries = _psSettled.map(function(r){ return r.status === 'fulfilled' ? r.value : []; });
+  var priceSeries = _psSettled;
   TC_SIGNALS = topRows.map(function(row, index){
     var story = getStoryForTicker(row.ticker) || {};
     var series = priceSeries[index] || [];
@@ -13443,14 +13391,14 @@ async function loadLeaderboard(){
     var user=await ensureDashboardAuth();
     if(!user) return;
     if(!SUPABASE_URL||!SUPABASE_ANON) throw new Error('Supabase not configured');
-    var results=await Promise.allSettled(BOARDS.map(function(b){return b.fetch();}));
+    var results=await Promise.all(BOARDS.map(function(b){return b.fetch();}));
     var html='';
     results.forEach(function(res,i){
       var b=BOARDS[i];
-      if(res.status==='fulfilled'&&res.value&&res.value.length){
-        html+=renderBoard(b,res.value);
+      if(res&&res.length){
+        html+=renderBoard(b,res);
       } else {
-        console.warn('Leaderboard board "'+b.id+'" failed:',res.reason||'empty');
+        console.warn('Leaderboard board "'+b.id+'": empty');
         html+=renderEmpty(b);
       }
     });
