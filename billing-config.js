@@ -28,19 +28,14 @@ window.MP_BILLING = (function(){
   };
 
   // Set to true to temporarily unlock all features for testing.
-  var dashboardAccessOverride = false;
+  var dashboardAccessOverride = true;
 
   // Admin emails — always get full pro access regardless of subscription
   var adminEmails = ['tara@vtlbranding.com'];
 
-  // Temporary testing mode: leave all dashboard tabs unlocked.
-  // Restore the gated tabs below when paid access enforcement is needed again.
-  var lockedTabs = {
-    cards: 'pro',
-    calendar: 'pro',
-    leaderboard: 'pro',
-    trapradar: 'pro'
-  };
+  // Tab gating — currently unlocked for launch. Re-enable when paid tiers are enforced:
+  // cards: 'pro', calendar: 'pro', leaderboard: 'pro', trapradar: 'pro'
+  var lockedTabs = {};
 
   function normalize(value){
     return String(value || '').trim().toLowerCase();
