@@ -20,6 +20,7 @@
 <meta name="twitter:title" content="AI Stock Dashboard — Market Prism">
 <link rel="icon" type="image/png" href="/assets/Market-Prism-Favicon.png">
 <script>try{if(localStorage.getItem('mp-theme')==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}</script>
+<meta http-equiv="x-dns-prefetch-control" content="on">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&family=Anton&family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -3895,6 +3896,24 @@ body{
 #dash-constellation{position:fixed;top:0;left:248px;right:0;bottom:0;pointer-events:none;z-index:0;}
 @media(max-width:1100px){#dash-constellation{left:0;}}
 
+/* ── ENTERPRISE: Loading skeletons ── */
+.mp-skeleton { position: relative; overflow: hidden; background: rgba(255,255,255,0.04); border-radius: 8px; }
+.mp-skeleton::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent); animation: mp-shimmer 1.5s infinite; }
+@keyframes mp-shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+.mp-skel-line { height: 14px; margin-bottom: 10px; border-radius: 4px; }
+.mp-skel-line.short { width: 40%; }
+.mp-skel-line.med { width: 65%; }
+.mp-skel-line.long { width: 90%; }
+.mp-skel-card { height: 120px; border-radius: 12px; margin-bottom: 16px; }
+.mp-skel-chart { height: 280px; border-radius: 12px; }
+/* ── ENTERPRISE: Error states ── */
+.mp-data-error { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 32px 20px; color: rgba(255,255,255,0.35); font-size: 13px; font-family: 'Inter', sans-serif; }
+.mp-data-error button { background: rgba(0,174,255,0.1); border: 1px solid rgba(0,174,255,0.25); color: #00AEFF; font-size: 12px; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.2s; }
+.mp-data-error button:hover { background: rgba(0,174,255,0.2); }
+[data-theme="light"] .mp-skeleton { background: rgba(0,0,0,0.04); }
+[data-theme="light"] .mp-skeleton::after { background: linear-gradient(90deg, transparent, rgba(0,0,0,0.03), transparent); }
+[data-theme="light"] .mp-data-error { color: rgba(0,0,0,0.35); }
+
 </style>
 </head>
 <body>
@@ -6092,7 +6111,7 @@ async function loadData(){
     loadSectorsFromSummaries();
     loadMarketWideFromSummaries();
     // Load supported + traps + coordination from their actual DB tables, then render
-    await Promise.all([loadSupportedData(), loadTrapsData(), loadCoordinationData()]);
+    await Promise.allSettled([loadSupportedData(), loadTrapsData(), loadCoordinationData()]);
     renderSupportedCards();
     renderTrapsCards();
     renderCoordinationCards();
@@ -8430,12 +8449,13 @@ async function loadNHT(ticker){
   if(loadEl)loadEl.style.display='';
   // Fetch all data in parallel (each catches its own errors)
   try {
-    var results=await Promise.all([
+    var settled=await Promise.allSettled([
       ensureLiveNarrativeHistory(nhtTicker).catch(function(e){console.warn('Narrative history fetch failed:',e);return null;}),
       fetchNarrativeScorecard(nhtTicker).catch(function(e){console.warn('Scorecard fetch failed:',e);return [];}),
       fetchNarrativeHealth(nhtTicker).catch(function(e){console.warn('Health fetch failed:',e);return [];}),
       fetchBenzingaEarnings(nhtTicker).catch(function(e){console.warn('Benzinga earnings fetch failed:',e);return [];})
     ]);
+    var results=settledValues(settled, [null, [], [], []]);
     var model=results[0]||{series:[],events:[],price:0,ytd:0};
     var series=(model.series||[]).filter(function(row){return row && row.snapshot_date && row.price_close!=null;});
     nhtPriceCache=series.map(function(row){
@@ -9986,11 +10006,12 @@ async function renderLeaderboardCards(){
   var scDate = await latestDateLB('narrative_scorecard');
   var scFilter = scDate ? '&snapshot_date=eq.'+encodeURIComponent(scDate) : '&order=snapshot_date.desc';
 
-  var [rUnder, rOver, rEarnings] = await Promise.all([
+  var _lbSettled = await Promise.allSettled([
     fetch(SUPABASE_URL+'/rest/v1/narrative_scorecard?select=ticker,fvd_pct,vms,verdict'+scFilter+'&fvd_pct=lt.0&order=fvd_pct.asc&limit=5',{headers:hdrs}).catch(function(){return null;}),
     fetch(SUPABASE_URL+'/rest/v1/narrative_scorecard?select=ticker,fvd_pct,vms,verdict'+scFilter+'&fvd_pct=gt.0&order=fvd_pct.desc&limit=5',{headers:hdrs}).catch(function(){return null;}),
     fetch(SUPABASE_URL+'/rest/v1/v_dash_daily_story?select=ticker,days_to_earnings,guidance_direction,narrative_state,prism_verdict&days_to_earnings=lte.21&days_to_earnings=gt.0&order=days_to_earnings.asc&limit=5',{headers:hdrs}).catch(function(){return null;}),
   ]);
+  var [rUnder, rOver, rEarnings] = settledValues(_lbSettled, [null, null, null]);
 
   var underRows=[], overRows=[], earnRows=[];
   try{ if(rUnder&&rUnder.ok) underRows=await rUnder.json(); }catch(_){}
@@ -10971,26 +10992,77 @@ function calendarBoot(){
   });
 }
 
-// Live overrides for auth, narrative history, and trading calendar
-function restFetch(table, params){
-  var qs = Object.keys(params || {}).filter(function(key){
-    var value = params[key];
-    return value !== undefined && value !== null && value !== '';
-  }).map(function(key){
-    return encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
-  }).join('&');
-  return fetch(SUPABASE_URL + '/rest/v1/' + table + (qs ? '?' + qs : ''), {
-    headers: {
-      'apikey': SUPABASE_ANON,
-      'Authorization': 'Bearer ' + SUPABASE_ANON,
-      'Accept': 'application/json'
-    }
-  }).then(async function(res){
-    if(!res.ok){
-      var body = await res.text().catch(function(){ return ''; });
-      throw new Error('[' + table + '] ' + res.status + ' ' + body.slice(0, 160));
-    }
-    return res.json();
+// ── ENTERPRISE: In-memory fetch cache ──
+var _mpCache = {};
+function cachedFetch(key, fetchFn, ttlMs) {
+  var c = _mpCache[key];
+  if (c && Date.now() - c.ts < ttlMs) return Promise.resolve(c.data);
+  return fetchFn().then(function(data) {
+    _mpCache[key] = { data: data, ts: Date.now() };
+    return data;
+  });
+}
+
+// ── ENTERPRISE: Resilient fetch with timeout + retry ──
+function restFetch(table, params, opts) {
+  opts = opts || {};
+  var retries = opts.retries !== undefined ? opts.retries : 2;
+  var timeoutMs = opts.timeout || 15000;
+  var cacheTtl = opts.cacheTtl || 0;
+
+  function doFetch() {
+    var qs = Object.keys(params || {}).filter(function(key) {
+      var value = params[key];
+      return value !== undefined && value !== null && value !== '';
+    }).map(function(key) {
+      return encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
+    }).join('&');
+
+    var controller = new AbortController();
+    var timer = setTimeout(function() { controller.abort(); }, timeoutMs);
+    var url = SUPABASE_URL + '/rest/v1/' + table + (qs ? '?' + qs : '');
+
+    return fetch(url, {
+      headers: {
+        'apikey': SUPABASE_ANON,
+        'Authorization': 'Bearer ' + SUPABASE_ANON,
+        'Accept': 'application/json'
+      },
+      signal: controller.signal
+    }).then(async function(res) {
+      clearTimeout(timer);
+      if (!res.ok) {
+        var body = await res.text().catch(function() { return ''; });
+        throw new Error('[' + table + '] ' + res.status + ' ' + body.slice(0, 160));
+      }
+      return res.json();
+    }).catch(function(err) {
+      clearTimeout(timer);
+      throw err;
+    });
+  }
+
+  function attempt(n) {
+    return doFetch().catch(function(err) {
+      if (n > 0 && (err.name === 'AbortError' || (err.message && /5\d\d/.test(err.message)))) {
+        var delay = (retries - n + 1) * 1500;
+        return new Promise(function(r) { setTimeout(r, delay); }).then(function() { return attempt(n - 1); });
+      }
+      throw err;
+    });
+  }
+
+  if (cacheTtl > 0) {
+    var cacheKey = table + '|' + JSON.stringify(params || {});
+    return cachedFetch(cacheKey, function() { return attempt(retries); }, cacheTtl);
+  }
+  return attempt(retries);
+}
+
+// ── ENTERPRISE: Extract fulfilled values from allSettled results ──
+function settledValues(results, defaults) {
+  return results.map(function(r, i) {
+    return r.status === 'fulfilled' ? r.value : (defaults && defaults[i] !== undefined ? defaults[i] : []);
   });
 }
 
@@ -11834,9 +11906,10 @@ async function loadTradingCalendarLive(){
   });
 
   var topRows = LIVE_EARNINGS_ROWS.slice(0, 5);
-  var priceSeries = await Promise.all(topRows.map(function(row){
+  var _psSettled = await Promise.allSettled(topRows.map(function(row){
     return fetchPriceHistory(row.ticker, 30).catch(function(){ return []; });
   }));
+  var priceSeries = _psSettled.map(function(r){ return r.status === 'fulfilled' ? r.value : []; });
   TC_SIGNALS = topRows.map(function(row, index){
     var story = getStoryForTicker(row.ticker) || {};
     var series = priceSeries[index] || [];

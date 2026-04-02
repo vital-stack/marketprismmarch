@@ -10,6 +10,7 @@
 <meta name="description" content="Deep AI-powered stock analysis with narrative scoring, sentiment signals, and institutional-grade equity intelligence. Decode what's really driving the price.">
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" type="image/png" href="/assets/Market-Prism-Favicon.png">
+<meta http-equiv="x-dns-prefetch-control" content="on">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&family=Anton&family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!-- Geist fonts removed per design standards -->
 <style>
@@ -3055,6 +3056,23 @@
     -webkit-text-fill-color: transparent;
     animation: mp-gradient-text 6s ease infinite;
   }
+/* ── ENTERPRISE: Loading skeletons ── */
+.mp-skeleton { position: relative; overflow: hidden; background: rgba(255,255,255,0.04); border-radius: 8px; }
+.mp-skeleton::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent); animation: mp-shimmer 1.5s infinite; }
+@keyframes mp-shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+.mp-skel-line { height: 14px; margin-bottom: 10px; border-radius: 4px; }
+.mp-skel-line.short { width: 40%; }
+.mp-skel-line.med { width: 65%; }
+.mp-skel-line.long { width: 90%; }
+.mp-skel-card { height: 120px; border-radius: 12px; margin-bottom: 16px; }
+.mp-skel-chart { height: 280px; border-radius: 12px; }
+/* ── ENTERPRISE: Error states ── */
+.mp-data-error { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 32px 20px; color: rgba(255,255,255,0.35); font-size: 13px; font-family: 'Inter', sans-serif; }
+.mp-data-error button { background: rgba(0,174,255,0.1); border: 1px solid rgba(0,174,255,0.25); color: #00AEFF; font-size: 12px; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.2s; }
+.mp-data-error button:hover { background: rgba(0,174,255,0.2); }
+[data-theme="light"] .mp-skeleton { background: rgba(0,0,0,0.04); }
+[data-theme="light"] .mp-skeleton::after { background: linear-gradient(90deg, transparent, rgba(0,0,0,0.03), transparent); }
+[data-theme="light"] .mp-data-error { color: rgba(0,0,0,0.35); }
 </style>
   <!-- Env vars injected by Vercel — do not edit this line -->
   <script>
@@ -4049,30 +4067,73 @@ document.getElementById('nav-ticker').textContent = TICKER;
 var feedTickerEl = document.getElementById('tk-feed-ticker');
 if (feedTickerEl) feedTickerEl.textContent = TICKER;
 
-// ── Supabase helper ──────────────────────────────────────────────────────────
-async function sbFetch(table, params) {
-  const qs = Object.entries(params)
-    .filter(([,v]) => v !== undefined && v !== null && v !== '')
-    .map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
-    .join('&');
-  const url = `${SUPABASE_URL}/rest/v1/${table}?${qs}`;
-  const res = await fetch(url, {
-    headers: {
-      'apikey': SUPABASE_ANON,
-      'Authorization': `Bearer ${SUPABASE_ANON}`,
-      'Accept': 'application/json'
-    }
+// ── ENTERPRISE: In-memory fetch cache ──
+var _mpCache = {};
+function cachedFetch(key, fetchFn, ttlMs) {
+  var c = _mpCache[key];
+  if (c && Date.now() - c.ts < ttlMs) return Promise.resolve(c.data);
+  return fetchFn().then(function(data) {
+    _mpCache[key] = { data: data, ts: Date.now() };
+    return data;
   });
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new Error(`[${table}] ${res.status}: ${body.slice(0, 200)}`);
+}
+
+// ── ENTERPRISE: Resilient fetch with timeout + retry ──
+async function sbFetch(table, params, opts) {
+  opts = opts || {};
+  var retries = opts.retries !== undefined ? opts.retries : 2;
+  var timeoutMs = opts.timeout || 15000;
+  var cacheTtl = opts.cacheTtl || 0;
+
+  async function doFetch() {
+    const qs = Object.entries(params || {})
+      .filter(([, v]) => v !== undefined && v !== null && v !== '')
+      .map(([k, v]) => encodeURIComponent(k) + '=' + encodeURIComponent(v))
+      .join('&');
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const url = SUPABASE_URL + '/rest/v1/' + table + (qs ? '?' + qs : '');
+    try {
+      const res = await fetch(url, {
+        headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON, 'Accept': 'application/json' },
+        signal: controller.signal
+      });
+      clearTimeout(timer);
+      if (!res.ok) {
+        const body = await res.text().catch(() => '');
+        throw new Error('[' + table + '] ' + res.status + ': ' + body.slice(0, 200));
+      }
+      const text = await res.text();
+      return JSON.parse(text);
+    } catch(err) {
+      clearTimeout(timer);
+      throw err;
+    }
   }
-  const text = await res.text();
-  try {
-    return JSON.parse(text);
-  } catch (e) {
-    throw new Error(`[${table}] JSON parse failed. Response starts with: ${text.slice(0, 120)}`);
+
+  async function attempt(n) {
+    try {
+      return await doFetch();
+    } catch(err) {
+      if (n > 0 && (err.name === 'AbortError' || (err.message && /5\d\d/.test(err.message)))) {
+        await new Promise(r => setTimeout(r, (retries - n + 1) * 1500));
+        return attempt(n - 1);
+      }
+      throw err;
+    }
   }
+
+  if (cacheTtl > 0) {
+    var cacheKey = table + '|' + JSON.stringify(params || {});
+    return cachedFetch(cacheKey, () => attempt(retries), cacheTtl);
+  }
+  return attempt(retries);
+}
+
+function settledValues(results, defaults) {
+  return results.map(function(r, i) {
+    return r.status === 'fulfilled' ? r.value : (defaults && defaults[i] !== undefined ? defaults[i] : []);
+  });
 }
 
 // ── Utils ────────────────────────────────────────────────────────────────────
@@ -4114,41 +4175,47 @@ async function loadHero() {
       'sector_trap_flag','sector_trap_name','days_to_options_expiry','next_options_expiry'
     ].join(',');
 
-    const [rows, healthRows, snapRows, tradeRows, scorecardRows, cvRows] = await Promise.all([
+    var _r1 = await Promise.allSettled([
       sbFetch('v_dash_daily_story', { select: cols, ticker: `eq.${TICKER}`, order: 'snapshot_date.desc', limit: '1' }),
       sbFetch('v_dash_narrative_health', {
         select: 'narrative_health,narrative_trend,attention_trend',
         ticker: `eq.${TICKER}`,
         order:  'snapshot_date.desc',
         limit:  '1'
-      }).catch(() => []),
+      }),
       sbFetch('ticker_snapshots', {
         select: 'snapshot_date,price_close',
         ticker: `eq.${TICKER}`,
         order:  'snapshot_date.desc',
         limit:  '1'
-      }).catch(() => []),
+      }),
       sbFetch('trade_classifications', {
         select: 'primary_label,primary_confidence,shortest_timeframe,longest_timeframe',
         ticker: `eq.${TICKER}`,
         order:  'snapshot_date.desc',
         limit:  '1'
-      }).catch(() => []),
+      }),
       // Fetch this ticker's scorecard for leaderboard-style badges
       sbFetch('narrative_scorecard', {
         select: 'ticker,fvd_pct,vms,coordination_score,decay_rate,suspicion_score,energy_remaining,verdict,narrative',
         ticker: `eq.${TICKER}`,
         order:  'snapshot_date.desc',
         limit:  '1'
-      }).catch(() => []),
+      }),
       // Fetch financials from claim_verifications (most recent earnings data)
       sbFetch('claim_verifications', {
         select: 'sec_revenue,sec_eps,sec_gross_margin,sec_net_margin,sec_operating_margin,benzinga_eps_actual,benzinga_eps_estimate,benzinga_eps_surprise_pct,benzinga_revenue_actual,benzinga_revenue_surprise_pct,benzinga_fiscal_period,pe_ratio,form_type,filing_date,period_of_report,vms_score',
         ticker: `eq.${TICKER}`,
         order:  'snapshot_date.desc',
         limit:  '1'
-      }).catch(() => [])
+      })
     ]);
+    const rows = _r1[0].status === 'fulfilled' ? _r1[0].value : [];
+    const healthRows = _r1[1].status === 'fulfilled' ? _r1[1].value : [];
+    const snapRows = _r1[2].status === 'fulfilled' ? _r1[2].value : [];
+    const tradeRows = _r1[3].status === 'fulfilled' ? _r1[3].value : [];
+    const scorecardRows = _r1[4].status === 'fulfilled' ? _r1[4].value : [];
+    const cvRows = _r1[5].status === 'fulfilled' ? _r1[5].value : [];
 
     if (!rows.length) {
       document.getElementById('hero').innerHTML = `<div class="no-data">No data found for "${esc(TICKER)}".</div>`;
@@ -4362,28 +4429,33 @@ async function enrichLeaderboardBadges() {
     if (!date) return;
 
     // Fetch top 10 from key leaderboards in parallel
-    const [undervalued, overvalued, reliable, hypegap, coordinated] = await Promise.all([
+    var _r2 = await Promise.allSettled([
       sbFetch('narrative_scorecard', {
         select: 'ticker', snapshot_date: `eq.${date}`,
         'fvd_pct': 'lt.0', order: 'fvd_pct.asc', limit: '10'
-      }).catch(() => []),
+      }),
       sbFetch('narrative_scorecard', {
         select: 'ticker', snapshot_date: `eq.${date}`,
         'fvd_pct': 'gt.0', order: 'fvd_pct.desc', limit: '10'
-      }).catch(() => []),
+      }),
       sbFetch('narrative_scorecard', {
         select: 'ticker', snapshot_date: `eq.${date}`,
         'vms': 'gt.0', order: 'vms.desc', limit: '10'
-      }).catch(() => []),
+      }),
       sbFetch('narrative_scorecard', {
         select: 'ticker', snapshot_date: `eq.${date}`,
         'fvd_pct': 'gt.0', order: 'fvd_pct.desc', limit: '10'
-      }).catch(() => []),
+      }),
       sbFetch('narrative_scorecard', {
         select: 'ticker', snapshot_date: `eq.${date}`,
         'coordination_score': 'gt.0', order: 'coordination_score.desc', limit: '10'
-      }).catch(() => [])
+      })
     ]);
+    const undervalued = _r2[0].status === 'fulfilled' ? _r2[0].value : [];
+    const overvalued = _r2[1].status === 'fulfilled' ? _r2[1].value : [];
+    const reliable = _r2[2].status === 'fulfilled' ? _r2[2].value : [];
+    const hypegap = _r2[3].status === 'fulfilled' ? _r2[3].value : [];
+    const coordinated = _r2[4].status === 'fulfilled' ? _r2[4].value : [];
 
     const rankBadges = [];
     const findRank = (list) => { const idx = list.findIndex(x => x.ticker === TICKER); return idx >= 0 ? idx + 1 : null; };
@@ -4510,32 +4582,36 @@ async function loadChart() {
   if (!TICKER) return;
   try {
     // Fetch prices, stories, narrative health, and decay in parallel
-    const [priceRows, storyRows, healthRows, decayRows] = await Promise.all([
+    var _r3 = await Promise.allSettled([
       sbFetch('ticker_snapshots', {
         select: 'snapshot_date,price_close',
         ticker: `eq.${TICKER}`,
         order:  'snapshot_date.asc',
         limit:  '2000'
-      }).catch(() => []),
+      }),
       sbFetch('narrative_analyses', {
         select: 'snapshot_date,narrative_text,source_outlet,article_url,sentiment_score,verdict',
         ticker: `eq.${TICKER}`,
         order:  'snapshot_date.asc',
         limit:  '2000'
-      }).catch(() => []),
+      }),
       sbFetch('v_dash_narrative_health', {
         select: 'snapshot_date,narrative_trend,sentiment_score',
         ticker: `eq.${TICKER}`,
         order:  'snapshot_date.asc',
         limit:  '2000'
-      }).catch(() => []),
+      }),
       sbFetch('decay_metrics', {
         select: 'snapshot_date,energy_remaining_pct,day_number',
         ticker: `eq.${TICKER}`,
         order:  'snapshot_date.asc',
         limit:  '2000'
-      }).catch(() => [])
+      })
     ]);
+    const priceRows = _r3[0].status === 'fulfilled' ? _r3[0].value : [];
+    const storyRows = _r3[1].status === 'fulfilled' ? _r3[1].value : [];
+    const healthRows = _r3[2].status === 'fulfilled' ? _r3[2].value : [];
+    const decayRows = _r3[3].status === 'fulfilled' ? _r3[3].value : [];
 
     ALL_SNAPS = priceRows.filter(r => r.snapshot_date && r.price_close != null);
 
@@ -5251,7 +5327,7 @@ async function loadNarratives() {
   if (!TICKER) return;
   try {
     // Fetch narratives and price snapshots in parallel
-    const [rows, snaps] = await Promise.all([
+    var _r4 = await Promise.allSettled([
       sbFetch('narrative_analyses', {
         select: [
           'narrative_hash','narrative_text','verdict','source_outlet','analyst_firm',
@@ -5264,14 +5340,16 @@ async function loadNarratives() {
         ticker: `eq.${TICKER}`,
         order:  'snapshot_date.desc',
         limit:  '30'
-      }).catch(() => []),
+      }),
       sbFetch('ticker_snapshots', {
         select: 'snapshot_date,price_close',
         ticker: `eq.${TICKER}`,
         order:  'snapshot_date.asc',
         limit:  '365'
-      }).catch(() => [])
+      })
     ]);
+    const rows = _r4[0].status === 'fulfilled' ? _r4[0].value : [];
+    const snaps = _r4[1].status === 'fulfilled' ? _r4[1].value : [];
 
     // Build date → price lookup
     const priceByDate = {};
@@ -6295,11 +6373,14 @@ async function loadStrategyData() {
 
   try {
     // Fetch strategy summary + article_outcomes breakdowns in parallel
-    const [summaryRows, themeRows, pubRows] = await Promise.all([
+    var _r5 = await Promise.allSettled([
       sbFetch('ticker_strategy_summary', { ticker: `eq.${TICKER}`, limit: '1' }),
-      sbFetch('rpc/strategy_theme_breakdown', { ticker_param: TICKER }).catch(() => []),
-      sbFetch('rpc/strategy_pub_breakdown',   { ticker_param: TICKER }).catch(() => [])
+      sbFetch('rpc/strategy_theme_breakdown', { ticker_param: TICKER }),
+      sbFetch('rpc/strategy_pub_breakdown',   { ticker_param: TICKER })
     ]);
+    const summaryRows = _r5[0].status === 'fulfilled' ? _r5[0].value : [];
+    const themeRows = _r5[1].status === 'fulfilled' ? _r5[1].value : [];
+    const pubRows = _r5[2].status === 'fulfilled' ? _r5[2].value : [];
 
     const d = Array.isArray(summaryRows) ? summaryRows[0] : null;
     if (!d) {
@@ -6641,10 +6722,12 @@ var _tickerPulseData = null;
 
 async function refreshAll() {
   if (!TICKER) return;
-  const [heroData, pulse] = await Promise.all([
+  var _r6 = await Promise.allSettled([
     loadHero(),
     loadPulse()
   ]);
+  const heroData = _r6[0].status === 'fulfilled' ? _r6[0].value : null;
+  const pulse = _r6[1].status === 'fulfilled' ? _r6[1].value : null;
   _tickerHeroData = heroData;
   _tickerPulseData = pulse;
   const fairValue = heroData?.fair_value ?? pulse?.fair_value ?? null;
@@ -6656,7 +6739,7 @@ async function refreshAll() {
   // Fire leaderboard badge enrichment (non-blocking)
   enrichLeaderboardBadges();
 
-  await Promise.all([
+  await Promise.allSettled([
     loadNarratives(),
     loadChart(),
     loadLifecycle(),
