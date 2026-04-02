@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Market Prism — NVDA Case Study: The Inverse Trap</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --obsidian: #0A0A0F;
+    --surface: #111118;
+    --surface2: #18181f;
+    --surface3: #1e1e28;
+    --border: rgba(255,255,255,0.07);
+    --amber: #FFB800;
+    --teal: #38C8B8;
+    --cyan: #00AEFF;
+    --mint: #00DE94;
+    --red: #FF4444;
+    --text: #E8E8F0;
+    --muted: rgba(232,232,240,0.55);
+    --dim: rgba(232,232,240,0.25);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--obsidian);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px; line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── COVER ── */
+  .cover {
+    min-height: 100vh; display: flex; flex-direction: column; justify-content: center;
+    padding: 80px 72px; position: relative; overflow: hidden;
+    border-bottom: 1px solid var(--border);
+  }
+  .cover::before {
+    content: ''; position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 65% 50% at 85% 30%, rgba(0,222,148,0.07) 0%, transparent 65%),
+      radial-gradient(ellipse 45% 55% at 5% 85%, rgba(0,174,255,0.04) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .cover-logo { margin-bottom: 52px; position: relative; z-index: 1; }
+  .cover-logo img { height: 32px; }
+  .cover-eyebrow {
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    letter-spacing: 0.22em; color: var(--mint);
+    text-transform: uppercase; margin-bottom: 28px;
+    display: flex; align-items: center; gap: 12px; position: relative; z-index: 1;
+  }
+  .cover-eyebrow::before { content: ''; width: 32px; height: 1px; background: var(--mint); }
+  .cover-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(0,222,148,0.08); border: 1px solid rgba(0,222,148,0.3);
+    color: var(--mint); font-family: 'DM Mono', monospace; font-size: 10px;
+    letter-spacing: 0.15em; text-transform: uppercase;
+    padding: 6px 14px; border-radius: 2px; margin-bottom: 40px; width: fit-content;
+    position: relative; z-index: 1;
+  }
+  .cover h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(46px, 6vw, 80px); font-weight: 900; line-height: 1.02;
+    letter-spacing: -0.02em; max-width: 860px; margin-bottom: 14px;
+    position: relative; z-index: 1;
+  }
+  .cover h1 em { font-style: italic; color: var(--mint); }
+  .cover-sub {
+    font-family: 'Playfair Display', serif; font-size: clamp(17px, 2vw, 24px);
+    font-style: italic; color: var(--muted); margin-bottom: 52px; max-width: 720px;
+    position: relative; z-index: 1;
+  }
+  .cover-meta { display: flex; gap: 44px; flex-wrap: wrap; position: relative; z-index: 1; }
+  .cover-stat { display: flex; flex-direction: column; gap: 4px; }
+  .cover-stat-val { font-family: 'DM Mono', monospace; font-size: 24px; font-weight: 500; color: var(--amber); }
+  .cover-stat-val.mint { color: var(--mint); }
+  .cover-stat-val.cyan { color: var(--cyan); }
+  .cover-stat-val.red { color: var(--red); }
+  .cover-stat-label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
+
+  /* ── LAYOUT ── */
+  .container { max-width: 960px; margin: 0 auto; padding: 0 48px; }
+  section { padding: 80px 0; border-bottom: 1px solid var(--border); }
+  section:last-child { border-bottom: none; }
+
+  .section-label {
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    letter-spacing: 0.25em; text-transform: uppercase; color: var(--mint);
+    margin-bottom: 20px; display: flex; align-items: center; gap: 10px;
+  }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(26px, 3.2vw, 38px); font-weight: 700;
+    line-height: 1.15; letter-spacing: -0.01em; margin-bottom: 20px;
+  }
+  p { color: rgba(232,232,240,0.80); margin-bottom: 16px; max-width: 720px; }
+  p:last-child { margin-bottom: 0; }
+  p strong { color: var(--text); }
+
+  /* ── SIGNAL GRID ── */
+  .signal-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 32px 0; }
+  .signal-card {
+    background: var(--surface2); border: 1px solid var(--border);
+    padding: 24px; position: relative; overflow: hidden;
+  }
+  .signal-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+  .signal-card.mint::before { background: var(--mint); }
+  .signal-card.amber::before { background: var(--amber); }
+  .signal-card.cyan::before { background: var(--cyan); }
+  .signal-card.red::before { background: var(--red); }
+  .signal-card.teal::before { background: var(--teal); }
+  .sig-label { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--dim); margin-bottom: 8px; }
+  .sig-val { font-family: 'DM Mono', monospace; font-size: 26px; font-weight: 500; color: var(--amber); line-height: 1; margin-bottom: 6px; }
+  .sig-val.mint { color: var(--mint); }
+  .sig-val.cyan { color: var(--cyan); }
+  .sig-val.red { color: var(--red); }
+  .sig-val.teal { color: var(--teal); }
+  .sig-desc { font-size: 12px; color: var(--muted); line-height: 1.4; }
+
+  /* ── CHIP ── */
+  .chip {
+    display: inline-block; font-family: 'DM Mono', monospace; font-size: 9px;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 3px 9px; border-radius: 2px; white-space: nowrap;
+  }
+  .chip.red { background: rgba(255,68,68,0.12); color: var(--red); border: 1px solid rgba(255,68,68,0.25); }
+  .chip.amber { background: rgba(255,184,0,0.1); color: var(--amber); border: 1px solid rgba(255,184,0,0.25); }
+  .chip.mint { background: rgba(0,222,148,0.1); color: var(--mint); border: 1px solid rgba(0,222,148,0.25); }
+  .chip.cyan { background: rgba(0,174,255,0.1); color: var(--cyan); border: 1px solid rgba(0,174,255,0.25); }
+  .chip.teal { background: rgba(56,200,184,0.1); color: var(--teal); border: 1px solid rgba(56,200,184,0.25); }
+  .chip.dim { background: rgba(255,255,255,0.04); color: var(--dim); border: 1px solid var(--border); }
+
+  /* ── TIMELINE ── */
+  .timeline { margin: 40px 0; position: relative; padding-left: 32px; }
+  .timeline::before {
+    content: ''; position: absolute; left: 6px; top: 0; bottom: 0; width: 1px;
+    background: linear-gradient(to bottom, var(--mint), var(--cyan), var(--amber), var(--red), transparent);
+  }
+  .timeline-item { position: relative; margin-bottom: 36px; }
+  .timeline-item::before {
+    content: ''; position: absolute; left: -28px; top: 6px; width: 8px; height: 8px;
+    border-radius: 50%; border: 2px solid var(--obsidian);
+  }
+  .timeline-item.bull::before { background: var(--mint); }
+  .timeline-item.bear::before { background: var(--red); }
+  .timeline-item.neutral::before { background: var(--amber); }
+  .timeline-item.pivot::before { background: var(--cyan); box-shadow: 0 0 8px rgba(0,174,255,0.5); }
+  .timeline-date { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 4px; }
+  .timeline-item.bull .timeline-date { color: var(--mint); }
+  .timeline-item.bear .timeline-date { color: var(--red); }
+  .timeline-item.neutral .timeline-date { color: var(--amber); }
+  .timeline-item.pivot .timeline-date { color: var(--cyan); }
+  .timeline-head { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+  .timeline-body { font-size: 13px; color: var(--muted); max-width: 620px; line-height: 1.6; }
+  .timeline-chips { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+
+  /* ── INVERSE TRAP BOX ── */
+  .inverse-trap {
+    background: linear-gradient(135deg, rgba(0,222,148,0.05) 0%, rgba(10,10,15,0) 60%);
+    border: 1px solid rgba(0,222,148,0.25);
+    padding: 48px; margin: 48px 0; position: relative; overflow: hidden;
+  }
+  .inverse-trap::before {
+    content: '';
+    position: absolute; top: -50px; right: -50px;
+    width: 180px; height: 180px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,222,148,0.08) 0%, transparent 70%);
+  }
+  .inverse-trap-label {
+    font-family: 'DM Mono', monospace; font-size: 9px;
+    letter-spacing: 0.3em; text-transform: uppercase; color: var(--mint); margin-bottom: 12px;
+  }
+  .inverse-trap h3 {
+    font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700;
+    margin-bottom: 16px; color: var(--mint);
+  }
+  .inverse-trap p { max-width: 100%; }
+  .it-stats { display: flex; gap: 32px; margin-top: 24px; flex-wrap: wrap; padding-top: 24px; border-top: 1px solid rgba(0,222,148,0.15); }
+  .it-stat { display: flex; flex-direction: column; gap: 4px; }
+  .it-stat-val { font-family: 'DM Mono', monospace; font-size: 20px; color: var(--mint); }
+  .it-stat-label { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--dim); }
+
+  /* ── CHINA CYCLE TABLE ── */
+  .cycle-table { width: 100%; border-collapse: collapse; margin: 28px 0; }
+  .cycle-table th {
+    font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.2em;
+    text-transform: uppercase; color: var(--dim); text-align: left;
+    padding: 8px 12px 8px 0; border-bottom: 1px solid var(--border);
+  }
+  .cycle-table td {
+    font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted);
+    padding: 9px 12px 9px 0; border-bottom: 1px solid rgba(255,255,255,0.03);
+    vertical-align: middle;
+  }
+  .cycle-table td.date-col { color: var(--dim); white-space: nowrap; }
+  .cycle-table td.src-col { color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 12px; }
+  .cycle-table td.srs-col { white-space: nowrap; }
+  .cycle-table td.narrative-col { font-style: italic; max-width: 240px; font-size: 11px; }
+  .cycle-table td.mat-col { text-align: center; }
+  .srs-row { display: flex; align-items: center; gap: 6px; }
+  .srs-track { width: 44px; height: 3px; background: var(--surface3); }
+  .srs-fill { height: 100%; }
+  .srs-fill.low { background: var(--red); }
+  .srs-fill.mid { background: var(--amber); }
+  .srs-fill.high { background: var(--mint); }
+  .srs-fill.vhigh { background: var(--cyan); }
+
+  /* ── VERDICT / PULLQUOTE ── */
+  .pullquote {
+    margin: 48px 0; padding: 40px 48px;
+    background: var(--surface2); border-left: 4px solid var(--mint);
+  }
+  .pullquote p {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(18px, 2.2vw, 24px); font-style: italic;
+    color: var(--text); line-height: 1.45; max-width: 100%; margin-bottom: 16px;
+  }
+  .pullquote-attr { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--mint); }
+
+  .verdict {
+    background: var(--surface2); border: 1px solid rgba(0,222,148,0.2);
+    padding: 40px; margin: 48px 0; position: relative;
+  }
+  .verdict::before {
+    content: 'PRISM VERDICT'; position: absolute; top: 20px; right: 24px;
+    font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.25em; color: var(--mint); opacity: 0.5;
+  }
+  .verdict h3 { font-family: 'Playfair Display', serif; color: var(--mint); font-size: 20px; margin-bottom: 12px; }
+  .verdict p { max-width: 100%; }
+
+  /* ── SCORE GRID ── */
+  .score-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); border: 1px solid var(--border); margin: 32px 0; }
+  .score-cell { background: var(--surface2); padding: 20px 24px; display: flex; flex-direction: column; gap: 4px; }
+  .score-name { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--dim); }
+  .score-val { font-family: 'DM Mono', monospace; font-size: 20px; font-weight: 500; color: var(--amber); }
+  .score-val.mint { color: var(--mint); }
+  .score-val.cyan { color: var(--cyan); }
+  .score-val.red { color: var(--red); }
+  .score-desc { font-size: 12px; color: var(--muted); }
+
+  /* ── OMISSION LIST ── */
+  .omission-list { margin: 28px 0; }
+  .omission-item { padding: 16px 20px; background: var(--surface2); border-left: 3px solid var(--cyan); margin-bottom: 8px; font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .omission-item .omit-source { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--cyan); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px; }
+  .omission-item strong { color: var(--text); }
+
+  /* ── FOOTER ── */
+  footer { background: var(--surface); border-top: 1px solid var(--border); padding: 60px 0 48px; }
+  .footer-inner { max-width: 960px; margin: 0 auto; padding: 0 48px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 20px; }
+  .footer-logo img { height: 26px; }
+  .footer-divider { width: 40px; height: 1px; background: var(--border); }
+  .footer-links { display: flex; gap: 32px; align-items: center; flex-wrap: wrap; justify-content: center; }
+  .footer-links a { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--mint); text-decoration: none; }
+  .footer-data-sources { background: var(--surface2); border: 1px solid var(--border); padding: 16px 24px; font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); text-align: left; max-width: 640px; width: 100%; }
+  .footer-data-sources .ds-label { color: var(--mint); letter-spacing: 0.2em; text-transform: uppercase; font-size: 9px; margin-bottom: 8px; }
+  .footer-data-sources .ds-list { display: flex; flex-wrap: wrap; gap: 4px 16px; color: var(--dim); }
+  .footer-data-sources .ds-list span::before { content: '· '; color: var(--mint); }
+  .footer-meta { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--dim); letter-spacing: 0.08em; line-height: 1.8; }
+
+  @media (max-width: 768px) {
+    .cover { padding: 60px 24px; }
+    .container { padding: 0 24px; }
+    .signal-grid { grid-template-columns: 1fr 1fr; }
+    .score-grid { grid-template-columns: 1fr; }
+    .footer-inner { padding: 0 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="container">
+    <div class="cover-logo"><img src="data:image/png;base64,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" alt="Market Prism"></div>
+    <div class="cover-eyebrow">Case Study · April 2, 2026</div>
+    <div class="cover-badge">⬡ Inverse Narrative Trap · Air Pocket Short Detected</div>
+    <h1>The <em>Inverse Trap</em> —<br>How NVIDIA Was<br>Talked Down</h1>
+    <div class="cover-sub">Five China narrative cycles. A Coordinated Campaign classification. High-SRS sources lending credibility to a bearish thesis. And a stock sitting $65 below where Market Prism's engine says it should be</div>
+    <div class="cover-meta">
+      <div class="cover-stat">
+        <span class="cover-stat-val mint">−27%</span>
+        <span class="cover-stat-label">Below Fair Value</span>
+      </div>
+      <div class="cover-stat">
+        <span class="cover-stat-val red">$175.75</span>
+        <span class="cover-stat-label">Current price (Apr 2, 2026)</span>
+      </div>
+      <div class="cover-stat">
+        <span class="cover-stat-val mint">$241.49</span>
+        <span class="cover-stat-label">Market Prism Fair Value</span>
+      </div>
+      <div class="cover-stat">
+        <span class="cover-stat-val amber">75/100</span>
+        <span class="cover-stat-label">Coordination Score</span>
+      </div>
+      <div class="cover-stat">
+        <span class="cover-stat-val cyan">18 months</span>
+        <span class="cover-stat-label">Platform surveillance record</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ══ 01 EXECUTIVE SUMMARY ══ -->
+<section>
+  <div class="section-label">01 · Executive Summary</div>
+  <h2>Every other case study<br>shows a stock talked up.<br>This one was talked down.</h2>
+  <p>The three case studies in Market Prism's current series — NKE, CCJ, and TSLA — share a common structure: coordinated bullish narratives inflating a stock above its fair value. NVIDIA is the counter-case. Here, coordinated <em>bearish</em> narratives have driven the stock to a <strong>27% discount to Market Prism's calculated fair value</strong> of $241.49. The platform's verdict on April 1, 2026 was <strong>Air Pocket Short</strong> — a classification reserved for situations where engineered negative sentiment has created an artificial price floor below fundamental value.</p>
+  <p>The mechanism is the same as a conventional trap — coordinated multi-source amplification, high-SRS sources lending credibility, systematic omission of contradicting information. But the direction is inverted. Where NKE's bulls pumped a declining stock toward $100, NVDA's bears have pushed a fundamentally strong company toward $175 while its SEC filings confirm robust revenue, strong margins, and dominant AI infrastructure positioning.</p>
+  <p>The story is China. More specifically: five interlocking narrative cycles about China export restrictions on Nvidia's H20 and H200 chips, Chinese localization efforts, and chip smuggling crackdowns — all generating bearish pressure from September 2024 through April 2026. Each cycle was structurally distinct. Each was classified by Market Prism as a narrative event with coordination signals. And each contributed to driving the stock progressively lower — below the point where the platform's fundamental anchor says it belongs.</p>
+
+  <div class="signal-grid">
+    <div class="signal-card mint">
+      <div class="sig-label">Fair Value Gap (Discount)</div>
+      <div class="sig-val mint">−$65.74</div>
+      <div class="sig-desc">Market trades at $175.75 — $65.74 below PRISM Fair Value of $241.49. FVD: −27.2%. The gap is negative: the stock is undervalued, not overvalued</div>
+    </div>
+    <div class="signal-card amber">
+      <div class="sig-label">Coordination Score (Apr 2)</div>
+      <div class="sig-val">75 / 100</div>
+      <div class="sig-desc">LIKELY_COORDINATED. 3 sources within 1 hour. Collision Class: COORDINATED_CLUSTER. Advanced Verdict: COORDINATED_CAMPAIGN</div>
+    </div>
+    <div class="signal-card cyan">
+      <div class="sig-label">Yesterday's Verdict</div>
+      <div class="sig-val cyan">Air Pocket Short</div>
+      <div class="sig-desc">April 1 verdict: Air Pocket Short — platform's classification for an engineered dip where narrative pressure has created a price floor below fundamental value. 68% continuation probability</div>
+    </div>
+    <div class="signal-card mint">
+      <div class="sig-label">Omission Gap Score</div>
+      <div class="sig-val mint">60–75 / 100</div>
+      <div class="sig-desc">Sustained high omission gap across the China bearish cycle. Articles systematically omit Blackwell architecture revenue, data center growth figures, and actual financial performance</div>
+    </div>
+    <div class="signal-card amber">
+      <div class="sig-label">Material Discrepancy Rate</div>
+      <div class="sig-val">~35%</div>
+      <div class="sig-desc">Approximately 35% of China-cycle articles triggered material_discrepancy = true across March–April 2026, confirmed against 10-K filing data</div>
+    </div>
+    <div class="signal-card teal">
+      <div class="sig-label">High-SRS Source Participation</div>
+      <div class="sig-val teal">SRS 82</div>
+      <div class="sig-desc">Barron's (SRS 82, Highly Reliable) and MarketWatch (SRS 75) participated in the bearish China narrative wave — the highest-credibility outlet combination in any case study</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 02 THE FIVE CHINA CYCLES ══ -->
+<section>
+  <div class="section-label">02 · Eighteen Months, Five China Cycles</div>
+  <h2>The story never changed.<br>The framing rotated<br>every six weeks.</h2>
+  <p>Market Prism's NVDA surveillance began in September 2024. What the 18-month record reveals is not a single coordinated campaign but a repeating playbook: China is the threat, and the specific mechanism — which chip, which restriction, which actor — is cycled in and out to sustain bearish pressure without any single narrative exhausting itself.</p>
+
+  <div class="timeline">
+
+    <div class="timeline-item bear">
+      <div class="timeline-date">Sep 2024 · Cycle 1</div>
+      <div class="timeline-head">China's domestic chip push — H20 demand threatened</div>
+      <div class="timeline-body">Benzinga (SRS 58) publishes the first China entry: domestic pressure on companies to adopt local chips instead of Nvidia's H20, framed as a geopolitical self-sufficiency drive. Drift: 30%. Causal logic: 85%. Platform does not yet have full scoring activated — this is the earliest canary in the record. The narrative is directionally real but incompletely quantified. No coordination signal at this stage.</div>
+      <div class="timeline-chips">
+        <span class="chip amber">Unscored · Pre-full-activation</span>
+        <span class="chip dim">Benzinga · Drift 30%</span>
+      </div>
+    </div>
+
+    <div class="timeline-item bull">
+      <div class="timeline-date">Nov 2024 – Jun 2025 · Structural Baseline</div>
+      <div class="timeline-head">AI infrastructure dominance — the filing-supported bull thesis</div>
+      <div class="timeline-body">A consistent stream of Motley Fool, GlobeNewswire, Benzinga, and Investing.com coverage tracks Nvidia's genuine AI infrastructure leadership: Hopper and Blackwell architecture demand, data center compute revenue growth, Run:ai acquisition, Oracle benefiting from NVDA demand. These articles score 0–20% drift against SEC filings — the cleanest alignment in NVDA's record. Platform verdict range: Plausible but Unverified to Needs Validation. Coordination score consistently 100 across Motley Fool entries — a baseline reading reflecting the outlet's automated publishing pattern rather than a coordination campaign. This period establishes the fundamental baseline that the bearish China cycle will later work against.</div>
+      <div class="timeline-chips">
+        <span class="chip mint">Plausible / Needs Validation</span>
+        <span class="chip dim">Drift 0–20% · Filing-adjacent</span>
+        <span class="chip dim">Motley Fool · GlobeNewswire · Benzinga</span>
+      </div>
+    </div>
+
+    <div class="timeline-item bear">
+      <div class="timeline-date">Apr 2025 · Cycle 2</div>
+      <div class="timeline-head">Huawei Ascend 910D — the competitive chip threat</div>
+      <div class="timeline-body">Investing.com (SRS 65, Reliable) introduces a new China angle: Huawei's Ascend 910D chip as a direct competitive threat to NVDA's AI chip market share. Drift: 30%. Causal logic: 80%. The filing confirms demand volatility exists but does not address the specific Huawei threat. Platform verdict: Plausible but Unverified. Coordination Score: 100. This is the first time the bearish China frame is applied to a specific named competitor rather than a general policy trend. It escalates the specificity of the threat without adding filing confirmation.</div>
+      <div class="timeline-chips">
+        <span class="chip red">Plausible but Unverified</span>
+        <span class="chip dim">Investing.com SRS 65 · Drift 30%</span>
+        <span class="chip dim">Huawei Ascend as existential threat</span>
+      </div>
+    </div>
+
+    <div class="timeline-item bear">
+      <div class="timeline-date">Dec 2025 · Cycle 3</div>
+      <div class="timeline-head">Unconfirmed M&A — AI21 Labs and Groq acquisitions claimed</div>
+      <div class="timeline-body">Benzinga publishes a claim that Nvidia is "aggressively acquiring" AI startups including AI21 Labs and Groq to build out AI talent. Drift: 100%. Platform verdict: Narrative Trap. The absence of SEC filing data to confirm any acquisition plans generates a maximum drift score — this is the single highest-drift entry in NVDA's record. While framed as bullish, the unconfirmable acquisition narrative introduces speculative valuation pressure in both directions. Coordination Score: 100. Causal logic: 75%. This entry marks the first Narrative Trap classification in NVDA's history.</div>
+      <div class="timeline-chips">
+        <span class="chip red">Narrative Trap</span>
+        <span class="chip red">Drift 100%</span>
+        <span class="chip dim">Benzinga · Unconfirmed acquisitions</span>
+      </div>
+    </div>
+
+    <div class="timeline-item bear">
+      <div class="timeline-date">Feb 17 – Mar 4, 2026 · Cycle 4 — COORDINATED</div>
+      <div class="timeline-head">AMD/Arista competition wave — 12 articles, 8 coordinated outlets</div>
+      <div class="timeline-body">The most structurally coordinated bearish phase prior to the China crackdown cycle. From February 17 through March 4, twelve articles across Motley Fool, Investor's Business Daily, Morningstar Canada, Seeking Alpha (×3), Analytics Insight (×2), Barron's, Silicon Canals, and The Chronicle-Journal published near-identical warnings that "increased competition from AMD and Arista threatens Nvidia's market dominance." Barron's (SRS 82.0, Highly Reliable) published at drift 40% with omission of revenue commitment data from the 10-K. Seeking Alpha reached Structurally Supported classification at drift 30% with Coordination Score 85. The filing confirms competition exists as a general risk but does not quantify AMD or Arista's specific impact. Multiple articles produced material_discrepancy = false only because the competitive risk is partially acknowledged in filings — but the magnitude of threat was systematically overstated relative to what the filing confirms.</div>
+      <div class="timeline-chips">
+        <span class="chip red">Narrative Trap / Needs Validation</span>
+        <span class="chip amber">Coordination 85/100</span>
+        <span class="chip amber">Barron's SRS 82 participating</span>
+        <span class="chip dim">12 articles · 8 outlets</span>
+      </div>
+    </div>
+
+    <div class="timeline-item pivot">
+      <div class="timeline-date">Mar 3 – Apr 2, 2026 · Cycle 5 — ACTIVE</div>
+      <div class="timeline-head">H200 export restrictions → brief easing → smuggling crackdown → localization — the current coordinated campaign</div>
+      <div class="timeline-body">The active and most damaging phase. Over five weeks, the China narrative cycled through four sub-frames in rapid succession — each sustaining bearish pressure for 4–6 days before pivoting to the next angle. H200 chip restrictions (Mar 3–6), a brief narrative reversal claiming easing of restrictions creating a buy signal (Mar 16–18), followed immediately by a smuggling crackdown narrative (Mar 19–24), and finally a localization/supply chain tightening narrative (Mar 30–Apr 2). The reversal on Mar 16–18 is particularly diagnostic — two outlets (The Tech Buzz, ET Edge Insights) published bullish claims about H200 sales resuming that contradicted the prior and subsequent bearish flow. The platform classified both as Structurally Supported. Then the smuggling frame resumed. Material discrepancy flags: 7 confirmed across the 5-week window. Coordination Score reaches 75 on April 2. Advanced verdict: COORDINATED_CAMPAIGN. 3 sources within 1 hour. Omission Gap Score: 60–75.</div>
+      <div class="timeline-chips">
+        <span class="chip cyan">Coordinated Watch · Air Pocket Short</span>
+        <span class="chip amber">Coordination 75/100</span>
+        <span class="chip red">7 Material Discrepancies</span>
+        <span class="chip dim">5 sub-frames · 5 weeks</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══ 03 THE CHINA CYCLE TABLE ══ -->
+<section>
+  <div class="section-label">03 · Cycle 5 in Detail — The Active China Campaign</div>
+  <h2>Four frames, five weeks,<br>one coordinated conclusion.</h2>
+  <p>The current bearish cycle running from March 3 through April 2 is the most structured in NVDA's record. What distinguishes it from the AMD/Arista wave is the narrative cycling — four distinct China-related angles deployed in sequence to sustain sustained bearish pressure, with high-SRS outlets anchoring each rotation.</p>
+
+  <table class="cycle-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Source</th>
+        <th>SRS</th>
+        <th>China Frame</th>
+        <th>Drift</th>
+        <th>Mat. Disc.</th>
+        <th>Verdict</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="date-col">Mar 3</td>
+        <td class="src-col">The Chronicle-Journal</td>
+        <td class="srs-col"><div class="srs-row">45 <div class="srs-track"><div class="srs-fill mid" style="width:45%"></div></div></div></td>
+        <td class="narrative-col">H200 restrictions to China — revenue risk</td>
+        <td>30%</td>
+        <td class="mat-col">—</td>
+        <td><span class="chip teal">Struct. Supported</span></td>
+      </tr>
+      <tr>
+        <td class="date-col">Mar 4</td>
+        <td class="src-col">Barron's</td>
+        <td class="srs-col"><div class="srs-row">82 <div class="srs-track"><div class="srs-fill vhigh" style="width:82%"></div></div></div></td>
+        <td class="narrative-col">H200 restrictions + competition — revenue risk</td>
+        <td>40%</td>
+        <td class="mat-col">—</td>
+        <td><span class="chip teal">Struct. Supported</span></td>
+      </tr>
+      <tr>
+        <td class="date-col">Mar 5</td>
+        <td class="src-col">Mexico Business News</td>
+        <td class="srs-col"><div class="srs-row">45 <div class="srs-track"><div class="srs-fill mid" style="width:45%"></div></div></div></td>
+        <td class="narrative-col">H200 restrictions halting production</td>
+        <td>40%</td>
+        <td class="mat-col"><span class="chip red">Yes</span></td>
+        <td><span class="chip amber">Monitoring</span></td>
+      </tr>
+      <tr>
+        <td class="date-col">Mar 6</td>
+        <td class="src-col">AOL.com</td>
+        <td class="srs-col"><div class="srs-row">45 <div class="srs-track"><div class="srs-fill mid" style="width:45%"></div></div></div></td>
+        <td class="narrative-col">H200 restrictions reducing market share</td>
+        <td>40%</td>
+        <td class="mat-col"><span class="chip red">Yes</span></td>
+        <td><span class="chip amber">Monitoring</span></td>
+      </tr>
+      <tr style="background: rgba(0,174,255,0.04);">
+        <td class="date-col">Mar 16–18</td>
+        <td class="src-col">The Tech Buzz (×2) · ET Edge Insights</td>
+        <td class="srs-col"><div class="srs-row">40–45 <div class="srs-track"><div class="srs-fill mid" style="width:42%"></div></div></div></td>
+        <td class="narrative-col">↑ REVERSAL: Restrictions eased, H200 sales resume — buy signal</td>
+        <td>10–20%</td>
+        <td class="mat-col">—</td>
+        <td><span class="chip teal">Struct. Supported</span></td>
+      </tr>
+      <tr>
+        <td class="date-col">Mar 19–20</td>
+        <td class="src-col">The Tech Buzz · MarketWatch</td>
+        <td class="srs-col"><div class="srs-row">40–75 <div class="srs-track"><div class="srs-fill high" style="width:75%"></div></div></div></td>
+        <td class="narrative-col">↓ REVERSAL REVERSED: New restrictions + smuggling allegations</td>
+        <td>20–30%</td>
+        <td class="mat-col">—</td>
+        <td><span class="chip teal">Struct. Supported</span></td>
+      </tr>
+      <tr>
+        <td class="date-col">Mar 23–24</td>
+        <td class="src-col">24/7 Wall St. · AlphaStreet</td>
+        <td class="srs-col"><div class="srs-row">45–55 <div class="srs-track"><div class="srs-fill mid" style="width:50%"></div></div></div></td>
+        <td class="narrative-col">Export restrictions + chip diversion — mixed uncertainty</td>
+        <td>10–20%</td>
+        <td class="mat-col">—</td>
+        <td><span class="chip amber">Monitoring</span></td>
+      </tr>
+      <tr>
+        <td class="date-col">Mar 30–31</td>
+        <td class="src-col">simplywall.st · AOL.com</td>
+        <td class="srs-col"><div class="srs-row">45 <div class="srs-track"><div class="srs-fill mid" style="width:45%"></div></div></div></td>
+        <td class="narrative-col">Smuggling crackdowns + localization tightening supply</td>
+        <td>30%</td>
+        <td class="mat-col"><span class="chip red">Yes</span></td>
+        <td><span class="chip amber">Regime Uncertainty</span></td>
+      </tr>
+      <tr>
+        <td class="date-col">Apr 1</td>
+        <td class="src-col">Investing.com</td>
+        <td class="srs-col"><div class="srs-row">65 <div class="srs-track"><div class="srs-fill high" style="width:65%"></div></div></div></td>
+        <td class="narrative-col">Smuggling + localization — AI hype cool-down buying opportunity</td>
+        <td>30%</td>
+        <td class="mat-col"><span class="chip red">Yes</span></td>
+        <td><span class="chip cyan">Air Pocket Short</span></td>
+      </tr>
+      <tr>
+        <td class="date-col">Apr 2</td>
+        <td class="src-col">The Motley Fool</td>
+        <td class="srs-col"><div class="srs-row">65 <div class="srs-track"><div class="srs-fill high" style="width:65%"></div></div></div></td>
+        <td class="narrative-col">Localization tightening supply chain — future growth hindered</td>
+        <td>30%</td>
+        <td class="mat-col">—</td>
+        <td><span class="chip amber">Coordinated Watch</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="inverse-trap">
+    <div class="inverse-trap-label">Classification · April 1–2, 2026</div>
+    <h3>Air Pocket Short — What This Classification Means</h3>
+    <p>Market Prism's Air Pocket Short verdict identifies situations where coordinated bearish narrative pressure has created an artificial price floor — a gap between where the stock is trading and where SEC-filing fundamentals suggest it should be. The "air pocket" is the space between $175.75 and $241.49 that has been cleared by narrative, not by deterioration in the underlying business.</p>
+    <p>The Investing.com article on April 1 is the clearest expression of this: it explicitly frames the NVDA dip as a "buying opportunity amid an AI hype cool-down." The platform's response — Air Pocket Short classification — reflects the detection of a compressed valuation created by coordinated bearish flow rather than fundamental deterioration. The underlying business, per the most recent SEC filings, remains intact: data center revenue growing on Blackwell architecture, no confirmation of the magnitude of China revenue loss claimed by bearish articles, and a VMS score of 68–75 confirming the filings are detailed and reliable.</p>
+    <div class="it-stats">
+      <div class="it-stat">
+        <span class="it-stat-val">−$65.74</span>
+        <span class="it-stat-label">Below fair value</span>
+      </div>
+      <div class="it-stat">
+        <span class="it-stat-val">56%</span>
+        <span class="it-stat-label">Probability of continuation</span>
+      </div>
+      <div class="it-stat">
+        <span class="it-stat-val">32%</span>
+        <span class="it-stat-label">Probability of volatility expansion</span>
+      </div>
+      <div class="it-stat">
+        <span class="it-stat-val">12%</span>
+        <span class="it-stat-label">Probability of mean reversion</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 04 WHAT EVERY ARTICLE OMITTED ══ -->
+<section>
+  <div class="section-label">04 · The Systematic Omission Pattern</div>
+  <h2>Seven confirmed material<br>discrepancies. One pattern.</h2>
+  <p>Market Prism's Claim Verification Engine flagged material discrepancies across seven articles in the China cycle. The pattern is precise and consistent: each article reporting a bearish China sub-narrative omits Nvidia's actual financial performance data — Blackwell architecture revenue, data center compute growth, and the broader technology stack — focusing only on the single China-specific risk vector. The filing confirms robust revenue. The articles confirm only the risk.</p>
+
+  <div class="omission-list">
+    <div class="omission-item">
+      <div class="omit-source">Mexico Business News · Mar 5, 2026 — Monitoring (Material Discrepancy)</div>
+      <strong>What the article said:</strong> H200 export restrictions halting production and impacting Nvidia's future revenue. <strong>What Market Prism found omitted:</strong> "The substantial revenue growth from data center compute and networking platforms, specifically NVIDIA's Blackwell architectures, and the company's dependence on infrastructure such as data centers and energy to maintain that growth."
+    </div>
+    <div class="omission-item">
+      <div class="omit-source">AOL.com · Mar 6, 2026 — Monitoring (Material Discrepancy)</div>
+      <strong>What the article said:</strong> H200 restrictions to China reducing Nvidia's market share. <strong>What Market Prism found omitted:</strong> "The broader drivers of Nvidia's revenue growth (data center compute and networking platforms for accelerated computing and AI solutions, particularly Blackwell architectures) and significant risk factors associated with AI infrastructure buildout."
+    </div>
+    <div class="omission-item">
+      <div class="omit-source">digitimes · Mar 9, 2026 — Monitoring (Material Discrepancy)</div>
+      <strong>What the article said:</strong> Export restrictions on H200 to China potentially halting production and impacting market share. <strong>What Market Prism found omitted:</strong> "The broader financial performance, growth drivers, and key risk factors detailed in the 10-K filing, such as overall revenue trends, the importance of Blackwell architectures, and resource availability risks."
+    </div>
+    <div class="omission-item">
+      <div class="omit-source">Yahoo Finance · Mar 10, 2026 — Monitoring (Material Discrepancy)</div>
+      <strong>What the article said:</strong> A billionaire's decision to buy more Nvidia stock — framed within the export restriction concern narrative. <strong>What Market Prism found omitted:</strong> "Critical information about Nvidia's business, financial performance, and risk factors disclosed in the 10-K filing." The article used a celebrity investor angle to launder bearish framing — the investor's buying is presented as contrarian rather than confirming of the underlying value.</div>
+    <div class="omission-item">
+      <div class="omit-source">AOL.com · Mar 12, 2026 — Monitoring (Material Discrepancy)</div>
+      <strong>What the article said:</strong> CEO's dismissal of a market sell-off as "illogical" in the context of China restriction concerns. <strong>What Market Prism found omitted:</strong> "Financial conditions, revenue drivers, and crucial risk factors related to data centers, energy, and capital that could impact future revenue, as detailed in the 10-K filing."
+    </div>
+    <div class="omission-item">
+      <div class="omit-source">AOL.com · Mar 31, 2026 — Regime Uncertainty (Material Discrepancy)</div>
+      <strong>What the article said:</strong> Nvidia's relative valuation versus Magnificent Seven peers. <strong>What Market Prism found omitted:</strong> "Crucial details about NVIDIA's business model, technology stack, and financial performance, as described in its SEC filings."
+    </div>
+    <div class="omission-item">
+      <div class="omit-source">Investing.com · Apr 1, 2026 — Air Pocket Short (Material Discrepancy)</div>
+      <strong>What the article said:</strong> Smuggling crackdowns and localization tightening supply chain — framed as "AI hype cool-down" creating buying opportunity. <strong>What Market Prism found omitted:</strong> "Any discussion of NVIDIA's business, revenue, or forward-looking statements as detailed in its SEC filings." Note: this is the Air Pocket Short classification — the article's own framing acknowledges the dip is a buying opportunity, yet the surrounding bearish ecosystem sustains the suppressed price.</div>
+  </div>
+
+  <div class="pullquote">
+    <p>"The inverse trap does not require the bearish claims to be false. It requires only that no single bearish article ever presents the complete picture — so the cumulative impression of Nvidia's China exposure is always darker than the filing data actually supports."</p>
+    <div class="pullquote-attr">Market Prism · Forensic Narrative Analysis · April 2, 2026</div>
+  </div>
+</section>
+
+<!-- ══ 05 WALSH ENGINE ══ -->
+<section>
+  <div class="section-label">05 · Walsh Engine Full Score Profile</div>
+  <h2>The signal structure<br>of a suppressed stock</h2>
+  <p>NVDA's score profile on April 2 reflects the unique dynamics of an inverse trap. Unlike CCJ (100% drift, zero SEC data) or TSLA (100% coordination, omission cascade), NVDA operates in a moderate-drift, moderate-coordination environment where each individual article passes superficial scrutiny — but the aggregate pattern, measured across 18 months, reveals a systematic bearish pressure campaign that has moved the stock below its filing-supported fair value.</p>
+
+  <div class="score-grid">
+    <div class="score-cell">
+      <div class="score-name">NRS — Narrative Risk Score</div>
+      <div class="score-val amber">40.9 <span style="font-size:13px;color:var(--dim)">/ 100</span></div>
+      <div class="score-desc">Band: MEDIUM. Moderate risk — the bearish China narrative has filing-adjacent support (competition and demand risks are acknowledged), preventing a High classification. The risk is in the systematic overstatement, not outright fabrication</div>
+    </div>
+    <div class="score-cell">
+      <div class="score-name">CCP — Claim Credibility Pressure</div>
+      <div class="score-val amber">54.4 <span style="font-size:13px;color:var(--dim)">/ 100</span></div>
+      <div class="score-desc">Mid-range — claims about China export risk are partially credible. But CCP cannot capture that the articles are consistently presenting the worst-case reading of a risk that the filing addresses with considerably more nuance</div>
+    </div>
+    <div class="score-cell">
+      <div class="score-name">VMS — SEC Truth Anchor</div>
+      <div class="score-val mint">68.0 <span style="font-size:13px;color:var(--dim)">/ 100</span></div>
+      <div class="score-desc">Good filing coverage — Nvidia's 10-K is detailed and current. Blackwell architecture revenue data, data center growth metrics, and forward guidance are all available. The bearish articles chose not to report them</div>
+    </div>
+    <div class="score-cell">
+      <div class="score-name">ACS — Analyst Credibility Score</div>
+      <div class="score-val mint">69.5 <span style="font-size:13px;color:var(--dim)">/ 100</span></div>
+      <div class="score-desc">Elevated — the NVDA China cycle includes Barron's (SRS 82), MarketWatch (SRS 75), Investor's Business Daily (SRS 68), Yahoo Finance (SRS 65), and Seeking Alpha (SRS 65). High-credibility sources dominate the bearish wave</div>
+    </div>
+    <div class="score-cell">
+      <div class="score-name">Coordination Score (Apr 2)</div>
+      <div class="score-val amber">75 / 100</div>
+      <div class="score-desc">LIKELY_COORDINATED. 3 sources within 1 hour. COORDINATED_CLUSTER collision class. Advanced verdict: COORDINATED_CAMPAIGN — confirmed on both April 1 and April 2</div>
+    </div>
+    <div class="score-cell">
+      <div class="score-name">Omission Gap Score</div>
+      <div class="score-val red">60–75 / 100</div>
+      <div class="score-desc">High and sustained. Omission gap readings of 60 (Apr 2) and 75 (Apr 1) reflect the most consistent pattern in NVDA's record: Blackwell revenue, data center growth, and overall financial performance are routinely absent from China-bearish articles</div>
+    </div>
+  </div>
+
+  <div class="verdict">
+    <h3>Why NVDA is the most dangerous case study for investors</h3>
+    <p>The three conventional traps — NKE, CCJ, TSLA — share a common investor risk: buying into a narrative-inflated price. The downside is overpaying. The NVDA inverse trap presents the opposite risk: selling out of, or failing to buy, a fundamentally sound business because a coordinated bearish media cycle has made the China risk appear larger than the SEC filings support.</p>
+    <p>The participation of Barron's (SRS 82.0, Highly Reliable) and MarketWatch (SRS 75.0, Reliable) in the AMD/Arista and H200 restriction cycles is the most consequential data point in this case file. When the platform's highest-SRS sources align with a coordinated bearish campaign — even at moderate drift scores — the reputational weight of those sources acts as a force multiplier on the bearish sentiment. An investor reading Barron's coverage of Nvidia's China risk has no reason to question it. Market Prism's engine does, and it has: drift 40%, omission of revenue commitment data, no quantification of the China revenue exposure despite the article treating it as material.</p>
+    <p>The price gap of $65.74 is the cost of that credibility asymmetry. Nvidia's fair value has not moved to $175. The narrative has moved the price to $175. The filing says $241.49.</p>
+  </div>
+</section>
+
+<!-- ══ 06 METHODOLOGY ══ -->
+<section>
+  <div class="section-label">06 · Methodology</div>
+  <h2>How Market Prism detects<br>the inverse trap</h2>
+  <p><strong>Walsh Narrative Decay Engine (Patent Pending #63/971,470)</strong> — the Air Pocket Short classification emerges from the engine's fair value divergence calculation when the FVD is negative (stock below fair value) while the coordination score and omission gap score remain elevated. A negative FVD combined with coordinated bearish narrative signals the suppression pattern. NVDA's decay rate of 0.21 reflects a slowly-decaying bearish narrative that is being continuously refreshed — China is an inexhaustible narrative substrate because the underlying geopolitical reality changes frequently enough to sustain new angles.</p>
+  <p><strong>Omission Gap Score</strong> — particularly diagnostic for inverse traps, where the omitted information is positive rather than negative. In a conventional trap, articles omit risk disclosures. In an inverse trap, articles omit financial performance data. NVDA's Omission Gap Score of 60–75 captures the consistent absence of Blackwell revenue, data center growth metrics, and actual EPS from articles that are nominally about Nvidia's financial prospects.</p>
+  <p><strong>Narrative Cycling Detection</strong> — the five-sub-frame structure of Cycle 5 (H200 restrictions → easing → smuggling → localization) is identified by tracking narrative_hash changes across sequential snapshots. When the same macro theme (China risk) is expressed through rapidly rotating specific claims without a primary source originating the rotation, the platform flags it as coordinated cycling. The brief bullish reversal on March 16–18 is particularly diagnostic — its rapid contradiction by the smuggling narrative three days later, without any change in underlying trade policy, indicates narrative management rather than genuine information flow.</p>
+  <p><strong>Source Credibility Weighting</strong> — the ACS score of 69.5 reflects the unusual concentration of high-SRS sources in NVDA's bearish cycle. Barron's, MarketWatch, and IBD are among the platform's most reliable outlets by historical directional accuracy. Their participation in a coordinated campaign does not mean the campaign is accurate — it means the campaign carries maximum reputational weight, which the engine factors into its classification of the suppression's durability.</p>
+</section>
+
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo"><img src="data:image/png;base64,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" alt="Market Prism"></div>
+    <div class="footer-divider"></div>
+    <div class="footer-links">
+      <a href="https://marketprism.co" target="_blank">marketprism.co</a>
+      <span style="color:var(--dim);font-family:'DM Mono',monospace;font-size:11px;">·</span>
+      <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--dim);letter-spacing:0.1em;">Patent Pending #63/971,470 · #63/971,478</span>
+    </div>
+    <div class="footer-data-sources">
+      <div class="ds-label">Data Sources</div>
+      <div class="ds-list">
+        <span>SEC EDGAR (10-K · Earnings · Guidance)</span>
+        <span>Financial Media Feeds (86+ publications)</span>
+        <span>Omission Gap Analysis Engine</span>
+        <span>Narrative Cycling Detection</span>
+        <span>Source Credibility Weighting (SRS)</span>
+        <span>Live Price &amp; Volume Data</span>
+        <span>Proprietary AI Signal Layer</span>
+      </div>
+    </div>
+    <div class="footer-meta">
+      Case Study produced April 2, 2026 &nbsp;·&nbsp; NVDA Air Pocket Short signal is active — this case is live and unresolved<br>
+      Past signal performance does not guarantee future results &nbsp;·&nbsp; © 2026 Market Prism. All rights reserved.
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
