@@ -3995,6 +3995,7 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
 // ── AUTH GUARD: redirect to login if not authenticated ──
 (async function enforceAuth() {
   try {
+    // Check beta access first (no external deps needed)
     var betaAccess = localStorage.getItem('mp-beta-access');
     if (betaAccess === 'true') {
       var betaExpires = localStorage.getItem('mp-beta-expires');
@@ -4008,12 +4009,22 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
       document.body.style.opacity = '1';
       return;
     }
-    if (typeof SUPA !== 'undefined' || typeof supa !== 'undefined') {
-      var client = typeof SUPA !== 'undefined' ? SUPA : supa;
-      var sess = await client.auth.getSession();
-      if (sess && sess.data && sess.data.session) {
-        document.body.style.opacity = '1';
-        return;
+    // Wait for Supabase library to load (external CDN script)
+    var _url = (window.__env && window.__env.SUPABASE_URL) || '';
+    var _anon = (window.__env && window.__env.SUPABASE_ANON) || '';
+    if (_url && _anon) {
+      // Poll for supabase lib (max 3 seconds)
+      for (var _i = 0; _i < 30 && !window.supabase; _i++) {
+        await new Promise(function(r){ setTimeout(r, 100); });
+      }
+      if (window.supabase) {
+        var _client = window.supabase.createClient(_url, _anon);
+        var sess = await _client.auth.getSession();
+        if (sess && sess.data && sess.data.session) {
+          window._mpCurrentUserEmail = (sess.data.session.user && sess.data.session.user.email || '').toLowerCase();
+          document.body.style.opacity = '1';
+          return;
+        }
       }
     }
     window.location.href = '/login';

@@ -497,10 +497,21 @@ var SUPABASE_URL=(window.__env||{}).SUPABASE_URL||'',SUPABASE_ANON=(window.__env
       }
       document.body.style.opacity = '1'; return;
     }
-    var client = typeof SUPA !== 'undefined' ? SUPA : (typeof supa !== 'undefined' ? supa : null);
-    if (client) {
-      var sess = await client.auth.getSession();
-      if (sess && sess.data && sess.data.session) { document.body.style.opacity = '1'; return; }
+    // Check for Supabase session via stored auth tokens
+    var _sbUrl = (window.__env && window.__env.SUPABASE_URL) || '';
+    var _sbAnon = (window.__env && window.__env.SUPABASE_ANON) || '';
+    if (_sbUrl && _sbAnon) {
+      // Check if Supabase auth tokens exist in localStorage (set by Supabase JS on login)
+      var _storageKey = 'sb-' + _sbUrl.replace(/https?:\/\//, '').split('.')[0] + '-auth-token';
+      var _token = localStorage.getItem(_storageKey);
+      if (_token) {
+        try {
+          var _parsed = JSON.parse(_token);
+          if (_parsed && _parsed.access_token && _parsed.expires_at && (_parsed.expires_at * 1000) > Date.now()) {
+            document.body.style.opacity = '1'; return;
+          }
+        } catch(_pe) {}
+      }
     }
     window.location.href = '/login';
   } catch(e) { window.location.href = '/login'; }
