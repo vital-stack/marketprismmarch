@@ -4,13 +4,11 @@ module.exports = async (req, res) => {
     const supabaseAnon = process.env.SUPABASE_ANON || '';
     const siteUrl = 'https://marketprism.co';
 
-    // Static pages
+    // Static pages — PUBLIC only (no dashboard, ticker, daily, heatmap)
     const staticPages = [
       { loc: '/', priority: '1.0', changefreq: 'daily' },
-      { loc: '/dashboard', priority: '0.9', changefreq: 'daily' },
       { loc: '/blog', priority: '0.9', changefreq: 'daily' },
-      { loc: '/heatmap', priority: '0.8', changefreq: 'daily' },
-      { loc: '/daily', priority: '0.8', changefreq: 'daily' },
+      { loc: '/casestudies', priority: '0.8', changefreq: 'weekly' },
       { loc: '/pricing', priority: '0.7', changefreq: 'monthly' },
       { loc: '/methodology', priority: '0.6', changefreq: 'monthly' },
     ];
@@ -72,23 +70,23 @@ module.exports = async (req, res) => {
       xml += '  </url>\n';
     }
 
-    // Ticker pages + programmatic SEO pages
+    // Case study pages (public)
+    const caseStudies = ['nke', 'ccj', 'tsla', 'nvda'];
+    for (const slug of caseStudies) {
+      xml += '  <url>\n';
+      xml += `    <loc>${siteUrl}/casestudy/${slug}</loc>\n`;
+      xml += '    <changefreq>monthly</changefreq>\n';
+      xml += '    <priority>0.7</priority>\n';
+      xml += '  </url>\n';
+    }
+
+    // SEO pages only (NOT ticker pages — those require auth)
     for (const t of tickers) {
-      const ticker = t.ticker;
-      const tickerLower = ticker.toLowerCase();
+      const tickerLower = t.ticker.toLowerCase();
       const lastmod = t.date
         ? new Date(t.date).toISOString().split('T')[0]
         : '';
 
-      // Main ticker page
-      xml += '  <url>\n';
-      xml += `    <loc>${siteUrl}/ticker/${ticker}</loc>\n`;
-      if (lastmod) xml += `    <lastmod>${lastmod}</lastmod>\n`;
-      xml += '    <changefreq>daily</changefreq>\n';
-      xml += '    <priority>0.8</priority>\n';
-      xml += '  </url>\n';
-
-      // SEO pages
       const seoPages = [
         `/why-is-${tickerLower}-stock-down`,
         `/is-${tickerLower}-overvalued`,

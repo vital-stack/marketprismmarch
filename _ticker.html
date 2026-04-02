@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <!-- Google tag (gtag.js) -->
@@ -8,7 +8,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Stock Analysis — Market Prism | Narrative Intelligence & Signals</title>
 <meta name="description" content="Deep AI-powered stock analysis with narrative scoring, sentiment signals, and institutional-grade equity intelligence. Decode what's really driving the price.">
-<meta name="robots" content="index, follow">
+<meta name="robots" content="noindex, nofollow">
 <link rel="icon" type="image/png" href="/assets/Market-Prism-Favicon.png">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&family=Anton&family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!-- Geist fonts removed per design standards -->
@@ -20,7 +20,7 @@
     --mp-obsidian: #F8F9FC;
     --mp-deep: #FFFFFF;
     --mp-surface: #FFFFFF;
-    --mp-surface2: #F3F4F8;
+    --mp-surface2: #FAFBFC;
     --mp-border: rgba(0,0,0,0.08);
     --mp-border-mid: rgba(0,0,0,0.12);
     --mp-border-hover: rgba(0,0,0,0.18);
@@ -55,7 +55,7 @@
     --accent-supported: #00DE94;
     --bg: #F8F9FC;
     --surface: #FFFFFF;
-    --surface2: #F3F4F8;
+    --surface2: #FAFBFC;
     --surface3: #E8EAF0;
     --border: rgba(0,0,0,0.08);
     --border-strong: rgba(0,0,0,0.12);
@@ -87,6 +87,7 @@
     line-height: 1.5;
     font-weight: 400;
     overflow-x: hidden;
+    opacity: 0; transition: opacity 0.2s;
   }
 
   /* ── App Layout + Sidebar ── */
@@ -175,13 +176,14 @@
   }
   .sidebar-overlay.visible { display: block; }
 
+  .table-scroll-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   @media (max-width: 768px) {
     .sidebar { transform: translateX(-100%); transition: transform 0.2s; }
     .sidebar.open { transform: translateX(0); }
     .mobile-topbar { display: flex; }
-    .main-content { margin-left: 0; padding-top: 52px; overflow-x: hidden; }
+    .main-content { margin-left: 0; padding-top: 52px; overflow-x: auto; }
     .page-wrap { padding: 16px 12px 60px; }
-    .section-body { overflow-x: hidden; }
+    .section-body { overflow-x: auto; }
   }
 
   .page-wrap {
@@ -3062,12 +3064,9 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
 <script src="/billing-config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    // Apply saved theme immediately to prevent flash (light is default)
+    // Apply saved theme immediately — dark is default, only switch to light if explicitly chosen
     (function(){
-      var t=localStorage.getItem('mp-theme');
-      if(t==='dark'){
-        document.documentElement.setAttribute('data-theme','dark');
-      }
+      if(localStorage.getItem('mp-theme')==='light') document.documentElement.setAttribute('data-theme','light');
     })();
     function applyTheme(t){
       document.documentElement.setAttribute('data-theme', t === 'dark' ? 'dark' : '');
@@ -3091,11 +3090,11 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
       applyTheme(next);
       localStorage.setItem('mp-theme', next);
     }
-    // Initialize toggle button state on load
+    // Initialize toggle button state on load — default to dark
     document.addEventListener('DOMContentLoaded', function(){
       var t = localStorage.getItem('mp-theme');
-      if(t === 'dark') applyTheme('dark');
-      else applyTheme('light');
+      if(t === 'light') applyTheme('light');
+      else applyTheme('dark');
     });
   </script>
 </head>
@@ -3947,7 +3946,7 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
       <!-- Filings table -->
       <div class="section">
         <div class="section-label">Filing History</div>
-        <div class="section-body" style="padding:0;overflow:hidden;">
+        <div class="section-body table-scroll-wrap" style="padding:0;">
           <table class="fund-table" id="fund-filings-table">
             <thead><tr>
               <th style="text-align:left;padding:12px 16px;">Date</th>
@@ -3974,6 +3973,37 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
     </div>
   </main>
 </div>
+<script>
+// ── AUTH GUARD: redirect to login if not authenticated ──
+(async function enforceAuth() {
+  try {
+    var betaAccess = localStorage.getItem('mp-beta-access');
+    if (betaAccess === 'true') {
+      var betaExpires = localStorage.getItem('mp-beta-expires');
+      if (betaExpires && Date.now() > parseInt(betaExpires)) {
+        localStorage.removeItem('mp-beta-access');
+        localStorage.removeItem('mp-beta-expires');
+        localStorage.removeItem('mp-beta-tier');
+        window.location.href = '/login';
+        return;
+      }
+      document.body.style.opacity = '1';
+      return;
+    }
+    if (typeof SUPA !== 'undefined' || typeof supa !== 'undefined') {
+      var client = typeof SUPA !== 'undefined' ? SUPA : supa;
+      var sess = await client.auth.getSession();
+      if (sess && sess.data && sess.data.session) {
+        document.body.style.opacity = '1';
+        return;
+      }
+    }
+    window.location.href = '/login';
+  } catch(e) {
+    window.location.href = '/login';
+  }
+})();
+</script>
 <script>
 // ── Mobile sidebar toggle ────────────────────────────────────────────────────
 (function() {
@@ -4539,16 +4569,6 @@ async function loadChart() {
     });
 
     ALL_DECAY = decayRows;
-
-    // Debug: log data counts and sample verdicts to console
-    const bearCount = ALL_NARRS.filter(n => n.isBear).length;
-    const bullCount = ALL_NARRS.filter(n => !n.isBear).length;
-    const verdicts = [...new Set(ALL_NARRS.map(n => n.verdict))];
-    const trends = [...new Set(ALL_NARRS.map(n => n.narrative_trend))];
-    console.log(`[Chart Debug] Prices: ${ALL_SNAPS.length}, Stories: ${ALL_NARRS.length} (bull: ${bullCount}, bear: ${bearCount}), Decay: ${ALL_DECAY.length}`);
-    console.log(`[Chart Debug] Verdict values:`, verdicts);
-    console.log(`[Chart Debug] Trend values:`, trends);
-    if (ALL_NARRS.length) console.log(`[Chart Debug] Sample story:`, ALL_NARRS[0]);
 
     if (!ALL_SNAPS.length) {
       document.getElementById('chart-outer').innerHTML = '<div class="chart-no-data">No price history available.</div>';
@@ -6760,16 +6780,13 @@ async function loadFinancialsData() {
   const contentEl = document.getElementById('fin-content');
 
   try {
-    console.log('[Financials] Fetching live quote for', TICKER);
     const res = await fetch('/api/live-quote?ticker=' + encodeURIComponent(TICKER));
-    console.log('[Financials] live-quote status:', res.status);
     if (!res.ok) {
       const errText = await res.text().catch(() => '');
       console.warn('[Financials] live-quote error body:', errText);
       throw new Error('API returned ' + res.status + ': ' + errText.slice(0, 200));
     }
     const d = await res.json();
-    console.log('[Financials] live-quote data:', d);
     if (!d || !d.price) throw new Error('No price data in response');
 
     const fmtP = (v) => v != null ? '$' + Number(v).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) : '—';

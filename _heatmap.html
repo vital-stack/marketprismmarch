@@ -8,7 +8,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Market Heatmap — Market Prism | Stock Sentiment & Narrative Strength</title>
 <meta name="description" content="Visual AI heatmap of stock market sentiment and narrative strength across sectors. See which stocks have the strongest AI-detected signals in real time.">
-<meta name="robots" content="index, follow">
+<meta name="robots" content="noindex, nofollow">
 <link rel="canonical" href="https://marketprism.co/heatmap">
 <link rel="icon" type="image/png" href="/assets/Market-Prism-Favicon.png">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -59,6 +59,7 @@
     color: var(--mp-text-primary);
     min-height: 100vh;
     line-height: 1.5;
+    opacity: 0; transition: opacity 0.2s;
   }
   body::after {
     content: '';
@@ -602,6 +603,29 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
 
 const SUPABASE_URL  = window.__env?.SUPABASE_URL  || '';
 const SUPABASE_ANON = window.__env?.SUPABASE_ANON || '';
+
+// ── AUTH GUARD ──
+(async function() {
+  try {
+    var betaAccess = localStorage.getItem('mp-beta-access');
+    if (betaAccess === 'true') {
+      var betaExpires = localStorage.getItem('mp-beta-expires');
+      if (betaExpires && Date.now() > parseInt(betaExpires)) {
+        localStorage.removeItem('mp-beta-access');
+        localStorage.removeItem('mp-beta-expires');
+        localStorage.removeItem('mp-beta-tier');
+        window.location.href = '/login'; return;
+      }
+      document.body.style.opacity = '1'; return;
+    }
+    var client = typeof SUPA !== 'undefined' ? SUPA : (typeof supa !== 'undefined' ? supa : null);
+    if (client) {
+      var sess = await client.auth.getSession();
+      if (sess && sess.data && sess.data.session) { document.body.style.opacity = '1'; return; }
+    }
+    window.location.href = '/login';
+  } catch(e) { window.location.href = '/login'; }
+})();
 
 // Always render fallback data immediately so the grid is never stuck on skeletons
 ALL_TICKERS = FALLBACK_TICKERS;

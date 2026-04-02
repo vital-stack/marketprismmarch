@@ -42,6 +42,7 @@ body{
   line-height:1.5;
   font-weight:300;
   -webkit-font-smoothing:antialiased;
+  opacity:0;transition:opacity 0.2s;
 }
 /* ── AMBIENT ── */
 .ambient-glow{position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;overflow:hidden;}
@@ -481,6 +482,30 @@ body{
 <script>
 'use strict';
 var SUPABASE_URL=(window.__env||{}).SUPABASE_URL||'',SUPABASE_ANON=(window.__env||{}).SUPABASE_ANON||'',ANTHROPIC_KEY=(window.__env||{}).ANTHROPIC_KEY||'';
+
+// ── AUTH GUARD ──
+(async function() {
+  try {
+    var betaAccess = localStorage.getItem('mp-beta-access');
+    if (betaAccess === 'true') {
+      var betaExpires = localStorage.getItem('mp-beta-expires');
+      if (betaExpires && Date.now() > parseInt(betaExpires)) {
+        localStorage.removeItem('mp-beta-access');
+        localStorage.removeItem('mp-beta-expires');
+        localStorage.removeItem('mp-beta-tier');
+        window.location.href = '/login'; return;
+      }
+      document.body.style.opacity = '1'; return;
+    }
+    var client = typeof SUPA !== 'undefined' ? SUPA : (typeof supa !== 'undefined' ? supa : null);
+    if (client) {
+      var sess = await client.auth.getSession();
+      if (sess && sess.data && sess.data.session) { document.body.style.opacity = '1'; return; }
+    }
+    window.location.href = '/login';
+  } catch(e) { window.location.href = '/login'; }
+})();
+
 var DOMAIN_MAP={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadcom.com',AAPL:'apple.com',MSFT:'microsoft.com',GOOGL:'google.com',META:'meta.com',AMZN:'amazon.com',ADBE:'adobe.com',TSLA:'tesla.com',NFLX:'netflix.com',SPOT:'spotify.com',RDDT:'reddit.com',PLTR:'palantir.com',CRM:'salesforce.com',NOW:'servicenow.com',WDAY:'workday.com',PANW:'paloaltonetworks.com',CRWD:'crowdstrike.com',HOOD:'robinhood.com',COIN:'coinbase.com',SOFI:'sofi.com',DASH:'doordash.com',UBER:'uber.com',ABNB:'airbnb.com',OPEN:'opendoor.com',JPM:'jpmorganchase.com',GS:'goldmansachs.com',V:'visa.com',MA:'mastercard.com',BAC:'bankofamerica.com',PYPL:'paypal.com',LLY:'lilly.com',JNJ:'jnj.com',PFE:'pfizer.com',ABBV:'abbvie.com',NVO:'novonordisk.com',XOM:'exxonmobil.com',CVX:'chevron.com',OXY:'oxy.com',SLB:'slb.com',EOG:'eogresources.com',FCX:'fcx.com',AA:'alcoa.com',ADM:'adm.com',BHP:'bhp.com',VALE:'vale.com',BA:'boeing.com',LMT:'lockheedmartin.com',CAT:'caterpillar.com',MSCI:'msci.com',SMR:'nuscalepower.com',CCJ:'cameco.com',DUK:'duke-energy.com',NEE:'nexteraenergy.com',VST:'vistraenergy.com'};
 var DATA=[],PULSE_DATA=[],TRAP_DATA=[],ANALOG_DATA=[],SECTOR_DATA=[],SCENARIO_DATA=[],AI_ENHANCED=false;
 

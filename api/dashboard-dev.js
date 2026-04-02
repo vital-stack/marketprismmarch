@@ -9,7 +9,7 @@ module.exports = (req, res) => {
 
     let html = resolveTemplate('_template_dev.html');
 
-    const scholarEnabled = process.env.ANTHROPIC_API_KEY ? 'true' : '';
+    const scholarEnabled = process.env.ANTHROPIC_KEY ? 'true' : '';
 
     html = html.replace(
       "window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '', SCHOLAR_ENABLED: '', ANTHROPIC_KEY: '', MASSIVE_API: '' };",
