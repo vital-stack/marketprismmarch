@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Market Prism — CCJ Case Study: The Uranium Narrative Machine</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --obsidian: #0A0A0F;
+    --surface: #111118;
+    --surface2: #18181f;
+    --surface3: #1e1e28;
+    --border: rgba(255,255,255,0.07);
+    --amber: #FFB800;
+    --teal: #38C8B8;
+    --cyan: #00AEFF;
+    --mint: #00DE94;
+    --red: #FF4444;
+    --text: #E8E8F0;
+    --muted: rgba(232,232,240,0.45);
+    --dim: rgba(232,232,240,0.25);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--obsidian);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── COVER ── */
+  .cover {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 80px 72px;
+    position: relative;
+    overflow: hidden;
+    border-bottom: 1px solid var(--border);
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 70% 50% at 85% 35%, rgba(56,200,184,0.07) 0%, transparent 65%),
+      radial-gradient(ellipse 40% 60% at 5% 85%, rgba(255,184,0,0.04) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .cover-logo { margin-bottom: 52px; }
+  .cover-logo img { height: 32px; }
+  .cover-eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    color: var(--teal);
+    text-transform: uppercase;
+    margin-bottom: 28px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .cover-eyebrow::before {
+    content: ''; display: block; width: 32px; height: 1px; background: var(--teal);
+  }
+  .cover-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(56,200,184,0.08);
+    border: 1px solid rgba(56,200,184,0.25);
+    color: var(--teal);
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    letter-spacing: 0.15em; text-transform: uppercase;
+    padding: 6px 14px; border-radius: 2px;
+    margin-bottom: 40px; width: fit-content;
+  }
+  .cover h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(48px, 6.5vw, 84px);
+    font-weight: 900; line-height: 1.02;
+    letter-spacing: -0.02em;
+    max-width: 860px; margin-bottom: 14px;
+  }
+  .cover h1 em { font-style: italic; color: var(--teal); }
+  .cover-sub {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(18px, 2.2vw, 26px);
+    font-style: italic; color: var(--muted);
+    margin-bottom: 52px; max-width: 700px;
+  }
+  .cover-meta { display: flex; gap: 44px; flex-wrap: wrap; }
+  .cover-stat { display: flex; flex-direction: column; gap: 4px; }
+  .cover-stat-val {
+    font-family: 'DM Mono', monospace; font-size: 26px;
+    font-weight: 500; color: var(--amber);
+  }
+  .cover-stat-val.red { color: var(--red); }
+  .cover-stat-val.teal { color: var(--teal); }
+  .cover-stat-label {
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim);
+  }
+
+  /* ── LAYOUT ── */
+  .container { max-width: 960px; margin: 0 auto; padding: 0 48px; }
+
+  section { padding: 80px 0; border-bottom: 1px solid var(--border); }
+  section:last-child { border-bottom: none; }
+
+  .section-label {
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    letter-spacing: 0.25em; text-transform: uppercase; color: var(--teal);
+    margin-bottom: 20px; display: flex; align-items: center; gap: 10px;
+  }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(26px, 3.2vw, 38px); font-weight: 700;
+    line-height: 1.15; letter-spacing: -0.01em; margin-bottom: 20px;
+  }
+  p {
+    color: rgba(232,232,240,0.80);
+    margin-bottom: 16px; max-width: 720px;
+  }
+  p:last-child { margin-bottom: 0; }
+  p strong { color: var(--text); }
+
+  /* ── SIGNAL CARDS ── */
+  .signal-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 16px; margin: 32px 0;
+  }
+  .signal-card {
+    background: var(--surface2); border: 1px solid var(--border);
+    padding: 24px; position: relative; overflow: hidden;
+  }
+  .signal-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  }
+  .signal-card.amber::before { background: var(--amber); }
+  .signal-card.red::before { background: var(--red); }
+  .signal-card.teal::before { background: var(--teal); }
+  .signal-card.mint::before { background: var(--mint); }
+  .sig-label { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--dim); margin-bottom: 8px; }
+  .sig-val { font-family: 'DM Mono', monospace; font-size: 28px; font-weight: 500; color: var(--amber); line-height: 1; margin-bottom: 6px; }
+  .sig-val.red { color: var(--red); }
+  .sig-val.teal { color: var(--teal); }
+  .sig-val.mint { color: var(--mint); }
+  .sig-desc { font-size: 12px; color: var(--muted); line-height: 1.4; }
+
+  /* ── TIMELINE ── */
+  .timeline { margin: 40px 0; position: relative; padding-left: 32px; }
+  .timeline::before {
+    content: ''; position: absolute; left: 6px; top: 0; bottom: 0;
+    width: 1px; background: linear-gradient(to bottom, var(--teal), var(--amber), var(--red), transparent);
+  }
+  .timeline-item { position: relative; margin-bottom: 36px; }
+  .timeline-item::before {
+    content: ''; position: absolute; left: -28px; top: 6px;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--teal); border: 2px solid var(--obsidian);
+  }
+  .timeline-item.neutral::before { background: var(--amber); }
+  .timeline-item.bear::before { background: var(--red); }
+  .timeline-item.shift::before { background: var(--mint); box-shadow: 0 0 8px rgba(0,222,148,0.4); }
+  .timeline-date { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.15em; color: var(--teal); text-transform: uppercase; margin-bottom: 4px; }
+  .timeline-item.neutral .timeline-date { color: var(--amber); }
+  .timeline-item.bear .timeline-date { color: var(--red); }
+  .timeline-item.shift .timeline-date { color: var(--mint); }
+  .timeline-head { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+  .timeline-body { font-size: 13px; color: var(--muted); max-width: 620px; }
+  .timeline-chips { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+
+  /* ── CHIP ── */
+  .chip {
+    display: inline-block; font-family: 'DM Mono', monospace; font-size: 9px;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 3px 9px; border-radius: 2px; white-space: nowrap;
+  }
+  .chip.red { background: rgba(255,68,68,0.12); color: var(--red); border: 1px solid rgba(255,68,68,0.25); }
+  .chip.amber { background: rgba(255,184,0,0.1); color: var(--amber); border: 1px solid rgba(255,184,0,0.25); }
+  .chip.teal { background: rgba(56,200,184,0.1); color: var(--teal); border: 1px solid rgba(56,200,184,0.25); }
+  .chip.mint { background: rgba(0,222,148,0.1); color: var(--mint); border: 1px solid rgba(0,222,148,0.25); }
+  .chip.dim { background: rgba(255,255,255,0.04); color: var(--dim); border: 1px solid var(--border); }
+
+  /* ── SOURCE TABLE ── */
+  .source-table { width: 100%; border-collapse: collapse; margin: 28px 0; }
+  .source-table th {
+    font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.2em;
+    text-transform: uppercase; color: var(--dim); text-align: left;
+    padding: 8px 16px 8px 0; border-bottom: 1px solid var(--border);
+  }
+  .source-table td {
+    font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted);
+    padding: 10px 16px 10px 0; border-bottom: 1px solid rgba(255,255,255,0.03);
+    vertical-align: top;
+  }
+  .source-table td.source-name { color: var(--text); font-size: 13px; font-family: 'DM Sans', sans-serif; }
+  .source-table td.verdict { }
+  .srs-bar { display: flex; align-items: center; gap: 8px; }
+  .srs-track { flex: 1; height: 3px; background: var(--surface3); max-width: 80px; }
+  .srs-fill { height: 100%; background: var(--amber); }
+  .srs-fill.low { background: var(--red); }
+  .srs-fill.high { background: var(--mint); }
+
+  /* ── PULLQUOTE ── */
+  .pullquote {
+    margin: 48px 0; padding: 40px 48px;
+    background: var(--surface2); border-left: 4px solid var(--teal);
+  }
+  .pullquote p {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(18px, 2.2vw, 24px); font-style: italic;
+    color: var(--text); line-height: 1.45; max-width: 100%; margin-bottom: 16px;
+  }
+  .pullquote-attr {
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    letter-spacing: 0.15em; text-transform: uppercase; color: var(--teal);
+  }
+
+  /* ── VERDICT BOX ── */
+  .verdict {
+    background: var(--surface2); border: 1px solid rgba(56,200,184,0.2);
+    padding: 40px; margin: 48px 0; position: relative;
+  }
+  .verdict::before {
+    content: 'PRISM VERDICT'; position: absolute; top: 20px; right: 24px;
+    font-family: 'DM Mono', monospace; font-size: 9px;
+    letter-spacing: 0.25em; color: var(--teal); opacity: 0.5;
+  }
+  .verdict h3 {
+    font-family: 'Playfair Display', serif; color: var(--teal);
+    font-size: 20px; margin-bottom: 12px;
+  }
+  .verdict p { max-width: 100%; }
+
+  /* ── SCORE GRID ── */
+  .score-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 1px; background: var(--border);
+    border: 1px solid var(--border); margin: 32px 0;
+  }
+  .score-cell {
+    background: var(--surface2); padding: 20px 24px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .score-name {
+    font-family: 'DM Mono', monospace; font-size: 9px;
+    letter-spacing: 0.2em; text-transform: uppercase; color: var(--dim);
+  }
+  .score-val {
+    font-family: 'DM Mono', monospace; font-size: 22px;
+    font-weight: 500; color: var(--amber);
+  }
+  .score-val.red { color: var(--red); }
+  .score-val.teal { color: var(--teal); }
+  .score-val.mint { color: var(--mint); }
+  .score-desc { font-size: 12px; color: var(--muted); }
+
+  /* ── NARRATIVE PHASE CHART (CSS-only) ── */
+  .phase-chart { margin: 36px 0; }
+  .phase-row {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
+  }
+  .phase-date {
+    font-family: 'DM Mono', monospace; font-size: 10px; color: var(--dim);
+    letter-spacing: 0.08em; width: 80px; flex-shrink: 0; text-align: right;
+  }
+  .phase-bar-wrap {
+    flex: 1; height: 28px; background: var(--surface2);
+    border: 1px solid var(--border); position: relative; overflow: hidden;
+  }
+  .phase-bar {
+    height: 100%; display: flex; align-items: center; padding: 0 10px;
+    font-family: 'DM Mono', monospace; font-size: 9px;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--obsidian);
+    font-weight: 500; white-space: nowrap;
+  }
+  .phase-bar.bull { background: rgba(0,222,148,0.7); color: #0a1a12; }
+  .phase-bar.bear { background: rgba(255,68,68,0.6); color: #1a0808; }
+  .phase-bar.trap { background: rgba(255,184,0,0.7); color: #1a1000; }
+  .phase-sentiment {
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    color: var(--muted); width: 50px; text-align: right; flex-shrink: 0;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--surface); border-top: 1px solid var(--border); padding: 60px 0 48px;
+  }
+  .footer-inner {
+    max-width: 960px; margin: 0 auto; padding: 0 48px;
+    display: flex; flex-direction: column; align-items: center;
+    text-align: center; gap: 20px;
+  }
+  .footer-logo img { height: 26px; }
+  .footer-divider { width: 40px; height: 1px; background: var(--border); }
+  .footer-links {
+    display: flex; gap: 32px; align-items: center;
+    flex-wrap: wrap; justify-content: center;
+  }
+  .footer-links a {
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--teal); text-decoration: none;
+  }
+  .footer-meta {
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    color: var(--dim); letter-spacing: 0.08em; line-height: 1.8;
+  }
+  .footer-data-sources {
+    background: var(--surface2); border: 1px solid var(--border);
+    padding: 16px 24px; font-family: 'DM Mono', monospace; font-size: 10px;
+    color: var(--muted); text-align: left; max-width: 640px; width: 100%;
+  }
+  .footer-data-sources .ds-label {
+    color: var(--teal); letter-spacing: 0.2em; text-transform: uppercase;
+    font-size: 9px; margin-bottom: 8px;
+  }
+  .footer-data-sources .ds-list {
+    display: flex; flex-wrap: wrap; gap: 4px 16px; color: var(--dim);
+  }
+  .footer-data-sources .ds-list span::before { content: '· '; color: var(--teal); }
+
+  @media (max-width: 768px) {
+    .cover { padding: 60px 24px; }
+    .container { padding: 0 24px; }
+    .signal-grid { grid-template-columns: 1fr 1fr; }
+    .score-grid { grid-template-columns: 1fr; }
+    .footer-inner { padding: 0 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="container">
+    <div class="cover-logo">
+      <img src="data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAB7AiYDASIAAhEBAxEB/8QAHQABAAIDAQEBAQAAAAAAAAAAAAgJBQYHBAMCAf/EAFcQAAEEAQIDBAMIDQkEBwkAAAEAAgMEBQYRBxIhCDFBURM3YQkUIkJ1drO0FRcyNVJxc4GRlaGy0hYjOFdigpSx0TM2VVYYNENyhJLCR1RjhaLBxNPh/8QAHAEBAAICAwEAAAAAAAAAAAAAAAIEBQYBAwgH/8QAMBEBAAIBAQYEBAUFAAAAAAAAAAECAwQFERIhMUEGUWGxMnGBwRMiNEKyM3Kh4fD/2gAMAwEAAhEDEQA/AIZIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIv6xrnuDWNLnHuAG5KyL8BnWV/fD8Lkmwkb+kNV4b+nbZcxEyjNq16yxqL+kEHYjYhfxcJCIv6ASdgNyUH8RZNmns++t75Zg8m6Dbf0gqPLdvx7bLGua5ri1zS1w6EEbEJuRretukv4iIiQiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICDqdgiy2jKjL+sMLRkALLGQgicD5OkaD/muYjfO5G94pWbT2SG4C8M6uGxcGo81XbNlLLA+GN7dxXYe7p+ER138F11x/EvrajEEz4g0MDT8EDuA8F5nOW94MFNPjilI/28ybW2pqNqaq2ozT16R5R2iHEOO3CyO3FLqXTNVrLDAXW6sTdhIPw2gePmPFR5PQ7FTxc7w71wTjvwwZGJtU6dr7bnmuVY2+J73tA/aPzrX9p6DdM5ccfOH0nwX4um3DoNbbn0raf4z9p+jhIBJ2HUqSnZ84RRVY4dU6qqh9lwD6dOVu4jHg94PxvIeH41jOz5wtaRDqvUlXc9H0a0g/RI4f5D86kMw7bAdFV0ml/fdX8c+MpiLbP0NufS1o/jH3n6Pewt2AA6DuXD+0Xwpp5TF2dV4Gu2DI1mGS1DG3YWGDvOw+OP2rtUTivt6NthjoXtBa8FrgfIq7kxxlrw2fL9ibX1GyNZTUYZ7847THeJ/wC5dVdKLL62pxY7Webx8DQ2KrkbELAPBrZHAfsCxCwMxunc9U47xkpF46TzERFwmItoZw64gvYHs0LqhzXDcEYmcgj/AMq+N/QmuMfSmu39G6iqVYWF8s02MmYyNo7y5xbsB7Sg11ERARZrB6S1XnabrmE0zmspWa8xump0JZmBwAJaXNaRvsQdvaF7/tccQ/8AkPVP6on/AIEGrIvrcrWKduancry17MEjo5oZWFj43tOzmuaeoIIIIPcvkgIiICIiAiIgIi92nsXZzmfx2FpGMWshaiqwmQ7ND5Hhrdz12G5CDwopH/8AQ04tf++6W/x0v/6lybjJwz1Fwq1PW09qaWhJcsUm3WGnK6Rno3PewblzWnfeN3TbyQaSiIgIiICIiAiL9RsfJI2ONrnvcQGtaNySfAIPyiyP2Czf/Bsj/hn/AOi8lurZpy+it1pq8m2/JKwtO3nsUHxREQEWTwOns/qB8zMDg8nlXQgGUUqj5jGDvtzcgO2+x7/JZb7XHEP/AJD1T+qJ/wCBBqyLaftccQ/+Q9U/qif+BYHKY3I4q0auUoW6M4G5iswujePzOAKDyIiICIiAi2vhBpSPXHE7T+k5rJrQ5K6yGaVv3TY+93L/AGuUHb27KzbT/CPhjg8IzD0NC6fNUR+jf6ejHM+UbbHne8FzyfMkoKnkUiO3Hwq09w51niMlpas2jjc7DM80mu3ZDNE5nOWA9WsIkaQ3uBB26bAR3QEREBERAREQEREBERAREQEREBZ/hv6xNNfK1X6ZqwCz/Df1iaa+Vqv0zVPH8cOjVf0L/KfZPrJY/wB+Qh8YAnaOn9oeS1mUOY4tcCCDsQe8LeY2fBHTwWL1DijZYbMDf59o+E0fHHn+NbxGTtLzfk0E3px0jm1RxJOwC1XWWe9DHJi6Ug9K4cs8jfiD8Ee1enVWb+x7XUqrgbjhs9w/7Efxf5LRuTqSSSSdyT3lVs9u0Lmy9nxMxmyRy7R9296D1F75azE3ngTsG0Eh6ekA+KfaFucbuq4k1pa4OaSCDuCDsQfNdH0XqAZKNtG48NvMHwXHumH8SpWiVfbOzOGZz4o5d48vVuMG7iGgbk+Cy8EHoY+v3Z7/AGexMVQMEQlmH864bgH4o/1Xqe3oV1xeN7B00k1jit1V58TPWRqf5Xt/TPWvLYeJnrI1P8sW/pnrXlgL/FL1Lof02P8Atj2ERFFaXHYf700/yDP3Qvxn8XSzmDv4XJRCalfrSVrEZ+NG9pa4foJX7w/3pp/kGfuhepBUHr3Td3R+tcxpfIf9ZxlySs522weGu2Dx7HDZw9hCwgBJAAJJ7gFKv3RXQ/2N1vidd1IGtr5iD3rcc0D/AKxEPguPtdHsB+SXLuyPon+XPHTB1JovSUMa/wCyd0EbgxwkFrT7HSGNp9hKCfvZ20V/IDg5p7TksYZcZWFi95++JfhvB8+Uu5R7GhdAREFTXHb1368+cmR+syLTFufHb1368+cmR+syKUXYv7PeGn07T4j65x0V+e5/O4mhYbzRRxeEz2no5zu9oO4A2PUkcoRCxmltTZSobmM05mLtYAkzV6UkjNgdieZoIWNlq2YbZpy15o7LX8hhcwh4d5cvfv7FcjGxkcbY42tYxoAa1o2AA8AtN4icM9Ka3t4zJZXHRMy2LuQW6WQiYBPG6KRrwwu73MO2xaenXcbEAgKq/sFm/wDg2R/wz/8AReS5UtU5RFbrTV5C3mDZYywkeex8OhVySgB7o7678N824PrNlBHCnjshcYZKdC1YY07F0ULngHy6BfWXC5iKJ0suJvsjY0uc51d4DQO8k7dApze5veqbUPy676CFSF4j4SxqXh5qTTlSWKGxlcTapRSSb8jHywuYC7brsC4b7IKia8M1idkFeKSaV52YxjS5zj5ADvW2cL6luhxj0lUvVZ6tiPO0eeKaMse3eeMjcHqOhBVlHBvhDozhbhY6mn8bFJfLALWTmYHWbDvHd3xW+TBsB7TuTCzjR/TtPzkxf+VdBYmoAe6O+u/DfNuD6zZU/wBQO7f2IyOe7RWmsLiKklu/dwNaCvDGN3Pe61ZAH/8AfBBGGlQvXef3nTsWeTbn9FE5/Lv3b7Dp3Fej7BZv/g2R/wAM/wD0VofZ84X47hRw7q6fruZPkJT74ydsD/bzkddv7LRs1o8hv3krzdo3i1jOEuhJMrN6OxmLnNDiqZPWaXbq5w7+Rm4Lj7QO9wQVcWYJ60zoLMMkMrduZkjS1w3G/UH2L5rJ5nJZnVWpbGTyM9jJZfJ2eeR5+E+aV56AAe0gADu6AKwDs4dmjTOhsNUzOr8bUzWqpGiR/p2iWCkSPuI2n4LnDxeQTv8Ac7DvCAuK0pqnLQCfF6azN+ItLg+tRkkaQO87taeix+Sx9/G2fe2RpWac/KHejsROjdse47OAOyuOa0NaGtADQNgAOgWL1TpvT+qcVJi9R4ajlaUg2MNqESAe0b9x6DqNiNkFPi3LgzQvWOKOkrNelZlgjztLnkZE5zW7TsJ3IGw6dV07tdcBY+FeSr5/Tbp5tLZGUxMbKeZ9KbYuERd8ZpAJaT1+CQdyNz3/ANzi9SGZ+ck/1asgkyoA+6CYzJXOOdWWpj7diMYOu3mihc4b+lm6bgKfyIKaZY3xSuilY5kjHFrmuGxaR3gjwK/K3Pjt679efOTI/WZFpiCYXuaH321z+QpfvTKayhT7mh99tc/kKX70ymsgLE6q01p/VWJkxWpMNSytKQbOhtQh4HtG/Vp7uo2I2VUOO19rnHXI7dHWOoK88ZBa9mRlB6Hf8LqPYVaPwZzWV1Hwn0tns4zlyV/FwT2Dy8vO5zAefbw5vutvDdBX/wBrPgt9qXV9ebEySz6by/O+i6TcuruaRzQOd47BwLSepB8S0lcep47IXGGSnQtWGNOxdFC54B8ugU/vdD6lebgXUsysBmr5uAwu8RzRytI/EQe72DyWM9ze9U2ofl130EKCDMuFzEUTpZcTfZGxpc5zq7wGgd5J26BeSvDNYnZBXikmledmMY0uc4+QA71btxHwljUvDzUmnKksUNjK4m1Sikk35GPlhcwF23XYFw32Wu8G+EOjOFuFjqafxsUl8sAtZOZgdZsO8d3fFb5MGwHtO5IVgYS5n9Jauo5ClHax+bx1mOeBr4i2RkgIc0FhG536dCOoPtU0sB2wZfsMz7PcL8+Mo1mz/eXWCR3mOYBzQevT4W3mVxnjR/TtPzkxf+VdWJoKtO0XxQ1JxS1pHlc7jHYitWh9Hj8eQf5mMnckuIBc5xHV2wHQDbouZKTPujvrvw3zbg+s2V4+xbwQx3ErLXdT6pjdNp7EzNhbUBIFywRzcriOvI0FpIHfzNHdug4DiMNmMxKYsRir2Qkbtu2rXfKRv3dGgr7ZnTeosK0uzOAyuNAIG9unJF1PcPhAK3bFY7FYLFx0cXRp42hXbsyGvE2KKNo8gNgAvu9tS/UdG8QWq8oLXNID2PHiD4FBTavpXhmsTNhrxSTSu+5Yxpc4/iAUxO2j2e8JiNP2OI+haEeOjrOactjoG7Q8jiGiaJo6M2JHM0dNjv02O/E+xz/SU0d+Xn+rSoOafYLN/wDBsj/hn/6LxWYJ60zoLMMkMrduZkjS1w3G/UH2K5RaRj+Fuj6/ErM8Q7OMhv5/JyQubYssD/ejY4Y4g2IHo0nk3Lu/4W2+yCrOTTWo46ZuyYDKsqhvOZnU5AwN8+bbbZYpXMKP/aN7NOnuI0UeW0zFR0/qMTM9NOyLlhtRlwDzI1ve8DdwcOp25T3gtCuuvDNYnZBXikmledmMY0uc4+QA717sngM7jIBPksLkqUROwfYqvjaT5buAVpnCLhRozhhhI6Gm8XELRYG2cjKwOs2XeJc/vA3+KNmjwC3exDDYgfBYiZNFI0tex7Q5rge8EHvCCmpFMTttcA8Hg8DJxI0Tj2Y+KKVrctQgbtCGvPK2djfifCLWuaOnUHYbHeHaAiIgLYOG3rE018rVfpmrX1sHDb1iaa+Vqv0zVKnxQ6dRG/Fb5T7LFY4/gj8Sxuosp9jovRVyDbcNx5RjzPtXuydxtGsOUB07x8Bp8PaVpl7nke6R7i57ju5x7yVumOnHO+XxrS4YrMb3PdUYc+nlvQAkvJdM3x3Pe5a8GBdLtx7krVM3ivROdYgb8Dvc38H2/iXZm0/Liqu6nTTw8dPqwAZ1Wf05jC2eK7Ju17HB0I8QR3OXyxOPEj2zTN+D8Vvn7VtNSIDY7KherWNdrZrHBV0PT2WGSriOYhtpo+EPwx5hZCRvRaJRe+J7ZI3Fr2ncELc8ZebfrkkBszB8Nv8A9wsbkrNJ3ww9M0Zt9bdfdXtxN9ZGp/li39M9a8th4m+sjU/yxb+meteWHt1l6U0f6fH8o9hERcLK47D/AHpp/kGfuhYTM6phxnEbTmlJy1pzdG/NC4nq6Wua55B+Nksjv7izeH+9NP8AIM/dCjF249U2NE8ROEGq6xeHY27eme1ve+PeqJGf3mFzfzoOs9qLQ/8AL/gpncNDEJMhXi9/UOm59PFu4Ae1zedn99cp9zu0R9iOHWT1taj2s52x6GsSO6tCS3ceXNIX7/8AcapP1LEFupDbrSNlgmjbJG9vc5rhuCPxgr4YXGUMLiq+LxdWKpSrM5IYYxs1jfIIMPnNUQUNead0oxzTaysdqy4bblsMLBufZu+Rn6D+bZFFTSusP5W9v/IRwy+kp4TE2MXBsem8exl/P6V0g/EApVoKp+LFA5XtGatxbZBGbmrrlcPPc3nuPbv+1WoY2nWx2OrY+lE2GtVhZDDG3uYxoDWgfiACqy4pX2YrtI6qykjHPZT1hcnc1ve4MuPcQP0K1GrPDarRWa8jZIZWB8b29zmkbgj8yCOvbW4157hnjsTp/SMsVbM5Vj5pLjmNe6tC0gDla4EcziSNyDsGnpuQRxPs39pbiBFxJxOA1jl5M9iMxcipuNhjRLWfI4MbI1zQCRzEbg79N9tiusdu/hHqTXFLDar0nj5cncxccle3SgbzTPicQ5r2N73Fp5gWjcnmGw6FcG7MfA3Xed4p4TK5bTmUwuFxF2K7as3q7q/OY3B7Y2B4BcXFoB2HQEkkdNwsbUAPdHfXfhvm3B9Zsqf6gB7o7678N824PrNlB1z3N71Tah+XXfQQqT9meGtWls2JWRQxML5JHnZrWgbkk+AAUYPc3vVNqH5dd9BCu48c3OZwS125ri1w03kCCDsQfe0iCO+r+25h6mUmraX0RZylRjy1lu3e97ekAPeIwxxAPeNyD5gdyjqNZycQu0/htYy49uPfktQ455rNl9II+V8TNubYb/c793iuVraeEPrZ0f8ALtL6diC29ahLoDD2OLzeJNtonyVfDx4uk1w6VwJZnySD+04Shu/gA78Irb1qrtdYeLit9rqw/wBDlZMRHlapcelhhlljexv9pvow7bxDifilB79d6qwmidKX9Tahttq4+jHzyO73OPc1jR4ucdgB5lVc8a+I+a4o68t6my7jHG7+apVA7dlWAE8sY8z1JJ8SSfYrNuLOgsHxJ0Ne0pnoz6CwOeGdo+HWmG/JKz2gn84JB6EqrjidojO8PNZ3tLahr+it1Xbskb1jnjP3ErD4tcOvmOoOxBCDoXYpwFbPdonAC2xkkOPbNfLHt35nxxn0Z/GHljv7qswVa3YezNbEdorCMtENZkIbFNrj3B7oy5v6XNDfzqylBF3jnwe7QOvteXMpitfYfFYKOXbGUYsrbg9FG0bBzmxw7GQ9STudt9gdgF2PgLg+Imm9Ctw3ErOUM5lK9hwr3a08krnwEN5RI6RjCXh3N167jbqo7ceu0Hxs4a8TMpp5+FwQxpsOdirEuPlIsV3HdmzhIA5wBDXbfGB6BbjpvUPa5zmCp5eLTuh6cduISshuMkima093MwybtJHXY9Rv12PRB0/tPYStnuAGtKlpjHCviprsZcPuXwN9M0jyO7Nvz+SgD2fOImttN6y07pnBaiuUMPfz9Z1qpFy8kpkkjjfvuN+rWgfmUjuNeou0vh+FWo7GsaWgq+Cnovp3H1nSGbknHodmDn+6+H0/Soj8IiG8V9IOcQAM7SJJ8P59iC3BQp7bfFTiFovjDWxGltVX8VRdiIJ3QQFvKXmSUF3UHrs0foU1lB3t5cPdc5/i/j8zp/SWbzVCTDxQ+mx1GSwGSMklLmu5AeU7Oaevfv07jsEU8vkLuWy1zK5Kw+zduzvsWZn/AHUkj3FznH2kkleVfe/UtUL1ijerTVbdaV0M8E0ZZJE9p2cxzT1a4EEEHqCF8EEwvc0Pvtrn8hS/emU1lCn3ND77a5/IUv3plNZBzPHcAeDdC02zX4fYd0jSCPTMdM3p/ZeSD+hdLa0NaGtADQNgAOgVf8vbT4qvjLW4TR8RPxm07G4/TOQtG4hdpDi1rWjLj7uohjaEo2kr4uIVw8eReN5CPAjm2I7wg6V2+uLOL1TmKPD/AE/Zjt08NYdYyFiM7sda5SwRtPceRrn7nr1dt8Urpvub3qm1D8uu+ghUClPX3N71Tah+XXfQQoJP2Z4a1aWzYlZFDEwvkkedmtaBuST4ABRJ1f23MPUyk1bS+iLOUqMeWst273vb0gB7xGGOIB7xuQfMDuUiOObnM4Ja7c1xa4abyBBB2IPvaRVMoOqDWcnELtP4bWMuPbj35LUOOeazZfSCPlfEzbm2G/3O/d4q0RVIcIfWzo/5dpfTsVt6CAHujvrvw3zbg+s2V1X3ODUOOn4c5/SwlibkqmUN10Y6OfDLHGwP9uzo3Anw3b5hcq90d9d+G+bcH1mytZ4N8FuOE1LE8QuHhiqNnaZKluLJRxuIDi1zXNJ6jdpBa4EHbqCgntxi0FR4l8P7+kMhkLlCC2WO9PWI5muY4ObuD0c3cDcH9h2K4Hw/4N8cuCQyZ4cZ3SuqaN0NL6WVbPAQ9u+z42NeGNcQdiS/r08ht6szxd4+cKtKx5vijoLCZbGtsMrut0LwilBcDsXhnO3rttuGtG5A8V07gFxx0xxhr32YelkMdkMe1jrNW01p+C7fZzHtJDhuCOux9iCL3GTtD8bsdQy2htf6D03ihkqctWZr6NgF8cjC1zon+nLHbc3RzdwCPYub9jn+kpo78vP9WlU7+09ojF644MagqX68brVClLfx85HwoZ4mF42PgHAFp9jj7FBDsc/0lNHfl5/q0qCzxQt7ZHH/AFzpziZZ0Lo3JnC1sbDCbdiKJrpp5ZIxJsHOB5Whr2dwB35tyRsBNJVm9tr+k7q7/wAF9SgQSM7EHG/VPEDJZbR+sbjcldp1Pf1S6YmskdEHtY9j+UBp2L2EHbfqd9/CUygB7nF678z825/rNZT/AEFevHbtL8S7PEzMUdLZ+TB4bG3ZK1WGtFGXSCNxaZHuc0lxcRvt3AEDbvJk52OuKmb4pcOrdnUrYn5bF3Pes1mNgYLDS0Oa8tHQO6kEAbdAfHZV48Qf9/dQ/Kln6VymZ7mx/uFqv5Uj+iCCQXGmhDlOEGsMfPtyTYS43fbflPoXEO/MQD+ZVKq3bif6tNUfI9v6F6qJQEREBZrQdiOnrjA25jtHBkq8j/xNlaT/AJLCr+gkEEHYjqCuYndO9G9eKs181jOUk9NakkJBG+w/EFi7EfQlc47P3EmlqrTcGGyNlkWZpMEZa93WdgGwePP2rp87Oi3jSZa5aRavR8ktpMml1E4skc4/z6sHZi7yuG8cuI8VKOXTuCsB9t3wbM7D/sh+CD5/5LYeO3FGtp6vLgcHK2XLSN2kkad21wf/AFexRgke+SR0kji57iS5xO5JPisftXanBE4cU8+8+Xo3PY2zOKIzZY5do+6QXBDXsWZgjwWXmAyUQ2hkef8AbtH/AKh+1dlrs7lBmCaWvMyeCR0csbg5j2nYtI7iCpRcEOI9XVFCPE5SZkWYgZseY7Cw0fGHt8wqWh1vHH4eTr2ad418L2w8Wu0lfy/uiO3rHp5+Xy6dVrt6brJY2b3tZZMTs0fdfi8V44W9AFznj3xBp6W0zPiqdlrszdjMcbGO+FC09C8+Xs81PVTFImZfNtl6HPtDW0wYI3zMx9I7zPpCMPECxFb15qG3A4PimylmRjh4tdK4g/oKwaIsA9Q46RjpFY7chERE1x2H+9NP8gz90KHvumn/ALPv/mX/AOKoys4rcUWMaxnEnWTWtGwAzlkADy+7WH1PqzVWqPe/8ptS5rN+9ub3v9kb0tj0XNtzcvO48u/K3fbv2HkgsS7FWs/5X8BsVDNKH3cG44qcbnfljAMR6/8Aw3MG/mCuj8U9Uw6J4c5/Vc5btjaMk0bXHYPl22jZ/eeWt/OqqNNax1dpiGaHTWqc5hY53B0zMfkJa7ZCOgLgxw3I9q9Wc4g69z2Mlxec1vqXKUJSDJWuZWeaJ+xBG7HOIOxAI6d4Qdi7Btmxd7SAuWpXTWJ8fbllkcdy97uUkn2klWIKnfT+czensiMjgMxkMTdDCwWKNl8Eoae8czCDsfJbH9tjin/WXrP9e2f40Djt679efOTI/WZFMTsT8csXn9KUOHepr8dbP41gr498z9hegaPgNaT/ANowfB5e8tAI3+FtA+/btX71i9eszWrdmV00880hfJK9x3c9zj1c4kkknqSV8QSCCCQR3EILl1gNZ6w0/pCvSlzl+Ou+/cipU4d95LE0jwxrWN7z1O5PcBuSqwsPxl4rYmgKFDiBqGOs1vK1jrr38g8mlxJaOnhstay2p9SZbOR53KZ/KXcrE9r4rs9t75o3NO7S15O7dj1Gx6eCC4FQA90d9d+G+bcH1myuM/bY4p/1l6z/AF7Z/jWv6k1Dn9S3mXtR5zJ5m3HEIWT37b7EjWAkhgc8khu7nHbu3J80E4vc3vVNqH5dd9BCu4cdvUhrz5t5H6tIqudN611lpmpJT05q3P4WtLJ6SSHH5Gaux79gOYtY4AnYAb+wL3X+JvEm/RsUb3ELVtqpZidDPBNmbD45WOGzmOaX7OaQSCD0IKDUltPCH1s6P+XaX07Fqy+tOzYp24blOxLXswSNkhmieWPje07tc1w6gggEEdyC5NQT7eedymmO0lpfUGFsurZDH4KtPXlHg5tqz3jxB7iPEEhcG+2xxT/rL1n+vbP8a1/Umoc/qW8y9qPOZPM244hCye/bfYkawEkMDnkkN3c47d25PmgtP4JcQ8XxP4eUNU40tjkkb6K7WB3Naw0DnjPs6gg+LSD4rV+1FwbpcWtFFlVsUGpcc10mMsu6Bx8YXn8B23f8U7HzBrh0zrDVumIpotNapzmFjncHTNx9+WuJCO4uDHDcjc9/msv9tjin/WXrP9e2f40GvvZmtKaoAeyxjMzibYOzm8sleeN246HxDh+xWQ9nLjzpringqtO1brY7VkUYbcxz3cvpXAdZId/umHqdhuW9x8Ca2M1lspm8lLk81krmSvTbels253TSv2AA5nuJJ2AA6nwXkje+ORskbnMe0gtc07EEeIQXLLzZXIUMVj5sjlLtejTgbzzT2JBHHG3zLj0AVV+G40cWMRWFahxB1C2Fo5WskuOlDR5Dn327vBa/qrWmr9VuB1LqfMZgNdzNbcuSStaf7LXHYfmCDuXbK49VeI9yDSOkppXaaoTelmskFvv6YbgEA9fRtBO2/eTvt0ao507E9O3DbrSuingkbJE9ve1zTuCPxEL5IgtQ4BcXNO8VtH1shRtwQ5mKJrcnjS/aWvLt1IaepjJ6tcOm3Q7EEDpCpuo27dC3Hbo2p6tmI7xywyFj2HzDh1C2qPirxQjYGR8SNYsY3oGtzlkAf/Wg/XHb1368+cmR+syLTF979u1fvWL16zNat2ZXTTzzSF8kr3Hdz3OPVziSSSepJXwQTC9zQ++2ufyFL96ZTWVP+mdVao0w+d+mtSZjCOsBonOPvSVzKG78odyOG+25238ys39tjin/AFl6z/Xtn+NBpiIiAp6+5veqbUPy676CFQKWf03rXWWmaklPTmrc/ha0snpJIcfkZq7Hv2A5i1jgCdgBv7AgtG47epDXnzbyP1aRVNLbb/E3iTfo2KN7iFq21UsxOhngmzNh8crHDZzHNL9nNIJBB6EFakg2nhD62dH/AC7S+nYrb1TZTs2KduG5TsS17MEjZIZonlj43tO7XNcOoIIBBHctu+2xxT/rL1n+vbP8aDs3ujvrvw3zbg+s2VnOxJx6w+lcd9rrWlxlHHundLi8hKdooXPO7oZD8VpcS4OPQFztyOii7qTUOf1LeZe1HnMnmbccQhZPftvsSNYCSGBzySG7ucdu7cnzWMQXHWIcdmMW+GeKrkMfaj2cx7WyxTMI7iDuHA/oXg0tpTTGla81fTOnsVhopn88rKNRkIkd5u5QN/zqqXSmvtb6UiEOm9W5vEw9T6GrdkZGSe8lgPKf0LNZvjRxYzNc17/EHULoiNnMiuOhDh16Hk23HXx9nkEE1u2NxowWjNBZXSGOvR2tT5irJUEEEgLqcUjS18khH3B5SQ0d5JB7gSojdjn+kpo78vP9WlXJZHvkkdJI5z3uJLnOO5JPiV6sNlMnhcnDk8PkbeOvQEmGzUmdFLGSCCWvaQR0JHQ9xQXGKs3ttf0ndXf+C+pQLTPtscU/6y9Z/r2z/GtZzeWyucyk2UzeTu5O/Py+ltXJ3TSycrQ0cz3Ek7NAA3PcAEEjPc4vXfmfm3P9ZrKf6p603qHP6avPvaczmTw1uSIwvnoW315HMJBLC5hBLd2tO3duB5LYPtscU/6y9Z/r2z/GgxHEH/f3UPypZ+lcpme5sf7har+VI/ogoN2JprFiSxYlkmmleXySPcXOe4nckk9SSfFZnTWstX6Zry19N6rzuFhmeHyx4/IS12yOA2BcGOAJ28SgtZ4n+rTVHyPb+heqiVt9rijxMtVpatriLq+eCZhjlikzVhzHtI2LSC/YgjoQVqCAiIgIiIPrUsT1LDLFWaSCaM7skjcWuafMELZ5eJGu5aXvOTVGSMO223pNnbf97v8A2rU0U65L1+Gdzrvix3mJtWJ+j9SyPlkdLK9z3vO7nOO5J8yV+URQdgv3BLLBMyaGR8cjCHMe07Fp8wV+EQnm3GLihr+KqKzNUXhGBtueUu/8xG/7Vqly1Zu2pLVueSeeV3M+SRxc5x8ySviila9rdZV8OkwYJmcVIrM9d0RHsIiKKwIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiIP/9k=" alt="Market Prism">
+    </div>
+    <div class="cover-eyebrow">Case Study · April 2, 2026</div>
+    <div class="cover-badge">⬡ Coordinated Campaign Detected</div>
+    <h1>The <em>Uranium<br>Narrative Machine</em></h1>
+    <div class="cover-sub">How a supply constraint story with zero SEC confirmation traded Cameco to 499% above fair value — and why Market Prism classified it a Narrative Trap from day one</div>
+    <div class="cover-meta">
+      <div class="cover-stat">
+        <span class="cover-stat-val red">+499%</span>
+        <span class="cover-stat-label">Above Fair Value</span>
+      </div>
+      <div class="cover-stat">
+        <span class="cover-stat-val red">$111.13</span>
+        <span class="cover-stat-label">Current price (Apr 2, 2026)</span>
+      </div>
+      <div class="cover-stat">
+        <span class="cover-stat-val">$18.55</span>
+        <span class="cover-stat-label">Market Prism Fair Value</span>
+      </div>
+      <div class="cover-stat">
+        <span class="cover-stat-val teal">100%</span>
+        <span class="cover-stat-label">SEC Drift — no filing data</span>
+      </div>
+      <div class="cover-stat">
+        <span class="cover-stat-val">308.7x</span>
+        <span class="cover-stat-label">P/E Ratio</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BODY -->
+<div class="container">
+
+<!-- ══ 01 EXECUTIVE SUMMARY ══ -->
+<section>
+  <div class="section-label">01 · Executive Summary</div>
+  <h2>The same story,<br>retold by nine sources,<br>confirmed by none.</h2>
+  <p>Since early March 2026, a single thesis has circulated across at least nine financial media outlets: uranium supply constraints driven by Cameco's production limitations will push uranium prices higher and benefit CCJ shareholders. The claim is thematically coherent. It sounds like analysis. And it has been classified a <strong>Narrative Trap</strong> by Market Prism every single day it has run.</p>
+  <p>The reason is not that the macro claim is false — uranium dynamics are real. The reason is that not a single SEC filing from Cameco contains financial data that can confirm, quantify, or anchor the claim to actual company performance. The drift score has read 100% continuously for over two weeks. Meanwhile, the stock trades at a <strong>308.7x P/E ratio</strong> and a <strong>499% premium to Market Prism's calculated fair value</strong>.</p>
+  <p>This is a case study in how a structurally unverifiable narrative — one that feels like fundamental analysis but lacks any filing anchor — gets amplified into a coordinated media cycle with a Coordination Score of 90/100. Market Prism caught it. The price has not corrected yet. That is the live signal.</p>
+
+  <div class="signal-grid">
+    <div class="signal-card red">
+      <div class="sig-label">Fair Value Divergence</div>
+      <div class="sig-val red">+499%</div>
+      <div class="sig-desc">$111.13 vs Market Prism Fair Value of $18.55. Price cushion to fair value: 84.7%</div>
+    </div>
+    <div class="signal-card amber">
+      <div class="sig-label">Coordination Score</div>
+      <div class="sig-val">90 / 100</div>
+      <div class="sig-desc">LIKELY_COORDINATED classification. 3 sources published within 1 hour. 2 instances of identical phrasing detected</div>
+    </div>
+    <div class="signal-card red">
+      <div class="sig-label">SEC Drift Score</div>
+      <div class="sig-val red">100%</div>
+      <div class="sig-desc">No SEC filing data available to confirm or deny any claim. Complete information vacuum sustaining the narrative</div>
+    </div>
+    <div class="signal-card amber">
+      <div class="sig-label">Narrative Risk Score</div>
+      <div class="sig-val">64.9 / 100</div>
+      <div class="sig-desc">NRS Band: HIGH — the highest risk band in Market Prism's active trap universe as of April 2, 2026</div>
+    </div>
+    <div class="signal-card teal">
+      <div class="sig-label">Advanced Verdict</div>
+      <div class="sig-val teal">COORDINATED</div>
+      <div class="sig-desc">COORDINATED_CAMPAIGN advanced verdict — beyond standard Narrative Trap — with Collision Class: COORDINATED_CLUSTER</div>
+    </div>
+    <div class="signal-card amber">
+      <div class="sig-label">Mean Reversion Probability</div>
+      <div class="sig-val">50%</div>
+      <div class="sig-desc">50% probability of mean reversion within 30 days. 11% continuation. 39% volatility expansion</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 02 THE NARRATIVE ARC ══ -->
+<section>
+  <div class="section-label">02 · Narrative Arc</div>
+  <h2>Seven weeks. Three phases.<br>One unverified thesis.</h2>
+  <p>Market Prism's chronological record of CCJ narratives reveals a story that has morphed in framing while remaining identical in substance — and has been a Narrative Trap classification throughout. Below is the reconstructed arc from platform intelligence.</p>
+
+  <div class="timeline">
+
+    <div class="timeline-item">
+      <div class="timeline-date">Feb 11, 2026 · Speculation</div>
+      <div class="timeline-head">Pre-earnings speculation — "buy, hold, or sell?"</div>
+      <div class="timeline-body">Yahoo Finance publishes pre-earnings positioning piece ahead of Q4 disclosures. Platform verdict: Needs Validation. SRS: 65.0 (Reliable). Causal logic: 60%. This is the baseline — a legitimate question framing before any coordinated cycle emerges.</div>
+      <div class="timeline-chips">
+        <span class="chip teal">Needs Validation</span>
+        <span class="chip dim">Yahoo Finance · SRS 65</span>
+      </div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-date">Mar 2–3, 2026 · Catalyst — PHASE 1</div>
+      <div class="timeline-head">India uranium deal — a real catalyst enters, classified Plausible but Unverified</div>
+      <div class="timeline-body">Seeking Alpha (SRS 65.0, Reliable) publishes two pieces on Cameco's $1.9 billion uranium supply agreement with India. This is a real, documented deal. Market Prism's drift score for these articles: 5–20% — the lowest in the entire CCJ record. Causal logic: 90%. Platform verdict: Plausible but Unverified. The India deal is the only moment in this arc where the narrative has any filing-adjacent support.</div>
+      <div class="timeline-chips">
+        <span class="chip teal">Plausible but Unverified</span>
+        <span class="chip dim">Seeking Alpha · SRS 65 · Drift 5–20%</span>
+      </div>
+    </div>
+
+    <div class="timeline-item neutral">
+      <div class="timeline-date">Mar 4, 2026 · Headwind</div>
+      <div class="timeline-head">Seeking Alpha issues a sell recommendation — overvaluation concerns emerge</div>
+      <div class="timeline-body">The same Seeking Alpha publishes a counterpoint: despite the India deal, CCJ remains a sell due to overvaluation. Verdict: Narrative Trap. NRS: 63.0. This contradicting signal appears and then disappears from the dominant media cycle — it is not picked up and amplified. Drift: 50%. The overvaluation concern is real but fails to achieve coordinated reach.</div>
+      <div class="timeline-chips">
+        <span class="chip amber">Narrative Trap</span>
+        <span class="chip dim">Seeking Alpha · SRS 2.8 (new contributor)</span>
+      </div>
+    </div>
+
+    <div class="timeline-item bear">
+      <div class="timeline-date">Mar 5–20, 2026 · Headwind — PHASE 2</div>
+      <div class="timeline-head">Bearish wave: uranium cooling, risk-off, overvaluation — all unconfirmed</div>
+      <div class="timeline-body">For two weeks, coverage shifts to a bearish framing: cooling uranium sentiment, risk-off markets, overvaluation concerns. Sources: Quiver Quantitative, AOL.com, Finviz (×3), MarketBeat (×2), 24/7 Wall St. (×2). Every single entry: Narrative Trap. Every single drift score: 50–100%. No SEC filing data available for any article. On March 20, Bitget publishes with Coordination Score 85 — a bearish coordination cluster emerges briefly before being overwhelmed by the third phase.</div>
+      <div class="timeline-chips">
+        <span class="chip red">Narrative Trap</span>
+        <span class="chip red">Coordination Score 85</span>
+        <span class="chip dim">Drift 50–100% · No SEC data</span>
+      </div>
+    </div>
+
+    <div class="timeline-item shift">
+      <div class="timeline-date">Mar 23–Apr 2, 2026 · Catalyst — PHASE 3 (Active)</div>
+      <div class="timeline-head">Supply constraint narrative returns — now coordinated, higher NRS, 100% drift</div>
+      <div class="timeline-body">The supply constraint thesis re-emerges in a more coordinated form. Sources: Bitget, TradingView (×2), The Motley Fool, MarketBeat (×2), Barchart.com, MSN. 9 sources across 10 articles. Coordination Score climbs to 90/100. NRS escalates from 55 to 64.9. Crucially, the drift score locks at 100% for every article from March 30 onward — no filing data available to confirm or deny. Source agreement: 0.553 (low consensus on details despite surface similarity of thesis). 3 sources published within the same hour. 2 instances of identical phrasing detected. Advanced verdict: COORDINATED_CAMPAIGN.</div>
+      <div class="timeline-chips">
+        <span class="chip red">Narrative Trap</span>
+        <span class="chip red">Coordinated Campaign</span>
+        <span class="chip amber">Drift 100%</span>
+        <span class="chip dim">9 sources · Phrasing match detected</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="pullquote">
+    <p>"A narrative that cannot be confirmed by SEC filings is not analysis. It is a story about a company. The market is pricing the story."</p>
+    <div class="pullquote-attr">Market Prism · Forensic Narrative Analysis · April 2, 2026</div>
+  </div>
+</section>
+
+<!-- ══ 03 SOURCE ANALYSIS ══ -->
+<section>
+  <div class="section-label">03 · Source Reliability Analysis</div>
+  <h2>Nine outlets. Zero<br>filing-confirmed claims.</h2>
+  <p>Market Prism assigns a Source Reliability Score (SRS) to each publication using a Wilson lower-bound calculation on historical directional accuracy. The CCJ narrative cluster is notable for relying heavily on outlets in the Unreliable and Mixed tiers, with the most reliable sources (Seeking Alpha, Motley Fool) either issuing contradicting sell signals or being outweighed in the coordination count.</p>
+
+  <table class="source-table">
+    <thead>
+      <tr>
+        <th>Source</th>
+        <th>SRS Band</th>
+        <th>SRS Score</th>
+        <th>Role in CCJ Arc</th>
+        <th>Verdict</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="source-name">Seeking Alpha</td>
+        <td><span class="chip teal">Reliable</span></td>
+        <td>
+          <div class="srs-bar">65.0
+            <div class="srs-track"><div class="srs-fill high" style="width:65%"></div></div>
+          </div>
+        </td>
+        <td>India deal catalyst (Phase 1), then sell recommendation</td>
+        <td><span class="chip teal">Plausible</span></td>
+      </tr>
+      <tr>
+        <td class="source-name">The Motley Fool</td>
+        <td><span class="chip teal">Reliable</span></td>
+        <td>
+          <div class="srs-bar">65.0
+            <div class="srs-track"><div class="srs-fill high" style="width:65%"></div></div>
+          </div>
+        </td>
+        <td>Phase 3 supply constraint amplification</td>
+        <td><span class="chip amber">Narrative Trap</span></td>
+      </tr>
+      <tr>
+        <td class="source-name">MarketBeat</td>
+        <td><span class="chip dim">Mixed</span></td>
+        <td>
+          <div class="srs-bar">62.0
+            <div class="srs-track"><div class="srs-fill" style="width:62%"></div></div>
+          </div>
+        </td>
+        <td>Both bear (Phase 2) and bull (Phase 3) — inconsistent</td>
+        <td><span class="chip red">Narrative Trap</span></td>
+      </tr>
+      <tr>
+        <td class="source-name">Barchart.com</td>
+        <td><span class="chip dim">Mixed</span></td>
+        <td>
+          <div class="srs-bar">58.0
+            <div class="srs-track"><div class="srs-fill" style="width:58%"></div></div>
+          </div>
+        </td>
+        <td>Phase 3 bull — supply constraint amplifier</td>
+        <td><span class="chip red">Narrative Trap</span></td>
+      </tr>
+      <tr>
+        <td class="source-name">TradingView</td>
+        <td><span class="chip dim">Mixed</span></td>
+        <td>
+          <div class="srs-bar">55.0
+            <div class="srs-track"><div class="srs-fill" style="width:55%"></div></div>
+          </div>
+        </td>
+        <td>Phase 3 ×2 — highest causal logic score (95%) but 100% drift</td>
+        <td><span class="chip red">Narrative Trap</span></td>
+      </tr>
+      <tr>
+        <td class="source-name">Finviz</td>
+        <td><span class="chip dim">Mixed</span></td>
+        <td>
+          <div class="srs-bar">55.0
+            <div class="srs-track"><div class="srs-fill" style="width:55%"></div></div>
+          </div>
+        </td>
+        <td>Phase 2 ×3 — overvaluation bearish wave</td>
+        <td><span class="chip red">Narrative Trap</span></td>
+      </tr>
+      <tr>
+        <td class="source-name">Quiver Quantitative</td>
+        <td><span class="chip dim">Mixed</span></td>
+        <td>
+          <div class="srs-bar">50.0
+            <div class="srs-track"><div class="srs-fill" style="width:50%"></div></div>
+          </div>
+        </td>
+        <td>Both bear Phase 2 and bull catalyst phases</td>
+        <td><span class="chip red">Narrative Trap</span></td>
+      </tr>
+      <tr>
+        <td class="source-name">Bitget</td>
+        <td><span class="chip red">Unreliable</span></td>
+        <td>
+          <div class="srs-bar">35.0
+            <div class="srs-track"><div class="srs-fill low" style="width:35%"></div></div>
+          </div>
+        </td>
+        <td>Phase 2 bear + Phase 3 bull — coordination score 85 detected</td>
+        <td><span class="chip red">Narrative Trap</span></td>
+      </tr>
+      <tr>
+        <td class="source-name">MSN</td>
+        <td><span class="chip red">Unreliable</span></td>
+        <td>
+          <div class="srs-bar">45.0
+            <div class="srs-track"><div class="srs-fill low" style="width:45%"></div></div>
+          </div>
+        </td>
+        <td>Phase 3 primary source — coordination score 90 on Apr 2</td>
+        <td><span class="chip red">Narrative Trap</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>The most reliable sources in this group (Seeking Alpha, SRS 65.0) either issued contradicting sell recommendations or were publishing on the authentic India deal catalyst — the one moment where filing-adjacent support existed. The coordinated Phase 3 amplification is dominated by Mixed and Unreliable tier sources, with the Unreliable-tier MSN as the primary outlet on the highest-coordination day.</p>
+</section>
+
+<!-- ══ 04 THE COORDINATION SIGNAL ══ -->
+<section>
+  <div class="section-label">04 · Coordination Intelligence</div>
+  <h2>90/100 coordination score —<br>what the engine found</h2>
+  <p>Market Prism's coordination detection layer examines publication timing, phrasing overlap, source clustering, and the presence or absence of a primary originating source. The CCJ Phase 3 cluster triggered multiple flags simultaneously:</p>
+
+  <div class="score-grid">
+    <div class="score-cell">
+      <div class="score-name">Coordination Score</div>
+      <div class="score-val red">90 / 100</div>
+      <div class="score-desc">LIKELY_COORDINATED classification. Top tier of coordination detection</div>
+    </div>
+    <div class="score-cell">
+      <div class="score-name">Sources Within 1 Hour</div>
+      <div class="score-val amber">3 sources</div>
+      <div class="score-desc">Three separate outlets published within the same 60-minute window</div>
+    </div>
+    <div class="score-cell">
+      <div class="score-name">Identical Phrasing Count</div>
+      <div class="score-val amber">2 instances</div>
+      <div class="score-desc">Detected near-verbatim repetition across independent outlets — no primary source attribution</div>
+    </div>
+    <div class="score-cell">
+      <div class="score-name">Has Primary Source</div>
+      <div class="score-val red">False</div>
+      <div class="score-desc">No originating report identified. The narrative propagates without an acknowledged source</div>
+    </div>
+    <div class="score-cell">
+      <div class="score-name">Collision Class</div>
+      <div class="score-val teal">COORDINATED_CLUSTER</div>
+      <div class="score-desc">Collision events between narratives detected — single cluster of 1 active collision event</div>
+    </div>
+    <div class="score-cell">
+      <div class="score-name">SNDI Flag</div>
+      <div class="score-val amber">SOCIAL_DIVERGENCE</div>
+      <div class="score-desc">SNDI: 62.5 — social media velocity diverges from print media direction. Conflicting signals at the social layer</div>
+    </div>
+    <div class="score-cell">
+      <div class="score-name">Source Agreement</div>
+      <div class="score-val red">0.553</div>
+      <div class="score-desc">Low consensus on claim specifics despite surface similarity — sources agreeing on conclusion, not evidence</div>
+    </div>
+    <div class="score-cell">
+      <div class="score-name">Advanced Verdict</div>
+      <div class="score-val teal">COORDINATED_CAMPAIGN</div>
+      <div class="score-desc">Elevated beyond standard Narrative Trap — structured multi-source amplification pattern detected</div>
+    </div>
+  </div>
+
+  <p>The most diagnostic signal is the combination of high coordination score (90) with low source agreement (0.553). This means nine sources are all reaching the same bullish conclusion while individually constructing different supporting arguments — none grounded in the same filing data, because no filing data exists for any of them to reference. The thesis propagates by consensus of conclusion, not by shared evidence.</p>
+
+  <p>This is the signature of a thematic trap: a macro theme so broadly accepted (nuclear energy resurgence, uranium scarcity) that it bypasses the evidential standard normally applied to individual company claims. No outlet asks: what does Cameco's actual 10-K say about expected uranium pricing and production levels? The answer is that no recent 10-K-equivalent data was available to Market Prism's verification engine for any of the Phase 3 articles.</p>
+</section>
+
+<!-- ══ 05 WALSH ENGINE SCORES ══ -->
+<section>
+  <div class="section-label">05 · Walsh Engine Full Score Profile</div>
+  <h2>The signal stack —<br>all indicators aligned bearish</h2>
+  <p>Market Prism's Walsh Narrative Decay Engine produces seven composite scores per narrative snapshot. For CCJ on April 2, 2026, every score is consistent with an active, high-energy trap at peak narrative saturation.</p>
+
+  <div class="signal-grid">
+    <div class="signal-card red">
+      <div class="sig-label">NRS — Narrative Risk Score</div>
+      <div class="sig-val red">64.9 <span style="font-size:14px;color:var(--dim)">/ 100</span></div>
+      <div class="sig-desc">Band: HIGH. Highest NRS in Market Prism's active trap cohort as of April 2. Narrative risk elevated by coordination pattern, zero filing confirmation, and high sentiment divergence.</div>
+    </div>
+    <div class="signal-card amber">
+      <div class="sig-label">CCP — Claim Credibility Pressure</div>
+      <div class="sig-val">43.3 <span style="font-size:14px;color:var(--dim)">/ 100</span></div>
+      <div class="sig-desc">Low CCP indicates the specific claims made (supply constraints → profitability) cannot be substantiated at the claim level. Causal logic is internally coherent (90/100) but externally unanchored.</div>
+    </div>
+    <div class="signal-card red">
+      <div class="sig-label">VMS — SEC Truth Anchor</div>
+      <div class="sig-val red">32.4 <span style="font-size:14px;color:var(--dim)">/ 100</span></div>
+      <div class="sig-desc">Critical: VMS measures the quality and confirmatory strength of available SEC filing data. 32.4 reflects a near-complete absence of filing coverage. No revenue, margin, or MDA disclosures available.</div>
+    </div>
+    <div class="signal-card amber">
+      <div class="sig-label">ACS — Analyst Credibility Score</div>
+      <div class="sig-val">64.1 <span style="font-size:14px;color:var(--dim)">/ 100</span></div>
+      <div class="sig-desc">Moderate — reflects presence of some credible analyst coverage (Seeking Alpha, Motley Fool) within the broader narrative ecosystem, partially offset by Bitget and MSN amplification.</div>
+    </div>
+    <div class="signal-card teal">
+      <div class="sig-label">SRS — Source Reliability Score</div>
+      <div class="sig-val teal">45.0 <span style="font-size:14px;color:var(--dim)">/ 100</span></div>
+      <div class="sig-desc">Band: UNRELIABLE. Composite SRS for the Phase 3 cluster is pulled down by Bitget (35.0) and MSN (45.0) dominance in the coordinated amplification window.</div>
+    </div>
+    <div class="signal-card amber">
+      <div class="sig-label">CVS — Claim Verification Score</div>
+      <div class="sig-val">50.0 <span style="font-size:14px;color:var(--dim)">/ 100</span></div>
+      <div class="sig-desc">Neutral — reflects the absence of contradiction as much as absence of confirmation. No filing data exists to produce a definitive pass or fail on the supply constraint claims.</div>
+    </div>
+  </div>
+
+  <div class="verdict">
+    <h3>Why the VMS score is the key number</h3>
+    <p>A VMS of 32.4/100 is not merely a low score — it is a diagnostic. When VMS is low, the platform cannot anchor the narrative to corporate disclosure. This is more dangerous than a narrative that is contradicted by filings, because contradiction can be identified and quantified. A narrative in an information vacuum expands unchallenged. The market has no filing anchor either. It is pricing a thesis about a macro commodity trend applied to a specific company whose actual financial disclosures are unavailable for verification.</p>
+    <p>The 308.7x P/E ratio is the result. When you cannot benchmark fundamentals, speculation fills the gap — and speculation compounds. The Overreaction Ratio of 0.0383x (classified Normal) suggests the overvaluation is not driven by a single news event but has been systematically built through sustained narrative accumulation over weeks.</p>
+  </div>
+</section>
+
+<!-- ══ 06 THE THEMATIC TRAP ══ -->
+<section>
+  <div class="section-label">06 · The Thematic Trap</div>
+  <h2>When the macro story is real<br>but the stock price is fiction</h2>
+  <p>The CCJ case illustrates a specific and dangerous species of Narrative Trap: one where the macro theme is legitimate. Nuclear energy's resurgence is well-documented. Uranium scarcity dynamics are real. The India supply agreement was a genuine event. Market Prism does not dispute any of this.</p>
+  <p>What Market Prism disputes is the translation of a legitimate macro theme into a specific stock price of $111.13 — through a media cycle that cannot produce a single filing-confirmed financial metric to support that price. The Causal Logic Score of 90/100 tells the story precisely: the internal logic of the supply constraint argument is coherent and well-constructed. It sounds like analysis. But coherent logic applied to unconfirmed premises is not investing. It is narrative acceptance.</p>
+
+  <div class="pullquote">
+    <p>"The uranium thesis may be correct. But a 308x P/E ratio is not a bet on uranium fundamentals — it is a bet that the narrative never gets tested against them."</p>
+    <div class="pullquote-attr">Market Prism · Forensic Narrative Analysis · April 2, 2026</div>
+  </div>
+
+  <p>The distinction matters for risk. A company with verified financials that looks overvalued has a knowable floor — the point where fundamentals provide support. CCJ's 100% drift means there is no filing-derived floor in the current data environment. The downside scenario is not mean reversion to some fundamental value — it is mean reversion to a value that the market has never actually tested against real disclosures.</p>
+  <p>Market Prism's scenario model reflects this: 50% probability of mean reversion within 30 days. 39% probability of volatility expansion — meaning the gap between price and fair value continues to widen before the correction. Only 11% probability of narrative continuation.</p>
+</section>
+
+<!-- ══ 07 METHODOLOGY ══ -->
+<section>
+  <div class="section-label">07 · Methodology</div>
+  <h2>The engine behind the signal</h2>
+  <p><strong>Walsh Narrative Decay Engine (Patent Pending #63/971,470)</strong> — models narrative half-life using exponential decay calibrated to publication type, reach, and sentiment class. CCJ's current decay rate of −1.97 with an energy reading of 100% and no exhaustion date suggests the narrative has reached a plateau of sustained high energy rather than the typical decay arc.</p>
+  <p><strong>Source Reliability Score (SRS)</strong> — Wilson lower-bound credibility score per publication across 86+ financial media sources, based on historical directional accuracy. Applied at the source level before claim-level verification begins.</p>
+  <p><strong>Claim Verification Engine</strong> — cross-references narrative claims against SEC EDGAR filings, earnings transcripts, and guidance disclosures. The 100% drift score for CCJ is not an error — it reflects a genuine absence of available filing data for the specific claims being made. The system flags this as a distinct risk category: unverifiable claims in an information vacuum.</p>
+  <p><strong>Coordination Detection</strong> — examines publication timing windows, phrasing similarity, source clustering, and primary source attribution. A coordination score of 90/100 with no identified primary source and identical phrasing across outlets is the clearest structural signal of an orchestrated narrative campaign in Market Prism's detection framework.</p>
+</section>
+
+</div><!-- end container -->
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo">
+      <img src="data:image/png;base64,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" alt="Market Prism">
+    </div>
+    <div class="footer-divider"></div>
+    <div class="footer-links">
+      <a href="https://marketprism.co" target="_blank">marketprism.co</a>
+      <span style="color:var(--dim);font-family:'DM Mono',monospace;font-size:11px;">·</span>
+      <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--dim);letter-spacing:0.1em;">Patent Pending #63/971,470 · #63/971,478</span>
+    </div>
+    <div class="footer-data-sources">
+      <div class="ds-label">Data Sources</div>
+      <div class="ds-list">
+        <span>SEC EDGAR</span>
+        <span>Financial Media Feeds (86+ publications)</span>
+        <span>Earnings Transcripts</span>
+        <span>Guidance Disclosures</span>
+        <span>Live Price &amp; Volume Data</span>
+        <span>Social Velocity Index</span>
+        <span>Proprietary AI Signal Layer</span>
+      </div>
+    </div>
+    <div class="footer-meta">
+      Case Study produced April 2, 2026 &nbsp;·&nbsp; This is active intelligence — CCJ remains an open Narrative Trap signal<br>
+      Past signal performance does not guarantee future results &nbsp;·&nbsp; © 2026 Market Prism. All rights reserved.
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
