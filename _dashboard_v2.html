@@ -189,6 +189,42 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
   .dc-grid{grid-template-columns:1fr;}
 }
 
+/* ── MARKET MAP ─────────────────────────────────────────────────────────────── */
+.mm-section{margin-bottom:20px;}
+.mm-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:0 2px;flex-wrap:wrap;gap:8px;}
+.mm-title{font-family:var(--font-body);font-size:15px;font-weight:600;color:var(--mp-text-primary);display:flex;align-items:center;gap:8px;}
+.mm-legend{display:flex;gap:16px;font-size:12px;font-family:var(--font-body);}
+.mm-wrap{
+  position:relative;background:var(--mp-surface);border:1px solid var(--mp-border);
+  border-radius:16px;overflow:hidden;box-shadow:var(--mp-card-shadow);
+}
+.mm-canvas{display:block;width:100%;}
+.mm-detail{
+  position:absolute;top:16px;right:16px;width:300px;max-width:90%;
+  background:var(--mp-surface2);border:1px solid var(--mp-border-hover);
+  border-radius:14px;padding:20px;box-shadow:0 12px 40px rgba(0,0,0,0.5);
+  z-index:10;animation:fadeUp .25s ease both;
+}
+.mm-detail-close{position:absolute;top:10px;right:12px;background:none;border:none;color:var(--mp-text-muted);font-size:20px;cursor:pointer;line-height:1;}
+.mm-detail-close:hover{color:var(--mp-text-primary);}
+.mm-detail-header{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+.mm-detail-ticker{font-size:22px;font-weight:700;color:var(--mp-text-primary);font-family:var(--font-body);}
+.mm-detail-dir{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;}
+.mm-detail-sector{font-size:12px;color:var(--mp-text-tertiary);margin-bottom:8px;}
+.mm-detail-desc{font-size:13px;color:var(--mp-text-secondary);line-height:1.6;margin-bottom:12px;}
+.mm-detail-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.mm-stat{background:rgba(255,255,255,0.03);border:1px solid var(--mp-border);border-radius:8px;padding:8px 10px;}
+.mm-stat-l{font-size:10px;color:var(--mp-text-muted);text-transform:uppercase;letter-spacing:.05em;display:block;font-family:var(--font-body);}
+.mm-stat-v{font-size:16px;font-weight:700;color:var(--mp-text-primary);font-family:var(--font-body);}
+.mm-detail-link{
+  display:block;text-align:center;padding:10px;border-radius:8px;
+  background:rgba(0,174,255,0.08);border:1px solid rgba(0,174,255,0.2);
+  color:var(--mp-cyan);font-size:13px;font-weight:600;text-decoration:none;
+  transition:all .2s;
+}
+.mm-detail-link:hover{background:rgba(0,174,255,0.15);}
+.mm-detail-action{font-family:var(--font-body);}
+
 /* ── ANIMATIONS ────────────────────────────────────────────────────────────── */
 @keyframes slideUp{from{opacity:0;transform:translateY(40px);}to{opacity:1;transform:translateY(0);}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
@@ -269,6 +305,17 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
         <div class="dc-grid" id="dc-grid"></div>
       </div>
 
+      <!-- Market Map — Force-directed graph -->
+      <div class="mm-section" id="mm-container">
+        <div class="mm-header">
+          <div class="mm-title">Market Signal Map</div>
+          <div class="mm-legend" id="mm-legend"></div>
+        </div>
+        <div class="mm-wrap" id="mm-wrap">
+          <canvas class="mm-canvas" id="mm-canvas"></canvas>
+        </div>
+      </div>
+
       <!-- More sections will be added as modules -->
       <div id="daily-modules">
         <!-- Additional daily brief modules render here -->
@@ -313,6 +360,7 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
 <!-- Modules — each is self-contained -->
 <script src="/lib/mod-market-weather.js"></script>
 <script src="/lib/mod-daily-conviction.js"></script>
+<script src="/lib/mod-market-map.js"></script>
 
 <!-- Boot -->
 <script>
@@ -339,6 +387,7 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
     // Load Daily Brief modules
     MP.load('market-weather');
     MP.load('daily-conviction');
+    MP.load('market-map');
   });
 })();
 </script>
