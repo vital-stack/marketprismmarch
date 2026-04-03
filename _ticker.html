@@ -3016,6 +3016,26 @@
     color: var(--mp-text-primary);
     font-weight: 400;
   }
+  /* ── Company Info tab ── */
+  .ci-stats-grid{
+    display:grid;grid-template-columns:1fr 1fr;
+    gap:1px;background:var(--mp-border);
+  }
+  .ci-stat{
+    padding:16px 20px;background:var(--mp-surface);display:flex;flex-direction:column;gap:3px;
+  }
+  .ci-stat-label{
+    font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;
+    color:var(--mp-text-muted);font-family:var(--font-body);
+  }
+  .ci-stat-val{
+    font-family:var(--font-body);font-size:16px;font-weight:600;color:var(--mp-text-primary);
+  }
+  .ci-stat-val a{color:var(--mp-cyan);text-decoration:none;}
+  .ci-stat-val a:hover{text-decoration:underline;}
+  @media(max-width:600px){
+    .ci-stats-grid{grid-template-columns:1fr;}
+  }
   .fund-form-badge {
     font-family: var(--font-body);
     font-size: 11px;
@@ -3214,6 +3234,7 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
     <button class="tk-tab" data-tab="strategy">Trading Strategy</button>
     <button class="tk-tab" data-tab="financials">Live Market Snapshot</button>
     <button class="tk-tab" data-tab="fundamentals">Fundamentals</button>
+    <button class="tk-tab" data-tab="companyinfo">Company Info</button>
   </div>
 
   <!-- Action bar -->
@@ -4002,6 +4023,70 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
 
     </div><!-- /fund-content -->
   </div><!-- /tab-fundamentals -->
+
+  <!-- ═══ TAB: COMPANY INFO ═══ -->
+  <div class="tk-tab-panel" id="tab-companyinfo">
+    <div id="ci-loading">
+      <div class="section">
+        <div class="section-label">Company Profile</div>
+        <div class="section-body" style="padding:20px;">
+          <div class="skel" style="height:16px;width:50%;margin-bottom:12px;"></div>
+          <div class="skel" style="height:14px;width:80%;margin-bottom:8px;"></div>
+          <div class="skel" style="height:14px;width:65%;margin-bottom:8px;"></div>
+          <div class="skel" style="height:14px;width:70%;"></div>
+        </div>
+      </div>
+    </div>
+    <div id="ci-nodata" style="display:none;">
+      <div class="section">
+        <div class="section-body" style="padding:24px;text-align:center;color:var(--mp-text-tertiary);">
+          No company info available for this ticker.
+        </div>
+      </div>
+    </div>
+    <div id="ci-content" style="display:none;">
+
+      <!-- Company header -->
+      <div class="section">
+        <div class="section-label">Company Profile</div>
+        <div class="section-body" style="padding:24px;">
+          <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+            <div id="ci-logo" style="width:48px;height:48px;border-radius:10px;overflow:hidden;background:var(--mp-surface2);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <span style="font-size:20px;font-weight:700;color:var(--mp-text-tertiary);" id="ci-logo-fallback"></span>
+            </div>
+            <div>
+              <div id="ci-name" style="font-family:var(--font-body);font-size:20px;font-weight:700;color:var(--mp-text-primary);"></div>
+              <div id="ci-sector-industry" style="font-size:13px;color:var(--mp-text-tertiary);margin-top:2px;"></div>
+            </div>
+          </div>
+          <div id="ci-description" style="font-size:14px;line-height:1.7;color:var(--mp-text-secondary);"></div>
+        </div>
+      </div>
+
+      <!-- Key stats grid -->
+      <div class="section">
+        <div class="section-label">Key Details</div>
+        <div class="section-body" style="padding:0;">
+          <div class="ci-stats-grid" id="ci-stats-grid">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Links -->
+      <div class="section" id="ci-links-section" style="display:none;">
+        <div class="section-label">Links</div>
+        <div class="section-body" style="padding:16px 20px;">
+          <div id="ci-links" style="display:flex;gap:12px;flex-wrap:wrap;"></div>
+        </div>
+      </div>
+
+      <div style="text-align:right;padding:8px 0;font-size:11px;color:var(--mp-text-muted);">
+        Data: Polygon.io / Massive API
+      </div>
+
+    </div><!-- /ci-content -->
+  </div><!-- /tab-companyinfo -->
 
   <!-- Chart tab removed — chart now embedded in Overview -->
 
@@ -6101,6 +6186,9 @@ function exportReport() {
 
     // ── Capture live sections from the page ──
 
+    // Score color helper (used by narrative section + text sections below)
+    function sc(v) { return v >= 70 ? cyan : v >= 40 ? [255,184,0] : red; }
+
     // The Narrative (strength ring) — draw natively to fix SVG/absolute-position rendering
     (function drawNarrativeSection() {
       var overall = Math.round(p.narrative_strength || 0);
@@ -6111,7 +6199,6 @@ function exportReport() {
       var verdict = p.narrative_verdict || p.verdict || '';
       var claim = p.prevailing_narrative || 'No prevailing narrative found';
       var exdays = (p.nearest_exhaustion_days != null) ? (p.nearest_exhaustion_days + ' days') : null;
-      function sc(v) { return v >= 70 ? cyan : v >= 40 ? [255,184,0] : red; }
       var oc = sc(overall);
 
       checkPage(60);
@@ -6198,6 +6285,136 @@ function exportReport() {
       y += 18;
     })();
 
+    // ── Helper: draw a text section with label + key-value rows ──
+    function sectionLabel(label) {
+      checkPage(12);
+      doc.setFillColor(cyan[0],cyan[1],cyan[2]);
+      doc.rect(mx, y, 2, 6, 'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(white[0],white[1],white[2]);
+      doc.text(label, mx + 5, y + 5);
+      y += 10;
+    }
+    function kvRow(label, value, color) {
+      if (value == null || value === '' || value === '—') return;
+      checkPage(6);
+      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(muted[0],muted[1],muted[2]);
+      doc.text(label, mx + 2, y);
+      doc.setFont('helvetica','bold'); doc.setFontSize(9);
+      var c = color || white;
+      doc.setTextColor(c[0],c[1],c[2]);
+      doc.text(String(value), mx + 52, y);
+      y += 5.5;
+    }
+    function textBlock(text, maxW) {
+      if (!text) return;
+      doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(secondary[0],secondary[1],secondary[2]);
+      var lines = doc.splitTextToSize(text, maxW || (cw - 4));
+      lines.forEach(function(line) { checkPage(5); doc.text(line, mx + 2, y); y += 4.2; });
+      y += 3;
+    }
+
+    // ── Executive Summary ──
+    var storyClaim = r.story_claim || r.primary_driver || '';
+    var forensicRebuttal = r.forensic_rebuttal || '';
+    if (storyClaim || forensicRebuttal) {
+      sectionLabel('Executive Summary');
+      if (storyClaim) {
+        doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(cyan[0],cyan[1],cyan[2]);
+        doc.text('PREVAILING NARRATIVE', mx + 2, y); y += 5;
+        textBlock(storyClaim);
+      }
+      if (forensicRebuttal) {
+        doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(red[0],red[1],red[2]);
+        doc.text('FORENSIC COUNTER-NARRATIVE', mx + 2, y); y += 5;
+        textBlock(forensicRebuttal);
+      }
+      y += 2;
+    }
+
+    // ── Fair Value Analysis ──
+    var fairVal = r.fair_value || p.fair_value;
+    var curPrice = r.price;
+    if (fairVal != null && curPrice != null) {
+      sectionLabel('Fair Value Analysis');
+      var fvDev = ((curPrice - fairVal) / fairVal * 100).toFixed(1);
+      var fvColor = fvDev > 15 ? red : fvDev < -15 ? green : cyan;
+      var fvLabel = fvDev > 0 ? fvDev + '% ABOVE fair value' : Math.abs(fvDev) + '% BELOW fair value';
+      kvRow('Current Price', '$' + Number(curPrice).toFixed(2), white);
+      kvRow('Fair Value', '$' + Number(fairVal).toFixed(2), cyan);
+      kvRow('Deviation', fvLabel, fvColor);
+      if (r.pe_ratio != null) kvRow('P/E Ratio', Number(r.pe_ratio).toFixed(1), white);
+      if (r.revenue_growth_pct != null) kvRow('Revenue Growth', r.revenue_growth_pct + '%', r.revenue_growth_pct > 0 ? green : red);
+      if (r.institutional_positioning) kvRow('Institutional', r.institutional_positioning, white);
+      y += 4;
+    }
+
+    // ── Key Forensic Metrics (text-based, always renders) ──
+    var hasPulseMetrics = p.pulse_health_score != null || p.fvd_pct != null || p.pulse_vms != null;
+    if (hasPulseMetrics) {
+      sectionLabel('Key Forensic Metrics');
+      kvRow('Pulse Health', (p.pulse_health_score || 0) + '/100', sc(p.pulse_health_score || 0));
+      if (p.fvd_pct != null) {
+        var fvdColor = p.fvd_pct > 20 ? red : p.fvd_pct < -20 ? green : cyan;
+        kvRow('FV Deviation', (p.fvd_pct > 0 ? '+' : '') + Number(p.fvd_pct).toFixed(1) + '%', fvdColor);
+      }
+      if (p.pulse_vms != null) kvRow('VMS (Validation)', p.pulse_vms + '/100', sc(p.pulse_vms));
+      if (p.pulse_coordination != null) kvRow('Coordination', p.pulse_coordination + '/100', p.pulse_coordination > 40 ? red : green);
+      if (p.pulse_nrs != null) kvRow('NRS (Risk)', p.pulse_nrs + '/100', p.pulse_nrs > 40 ? red : green);
+      if (p.pulse_ccp != null) kvRow('CCP (Claim Power)', p.pulse_ccp + '/100', sc(p.pulse_ccp));
+      if (p.pulse_or != null) kvRow('Overreaction Ratio', Number(p.pulse_or).toFixed(2), p.pulse_or > 0.15 ? red : green);
+      if (p.net_sentiment != null) kvRow('Net Sentiment', Number(p.net_sentiment).toFixed(0), p.net_sentiment > 0 ? green : red);
+      if (p.active_narrative_count != null) kvRow('Active Narratives', String(p.active_narrative_count), white);
+      if (p.trap_count != null && p.trap_count > 0) kvRow('Trap Count', String(p.trap_count), red);
+      y += 4;
+    }
+
+    // ── Earnings Intelligence ──
+    var hasEarnings = r.days_to_earnings != null || r.benzinga_eps_actual != null || r.guidance_direction;
+    if (hasEarnings) {
+      sectionLabel('Earnings Intelligence');
+      if (r.days_to_earnings != null) {
+        var earnColor = r.days_to_earnings <= 14 ? [255,184,0] : white;
+        kvRow('Days to Earnings', r.days_to_earnings + ' days' + (r.earnings_window_flag ? ' (EARNINGS WINDOW)' : ''), earnColor);
+      }
+      if (r.benzinga_eps_actual != null) kvRow('EPS Actual', '$' + Number(r.benzinga_eps_actual).toFixed(2), white);
+      if (r.benzinga_eps_estimate != null) kvRow('EPS Estimate', '$' + Number(r.benzinga_eps_estimate).toFixed(2), muted);
+      if (r.benzinga_eps_surprise_pct != null) {
+        var surpriseColor = r.benzinga_eps_surprise_pct > 0 ? green : red;
+        kvRow('EPS Surprise', (r.benzinga_eps_surprise_pct > 0 ? '+' : '') + Number(r.benzinga_eps_surprise_pct).toFixed(1) + '%', surpriseColor);
+      }
+      if (r.guidance_direction && r.guidance_direction !== 'Neutral') kvRow('Guidance', r.guidance_direction, r.guidance_direction === 'Positive' ? green : red);
+      if (r.mda_snippet) {
+        y += 2;
+        doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(muted[0],muted[1],muted[2]);
+        doc.text('MD&A EXCERPT', mx + 2, y); y += 4;
+        textBlock(r.mda_snippet.slice(0, 500));
+      }
+      y += 4;
+    }
+
+    // ── Sector Context ──
+    if (r.sector_name) {
+      sectionLabel('Sector: ' + r.sector_name);
+      if (r.sector_cagr_pct != null) kvRow('Sector CAGR', r.sector_cagr_pct + '%', cyan);
+      if (r.sector_key_strengths) {
+        doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(green[0],green[1],green[2]);
+        doc.text('STRENGTHS', mx + 2, y); y += 4;
+        textBlock(r.sector_key_strengths.slice(0, 300));
+      }
+      if (r.sector_key_weaknesses) {
+        doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(red[0],red[1],red[2]);
+        doc.text('WEAKNESSES', mx + 2, y); y += 4;
+        textBlock(r.sector_key_weaknesses.slice(0, 300));
+      }
+      if (r.sector_contrarian_thesis) {
+        var amber = [255,184,0];
+        doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(amber[0],amber[1],amber[2]);
+        doc.text('CONTRARIAN THESIS', mx + 2, y); y += 4;
+        textBlock(r.sector_contrarian_thesis.slice(0, 300));
+      }
+      y += 4;
+    }
+
     // What's Driving the Price
     var driversSection = document.querySelector('#drivers-body');
     if (driversSection && driversSection.textContent.trim() && driversSection.textContent.indexOf('No driver') === -1) {
@@ -6247,17 +6464,32 @@ function exportReport() {
 
     // Pulse Summary text
     if (p.pulse_summary) {
-      checkPage(20);
-      doc.setFillColor(cyan[0],cyan[1],cyan[2]);
-      doc.rect(mx, y, 2, 6, 'F');
-      doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(white[0],white[1],white[2]);
-      doc.text('Pulse Summary', mx + 5, y + 5);
-      y += 10;
-      doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(secondary[0],secondary[1],secondary[2]);
-      var summaryLines = doc.splitTextToSize(p.pulse_summary, cw - 4);
-      summaryLines.forEach(function(line) { checkPage(5); doc.text(line, mx + 2, y); y += 4.5; });
-      y += 6;
+      sectionLabel('Pulse Summary');
+      textBlock(p.pulse_summary);
+      y += 2;
     }
+
+    // ── Narrative Loyalty & Fragility Assessment ──
+    var hasLoyalty = p.narrative_loyalty != null || p.worst_nrs != null || p.coordinated_count != null;
+    if (hasLoyalty) {
+      sectionLabel('Risk Assessment');
+      if (p.narrative_loyalty != null) kvRow('Narrative Loyalty', Number(p.narrative_loyalty).toFixed(0) + '%', sc(p.narrative_loyalty));
+      if (p.worst_nrs != null) kvRow('Worst NRS', p.worst_nrs + '/100', p.worst_nrs > 40 ? red : green);
+      if (p.worst_vms != null) kvRow('Worst VMS', p.worst_vms + '/100', sc(p.worst_vms));
+      if (p.worst_coordination != null) kvRow('Worst Coord.', p.worst_coordination + '/100', p.worst_coordination > 40 ? red : green);
+      if (p.coordinated_count != null && p.coordinated_count > 0) kvRow('Coordinated Claims', String(p.coordinated_count), red);
+      if (p.sentiment_momentum != null) kvRow('Sentiment Momentum', (p.sentiment_momentum > 0 ? '+' : '') + Number(p.sentiment_momentum).toFixed(1), p.sentiment_momentum > 0 ? green : red);
+      y += 4;
+    }
+
+    // ── Disclaimer ──
+    checkPage(16);
+    y += 2;
+    doc.setDrawColor(40,45,55); doc.setLineWidth(0.3);
+    doc.line(mx, y, pw - mx, y); y += 4;
+    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(muted[0],muted[1],muted[2]);
+    var disclaimerLines = doc.splitTextToSize('This report is generated by Market Prism AI narrative intelligence. It is for informational purposes only and does not constitute financial advice. All signals, scores, and verdicts are algorithmically derived from public data sources including SEC filings, news sentiment, and market data. Past performance does not guarantee future results. Always do your own research.', cw);
+    disclaimerLines.forEach(function(line) { checkPage(4); doc.text(line, mx, y); y += 3.5; });
 
     // ── Footer on all pages ──
     var pageCount = doc.internal.getNumberOfPages();
@@ -6368,6 +6600,11 @@ async function createImage() {
       if (tab.dataset.tab === 'fundamentals' && !window._fundamentalsLoaded) {
         window._fundamentalsLoaded = true;
         loadFundamentalsData();
+      }
+      // Lazy-load company info on first click
+      if (tab.dataset.tab === 'companyinfo' && !window._companyInfoLoaded) {
+        window._companyInfoLoaded = true;
+        loadCompanyInfo();
       }
     });
   });
@@ -7033,6 +7270,92 @@ async function loadFundamentalsData() {
     var ndBody = nodataEl.querySelector('.section-body');
     if (ndBody) ndBody.innerHTML = '<div style="padding:24px;text-align:center;color:var(--mp-text-tertiary);">No SEC filings data available for this ticker.<br><span style="font-size:11px;color:var(--mp-text-muted);margin-top:8px;display:inline-block;">' + esc(err.message) + '</span></div>';
   }
+}
+
+// ── Company Info Tab ─────────────────────────────────────────────────────────
+async function loadCompanyInfo() {
+  if (!TICKER) return;
+  var loadingEl = document.getElementById('ci-loading');
+  var nodataEl  = document.getElementById('ci-nodata');
+  var contentEl = document.getElementById('ci-content');
+
+  loadingEl.style.display = 'block';
+  nodataEl.style.display = 'none';
+  contentEl.style.display = 'none';
+
+  try {
+    // Fetch from our API (which calls Polygon /v3/reference/tickers/{ticker})
+    var res = await fetch('/api/ticker-details?ticker=' + encodeURIComponent(TICKER) + '&sync=true');
+    if (!res.ok) throw new Error('API returned ' + res.status);
+    var d = await res.json();
+    if (!d || !d.ticker) throw new Error('No data returned');
+
+    // ── Populate header ──
+    var logoEl = document.getElementById('ci-logo');
+    var fallbackEl = document.getElementById('ci-logo-fallback');
+    if (d.logo) {
+      var img = document.createElement('img');
+      img.src = d.logo;
+      img.alt = d.ticker;
+      img.style.cssText = 'width:100%;height:100%;object-fit:contain;';
+      img.onerror = function() { this.style.display = 'none'; fallbackEl.textContent = d.ticker.slice(0, 3); };
+      logoEl.insertBefore(img, fallbackEl);
+      fallbackEl.style.display = 'none';
+    } else {
+      fallbackEl.textContent = d.ticker.slice(0, 3);
+    }
+
+    document.getElementById('ci-name').textContent = d.name || d.ticker;
+    var sectorIndustry = [d.sector, d.industry].filter(Boolean).join(' \u00B7 ');
+    document.getElementById('ci-sector-industry').textContent = sectorIndustry || '\u2014';
+    document.getElementById('ci-description').textContent = d.description || 'No company description available.';
+
+    // ── Stats grid ──
+    var stats = [];
+    if (d.sector) stats.push({ label: 'Sector', val: d.sector });
+    if (d.industry) stats.push({ label: 'Industry (SIC)', val: d.industry });
+    if (d.sic_code) stats.push({ label: 'SIC Code', val: d.sic_code });
+    if (d.market_cap) stats.push({ label: 'Market Cap', val: '$' + fmtLargeNum(d.market_cap) });
+    if (d.total_employees) stats.push({ label: 'Employees', val: Number(d.total_employees).toLocaleString() });
+    if (d.list_date) stats.push({ label: 'IPO Date', val: d.list_date });
+    if (d.type) stats.push({ label: 'Security Type', val: d.type === 'CS' ? 'Common Stock' : d.type === 'ETF' ? 'ETF' : d.type });
+    if (d.locale) stats.push({ label: 'Locale', val: d.locale === 'us' ? 'United States' : d.locale });
+    if (d.share_class_shares_outstanding) stats.push({ label: 'Shares Outstanding', val: fmtLargeNum(d.share_class_shares_outstanding) });
+    if (d.weighted_shares_outstanding) stats.push({ label: 'Weighted Shares', val: fmtLargeNum(d.weighted_shares_outstanding) });
+
+    var gridEl = document.getElementById('ci-stats-grid');
+    gridEl.innerHTML = stats.map(function(s) {
+      return '<div class="ci-stat"><div class="ci-stat-label">' + esc(s.label) + '</div><div class="ci-stat-val">' + esc(s.val) + '</div></div>';
+    }).join('');
+
+    // ── Links ──
+    if (d.homepage) {
+      var linksSection = document.getElementById('ci-links-section');
+      linksSection.style.display = 'block';
+      var linksEl = document.getElementById('ci-links');
+      linksEl.innerHTML =
+        '<a href="' + esc(d.homepage) + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;background:rgba(0,174,255,0.08);border:1px solid rgba(0,174,255,0.2);color:var(--mp-cyan);font-size:13px;font-weight:600;text-decoration:none;transition:all .2s;">'
+          + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>'
+          + 'Company Website</a>';
+    }
+
+    loadingEl.style.display = 'none';
+    contentEl.style.display = 'block';
+  } catch (err) {
+    console.warn('[CompanyInfo] Load failed:', err);
+    loadingEl.style.display = 'none';
+    nodataEl.style.display = 'block';
+  }
+}
+
+function fmtLargeNum(n) {
+  n = Number(n);
+  if (isNaN(n)) return '\u2014';
+  if (n >= 1e12) return (n / 1e12).toFixed(2) + 'T';
+  if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+  if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+  return n.toLocaleString();
 }
 
 function formBadgeClass(ft) {
