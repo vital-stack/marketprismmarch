@@ -3273,18 +3273,19 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
       <!-- ── Main Content Column ── -->
       <div class="tk-col-left">
 
-        <!-- 1. TRENDING STORIES — Moved up from Story Feed section -->
-        <div class="section">
-          <div class="section-label" style="display:flex;align-items:center;justify-content:space-between;">
-            <span>Trending Stories</span>
-            <button class="tk-feed-refresh" id="tk-feed-refresh-top" title="Refresh stories" style="background:none;border:1px solid var(--mp-border);border-radius:4px;padding:3px 6px;cursor:pointer;color:var(--mp-text-tertiary);">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-            </button>
+        <!-- 1. TRENDING NARRATIVES — Moved up from Narratives tab -->
+        <div class="narr-section">
+          <div class="section-label">
+            Trending Narratives
+            <span class="section-label-sub">Top stories being cited in the market</span>
           </div>
           <div class="section-body">
-            <div class="tk-feed" id="tk-feed-top" style="position:static;max-height:none;overflow:visible;">
-              <div class="tk-feed-list" id="tk-feed-list-top">
-                <div class="tk-feed-empty">Loading stories...</div>
+            <div id="narr-list-top" class="narr-list">
+              <div class="narr-header" style="cursor:default;">
+                <div style="flex:1;"><div class="skel" style="height:13px;width:80%;margin-bottom:8px;"></div><div class="skel" style="height:11px;width:40%;"></div></div>
+              </div>
+              <div class="narr-header" style="cursor:default;">
+                <div style="flex:1;"><div class="skel" style="height:13px;width:70%;margin-bottom:8px;"></div><div class="skel" style="height:11px;width:35%;"></div></div>
               </div>
             </div>
           </div>
@@ -5486,7 +5487,7 @@ async function loadNarratives() {
       allCitations: t.allCitations
     }));
 
-    document.getElementById('narr-list').innerHTML = top.map((n, idx) => {
+    var narrHTML = top.map((n, idx) => {
       // Verdict class
       const v = (n.verdict || '').toUpperCase();
       const vCls = v.includes('MISLEAD') || v.includes('FALSE') ? 'narr-v-misleading'
@@ -5643,7 +5644,11 @@ async function loadNarratives() {
       </div>`;
     }).join('');
 
-    // Wire up accordion toggles
+    document.getElementById('narr-list').innerHTML = narrHTML;
+    var narrListTop = document.getElementById('narr-list-top');
+    if(narrListTop) narrListTop.innerHTML = narrHTML;
+
+    // Wire up accordion toggles (in both locations)
     document.querySelectorAll('.narr-header[data-target]').forEach(hdr => {
       hdr.addEventListener('click', () => {
         const id     = hdr.dataset.target;
@@ -5670,6 +5675,8 @@ async function loadNarratives() {
   } catch (err) {
     document.getElementById('narr-list').innerHTML =
       `<div class="inline-err">Narratives: ${esc(err.message)}</div>`;
+    var narrListTopErr = document.getElementById('narr-list-top');
+    if(narrListTopErr) narrListTopErr.innerHTML = `<div class="inline-err">Narratives: ${esc(err.message)}</div>`;
   }
 }
 
@@ -6966,7 +6973,6 @@ async function loadEarnings() {
 async function loadStoriesFeed() {
   if (!TICKER) return;
   const feedList = document.getElementById('tk-feed-list');
-  const feedListTop = document.getElementById('tk-feed-list-top');
   try {
     const rows = await sbFetch('narrative_analyses', {
       select: 'narrative_text,verdict,sentiment_score,snapshot_date,created_at,source_outlet,narrative_type,article_url',
@@ -6977,11 +6983,10 @@ async function loadStoriesFeed() {
 
     if (!rows.length) {
       if(feedList) feedList.innerHTML = '<div class="tk-feed-empty">No stories available for this ticker.</div>';
-      if(feedListTop) feedListTop.innerHTML = '<div class="tk-feed-empty">No stories available for this ticker.</div>';
       return;
     }
 
-    var renderedHTML = rows.map(r => {
+    feedList.innerHTML = rows.map(r => {
       const score = r.sentiment_score ?? 0;
       const dotCls = score > 0 ? 'bull' : score < 0 ? 'bear' : 'neutral';
       const v = (r.verdict || '').toUpperCase();
@@ -7008,11 +7013,8 @@ async function loadStoriesFeed() {
         + linkHtml
         + '</div></div></div>';
     }).join('');
-    if(feedList) feedList.innerHTML = renderedHTML;
-    if(feedListTop) feedListTop.innerHTML = renderedHTML;
   } catch (err) {
     if(feedList) feedList.innerHTML = '<div class="tk-feed-empty">Failed to load stories.</div>';
-    if(feedListTop) feedListTop.innerHTML = '<div class="tk-feed-empty">Failed to load stories.</div>';
   }
 }
 
