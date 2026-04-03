@@ -489,6 +489,45 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
 .st-card-tickers{font-size:11px;color:var(--mp-text-muted);font-family:var(--font-body);margin-top:6px;}
 .st-card-sev{font-size:10px;font-weight:700;letter-spacing:.05em;margin-top:4px;font-family:var(--font-body);}
 
+/* ── TICKER SNAPSHOTS ──────────────────────────────────────────────────────── */
+.snap-controls{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
+.snap-filters{display:flex;gap:8px;flex-wrap:wrap;}
+.snap-chip{padding:7px 16px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid var(--mp-border);color:var(--mp-text-secondary);background:transparent;cursor:pointer;transition:all .15s;font-family:var(--font-body);}
+.snap-chip:hover{border-color:var(--mp-cyan);color:var(--mp-cyan);}
+.snap-chip.active{border-color:var(--mp-cyan);color:#fff;background:var(--mp-cyan);}
+.snap-count{font-size:12px;color:var(--mp-text-muted);font-family:var(--font-body);}
+.snap-table-wrap{overflow-x:auto;border:1px solid var(--mp-border);border-radius:12px;}
+.snap-table{width:100%;border-collapse:collapse;font-family:var(--font-body);font-size:13px;}
+.snap-table thead th{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--mp-text-muted);padding:10px 14px;text-align:left;border-bottom:1px solid var(--mp-border);cursor:pointer;white-space:nowrap;background:var(--mp-surface);}
+.snap-table thead th:hover{color:var(--mp-cyan);}
+.snap-table tbody tr{border-bottom:1px solid var(--mp-border);cursor:pointer;transition:background .12s;}
+.snap-table tbody tr:hover{background:var(--mp-surface2);}
+.snap-table td{padding:10px 14px;color:var(--mp-text-secondary);white-space:nowrap;}
+.snap-ticker-cell{display:flex;align-items:center;gap:8px;font-weight:700;color:var(--mp-text-primary);}
+.snap-logo{width:18px;height:18px;border-radius:4px;object-fit:contain;}
+.snap-flag{font-size:10px;font-weight:600;padding:2px 6px;border-radius:3px;background:rgba(255,184,0,0.1);color:#FFB800;border:1px solid rgba(255,184,0,0.15);margin-right:4px;}
+
+/* ── LEADERBOARD ──────────────────────────────────────────────────────────── */
+.lb-section{margin-bottom:24px;background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:12px;overflow:hidden;}
+.lb-section-head{padding:14px 18px;border-bottom:1px solid var(--mp-border);}
+.lb-section-title{font-size:15px;font-weight:700;color:var(--mp-text-primary);font-family:var(--font-body);}
+.lb-section-sub{font-size:12px;color:var(--mp-text-muted);margin-top:2px;}
+.lb-table{font-family:var(--font-body);font-size:13px;}
+.lb-thead{display:flex;align-items:center;padding:8px 14px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--mp-text-muted);border-bottom:1px solid var(--mp-border);background:var(--mp-surface);}
+.lb-row{display:flex;align-items:center;padding:10px 14px;border-bottom:1px solid var(--mp-border);cursor:pointer;transition:background .12s;}
+.lb-row:last-child{border-bottom:none;}
+.lb-row:hover{background:var(--mp-surface2);}
+.lb-rank{width:30px;flex-shrink:0;font-weight:700;color:var(--mp-text-muted);font-size:12px;}
+.lb-id{flex:1;min-width:80px;display:flex;align-items:center;gap:8px;font-weight:700;color:var(--mp-text-primary);}
+.lb-logo{width:18px;height:18px;border-radius:4px;object-fit:contain;}
+.lb-price{width:80px;flex-shrink:0;color:var(--mp-text-secondary);}
+.lb-signal{flex:1;min-width:100px;color:var(--mp-text-secondary);}
+.lb-action{flex:1;min-width:80px;font-weight:500;color:var(--mp-text-primary);}
+.lb-dir{width:70px;flex-shrink:0;font-weight:600;font-size:12px;}
+.lb-fvd{width:80px;flex-shrink:0;font-weight:600;}
+.lb-score{width:50px;flex-shrink:0;font-weight:700;color:var(--mp-text-primary);text-align:right;}
+@media(max-width:768px){.lb-thead,.lb-row{font-size:11px;padding:8px 10px;}.lb-signal,.lb-action{display:none;}}
+
 /* ── TRADING CALENDAR ──────────────────────────────────────────────────────── */
 /* Signal strip */
 .cal-signals{margin-bottom:20px;}
@@ -606,6 +645,11 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
       Leaderboard
       <span class="nav-item-badge teal">New</span>
     </button>
+    <button class="nav-item" data-tab="leaderboard" onclick="MP.switchTab('leaderboard',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+      Leaderboard
+      <span class="nav-item-badge teal">New</span>
+    </button>
   </div>
   <div class="nav-bottom">
     <button onclick="toggleTheme()" style="display:flex;align-items:center;gap:8px;">
@@ -696,6 +740,13 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
       </div>
     </div>
 
+    <!-- ═══ TAB: LEADERBOARD ═══ -->
+    <div class="tk-tab-panel" id="tab-leaderboard">
+      <div id="leaderboard-root">
+        <div style="padding:40px;text-align:center;color:var(--mp-text-tertiary);">Loading Leaderboard...</div>
+      </div>
+    </div>
+
   </div><!-- /page-content -->
 </div><!-- /main -->
 
@@ -716,6 +767,8 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
 <script src="/lib/mod-trading-cards.js"></script>
 <script src="/lib/mod-sectors-themes.js"></script>
 <script src="/lib/mod-trading-calendar.js"></script>
+<script src="/lib/mod-ticker-snapshots.js"></script>
+<script src="/lib/mod-leaderboard.js"></script>
 <script src="/lib/mod-ticker-snapshots.js"></script>
 <script src="/lib/mod-leaderboard.js"></script>
 
