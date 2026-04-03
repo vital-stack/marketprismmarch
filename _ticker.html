@@ -3273,36 +3273,46 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
       <!-- ── Main Content Column ── -->
       <div class="tk-col-left">
 
-        <!-- 1. THE NARRATIVE — Strength Ring + Claim + Summary -->
+        <!-- 1. TRENDING STORIES — Moved up from Story Feed section -->
         <div class="section">
-          <div class="section-label">The Narrative</div>
-          <div class="section-body" id="narr-strength-body">
-            <div class="narr-strength-wrap">
-              <div class="narr-ring-main" id="narr-ring-main">
-                <div class="skel" style="width:160px;height:160px;border-radius:50%;"></div>
-              </div>
-              <div class="narr-ring-right">
-                <div class="narr-claim-text" id="narr-claim-text">
-                  <div class="skel" style="height:16px;width:90%;margin-bottom:8px;"></div>
-                  <div class="skel" style="height:16px;width:70%;"></div>
-                </div>
-                <div class="narr-phase-row" id="narr-phase-row"></div>
-                <div class="narr-mini-rings" id="narr-mini-rings">
-                  <div class="skel" style="width:64px;height:64px;border-radius:50%;"></div>
-                  <div class="skel" style="width:64px;height:64px;border-radius:50%;"></div>
-                  <div class="skel" style="width:64px;height:64px;border-radius:50%;"></div>
-                </div>
-                <div class="narr-summary-text" id="narr-summary-text">
-                  <div class="skel" style="height:12px;width:95%;margin-bottom:6px;"></div>
-                  <div class="skel" style="height:12px;width:80%;"></div>
-                </div>
+          <div class="section-label" style="display:flex;align-items:center;justify-content:space-between;">
+            <span>Trending Stories</span>
+            <button class="tk-feed-refresh" id="tk-feed-refresh-top" title="Refresh stories" style="background:none;border:1px solid var(--mp-border);border-radius:4px;padding:3px 6px;cursor:pointer;color:var(--mp-text-tertiary);">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            </button>
+          </div>
+          <div class="section-body">
+            <div class="tk-feed" id="tk-feed-top" style="position:static;max-height:none;overflow:visible;">
+              <div class="tk-feed-list" id="tk-feed-list-top">
+                <div class="tk-feed-empty">Loading stories...</div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- 1b. WHAT'S MOVING IT (populated by renderPrimaryClaim) -->
-        <div id="narr-movers"></div>
+        <!-- Story Lifecycle — moved up from Narratives tab -->
+        <div class="section">
+          <div class="section-label">Story Lifecycle</div>
+          <div class="section-body">
+            <div class="lc-pad" id="lc-body-top">
+              <div class="skel" style="height:14px;width:40%;margin-bottom:14px;"></div>
+              <div class="skel" style="height:7px;margin-bottom:8px;"></div>
+              <div class="skel" style="height:10px;width:80%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hidden: narr-movers kept for JS compat but not displayed -->
+        <div id="narr-movers" style="display:none;"></div>
+
+        <!-- Hidden: original narr elements so JS that references them doesn't crash -->
+        <div id="narr-strength-body" style="display:none;">
+          <div id="narr-ring-main"></div>
+          <div id="narr-claim-text"></div>
+          <div id="narr-phase-row"></div>
+          <div id="narr-mini-rings"></div>
+          <div id="narr-summary-text"></div>
+        </div>
 
         <!-- 2. ASK MARKET SCHOLAR — Prominent AI Section -->
         <div class="section scholar-hero-section" id="scholar-hero-section">
@@ -5033,7 +5043,7 @@ async function loadLifecycle() {
     const deltaStr  = delta != null ? (delta > 0 ? '+' : '') + delta.toFixed(2) + ' today' : '—';
     const deltaCls  = delta > 0 ? 'color:var(--accent-surging)' : delta < 0 ? 'color:var(--accent-breaking)' : '';
 
-    document.getElementById('lc-body').innerHTML = `
+    var lcHTML = `
       <div class="lc-top">
         <div class="lc-stage">${esc(stage)}</div>
         <div class="lc-energy">${pct != null ? Math.round(pct) + '% health' : '—'}</div>
@@ -5056,6 +5066,9 @@ async function loadLifecycle() {
           <div class="lc-stat-val" style="${deltaCls}">${deltaStr}</div>
         </div>
       </div>`;
+    document.getElementById('lc-body').innerHTML = lcHTML;
+    var lcTop = document.getElementById('lc-body-top');
+    if(lcTop) lcTop.innerHTML = lcHTML;
   } catch (err) {
     document.getElementById('lc-body').innerHTML = `<div class="inline-err">Lifecycle: ${esc(err.message)}</div>`;
   }
@@ -6953,7 +6966,7 @@ async function loadEarnings() {
 async function loadStoriesFeed() {
   if (!TICKER) return;
   const feedList = document.getElementById('tk-feed-list');
-  if (!feedList) return;
+  const feedListTop = document.getElementById('tk-feed-list-top');
   try {
     const rows = await sbFetch('narrative_analyses', {
       select: 'narrative_text,verdict,sentiment_score,snapshot_date,created_at,source_outlet,narrative_type,article_url',
@@ -6963,11 +6976,12 @@ async function loadStoriesFeed() {
     }).catch(() => []);
 
     if (!rows.length) {
-      feedList.innerHTML = '<div class="tk-feed-empty">No stories available for this ticker.</div>';
+      if(feedList) feedList.innerHTML = '<div class="tk-feed-empty">No stories available for this ticker.</div>';
+      if(feedListTop) feedListTop.innerHTML = '<div class="tk-feed-empty">No stories available for this ticker.</div>';
       return;
     }
 
-    feedList.innerHTML = rows.map(r => {
+    var renderedHTML = rows.map(r => {
       const score = r.sentiment_score ?? 0;
       const dotCls = score > 0 ? 'bull' : score < 0 ? 'bear' : 'neutral';
       const v = (r.verdict || '').toUpperCase();
@@ -6994,8 +7008,11 @@ async function loadStoriesFeed() {
         + linkHtml
         + '</div></div></div>';
     }).join('');
+    if(feedList) feedList.innerHTML = renderedHTML;
+    if(feedListTop) feedListTop.innerHTML = renderedHTML;
   } catch (err) {
-    feedList.innerHTML = '<div class="tk-feed-empty">Failed to load stories.</div>';
+    if(feedList) feedList.innerHTML = '<div class="tk-feed-empty">Failed to load stories.</div>';
+    if(feedListTop) feedListTop.innerHTML = '<div class="tk-feed-empty">Failed to load stories.</div>';
   }
 }
 
