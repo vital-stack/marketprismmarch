@@ -706,6 +706,42 @@ body{
 .disc-nc-rb-text{font-size:12px;color:var(--mp-text-secondary);line-height:1.6;}
 .disc-nc-rb-claim{font-size:12px;color:var(--mp-text-muted);line-height:1.6;margin-bottom:6px;font-style:italic;}
 /* Hero banner card style */
+/* ── Market Weather + Trade Lanes (v2 features) ── */
+.mw-banner{display:flex;align-items:stretch;gap:1px;background:var(--mp-border);border:1px solid var(--mp-border);border-radius:12px;overflow:hidden;margin-bottom:16px;position:relative;}
+.mw-banner::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;z-index:2;background:var(--mp-cyan);opacity:0.3;}
+.mw-cell{flex:1;padding:14px 18px;background:var(--mp-surface);display:flex;flex-direction:column;gap:4px;min-width:0;}
+.mw-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--mp-text-muted);font-family:var(--font-body);white-space:nowrap;}
+.mw-val{font-size:18px;font-weight:700;color:var(--mp-text-primary);font-family:var(--font-body);white-space:nowrap;}
+.mw-sub{font-size:11px;color:var(--mp-text-tertiary);}
+.tl-section{margin-bottom:20px;}
+.tl-header{margin-bottom:14px;}
+.tl-title{font-family:var(--font-body);font-size:18px;font-weight:700;color:var(--mp-text-primary);margin-bottom:2px;}
+.tl-title-sub{font-size:13px;color:var(--mp-text-tertiary);}
+.tl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start;}
+@media(max-width:1024px){.tl-grid{grid-template-columns:1fr;}}
+.tl-lane{background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:12px;overflow:hidden;}
+.tl-lane-header{padding:12px 16px;border-bottom:1px solid var(--mp-border);display:flex;align-items:center;gap:8px;}
+.tl-lane-title{font-size:14px;font-weight:700;font-family:var(--font-body);color:var(--mp-text-primary);}
+.tl-lane-sub{font-size:11px;color:var(--mp-text-muted);}
+.tl-lane-rows{display:flex;flex-direction:column;}
+.tl-row{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--mp-border);cursor:pointer;transition:background .12s;}
+.tl-row:last-child{border-bottom:none;}
+.tl-row:hover{background:var(--mp-surface2);}
+.tl-row-left{display:flex;align-items:center;gap:8px;min-width:0;}
+.tl-row-logo{width:18px;height:18px;border-radius:4px;object-fit:contain;flex-shrink:0;}
+.tl-row-ticker{font-size:14px;font-weight:700;color:var(--mp-text-primary);font-family:var(--font-body);}
+.tl-row-price{font-size:12px;color:var(--mp-text-muted);font-family:var(--font-body);margin-left:4px;}
+.tl-row-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.tl-row-action{font-size:13px;font-weight:500;color:var(--mp-text-secondary);font-family:var(--font-body);}
+.tl-row-dir{font-size:12px;font-weight:700;}
+.tl-tier{font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;font-family:var(--font-body);letter-spacing:.03em;flex-shrink:0;}
+.tl-plat{background:rgba(0,174,255,0.1);color:var(--mp-cyan);border:1px solid rgba(0,174,255,0.15);}
+.tl-gold{background:rgba(255,255,255,0.04);color:var(--mp-text-tertiary);border:1px solid var(--mp-border);}
+.tl-overflow{display:flex;flex-direction:column;}
+.tl-view-more{width:100%;padding:10px 16px;border:none;border-top:1px solid var(--mp-border);background:none;color:var(--mp-text-muted);font-size:12px;font-weight:500;font-family:var(--font-body);cursor:pointer;transition:all .12s;text-align:center;}
+.tl-view-more:hover{background:var(--mp-surface2);color:var(--mp-text-secondary);}
+@media(max-width:768px){.mw-banner{flex-wrap:wrap;}.mw-cell{flex:1 1 45%;min-width:100px;}}
+
 .daily-hero-banner{background:linear-gradient(rgba(8,11,17,0.82),rgba(8,11,17,0.82)),url('/assets/daily-brief-bg.png') center/cover no-repeat;border:1px solid var(--mp-border);border-radius:16px;box-shadow:var(--mp-card-shadow);overflow:hidden;position:relative;margin-bottom:0;}
 .daily-hero-banner::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
   background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:48px 48px;}
@@ -4307,6 +4343,18 @@ body{
         </div>
       </div>
 
+      <!-- 0a) MARKET WEATHER -->
+      <div class="mw-banner" id="mw-banner" style="display:none;"></div>
+
+      <!-- 0b) WHAT'S THE PLAY — Trade Lanes -->
+      <div class="tl-section" id="tl-container" style="display:none;">
+        <div class="tl-header">
+          <div class="tl-title">What's the play?</div>
+          <div class="tl-title-sub">Sorted by conviction. Click any ticker for full analysis.</div>
+        </div>
+        <div class="tl-grid" id="tl-grid"></div>
+      </div>
+
       <!-- 1) MARKET NARRATIVE SUMMARY -->
       <div class="daily-narr-card" id="nf-summary" style="margin-bottom:0;">
         <div class="nf-sum-header" style="padding:14px 20px;border-bottom:1px solid var(--mp-border);margin-bottom:0;">
@@ -6721,6 +6769,101 @@ function renderNarrativeCards(){
 
   // Render 4 featured mini trading cards in left column
   renderMiniTradingCards();
+
+  // Render Market Weather + Trade Lanes (v2 features)
+  loadMarketWeather();
+  loadTradeLanes();
+}
+
+// ── Market Weather Banner ─────────────────────────────────────────────────────
+async function loadMarketWeather(){
+  if(!SUPABASE_URL||!SUPABASE_ANON)return;
+  try{
+    var rows=await restFetch('market_regime_log',{select:'date,vix_close,vix_regime,market_regime,spy_trend_5d,spy_trend_20d,rate_environment,is_transitioning',order:'date.desc',limit:'1'});
+    if(!rows||!rows.length)return;
+    var r=rows[0];
+    var el=document.getElementById('mw-banner');
+    if(!el)return;
+    el.style.display='flex';
+    var vix=r.vix_close?Number(r.vix_close):0;
+    var t5=r.spy_trend_5d?Number(r.spy_trend_5d):0;
+    var t20=r.spy_trend_20d?Number(r.spy_trend_20d):0;
+    function mwCell(label,val,sub){return '<div class="mw-cell"><div class="mw-label">'+label+'</div><div class="mw-val">'+val+'</div><div class="mw-sub">'+esc(sub)+'</div></div>';}
+    el.innerHTML=mwCell('Market Regime',esc(r.market_regime||'\u2014'),r.is_transitioning?'Transitioning':'Established')
+      +mwCell('VIX','<span'+(vix>25?' style="color:#FF4D4D;"':'')+'>'+vix.toFixed(1)+'</span>',r.vix_regime||'')
+      +mwCell('S&P 500','<span'+(t5<0?' style="color:#FF4D4D;"':'')+'>'+Math.abs(t5).toFixed(2)+'%'+(t5<0?' down':' up')+'</span>','20d: '+t20.toFixed(2)+'%')
+      +mwCell('Rates',esc(r.rate_environment||'\u2014'),r.date||'');
+  }catch(e){console.warn('[MW] Load failed:',e);}
+}
+
+// ── Trade Lanes ("What's the Play?") ──────────────────────────────────────────
+var TL_ACTIONS={
+  'NARRATIVE_TRAP':'Short or avoid','FUNDAMENTAL_DISCONNECT':'Avoid',
+  'FADE_THE_HYPE':'Fade rallies','DRIFT_COMPRESSION_SHORT':'Short on bounce',
+  'AIR_POCKET_SHORT':'Stay away','ACCUMULATE':'Buy dips',
+  'MOMENTUM_CONFIRMED':'Ride the trend','FUNDAMENTAL_LONG':'Accumulate',
+  'OMISSION_CASCADE':'Avoid'
+};
+var TL_LIMIT=5;
+
+function tlBuildRow(r){
+  var dir=(r.direction||'').toUpperCase();
+  var dirColor=dir==='BEARISH'?'#FF4D4D':'var(--mp-cyan)';
+  var dirArrow=dir==='BEARISH'?'\u25BC':dir==='BULLISH'?'\u25B2':'';
+  var action=TL_ACTIONS[r.primary_label]||'Monitor';
+  var price=r.price?'$'+fmtPrice(Number(r.price)):'';
+  var tier=(r.card_tier||'').toUpperCase();
+  var tierHTML='';
+  if(tier==='PLATINUM')tierHTML='<span class="tl-tier tl-plat">Plat</span>';
+  else if(tier==='GOLD')tierHTML='<span class="tl-tier tl-gold">Gold</span>';
+  var domain=DOMAIN_MAP[r.ticker];
+  var logo=domain?'<img class="tl-row-logo" src="https://www.google.com/s2/favicons?domain='+domain+'&sz=32" alt="" onerror="this.style.display=\'none\';">':'';
+  return '<div class="tl-row" onclick="window.location.href=\'/ticker/'+encodeURIComponent(r.ticker)+'\'">'
+    +'<div class="tl-row-left">'+tierHTML+logo+'<span class="tl-row-ticker">'+esc(r.ticker)+'</span><span class="tl-row-price">'+price+'</span></div>'
+    +'<div class="tl-row-right"><span class="tl-row-action">'+esc(action)+'</span><span class="tl-row-dir" style="color:'+dirColor+';">'+dirArrow+'</span></div>'
+  +'</div>';
+}
+
+function tlBuildLane(title,subtitle,cards){
+  if(!cards.length)return'';
+  cards.sort(function(a,b){return(Number(b.confidence)||0)-(Number(a.confidence)||0);});
+  var visible=cards.slice(0,TL_LIMIT);
+  var overflow=cards.slice(TL_LIMIT);
+  var laneId='tl-overflow-'+title.replace(/\s/g,'-').toLowerCase();
+  var html='<div class="tl-lane"><div class="tl-lane-header"><div><div class="tl-lane-title">'+esc(title)+'</div><div class="tl-lane-sub">'+esc(subtitle)+' \u00B7 '+cards.length+' signals</div></div></div><div class="tl-lane-rows">';
+  visible.forEach(function(c){html+=tlBuildRow(c);});
+  if(overflow.length){
+    html+='<div class="tl-overflow" id="'+laneId+'" style="display:none;">';
+    overflow.forEach(function(c){html+=tlBuildRow(c);});
+    html+='</div><button class="tl-view-more" onclick="var t=document.getElementById(\''+laneId+'\');var s=t.style.display!==\'none\';t.style.display=s?\'none\':\'block\';this.textContent=s?\'View '+overflow.length+' more\':\'Show less\';">View '+overflow.length+' more</button>';
+  }
+  html+='</div></div>';
+  return html;
+}
+
+async function loadTradeLanes(){
+  if(!SUPABASE_URL||!SUPABASE_ANON)return;
+  var container=document.getElementById('tl-container');
+  if(!container)return;
+  try{
+    var rows=await restFetch('trade_cards_live',{select:'ticker,direction,confidence,card_tier,primary_label,timeframe,holding_days,price',order:'confidence.desc'});
+    if(!rows||!rows.length){container.style.display='none';return;}
+    var buckets={day:[],swing:[],position:[]};
+    rows.forEach(function(r){
+      var tf=(r.timeframe||'').toLowerCase();
+      if(tf==='day')buckets.day.push(r);
+      else if(tf==='swing')buckets.swing.push(r);
+      else if(tf==='position')buckets.position.push(r);
+      else{var hd=r.holding_days||7;if(hd<=2)buckets.day.push(r);else if(hd<=14)buckets.swing.push(r);else buckets.position.push(r);}
+    });
+    var html='';
+    html+=tlBuildLane('Day Trade','In and out today',buckets.day);
+    html+=tlBuildLane('Swing Trade','3\u201314 day window',buckets.swing);
+    html+=tlBuildLane('Long Hold','Weeks to months',buckets.position);
+    var grid=document.getElementById('tl-grid');
+    if(grid)grid.innerHTML=html;
+    container.style.display='block';
+  }catch(e){console.warn('[TL] Load failed:',e);}
 }
 
 function renderMiniTradingCards(){
