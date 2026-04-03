@@ -8,7 +8,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Stock Analysis — Market Prism | Narrative Intelligence & Signals</title>
 <meta name="description" content="Deep AI-powered stock analysis with narrative scoring, sentiment signals, and institutional-grade equity intelligence. Decode what's really driving the price.">
-<meta name="robots" content="noindex, nofollow">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Market Prism">
+<meta property="og:title" content="AI Stock Analysis — Market Prism">
+<meta property="og:description" content="Deep AI-powered stock analysis with narrative scoring, sentiment signals, and institutional-grade equity intelligence.">
+<meta property="og:url" content="https://marketprism.co">
+<meta property="og:image" content="https://marketprism.co/og-default.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@marketprism">
+<meta name="twitter:title" content="AI Stock Analysis — Market Prism">
+<meta name="twitter:description" content="Decode what's really driving the price with narrative intelligence.">
+<meta name="twitter:image" content="https://marketprism.co/og-default.png">
 <link rel="icon" type="image/png" href="/assets/Market-Prism-Favicon.png">
 <meta http-equiv="x-dns-prefetch-control" content="on">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&family=Anton&family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -3256,6 +3267,14 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
 
         <!-- 1b. WHAT'S MOVING IT (populated by renderPrimaryClaim) -->
         <div id="narr-movers"></div>
+
+        <!-- 1c. SIGNUP CTA (non-authenticated users) -->
+        <div id="ticker-signup-cta" style="display:none;margin:20px 0;padding:24px;border-radius:16px;border:1px solid rgba(0,174,255,0.12);background:linear-gradient(135deg,rgba(0,174,255,0.04),rgba(0,222,148,0.04));text-align:center;">
+          <div style="font-family:'Instrument Serif',Georgia,serif;font-size:20px;color:#fff;margin-bottom:8px;">Get this report for 170 tickers every morning</div>
+          <div style="font-family:Inter,sans-serif;font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:16px;">Narrative traps, momentum signals, and forensic analysis — delivered before market open.</div>
+          <a href="/login#register" style="display:inline-block;font-family:Inter,sans-serif;font-size:13px;font-weight:600;padding:11px 28px;border-radius:8px;background:linear-gradient(135deg,#00AEFF,#00DE94);color:#fff;text-decoration:none;">Start Free →</a>
+          <div style="font-family:Inter,sans-serif;font-size:11px;color:rgba(255,255,255,0.3);margin-top:10px;">No credit card required</div>
+        </div>
 
         <!-- 2. ASK MARKET SCHOLAR — Prominent AI Section -->
         <div class="section scholar-hero-section" id="scholar-hero-section">
@@ -6711,6 +6730,32 @@ async function refreshAll() {
   renderPrimaryClaim(pulse);
   renderWarranted(pulse);
   renderSidebar(pulse, heroData);
+
+  // Show signup CTA for non-authenticated users
+  if(localStorage.getItem('mp-beta-access') !== 'true'){
+    var ctaEl = document.getElementById('ticker-signup-cta');
+    if(ctaEl) ctaEl.style.display = 'block';
+  }
+
+  // Dynamic OG meta tags
+  (function(){
+    var t = TICKER;
+    var price = heroData && heroData.price ? '$' + parseFloat(heroData.price).toFixed(2) : '';
+    var co = heroData && heroData.company_name ? heroData.company_name : t;
+    var ogTitle = t + ' Narrative Intelligence — Market Prism';
+    var ogDesc = co + ' ' + price + ' — AI-powered narrative analysis, trap detection, and forensic signals.';
+    var metas = [
+      {p:'og:title', c:ogTitle}, {p:'og:description', c:ogDesc},
+      {p:'og:url', c:'https://marketprism.co/ticker/'+encodeURIComponent(t)},
+      {n:'twitter:title', c:ogTitle}, {n:'twitter:description', c:ogDesc}
+    ];
+    metas.forEach(function(m){
+      var sel = m.p ? 'meta[property="'+m.p+'"]' : 'meta[name="'+m.n+'"]';
+      var el = document.querySelector(sel);
+      if(el) el.setAttribute('content', m.c);
+    });
+    document.title = t + ' — AI Stock Analysis | Market Prism';
+  })();
 
   // Fire leaderboard badge enrichment (non-blocking)
   enrichLeaderboardBadges();

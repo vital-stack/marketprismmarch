@@ -352,6 +352,16 @@ body::before{
     switchAuthTab(hash);
   }
 
+  // Pre-fill email from URL param (e.g. /login?email=foo@bar.com#register)
+  var urlParams = new URLSearchParams(window.location.search);
+  var prefillEmail = urlParams.get('email');
+  if(prefillEmail){
+    var regEmail = document.getElementById('register-email');
+    if(regEmail) regEmail.value = prefillEmail;
+    var signinEmail = document.getElementById('signin-email');
+    if(signinEmail) signinEmail.value = prefillEmail;
+  }
+
   // ── Message helpers ──
   function showMsg(type, text){
     var el = document.getElementById('auth-message');

@@ -4996,6 +4996,43 @@ function switchTab(id, btn){
         ch.style.userSelect = '';
       });
     }
+    // ── Soft-gate: nudge non-authenticated users on select tabs ──
+    var SOFT_GATED = ['narrative','leaderboard','scorer'];
+    var softOverlay = tabEl.querySelector('.soft-gate-overlay');
+    if(softOverlay) softOverlay.remove();
+    var isAuthed = localStorage.getItem('mp-beta-access') === 'true';
+    if(!isAuthed && SOFT_GATED.indexOf(id) !== -1 && !sessionStorage.getItem('mp-softgate-'+id)){
+      tabEl.style.position = 'relative';
+      tabEl.style.minHeight = '60vh';
+      var sg = document.createElement('div');
+      sg.className = 'soft-gate-overlay';
+      sg.style.cssText = 'position:absolute;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,transparent 0%,rgba(8,11,17,0.7) 30%,rgba(8,11,17,0.95) 70%);backdrop-filter:blur(2px);';
+      sg.innerHTML = '<div style="text-align:center;max-width:400px;padding:40px 24px;">'
+        +'<div style="font-family:Inter,system-ui,sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#00AEFF;margin-bottom:12px;">Free Account</div>'
+        +'<div style="font-family:\'Instrument Serif\',Georgia,serif;font-size:24px;color:#fff;margin-bottom:12px;">Create a free account to unlock this view</div>'
+        +'<div style="font-family:Inter,sans-serif;font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:24px;line-height:1.5;">170 tickers analyzed daily. Narrative traps, momentum signals, and forensic scores — all free.</div>'
+        +'<a href="/login#register" style="display:inline-block;font-family:Inter,sans-serif;font-size:13px;font-weight:600;padding:12px 28px;border-radius:8px;background:linear-gradient(135deg,#00AEFF,#00DE94);color:#fff;text-decoration:none;margin-bottom:12px;">Start Free →</a>'
+        +'<br><button class="soft-gate-dismiss" style="font-family:Inter,sans-serif;font-size:12px;color:rgba(255,255,255,0.35);background:none;border:none;cursor:pointer;margin-top:8px;padding:4px 12px;">Continue browsing →</button>'
+        +'</div>';
+      tabEl.appendChild(sg);
+      // Blur content behind
+      Array.from(tabEl.children).forEach(function(ch){
+        if(!ch.classList.contains('soft-gate-overlay')){
+          ch.style.filter = 'blur(4px)';
+          ch.style.pointerEvents = 'none';
+          ch.style.userSelect = 'none';
+        }
+      });
+      sg.querySelector('.soft-gate-dismiss').addEventListener('click', function(){
+        sessionStorage.setItem('mp-softgate-'+id, '1');
+        sg.remove();
+        Array.from(tabEl.children).forEach(function(ch){
+          ch.style.filter = '';
+          ch.style.pointerEvents = '';
+          ch.style.userSelect = '';
+        });
+      });
+    }
   }
   if(id==='discover'&&typeof initStoryStream==='function')setTimeout(initStoryStream,100);
   if(id==='narrative'&&typeof renderNHT==='function')setTimeout(renderNHT,50);
@@ -13632,6 +13669,23 @@ onTabSwitch(function(id){
     if(!document.hidden) requestAnimationFrame(loop);
   });
   init(); loop();
+})();
+</script>
+<!-- ── STICKY BOTTOM CTA (non-authenticated users) ── -->
+<div id="dash-sticky-cta" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:200;background:rgba(8,11,17,0.95);backdrop-filter:blur(12px);border-top:1px solid rgba(0,174,255,0.15);padding:10px 24px;font-family:Inter,system-ui,sans-serif;">
+  <div style="max-width:800px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+    <span style="font-size:13px;color:rgba(255,255,255,0.7);">Get daily narrative signals for 170 tickers — <strong style="color:#fff;">free forever</strong></span>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <a href="/login#register" style="font-family:Inter,sans-serif;font-size:12px;font-weight:600;padding:8px 20px;border-radius:6px;background:linear-gradient(135deg,#00AEFF,#00DE94);color:#fff;text-decoration:none;white-space:nowrap;">Start Free →</a>
+      <button onclick="this.closest('#dash-sticky-cta').style.display='none';sessionStorage.setItem('mp-dash-sticky-dismissed','1')" style="background:none;border:none;color:rgba(255,255,255,0.3);font-size:18px;cursor:pointer;padding:2px 6px;">&times;</button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  if(localStorage.getItem('mp-beta-access')!=='true' && !sessionStorage.getItem('mp-dash-sticky-dismissed')){
+    setTimeout(function(){ document.getElementById('dash-sticky-cta').style.display='block'; }, 5000);
+  }
 })();
 </script>
 </body>
