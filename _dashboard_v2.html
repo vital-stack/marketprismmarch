@@ -396,6 +396,117 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
 .tcv2-card:hover .tcv2-view{color:#fff;}
 @media(max-width:600px){.tcv2-grid{grid-template-columns:1fr;}}
 
+/* ── TRADING CALENDAR ──────────────────────────────────────────────────────── */
+/* Signal strip */
+.cal-signals{margin-bottom:20px;}
+.cal-strip-label{font-size:12px;color:var(--mp-text-muted);margin-bottom:8px;font-family:var(--font-body);}
+.cal-strip-scroll{
+  display:flex;gap:10px;overflow-x:auto;padding:4px 0 12px;
+  scroll-snap-type:x mandatory;scrollbar-width:none;-ms-overflow-style:none;
+}
+.cal-strip-scroll::-webkit-scrollbar{display:none;}
+.cal-strip-card{
+  min-width:180px;padding:10px 14px;border-radius:10px;
+  background:var(--mp-surface);border:1px solid var(--mp-border);
+  cursor:grab;flex-shrink:0;scroll-snap-align:start;
+  transition:border-color .15s,box-shadow .15s;
+}
+.cal-strip-card:hover{border-color:var(--mp-border-hover);box-shadow:0 4px 12px rgba(0,0,0,0.2);}
+.cal-strip-card.dragging{opacity:0.3;transform:scale(0.95);}
+.cal-strip-card-top{display:flex;align-items:center;gap:6px;margin-bottom:4px;}
+.cal-strip-logo{width:16px;height:16px;border-radius:3px;object-fit:contain;flex-shrink:0;}
+.cal-strip-ticker{font-size:14px;font-weight:700;color:var(--mp-text-primary);font-family:var(--font-body);}
+.cal-strip-dir{font-size:10px;font-weight:600;margin-left:auto;font-family:var(--font-body);}
+.cal-strip-action{font-size:12px;font-weight:500;color:var(--mp-text-secondary);font-family:var(--font-body);}
+.cal-strip-meta{font-size:10px;color:var(--mp-text-muted);margin-top:2px;}
+
+/* Calendar nav */
+.cal-nav{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:12px;}
+.cal-nav-title{font-size:16px;font-weight:700;color:var(--mp-text-primary);font-family:var(--font-body);min-width:180px;text-align:center;}
+.cal-nav-btn{
+  width:32px;height:32px;border-radius:8px;border:1px solid var(--mp-border);
+  background:var(--mp-surface);color:var(--mp-text-primary);font-size:20px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  transition:all .12s;font-family:var(--font-body);
+}
+.cal-nav-btn:hover{border-color:var(--mp-cyan);color:var(--mp-cyan);}
+
+/* Calendar grid */
+.cal-grid{
+  display:grid;grid-template-columns:repeat(7,1fr);gap:1px;
+  background:var(--mp-border);border:1px solid var(--mp-border);border-radius:12px;
+  overflow:hidden;margin-bottom:16px;
+}
+.cal-day-header{
+  padding:8px;text-align:center;font-size:11px;font-weight:600;
+  text-transform:uppercase;letter-spacing:.06em;color:var(--mp-text-muted);
+  background:var(--mp-surface);font-family:var(--font-body);
+}
+.cal-day{
+  min-height:90px;padding:6px 8px;background:var(--mp-surface);
+  display:flex;flex-direction:column;position:relative;transition:background .12s;
+}
+.cal-empty{background:var(--mp-surface);opacity:0.4;}
+.cal-today{background:var(--mp-surface2);}
+.cal-today .cal-day-num{color:var(--mp-cyan);font-weight:700;}
+.cal-past{opacity:0.5;}
+.cal-closed{background:rgba(255,77,77,0.03);}
+.cal-day-num{font-size:12px;font-weight:500;color:var(--mp-text-tertiary);margin-bottom:4px;font-family:var(--font-body);}
+
+/* Events */
+.cal-day-events{display:flex;flex-direction:column;gap:2px;margin-bottom:4px;}
+.cal-evt{font-size:9px;font-weight:500;display:flex;align-items:center;gap:4px;font-family:var(--font-body);line-height:1.3;}
+.cal-evt-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+
+/* Queued chips */
+.cal-day-queued{display:flex;flex-wrap:wrap;gap:3px;margin-top:auto;}
+.cal-chip{
+  font-size:9px;font-weight:600;padding:2px 6px;border-radius:4px;
+  background:rgba(255,255,255,0.03);border:1px solid;
+  display:flex;align-items:center;gap:3px;font-family:var(--font-body);
+  color:var(--mp-text-secondary);
+}
+.cal-chip-dot{width:4px;height:4px;border-radius:50%;flex-shrink:0;}
+.cal-chip-x{
+  background:none;border:none;color:var(--mp-text-muted);font-size:11px;
+  cursor:pointer;padding:0 0 0 2px;line-height:1;
+}
+.cal-chip-x:hover{color:#FF4D4D;}
+
+/* Drop zone */
+.cal-drop-hint{
+  display:none;font-size:9px;color:var(--mp-cyan);text-align:center;
+  padding:4px;font-family:var(--font-body);
+}
+.cal-drag-over{background:rgba(0,174,255,0.06) !important;outline:2px dashed var(--mp-cyan);outline-offset:-2px;}
+.cal-drag-over .cal-drop-hint{display:block;}
+
+/* Summary */
+.cal-summary-wrap{margin-bottom:16px;}
+.cal-summary{
+  padding:12px 16px;background:var(--mp-surface);border:1px solid var(--mp-border);
+  border-radius:10px;font-size:13px;color:var(--mp-text-secondary);
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-family:var(--font-body);
+}
+.cal-sum-count{font-size:18px;font-weight:700;color:var(--mp-text-primary);}
+.cal-sum-chip{
+  display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;
+  color:var(--mp-text-secondary);font-family:var(--font-body);
+}
+.cal-sum-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+
+/* Legend */
+.cal-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--mp-text-muted);font-family:var(--font-body);}
+.cal-legend-item{display:flex;align-items:center;gap:5px;}
+.cal-legend-dot{width:6px;height:6px;border-radius:50%;}
+
+@media(max-width:600px){
+  .cal-day{min-height:60px;padding:4px;}
+  .cal-day-num{font-size:10px;}
+  .cal-evt{font-size:8px;}
+  .cal-strip-card{min-width:150px;}
+}
+
 /* ── ANIMATIONS ────────────────────────────────────────────────────────────── */
 @keyframes slideUp{from{opacity:0;transform:translateY(40px);}to{opacity:1;transform:translateY(0);}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
@@ -529,6 +640,7 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
 <script src="/lib/mod-daily-conviction.js"></script>
 <script src="/lib/mod-trade-lanes.js"></script>
 <script src="/lib/mod-trading-cards.js"></script>
+<script src="/lib/mod-trading-calendar.js"></script>
 
 <!-- Boot -->
 <script>
