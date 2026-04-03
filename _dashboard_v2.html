@@ -189,6 +189,43 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
   .dc-grid{grid-template-columns:1fr;}
 }
 
+/* ── TRADE LANES ("What's the Play?") ──────────────────────────────────────── */
+.tl-section{margin-bottom:20px;}
+.tl-header{display:flex;align-items:baseline;gap:10px;margin-bottom:14px;}
+.tl-title{font-family:var(--font-display);font-size:24px;font-weight:400;color:var(--mp-text-primary);}
+.tl-title-sub{font-size:13px;color:var(--mp-text-tertiary);font-style:italic;}
+.tl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;align-items:start;}
+.tl-lane{background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:14px;overflow:hidden;box-shadow:var(--mp-card-shadow);}
+.tl-lane-header{display:flex;align-items:center;gap:12px;padding:14px 18px;}
+.tl-lane-icon{font-size:22px;}
+.tl-lane-title{font-size:15px;font-weight:700;font-family:var(--font-body);}
+.tl-lane-sub{font-size:11px;color:var(--mp-text-muted);margin-top:1px;}
+.tl-lane-cards{padding:8px;display:flex;flex-direction:column;gap:8px;}
+.tl-card{
+  background:var(--mp-surface2);border:1px solid var(--mp-border);border-radius:10px;
+  padding:12px 14px;cursor:pointer;transition:all .15s;
+}
+.tl-card:hover{border-color:var(--mp-border-hover);transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,0.3);}
+.tl-card-row1{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.tl-card-left{display:flex;align-items:center;gap:8px;}
+.tl-ticker{font-size:15px;font-weight:700;color:var(--mp-text-primary);font-family:var(--font-body);}
+.tl-price{font-size:12px;color:var(--mp-text-tertiary);margin-left:6px;}
+.tl-card-right{display:flex;align-items:center;gap:6px;}
+.tl-dir{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-family:var(--font-body);}
+.tl-tier{font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;font-family:var(--font-body);letter-spacing:.04em;}
+.tl-platinum{background:rgba(0,174,255,0.1);color:#00AEFF;border:1px solid rgba(0,174,255,0.2);}
+.tl-gold{background:rgba(255,184,0,0.1);color:#FFB800;border:1px solid rgba(255,184,0,0.2);}
+.tl-surprise{background:rgba(123,97,255,0.1);color:#B97CFF;border:1px solid rgba(123,97,255,0.2);}
+.tl-action{font-size:14px;font-weight:700;font-family:var(--font-body);margin-bottom:2px;}
+.tl-verb{font-size:12px;color:var(--mp-text-secondary);margin-bottom:8px;line-height:1.5;}
+.tl-card-footer{display:flex;align-items:center;gap:10px;}
+.tl-conf-wrap{display:flex;align-items:center;gap:6px;flex:1;}
+.tl-conf-bar{flex:1;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;}
+.tl-conf-fill{height:100%;border-radius:2px;}
+.tl-conf-pct{font-size:11px;font-weight:700;font-family:var(--font-body);}
+.tl-days{font-size:11px;color:var(--mp-text-muted);font-family:var(--font-body);white-space:nowrap;}
+@media(max-width:768px){.tl-grid{grid-template-columns:1fr;}}
+
 /* ── MARKET MAP ─────────────────────────────────────────────────────────────── */
 .mm-section{margin-bottom:20px;}
 .mm-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:0 2px;flex-wrap:wrap;gap:8px;}
@@ -305,6 +342,15 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
         <div class="dc-grid" id="dc-grid"></div>
       </div>
 
+      <!-- Trade Lanes — "What's the Play?" -->
+      <div class="tl-section" id="tl-container" style="display:none;">
+        <div class="tl-header">
+          <div class="tl-title">What's the play?</div>
+          <div class="tl-title-sub">Sorted by confidence. Click any ticker for full analysis.</div>
+        </div>
+        <div class="tl-grid" id="tl-grid"></div>
+      </div>
+
       <!-- Market Map — Force-directed graph -->
       <div class="mm-section" id="mm-container">
         <div class="mm-header">
@@ -360,6 +406,7 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
 <!-- Modules — each is self-contained -->
 <script src="/lib/mod-market-weather.js"></script>
 <script src="/lib/mod-daily-conviction.js"></script>
+<script src="/lib/mod-trade-lanes.js"></script>
 <script src="/lib/mod-market-map.js"></script>
 
 <!-- Boot -->
@@ -387,6 +434,7 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
     // Load Daily Brief modules
     MP.load('market-weather');
     MP.load('daily-conviction');
+    MP.load('trade-lanes');
     MP.load('market-map');
   });
 })();
