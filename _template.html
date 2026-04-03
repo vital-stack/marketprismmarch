@@ -5792,6 +5792,7 @@ var CARD_DATA  = []; // High-conviction trade signals from v_trade_cards (filter
 var TRADE_CLASS_MAP = {};
 var PREDICTION_MAP  = {};
 var snapshotMap     = {};
+var industryMap     = {};  // ticker -> {sector, industry, name, description} from ticker_industry_lookup
 var scorecardMap    = {};
 var qualityFlagMap  = {};
 var LOVE_HATE_DATA  = [];
@@ -6048,6 +6049,8 @@ async function loadData(){
     }).catch(function(e){ console.error('[MP] v_trade_cards fetch error:', e); return []; });
     // price fallback for cards if v_trade_cards lacks price
     var snapP = fetch(SUPABASE_URL+'/rest/v1/ticker_snapshots?select=ticker,price_close,sector,industry&order=snapshot_date.desc&limit=500',{headers:hdrs}).catch(function(){return null;});
+    // Industry + description from ticker_industry_lookup (Polygon reference data)
+    var industryP = fetch(SUPABASE_URL+'/rest/v1/ticker_industry_lookup?select=ticker,sector,industry,name,description',{headers:hdrs}).catch(function(){return null;});
 
     var res = await mainP;
     if(!res.ok) throw new Error('Supabase '+res.status);
@@ -6059,6 +6062,8 @@ async function loadData(){
 
     snapshotMap={};
     try{ if(snapP){ var sr=await snapP; if(sr&&sr.ok)(await sr.json()).forEach(function(s){if(!snapshotMap[s.ticker])snapshotMap[s.ticker]=s;}); } }catch(_){}
+    industryMap={};
+    try{ if(industryP){ var ir=await industryP; if(ir&&ir.ok)(await ir.json()).forEach(function(r){if(r.ticker)industryMap[r.ticker]=r;}); } }catch(_){}
 
     // Build CARD_DATA from v_trade_cards — enrich each row with computed fields
     CARD_DATA = cardRows.map(function(r){
@@ -6107,8 +6112,8 @@ async function loadData(){
         _moveDateOverride: moveDateOverride,
         _description:   description,
         _confPct:       confPct,
-        sector_name:    r.sector_name || r.sector || (SECTOR_MAP[r.ticker]||[])[0] || snap.sector || '\u2014',
-        industry:       r.industry || '',
+        sector_name:    r.sector_name || r.sector || (industryMap[r.ticker]||{}).sector || (SECTOR_MAP[r.ticker]||[])[0] || snap.sector || '\u2014',
+        industry:       r.industry || (industryMap[r.ticker]||{}).industry || '',
         // keep price_change_pct; fallback price from snapshot if null
         price:          r.price || snap.price_close || 0,
         narrative_state: derivedRarity,
@@ -6197,6 +6202,11 @@ async function loadData(){
       // Preserve prism_verdict from base row — scorecard merge can overwrite with null
       if(r.prism_verdict && !m.prism_verdict) m.prism_verdict = r.prism_verdict;
       if(!m.sector_name&&SECTOR_MAP[m.ticker])m.sector_name=SECTOR_MAP[m.ticker][0];
+      var _il=industryMap[m.ticker];
+      if(_il){
+        if(!m.sector_name)m.sector_name=_il.sector||m.sector_name;
+        if(!m.industry)m.industry=_il.industry||'';
+      }
       // Merge narrative_analyses fields (prefixed to avoid collisions)
       var na=narrativeAnalysesMap[m.ticker];
       if(na){
@@ -8132,7 +8142,7 @@ function renderSnap(){
       +'<td><div class="snap-tags">'+tagsHTML+'</div></td>'
       +'<td>'+fvdHTML+'</td>'
       +'<td>'+prismHTML+'</td>'
-      +'<td><span style="font-size:11px;color:var(--mp-text-tertiary);">'+esc(r.sector_name||'\u2014')+'</span>'+(r.sector_trap_flag?'<span style="display:inline-block;font-size:10px;font-weight:700;color:#FFB800;background:rgba(255,184,0,.08);padding:1px 5px;border-radius:3px;border:1px solid rgba(255,184,0,.2);margin-left:4px;">\u26A0 Trap</span>':'')+'</td>'
+      +'<td><span style="font-size:11px;color:var(--mp-text-tertiary);">'+esc(r.sector_name||(industryMap[r.ticker]||{}).sector||'\u2014')+'</span>'+(r.industry||(industryMap[r.ticker]||{}).industry?'<br><span style="font-size:10px;color:var(--mp-text-muted);">'+esc(r.industry||(industryMap[r.ticker]||{}).industry)+'</span>':'')+(r.sector_trap_flag?'<span style="display:inline-block;font-size:10px;font-weight:700;color:#FFB800;background:rgba(255,184,0,.08);padding:1px 5px;border-radius:3px;border:1px solid rgba(255,184,0,.2);margin-left:4px;">\u26A0 Trap</span>':'')+'</td>'
       +'<td class="r"><a href="/ticker/'+encodeURIComponent(r.ticker)+'" class="snap-cta" onclick="event.stopPropagation();">View \u2192</a></td>'
     +'</tr>';
   }).join('');
@@ -9825,7 +9835,9 @@ function buildCardFrontHTML(c,i,dateStr,prefix,showActions){
   var rKey=c.prism_verdict||c.narrative_state||'Stable';
   var rarity=RARITY_MAP[rKey]||RARITY_MAP['Stable'];
   var snap=snapshotMap&&snapshotMap[c.ticker]||{};
-  var companyName=c.sector_name||snap.sector||'\u2014';
+  var _il=industryMap[c.ticker]||{};
+  var companyName=c.sector_name||_il.sector||snap.sector||'\u2014';
+  var companyIndustry=c.industry||_il.industry||'';
   var signalPrimary=esc(c._description||c.synopsis||c.story_claim||c.primary_driver||'Signal under analysis');
   var sentiment=cardSentiment(c);
   var ss=SENTIMENT_STYLES[sentiment];
@@ -9865,7 +9877,7 @@ function buildCardFrontHTML(c,i,dateStr,prefix,showActions){
             // 1. Header
             +'<div class="tc-header">'
               +'<div class="tc-header-left">'
-                +'<div class="tc-id"><span class="tc-ticker">'+c.ticker+'</span><span class="tc-name">'+esc(companyName)+'</span></div>'
+                +'<div class="tc-id"><span class="tc-ticker">'+c.ticker+'</span><span class="tc-name">'+esc(companyName)+(companyIndustry?' \u00B7 '+esc(companyIndustry):'')+'</span></div>'
               +'</div>'
               +'<span class="tc-rarity" style="color:'+rarity.color+';border-color:'+rarity.border+';background:'+hexToRgba(rarity.color,0.08)+';">'+rarity.label+'</span>'
             +'</div>'
@@ -9881,7 +9893,7 @@ function buildCardFrontHTML(c,i,dateStr,prefix,showActions){
             // 5. Context
             +'<div class="tc-context">'+signalPrimary+'</div>'
             // 6. Sector + date
-            +'<div class="tc-sector-date">'+esc(companyName)+' \u2022 Move Date: '+moveDateStr+'</div>'
+            +'<div class="tc-sector-date">'+esc(companyName)+(companyIndustry?' \u00B7 '+esc(companyIndustry):'')+' \u2022 Play Expires: '+moveDateStr+'</div>'
             // 7. Footer
             +'<div class="tc-foot">'
               +'<span class="tc-state-tag"><span class="tc-pulse" style="background:'+borderColor+';"></span>'+phaseLabel+' \u2022 LIVE</span>'
@@ -11276,7 +11288,7 @@ function tcBuildFromData(){
     var desc = r.description || r._description || r.story_claim || '';
     return {
       id: r.ticker.toLowerCase(), ticker: r.ticker,
-      name: r.sector_name || r.sector || '\u2014',
+      name: r.sector_name || r.sector || (industryMap[r.ticker]||{}).sector || '\u2014',
       price: '$' + fmtPrice(Number(r.price) || 0),
       change: (isUp ? '\u25B2' : '\u25BC') + ' ' + Math.abs(pct).toFixed(2) + '%',
       changeDir: isUp ? 'up' : 'down',
