@@ -5969,13 +5969,9 @@ function renderSidebar(p, h) {
   var coordEl = document.getElementById('tk-sb-coord');
   if (coordEl) { coordEl.textContent = p.coordinated_count != null ? p.coordinated_count : '\u2014'; coordEl.style.color = p.coordinated_count > 0 ? 'var(--mp-blue)' : ''; }
   s('tk-sb-traps', p.trap_count != null ? p.trap_count : '0');
-  // Extra pulse rows
+  // Extra pulse rows — Direction removed (contradicts verdict banner)
   var extraEl = document.getElementById('tk-sb-pulse-extra');
-  if (extraEl) {
-    var dir = p.direction_forecast || '\u2014';
-    var dirColor = dir.indexOf('BULL') !== -1 ? 'var(--mp-green)' : dir.indexOf('BEAR') !== -1 ? 'var(--mp-red)' : 'var(--mp-text-secondary)';
-    extraEl.innerHTML = '<div style="display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid var(--mp-border);"><span style="font-size:13px;color:var(--mp-text-secondary);">Direction</span><span style="font-size:13px;font-weight:600;color:' + dirColor + ';">' + esc(dir) + '</span></div>';
-  }
+  if (extraEl) { extraEl.innerHTML = ''; }
   // PRISM Scores
   var prismEl = document.getElementById('tk-prism-block');
   if (prismEl) {
