@@ -6035,7 +6035,7 @@ async function loadData(){
 
     // Build URL — single order param, snapshot_date pinned to latest
     var cardUrl = SUPABASE_URL+'/rest/v1/v_trade_cards'
-      +'?select=ticker,price,primary_label,direction,confidence,holding_days,entry_date,exit_date,description,phase,status,card_tier,trade_score,snapshot_date,sector_name'
+      +'?select=ticker,price,primary_label,direction,confidence,holding_days,entry_date,exit_date,description,phase,status,card_tier,trade_score,snapshot_date,sector_name,sector,industry'
       +(latestCardDate ? '&snapshot_date=eq.'+encodeURIComponent(latestCardDate) : '')
       +'&confidence=gte.0.65'
       +'&order=confidence.desc'
@@ -6107,7 +6107,8 @@ async function loadData(){
         _moveDateOverride: moveDateOverride,
         _description:   description,
         _confPct:       confPct,
-        sector_name:    r.sector_name || (SECTOR_MAP[r.ticker]||[])[0] || snap.sector || '—',
+        sector_name:    r.sector_name || r.sector || (SECTOR_MAP[r.ticker]||[])[0] || snap.sector || '\u2014',
+        industry:       r.industry || '',
         // keep price_change_pct; fallback price from snapshot if null
         price:          r.price || snap.price_close || 0,
         narrative_state: derivedRarity,
@@ -10046,7 +10047,8 @@ function buildStratCard(d){
   var chSign=chPct>=0?'\u25B2':'\u25BC';
   var moveName=gcFmtLabel(d.primary_label);
   var desc=gcEsc(d.description||d.story_claim||'Signal under analysis');
-  var sector=gcEsc(d.sector_name||'\u2014');
+  var sector=gcEsc(d.sector_name||d.sector||'\u2014');
+  var industry=gcEsc(d.industry||'');
   var scoreRaw=Number(d.trade_score)||0;
   var scorePct=Math.round(scoreRaw*100);
   var scoreCirc=2*Math.PI*17;
@@ -10087,7 +10089,7 @@ function buildStratCard(d){
         +logoHTML(d.ticker,'sm')
         +'<div>'
           +'<div class="gc-ticker">'+gcEsc(d.ticker)+'</div>'
-          +'<div class="gc-sector">'+sector+'</div>'
+          +'<div class="gc-sector">'+sector+(industry?' \u00B7 '+industry:'')+'</div>'
         +'</div>'
       +'</div>'
       +'<div class="gc-price-col">'
@@ -10234,7 +10236,7 @@ async function loadStrategyData(){
     }catch(_){}
 
     var cols='ticker,price,primary_label,direction,confidence,holding_days,entry_date,exit_date,'
-      +'description,phase,status,card_tier,tier_label,trade_score,snapshot_date,sector_name,'
+      +'description,phase,status,card_tier,tier_label,trade_score,snapshot_date,sector_name,sector,industry,'
       +'story_claim,forensic_rebuttal,primary_driver,fair_value,pct_above_fair_value,pe_ratio,'
       +'energy,nrs,vms,coordination_class,dark_pool_signal,dark_pool_direction,narrative_tone';
     var cardUrl=SUPABASE_URL+'/rest/v1/v_trade_cards?select='+cols
@@ -11274,7 +11276,7 @@ function tcBuildFromData(){
     var desc = r.description || r._description || r.story_claim || '';
     return {
       id: r.ticker.toLowerCase(), ticker: r.ticker,
-      name: r.sector_name || '\u2014',
+      name: r.sector_name || r.sector || '\u2014',
       price: '$' + fmtPrice(Number(r.price) || 0),
       change: (isUp ? '\u25B2' : '\u25BC') + ' ' + Math.abs(pct).toFixed(2) + '%',
       changeDir: isUp ? 'up' : 'down',
