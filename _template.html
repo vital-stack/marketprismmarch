@@ -5109,7 +5109,7 @@ function switchTab(id, btn){
     var SOFT_GATED = ['narrative','leaderboard','scorer'];
     var softOverlay = tabEl.querySelector('.soft-gate-overlay');
     if(softOverlay) softOverlay.remove();
-    var isAuthed = localStorage.getItem('mp-beta-access') === 'true';
+    var isAuthed = localStorage.getItem('mp-beta-access') === 'true' || !!CURRENT_USER || (typeof BILLING !== 'undefined' && BILLING.hasAccess && BILLING.hasAccess(CURRENT_SUBSCRIPTION, 'standard'));
     if(!isAuthed && SOFT_GATED.indexOf(id) !== -1 && !sessionStorage.getItem('mp-softgate-'+id)){
       tabEl.style.position = 'relative';
       tabEl.style.minHeight = '60vh';
@@ -13879,7 +13879,7 @@ onTabSwitch(function(id){
 </div>
 <script>
 (function(){
-  if(localStorage.getItem('mp-beta-access')!=='true' && !sessionStorage.getItem('mp-dash-sticky-dismissed')){
+  if(localStorage.getItem('mp-beta-access')!=='true' && !window.CURRENT_USER && !sessionStorage.getItem('mp-dash-sticky-dismissed')){
     setTimeout(function(){ document.getElementById('dash-sticky-cta').style.display='block'; }, 5000);
   }
 })();
