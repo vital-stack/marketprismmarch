@@ -726,21 +726,36 @@ body{
 .mw-banner{
   display:flex;align-items:stretch;gap:1px;
   background:var(--mp-border);border:1px solid var(--mp-border);border-radius:12px;
-  overflow:hidden;margin-bottom:16px;
+  overflow:hidden;margin-bottom:16px;position:relative;
 }
+.mw-banner::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:3px;z-index:2;
+}
+.mw-banner.mw-choppy::after{background:linear-gradient(90deg,#FFB800,#FF8C00,#FFB800);background-size:200% 100%;animation:mwPulse 3s ease infinite;}
+.mw-banner.mw-trending::after{background:linear-gradient(90deg,#00DE94,#38C8B8);}
+.mw-banner.mw-crisis::after{background:linear-gradient(90deg,#FF4D4D,#FF0000);animation:mwPulse 1.5s ease infinite;}
+.mw-banner.mw-recovery::after{background:linear-gradient(90deg,#00AEFF,#38C8B8);}
+@keyframes mwPulse{0%,100%{opacity:1}50%{opacity:0.5}}
 .mw-cell{
-  flex:1;padding:12px 16px;background:var(--mp-surface);
-  display:flex;flex-direction:column;gap:3px;min-width:0;
+  flex:1;padding:14px 18px;background:var(--mp-surface);
+  display:flex;flex-direction:column;gap:4px;min-width:0;
 }
 .mw-cell:first-child{border-radius:12px 0 0 12px;}
 .mw-cell:last-child{border-radius:0 12px 12px 0;}
 .mw-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--mp-text-muted);font-family:var(--font-body);white-space:nowrap;}
-.mw-val{font-size:16px;font-weight:700;color:var(--mp-text-primary);font-family:var(--font-body);white-space:nowrap;}
+.mw-val{font-size:18px;font-weight:700;color:var(--mp-text-primary);font-family:var(--font-body);white-space:nowrap;display:flex;align-items:center;gap:8px;}
 .mw-val.regime-choppy{color:#FFB800;}
 .mw-val.regime-trending{color:#00DE94;}
 .mw-val.regime-crisis{color:#FF4D4D;}
 .mw-val.regime-recovery{color:#00AEFF;}
+.mw-icon{font-size:20px;flex-shrink:0;}
 .mw-sub{font-size:11px;color:var(--mp-text-tertiary);}
+/* Heatmap bar inside banner */
+.mw-heatmap{
+  display:flex;align-items:stretch;height:28px;border-radius:6px;overflow:hidden;
+  background:var(--mp-surface2);margin-top:4px;
+}
+.mw-hm-seg{display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;font-family:var(--font-body);color:rgba(255,255,255,0.85);transition:flex .3s;}
 @media(max-width:768px){
   .mw-banner{flex-wrap:wrap;}
   .mw-cell{flex:1 1 45%;min-width:100px;}
@@ -751,16 +766,22 @@ body{
 .dc-section{margin-bottom:20px;}
 .dc-header{
   display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:12px;padding:0 2px;
+  margin-bottom:14px;padding:0 2px;flex-wrap:wrap;gap:8px;
 }
-.dc-title{font-family:var(--font-body);font-size:14px;font-weight:600;color:var(--mp-text-primary);display:flex;align-items:center;gap:8px;}
-.dc-subtitle{font-size:11px;color:var(--mp-text-muted);}
+.dc-title{font-family:var(--font-body);font-size:15px;font-weight:600;color:var(--mp-text-primary);display:flex;align-items:center;gap:8px;}
+.dc-subtitle{font-size:12px;color:var(--mp-text-muted);}
+.dc-row-label{
+  font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;
+  color:var(--mp-text-muted);margin:16px 0 8px 2px;font-family:var(--font-body);
+  display:flex;align-items:center;gap:6px;
+}
+.dc-row-label .dc-row-icon{font-size:14px;}
 .dc-grid{
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;
 }
 .dc-card{
   background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:14px;
-  padding:16px 18px;position:relative;overflow:hidden;
+  padding:18px 20px;position:relative;overflow:hidden;
   transition:border-color .2s,box-shadow .2s,transform .2s;cursor:pointer;
 }
 .dc-card:hover{border-color:var(--mp-border-hover);box-shadow:0 8px 24px rgba(0,0,0,0.4);transform:translateY(-2px);}
@@ -770,31 +791,30 @@ body{
 .dc-card.dc-safe::before{background:linear-gradient(90deg,#00DE94,#38C8B8);}
 .dc-card.dc-avoid::before{background:linear-gradient(90deg,#FF4D4D,#FFB800);}
 .dc-card.dc-monitor::before{background:linear-gradient(90deg,#00AEFF,#7B61FF);}
-.dc-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
-.dc-card-ticker{font-size:18px;font-weight:700;color:var(--mp-text-primary);font-family:var(--font-body);}
+.dc-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.dc-card-ticker{font-size:20px;font-weight:700;color:var(--mp-text-primary);font-family:var(--font-body);}
 .dc-card-badge{
   font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
-  padding:3px 8px;border-radius:5px;font-family:var(--font-body);
+  padding:4px 10px;border-radius:5px;font-family:var(--font-body);
 }
 .dc-card-badge.safe{background:rgba(0,222,148,0.1);color:#00DE94;border:1px solid rgba(0,222,148,0.2);}
 .dc-card-badge.avoid{background:rgba(255,77,77,0.1);color:#FF4D4D;border:1px solid rgba(255,77,77,0.2);}
 .dc-card-badge.monitor{background:rgba(0,174,255,0.1);color:#00AEFF;border:1px solid rgba(0,174,255,0.2);}
 .dc-card-conf{
-  display:flex;align-items:center;gap:8px;margin-bottom:8px;
+  display:flex;align-items:center;gap:10px;margin-bottom:10px;
 }
-.dc-conf-bar{flex:1;height:5px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;}
+.dc-conf-bar{flex:1;height:6px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;}
 .dc-conf-fill{height:100%;border-radius:3px;}
-.dc-conf-pct{font-size:12px;font-weight:700;font-family:var(--font-body);min-width:32px;text-align:right;}
+.dc-conf-pct{font-size:13px;font-weight:700;font-family:var(--font-body);min-width:36px;text-align:right;}
 .dc-card-signals{
-  display:flex;align-items:center;gap:4px;margin-bottom:6px;
+  display:flex;align-items:center;gap:4px;margin-bottom:10px;flex-wrap:wrap;
 }
-.dc-signal-dot{width:8px;height:8px;border-radius:50%;}
+.dc-signal-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .dc-signal-dot.on{background:#00DE94;}
 .dc-signal-dot.off{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);}
-.dc-signal-label{font-size:11px;color:var(--mp-text-muted);margin-left:4px;font-family:var(--font-body);}
+.dc-signal-label{font-size:11px;color:var(--mp-text-muted);margin-left:4px;font-family:var(--font-body);white-space:nowrap;}
 .dc-card-reason{
-  font-size:12px;color:var(--mp-text-secondary);line-height:1.6;
-  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+  font-size:13px;color:var(--mp-text-secondary);line-height:1.65;
 }
 .dhb-context strong{color:#FFB800;}
 /* Narrative summary card style */
@@ -4386,12 +4406,12 @@ body{
       <div class="mw-banner" id="mw-banner" style="display:none;">
         <div class="mw-cell">
           <div class="mw-label">Market Regime</div>
-          <div class="mw-val" id="mw-regime">—</div>
+          <div class="mw-val" id="mw-regime"><span class="mw-icon" id="mw-regime-icon"></span> <span id="mw-regime-text">—</span></div>
           <div class="mw-sub" id="mw-regime-sub"></div>
         </div>
         <div class="mw-cell">
           <div class="mw-label">VIX</div>
-          <div class="mw-val" id="mw-vix">—</div>
+          <div class="mw-val" id="mw-vix"><span class="mw-icon" id="mw-vix-icon"></span> <span id="mw-vix-text">—</span></div>
           <div class="mw-sub" id="mw-vix-sub"></div>
         </div>
         <div class="mw-cell">
@@ -4403,6 +4423,11 @@ body{
           <div class="mw-label">Rate Environment</div>
           <div class="mw-val" id="mw-rates">—</div>
           <div class="mw-sub" id="mw-rates-sub"></div>
+        </div>
+        <div class="mw-cell" style="flex:1.5;">
+          <div class="mw-label">Market Heatmap</div>
+          <div class="mw-heatmap" id="mw-heatmap"></div>
+          <div class="mw-sub" id="mw-heatmap-sub"></div>
         </div>
       </div>
 
@@ -6848,31 +6873,71 @@ async function loadMarketWeather(){
     if(!banner)return;
     banner.style.display='flex';
 
-    // Regime
-    var regimeEl=document.getElementById('mw-regime');
-    regimeEl.textContent=r.market_regime||'\u2014';
-    regimeEl.className='mw-val regime-'+(r.market_regime||'').toLowerCase();
-    var regSub=document.getElementById('mw-regime-sub');
-    regSub.textContent=r.is_transitioning?'Transitioning':'Established';
+    // Regime class for animated bottom bar
+    var regimeKey=(r.market_regime||'').toLowerCase();
+    banner.className='mw-banner mw-'+regimeKey;
 
-    // VIX
+    // Weather icons by regime
+    var regimeIcons={choppy:'\u26C8\uFE0F',trending:'\u2600\uFE0F',crisis:'\uD83C\uDF2A\uFE0F',recovery:'\uD83C\uDF24\uFE0F'};
+    var regimeEl=document.getElementById('mw-regime');
+    regimeEl.className='mw-val regime-'+regimeKey;
+    document.getElementById('mw-regime-icon').textContent=regimeIcons[regimeKey]||'\uD83C\uDF25\uFE0F';
+    document.getElementById('mw-regime-text').textContent=r.market_regime||'\u2014';
+    var regSub=document.getElementById('mw-regime-sub');
+    regSub.textContent=r.is_transitioning?'\u26A0 Transitioning':'Established';
+
+    // VIX with icon
+    var vix=r.vix_close?Number(r.vix_close):0;
+    var vixIcon=vix>30?'\uD83D\uDD34':vix>20?'\uD83D\uDFE1':'\uD83D\uDFE2';
+    document.getElementById('mw-vix-icon').textContent=vixIcon;
+    var vixText=document.getElementById('mw-vix-text');
+    vixText.textContent=vix?vix.toFixed(1):'\u2014';
     var vixEl=document.getElementById('mw-vix');
-    var vix=r.vix_close?Number(r.vix_close).toFixed(1):'\u2014';
-    vixEl.textContent=vix;
-    vixEl.style.color=r.vix_close>30?'var(--mp-red)':r.vix_close>20?'var(--mp-amber)':'var(--mp-green)';
+    vixEl.style.color=vix>30?'var(--mp-red)':vix>20?'var(--mp-amber)':'var(--mp-green)';
     document.getElementById('mw-vix-sub').textContent=r.vix_regime||'';
 
     // SPY trend
     var spyEl=document.getElementById('mw-spy');
-    var trend5=r.spy_trend_5d?Number(r.spy_trend_5d).toFixed(2)+'%':'\u2014';
-    spyEl.textContent=trend5;
-    spyEl.style.color=r.spy_trend_5d>0?'var(--mp-green)':'var(--mp-red)';
+    var t5=r.spy_trend_5d?Number(r.spy_trend_5d):0;
+    spyEl.innerHTML=(t5>0?'\u25B2':'\u25BC')+' '+Math.abs(t5).toFixed(2)+'%';
+    spyEl.style.color=t5>0?'var(--mp-green)':'var(--mp-red)';
     document.getElementById('mw-spy-sub').textContent='20d: '+(r.spy_trend_20d?Number(r.spy_trend_20d).toFixed(2)+'%':'\u2014');
 
     // Rates
-    document.getElementById('mw-rates').textContent=r.rate_environment||'\u2014';
+    var ratesEl=document.getElementById('mw-rates');
+    var rateIcons={Rising:'\u2B06\uFE0F',Falling:'\u2B07\uFE0F',Stable:'\u27A1\uFE0F'};
+    ratesEl.innerHTML=(rateIcons[r.rate_environment]||'')+' '+(r.rate_environment||'\u2014');
     document.getElementById('mw-rates-sub').textContent=r.date||'';
+
+    // Heatmap — build from CARD_DATA or DATA
+    buildMarketHeatmap();
   }catch(e){console.warn('[MP] Market weather load failed:',e);}
+}
+
+function buildMarketHeatmap(){
+  var hm=document.getElementById('mw-heatmap');
+  var hmSub=document.getElementById('mw-heatmap-sub');
+  if(!hm)return;
+  // Count signals by direction from CARD_DATA or DATA
+  var src=CARD_DATA.length>0?CARD_DATA:DATA;
+  if(!src.length){hm.innerHTML='<div class="mw-hm-seg" style="flex:1;background:var(--mp-surface2);color:var(--mp-text-muted);">No data</div>';return;}
+  var bull=0,bear=0,neutral=0;
+  src.forEach(function(r){
+    var dir=(r.direction||r.prism_verdict||'').toUpperCase();
+    if(dir.indexOf('BULL')!==-1||dir.indexOf('SUPPORT')!==-1||dir.indexOf('SURG')!==-1)bull++;
+    else if(dir.indexOf('BEAR')!==-1||dir.indexOf('TRAP')!==-1||dir.indexOf('BREAK')!==-1||dir.indexOf('DISCONNECT')!==-1)bear++;
+    else neutral++;
+  });
+  var total=bull+bear+neutral;
+  if(!total)return;
+  var bullPct=Math.round(bull/total*100);
+  var bearPct=Math.round(bear/total*100);
+  var neutPct=100-bullPct-bearPct;
+  hm.innerHTML=
+    (bullPct?'<div class="mw-hm-seg" style="flex:'+bullPct+';background:rgba(0,222,148,0.25);color:#00DE94;">'+bullPct+'%</div>':'')
+    +(neutPct?'<div class="mw-hm-seg" style="flex:'+neutPct+';background:rgba(0,174,255,0.15);color:#00AEFF;">'+neutPct+'%</div>':'')
+    +(bearPct?'<div class="mw-hm-seg" style="flex:'+bearPct+';background:rgba(255,77,77,0.25);color:#FF4D4D;">'+bearPct+'%</div>':'');
+  if(hmSub)hmSub.textContent=bull+' bullish \u00B7 '+bear+' bearish \u00B7 '+neutral+' neutral';
 }
 
 // ── Daily Conviction Cards ───────────────────────────────────────────────────
@@ -6901,22 +6966,42 @@ async function loadDailyConviction(){
 
     var grid=document.getElementById('dc-grid');
     if(!grid)return;
-    var cards=[];
+    var html='';
 
-    // SAFE cards
-    (data.strong_conviction_safe||[]).forEach(function(d){
-      cards.push(buildDCCard(d,'safe'));
-    });
-    // AVOID cards (top 5)
-    (data.strong_conviction_avoid||[]).slice(0,5).forEach(function(d){
-      cards.push(buildDCCard(d,'avoid'));
-    });
-    // MONITORING cards (top 3)
-    (data.monitoring_notable||[]).slice(0,3).forEach(function(d){
-      cards.push(buildDCCard(d,'monitor'));
-    });
+    // SAFE section
+    var safeCards=(data.strong_conviction_safe||[]);
+    if(safeCards.length){
+      html+='<div style="grid-column:1/-1;" class="dc-row-label"><span class="dc-row-icon">\u2705</span> Safe — Structurally supported</div>';
+      safeCards.forEach(function(d){html+=buildDCCard(d,'safe');});
+    }
+    // AVOID section
+    var avoidCards=(data.strong_conviction_avoid||[]).slice(0,6);
+    if(avoidCards.length){
+      html+='<div style="grid-column:1/-1;" class="dc-row-label"><span class="dc-row-icon">\uD83D\uDEA8</span> Avoid — High-conviction traps</div>';
+      avoidCards.forEach(function(d){html+=buildDCCard(d,'avoid');});
+    }
+    // MONITORING section
+    var monCards=(data.monitoring_notable||[]).slice(0,4);
+    if(monCards.length){
+      html+='<div style="grid-column:1/-1;" class="dc-row-label"><span class="dc-row-icon">\uD83D\uDD0D</span> Watch — Monitor for resolution</div>';
+      monCards.forEach(function(d){html+=buildDCCard(d,'monitor');});
+    }
+    // EARNINGS IMMINENT
+    var earnCards=(data.earnings_imminent||[]);
+    if(earnCards.length){
+      html+='<div style="grid-column:1/-1;" class="dc-row-label"><span class="dc-row-icon">\uD83D\uDCC5</span> Earnings Imminent</div>';
+      earnCards.forEach(function(d){
+        html+='<div class="dc-card dc-monitor" data-ticker="'+esc(d.ticker)+'" style="cursor:pointer;">'
+          +'<div class="dc-card-top">'
+            +'<span class="dc-card-ticker">'+esc(d.ticker)+'</span>'
+            +'<span class="dc-card-badge monitor">'+esc(d.dte)+' DAYS</span>'
+          +'</div>'
+          +'<div class="dc-card-reason">'+esc(d.current_verdict||'')+' \u2014 '+esc(d.note||'')+'</div>'
+        +'</div>';
+      });
+    }
 
-    grid.innerHTML=cards.join('');
+    grid.innerHTML=html;
 
     // Click handlers
     grid.querySelectorAll('.dc-card[data-ticker]').forEach(function(card){
@@ -6939,11 +7024,7 @@ function buildDCCard(d,type){
   for(var i=0;i<total&&i<8;i++){
     dots+='<span class="dc-signal-dot '+(i<aligned?'on':'off')+'"></span>';
   }
-  // Truncate reasoning for display
   var reason=d.reasoning||'';
-  // Extract the short key insight — take first sentence or up to first period
-  var shortReason=reason.split('. ').slice(0,2).join('. ');
-  if(shortReason.length>180)shortReason=shortReason.slice(0,180)+'\u2026';
 
   return '<div class="dc-card dc-'+type+'" data-ticker="'+esc(d.ticker)+'">'
     +'<div class="dc-card-top">'
@@ -6958,7 +7039,7 @@ function buildDCCard(d,type){
       +dots
       +'<span class="dc-signal-label">'+aligned+'/'+total+' signals aligned</span>'
     +'</div>'
-    +'<div class="dc-card-reason">'+esc(shortReason)+'</div>'
+    +'<div class="dc-card-reason">'+esc(reason)+'</div>'
   +'</div>';
 }
 
