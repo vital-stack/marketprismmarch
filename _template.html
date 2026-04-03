@@ -5783,13 +5783,18 @@ function dailyCalendarClassForType(type){
   if(key.indexOf('FOMC') !== -1) return 'fomc';
   if(key === 'OPTIONS_EXPIRY' || key === 'QUAD_WITCHING') return 'opex';
   if(key === 'EARNINGS') return 'earn';
+  if(key === 'JOBS_REPORT' || key === 'JOBLESS_CLAIMS') return 'earn';
+  if(key.indexOf('ISM') !== -1) return 'earn';
+  if(key === 'CPI' || key === 'PPI' || key === 'PCE' || key === 'GDP') return 'fomc';
+  if(key === 'CONSUMER_SENTIMENT' || key === 'RETAIL_SALES') return 'earn';
   return 'earn';
 }
 function dailyCalendarLabel(row){
   var type = String(row.event_type || '').toUpperCase();
   var label = row.event_name || type.replace(/_/g, ' ');
   if(type === 'EARNINGS' && row.ticker) label = row.ticker + ' Earnings';
-  if(row.event_time) label += ' ' + row.event_time;
+  // Only append human-readable times, not PRE_MARKET/MARKET_CLOSE codes
+  if(row.event_time && row.event_time.indexOf(':') !== -1) label += ' ' + row.event_time;
   return label;
 }
 function buildDailyWeekPersonalizedRows(baseRows){
