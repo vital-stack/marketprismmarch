@@ -2859,28 +2859,59 @@ body{
 .strat-filter-chip:hover{border-color:var(--mp-cyan);color:var(--mp-cyan);}
 .strat-filter-chip.active{border-color:var(--mp-cyan);color:var(--mp-cyan);background:rgba(0,174,255,0.08);}
 .strat-cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;padding-bottom:40px;}
-.strat-card{
-  background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:16px;
-  box-shadow:0 4px 12px rgba(0,0,0,0.4);overflow:hidden;
-  transition:border-color .2s,transform .15s;cursor:pointer;position:relative;
+
+/* ── Flip Card Scene ── */
+.strat-scene{
+  perspective:1400px;cursor:pointer;
   animation:fadeUp .3s ease both;
 }
-.strat-card:hover{border-color:var(--mp-border-hover);transform:translateY(-4px);}
-.strat-card::before{
+.strat-scene:nth-child(1){animation-delay:.03s}.strat-scene:nth-child(2){animation-delay:.07s}
+.strat-scene:nth-child(3){animation-delay:.11s}.strat-scene:nth-child(4){animation-delay:.15s}
+.strat-scene:nth-child(5){animation-delay:.19s}.strat-scene:nth-child(6){animation-delay:.23s}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+.strat-flipper{
+  position:relative;width:100%;
+  transform-style:preserve-3d;
+  transition:transform 0.7s cubic-bezier(0.35,0.15,0.15,1);
+}
+.strat-scene.flipped .strat-flipper{transform:rotateY(180deg);}
+
+.strat-front,.strat-back{
+  backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  border-radius:16px;overflow:hidden;
+  background:var(--mp-surface);border:1px solid var(--mp-border);
+  box-shadow:0 4px 12px rgba(0,0,0,0.4);
+  position:relative;
+}
+.strat-front{z-index:2;}
+.strat-back{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  transform:rotateY(180deg);z-index:1;
+  overflow-y:auto;
+}
+
+/* Grid overlay for both faces */
+.strat-front::before,.strat-back::before{
   content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:0;
   background-image:linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px);
   background-size:48px 48px;
 }
-.strat-card>*{position:relative;z-index:1;}
-.strat-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;z-index:2;}
-.strat-card.zone-match::after{background:linear-gradient(90deg,var(--mp-green),var(--mp-teal));}
-.strat-card.zone-close::after{background:var(--mp-amber);}
-.strat-card.zone-no::after{background:rgba(255,255,255,0.08);}
-.strat-card.zone-avoid::after{background:var(--mp-red);}
-.strat-card:nth-child(1){animation-delay:.03s}.strat-card:nth-child(2){animation-delay:.07s}
-.strat-card:nth-child(3){animation-delay:.11s}.strat-card:nth-child(4){animation-delay:.15s}
-.strat-card:nth-child(5){animation-delay:.19s}.strat-card:nth-child(6){animation-delay:.23s}
-@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.strat-front>*,.strat-back>*{position:relative;z-index:1;}
+
+/* Zone accent bar on top */
+.strat-front::after,.strat-back::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;z-index:2;}
+.strat-scene.zone-match .strat-front::after,.strat-scene.zone-match .strat-back::after{background:linear-gradient(90deg,var(--mp-green),var(--mp-teal));}
+.strat-scene.zone-close .strat-front::after,.strat-scene.zone-close .strat-back::after{background:var(--mp-amber);}
+.strat-scene.zone-no .strat-front::after,.strat-scene.zone-no .strat-back::after{background:rgba(255,255,255,0.08);}
+.strat-scene.zone-avoid .strat-front::after,.strat-scene.zone-avoid .strat-back::after{background:var(--mp-red);}
+
+/* Hover effect on scene */
+.strat-scene:hover .strat-front,.strat-scene:hover .strat-back{border-color:var(--mp-border-hover);box-shadow:0 12px 32px rgba(0,0,0,0.5);}
+.strat-scene:hover{transform:translateY(-4px);}
+.strat-scene.flipped:hover{transform:translateY(-4px);}
+
+/* ── FRONT FACE ── */
 .sc-header{
   padding:20px 20px 14px;border-bottom:1px solid var(--mp-border);
   display:flex;justify-content:space-between;align-items:flex-start;
@@ -2898,13 +2929,7 @@ body{
 }
 .sc-conf-badge.high{background:rgba(0,222,148,0.1);color:var(--mp-green);}
 .sc-conf-badge.medium{background:rgba(255,184,0,0.1);color:var(--mp-amber);}
-.sc-rsi-badge{
-  font-family:var(--font-body);font-size:11px;padding:3px 8px;border-radius:4px;
-  background:var(--mp-surface2);color:var(--mp-text-secondary);
-}
-.sc-rsi-badge.oversold{background:rgba(0,222,148,0.1);color:var(--mp-green);}
-.sc-rsi-badge.overbought{background:rgba(255,77,77,0.1);color:var(--mp-red);}
-.sc-zone-badge-wrap{padding:10px 20px 0;}
+.sc-zone-badge-wrap{padding:12px 20px 0;}
 .sc-zone-badge{
   display:inline-flex;align-items:center;gap:6px;
   padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;
@@ -2915,6 +2940,37 @@ body{
 .sc-zone-badge.no{background:rgba(255,255,255,0.04);color:var(--mp-text-muted);border:1px solid var(--mp-border);}
 .sc-zone-badge.avoid{background:rgba(255,77,77,0.08);color:var(--mp-red);border:1px solid rgba(255,77,77,0.2);}
 .sc-zb-dot{width:5px;height:5px;border-radius:50%;background:currentColor;}
+
+/* Bias / Move Name on front */
+.sc-bias-name{
+  font-family:'Anton',Impact,sans-serif;font-size:22px;font-weight:400;
+  text-transform:uppercase;letter-spacing:.03em;
+  color:var(--mp-text-primary);padding:16px 20px 4px;line-height:1.2;
+}
+.sc-behavior-line{
+  font-size:13px;color:var(--mp-text-secondary);padding:4px 20px 16px;line-height:1.5;
+}
+
+/* Flip hint at bottom of front */
+.sc-flip-hint{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:12px 20px;background:var(--mp-surface2);
+  border-top:1px solid var(--mp-border);
+  font-size:12px;color:var(--mp-text-muted);letter-spacing:.03em;
+  transition:color .2s,background .2s;
+}
+.sc-flip-hint svg{width:16px;height:16px;fill:currentColor;transition:transform .3s;}
+.strat-scene:hover .sc-flip-hint{color:var(--mp-cyan);background:rgba(0,174,255,0.04);}
+.strat-scene:hover .sc-flip-hint svg{transform:rotateY(180deg);}
+
+/* ── BACK FACE ── */
+.sc-back-header{
+  padding:16px 20px 12px;border-bottom:1px solid var(--mp-border);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.sc-back-ticker{font-family:var(--font-body);font-size:16px;font-weight:600;color:var(--mp-text-primary);}
+.sc-back-price{font-family:var(--font-body);font-size:16px;font-weight:500;color:var(--mp-text-primary);}
+
 .sc-drawdown-row{padding:10px 20px;display:flex;align-items:center;gap:10px;}
 .sc-dd-label{font-size:11px;color:var(--mp-text-muted);width:80px;flex-shrink:0;}
 .sc-dd-track{flex:1;height:5px;background:var(--mp-surface2);border-radius:3px;overflow:visible;position:relative;}
@@ -2956,6 +3012,23 @@ body{
 }
 .sc-now-dot{width:6px;height:6px;border-radius:50%;background:var(--mp-cyan);animation:pulse 2s ease infinite;flex-shrink:0;}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* Flip-back hint on back face */
+.sc-back-flip-hint{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:12px 20px;background:var(--mp-surface2);
+  border-top:1px solid var(--mp-border);
+  font-size:12px;color:var(--mp-text-muted);
+}
+.sc-back-flip-hint svg{width:14px;height:14px;fill:currentColor;}
+.sc-view-ticker-btn{
+  font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--mp-cyan);background:rgba(0,174,255,0.08);
+  border:1px solid rgba(0,174,255,0.2);border-radius:6px;
+  padding:5px 14px;cursor:pointer;transition:all .2s;font-family:var(--font-body);
+  text-decoration:none;
+}
+.sc-view-ticker-btn:hover{background:rgba(0,174,255,0.15);border-color:var(--mp-cyan);}
 
 /* Expanded signal card overlay */
 .tc-card-overlay{
@@ -4180,7 +4253,7 @@ body{
         <div class="nf-sum-header" style="padding:14px 20px;border-bottom:1px solid var(--mp-border);margin-bottom:0;">
           <span class="nf-sum-dot"></span>
           <span class="nf-sum-label">Market Narrative Summary</span>
-          <span class="nf-sum-time" id="nf-sum-time">Generated 8:30 ET</span>
+          <span class="nf-sum-time" id="nf-sum-time" style="display:none;"></span>
         </div>
         <div style="padding:16px 20px;">
           <div class="nf-sum-body" id="nf-sum-body">
@@ -4675,7 +4748,6 @@ body{
         <div class="strat-filter-chip" data-filter="match">In Zone</div>
         <div class="strat-filter-chip" data-filter="contrarian">Contrarian</div>
         <div class="strat-filter-chip" data-filter="high">High Confidence</div>
-        <div class="strat-filter-chip" data-filter="oversold">RSI &lt; 30</div>
       </div>
 
       <div class="tcg-header">
@@ -5909,7 +5981,7 @@ async function loadData(){
 
     // Build URL — single order param, snapshot_date pinned to latest
     var cardUrl = SUPABASE_URL+'/rest/v1/v_trade_cards'
-      +'?select=ticker,price,primary_label,direction,confidence,holding_days,entry_date,exit_date,description,phase,status,card_tier,trade_score,snapshot_date'
+      +'?select=ticker,price,primary_label,direction,confidence,holding_days,entry_date,exit_date,description,phase,status,card_tier,trade_score,snapshot_date,sector_name'
       +(latestCardDate ? '&snapshot_date=eq.'+encodeURIComponent(latestCardDate) : '')
       +'&confidence=gte.0.65'
       +'&order=confidence.desc'
@@ -5981,7 +6053,7 @@ async function loadData(){
         _moveDateOverride: moveDateOverride,
         _description:   description,
         _confPct:       confPct,
-        sector_name:    r.sector_name || snap.sector || '—',
+        sector_name:    r.sector_name || (SECTOR_MAP[r.ticker]||[])[0] || snap.sector || '—',
         // keep price_change_pct; fallback price from snapshot if null
         price:          r.price || snap.price_close || 0,
         narrative_state: derivedRarity,
@@ -6241,6 +6313,11 @@ async function loadData(){
     renderSupportedCards();
     renderTrapsCards();
     renderCoordinationCards();
+    // Update Signal Summary with real counts from dedicated tables
+    var drTraps2=document.getElementById('dr-traps');
+    if(drTraps2) drTraps2.textContent=TRAPS_DB_DATA.length;
+    var drSupported2=document.getElementById('dr-supported');
+    if(drSupported2) drSupported2.textContent=SUPPORTED_DATA.length;
     // Pre-load leaderboard data so it's ready when tab is clicked
     if(typeof loadLeaderboard==='function') loadLeaderboard();
   } catch(err){
@@ -7122,12 +7199,7 @@ function nfUpdateSummary(){
   var traps=DATA.filter(function(r){return r.prism_verdict==='Narrative Trap';}).length;
   var breaking=DATA.filter(function(r){return r.narrative_state==='Breaking';}).length;
 
-  // Update summary time
-  var timeEl=document.getElementById('nf-sum-time');
-  if(timeEl){
-    var now=new Date();
-    timeEl.textContent='Generated '+now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false})+' ET';
-  }
+  // Generated time removed per design request
 
   // Update dominant narrative from top story (fallback — overridden by Claude if available)
   var top=DATA.filter(function(r){return r.story_claim;}).sort(function(a,b){return Math.abs(b.price_change_pct||0)-Math.abs(a.price_change_pct||0);})[0];
@@ -7201,7 +7273,7 @@ async function fillMarketNarrative(){
           return '<span class="nf-tag">'+esc(t)+'</span>';
         }).join('');
       }
-      document.getElementById('nf-sum-time').textContent = 'Generated · '+today;
+      // Generated date removed per design request
     } else {
       document.getElementById('nf-sum-body').innerHTML='<p style="color:var(--mp-text-tertiary);font-style:italic;">No market narrative available for '+today+'</p>';
     }
@@ -9891,6 +9963,22 @@ function stratBehaviorEmoji(b){
   return'\uD83D\uDCCA';
 }
 function stratEsc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function behaviorToBias(b){
+  if(b.indexOf('Contrarian')!==-1)return'Fade Rallies';
+  if(b.indexOf('Resilient')!==-1)return'Hold Steady';
+  if(b.indexOf('Momentum')!==-1)return'Ride the Trend';
+  if(b.indexOf('coincide with downside')!==-1)return'Avoid';
+  if(b.indexOf('Positive narratives help')!==-1)return'Buy the Dip';
+  return'Hold Steady';
+}
+function biasColor(bias){
+  var b=bias.toLowerCase();
+  if(b==='ride the trend'||b==='buy the dip')return'var(--mp-green)';
+  if(b==='fade rallies'||b==='avoid')return'var(--mp-red)';
+  return'var(--mp-cyan)';
+}
+var FLIP_ICON='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-4h2v-2h-2v2zm1-10C9.79 6 8 7.79 8 10h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/></svg>';
+var FLIP_ROTATE_ICON='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>';
 
 function buildStratCard(d){
   var curZone=stratGetCurrentZone(d.close,d.latest_price_usd);
@@ -9900,12 +9988,14 @@ function buildStratCard(d){
   var ddColor=ddPct>-5?'var(--mp-green)':ddPct>-15?'var(--mp-amber)':'var(--mp-red)';
   var chClass=d.price_change_pct>=0?'up':'dn';
   var chSign=d.price_change_pct>=0?'\u25B2':'\u25BC';
-  var rsiClass=d.rsi<30?'oversold':d.rsi>70?'overbought':'';
   var zmLabels={match:'\u2705 In Best Zone Now',close:'\uD83D\uDFE1 Approaching Zone',no:'\u2B1C Not In Zone',avoid:'\uD83D\uDEAB Avoid \u2014 Downside Risk'};
   var bestZoneColor=zm==='match'?'var(--mp-green)':zm==='close'?'var(--mp-amber)':'var(--mp-text-secondary)';
   var dateStr=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  var bias=behaviorToBias(d.behavior);
+  var bColor=biasColor(bias);
 
-  return '<div class="strat-card zone-'+zm+'" data-zone="'+zm+'" data-contrarian="'+String(d.behavior.indexOf('Contrarian')!==-1)+'" data-confidence="'+d.confidence.toLowerCase()+'" data-rsi="'+d.rsi+'" onclick="window.location.href=\'/ticker/'+encodeURIComponent(d.ticker)+'\'" style="cursor:pointer;">'
+  /* ── FRONT FACE ── */
+  var front='<div class="strat-front">'
     +'<div class="sc-header">'
       +'<div style="display:flex;align-items:center;gap:10px;">'
         +logoHTML(d.ticker,'sm')
@@ -9921,11 +10011,21 @@ function buildStratCard(d){
     +'</div>'
     +'<div class="sc-badges-row">'
       +'<span class="sc-conf-badge '+d.confidence.toLowerCase()+'">'+stratEsc(d.confidence)+'</span>'
-      +'<span class="sc-rsi-badge '+rsiClass+'">RSI '+d.rsi.toFixed(1)+'</span>'
       +'<span style="font-size:11px;color:var(--mp-text-muted);">Vol '+d.vol_mult.toFixed(2)+'\u00D7 avg</span>'
     +'</div>'
     +'<div class="sc-zone-badge-wrap">'
       +'<div class="sc-zone-badge '+zm+'"><div class="sc-zb-dot"></div>'+zmLabels[zm]+'</div>'
+    +'</div>'
+    +'<div class="sc-bias-name" style="color:'+bColor+'">'+stratEsc(bias)+'</div>'
+    +'<div class="sc-behavior-line">'+stratBehaviorEmoji(d.behavior)+' '+stratEsc(d.behavior)+'</div>'
+    +'<div class="sc-flip-hint">'+FLIP_ROTATE_ICON+' Tap for details</div>'
+  +'</div>';
+
+  /* ── BACK FACE ── */
+  var back='<div class="strat-back">'
+    +'<div class="sc-back-header">'
+      +'<div class="sc-back-ticker">'+stratEsc(d.ticker)+'</div>'
+      +'<div class="sc-back-price">$'+d.close.toFixed(2)+'</div>'
     +'</div>'
     +'<div class="sc-drawdown-row">'
       +'<div class="sc-dd-label">vs 60d peak</div>'
@@ -9961,10 +10061,6 @@ function buildStratCard(d){
       +'</div>'
     +'</div>'
     +'<div class="sc-intel-row">'
-      +'<div class="sc-intel-icon">'+stratBehaviorEmoji(d.behavior)+'</div>'
-      +'<div class="sc-intel-text">'+stratEsc(d.behavior)+'</div>'
-    +'</div>'
-    +'<div class="sc-intel-row">'
       +'<div class="sc-intel-icon">\uD83C\uDFF7\uFE0F</div>'
       +'<div class="sc-intel-text">Theme: <strong>'+stratEsc(d.theme_influential)+'</strong>'+(d.theme_negative!==d.theme_influential?' \u00B7 Negative: <strong>'+stratEsc(d.theme_negative)+'</strong>':'')+'</div>'
     +'</div>'
@@ -9981,6 +10077,17 @@ function buildStratCard(d){
     +'<div class="sc-now-indicator">'
       +'<div class="sc-now-dot"></div>'
       +dateStr+' \u00B7 '+stratEsc(d.confidence)+' confidence \u00B7 Now: '+stratEsc(curZone)
+    +'</div>'
+    +'<div class="sc-back-flip-hint">'
+      +'<span>'+FLIP_ROTATE_ICON+' Tap to flip back</span>'
+      +'<a class="sc-view-ticker-btn" href="/ticker/'+encodeURIComponent(d.ticker)+'" onclick="event.stopPropagation();">View Ticker \u2192</a>'
+    +'</div>'
+  +'</div>';
+
+  /* ── Wrap in flip scene ── */
+  return '<div class="strat-scene zone-'+zm+'" data-zone="'+zm+'" data-contrarian="'+String(d.behavior.indexOf('Contrarian')!==-1)+'" data-confidence="'+d.confidence.toLowerCase()+'">'
+    +'<div class="strat-flipper">'
+      +front+back
     +'</div>'
   +'</div>';
 }
@@ -10000,6 +10107,13 @@ function renderStratCards(filter){
     if(filter==='high'&&d.confidence!=='High')show=false;
     if(filter==='oversold'&&d.rsi>=30)show=false;
     if(show){grid.innerHTML+=buildStratCard(d);shown++;}
+  });
+  /* Attach flip handlers */
+  grid.querySelectorAll('.strat-scene').forEach(function(scene){
+    scene.addEventListener('click',function(e){
+      if(e.target.closest('.sc-view-ticker-btn'))return;
+      scene.classList.toggle('flipped');
+    });
   });
   var countEl=document.getElementById('tcg-count');
   if(countEl)countEl.textContent=shown+' cards';
