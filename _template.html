@@ -10800,34 +10800,45 @@ function tcRenderCards(){
   var track=document.getElementById('tc-cal-track');
   var pips=document.getElementById('tc-cal-pips');
   if(!track)return;
+  // Tier colors for accent bar
+  var TIER_COLORS={PLATINUM:'#00AEFF',GOLD:'#FFB800',SURPRISE:'#7B61FF'};
+  var TIER_ICONS={PLATINUM:'\u25C6',GOLD:'\u25B2',SURPRISE:'\u26A1'};
   track.innerHTML=TC_SIGNALS.map(function(s,i){
-    var rc=TC_RARITY_COLORS[s.rarity]||'var(--mp-text-tertiary)';
+    var tierColor=TIER_COLORS[s.tier]||'rgba(255,255,255,0.08)';
+    var tierIcon=TIER_ICONS[s.tier]||'\u25CF';
+    var tierClass=s.tier?(s.tier.toLowerCase()):'default';
     var qc=tcQueuedCount(s.id);
     var isBull=s.changeDir==='up';
     var deltaColor=isBull?'#00DE94':'#FF4D4D';
-    var rarityBorder='rgba(160,168,176,0.20)';
-    if(s.rarity==='Rare')rarityBorder='rgba(56,200,184,0.25)';
-    if(s.rarity==='Epic')rarityBorder='rgba(0,222,148,0.25)';
-    if(s.rarity==='Uncommon')rarityBorder='rgba(0,174,255,0.25)';
+    var dirColor=s.direction==='BEARISH'?'var(--mp-red)':s.direction==='BULLISH'?'var(--mp-green)':'var(--mp-cyan)';
+    var confPct=s.confPct||50;
+    var confColor=confPct>=75?'var(--mp-green)':confPct>=55?'var(--mp-amber)':'var(--mp-cyan)';
     return '<div class="tc-sig-card'+(qc>0?' queued':'')+'" draggable="true" data-idx="'+i+'" data-id="'+s.id+'">'
       +'<div class="tc">'
-        +'<div class="tc-sentiment-bar" style="background:'+rc+';"></div>'
+        +'<div class="tc-sentiment-bar" style="background:'+tierColor+';"></div>'
         +'<div class="tc-body">'
           +'<div class="tc-header">'
             +'<div class="tc-header-left">'
               +'<div class="tc-id"><span class="tc-ticker">'+s.ticker+'</span><span class="tc-name">'+s.name+'</span></div>'
             +'</div>'
-            +'<span class="tc-rarity" style="color:'+rc+';border-color:'+rarityBorder+';background:rgba(0,0,0,0.2);">'+s.rarity+'</span>'
+            +'<span class="tc-rarity" style="color:'+tierColor+';border-color:'+tierColor+'33;background:'+tierColor+'14;">'+tierIcon+' '+(s.tier||'SIGNAL')+'</span>'
           +'</div>'
           +'<div class="tc-price-row">'
             +'<span class="tc-price">'+s.price+'</span>'
             +'<span class="tc-change" style="color:'+deltaColor+';">'+s.change+'</span>'
           +'</div>'
-          +'<div class="tc-command">'+s.bias+'</div>'
-          +'<div class="tc-meta-line">'+s.conf+' \u2022 '+s.window+'</div>'
+          +'<div class="tc-command" style="color:'+dirColor+';">'+s.moveName+'</div>'
+          +'<div style="padding:2px 14px 6px;display:flex;align-items:center;gap:6px;">'
+            +'<div style="flex:1;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;">'
+              +'<div style="width:'+confPct+'%;height:100%;background:'+confColor+';border-radius:2px;"></div>'
+            +'</div>'
+            +'<span style="font-size:11px;font-weight:700;color:'+confColor+';font-family:Inter,sans-serif;">'+confPct+'%</span>'
+          +'</div>'
+          +'<div class="tc-meta-line">'+(s.tradeScore?'Score '+s.tradeScore+' \u2022 ':'')+s.window+'</div>'
+          +(s.expires?'<div style="font-size:10px;color:var(--mp-text-muted);padding:0 14px 4px;font-family:Inter,sans-serif;">\u23F3 Expires '+s.expires+'</div>':'')
           +'<div class="tc-sector-date">drag to plan \u2193</div>'
           +'<div class="tc-foot">'
-            +'<span class="tc-state-tag"><span class="tc-pulse" style="background:'+rc+';"></span>ACTIVE \u2022 LIVE</span>'
+            +'<span class="tc-state-tag"><span class="tc-pulse" style="background:'+dirColor+';"></span>'+(s.direction||'ACTIVE')+' \u2022 LIVE</span>'
           +'</div>'
         +'</div>'
       +'</div>'
@@ -10867,8 +10878,9 @@ function tcRenderCards(){
         ghost.className='tc-cal-ghost';
         document.body.appendChild(ghost);
       }
-      var rc=TC_RARITY_COLORS[s.rarity]||'#888';
-      ghost.innerHTML='<span class="tc-cal-ghost-dot" style="background:'+rc+';"></span>'+s.ticker+' — '+s.bias+' '+s.conf;
+      var _tc={PLATINUM:'#00AEFF',GOLD:'#FFB800',SURPRISE:'#7B61FF'};
+      var rc=_tc[s.tier]||TC_RARITY_COLORS[s.rarity]||'#888';
+      ghost.innerHTML='<span class="tc-cal-ghost-dot" style="background:'+rc+';"></span>'+s.ticker+' — '+s.moveName+' '+s.conf;
       ghost.style.top='-999px';ghost.style.left='-999px';
       e.dataTransfer.setDragImage(ghost,60,16);
       tcCarouselPause(4000);
@@ -11161,33 +11173,42 @@ function tcExpandCard(idx){
   var s=TC_SIGNALS[idx];
   if(!s)return;
   tcExpandedIdx=idx;
-  var rc=TC_RARITY_COLORS[s.rarity]||'var(--mp-text-tertiary)';
+  var _tc={PLATINUM:'#00AEFF',GOLD:'#FFB800',SURPRISE:'#7B61FF'};
+  var tierColor=_tc[s.tier]||TC_RARITY_COLORS[s.rarity]||'var(--mp-text-tertiary)';
+  var tierIcon=s.tier==='PLATINUM'?'\u25C6':s.tier==='GOLD'?'\u25B2':s.tier==='SURPRISE'?'\u26A1':'\u25CF';
+  var dirColor=s.direction==='BEARISH'?'var(--mp-red)':s.direction==='BULLISH'?'var(--mp-green)':'var(--mp-cyan)';
   var changeStyle=s.changeDir==='up'?'color:var(--mp-teal)':'color:var(--mp-red)';
-  var cs=getComputedStyle(document.documentElement);
-  var rawAc=s.ac.replace('var(','').replace(')','').trim();
-  var resolvedAc=cs.getPropertyValue(rawAc).trim()||rawAc;
+  var confPct=s.confPct||50;
+  var confColor=confPct>=75?'#00DE94':confPct>=55?'#FFB800':'#00AEFF';
   var panel=document.getElementById('tc-card-expanded');
   panel.innerHTML=
-    '<div class="tc-card-exp-accent" style="background:linear-gradient(90deg,'+resolvedAc+',transparent);"></div>'
+    '<div class="tc-card-exp-accent" style="background:linear-gradient(90deg,'+tierColor+',transparent);"></div>'
     +'<div class="tc-card-exp-body">'
       +'<div class="tc-card-exp-top">'
         +'<div class="tc-card-exp-logo">'+s.logo+'</div>'
         +'<span class="tc-card-exp-ticker">'+s.ticker+'</span>'
         +'<span class="tc-card-exp-name">'+s.name+'</span>'
-        +'<span class="tc-card-exp-rarity" style="color:'+rc+';border-color:'+rc+';">'+s.rarity+'</span>'
+        +'<span class="tc-card-exp-rarity" style="color:'+tierColor+';border-color:'+tierColor+';">'+tierIcon+' '+(s.tier||'SIGNAL')+'</span>'
       +'</div>'
       +'<div class="tc-card-exp-price-row">'
         +'<span class="tc-card-exp-price">'+s.price+'</span>'
         +'<span class="tc-card-exp-change" style="'+changeStyle+'">'+s.change+'</span>'
       +'</div>'
       +'<div class="tc-card-exp-bias">'
-        +'<div class="tc-card-exp-bias-eyebrow">Signal Bias</div>'
-        +'<div class="tc-card-exp-bias-text" style="color:'+rc+';">'+s.bias+'</div>'
+        +'<div class="tc-card-exp-bias-eyebrow">Trade Signal</div>'
+        +'<div class="tc-card-exp-bias-text" style="color:'+dirColor+';">'+s.moveName+'</div>'
+      +'</div>'
+      +'<div style="padding:4px 0 8px;display:flex;align-items:center;gap:8px;">'
+        +'<div style="flex:1;height:5px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;">'
+          +'<div style="width:'+confPct+'%;height:100%;background:'+confColor+';border-radius:3px;"></div>'
+        +'</div>'
+        +'<span style="font-size:12px;font-weight:700;color:'+confColor+';font-family:Inter,sans-serif;">'+confPct+'%</span>'
       +'</div>'
       +'<div class="tc-card-exp-meta">'
-        +'<span class="tc-card-exp-conf">Confidence: '+s.conf+'</span>'
-        +'<span class="tc-card-exp-window">'+s.window+'</span>'
+        +'<span class="tc-card-exp-conf">'+(s.tradeScore?'Score '+s.tradeScore+' \u2022 ':'')+s.window+'</span>'
+        +(s.expires?'<span class="tc-card-exp-window">\u23F3 '+s.expires+'</span>':'')
       +'</div>'
+      +(s.description?'<div style="font-size:12px;color:rgba(255,255,255,0.6);line-height:1.5;padding:6px 0 8px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">'+s.description+'</div>':'')
       +'<div class="tc-card-exp-hint">Drag this card onto a calendar date to queue it</div>'
       +'<div class="tc-card-exp-actions">'
         +'<button class="tc-card-exp-btn" onclick="tcCloseExpand()">Close</button>'
@@ -11202,7 +11223,7 @@ function tcExpandCard(idx){
     e.dataTransfer.setData('text/plain',s.id);
     var ghost=document.getElementById('tc-cal-drag-ghost');
     if(!ghost){ghost=document.createElement('div');ghost.id='tc-cal-drag-ghost';ghost.className='tc-cal-ghost';document.body.appendChild(ghost);}
-    ghost.innerHTML='<span class="tc-cal-ghost-dot" style="background:'+rc+';"></span>'+s.ticker+' — '+s.bias+' '+s.conf;
+    ghost.innerHTML='<span class="tc-cal-ghost-dot" style="background:'+tierColor+';"></span>'+s.ticker+' \u2014 '+s.moveName+' '+s.conf;
     ghost.style.top='-999px';ghost.style.left='-999px';
     e.dataTransfer.setDragImage(ghost,60,16);
     setTimeout(tcCloseExpand,100);
@@ -11228,38 +11249,46 @@ function tcBuildFromData(){
   // Prefer CARD_DATA (high-conviction signals from v_trade_cards) over legacy DATA
   var src = CARD_DATA.length > 0 ? CARD_DATA : DATA;
   if(!src.length) return;
-  var confRarity = function(conf){
-    if(conf >= 0.75) return 'Rare';
-    if(conf >= 0.55) return 'Rare';
-    return 'Uncommon';
-  };
-  var legacyRMap = {
-    'Breaking':'Rare','Narrative Trap':'Rare',
-    'Surging':'Epic','Structurally Supported':'Epic',
-    'Fragile':'Uncommon','Stable':'Common'
-  };
   TC_SIGNALS = src.map(function(r){
-    var pct = r.price_change_pct || 0;
+    var pct = Number(r.price_change_pct) || 0;
     var isUp = pct > 0;
-    // Bias text — use pre-computed _fields from CARD_DATA, else fall back
-    var biasText = r.biasText ? r.biasText.toUpperCase() : 'HOLD STEADY';
+    // Move name from primary_label
+    var moveName = r.primary_label
+      ? r.primary_label.replace(/_/g,' ').toLowerCase().replace(/\b\w/g,function(c){return c.toUpperCase();})
+      : (r.biasText ? r.biasText.toUpperCase() : 'HOLD STEADY');
     // Confidence
-    var conf = r._confPct != null ? r._confPct + '%'
-             : (r.confidence != null ? Math.round(r.confidence * 100) + '%'
-             : Math.round(50 + Math.random() * 40) + '%');
+    var confRaw = r.confidence != null ? Number(r.confidence) : 0.5;
+    var confPct = Math.round(confRaw * 100);
     // Window
     var win = r._winOverride || (r.holding_days ? r.holding_days + (r.holding_days > 1 ? ' days' : ' day') : '3\u20137d');
-    // Rarity — from confidence if available, else legacy verdict map
-    var rarity = r.confidence != null ? confRarity(r.confidence)
-               : (legacyRMap[r.prism_verdict || r.narrative_state || 'Stable'] || 'Common');
+    // Tier from v_trade_cards
+    var tier = (r.card_tier || '').toUpperCase();
+    var tierLabel = r.tier_label || '';
+    var direction = (r.direction || '').toUpperCase();
+    // Play Expires
+    var expiresStr = '';
+    if(r.exit_date){
+      try{ expiresStr = new Date(r.exit_date+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}); }catch(_){}
+    }
+    // Description
+    var desc = r.description || r._description || r.story_claim || '';
     return {
       id: r.ticker.toLowerCase(), ticker: r.ticker,
       name: r.sector_name || '\u2014',
-      price: '$' + fmtPrice(r.price),
+      price: '$' + fmtPrice(Number(r.price) || 0),
       change: (isUp ? '\u25B2' : '\u25BC') + ' ' + Math.abs(pct).toFixed(2) + '%',
       changeDir: isUp ? 'up' : 'down',
-      rarity: rarity, ac: 'var(--mp-text-tertiary)',
-      bias: biasText, conf: conf, window: win, logo: ''
+      tier: tier, tierLabel: tierLabel, direction: direction,
+      moveName: moveName.toUpperCase(),
+      bias: moveName.toUpperCase(),
+      conf: confPct + '%', confPct: confPct,
+      window: win, logo: '',
+      expires: expiresStr,
+      description: desc,
+      tradeScore: r.trade_score != null ? Math.round(Number(r.trade_score) * 100) : 0,
+      // Keep rarity for backward compat with drag ghost
+      rarity: tier === 'PLATINUM' ? 'Rare' : tier === 'GOLD' ? 'Uncommon' : 'Common',
+      ac: direction === 'BEARISH' ? 'var(--mp-red)' : direction === 'BULLISH' ? 'var(--mp-green)' : 'var(--mp-cyan)'
     };
   });
 }
@@ -12183,27 +12212,51 @@ async function loadTradingCalendarLive(){
     var confidence = story.narrative_health != null ? Math.round(story.narrative_health) : 55;
     // ── Override with CARD_DATA signal if this ticker has a high-conviction signal ──
     var cdMatch = CARD_DATA.filter(function(cd){ return cd.ticker === row.ticker; })[0];
+    var tier = '';
+    var tierLabel = '';
+    var direction = '';
+    var moveName = bias.text;
+    var tradeScore = 0;
+    var expiresStr = '';
+    var desc = '';
     if(cdMatch){
+      moveName = cdMatch.primary_label
+        ? cdMatch.primary_label.replace(/_/g,' ').toLowerCase().replace(/\b\w/g,function(c){return c.toUpperCase();}).toUpperCase()
+        : (cdMatch.biasText ? cdMatch.biasText.toUpperCase() : bias.text);
+      tier = (cdMatch.card_tier || '').toUpperCase();
+      tierLabel = cdMatch.tier_label || '';
+      direction = (cdMatch.direction || '').toUpperCase();
+      confidence = cdMatch._confPct != null ? cdMatch._confPct : (cdMatch.confidence != null ? Math.round(Number(cdMatch.confidence)*100) : confidence);
+      tradeScore = cdMatch.trade_score != null ? Math.round(Number(cdMatch.trade_score)*100) : 0;
+      desc = cdMatch.description || cdMatch._description || '';
+      if(cdMatch.exit_date){
+        try{ expiresStr = new Date(cdMatch.exit_date+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}); }catch(_){}
+      }
       bias = {
-        text: cdMatch.biasText ? cdMatch.biasText.toUpperCase() : bias.text,
-        rarity: cdMatch.confidence >= 0.75 ? 'Rare' : cdMatch.confidence >= 0.55 ? 'Rare' : 'Uncommon',
-        color: '#00DE94'
+        text: moveName,
+        rarity: tier === 'PLATINUM' ? 'Rare' : tier === 'GOLD' ? 'Uncommon' : 'Common',
+        color: direction === 'BEARISH' ? 'var(--mp-red)' : direction === 'BULLISH' ? 'var(--mp-green)' : 'var(--mp-cyan)'
       };
-      confidence = cdMatch._confPct != null ? cdMatch._confPct : confidence;
     }
     return {
       id: row.ticker.toLowerCase(),
       ticker: row.ticker,
       name: getTickerDisplayName(row.ticker),
-      price: livePrice != null ? '$' + fmtPrice(livePrice) : '—',
+      price: livePrice != null ? '$' + fmtPrice(livePrice) : '\u2014',
       change: delta.txt,
       changeDir: liveChangePct > 0 ? 'up' : liveChangePct < 0 ? 'down' : 'flat',
+      tier: tier, tierLabel: tierLabel, direction: direction,
+      moveName: moveName,
       rarity: bias.rarity,
       ac: bias.color,
-      bias: bias.text,
+      bias: moveName,
       conf: Math.max(40, Math.min(95, confidence)) + '%',
-      window: cdMatch && cdMatch._winOverride ? cdMatch._winOverride : (row.days_to_earnings || 0) + 'd to earnings',
+      confPct: Math.max(40, Math.min(95, confidence)),
+      window: cdMatch && cdMatch._winOverride ? cdMatch._winOverride : (cdMatch && cdMatch.holding_days ? cdMatch.holding_days + 'd' : (row.days_to_earnings || 0) + 'd to earnings'),
       logo: '',
+      expires: expiresStr,
+      description: desc,
+      tradeScore: tradeScore,
       eventDate: addDaysISO(row.snapshot_date, row.days_to_earnings || 0)
     };
   });
