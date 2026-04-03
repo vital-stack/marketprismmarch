@@ -4355,6 +4355,9 @@ body{
         <span style="margin-left:auto;font-size:11px;color:var(--mp-text-muted);">click any card to open forensic analysis</span>
       </div>
 
+      <!-- Pipeline staleness banner -->
+      <div id="pipeline-stale-banner" style="display:none;background:rgba(255,184,0,0.12);border:1px solid rgba(255,184,0,0.25);border-radius:10px;padding:10px 16px;margin-bottom:12px;font-size:13px;color:#FFB800;"></div>
+
       <!-- FEED -->
       <div id="discover-feed"></div>
       <div class="load-more" id="discover-load-more" style="display:none;">
@@ -5815,7 +5818,7 @@ async function loadData(){
 
     // Build URL — single order param, snapshot_date pinned to latest
     var cardUrl = SUPABASE_URL+'/rest/v1/v_trade_cards'
-      +'?select=ticker,price,primary_label,direction,confidence,holding_days,entry_date,exit_date,description,phase,status,rarity,trade_score,snapshot_date'
+      +'?select=ticker,price,primary_label,direction,confidence,holding_days,entry_date,exit_date,description,phase,status,card_tier,trade_score,snapshot_date'
       +(latestCardDate ? '&snapshot_date=eq.'+encodeURIComponent(latestCardDate) : '')
       +'&confidence=gte.0.65'
       +'&order=confidence.desc'
@@ -5827,7 +5830,7 @@ async function loadData(){
       return r.ok ? r.json().then(function(j){ return j; }) : [];
     }).catch(function(e){ console.error('[MP] v_trade_cards fetch error:', e); return []; });
     // price fallback for cards if v_trade_cards lacks price
-    var snapP = fetch(SUPABASE_URL+'/rest/v1/ticker_snapshots?select=ticker,price,sector,industry&order=snapshot_date.desc',{headers:hdrs}).catch(function(){return null;});
+    var snapP = fetch(SUPABASE_URL+'/rest/v1/ticker_snapshots?select=ticker,price_close,sector,industry&order=snapshot_date.desc&limit=500',{headers:hdrs}).catch(function(){return null;});
 
     var res = await mainP;
     if(!res.ok) throw new Error('Supabase '+res.status);
@@ -5889,7 +5892,7 @@ async function loadData(){
         _confPct:       confPct,
         sector_name:    r.sector_name || snap.sector || '—',
         // keep price_change_pct; fallback price from snapshot if null
-        price:          r.price || snap.price || 0,
+        price:          r.price || snap.price_close || 0,
         narrative_state: derivedRarity,
         prism_verdict:  derivedRarity,
         // Suppress old noise fields
@@ -5950,6 +5953,21 @@ async function loadData(){
         qfRes.forEach(function(qf){if(qf.ticker)qualityFlagMap[qf.ticker]=qf;});
       }
     }catch(e){console.warn('[MP] data quality flags fetch failed:',e);}
+
+    // ── Pipeline freshness check ──
+    try{
+      var pfRes=await restFetch('pipeline_freshness','select=last_snapshot,days_stale,freshness_status&limit=1');
+      if(pfRes&&pfRes.length){
+        var pf=pfRes[0];
+        if(pf.days_stale>1){
+          var banner=document.getElementById('pipeline-stale-banner');
+          if(banner){
+            banner.style.display='block';
+            banner.textContent='\u26A0 Data last updated '+pf.last_snapshot+' \u2014 pipeline may be delayed.';
+          }
+        }
+      }
+    }catch(e){console.warn('[MP] pipeline freshness check failed:',e);}
 
     // dedup + merge
     var seen=new Set();
@@ -7217,7 +7235,7 @@ function getFilteredDiscover(){
       var snap = snapshotMap[t.ticker]||{};
       return {
         ticker: t.ticker,
-        price: t.current_price || snap.price || 0,
+        price: t.current_price || snap.price_close || 0,
         price_change_pct: null,
         narrative_state: 'Fragile',
         primary_driver: t.narrative || '',
@@ -7263,6 +7281,8 @@ function buildStoryCardHTML(r,idx){
   var fvdStr=isNoSignal?'':fvd!=null?(fvd>0?'FVD +'+Math.abs(fvd).toFixed(0)+'% overvalued':'FVD '+fvd.toFixed(0)+'% undervalued'):'';
   var fvdCls=isNoSignal?'':fvd!=null?(fvd>0?'over':'under'):'';
   var noSignalBadge=isNoSignal?'<div class="disc-nc-tag no-signal">\uD83D\uDCE1 Narrative signal only \u2014 no valuation data</div>':'';
+  var isLowConf=!isNoSignal&&r._signal_confidence_tier==='LOW_CONFIDENCE';
+  var lowConfBadge=isLowConf?'<span style="display:inline-block;font-size:10px;padding:2px 7px;border-radius:4px;background:rgba(255,184,0,0.10);border:1px solid rgba(255,184,0,0.25);color:#FFB800;margin-left:6px;vertical-align:middle;">limited data</span>':'';
   var headline=r.headline_explanation||r.story_claim||r.primary_driver||'';
   var claim=r.story_claim||'';
   var rebuttal=r.forensic_rebuttal||'';
@@ -7284,7 +7304,7 @@ function buildStoryCardHTML(r,idx){
     +'<div class="disc-nc-hdr">'
       +'<div class="disc-nc-logo">'+logoHTML(r.ticker,'sm')+'</div>'
       +'<div class="disc-nc-main">'
-        +'<div class="disc-nc-sym">'+r.ticker+' <span>\u00B7 '+esc(r.sector_name||'')+'</span></div>'
+        +'<div class="disc-nc-sym">'+r.ticker+lowConfBadge+' <span>\u00B7 '+esc(r.sector_name||'')+'</span></div>'
         +'<div class="disc-nc-headline">'+esc(headline)+'</div>'
         +'<div class="disc-nc-price-row">'
           +'<div class="disc-nc-price">$'+fmtPrice(r.price)+'</div>'
@@ -7735,7 +7755,7 @@ function getSnapData(){
       TRAP_DATA.forEach(function(t){
         if(existing.has(t.ticker))return;
         var snap=snapshotMap[t.ticker]||{};
-        arr.push({ticker:t.ticker,price:t.current_price||snap.price||0,price_change_pct:null,narrative_state:'Fragile',primary_driver:t.narrative||'',prism_verdict:'Narrative Trap',story_claim:t.narrative||'',sector_name:snap.sector||(SECTOR_MAP[t.ticker]||[])[0]||'',fvd_pct:t.fvd_pct,coordination_score:null,coordination_class:t.coordination_class});
+        arr.push({ticker:t.ticker,price:t.current_price||snap.price_close||0,price_change_pct:null,narrative_state:'Fragile',primary_driver:t.narrative||'',prism_verdict:'Narrative Trap',story_claim:t.narrative||'',sector_name:snap.sector||(SECTOR_MAP[t.ticker]||[])[0]||'',fvd_pct:t.fvd_pct,coordination_score:null,coordination_class:t.coordination_class});
       });
     }
   }
@@ -7762,7 +7782,7 @@ function getSnapData(){
       SUPPORTED_DATA.forEach(function(s){
         if(existing.has(s.ticker))return;
         var snap=snapshotMap[s.ticker]||{};
-        arr.push({ticker:s.ticker,price:s.current_price?parseFloat(s.current_price):(snap.price||0),price_change_pct:null,narrative_state:'Surging',primary_driver:s.narrative||s.synopsis||'',prism_verdict:'Structurally Supported',story_claim:s.narrative||s.synopsis||'',sector_name:(s.macro_theme||'').replace(/_/g,' ')||(SECTOR_MAP[s.ticker]||[])[0]||'',fvd_pct:s.fvd_pct,energy_remaining:s.energy_remaining,coordination_score:s.coordination_score});
+        arr.push({ticker:s.ticker,price:s.current_price?parseFloat(s.current_price):(snap.price_close||0),price_change_pct:null,narrative_state:'Surging',primary_driver:s.narrative||s.synopsis||'',prism_verdict:'Structurally Supported',story_claim:s.narrative||s.synopsis||'',sector_name:(s.macro_theme||'').replace(/_/g,' ')||(SECTOR_MAP[s.ticker]||[])[0]||'',fvd_pct:s.fvd_pct,energy_remaining:s.energy_remaining,coordination_score:s.coordination_score});
       });
     }
   }
@@ -9556,7 +9576,7 @@ var SENTIMENT_STYLES={
 function buildCardFrontHTML(c,i,dateStr,prefix,showActions){
   // 🛡️ Safety defaults — prevent crashes if fields are missing
   if(!c.biasText) c = Object.assign({},c,{biasText: LABEL_TO_BIAS[c.primary_label]||'Hold Steady'});
-  if(!c.price) c = Object.assign({},c,{price: (snapshotMap[c.ticker]||{}).price||0});
+  if(!c.price) c = Object.assign({},c,{price: (snapshotMap[c.ticker]||{}).price_close||0});
   if(!c.sector_name) c = Object.assign({},c,{sector_name: (snapshotMap[c.ticker]||{}).sector||'\u2014'});
   if(c.price_change_pct==null) c = Object.assign({},c,{price_change_pct:0});
   var isBull=c.price_change_pct>0;
@@ -9916,7 +9936,7 @@ async function loadStrategyData(){
     if(!tssRes.ok)throw new Error('Failed to load strategy data');
     var tssRows=await tssRes.json();
 
-    var tdmUrl=SUPABASE_URL+'/rest/v1/ticker_daily_metrics?select=ticker,date,close,price_change_pct,rsi_14,volume_multiple_vs_20d&order=date.desc';
+    var tdmUrl=SUPABASE_URL+'/rest/v1/ticker_daily_metrics?select=ticker,date,close,price_change_pct,rsi_14,volume_multiple_vs_20d&date=gte.'+new Date(Date.now()-30*864e5).toISOString().split('T')[0]+'&order=date.desc&limit=1000';
     var tdmRes=await fetch(tdmUrl,{headers:hdrs});
     var tdmRows=tdmRes.ok?await tdmRes.json():[];
 
@@ -13162,18 +13182,6 @@ function ini(s){return(s||'').split(/\s+/).slice(0,2).map(function(w){return(w[0
 function lbEsc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 
 var BOARDS=[
-  {id:'themes',title:'Top Themes',sub:'By sector risk & contagion level',color:'#FFB800',bg:'rgba(255,184,0,0.12)',scoreLabel:'Tickers',
-  fetch:async function(){
-    var r=await sq('sector_risk_summary?select=macro_theme,contagion_level,trap_intensity,trap_count,ticker_count&macro_theme=not.is.null&order=ticker_count.desc&limit=10');
-    return r.map(function(x){return{name:x.macro_theme||'Unknown',meta:x.contagion_level+' \u00b7 '+(x.trap_count||0)+' traps \u00b7 intensity '+(Math.round((x.trap_intensity||0)*100))+'%',score:x.ticker_count||0,link:'#mindmap'};});
-  }},
-  {id:'political',title:'Macro & Political Events',sub:'By contagion risk across themes',color:'#FF4D4D',bg:'rgba(255,77,77,0.12)',scoreLabel:'Risk',
-  fetch:async function(){
-    var r=await sq('narrative_analyses?select=macro_theme,contagion_risk,ticker&macro_theme=not.is.null&order=contagion_risk.desc&limit=200');
-    var map={};
-    r.forEach(function(x){if(!x.macro_theme)return;if(!map[x.macro_theme])map[x.macro_theme]={risk:0,n:0};map[x.macro_theme].risk+=(x.contagion_risk||0);map[x.macro_theme].n++;});
-    return Object.keys(map).map(function(t){return{name:t,meta:map[t].n+' tickers \u00b7 Avg risk: '+Math.round(map[t].risk/map[t].n),score:Math.round(map[t].risk/map[t].n),link:'#discover'};}).sort(function(a,b){return b.score-a.score;}).slice(0,10);
-  }},
   {id:'undervalued',title:'Under Fair Value',sub:'Price below fundamental fair value · potential opportunities',color:'#00DE94',bg:'rgba(0,222,148,0.12)',scoreLabel:'Discount %',
   fetch:async function(){
     try{
@@ -13306,6 +13314,19 @@ var BOARDS=[
     var r=await sq('theme_performance?select=thematic_theme,hit_rate,avg_signed_return,article_count&order=hit_rate.asc&limit=10');
     return r.map(function(x){var hr=(x.hit_rate||0)*100;var hrD=hr.toFixed(1);return{name:x.thematic_theme||'Unknown',meta:formatEdge(x.avg_signed_return)+' avg return \u00b7 '+(x.article_count||0)+' articles',score:hr,scoreDisplay:hrD+'%',_scoreColor:hr<=30?'#FF4D4D':hr<=50?'#FFB800':'#00DE94',link:'#discover'};});
   }},
+  {id:'themes',title:'Top Themes',sub:'By sector risk & contagion level',color:'#FFB800',bg:'rgba(255,184,0,0.12)',scoreLabel:'Tickers',
+  fetch:async function(){
+    var r=await sq('sector_risk_summary?select=macro_theme,contagion_level,trap_intensity,trap_count,ticker_count&macro_theme=not.is.null&order=ticker_count.desc&limit=10');
+    return r.map(function(x){return{name:x.macro_theme||'Unknown',meta:x.contagion_level+' \u00b7 '+(x.trap_count||0)+' traps \u00b7 intensity '+(Math.round((x.trap_intensity||0)*100))+'%',score:x.ticker_count||0,link:'#sector'};});
+  }},
+  {id:'political',title:'Macro & Political Events',sub:'By contagion risk across themes',color:'#FF4D4D',bg:'rgba(255,77,77,0.12)',scoreLabel:'Risk',
+  fetch:async function(){
+    var naDate=await latestDate('narrative_analyses');
+    var r=await sq('narrative_analyses?select=macro_theme,contagion_risk,ticker&macro_theme=not.is.null'+(naDate?'&snapshot_date=eq.'+encodeURIComponent(naDate):'')+'&order=contagion_risk.desc&limit=200');
+    var map={};
+    r.forEach(function(x){if(!x.macro_theme)return;if(!map[x.macro_theme])map[x.macro_theme]={risk:0,n:0};map[x.macro_theme].risk+=(x.contagion_risk||0);map[x.macro_theme].n++;});
+    return Object.keys(map).map(function(t){return{name:t,meta:map[t].n+' tickers \u00b7 Avg risk: '+Math.round(map[t].risk/map[t].n),score:Math.round(map[t].risk/map[t].n),link:'#marketwide'};}).sort(function(a,b){return b.score-a.score;}).slice(0,10);
+  }},
 ];
 
 function formatPercent(v){if(v===null||v===undefined)return'-';return(v*100).toFixed(1)+'%';}
@@ -13403,6 +13424,17 @@ async function loadLeaderboard(){
       }
     });
     grid.innerHTML=html;
+    // Intercept hash-based leaderboard row clicks to switch tabs
+    grid.addEventListener('click',function(e){
+      var row=e.target.closest('a.lb-row');
+      if(!row) return;
+      var href=row.getAttribute('href')||'';
+      if(href.startsWith('#')){
+        var tabId=href.slice(1);
+        var btn=document.querySelector('[data-tab="'+tabId+'"]');
+        if(btn){e.preventDefault();switchTab(tabId,btn);}
+      }
+    });
     if(loading) loading.style.display='none';
     if(body) body.style.display='block';
   } catch(e){
