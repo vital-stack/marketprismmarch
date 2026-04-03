@@ -12195,71 +12195,10 @@ async function loadTradingCalendarLive(){
     LIVE_EARNINGS_BY_DATE[eventDate].push(row);
   });
 
-  var topRows = LIVE_EARNINGS_ROWS.slice(0, 5);
-  var _psSettled = await Promise.all(topRows.map(function(row){
-    return fetchPriceHistory(row.ticker, 30).catch(function(){ return []; });
-  }));
-  var priceSeries = _psSettled;
-  TC_SIGNALS = topRows.map(function(row, index){
-    var story = getStoryForTicker(row.ticker) || {};
-    var series = priceSeries[index] || [];
-    var latest = series.length ? series[series.length - 1] : null;
-    var prev = series.length > 1 ? series[series.length - 2] : null;
-    var livePrice = latest && latest.price_close != null ? latest.price_close : story.price;
-    var liveChangePct = latest && prev && prev.price_close ? ((latest.price_close - prev.price_close) / prev.price_close) * 100 : story.price_change_pct;
-    var delta = fmtDelta(liveChangePct);
-    var bias = getLiveSignalBias(row, story);
-    var confidence = story.narrative_health != null ? Math.round(story.narrative_health) : 55;
-    // ── Override with CARD_DATA signal if this ticker has a high-conviction signal ──
-    var cdMatch = CARD_DATA.filter(function(cd){ return cd.ticker === row.ticker; })[0];
-    var tier = '';
-    var tierLabel = '';
-    var direction = '';
-    var moveName = bias.text;
-    var tradeScore = 0;
-    var expiresStr = '';
-    var desc = '';
-    if(cdMatch){
-      moveName = cdMatch.primary_label
-        ? cdMatch.primary_label.replace(/_/g,' ').toLowerCase().replace(/\b\w/g,function(c){return c.toUpperCase();}).toUpperCase()
-        : (cdMatch.biasText ? cdMatch.biasText.toUpperCase() : bias.text);
-      tier = (cdMatch.card_tier || '').toUpperCase();
-      tierLabel = cdMatch.tier_label || '';
-      direction = (cdMatch.direction || '').toUpperCase();
-      confidence = cdMatch._confPct != null ? cdMatch._confPct : (cdMatch.confidence != null ? Math.round(Number(cdMatch.confidence)*100) : confidence);
-      tradeScore = cdMatch.trade_score != null ? Math.round(Number(cdMatch.trade_score)*100) : 0;
-      desc = cdMatch.description || cdMatch._description || '';
-      if(cdMatch.exit_date){
-        try{ expiresStr = new Date(cdMatch.exit_date+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}); }catch(_){}
-      }
-      bias = {
-        text: moveName,
-        rarity: tier === 'PLATINUM' ? 'Rare' : tier === 'GOLD' ? 'Uncommon' : 'Common',
-        color: direction === 'BEARISH' ? 'var(--mp-red)' : direction === 'BULLISH' ? 'var(--mp-green)' : 'var(--mp-cyan)'
-      };
-    }
-    return {
-      id: row.ticker.toLowerCase(),
-      ticker: row.ticker,
-      name: getTickerDisplayName(row.ticker),
-      price: livePrice != null ? '$' + fmtPrice(livePrice) : '\u2014',
-      change: delta.txt,
-      changeDir: liveChangePct > 0 ? 'up' : liveChangePct < 0 ? 'down' : 'flat',
-      tier: tier, tierLabel: tierLabel, direction: direction,
-      moveName: moveName,
-      rarity: bias.rarity,
-      ac: bias.color,
-      bias: moveName,
-      conf: Math.max(40, Math.min(95, confidence)) + '%',
-      confPct: Math.max(40, Math.min(95, confidence)),
-      window: cdMatch && cdMatch._winOverride ? cdMatch._winOverride : (cdMatch && cdMatch.holding_days ? cdMatch.holding_days + 'd' : (row.days_to_earnings || 0) + 'd to earnings'),
-      logo: '',
-      expires: expiresStr,
-      description: desc,
-      tradeScore: tradeScore,
-      eventDate: addDaysISO(row.snapshot_date, row.days_to_earnings || 0)
-    };
-  });
+  // ── Rebuild TC_SIGNALS from CARD_DATA (v_trade_cards) — earnings data only feeds calendar chips ──
+  if(CARD_DATA.length > 0){
+    tcBuildFromData();
+  }
   if(tcCalBooted){
     tcRenderCards();
     tcRenderCalendar();
