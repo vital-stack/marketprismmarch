@@ -813,6 +813,15 @@ body{
 .dc-signal-dot.on{background:#00DE94;}
 .dc-signal-dot.off{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);}
 .dc-signal-label{font-size:11px;color:var(--mp-text-muted);margin-left:4px;font-family:var(--font-body);white-space:nowrap;}
+.dc-card-chips{
+  display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;
+}
+.dc-chip{
+  font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;
+  padding:2px 7px;border-radius:4px;font-family:var(--font-body);
+  background:rgba(255,255,255,0.04);border:1px solid var(--mp-border);
+  color:var(--mp-text-tertiary);white-space:nowrap;
+}
 .dc-card-reason{
   font-size:13px;color:var(--mp-text-secondary);line-height:1.65;
 }
@@ -7012,6 +7021,35 @@ async function loadDailyConviction(){
   }catch(e){console.warn('[MP] Daily conviction load failed:',e);}
 }
 
+function dcParseReasoning(raw){
+  // Extract human-readable insight from the raw quant string
+  // Format: "VMS=93.0, NRS=25.7, verdict=Structurally Supported, ... Narrative supports hardware demand despite compression fears."
+  if(!raw)return{metrics:{},insight:''};
+  var metrics={};
+  // Pull known metrics
+  var mPat=/(\w+)=([\d.]+%?)/g;var m;
+  while((m=mPat.exec(raw))!==null){
+    var k=m[1],v=m[2];
+    if(['VMS','NRS','FVD','coord','drift','energy','conf','OR'].indexOf(k)!==-1||k.indexOf('FVD')!==-1){
+      metrics[k]=v;
+    }
+  }
+  // Extract verdict
+  var vMatch=raw.match(/verdict=([^,]+)/);
+  if(vMatch)metrics.verdict=vMatch[1].trim();
+  // Extract the narrative insight — the last sentence(s) after the quant data
+  var parts=raw.split('. ');
+  var insight=parts.filter(function(p){
+    return p.length>20&&!/^[A-Z]{2,}=/.test(p.trim())&&!/^\w+=\d/.test(p.trim());
+  }).join('. ');
+  if(!insight){
+    // Fallback: last sentence
+    insight=parts[parts.length-1]||'';
+  }
+  if(insight&&!insight.endsWith('.'))insight+='.';
+  return{metrics:metrics,insight:insight};
+}
+
 function buildDCCard(d,type){
   var confPct=d.confidence!=null?Math.round(d.confidence*100):50;
   var confColor=confPct>=80?'#00DE94':confPct>=60?'#FFB800':'#00AEFF';
@@ -7024,7 +7062,16 @@ function buildDCCard(d,type){
   for(var i=0;i<total&&i<8;i++){
     dots+='<span class="dc-signal-dot '+(i<aligned?'on':'off')+'"></span>';
   }
-  var reason=d.reasoning||'';
+  // Parse reasoning into metrics + insight
+  var parsed=dcParseReasoning(d.reasoning);
+  var insight=parsed.insight;
+  var mv=parsed.metrics;
+  // Build compact metric chips
+  var chips='';
+  if(mv.verdict)chips+='<span class="dc-chip" style="color:'+(mv.verdict.indexOf('Trap')!==-1||mv.verdict.indexOf('Disconnect')!==-1?'#FF4D4D':mv.verdict.indexOf('Support')!==-1?'#00DE94':'#00AEFF')+';">'+esc(mv.verdict)+'</span>';
+  if(mv.FVD)chips+='<span class="dc-chip">FVD '+esc(mv.FVD)+'</span>';
+  if(mv.VMS)chips+='<span class="dc-chip">VMS '+esc(mv.VMS)+'</span>';
+  if(mv.NRS)chips+='<span class="dc-chip">NRS '+esc(mv.NRS)+'</span>';
 
   return '<div class="dc-card dc-'+type+'" data-ticker="'+esc(d.ticker)+'">'
     +'<div class="dc-card-top">'
@@ -7037,9 +7084,10 @@ function buildDCCard(d,type){
     +'</div>'
     +'<div class="dc-card-signals">'
       +dots
-      +'<span class="dc-signal-label">'+aligned+'/'+total+' signals aligned</span>'
+      +'<span class="dc-signal-label">'+aligned+'/'+total+' aligned</span>'
     +'</div>'
-    +'<div class="dc-card-reason">'+esc(reason)+'</div>'
+    +(chips?'<div class="dc-card-chips">'+chips+'</div>':'')
+    +(insight?'<div class="dc-card-reason">'+esc(insight)+'</div>':'')
   +'</div>';
 }
 
