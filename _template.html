@@ -10827,7 +10827,7 @@ function tcRenderCards(){
             +'<span class="tc-price">'+s.price+'</span>'
             +'<span class="tc-change" style="color:'+deltaColor+';">'+s.change+'</span>'
           +'</div>'
-          +'<div class="tc-command" style="color:'+dirColor+';">'+s.moveName+'</div>'
+          +'<div class="tc-command" style="color:'+dirColor+';">'+(s.moveName||s.bias||'SIGNAL')+'</div>'
           +'<div style="padding:2px 14px 6px;display:flex;align-items:center;gap:6px;">'
             +'<div style="flex:1;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;">'
               +'<div style="width:'+confPct+'%;height:100%;background:'+confColor+';border-radius:2px;"></div>'
@@ -10880,7 +10880,7 @@ function tcRenderCards(){
       }
       var _tc={PLATINUM:'#00AEFF',GOLD:'#FFB800',SURPRISE:'#7B61FF'};
       var rc=_tc[s.tier]||TC_RARITY_COLORS[s.rarity]||'#888';
-      ghost.innerHTML='<span class="tc-cal-ghost-dot" style="background:'+rc+';"></span>'+s.ticker+' — '+s.moveName+' '+s.conf;
+      ghost.innerHTML='<span class="tc-cal-ghost-dot" style="background:'+rc+';"></span>'+s.ticker+' \u2014 '+(s.moveName||s.bias||'SIGNAL')+' '+s.conf;
       ghost.style.top='-999px';ghost.style.left='-999px';
       e.dataTransfer.setDragImage(ghost,60,16);
       tcCarouselPause(4000);
@@ -11196,7 +11196,7 @@ function tcExpandCard(idx){
       +'</div>'
       +'<div class="tc-card-exp-bias">'
         +'<div class="tc-card-exp-bias-eyebrow">Trade Signal</div>'
-        +'<div class="tc-card-exp-bias-text" style="color:'+dirColor+';">'+s.moveName+'</div>'
+        +'<div class="tc-card-exp-bias-text" style="color:'+dirColor+';">'+(s.moveName||s.bias||'SIGNAL')+'</div>'
       +'</div>'
       +'<div style="padding:4px 0 8px;display:flex;align-items:center;gap:8px;">'
         +'<div style="flex:1;height:5px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;">'
@@ -11223,7 +11223,7 @@ function tcExpandCard(idx){
     e.dataTransfer.setData('text/plain',s.id);
     var ghost=document.getElementById('tc-cal-drag-ghost');
     if(!ghost){ghost=document.createElement('div');ghost.id='tc-cal-drag-ghost';ghost.className='tc-cal-ghost';document.body.appendChild(ghost);}
-    ghost.innerHTML='<span class="tc-cal-ghost-dot" style="background:'+tierColor+';"></span>'+s.ticker+' \u2014 '+s.moveName+' '+s.conf;
+    ghost.innerHTML='<span class="tc-cal-ghost-dot" style="background:'+tierColor+';"></span>'+s.ticker+' \u2014 '+(s.moveName||s.bias||'SIGNAL')+' '+s.conf;
     ghost.style.top='-999px';ghost.style.left='-999px';
     e.dataTransfer.setDragImage(ghost,60,16);
     setTimeout(tcCloseExpand,100);
