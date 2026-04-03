@@ -3766,7 +3766,13 @@ body{
   gap:8px !important;
   padding:0 !important;
   margin-bottom:16px !important;
+  overflow-x:auto !important;
+  -webkit-overflow-scrolling:touch !important;
+  scrollbar-width:none !important;
+  -ms-overflow-style:none !important;
+  flex-wrap:nowrap !important;
 }
+.nf-tabs::-webkit-scrollbar{display:none !important;}
 .nf-tab{
   background:rgba(0,174,255,0.10) !important;
   border:1px solid rgba(0,174,255,0.20) !important;
@@ -3776,6 +3782,8 @@ body{
   font-size:13px !important;
   font-weight:500 !important;
   transition:all .2s !important;
+  flex-shrink:0 !important;
+  white-space:nowrap !important;
 }
 .nf-tab:hover{
   background:rgba(0,174,255,0.18) !important;
@@ -4041,13 +4049,13 @@ body{
       Market Sharing
       <span class="nav-item-badge teal" id="nav-badge-memes">New</span>
     </button>
+
+    <div class="nav-section-lbl">Labs</div>
     <button class="nav-item" data-tab="calendar" onclick="switchTab('calendar',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/><path d="M8.25 15h.008v.008H8.25V15zm0 2.25h.008v.008H8.25V17.25zm2.25-2.25h.008v.008H10.5V15zm0 2.25h.008v.008H10.5V17.25zm2.25-2.25h.008v.008H12.75V15zm0 2.25h.008v.008H12.75V17.25zm2.25-2.25h.008v.008H15V15zm0 2.25h.008v.008H15V17.25z"/></svg>
       Trading Calendar
       <span class="nav-item-badge teal" id="nav-badge-calendar">New</span>
     </button>
-
-    <div class="nav-section-lbl">Labs</div>
     <button class="nav-item" data-tab="scorer" onclick="switchTab('scorer',this)" style="position:relative;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"/></svg>
       Score Any Stock
@@ -7300,7 +7308,7 @@ function buildStoryCardHTML(r,idx){
   var earningsTag=(r.days_to_earnings!=null&&r.days_to_earnings<60)?'<div class="disc-nc-tag earnings">\uD83D\uDCC5 '+r.days_to_earnings+'d to earnings</div>':'';
   var sectorTrapTag=r.sector_trap_flag?'<div class="disc-nc-tag omission">\uD83D\uDD3A Sector Trap</div>':'';
 
-  return '<div class="disc-nc '+stCls+'" onclick="toggleForensic(\''+cardId+'\',event,'+idx+')" style="cursor:pointer;">'
+  return '<div class="disc-nc '+stCls+'" onclick="window.location.href=\'/ticker/'+encodeURIComponent(r.ticker)+'\'" style="cursor:pointer;">'
     +'<div class="disc-nc-hdr">'
       +'<div class="disc-nc-logo">'+logoHTML(r.ticker,'sm')+'</div>'
       +'<div class="disc-nc-main">'
@@ -9815,7 +9823,7 @@ function buildStratCard(d){
   var bestZoneColor=zm==='match'?'var(--mp-green)':zm==='close'?'var(--mp-amber)':'var(--mp-text-secondary)';
   var dateStr=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
 
-  return '<div class="strat-card zone-'+zm+'" data-zone="'+zm+'" data-contrarian="'+String(d.behavior.indexOf('Contrarian')!==-1)+'" data-confidence="'+d.confidence.toLowerCase()+'" data-rsi="'+d.rsi+'">'
+  return '<div class="strat-card zone-'+zm+'" data-zone="'+zm+'" data-contrarian="'+String(d.behavior.indexOf('Contrarian')!==-1)+'" data-confidence="'+d.confidence.toLowerCase()+'" data-rsi="'+d.rsi+'" onclick="window.location.href=\'/ticker/'+encodeURIComponent(d.ticker)+'\'" style="cursor:pointer;">'
     +'<div class="sc-header">'
       +'<div style="display:flex;align-items:center;gap:10px;">'
         +logoHTML(d.ticker,'sm')
