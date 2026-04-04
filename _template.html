@@ -6067,17 +6067,9 @@ async function loadData(){
     var url = SUPABASE_URL+'/rest/v1/v_dash_daily_story?select='+COLS+'&story_claim=not.is.null&order=snapshot_date.desc,ticker.asc';
     var hdrs = {'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Accept':'application/json'};
 
-    // ── PRIMARY: v_trade_cards — get latest snapshot_date first, then pull that date's signals ──
-    var latestCardDate = null;
-    try{
-      var ldRes = await fetch(SUPABASE_URL+'/rest/v1/v_trade_cards?select=snapshot_date&order=snapshot_date.desc&limit=1',{headers:hdrs});
-      if(ldRes&&ldRes.ok){ var ldJ=await ldRes.json(); if(ldJ&&ldJ[0])latestCardDate=ldJ[0].snapshot_date; }
-    }catch(_){}
-
-    // Build URL — single order param, snapshot_date pinned to latest
-    var cardUrl = SUPABASE_URL+'/rest/v1/v_trade_cards'
+    // ── PRIMARY: trade_cards_live (pre-computed table, fast) ──
+    var cardUrl = SUPABASE_URL+'/rest/v1/trade_cards_live'
       +'?select=ticker,price,primary_label,direction,confidence,holding_days,entry_date,exit_date,description,phase,status,card_tier,trade_score,snapshot_date,sector_name,sector,industry'
-      +(latestCardDate ? '&snapshot_date=eq.'+encodeURIComponent(latestCardDate) : '')
       +'&confidence=gte.0.65'
       +'&order=confidence.desc'
       +'&limit=50';
@@ -6086,7 +6078,7 @@ async function loadData(){
     var mainP = fetch(url,{headers:hdrs});
     var cardP = fetch(cardUrl,{headers:hdrs}).then(function(r){
       return r.ok ? r.json().then(function(j){ return j; }) : [];
-    }).catch(function(e){ console.error('[MP] v_trade_cards fetch error:', e); return []; });
+    }).catch(function(e){ console.error('[MP] trade_cards_live fetch error:', e); return []; });
     // price fallback for cards if v_trade_cards lacks price
     var snapP = fetch(SUPABASE_URL+'/rest/v1/ticker_snapshots?select=ticker,price_close,sector,industry&order=snapshot_date.desc&limit=500',{headers:hdrs}).catch(function(){return null;});
     // Industry + description from ticker_industry_lookup (Polygon reference data)
@@ -10375,22 +10367,15 @@ async function loadStrategyData(){
   if(!SUPABASE_URL||!SUPABASE_ANON)return;
   var hdrs={'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Accept':'application/json'};
   try{
-    // Get latest snapshot_date
-    var latestDate=null;
-    try{
-      var ldRes=await fetch(SUPABASE_URL+'/rest/v1/v_trade_cards?select=snapshot_date&order=snapshot_date.desc&limit=1',{headers:hdrs});
-      if(ldRes&&ldRes.ok){var ldJ=await ldRes.json();if(ldJ&&ldJ[0])latestDate=ldJ[0].snapshot_date;}
-    }catch(_){}
-
+    // Use trade_cards_live (pre-computed table) instead of v_trade_cards (slow view ~8s)
     var cols='ticker,price,primary_label,direction,confidence,holding_days,entry_date,exit_date,'
       +'description,phase,status,card_tier,tier_label,trade_score,snapshot_date,sector_name,sector,industry,'
       +'story_claim,forensic_rebuttal,primary_driver,fair_value,pct_above_fair_value,pe_ratio,'
       +'energy,nrs,vms,coordination_class,dark_pool_signal,dark_pool_direction,narrative_tone';
-    var cardUrl=SUPABASE_URL+'/rest/v1/v_trade_cards?select='+cols
-      +(latestDate?'&snapshot_date=eq.'+encodeURIComponent(latestDate):'')
+    var cardUrl=SUPABASE_URL+'/rest/v1/trade_cards_live?select='+cols
       +'&order=trade_score.desc';
     var res=await fetch(cardUrl,{headers:hdrs});
-    if(!res.ok)throw new Error('v_trade_cards fetch failed: '+res.status);
+    if(!res.ok)throw new Error('trade_cards_live fetch failed: '+res.status);
     var rows=await res.json();
 
     // Overlay live prices from Massive API
