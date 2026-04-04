@@ -6074,28 +6074,31 @@ async function loadData(){
       +'&order=confidence.desc'
       +'&limit=50';
 
-    // ── SECONDARY: existing v_dash_daily_story for dashboard stats/movers (unchanged) ──
+    // ── Fire ALL fetches in parallel (eliminates sequential waterfall) ──
     var mainP = fetch(url,{headers:hdrs});
     var cardP = fetch(cardUrl,{headers:hdrs}).then(function(r){
-      return r.ok ? r.json().then(function(j){ return j; }) : [];
+      return r.ok ? r.json() : [];
     }).catch(function(e){ console.error('[MP] trade_cards_live fetch error:', e); return []; });
-    // price fallback for cards if v_trade_cards lacks price
     var snapP = fetch(SUPABASE_URL+'/rest/v1/ticker_snapshots?select=ticker,price_close,sector,industry&order=snapshot_date.desc&limit=500',{headers:hdrs}).catch(function(){return null;});
-    // Industry + description from ticker_industry_lookup (Polygon reference data)
     var industryP = fetch(SUPABASE_URL+'/rest/v1/ticker_industry_lookup?select=ticker,sector,industry,name,description',{headers:hdrs}).catch(function(){return null;});
+    // Date lookups for scorecard + analyses (fire in parallel, not sequentially)
+    var scDateP = fetch(SUPABASE_URL+'/rest/v1/narrative_scorecard?select=snapshot_date&order=snapshot_date.desc&limit=1',{headers:hdrs}).then(function(r){return r.ok?r.json():[];}).catch(function(){return[];});
+    var naDateP = fetch(SUPABASE_URL+'/rest/v1/narrative_analyses?select=snapshot_date&order=snapshot_date.desc&limit=1',{headers:hdrs}).then(function(r){return r.ok?r.json():[];}).catch(function(){return[];});
+    var qfP = restFetch('v_beta_data_quality_flags',{select:'ticker,signal_confidence_tier'}).catch(function(){return[];});
+    var pfP = restFetch('pipeline_freshness',{select:'last_snapshot,days_stale,freshness_status',limit:'1'}).catch(function(){return[];});
 
+    // ── Await primary data ──
     var res = await mainP;
     if(!res.ok) throw new Error('Supabase '+res.status);
     var rows = await res.json();
 
-    // cardP resolves to a JSON array directly (not a Response object)
     var cardRows = await cardP;
     if(!Array.isArray(cardRows)) cardRows = [];
 
     snapshotMap={};
-    try{ if(snapP){ var sr=await snapP; if(sr&&sr.ok)(await sr.json()).forEach(function(s){if(!snapshotMap[s.ticker])snapshotMap[s.ticker]=s;}); } }catch(_){}
+    try{ var sr=await snapP; if(sr&&sr.ok)(await sr.json()).forEach(function(s){if(!snapshotMap[s.ticker])snapshotMap[s.ticker]=s;}); }catch(_){}
     industryMap={};
-    try{ if(industryP){ var ir=await industryP; if(ir&&ir.ok)(await ir.json()).forEach(function(r){if(r.ticker)industryMap[r.ticker]=r;}); } }catch(_){}
+    try{ var ir=await industryP; if(ir&&ir.ok)(await ir.json()).forEach(function(r){if(r.ticker)industryMap[r.ticker]=r;}); }catch(_){}
 
     // Build CARD_DATA from v_trade_cards — enrich each row with computed fields
     CARD_DATA = cardRows.map(function(r){
@@ -6157,63 +6160,39 @@ async function loadData(){
     });
 
 
-    // Parse overlay responses in parallel — keep for dashboard stats only
+    // ── Resolve overlay data (date lookups already fired in parallel above) ──
     var healthMap={};
     var pulseMap={};
     scorecardMap={};
-
-    // ── Fetch narrative_scorecard data for insight tags ──
-    // Use select=* to avoid 400 errors from missing columns (ticker page works this way)
-    try{
-      var scDateRes=await fetch(SUPABASE_URL+'/rest/v1/narrative_scorecard?select=snapshot_date&order=snapshot_date.desc&limit=1',{headers:hdrs});
-      if(scDateRes&&scDateRes.ok){
-        var scDateJ=await scDateRes.json();
-        var scDate=scDateJ[0]&&scDateJ[0].snapshot_date;
-        if(scDate){
-          var scRes=await fetch(SUPABASE_URL+'/rest/v1/narrative_scorecard?select=*&snapshot_date=eq.'+encodeURIComponent(scDate)+'&limit=500',{headers:hdrs});
-          if(scRes&&scRes.ok){
-            var scRows=await scRes.json();
-            scRows.forEach(function(s){if(s.ticker&&!scorecardMap[s.ticker])scorecardMap[s.ticker]=s;});
-          } else {
-            var errBody=''; try{errBody=await scRes.text();}catch(_){}
-            console.warn('[MP] scorecard query failed:',scRes.status,errBody.slice(0,300));
-          }
-        } else { console.warn('[MP] narrative_scorecard has no snapshot dates'); }
-      } else { console.warn('[MP] narrative_scorecard date query failed:',scDateRes&&scDateRes.status); }
-    }catch(e){console.warn('[MP] scorecard fetch failed:',e);}
-
-    // ── Fetch narrative_analyses for expanded tags ──
     var narrativeAnalysesMap={};
-    try{
-      var naDateRes=await fetch(SUPABASE_URL+'/rest/v1/narrative_analyses?select=snapshot_date&order=snapshot_date.desc&limit=1',{headers:hdrs});
-      if(naDateRes&&naDateRes.ok){
-        var naDateJ=await naDateRes.json();
-        var naDate=naDateJ[0]&&naDateJ[0].snapshot_date;
-        if(naDate){
-          var naCols='ticker,narrative_tone,material_discrepancy,verdict,omission_gap_score,urgency_count,fear_greed_count,analyst_firm,macro_theme,upstream_tickers,downstream_tickers,cluster_id';
-          var naRes=await fetch(SUPABASE_URL+'/rest/v1/narrative_analyses?select='+naCols+'&snapshot_date=eq.'+encodeURIComponent(naDate)+'&limit=500',{headers:hdrs});
-          if(naRes&&naRes.ok){
-            var naRows=await naRes.json();
-            naRows.forEach(function(n){if(n.ticker&&!narrativeAnalysesMap[n.ticker])narrativeAnalysesMap[n.ticker]=n;});
-          }
-        }
-      }
-    }catch(e){console.warn('[MP] narrative_analyses fetch failed:',e);}
-
-    // ── Fetch data quality flags for NO_SIGNAL suppression ──
     qualityFlagMap={};
-    try{
-      var qfRes=await restFetch('v_beta_data_quality_flags',{select:'ticker,signal_confidence_tier'});
-      if(qfRes&&qfRes.length){
-        qfRes.forEach(function(qf){if(qf.ticker)qualityFlagMap[qf.ticker]=qf;});
-      }
-    }catch(e){console.warn('[MP] data quality flags fetch failed:',e);}
 
-    // ── Pipeline freshness check ──
+    // Resolve date lookups (already running), then fire data fetches in parallel
+    var scDateJ=await scDateP;
+    var naDateJ=await naDateP;
+    var scDate=scDateJ[0]&&scDateJ[0].snapshot_date;
+    var naDate=naDateJ[0]&&naDateJ[0].snapshot_date;
+
+    // Fire scorecard + analyses data fetches in parallel (second round)
+    var scDataP=scDate?fetch(SUPABASE_URL+'/rest/v1/narrative_scorecard?select=*&snapshot_date=eq.'+encodeURIComponent(scDate)+'&limit=500',{headers:hdrs}).then(function(r){return r.ok?r.json():[];}).catch(function(){return[];}):Promise.resolve([]);
+    var naCols='ticker,narrative_tone,material_discrepancy,verdict,omission_gap_score,urgency_count,fear_greed_count,analyst_firm,macro_theme,upstream_tickers,downstream_tickers,cluster_id';
+    var naDataP=naDate?fetch(SUPABASE_URL+'/rest/v1/narrative_analyses?select='+naCols+'&snapshot_date=eq.'+encodeURIComponent(naDate)+'&limit=500',{headers:hdrs}).then(function(r){return r.ok?r.json():[];}).catch(function(){return[];}):Promise.resolve([]);
+
+    // Await all four in parallel
+    var overlayResults=await Promise.all([scDataP,naDataP,qfP,pfP]);
+    var scRows=overlayResults[0]||[];
+    var naRows=overlayResults[1]||[];
+    var qfRows=overlayResults[2]||[];
+    var pfRows=overlayResults[3]||[];
+
+    scRows.forEach(function(s){if(s.ticker&&!scorecardMap[s.ticker])scorecardMap[s.ticker]=s;});
+    naRows.forEach(function(n){if(n.ticker&&!narrativeAnalysesMap[n.ticker])narrativeAnalysesMap[n.ticker]=n;});
+    qfRows.forEach(function(qf){if(qf.ticker)qualityFlagMap[qf.ticker]=qf;});
+
+    // Pipeline freshness
     try{
-      var pfRes=await restFetch('pipeline_freshness','select=last_snapshot,days_stale,freshness_status&limit=1');
-      if(pfRes&&pfRes.length){
-        var pf=pfRes[0];
+      if(pfRows&&pfRows.length){
+        var pf=pfRows[0];
         if(pf.days_stale>1){
           var banner=document.getElementById('pipeline-stale-banner');
           if(banner){
@@ -6222,7 +6201,7 @@ async function loadData(){
           }
         }
       }
-    }catch(e){console.warn('[MP] pipeline freshness check failed:',e);}
+    }catch(_){}
 
     // dedup + merge
     var seen=new Set();
