@@ -1099,32 +1099,63 @@
   .driver-impact { font-size: 12px; font-family: var(--mono); font-weight: 500; width: 44px; text-align: right; }
   /* ── Narratives Accordion ── */
   .narr-section { margin-bottom: 24px; width: 100%; }
-  .narr-list { display: flex; flex-direction: column; }
+  .narr-list { display: flex; flex-direction: column; gap: 0; }
 
   .narr-item {
-    border-bottom: 1px solid var(--border);
+    background: var(--mp-surface);
+    border: 1px solid var(--mp-border);
+    border-radius: 14px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    position: relative;
   }
-  .narr-item:last-child { border-bottom: none; }
+  .narr-item:hover {
+    border-color: rgba(255,255,255,0.12);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  }
+  .narr-item:last-child { margin-bottom: 0; }
+  /* Colored left accent bar per narrative type */
+  .narr-item::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--narr-accent, #00AEFF);
+    border-radius: 14px 0 0 14px;
+  }
+  .narr-item[data-verdict="trap"]::before,
+  .narr-item[data-verdict="misleading"]::before { --narr-accent: #FF4D4D; }
+  .narr-item[data-verdict="monitoring"]::before { --narr-accent: #00AEFF; }
+  .narr-item[data-verdict="verified"]::before,
+  .narr-item[data-verdict="supported"]::before { --narr-accent: #00DE94; }
 
   .narr-header {
     display: flex;
     align-items: flex-start;
-    gap: 12px;
-    padding: 14px 18px;
+    gap: 14px;
+    padding: 16px 20px 16px 22px;
     cursor: pointer;
     user-select: none;
-    transition: background 0.1s;
+    transition: background 0.15s;
   }
-  .narr-header:hover { background: var(--surface2); }
+  .narr-header:hover { background: rgba(255,255,255,0.02); }
 
   .narr-rank {
-    font-size: 11px;
-    font-family: var(--font-body);
-    color: var(--text-tertiary);
+    font-size: 22px;
+    font-family: var(--font-display);
+    font-weight: 400;
+    color: var(--narr-accent, #00AEFF);
     flex-shrink: 0;
-    margin-top: 2px;
-    width: 18px;
+    margin-top: -1px;
+    width: 28px;
+    text-align: center;
+    line-height: 1.2;
   }
+  .narr-item[data-verdict="trap"] .narr-rank,
+  .narr-item[data-verdict="misleading"] .narr-rank { color: #FF4D4D; }
+  .narr-item[data-verdict="verified"] .narr-rank,
+  .narr-item[data-verdict="supported"] .narr-rank { color: #00DE94; }
   .narr-header-mid { flex: 1; min-width: 0; }
   .narr-text {
     font-size: 16px;
@@ -1159,13 +1190,13 @@
   .narr-cite {
     font-size: 11px;
     font-family: var(--font-body);
-    color: var(--text-tertiary);
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    padding: 1px 7px;
+    color: var(--mp-text-tertiary);
+    background: rgba(0,174,255,0.06);
+    border: 1px solid rgba(0,174,255,0.12);
+    padding: 2px 9px;
     border-radius: 99px;
   }
-  .narr-cite-count { font-weight: 500; color: var(--text-secondary); }
+  .narr-cite-count { font-weight: 700; font-size: 12px; color: #00AEFF; }
   .narr-outlet { font-size: 11px; color: var(--text-tertiary); }
   .narr-reach {
     font-size: 10px;
@@ -1185,7 +1216,7 @@
   .narr-date   { font-size: 11px; font-family: var(--font-body); color: var(--text-tertiary); }
   .narr-price-at {
     font-size: 11px;
-    font-family: var(--mono);
+    font-family: var(--font-body);
     color: var(--text-tertiary);
   }
   .narr-price-at strong {
@@ -1207,10 +1238,10 @@
   .narr-toggle.open { transform: rotate(180deg); }
 
   /* Expanded body */
-  .narr-body { display: none; border-top: 1px solid var(--border); }
-  .narr-body.open { display: block; }
+  .narr-body { display: none; border-top: 1px solid var(--mp-border); }
+  .narr-body.open { display: block; background: rgba(255,255,255,0.01); }
 
-  .narr-body-pad { padding: 14px 18px; }
+  .narr-body-pad { padding: 16px 20px 16px 22px; }
 
   /* Claim row */
   .narr-claim-row {
@@ -1227,12 +1258,12 @@
     color: #6b7280;
     font-weight: 500;
     white-space: nowrap;
-    font-family: var(--mono);
+    font-family: var(--font-body);
   }
   .narr-claim-val {
     font-size: 14px;
     color: var(--mp-text-primary);
-    font-family: var(--mono);
+    font-family: var(--font-body);
   }
   .narr-claim-tf {
     font-size: 11px;
@@ -3274,9 +3305,13 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
 
         <!-- Trending Narratives -->
         <div class="narr-section">
-          <div class="section-label">
+          <div class="section-label" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
             Trending Narratives
             <span class="section-label-sub">Top stories being cited in the market</span>
+            <span class="narr-info-btn" id="narr-info-toggle" style="cursor:pointer;margin-left:4px;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:rgba(0,174,255,0.08);border:1px solid rgba(0,174,255,0.2);color:#00AEFF;font-size:11px;font-weight:700;font-family:var(--font-body);transition:all 0.15s;" title="What are Trending Narratives?">i</span>
+          </div>
+          <div class="narr-info-box" id="narr-info-box" style="display:none;padding:14px 18px;margin:0 0 4px;background:rgba(0,174,255,0.04);border:1px solid rgba(0,174,255,0.12);border-radius:10px;font-size:13px;color:var(--mp-text-secondary);line-height:1.6;">
+            <strong style="color:var(--mp-text-primary);">Trending Narratives</strong> are the most-cited market stories about this ticker, clustered by theme. Each narrative is scored by our four-agent pipeline for verification quality, source credibility, and data-backing. The rank number reflects how many independent citations we found across news sources. Click any narrative to expand its claim verification, quality signals, and full source list.
           </div>
           <div class="section-body">
             <div id="narr-list-top" class="narr-list">
@@ -3308,45 +3343,6 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
           <div id="narr-phase-row"></div>
           <div id="narr-mini-rings"></div>
           <div id="narr-summary-text"></div>
-        </div>
-
-        <!-- 2. ASK MARKET SCHOLAR — Prominent AI Section -->
-        <div class="section scholar-hero-section" id="scholar-hero-section">
-          <div class="scholar-hero-inner">
-            <div class="scholar-hero-header">
-              <div class="scholar-hero-sparkle">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2L14.09 8.26L20 9.27L15.55 13.97L16.91 20L12 16.9L7.09 20L8.45 13.97L4 9.27L9.91 8.26L12 2Z" fill="url(#sparkle-grad)" opacity="0.9"/><defs><linearGradient id="sparkle-grad" x1="4" y1="2" x2="20" y2="20"><stop offset="0%" stop-color="#00AEFF"/><stop offset="100%" stop-color="#00DE94"/></linearGradient></defs></svg>
-              </div>
-              <div class="scholar-hero-title">
-                Ask <span class="scholar-hero-accent">Market Scholar</span> <span class="scholar-hero-ai-tag">AI</span>
-              </div>
-              <div class="scholar-hero-sub" id="scholar-hero-sub">Get instant forensic intelligence on this ticker</div>
-            </div>
-            <div class="scholar-hero-input-row" id="scholar-hero-input-row">
-              <input class="scholar-hero-input" id="scholar-hero-input" type="text" autocomplete="off">
-              <button class="scholar-hero-send" id="scholar-hero-send">
-                <svg viewBox="0 0 20 20" fill="none"><path d="M3 10h14M12 5l5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </button>
-            </div>
-            <div class="scholar-hero-suggestions" id="scholar-hero-suggestions">
-              <button class="scholar-suggest-chip" data-q="narrative-trap">
-                <svg class="scholar-chip-icon" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.5 4.5H14l-3.5 3 1.5 4.5L8 10l-4 3 1.5-4.5L2 5.5h4.5L8 1z" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>
-                Is this a narrative trap?
-              </button>
-              <button class="scholar-suggest-chip" data-q="verification">
-                <svg class="scholar-chip-icon" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.5 4.5H14l-3.5 3 1.5 4.5L8 10l-4 3 1.5-4.5L2 5.5h4.5L8 1z" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>
-                How strong is the verification score?
-              </button>
-              <button class="scholar-suggest-chip" data-q="signals">
-                <svg class="scholar-chip-icon" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.5 4.5H14l-3.5 3 1.5 4.5L8 10l-4 3 1.5-4.5L2 5.5h4.5L8 1z" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>
-                What signals are active right now?
-              </button>
-              <button class="scholar-suggest-chip" data-q="risk">
-                <svg class="scholar-chip-icon" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.5 4.5H14l-3.5 3 1.5 4.5L8 10l-4 3 1.5-4.5L2 5.5h4.5L8 1z" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>
-                What are the biggest risks?
-              </button>
-            </div>
-          </div>
         </div>
 
         <!-- 3. WHAT'S DRIVING THE PRICE (moved from History tab) -->
@@ -3552,6 +3548,42 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
           <div style="padding:0 16px 14px;" id="tk-sb-pulse-extra"></div>
         </div>
 
+        <!-- ASK MARKET SCHOLAR — Sidebar AI Section -->
+        <div class="tk-sb-card scholar-hero-section" id="scholar-hero-section" style="overflow:hidden;position:relative;">
+          <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#00AEFF,#00DE94,#7B61FF);opacity:0.7;"></div>
+          <div class="scholar-hero-inner" style="padding:18px;background:transparent;border:none;border-radius:0;">
+            <div class="scholar-hero-header" style="margin-bottom:12px;flex-direction:column;align-items:flex-start;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2L14.09 8.26L20 9.27L15.55 13.97L16.91 20L12 16.9L7.09 20L8.45 13.97L4 9.27L9.91 8.26L12 2Z" fill="url(#sparkle-grad-sb)" opacity="0.9"/><defs><linearGradient id="sparkle-grad-sb" x1="4" y1="2" x2="20" y2="20"><stop offset="0%" stop-color="#00AEFF"/><stop offset="100%" stop-color="#00DE94"/></linearGradient></defs></svg>
+                <div class="scholar-hero-title" style="font-size:15px;">
+                  Ask <span class="scholar-hero-accent">Market Scholar</span> <span class="scholar-hero-ai-tag">AI</span>
+                </div>
+              </div>
+              <div class="scholar-hero-sub" id="scholar-hero-sub" style="font-size:12px;">Get instant forensic intelligence on this ticker</div>
+            </div>
+            <div class="scholar-hero-input-row" id="scholar-hero-input-row" style="margin-bottom:10px;">
+              <input class="scholar-hero-input" id="scholar-hero-input" type="text" autocomplete="off" style="font-size:13px;padding:10px 14px;">
+              <button class="scholar-hero-send" id="scholar-hero-send" style="padding:10px 14px;">
+                <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M3 10h14M12 5l5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+            <div class="scholar-hero-suggestions" id="scholar-hero-suggestions" style="gap:6px;">
+              <button class="scholar-suggest-chip" data-q="narrative-trap" style="font-size:11px;padding:5px 10px;">
+                Is this a narrative trap?
+              </button>
+              <button class="scholar-suggest-chip" data-q="verification" style="font-size:11px;padding:5px 10px;">
+                How strong is verification?
+              </button>
+              <button class="scholar-suggest-chip" data-q="signals" style="font-size:11px;padding:5px 10px;">
+                What signals are active?
+              </button>
+              <button class="scholar-suggest-chip" data-q="risk" style="font-size:11px;padding:5px 10px;">
+                Biggest risks?
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- Signal Labels -->
         <div class="tk-sb-card" id="tk-signal-card">
           <div class="tk-sb-hdr">
@@ -3602,9 +3634,13 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
   <div class="tk-tab-panel" id="tab-narratives" style="display:none !important;"
     <!-- Trending Narratives accordion -->
     <div class="narr-section">
-      <div class="section-label">
+      <div class="section-label" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
         Trending Narratives
         <span class="section-label-sub">Top stories being cited in the market</span>
+        <span class="narr-info-btn" style="cursor:pointer;margin-left:4px;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:rgba(0,174,255,0.08);border:1px solid rgba(0,174,255,0.2);color:#00AEFF;font-size:11px;font-weight:700;font-family:var(--font-body);transition:all 0.15s;" title="What are Trending Narratives?">i</span>
+      </div>
+      <div class="narr-info-box" style="display:none;padding:14px 18px;margin:0 0 4px;background:rgba(0,174,255,0.04);border:1px solid rgba(0,174,255,0.12);border-radius:10px;font-size:13px;color:var(--mp-text-secondary);line-height:1.6;">
+        <strong style="color:var(--mp-text-primary);">Trending Narratives</strong> are the most-cited market stories about this ticker, clustered by theme. Each narrative is scored by our four-agent pipeline for verification quality, source credibility, and data-backing. The rank number reflects how many independent citations we found across news sources. Click any narrative to expand its claim verification, quality signals, and full source list.
       </div>
       <div class="section-body">
         <div id="narr-list" class="narr-list">
@@ -5595,7 +5631,8 @@ async function loadNarratives() {
 
       const itemId = `narr-${idx}`;
 
-      return `<div class="narr-item">
+      const verdictKey = vLbl.toLowerCase();
+      return `<div class="narr-item" data-verdict="${verdictKey}">
         <div class="narr-header" data-target="${itemId}">
           <div class="narr-rank">${idx + 1}</div>
           <div class="narr-header-mid">
@@ -5666,6 +5703,15 @@ async function loadNarratives() {
     const firstToggle = document.getElementById('toggle-narr-0');
     if (firstBody)   firstBody.classList.add('open');
     if (firstToggle) firstToggle.classList.add('open');
+
+    // Wire info toggle
+    document.querySelectorAll('.narr-info-btn').forEach(function(btn){
+      btn.addEventListener('click', function(e){
+        e.stopPropagation();
+        var box = btn.closest('.narr-section').querySelector('.narr-info-box');
+        if(box) box.style.display = box.style.display === 'none' ? '' : 'none';
+      });
+    });
 
   } catch (err) {
     document.getElementById('narr-list').innerHTML =
