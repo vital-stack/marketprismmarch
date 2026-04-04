@@ -3381,10 +3381,11 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
             <div class="chart-bottom-bar">
               <div class="chart-legend">
                 <div class="legend-item"><div class="leg-line" style="background:var(--text-primary);"></div> Price</div>
-                <div class="legend-item"><div class="leg-dot" style="background:#00DE94;"></div> Bullish</div>
-                <div class="legend-item"><div class="leg-dot" style="background:#FF4D4D;"></div> Bearish</div>
+                <div class="legend-item"><div class="leg-dot" style="background:#00DE94;"></div> Bullish Sentiment</div>
+                <div class="legend-item"><div class="leg-dot" style="background:#FF4D4D;"></div> Bearish Sentiment</div>
                 <div class="legend-item"><div class="leg-line" style="background:#00AEFF;opacity:0.7;border-top:2px dashed #00AEFF;height:0;width:14px;"></div> Narrative Energy</div>
                 <div class="legend-item"><div class="leg-line" style="background:#FFB800;opacity:0.7;border-top:2px dashed #FFB800;height:0;width:14px;"></div> Physics Energy</div>
+                <div class="legend-item"><div class="leg-line" style="background:#7B61FF;opacity:0.7;border-top:2px dashed #7B61FF;height:0;width:14px;"></div> Narrative Pressure</div>
               </div>
             </div>
             <div class="bear-stories-wrap" id="bear-stories-wrap" style="display:none;">
@@ -4684,6 +4685,7 @@ let ALL_SNAPS = [];   // full price history from ticker_snapshots
 let ALL_NARRS = [];   // narrative story dots from narrative_analyses
 let ALL_DECAY = [];   // narrative energy time series
 let ALL_PHYSICS = []; // physics energy (narrative_energy_absolute from narrative_scorecard)
+let ALL_PRESSURE = []; // narrative pressure (composite of nrs, overreaction_ratio, coordination_score)
 async function loadChart() {
   if (!TICKER) return;
   try {
@@ -4714,7 +4716,7 @@ async function loadChart() {
         limit:  '2000'
       }),
       sbFetch('narrative_scorecard', {
-        select: 'snapshot_date,narrative_energy_absolute',
+        select: 'snapshot_date,narrative_energy_absolute,nrs,overreaction_ratio,coordination_score',
         ticker: `eq.${TICKER}`,
         order:  'snapshot_date.asc',
         limit:  '2000'
@@ -4754,6 +4756,15 @@ async function loadChart() {
 
     ALL_DECAY = decayRows;
     ALL_PHYSICS = physicsRows.filter(r => r.snapshot_date && r.narrative_energy_absolute != null);
+    ALL_PRESSURE = physicsRows.filter(r => r.snapshot_date).map(r => {
+      const nrs = r.nrs || 0;
+      const or = Math.min(r.overreaction_ratio || 0, 50);
+      const cs = r.coordination_score || 0;
+      return {
+        snapshot_date: r.snapshot_date,
+        pressure: ((nrs / 100) * 0.4 + (or / 50) * 0.4 + (cs / 100) * 0.2) * 100
+      };
+    });
 
     if (!ALL_SNAPS.length) {
       document.getElementById('chart-outer').innerHTML = '<div class="chart-no-data">No price history available.</div>';
@@ -4954,6 +4965,48 @@ function drawChart(snaps, narrs) {
       const normalized = (d.narrative_energy_absolute / maxAbsolute) * 100;
       const y = yEnergy(normalized);
       if (!pStarted) { ctx.moveTo(x, y); pStarted = true; }
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Narrative Pressure overlay (dashed purple, right axis 0-100)
+  const pressureFiltered = ALL_PRESSURE.filter(d => {
+    const ds = d.snapshot_date?.slice(0,10);
+    return ds && ds >= lo && ds <= hi;
+  });
+  if (pressureFiltered.length > 1) {
+    // Danger zone shading: light red background where pressure > 60
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,77,77,0.06)';
+    let inDanger = false;
+    let dangerStartX = 0;
+    pressureFiltered.forEach((d, i) => {
+      const idx = dateIdx[d.snapshot_date.slice(0,10)];
+      if (idx == null) return;
+      const x = xOf(idx);
+      if (d.pressure > 60 && !inDanger) { inDanger = true; dangerStartX = x; }
+      else if ((d.pressure <= 60 || i === pressureFiltered.length - 1) && inDanger) {
+        const endX = d.pressure > 60 ? x : xOf(dateIdx[pressureFiltered[i-1]?.snapshot_date?.slice(0,10)] ?? idx);
+        ctx.fillRect(dangerStartX, PAD.top, endX - dangerStartX, CH);
+        inDanger = false;
+      }
+    });
+    ctx.restore();
+
+    // Dashed purple line
+    ctx.save();
+    ctx.setLineDash([3,3]);
+    ctx.strokeStyle = '#7B61FF'; ctx.lineWidth = 1.2; ctx.globalAlpha = 0.7;
+    ctx.beginPath();
+    let prStarted = false;
+    pressureFiltered.forEach(d => {
+      const idx = dateIdx[d.snapshot_date.slice(0,10)];
+      if (idx == null) return;
+      const x = xOf(idx);
+      const y = yEnergy(d.pressure);
+      if (!prStarted) { ctx.moveTo(x, y); prStarted = true; }
       else ctx.lineTo(x, y);
     });
     ctx.stroke();
