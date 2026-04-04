@@ -13998,6 +13998,16 @@ var BOARDS=[
     r.forEach(function(x){if(!x.macro_theme)return;if(!map[x.macro_theme])map[x.macro_theme]={risk:0,n:0};map[x.macro_theme].risk+=(x.contagion_risk||0);map[x.macro_theme].n++;});
     return Object.keys(map).map(function(t){return{name:t,meta:map[t].n+' tickers \u00b7 Avg risk: '+Math.round(map[t].risk/map[t].n),score:Math.round(map[t].risk/map[t].n),link:'#marketwide'};}).sort(function(a,b){return b.score-a.score;}).slice(0,10);
   }},
+  {id:'consistent-signals',title:'Most Consistent Signals',sub:'Keywords with the highest return-to-noise ratio across all tickers',color:'#38C8B8',bg:'rgba(56,200,184,0.12)',scoreLabel:'Consistency',
+  fetch:async function(){
+    var r=await sq('v_consistent_signals?select=keyword,keyword_type,ticker_count,avg_return_10d,avg_stddev,consistency_score,total_articles');
+    return r.map(function(x){
+      var kw=(x.keyword||'').replace(/_/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();});
+      var ret=+(x.avg_return_10d||0);var retStr=(ret>=0?'+':'')+ret+'%';
+      var cs=+(x.consistency_score||0);
+      return{name:kw,meta:(x.ticker_count||0)+' tickers \u00b7 Avg 10d: '+retStr+' \u00b7 '+(x.total_articles||0)+' articles',score:Math.abs(cs),scoreDisplay:cs.toFixed(2),_scoreColor:cs>=0?'#00DE94':'#FF4D4D',link:'#discover'};
+    });
+  }},
 ];
 
 function formatPercent(v){if(v===null||v===undefined)return'-';return(v*100).toFixed(1)+'%';}
