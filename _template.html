@@ -6386,7 +6386,8 @@ async function loadData(){
           if (r.divergence_score == null && div.divergence_score != null) r.divergence_score = div.divergence_score;
           // Upgrade tier/description from view if divergence regime detected
           if (div.signal_regime && div.signal_regime !== 'NEUTRAL') {
-            if (div.card_tier === 'PLATINUM' && r.card_tier !== 'PLATINUM') r.card_tier = div.card_tier;
+            if (div.card_tier === 'UNICORN') r.card_tier = 'UNICORN';
+            else if (div.card_tier === 'PLATINUM' && r.card_tier !== 'PLATINUM' && r.card_tier !== 'UNICORN') r.card_tier = div.card_tier;
             if (div.description && div.signal_regime !== 'NEUTRAL') r.description = div.description;
           }
         }
@@ -10234,6 +10235,8 @@ function buildCardFrontHTML(c,i,dateStr,prefix,showActions){
   var energy=c.narrative_health||Math.round(40+Math.random()*50);
   var rKey=c.prism_verdict||c.narrative_state||'Stable';
   var rarity=RARITY_MAP[rKey]||RARITY_MAP['Stable'];
+  // Override rarity for UNICORN tier
+  if((c.card_tier||'').toUpperCase()==='UNICORN') rarity={label:'Unicorn',color:'#E8B4F8',border:'rgba(232,180,248,0.30)'};
   var snap=snapshotMap&&snapshotMap[c.ticker]||{};
   var _il=industryMap[c.ticker]||{};
   var companyName=c.sector_name||_il.sector||snap.sector||'\u2014';
