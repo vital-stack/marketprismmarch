@@ -4272,7 +4272,7 @@ async function loadHero() {
         limit:  '1'
       }),
       sbFetch('trade_classifications', {
-        select: 'primary_label,primary_confidence,shortest_timeframe,longest_timeframe',
+        select: 'primary_label,primary_confidence,shortest_timeframe,longest_timeframe,labels,label_count,signal_combo',
         ticker: `eq.${TICKER}`,
         order:  'snapshot_date.desc',
         limit:  '1'
@@ -4519,7 +4519,7 @@ async function loadHero() {
     // Show action bar once data is loaded
     document.getElementById('action-bar').style.display = 'flex';
 
-    return { ...r, narrative_health: h.narrative_health, narrative_trend: h.narrative_trend };
+    return { ...r, narrative_health: h.narrative_health, narrative_trend: h.narrative_trend, _tc: tc, _scorecard: sc };
   } catch (err) {
     document.getElementById('hero').innerHTML = `<div class="inline-err">Failed to load: ${esc(err.message)}</div>`;
     return null;
@@ -6031,12 +6031,78 @@ function renderSidebar(p, h) {
       + buildPrismRow('Reversal Risk', reversal, 'var(--mp-amber)')
       + buildPrismRow('Fragility', frag, frag > 50 ? 'var(--mp-red)' : 'var(--mp-green)');
   }
+  // Signal Labels — from trade_classifications
+  var tc = (h && h._tc) || {};
+  var sigEl = document.getElementById('tk-signal-block');
+  if (sigEl) {
+    var LABEL_DISPLAY = {
+      'MOMENTUM_RIDE':'Momentum Ride','MOMENTUM_CONFIRMED':'Momentum Confirmed',
+      'SPECULATIVE':'Speculative','SPECULATIVE_LOW':'Speculative (Low)',
+      'FADE_THE_HYPE':'Fade the Hype','NARRATIVE_TRAP':'Narrative Trap',
+      'FUNDAMENTAL_DISCONNECT':'Fundamental Disconnect','FUNDAMENTAL_LONG':'Fundamental Long',
+      'CATALYST_PENDING':'Catalyst Pending','ACCUMULATE':'Accumulate','FOREIGN_OPAQUE':'Foreign Opaque'
+    };
+    var LABEL_COLOR = {
+      'MOMENTUM_RIDE':'#00DE94','MOMENTUM_CONFIRMED':'#00DE94',
+      'FUNDAMENTAL_LONG':'#00DE94','ACCUMULATE':'#38C8B8',
+      'SPECULATIVE':'#FFB800','SPECULATIVE_LOW':'#FFB800','CATALYST_PENDING':'#FFB800',
+      'FADE_THE_HYPE':'#FF8C00','FOREIGN_OPAQUE':'#A0A8B0',
+      'NARRATIVE_TRAP':'#FF4D4D','FUNDAMENTAL_DISCONNECT':'#FF4D4D'
+    };
+    if (tc.primary_label) {
+      var sigHTML = '';
+      // Primary label
+      var plColor = LABEL_COLOR[tc.primary_label] || '#00AEFF';
+      sigHTML += '<div class="tk-signal-item" style="border-left:3px solid ' + plColor + ';">';
+      sigHTML += '<div><div class="tk-signal-label" style="color:' + plColor + ';">' + esc(LABEL_DISPLAY[tc.primary_label] || tc.primary_label.replace(/_/g, ' ')) + '</div>';
+      sigHTML += '<div style="font-size:11px;color:var(--mp-text-muted);margin-top:2px;">Primary Signal</div></div>';
+      if (tc.primary_confidence != null) sigHTML += '<div class="tk-signal-conf" style="font-size:14px;font-weight:700;color:' + plColor + ';">' + Math.round(tc.primary_confidence) + '%</div>';
+      sigHTML += '</div>';
+      // Secondary labels
+      var labels = tc.labels || [];
+      labels.forEach(function(lbl) {
+        if (lbl === tc.primary_label) return;
+        var lColor = LABEL_COLOR[lbl] || '#A0A8B0';
+        sigHTML += '<div class="tk-signal-item" style="border-left:3px solid ' + lColor + ';">';
+        sigHTML += '<div class="tk-signal-label" style="color:' + lColor + ';">' + esc(LABEL_DISPLAY[lbl] || lbl.replace(/_/g, ' ')) + '</div>';
+        sigHTML += '</div>';
+      });
+      // Timeframe
+      var shortTf = tc.shortest_timeframe || '';
+      var longTf = tc.longest_timeframe || '';
+      var winTxt = shortTf && longTf && shortTf !== longTf ? shortTf + ' \u2013 ' + longTf : (shortTf || longTf || '');
+      if (winTxt) {
+        sigHTML += '<div style="font-size:11px;color:var(--mp-text-muted);padding:4px 0 0;border-top:1px solid var(--mp-border);margin-top:4px;">Timeframe: <span style="color:var(--mp-text-secondary);font-weight:600;">' + esc(winTxt) + '</span></div>';
+      }
+      // Signal combo
+      if (tc.signal_combo) {
+        sigHTML += '<div style="font-size:10px;color:var(--mp-text-muted);margin-top:6px;word-break:break-all;">' + esc(tc.signal_combo) + '</div>';
+      }
+      sigEl.innerHTML = sigHTML;
+    } else {
+      sigEl.innerHTML = '<div style="font-size:12px;color:var(--mp-text-muted);">No signal classification available.</div>';
+    }
+  }
   // Intel Summary
   var intelEl = document.getElementById('tk-intel-qa');
   var intelTitle = document.getElementById('tk-intel-title');
   if (intelTitle) intelTitle.textContent = TICKER + ' Intelligence Summary';
-  if (intelEl && p.pulse_summary) {
-    intelEl.innerHTML = '<div><div class="tk-intel-q">Why is ' + esc(TICKER) + ' moving?</div><div class="tk-intel-a">' + esc(p.pulse_summary) + '</div></div>';
+  if (intelEl) {
+    if (p.pulse_summary) {
+      intelEl.innerHTML = '<div><div class="tk-intel-q">Why is ' + esc(TICKER) + ' moving?</div><div class="tk-intel-a">' + esc(p.pulse_summary) + '</div></div>';
+    } else {
+      // Fallback: build summary from available pulse data
+      var parts = [];
+      if (p.prevailing_verdict) parts.push('Verdict: ' + p.prevailing_verdict);
+      if (p.prevailing_narrative) parts.push(p.prevailing_narrative);
+      if (p.decay_status) parts.push('Narrative is ' + p.decay_status.toLowerCase());
+      if (p.net_sentiment != null) parts.push('Sentiment: ' + Math.round(p.net_sentiment));
+      if (parts.length > 0) {
+        intelEl.innerHTML = '<div><div class="tk-intel-q">What\'s the current narrative?</div><div class="tk-intel-a">' + esc(parts.join(' \u00B7 ')) + '</div></div>';
+      } else {
+        intelEl.innerHTML = '<div style="font-size:12px;color:var(--mp-text-muted);">No intelligence summary available for this ticker.</div>';
+      }
+    }
   }
 }
 function buildPrismRow(label, val, color) {
