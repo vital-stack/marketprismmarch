@@ -5320,55 +5320,313 @@ function renderScorerResult(d){
   var chgC=chg>0?'#00DE94':chg<0?'#FF4D4D':'#A0A8B0';
   var fvd=d.fair_value_deviation_pct;var fvdC=fvd>30?'#FF4D4D':fvd<-10?'#00DE94':'#A0A8B0';
   var latency=d.agent_latency_ms?((d.agent_latency_ms/1000).toFixed(1)+'s'):'—';
-  var h='<div style="background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:16px;padding:24px;max-width:700px;">';
-  // Header
-  h+='<div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;flex-wrap:wrap;">';
-  h+='<span style="font-family:var(--font-body);font-size:22px;font-weight:700;color:var(--mp-text-primary);">'+esc(d.ticker)+'</span>';
-  h+='<span style="font-size:20px;color:var(--mp-text-primary);font-weight:600;">$'+fmtNum(d.current_price)+'</span>';
-  if(chg!==null)h+='<span style="font-size:13px;color:'+chgC+';font-weight:600;">'+(chg>0?'+':'')+chg+'% (30d)</span>';
-  h+='<span style="margin-left:auto;font-size:11px;padding:5px 12px;border-radius:6px;font-weight:600;letter-spacing:.04em;background:'+vm.b+';color:'+vm.c+';border:1px solid '+vm.c+'33;">'+esc(d.verdict)+'</span>';
-  if(d.trade_direction)h+='<span style="font-size:11px;padding:4px 10px;border-radius:4px;font-weight:700;letter-spacing:.08em;background:rgba(255,255,255,0.04);border:1px solid var(--mp-border);color:var(--mp-text-secondary);">'+esc(d.trade_direction)+'</span>';
+  // Macro theme colors
+  var THEME_COLORS={AI_Infrastructure:'#7B61FF',Earnings_Surprise:'#00DE94',Regulatory:'#FFB800',M_and_A:'#00AEFF',Macro_Tariffs:'#FF4D4D',Consumer_Demand:'#38C8B8',Competitive_Threat:'#FF8C00',Management_Change:'#A0A8B0',Sector_Rotation:'#7B61FF',Other:'#A0A8B0'};
+  var themeLabel=function(t){return t?t.replace(/_/g,' ').replace(/M and A/,'M&A'):null;};
+  // Direction colors
+  var dirColors={LONG:'#00DE94',SHORT:'#FF4D4D',HOLD:'#FFB800'};
+  var dirC=dirColors[d.trade_direction]||'var(--mp-text-secondary)';
+  // Section label helper
+  var secLabel=function(txt){return '<div style="font-family:var(--font-display);font-size:16px;font-weight:400;color:var(--mp-text-primary);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--mp-border);">'+txt+'</div>';};
+  // Score tile explanation map
+  var scoreExplain={
+    NRS:'Narrative Risk Score — how much the market narrative diverges from verified data. Higher = more risk.',
+    VMS:'Verification & Materiality — how well claims are backed by SEC filings. Higher = better verified.',
+    ACS:'Aggregate Credibility — overall trustworthiness of the narrative from multiple signals.',
+    CCP:'Confidence Calibration — statistical confidence in the scoring model\'s output.',
+    CVS:'Claim Verification — whether specific claims have numeric anchors, sources, and timeframes.',
+    SRS:'Source Reliability — average trustworthiness of news sources covering this ticker.',
+    Drift:'Drift Score — how far the narrative has drifted from fundamental data. Higher = more drift.'
+  };
+  // Verdict explainer — maps each verdict to a plain-English reason + the trigger logic
+  var verdictExplain={
+    'Narrative Trap':{icon:'\uD83D\uDEA8',reason:'Price has moved far beyond what fundamentals justify, and the narrative is amplifying the disconnect.',trigger:'Fair value deviation >100%, or >50% with elevated narrative risk.'},
+    'Structurally Supported':{icon:'\u2705',reason:'Low narrative risk, strong filing verification, and price is close to fair value.',trigger:'NRS <30, VMS >80, fair value deviation within \u00B130%.'},
+    'Air Pocket Short':{icon:'\u26A0\uFE0F',reason:'Stock appears undervalued on paper but narrative risk is present \u2014 a potential value trap.',trigger:'Fair value deviation < -14.8% with NRS \u226525.'},
+    'Accumulate':{icon:'\uD83D\uDFE2',reason:'Trading below fair value with low narrative risk and decent verification.',trigger:'FV deviation negative, NRS <30, VMS >70.'},
+    'Drift Compression Short':{icon:'\uD83D\uDCC9',reason:'High narrative drift combined with high narrative risk \u2014 the story is pulling away from reality.',trigger:'NRS \u226545.8 and drift score \u226550.'},
+    'High Conviction Continuation':{icon:'\uD83D\uDE80',reason:'Trading well above fair value but strongly verified \u2014 the premium may be justified.',trigger:'FV deviation 82\u2013100% with VMS \u226583.'},
+    'Narrative Risk':{icon:'\u26A0\uFE0F',reason:'Elevated narrative risk detected \u2014 claims may not be well-supported by data.',trigger:'NRS \u226560.'},
+    'Elevated Risk':{icon:'\uD83D\uDFE1',reason:'Moderate narrative risk \u2014 worth watching but not yet alarming.',trigger:'NRS \u226540.'},
+    'Low Risk':{icon:'\uD83D\uDFE2',reason:'Low narrative risk with reasonable filing verification.',trigger:'NRS <25 and VMS \u226565.'},
+    'Monitoring':{icon:'\u23F3',reason:'No strong signal in either direction \u2014 watching for changes.',trigger:'Default state when no other threshold is met.'}
+  };
+
+  var h='<div style="max-width:780px;">';
+
+  // ── HEADER CARD ──
+  h+='<div style="background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:16px;padding:24px;margin-bottom:16px;position:relative;overflow:hidden;">';
+  // Accent bar at top
+  h+='<div style="position:absolute;top:0;left:0;right:0;height:2px;background:'+vm.c+';"></div>';
+  // Row 1: Ticker + name + price
+  h+='<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:6px;flex-wrap:wrap;">';
+  h+='<span style="font-family:var(--font-body);font-size:24px;font-weight:700;color:var(--mp-text-primary);">'+esc(d.ticker)+'</span>';
+  if(d.short_name)h+='<span style="font-size:14px;color:var(--mp-text-tertiary);">'+esc(d.short_name)+'</span>';
+  h+='<span style="margin-left:auto;font-size:22px;color:var(--mp-text-primary);font-weight:600;">$'+fmtNum(d.current_price)+'</span>';
+  if(chg!==null)h+='<span style="font-size:14px;color:'+chgC+';font-weight:600;">'+(chg>0?'+':'')+chg+'%<span style="font-size:11px;color:var(--mp-text-muted);font-weight:400;margin-left:3px;">30d</span></span>';
   h+='</div>';
+  // Row 2: Badges — verdict, direction, macro theme, narrative type
+  h+='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;">';
+  h+='<span style="font-size:12px;padding:5px 14px;border-radius:6px;font-weight:600;letter-spacing:.04em;background:'+vm.b+';color:'+vm.c+';border:1px solid '+vm.c+'33;">'+esc(d.verdict)+'</span>';
+  if(d.trade_direction)h+='<span style="font-size:12px;padding:4px 12px;border-radius:4px;font-weight:700;letter-spacing:.08em;background:rgba(255,255,255,0.04);border:1px solid '+dirC+'33;color:'+dirC+';">'+esc(d.trade_direction)+'</span>';
+  if(d.macro_theme){var tc=THEME_COLORS[d.macro_theme]||'#A0A8B0';h+='<span style="font-size:11px;padding:4px 10px;border-radius:4px;font-weight:600;letter-spacing:.04em;background:'+tc+'14;color:'+tc+';border:1px solid '+tc+'22;">'+esc(themeLabel(d.macro_theme))+'</span>';}
+  if(d.narrative_type){var ntC=d.narrative_type==='bullish'?'#00DE94':'#FF4D4D';h+='<span style="font-size:11px;padding:4px 10px;border-radius:4px;font-weight:600;letter-spacing:.04em;background:'+ntC+'14;color:'+ntC+';border:1px solid '+ntC+'22;">'+esc(d.narrative_type.charAt(0).toUpperCase()+d.narrative_type.slice(1))+' Narrative</span>';}
+  // Sector + industry inline
+  if(d.sector||d.industry){h+='<span style="font-size:11px;color:var(--mp-text-muted);margin-left:auto;">';if(d.sector)h+=esc(d.sector);if(d.industry)h+=' / '+esc(d.industry);h+='</span>';}
+  h+='</div>';
+  // Verdict explainer box
+  var vExp=verdictExplain[d.verdict];
+  if(vExp){
+    h+='<div style="margin-top:14px;padding:14px 16px;border-radius:10px;background:'+vm.c+'08;border:1px solid '+vm.c+'18;">';
+    h+='<div style="display:flex;align-items:flex-start;gap:10px;">';
+    h+='<span style="font-size:18px;line-height:1;">'+vExp.icon+'</span>';
+    h+='<div>';
+    h+='<div style="font-size:13px;color:var(--mp-text-secondary);line-height:1.5;">'+esc(vExp.reason)+'</div>';
+    h+='<div style="font-size:11px;color:var(--mp-text-muted);margin-top:6px;line-height:1.4;"><span style="color:'+vm.c+';font-weight:600;">Trigger:</span> '+esc(vExp.trigger)+'</div>';
+    h+='</div></div></div>';
+  }
   // Narrative summary
-  if(d.narrative_summary)h+='<div style="font-size:14px;line-height:1.6;color:var(--mp-text-secondary);padding:14px 16px;border-radius:10px;background:rgba(255,255,255,0.02);border:1px solid var(--mp-border);margin-bottom:20px;">'+esc(d.narrative_summary)+'</div>';
-  // Score grid
-  h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px;margin-bottom:20px;">';
+  if(d.narrative_summary)h+='<div style="font-size:14px;line-height:1.6;color:var(--mp-text-secondary);padding:14px 16px;border-radius:10px;background:rgba(255,255,255,0.02);border:1px solid var(--mp-border);margin-top:14px;">'+esc(d.narrative_summary)+'</div>';
+  h+='</div>';
+
+  // ── PRICE RANGE BAR ──
+  if(d.price_high&&d.price_low){
+    h+='<div style="background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:16px;padding:20px 24px;margin-bottom:16px;">';
+    h+=secLabel('Price Range');
+    var lo=d.price_low,hi=d.price_high,cl=d.current_price,op=d.price_open||cl;
+    var range=hi-lo||1;
+    var clPct=Math.max(0,Math.min(100,((cl-lo)/range)*100));
+    var opPct=Math.max(0,Math.min(100,((op-lo)/range)*100));
+    // Labels row
+    h+='<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--mp-text-muted);margin-bottom:6px;">';
+    h+='<span>Low $'+fmtNum(lo)+'</span>';
+    h+='<span>High $'+fmtNum(hi)+'</span>';
+    h+='</div>';
+    // Bar
+    h+='<div style="position:relative;height:8px;background:rgba(255,255,255,0.06);border-radius:4px;margin-bottom:10px;">';
+    // Fill from low to close
+    var fillLeft=Math.min(opPct,clPct),fillRight=Math.max(opPct,clPct);
+    var fillC=cl>=op?'rgba(0,222,148,0.4)':'rgba(255,77,77,0.4)';
+    h+='<div style="position:absolute;top:0;bottom:0;left:'+fillLeft+'%;width:'+(fillRight-fillLeft)+'%;background:'+fillC+';border-radius:4px;"></div>';
+    // Open marker
+    h+='<div style="position:absolute;top:-2px;left:'+opPct+'%;width:2px;height:12px;background:var(--mp-text-muted);border-radius:1px;" title="Open $'+fmtNum(op)+'"></div>';
+    // Close marker
+    h+='<div style="position:absolute;top:-4px;left:calc('+clPct+'% - 5px);width:10px;height:10px;border-radius:50%;background:'+(cl>=op?'#00DE94':'#FF4D4D')+';border:2px solid var(--mp-surface);" title="Close $'+fmtNum(cl)+'"></div>';
+    h+='</div>';
+    // Open/Close labels
+    h+='<div style="display:flex;gap:20px;font-size:12px;">';
+    h+='<span style="color:var(--mp-text-muted);">Open <span style="color:var(--mp-text-secondary);font-weight:600;">$'+fmtNum(op)+'</span></span>';
+    h+='<span style="color:var(--mp-text-muted);">Close <span style="color:'+(cl>=op?'#00DE94':'#FF4D4D')+';font-weight:600;">$'+fmtNum(cl)+'</span></span>';
+    // Volume
+    if(d.volume_day){
+      var volRatio=d.volume_avg&&d.volume_avg>0?(d.volume_day/d.volume_avg):null;
+      var volC=volRatio&&volRatio>1.5?'#FFB800':volRatio&&volRatio<0.5?'#A0A8B0':'var(--mp-text-secondary)';
+      h+='<span style="margin-left:auto;color:var(--mp-text-muted);">Vol <span style="color:'+volC+';font-weight:600;">'+fmtNum(d.volume_day/1e6)+'M</span>';
+      if(volRatio)h+=' <span style="font-size:11px;color:'+volC+';">('+volRatio.toFixed(1)+'x avg)</span>';
+      h+='</span>';
+    }
+    h+='</div>';
+    // 30d reference
+    if(d.price_30d_before){h+='<div style="font-size:11px;color:var(--mp-text-muted);margin-top:8px;">30d ago: $'+fmtNum(d.price_30d_before)+' <span style="color:'+chgC+';font-weight:600;">'+(chg>0?'+':'')+chg+'%</span></div>';}
+    h+='</div>';
+  }
+
+  // ── SCORE GRID ── (with tooltip explanations)
+  h+='<div style="background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:16px;padding:20px 24px;margin-bottom:16px;">';
+  h+=secLabel('Agent Scores');
+  h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px;margin-bottom:16px;">';
   var scores=[['NRS',d.nrs,'Narrative Risk'],['VMS',d.vms,'Verification'],['ACS',d.acs,'Credibility'],['CCP',d.ccp,'Confidence'],['CVS',d.cvs,'Claim Verif.'],['SRS',d.srs,'Source Rating'],['Drift',d.drift_score,'Drift Score']];
   for(var i=0;i<scores.length;i++){
     var s=scores[i];var sv=s[1];var sc=sv>=60?'#FF4D4D':sv>=40?'#FFB800':sv>=20?'#A0A8B0':'#00DE94';
     if(s[0]==='VMS'||s[0]==='ACS'||s[0]==='CCP'||s[0]==='SRS')sc=sv>=70?'#00DE94':sv>=50?'#A0A8B0':sv>=30?'#FFB800':'#FF4D4D';
-    h+='<div style="background:rgba(255,255,255,0.02);border:1px solid var(--mp-border);border-radius:10px;padding:12px;text-align:center;">';
+    var explain=scoreExplain[s[0]]||'';
+    h+='<div style="background:rgba(255,255,255,0.02);border:1px solid var(--mp-border);border-radius:10px;padding:12px;text-align:center;cursor:help;position:relative;" title="'+esc(explain)+'">';
+    // Mini bar fill
+    var barPct=Math.max(0,Math.min(100,sv||0));
+    h+='<div style="position:absolute;bottom:0;left:0;width:'+barPct+'%;height:2px;background:'+sc+';border-radius:0 0 10px 10px;opacity:0.5;"></div>';
     h+='<div style="font-size:20px;font-weight:700;color:'+sc+';">'+fmtNum(sv)+'</div>';
     h+='<div style="font-size:10px;color:var(--mp-text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-top:3px;">'+s[2]+'</div>';
     h+='</div>';
   }
   h+='</div>';
-  // Fair value
+  // Additional derived scores: HDS, Overreaction Ratio, NPI
+  h+='<div style="display:flex;gap:12px;flex-wrap:wrap;">';
+  if(d.hds!=null){var hdsV=typeof d.hds==='number'?(d.hds*100).toFixed(0):d.hds;var hdsC=d.hds>=0.8?'#00DE94':d.hds>=0.5?'#A0A8B0':'#FF4D4D';h+='<div style="padding:8px 14px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid var(--mp-border);font-size:12px;color:var(--mp-text-muted);cursor:help;" title="Hype/Data Score — ratio of substance vs hype. Higher = more data-backed.">HDS <span style="color:'+hdsC+';font-weight:600;font-size:14px;">'+hdsV+'%</span></div>';}
+  if(d.overreaction_ratio!=null){var orV=d.overreaction_ratio;var orC=orV>2?'#FF4D4D':orV>1.2?'#FFB800':'#00DE94';h+='<div style="padding:8px 14px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid var(--mp-border);font-size:12px;color:var(--mp-text-muted);cursor:help;" title="Overreaction Ratio — price move vs fundamental change. >1 means price moved more than fundamentals justify.">Overreaction <span style="color:'+orC+';font-weight:600;font-size:14px;">'+orV.toFixed(2)+'x</span></div>';}
+  if(d.npi!=null){h+='<div style="padding:8px 14px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid var(--mp-border);font-size:12px;color:var(--mp-text-muted);cursor:help;" title="News Penetration Index — how much news coverage this ticker is getting.">NPI <span style="color:#00AEFF;font-weight:600;font-size:14px;">'+fmtNum(d.npi)+'</span></div>';}
+  h+='</div>';
+  h+='</div>';
+
+  // ── FAIR VALUE + FUNDAMENTALS ──
+  h+='<div style="background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:16px;padding:20px 24px;margin-bottom:16px;">';
+  h+=secLabel('Valuation & Fundamentals');
+  // Fair value row
   if(d.fair_value!=null){
-    h+='<div style="display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap;">';
+    h+='<div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap;">';
     h+='<div style="padding:12px 16px;border-radius:10px;background:rgba(255,255,255,0.02);border:1px solid var(--mp-border);"><div style="font-size:10px;color:var(--mp-text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Fair Value</div><div style="font-size:18px;font-weight:700;color:var(--mp-text-primary);">$'+fmtNum(d.fair_value)+'</div></div>';
     if(fvd!=null)h+='<div style="padding:12px 16px;border-radius:10px;background:rgba(255,255,255,0.02);border:1px solid var(--mp-border);"><div style="font-size:10px;color:var(--mp-text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">FV Deviation</div><div style="font-size:18px;font-weight:700;color:'+fvdC+';">'+(fvd>0?'+':'')+fvd.toFixed(1)+'%</div></div>';
+    // Overvalued/undervalued label
+    if(fvd!=null){var fvLabel=fvd>30?'Overvalued':fvd>10?'Slightly Overvalued':fvd<-15?'Undervalued':fvd<-5?'Slightly Undervalued':'Near Fair Value';h+='<div style="padding:12px 16px;border-radius:10px;background:'+fvdC+'0a;border:1px solid '+fvdC+'22;display:flex;align-items:center;"><span style="font-size:13px;font-weight:600;color:'+fvdC+';">'+fvLabel+'</span></div>';}
     h+='</div>';
   }
-  // Headlines
-  if(d.top_headlines&&d.top_headlines.length>0){
-    h+='<div style="margin-bottom:16px;"><div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--mp-text-muted);margin-bottom:8px;">Top Headlines</div>';
-    for(var j=0;j<Math.min(d.top_headlines.length,5);j++){
-      var url=d.article_urls&&d.article_urls[j]?d.article_urls[j]:'';
-      h+='<div style="font-size:13px;color:var(--mp-text-secondary);padding:6px 0;border-bottom:1px solid var(--mp-border);line-height:1.5;">';
-      if(url)h+='<a href="'+esc(url)+'" target="_blank" rel="noopener" style="color:var(--mp-text-secondary);text-decoration:none;">'+esc(d.top_headlines[j])+'</a>';
-      else h+=esc(d.top_headlines[j]);
+  // Fundamentals grid
+  h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;">';
+  var fundItems=[];
+  if(d.pe_ratio!=null)fundItems.push(['P/E Ratio',d.pe_ratio.toFixed(1),d.pe_ratio>30?'#FFB800':d.pe_ratio<15?'#00DE94':'var(--mp-text-primary)']);
+  if(d.eps_ttm!=null)fundItems.push(['EPS (TTM)','$'+d.eps_ttm.toFixed(2),d.eps_ttm>0?'#00DE94':'#FF4D4D']);
+  if(d.price_to_sales!=null)fundItems.push(['P/S Ratio',d.price_to_sales.toFixed(1),d.price_to_sales>10?'#FFB800':'var(--mp-text-primary)']);
+  if(d.revenue_ttm!=null){var revStr=d.revenue_ttm>=1e9?'$'+(d.revenue_ttm/1e9).toFixed(1)+'B':d.revenue_ttm>=1e6?'$'+(d.revenue_ttm/1e6).toFixed(0)+'M':'$'+fmtNum(d.revenue_ttm);fundItems.push(['Revenue (TTM)',revStr,'var(--mp-text-primary)']);}
+  if(d.revenue_growth_yoy!=null)fundItems.push(['Rev Growth YoY',(d.revenue_growth_yoy>0?'+':'')+d.revenue_growth_yoy.toFixed(1)+'%',d.revenue_growth_yoy>0?'#00DE94':'#FF4D4D']);
+  if(d.market_cap!=null){var mcStr=d.market_cap>=1e12?'$'+(d.market_cap/1e12).toFixed(2)+'T':d.market_cap>=1e9?'$'+(d.market_cap/1e9).toFixed(1)+'B':'$'+(d.market_cap/1e6).toFixed(0)+'M';fundItems.push(['Market Cap',mcStr,'var(--mp-text-primary)']);}
+  if(d.fcf_per_share!=null)fundItems.push(['FCF/Share','$'+d.fcf_per_share.toFixed(2),d.fcf_per_share>0?'#00DE94':'#FF4D4D']);
+  if(d.sec_margin!=null)fundItems.push(['Net Margin',d.sec_margin.toFixed(1)+'%',d.sec_margin>15?'#00DE94':d.sec_margin>0?'#A0A8B0':'#FF4D4D']);
+  for(var fi=0;fi<fundItems.length;fi++){
+    var f=fundItems[fi];
+    h+='<div style="padding:10px 14px;border-radius:10px;background:rgba(255,255,255,0.02);border:1px solid var(--mp-border);">';
+    h+='<div style="font-size:10px;color:var(--mp-text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">'+f[0]+'</div>';
+    h+='<div style="font-size:16px;font-weight:700;color:'+f[2]+';">'+f[1]+'</div>';
+    h+='</div>';
+  }
+  h+='</div>';
+  h+='</div>';
+
+  // ── SENTIMENT GAUGE ──
+  h+='<div style="background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:16px;padding:20px 24px;margin-bottom:16px;">';
+  h+=secLabel('Sentiment & Coverage');
+  // Sentiment bar
+  var sent=d.sentiment||0;var sentC=sent>20?'#00DE94':sent<-20?'#FF4D4D':'#A0A8B0';
+  var sentPct=Math.max(0,Math.min(100,(sent+100)/2));
+  h+='<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">';
+  h+='<span style="font-size:28px;font-weight:700;color:'+sentC+';">'+sent+'</span>';
+  h+='<div style="flex:1;">';
+  h+='<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--mp-text-muted);margin-bottom:4px;"><span>Bearish</span><span>Neutral</span><span>Bullish</span></div>';
+  h+='<div style="height:8px;background:linear-gradient(to right,#FF4D4D,#A0A8B0 50%,#00DE94);border-radius:4px;position:relative;">';
+  h+='<div style="position:absolute;top:-3px;left:calc('+sentPct+'% - 7px);width:14px;height:14px;border-radius:50%;background:'+sentC+';border:2px solid var(--mp-surface);box-shadow:0 0 6px '+sentC+'66;"></div>';
+  h+='</div></div></div>';
+  // Coverage stats
+  h+='<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;">';
+  h+='<div style="font-size:12px;color:var(--mp-text-muted);">Articles analyzed: <span style="color:var(--mp-text-secondary);font-weight:600;">'+fmtNum(d.article_count)+'</span></div>';
+  if(d.sources&&d.sources.length>0){var uSrc=[].filter.call(d.sources,function(v,i,a){return a.indexOf(v)===i;});h+='<div style="font-size:12px;color:var(--mp-text-muted);">Unique sources: <span style="color:var(--mp-text-secondary);font-weight:600;">'+uSrc.length+'</span></div>';}
+  h+='</div>';
+  // Source list
+  if(d.sources&&d.sources.length>0){
+    var uSrc2=[].filter.call(d.sources,function(v,i,a){return a.indexOf(v)===i;}).slice(0,8);
+    h+='<div style="display:flex;gap:6px;flex-wrap:wrap;">';
+    for(var si=0;si<uSrc2.length;si++){h+='<span style="font-size:11px;padding:3px 8px;border-radius:4px;background:rgba(255,255,255,0.04);border:1px solid var(--mp-border);color:var(--mp-text-tertiary);">'+esc(uSrc2[si])+'</span>';}
+    h+='</div>';
+  }
+  h+='</div>';
+
+  // ── NARRATIVE FORENSICS ──
+  h+='<div style="background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:16px;padding:20px 24px;margin-bottom:16px;">';
+  h+=secLabel('Narrative Forensics');
+  // Hype vs Anchors visual
+  var hypeC=d.hype_adjective_count||0,anchC=d.numeric_anchor_count||0;
+  var totalHA=hypeC+anchC||1;
+  var hypePct=Math.round(hypeC/totalHA*100),anchPct=100-hypePct;
+  h+='<div style="margin-bottom:16px;">';
+  h+='<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;"><span style="color:#FF4D4D;">Hype Words: '+hypeC+'</span><span style="color:#00DE94;">Data Anchors: '+anchC+'</span></div>';
+  h+='<div style="display:flex;height:8px;border-radius:4px;overflow:hidden;">';
+  if(hypeC>0)h+='<div style="width:'+hypePct+'%;background:#FF4D4D;"></div>';
+  if(anchC>0)h+='<div style="width:'+anchPct+'%;background:#00DE94;"></div>';
+  if(hypeC===0&&anchC===0)h+='<div style="width:100%;background:rgba(255,255,255,0.06);"></div>';
+  h+='</div></div>';
+  // Boolean flags
+  var flags=[
+    [d.has_numeric_anchor,'Numeric Anchors','Claims backed by specific numbers'],
+    [d.has_source_ref,'Source References','Articles cite named sources'],
+    [d.has_timeframe,'Timeframe Given','Claims specify a time horizon'],
+    [d.has_vague_language,'Vague Language','Uses hedging words (could, might, may)']
+  ];
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">';
+  for(var fl=0;fl<flags.length;fl++){
+    var fg=flags[fl];var isGood=fg[0];
+    // Vague language: having it is bad
+    if(fl===3)isGood=!fg[0];
+    var fgC=isGood?'#00DE94':'#FF4D4D';
+    var fgIcon=fg[0]?(fl===3?'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#FF4D4D" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>':'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#00DE94" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>'):'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#FF4D4D" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+    if(fl===3&&!fg[0])fgIcon='<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#00DE94" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
+    h+='<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid var(--mp-border);cursor:help;" title="'+esc(fg[2])+'">';
+    h+=fgIcon;
+    h+='<span style="font-size:12px;color:'+fgC+';">'+fg[1]+'</span>';
+    h+='</div>';
+  }
+  h+='</div>';
+  // Claim details (what the narrative is claiming)
+  if(d.claim_metric||d.claim_value||d.claim_timeframe){
+    h+='<div style="padding:12px 16px;border-radius:10px;background:rgba(0,174,255,0.04);border:1px solid rgba(0,174,255,0.12);margin-bottom:12px;">';
+    h+='<div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#00AEFF;margin-bottom:6px;">Narrative Claim</div>';
+    h+='<div style="font-size:13px;color:var(--mp-text-secondary);line-height:1.5;">';
+    if(d.claim_metric)h+='Metric: <span style="color:var(--mp-text-primary);font-weight:600;">'+esc(d.claim_metric)+'</span> ';
+    if(d.claim_value)h+='Value: <span style="color:var(--mp-text-primary);font-weight:600;">'+esc(String(d.claim_value))+'</span> ';
+    if(d.claim_timeframe)h+='Timeframe: <span style="color:var(--mp-text-primary);font-weight:600;">'+esc(d.claim_timeframe)+'</span>';
+    h+='</div></div>';
+  }
+  // Hype metric + MDA omission (if available)
+  if(d.hype_metric_score!=null||d.mda_omission_pct!=null){
+    h+='<div style="display:flex;gap:12px;flex-wrap:wrap;">';
+    if(d.hype_metric_score!=null){var hmC=d.hype_metric_score>50?'#FF4D4D':d.hype_metric_score>25?'#FFB800':'#00DE94';h+='<div style="padding:8px 14px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid var(--mp-border);font-size:12px;color:var(--mp-text-muted);cursor:help;" title="Hype Metric Score — how much exaggeration detected in coverage. Higher = more hype.">Hype Score <span style="color:'+hmC+';font-weight:600;font-size:14px;">'+d.hype_metric_score+'</span></div>';}
+    if(d.mda_omission_pct!=null){var moC=d.mda_omission_pct>50?'#FF4D4D':d.mda_omission_pct>25?'#FFB800':'#00DE94';h+='<div style="padding:8px 14px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid var(--mp-border);font-size:12px;color:var(--mp-text-muted);cursor:help;" title="MD&A Omission — percentage of key filing details omitted from news coverage. Higher = more gaps.">MD&A Omission <span style="color:'+moC+';font-weight:600;font-size:14px;">'+d.mda_omission_pct+'%</span></div>';}
+    h+='</div>';
+  }
+  h+='</div>';
+
+  // ── SEC FILING ──
+  if(d.filing_found||d.sec_eps!=null||d.sec_revenue!=null){
+    h+='<div style="background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:16px;padding:20px 24px;margin-bottom:16px;">';
+    h+=secLabel('SEC Filing Data');
+    // Filing info
+    h+='<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">';
+    if(d.form_type){
+      var freshC='#00DE94';var freshLabel='Recent';
+      if(d.period_of_report){var prDate=new Date(d.period_of_report);var daysSince=Math.floor((Date.now()-prDate.getTime())/(86400000));if(daysSince>180){freshC='#FF4D4D';freshLabel='Stale ('+daysSince+'d)';}else if(daysSince>90){freshC='#FFB800';freshLabel=daysSince+'d ago';}else{freshLabel=daysSince+'d ago';}}
+      h+='<div style="padding:8px 14px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid var(--mp-border);">';
+      h+='<span style="font-size:12px;color:var(--mp-text-muted);">Filing: </span>';
+      h+='<span style="font-size:13px;font-weight:600;color:var(--mp-text-primary);">'+esc(d.form_type)+'</span>';
+      if(d.period_of_report)h+=' <span style="font-size:11px;color:var(--mp-text-muted);">'+esc(d.period_of_report)+'</span>';
+      h+=' <span style="font-size:10px;padding:2px 6px;border-radius:3px;background:'+freshC+'14;color:'+freshC+';font-weight:600;">'+freshLabel+'</span>';
+      h+='</div>';
+    }
+    if(!d.filing_found)h+='<div style="padding:8px 14px;border-radius:8px;background:rgba(255,77,77,0.06);border:1px solid rgba(255,77,77,0.15);font-size:12px;color:#FF4D4D;">No SEC filing found</div>';
+    h+='</div>';
+    // SEC data grid
+    var secItems=[];
+    if(d.sec_eps!=null)secItems.push(['SEC EPS','$'+d.sec_eps.toFixed(2),d.sec_eps>0?'#00DE94':'#FF4D4D']);
+    if(d.sec_revenue!=null){var secRevStr=d.sec_revenue>=1e9?'$'+(d.sec_revenue/1e9).toFixed(2)+'B':d.sec_revenue>=1e6?'$'+(d.sec_revenue/1e6).toFixed(0)+'M':'$'+fmtNum(d.sec_revenue);secItems.push(['SEC Revenue',secRevStr,'var(--mp-text-primary)']);}
+    if(d.sec_net_income!=null){var niAbs=Math.abs(d.sec_net_income);var niSign=d.sec_net_income<0?'-':'';var niStr=niAbs>=1e9?niSign+'$'+(niAbs/1e9).toFixed(2)+'B':niAbs>=1e6?niSign+'$'+(niAbs/1e6).toFixed(0)+'M':'$'+fmtNum(d.sec_net_income);secItems.push(['Net Income',niStr,d.sec_net_income>0?'#00DE94':'#FF4D4D']);}
+    if(d.sec_margin!=null)secItems.push(['SEC Margin',d.sec_margin.toFixed(1)+'%',d.sec_margin>15?'#00DE94':d.sec_margin>0?'#A0A8B0':'#FF4D4D']);
+    if(secItems.length>0){
+      h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;">';
+      for(var si2=0;si2<secItems.length;si2++){var sec=secItems[si2];h+='<div style="padding:10px 14px;border-radius:10px;background:rgba(255,255,255,0.02);border:1px solid var(--mp-border);"><div style="font-size:10px;color:var(--mp-text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">'+sec[0]+'</div><div style="font-size:16px;font-weight:700;color:'+sec[2]+';">'+sec[1]+'</div></div>';}
       h+='</div>';
     }
     h+='</div>';
   }
-  // Meta
-  h+='<div style="display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--mp-text-muted);">';
-  if(d.sector)h+='<span>'+esc(d.sector)+'</span>';
-  if(d.form_type)h+='<span>Filing: '+esc(d.form_type)+'</span>';
+
+  // ── HEADLINES ──
+  if(d.top_headlines&&d.top_headlines.length>0){
+    h+='<div style="background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:16px;padding:20px 24px;margin-bottom:16px;">';
+    h+=secLabel('Top Headlines');
+    for(var j=0;j<Math.min(d.top_headlines.length,7);j++){
+      var url=d.article_urls&&d.article_urls[j]?d.article_urls[j]:'';
+      var srcName=d.sources&&d.sources[j]?d.sources[j]:'';
+      h+='<div style="font-size:13px;color:var(--mp-text-secondary);padding:8px 0;border-bottom:1px solid var(--mp-border);line-height:1.5;display:flex;align-items:baseline;gap:8px;">';
+      if(url)h+='<a href="'+esc(url)+'" target="_blank" rel="noopener" style="color:var(--mp-text-secondary);text-decoration:none;flex:1;">'+esc(d.top_headlines[j])+'</a>';
+      else h+='<span style="flex:1;">'+esc(d.top_headlines[j])+'</span>';
+      if(srcName)h+='<span style="font-size:10px;color:var(--mp-text-muted);white-space:nowrap;">'+esc(srcName)+'</span>';
+      h+='</div>';
+    }
+    h+='</div>';
+  }
+
+  // ── META FOOTER ──
+  h+='<div style="display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--mp-text-muted);padding:8px 0;">';
   h+='<span>Latency: '+latency+'</span>';
+  if(d.snapshot_date)h+='<span>Snapshot: '+esc(d.snapshot_date)+'</span>';
   if(d.data_quality&&d.data_quality!=='good')h+='<span style="color:#FFB800;">Quality: '+esc(d.data_quality)+'</span>';
-  h+='</div></div>';
+  h+='</div>';
+
+  h+='</div>';
   res.innerHTML=h;
 }
 // Enter key triggers score
