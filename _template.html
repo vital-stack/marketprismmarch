@@ -7165,12 +7165,22 @@ async function loadValuePicks(){
       'brier_score_overall':'not.is.null'
     });
 
+    // Fetch active bearish signals to exclude from value picks
+    var bearishCards=await restFetch('trade_cards_live',{
+      select:'ticker,direction',
+      direction:'eq.BEARISH'
+    });
+    var bearishSet={};
+    if(bearishCards)bearishCards.forEach(function(c){bearishSet[c.ticker]=true;});
+
     if(!stories||!snaps)return[];
     var priceMap={};snaps.forEach(function(s){priceMap[s.ticker]=Number(s.price_close);});
     var brierMap={};if(sigs)sigs.forEach(function(s){brierMap[s.ticker]=Number(s.brier_score_overall);});
 
     var picks=[];
     stories.forEach(function(d){
+      // Skip tickers with active bearish trade signals
+      if(bearishSet[d.ticker])return;
       var price=priceMap[d.ticker];
       var fv=Number(d.fair_value);
       if(!price||!fv||fv<=0)return;
