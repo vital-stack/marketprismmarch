@@ -17,11 +17,6 @@ module.exports = (req, res) => {
         title: 'NKE Case Study — Catching the Crash | Market Prism',
         description: 'How Market Prism\'s narrative decay engine flagged Nike\'s collapse weeks before Wall Street caught up. A 30-day advance warning window.'
       },
-      'tsla': {
-        file: 'casestudy/tsla_case_study.html',
-        title: 'TSLA Case Study — Seventeen Months at the Event Horizon | Market Prism',
-        description: 'Three coordinated media campaigns. Eight instances of identical phrasing. A coordination score of 100/100. How Tesla\'s narrative machine built a 193% valuation premium.'
-      },
       'nvda': {
         file: 'casestudy/nvda_case_study.html',
         title: 'NVDA Case Study — The Inverse Trap | Market Prism',
