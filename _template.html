@@ -4842,6 +4842,7 @@ body{
       <div class="strat-filter-bar" id="strat-filter-bar">
         <span class="strat-filter-label">Filter:</span>
         <div class="strat-filter-chip active" data-filter="all">All Cards</div>
+        <div class="strat-filter-chip" data-filter="unicorn" style="color:#E8B4F8;">&#9733; Unicorn</div>
         <div class="strat-filter-chip" data-filter="platinum">&#9670; Platinum</div>
         <div class="strat-filter-chip" data-filter="gold">&#9650; Gold</div>
         <div class="strat-filter-chip" data-filter="surprise">&#9889; Surprise</div>
@@ -10599,6 +10600,7 @@ function renderStratCards(filter){
   var shown=0;
   STRAT_DATA.forEach(function(d){
     var show=true;
+    if(filter==='unicorn'&&(d.card_tier||'').toUpperCase()!=='UNICORN')show=false;
     if(filter==='platinum'&&(d.card_tier||'').toUpperCase()!=='PLATINUM')show=false;
     if(filter==='gold'&&(d.card_tier||'').toUpperCase()!=='GOLD')show=false;
     if(filter==='surprise'&&(d.card_tier||'').toUpperCase()!=='SURPRISE')show=false;
@@ -11699,7 +11701,7 @@ function tcBuildFromData(){
       description: desc,
       tradeScore: r.trade_score != null ? Math.round(Number(r.trade_score) * 100) : 0,
       // Keep rarity for backward compat with drag ghost
-      rarity: tier === 'PLATINUM' ? 'Rare' : tier === 'GOLD' ? 'Uncommon' : 'Common',
+      rarity: tier === 'UNICORN' ? 'Unicorn' : tier === 'PLATINUM' ? 'Rare' : tier === 'GOLD' ? 'Uncommon' : 'Common',
       ac: direction === 'BEARISH' ? 'var(--mp-red)' : direction === 'BULLISH' ? 'var(--mp-green)' : 'var(--mp-cyan)'
     };
   });
