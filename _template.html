@@ -4609,7 +4609,7 @@ body{
     <!-- ══════════════════════════════════════
          TAB: SECTOR PULSE
     ═══════════════════════════════════════ -->
-    <div class="tab-panel" id="tab-sector" style="display:none !important;">
+    <div class="tab-panel" id="tab-sector">
       <div class="page-header">
         <div class="ph-eyebrow">Sector Intelligence</div>
         <h1>Where momentum lives.</h1>
@@ -5165,8 +5165,8 @@ document.querySelectorAll('.page-header p').forEach(function(p,i){
   if(i===0) return;
 });
 // ── Tab switching (hook-based — sections register via onTabSwitch) ────────────
-var TABS = ['daily','leaderboard','cards','calendar','memes','signallab','scorer','help'];
-var TAB_TITLES = {daily:'Daily Brief',leaderboard:'Leaderboard',cards:'Trading Cards',calendar:'Trading Calendar',memes:'Market Sharing',signallab:'Signal Lab',scorer:'Score Any Stock',help:'Help & Account'};
+var TABS = ['daily','leaderboard','cards','calendar','memes','signallab','sector','scorer','help'];
+var TAB_TITLES = {daily:'Daily Brief',leaderboard:'Leaderboard',cards:'Trading Cards',calendar:'Trading Calendar',memes:'Market Sharing',signallab:'Signal Lab',sector:'Sector Pulse',scorer:'Score Any Stock',help:'Help & Account'};
 var _tabHooks = [];
 /** Register a callback to run after any tab switch. fn(id) */
 function onTabSwitch(fn){ if(typeof fn==='function') _tabHooks.push(fn); }
@@ -7372,11 +7372,11 @@ function renderSectorNarrativeCards(){
       .sort(function(a,b){return b.impact-a.impact;}).slice(0,8);
     el.innerHTML=sectors.map(function(s){
       var state=s.direction==='bull'?'Surging':(s.direction==='bear'?'Breaking':'Stable');
-      return nfBuildRow(s.direction, sectorIcon, s.name, s.count+' tickers', s.topClaim, state, '', {state:state,_scorecard:{}});
+      return nfBuildRow(s.direction, sectorIcon, s.name, s.count+' tickers', s.topClaim, state, 'javascript:switchTab(\"sector\")', {state:state,_scorecard:{}});
     }).join('');
   } else {
     el.innerHTML=NF_DEMO_SECTORS.map(function(d){
-      return nfBuildRow(d.direction, sectorIcon, d.name, d.sub, d.claim, d.verdict, '', {state:d.verdict,_scorecard:{}});
+      return nfBuildRow(d.direction, sectorIcon, d.name, d.sub, d.claim, d.verdict, 'javascript:switchTab(\"sector\")', {state:d.verdict,_scorecard:{}});
     }).join('');
   }
   // Sector cards stay inline — no tab switching
