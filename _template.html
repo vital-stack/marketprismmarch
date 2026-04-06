@@ -706,13 +706,7 @@ body{
 .disc-nc-rb-text{font-size:12px;color:var(--mp-text-secondary);line-height:1.6;}
 .disc-nc-rb-claim{font-size:12px;color:var(--mp-text-muted);line-height:1.6;margin-bottom:6px;font-style:italic;}
 /* Hero banner card style */
-/* ── Market Weather + Trade Lanes (v2 features) ── */
-.mw-banner{display:flex;align-items:stretch;gap:1px;background:var(--mp-border);border:1px solid var(--mp-border);border-radius:12px;overflow:hidden;margin-bottom:16px;position:relative;}
-.mw-banner::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;z-index:2;background:var(--mp-cyan);opacity:0.3;}
-.mw-cell{flex:1;padding:14px 18px;background:var(--mp-surface);display:flex;flex-direction:column;gap:4px;min-width:0;}
-.mw-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--mp-text-muted);font-family:var(--font-body);white-space:nowrap;}
-.mw-val{font-size:18px;font-weight:700;color:var(--mp-text-primary);font-family:var(--font-body);white-space:nowrap;}
-.mw-sub{font-size:11px;color:var(--mp-text-tertiary);}
+/* ── Trade Lanes (v2 features) ── */
 .tl-section{margin-bottom:20px;}
 .tl-header{margin-bottom:14px;}
 .tl-title{font-family:var(--font-body);font-size:18px;font-weight:700;color:var(--mp-text-primary);margin-bottom:2px;}
@@ -740,7 +734,6 @@ body{
 .tl-overflow{display:flex;flex-direction:column;}
 .tl-view-more{width:100%;padding:10px 16px;border:none;border-top:1px solid var(--mp-border);background:none;color:var(--mp-text-muted);font-size:12px;font-weight:500;font-family:var(--font-body);cursor:pointer;transition:all .12s;text-align:center;}
 .tl-view-more:hover{background:var(--mp-surface2);color:var(--mp-text-secondary);}
-@media(max-width:768px){.mw-banner{flex-wrap:wrap;}.mw-cell{flex:1 1 45%;min-width:100px;}}
 
 .daily-hero-banner{background:linear-gradient(rgba(8,11,17,0.82),rgba(8,11,17,0.82)),url('/assets/daily-brief-bg.png') center/cover no-repeat;border:1px solid var(--mp-border);border-radius:16px;box-shadow:var(--mp-card-shadow);overflow:hidden;position:relative;margin-bottom:0;}
 .daily-hero-banner::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
@@ -4367,9 +4360,6 @@ body{
         </div>
       </div>
 
-      <!-- 0a) MARKET WEATHER -->
-      <div class="mw-banner" id="mw-banner" style="display:none;"></div>
-
       <!-- 0b) WHAT'S THE PLAY — Trade Lanes -->
       <div class="tl-section" id="tl-container" style="display:none;">
         <div class="tl-header">
@@ -7046,30 +7036,8 @@ function renderNarrativeCards(){
   // Render 4 featured mini trading cards in left column
   renderMiniTradingCards();
 
-  // Render Market Weather + Trade Lanes (v2 features)
-  loadMarketWeather();
+  // Render Trade Lanes (v2 features)
   loadTradeLanes();
-}
-
-// ── Market Weather Banner ─────────────────────────────────────────────────────
-async function loadMarketWeather(){
-  if(!SUPABASE_URL||!SUPABASE_ANON)return;
-  try{
-    var rows=await restFetch('market_regime_log',{select:'date,vix_close,vix_regime,market_regime,spy_trend_5d,spy_trend_20d,rate_environment,is_transitioning',order:'date.desc',limit:'1'});
-    if(!rows||!rows.length)return;
-    var r=rows[0];
-    var el=document.getElementById('mw-banner');
-    if(!el)return;
-    el.style.display='flex';
-    var vix=r.vix_close?Number(r.vix_close):0;
-    var t5=r.spy_trend_5d?Number(r.spy_trend_5d):0;
-    var t20=r.spy_trend_20d?Number(r.spy_trend_20d):0;
-    function mwCell(label,val,sub){return '<div class="mw-cell"><div class="mw-label">'+label+'</div><div class="mw-val">'+val+'</div><div class="mw-sub">'+esc(sub)+'</div></div>';}
-    el.innerHTML=mwCell('Market Regime',esc(r.market_regime||'\u2014'),r.is_transitioning?'Transitioning':'Established')
-      +mwCell('VIX','<span'+(vix>25?' style="color:#FF4D4D;"':'')+'>'+vix.toFixed(1)+'</span>',r.vix_regime||'')
-      +mwCell('S&P 500','<span'+(t5<0?' style="color:#FF4D4D;"':'')+'>'+Math.abs(t5).toFixed(2)+'%'+(t5<0?' down':' up')+'</span>','20d: '+t20.toFixed(2)+'%')
-      +mwCell('Rates',esc(r.rate_environment||'\u2014'),r.date||'');
-  }catch(e){console.warn('[MW] Load failed:',e);}
 }
 
 // ── Trade Lanes ("What's the Play?") ──────────────────────────────────────────
