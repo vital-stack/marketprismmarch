@@ -10607,6 +10607,21 @@ function gcWinRate(d){
   var rd=REGIME_DISPLAY[d.signal_regime||''];
   return rd?rd.acc:'';
 }
+var GC_ACTIONS={
+  'NARRATIVE_TRAP':'SHORT','FUNDAMENTAL_DISCONNECT':'SHORT',
+  'FADE_THE_HYPE':'FADE RALLIES','DRIFT_COMPRESSION_SHORT':'SHORT ON BOUNCE',
+  'AIR_POCKET_SHORT':'SHORT','ACCUMULATE':'BUY DIPS',
+  'MOMENTUM_CONFIRMED':'RIDE UP','FUNDAMENTAL_LONG':'BUY & HOLD',
+  'OMISSION_CASCADE':'SHORT'
+};
+function gcAction(d){
+  var a=GC_ACTIONS[d.primary_label];
+  if(a)return a;
+  var dir=(d.direction||'').toUpperCase();
+  if(dir==='BEARISH')return'SHORT';
+  if(dir==='BULLISH')return'BUY & HOLD';
+  return'MONITOR';
+}
 function gcTierClass(tier){
   if(!tier)return'default';
   var t=tier.toLowerCase();
@@ -10708,7 +10723,7 @@ function buildStratCard(d){
     +'<div class="gc-move-name '+dirClass+'">'+gcEsc(moveName)+'</div>'
     +'<div class="gc-direction-strip">'
       +'<span class="gc-dir-arrow" style="color:'+phaseCol+';">'+(d.direction==='BEARISH'?'\u25BC':d.direction==='BULLISH'?'\u25B2':'\u25C6')+'</span>'
-      +'<span class="gc-dir-label" style="color:'+phaseCol+';">'+gcEsc(d.direction||'NEUTRAL')+'</span>'
+      +'<span class="gc-dir-label" style="color:'+phaseCol+';">'+gcAction(d)+'</span>'
     +'</div>'
     +'<div class="gc-conf-row">'
       +'<span class="gc-conf-label">Confidence</span>'
