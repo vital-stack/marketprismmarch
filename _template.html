@@ -2684,7 +2684,7 @@ body{
 .tc-cal-grid{
   display:grid;grid-template-columns:repeat(7,1fr);gap:1px;
   background:var(--mp-border);border:1px solid var(--mp-border);border-radius:10px;
-  overflow:hidden;
+  overflow:hidden;position:relative;
 }
 .tc-cal-dow{
   background:var(--mp-surface);padding:6px;text-align:center;
@@ -2753,6 +2753,28 @@ body{
   0%{transform:scale(.85);opacity:0;}
   100%{transform:scale(1);opacity:1;}
 }
+/* ── Multi-day trade bars ── */
+.tc-cal-bars-layer{
+  position:absolute;top:0;left:0;right:0;bottom:0;
+  pointer-events:none;z-index:2;
+}
+.tc-cal-bar{
+  position:absolute;
+  height:16px;
+  border-radius:3px;
+  display:flex;align-items:center;
+  padding:0 5px;
+  font-family:var(--font-body);font-size:9px;font-weight:600;
+  letter-spacing:.03em;text-transform:uppercase;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  pointer-events:auto;cursor:default;
+  opacity:0.85;
+  animation:barIn .25s ease-out both;
+}
+.tc-cal-bar.bearish{background:rgba(255,77,77,0.18);color:#FF4D4D;border:1px solid rgba(255,77,77,0.25);}
+.tc-cal-bar.bullish{background:rgba(0,222,148,0.18);color:#00DE94;border:1px solid rgba(0,222,148,0.25);}
+.tc-cal-bar.neutral{background:rgba(0,174,255,0.18);color:#00AEFF;border:1px solid rgba(0,174,255,0.25);}
+@keyframes barIn{0%{opacity:0;transform:scaleX(.8);}100%{opacity:.85;transform:scaleX(1);}}
 /* Tooltip */
 .tc-cal-tooltip{
   position:fixed;z-index:999;pointer-events:none;
@@ -11487,6 +11509,8 @@ function tcRenderCalendar(){
     emp.className='tc-cal-day empty';
     grid.appendChild(emp);
   }
+  // Render multi-day trade bars after grid is laid out
+  requestAnimationFrame(tcRenderTradeBars);
 }
 
 function tcRenderChips(dateStr,container){
@@ -11517,6 +11541,109 @@ function tcRenderChips(dateStr,container){
       tcDeleteCustomEvent(q.eventId);
     });
     container.appendChild(chip);
+  });
+}
+
+// ── Multi-day trade bars ──
+function tcRenderTradeBars(){
+  var grid=document.getElementById('tc-cal-grid');
+  if(!grid)return;
+  // Remove old bars layer
+  var old=grid.querySelector('.tc-cal-bars-layer');
+  if(old)old.remove();
+
+  // Collect signal card items with holding_days
+  var bars=[];
+  Object.keys(tcQueued).forEach(function(dateStr){
+    (tcQueued[dateStr]||[]).forEach(function(q){
+      if(q.source_type!=='signal_card')return;
+      var hd=(q.metadata&&q.metadata.holding_days)?parseInt(q.metadata.holding_days):0;
+      if(!hd||hd<2)return;
+      bars.push({
+        date:dateStr, ticker:q.ticker||q.metadata?.ticker||'',
+        bias:(q.bias||q.metadata?.bias||'').toUpperCase(),
+        ac:q.ac||q.color_token||'var(--mp-cyan)',
+        days:hd,
+        direction: (q.bias||q.metadata?.bias||'').toLowerCase().includes('fade')||
+          (q.bias||q.metadata?.bias||'').toLowerCase().includes('short')||
+          (q.bias||q.metadata?.bias||'').toLowerCase().includes('avoid') ? 'bearish' :
+          (q.bias||q.metadata?.bias||'').toLowerCase().includes('ride')||
+          (q.bias||q.metadata?.bias||'').toLowerCase().includes('add')||
+          (q.bias||q.metadata?.bias||'').toLowerCase().includes('accumulate') ? 'bullish' : 'neutral'
+      });
+    });
+  });
+  if(!bars.length)return;
+
+  // Get all day cells with data-date
+  var cells=grid.querySelectorAll('.tc-cal-day[data-date]');
+  var cellMap={};
+  cells.forEach(function(c){cellMap[c.dataset.date]=c;});
+
+  // Create overlay layer
+  var layer=document.createElement('div');
+  layer.className='tc-cal-bars-layer';
+  grid.appendChild(layer);
+
+  // Need grid to be laid out first
+  var gridRect=grid.getBoundingClientRect();
+
+  bars.forEach(function(b, barIdx){
+    var startCell=cellMap[b.date];
+    if(!startCell)return;
+
+    // Calculate end date
+    var startDate=new Date(b.date+'T12:00:00');
+    var endDate=new Date(startDate);
+    endDate.setDate(endDate.getDate()+b.days-1);
+    var endStr=endDate.getFullYear()+'-'+tcPadDate(endDate.getMonth()+1)+'-'+tcPadDate(endDate.getDate());
+
+    // Find the last visible cell (might end outside current month)
+    var lastVisibleDate=endStr;
+    var lastCell=cellMap[endStr];
+    if(!lastCell){
+      // Find the last date that has a cell
+      var datesInGrid=Object.keys(cellMap).sort();
+      for(var k=datesInGrid.length-1;k>=0;k--){
+        if(datesInGrid[k]<=endStr&&datesInGrid[k]>=b.date){
+          lastVisibleDate=datesInGrid[k];
+          lastCell=cellMap[lastVisibleDate];
+          break;
+        }
+      }
+    }
+    if(!lastCell)lastCell=startCell;
+
+    var startRect=startCell.getBoundingClientRect();
+    var endRect=lastCell.getBoundingClientRect();
+
+    // Position bar relative to grid
+    var left=startRect.left-gridRect.left;
+    var top=startRect.top-gridRect.top+startRect.height-20; // Bottom of cell
+    var width=(endRect.left+endRect.width)-startRect.left;
+
+    // Check if bar wraps to next week row
+    if(endRect.top>startRect.top+5){
+      // Multi-row: just draw first segment to end of week
+      var rowEnd=startRect.left+startRect.width;
+      // Find rightmost cell in same row
+      cells.forEach(function(c){
+        var cr=c.getBoundingClientRect();
+        if(Math.abs(cr.top-startRect.top)<5 && cr.left+cr.width>rowEnd){
+          rowEnd=cr.left+cr.width;
+        }
+      });
+      width=rowEnd-startRect.left;
+    }
+
+    var bar=document.createElement('div');
+    bar.className='tc-cal-bar '+b.direction;
+    bar.style.left=left+'px';
+    bar.style.top=top+'px';
+    bar.style.width=Math.max(width,30)+'px';
+    bar.textContent=b.ticker+' \u2022 '+b.days+'d';
+    bar.title=b.ticker+' '+b.bias+' \u2022 '+b.days+' day window \u2022 '+b.date+' to '+endStr;
+    layer.appendChild(bar);
   });
 }
 
@@ -11694,7 +11821,8 @@ function tcBuildFromData(){
       tradeScore: r.trade_score != null ? Math.round(Number(r.trade_score) * 100) : 0,
       // Keep rarity for backward compat with drag ghost
       rarity: tier === 'UNICORN' ? 'Unicorn' : tier === 'PLATINUM' ? 'Rare' : tier === 'GOLD' ? 'Uncommon' : 'Common',
-      ac: direction === 'BEARISH' ? 'var(--mp-red)' : direction === 'BULLISH' ? 'var(--mp-green)' : 'var(--mp-cyan)'
+      ac: direction === 'BEARISH' ? 'var(--mp-red)' : direction === 'BULLISH' ? 'var(--mp-green)' : 'var(--mp-cyan)',
+      holdingDays: r.holding_days || 5
     };
   });
 }
@@ -12279,7 +12407,8 @@ function tcSignalToCustomEvent(dateStr, sig){
       bias: sig.bias,
       conf: sig.conf,
       signal_id: sig.id,
-      name: sig.name || ''
+      name: sig.name || '',
+      holding_days: sig.holdingDays || 5
     },
     created_at: new Date().toISOString()
   };
