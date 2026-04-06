@@ -14363,19 +14363,19 @@ var BOARDS=[
       function(s){var or=Number(s.overreaction_ratio)||0;return{name:s.ticker,meta:'OR: '+(or>=1?or.toFixed(1):or.toFixed(3))+'\u00d7 \u00b7 '+(s.verdict||''),score:or,scoreDisplay:or>=1?or.toFixed(1)+'\u00d7':or.toFixed(2)+'\u00d7',_scoreColor:'#FF4D4D',link:'/ticker/'+encodeURIComponent(s.ticker)};},
       function(a,b){return(b.overreaction_ratio||0)-(a.overreaction_ratio||0);},10);
   }},
-  {id:'bullish',title:'Bullish Sentiment Watch',sub:'Tickers with LOVE label \u00b7 today',color:'#00DE94',bg:'rgba(0,222,148,0.12)',scoreLabel:'Reliability',
+  {id:'bullish',title:'Bullish Sentiment Watch',sub:'Narratives most aligned with fundamentals \u00b7 today',color:'#00DE94',bg:'rgba(0,222,148,0.12)',scoreLabel:'Reliability',
   fetch:async function(){
     try{
-      var date=await latestDate('daily_trade_labels');
+      var date=await latestDate('narrative_scorecard');
       if(date){
-        var r=await sq('daily_trade_labels?select=ticker,signal_strength,vms,story_claim,primary_narrative,label&snapshot_date=eq.'+encodeURIComponent(date)+'&label=eq.LOVE&order=signal_strength.desc&limit=10');
-        if(r.length) return r.map(function(x){var claim=(x.story_claim||x.primary_narrative||'').slice(0,55);return{name:x.ticker||'Unknown',meta:'Signal: '+Math.round(x.signal_strength||0)+' \u00b7 '+claim,score:Math.round((x.vms||0)*10)/10,link:'/ticker/'+encodeURIComponent(x.ticker)};});
+        var r=await sq('narrative_scorecard?select=ticker,verdict,vms,narrative&snapshot_date=eq.'+encodeURIComponent(date)+'&vms=gte.50&order=vms.desc&limit=10');
+        if(r.length) return r.map(function(x){var narr=(x.narrative||'').slice(0,55);return{name:x.ticker||'Unknown',meta:(x.verdict||'')+' \u00b7 VMS '+Math.round(x.vms)+(narr?' \u00b7 '+narr:''),score:Math.round(Number(x.vms)),link:'/ticker/'+encodeURIComponent(x.ticker)};});
       }
     }catch(e){console.warn('[LB] bullish API failed, using fallback:',e.message);}
-    return dataFallback(
-      function(r){return r.ticker&&(r.narrative_state==='Surging'||r.prism_verdict==='Structurally Supported'||(r.price_change_pct&&r.price_change_pct>0));},
-      function(r){var claim=(r.story_claim||r.primary_driver||'').slice(0,55);return{name:r.ticker,meta:(r.narrative_state||'')+' \u00b7 '+claim,score:Math.round(Math.abs(r.price_change_pct||0)*10)/10,link:'/ticker/'+encodeURIComponent(r.ticker)};},
-      function(a,b){return(b.price_change_pct||0)-(a.price_change_pct||0);},10);
+    return scorecardFallback(
+      function(s){return s.vms!=null&&s.vms>=50;},
+      function(s){return{name:s.ticker,meta:(s.verdict||'')+' \u00b7 VMS '+Math.round(s.vms||0),score:Math.round(Number(s.vms)||0),link:'/ticker/'+encodeURIComponent(s.ticker)};},
+      function(a,b){return(b.vms||0)-(a.vms||0);},10);
   }},
   {id:'top-sources',title:'Top Performing Sources',sub:'Ranked by composite score · hit rate, returns & confidence',color:'#00DE94',bg:'rgba(0,222,148,0.12)',scoreLabel:'Score',
   fetch:async function(){
