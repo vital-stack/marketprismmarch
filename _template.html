@@ -7206,16 +7206,133 @@ async function loadValuePicks(){
   }catch(e){console.warn('[VP] Value picks failed:',e);return[];}
 }
 
+// ── Day Trade Signals (momentum + dark pool) ────────────────────────────────
+async function loadDayTrades(){
+  try{
+    // Get latest + previous snapshot dates
+    var dateRows=await restFetch('ticker_snapshots',{select:'snapshot_date',order:'snapshot_date.desc',limit:'2'});
+    if(!dateRows||dateRows.length<2)return[];
+    var today=dateRows[0].snapshot_date;
+    var yesterday=dateRows[1].snapshot_date;
+
+    // Fetch today + yesterday prices, and dark pool data in parallel
+    var todayP=restFetch('ticker_snapshots',{select:'ticker,price_close',snapshot_date:'eq.'+today});
+    var yesterP=restFetch('ticker_snapshots',{select:'ticker,price_close',snapshot_date:'eq.'+yesterday});
+    var dpP=restFetch('ticker_dark_pool',{select:'ticker,dark_pool_signal,smart_money_direction',sample_date:'eq.'+today});
+
+    var todaySnaps=await todayP;
+    var yesterSnaps=await yesterP;
+    var dpRows=await dpP;
+
+    if(!todaySnaps||!yesterSnaps)return[];
+    var yesterMap={};yesterSnaps.forEach(function(s){yesterMap[s.ticker]=Number(s.price_close);});
+    var dpMap={};if(dpRows)dpRows.forEach(function(d){dpMap[d.ticker]=d;});
+
+    // Also get tickers already in trade_cards_live to avoid duplicates
+    var existingCards=await restFetch('trade_cards_live',{select:'ticker'});
+    var existingSet={};if(existingCards)existingCards.forEach(function(c){existingSet[c.ticker]=true;});
+
+    var signals=[];
+    todaySnaps.forEach(function(s){
+      if(existingSet[s.ticker])return; // skip if already a trade card signal
+      var price=Number(s.price_close);
+      var prev=yesterMap[s.ticker];
+      if(!price||!prev)return;
+      var changePct=((price-prev)/prev)*100;
+      if(Math.abs(changePct)<2)return; // need >2% move
+
+      var dp=dpMap[s.ticker]||{};
+      var smartDir=(dp.smart_money_direction||'').toUpperCase();
+      var dpSignal=(dp.dark_pool_signal||'').toUpperCase();
+
+      // Determine day trade signal
+      var action='',direction='',reason='';
+      if(changePct>2&&smartDir==='SELLING'){
+        action='Short';direction='BEARISH';reason='Pop + smart money selling';
+      } else if(changePct>2&&smartDir==='BUYING'){
+        action='Ride up';direction='BULLISH';reason='Momentum + smart money buying';
+      } else if(changePct<-2&&smartDir==='BUYING'){
+        action='Buy the dip';direction='BULLISH';reason='Dip + smart money buying';
+      } else if(changePct<-2&&smartDir==='SELLING'){
+        action='Short';direction='BEARISH';reason='Breakdown confirmed';
+      } else if(changePct>2){
+        action='Monitor';direction='BULLISH';reason='Big move, no dark pool data';
+      } else if(changePct<-2){
+        action='Monitor';direction='BEARISH';reason='Big move, no dark pool data';
+      } else return;
+
+      // Confidence: bigger move + dark pool confirmation = higher
+      var conf=Math.min(1,Math.abs(changePct)/10+0.4);
+      if(smartDir&&((changePct>0&&smartDir==='SELLING')||(changePct<0&&smartDir==='BUYING')))conf+=0.15; // divergence bonus
+      if(dpSignal==='HEAVY')conf+=0.1;
+      conf=Math.min(1,conf);
+
+      signals.push({
+        ticker:s.ticker,price:price,direction:direction,
+        primary_label:action==='Short'?'NARRATIVE_TRAP':action==='Ride up'?'MOMENTUM_CONFIRMED':action==='Buy the dip'?'ACCUMULATE':'MOMENTUM_CONFIRMED',
+        _action:action,_reason:reason,
+        _changePct:changePct,
+        _dpSignal:dpSignal,_smartDir:smartDir,
+        confidence:conf,regime_adjusted_confidence:conf
+      });
+    });
+
+    // Sort by absolute move size (biggest movers first)
+    signals.sort(function(a,b){return Math.abs(b._changePct)-Math.abs(a._changePct);});
+    return signals;
+  }catch(e){console.warn('[DT] Day trades failed:',e);return[];}
+}
+
+function tlBuildDayRow(r){
+  var isBear=r.direction==='BEARISH';
+  var isBull=r.direction==='BULLISH';
+  var dirColor=isBear?'#FF4D4D':isBull?'#00DE94':'#00AEFF';
+  var dirArrow=isBear?'\u25BC':isBull?'\u25B2':'';
+  var actionColor=isBear?'#FF4D4D':isBull?'#00DE94':'var(--mp-text-secondary)';
+  var price=r.price?'$'+fmtPrice(Number(r.price)):'';
+  var changePct=r._changePct?((r._changePct>0?'+':'')+r._changePct.toFixed(2)+'%'):'';
+  var changeColor=r._changePct>=0?'#00DE94':'#FF4D4D';
+  var domain=DOMAIN_MAP[r.ticker];
+  var logo=domain?'<img class="tl-row-logo" src="https://www.google.com/s2/favicons?domain='+domain+'&sz=32" alt="" onerror="this.style.display=\'none\';">':'';
+  var dpBadge='';
+  if(r._dpSignal==='HEAVY')dpBadge='<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(0,174,255,0.1);color:#00AEFF;border:1px solid rgba(0,174,255,0.2);margin-left:4px;font-family:var(--font-body);">DP</span>';
+  return '<div class="tl-row" onclick="window.location.href=\'/ticker/'+encodeURIComponent(r.ticker)+'\'">'
+    +'<div class="tl-row-left">'+logo+'<span class="tl-row-ticker">'+esc(r.ticker)+'</span><span class="tl-row-price">'+price+'</span><span style="font-size:11px;color:'+changeColor+';font-family:var(--font-body);margin-left:4px;">'+changePct+'</span>'+dpBadge+'</div>'
+    +'<div class="tl-row-right"><span class="tl-row-action" style="color:'+actionColor+';">'+esc(r._action)+'</span><span class="tl-row-dir" style="color:'+dirColor+';">'+dirArrow+'</span></div>'
+  +'</div>';
+}
+
+function tlBuildDayLane(existingDayCards,dayTradeSignals){
+  // Merge: existing trade_cards_live day trades first, then momentum signals
+  var all=existingDayCards.concat(dayTradeSignals);
+  if(!all.length)return'';
+  var laneId='tl-overflow-day-trade';
+  var html='<div class="tl-lane"><div class="tl-lane-header"><div><div class="tl-lane-title">Day Trade</div><div class="tl-lane-sub">In and out today \u00B7 '+all.length+' signals</div></div></div><div class="tl-lane-rows">';
+  // Existing cards use normal row, momentum signals use day row
+  var visible=all.slice(0,TL_LIMIT);
+  var overflow=all.slice(TL_LIMIT);
+  visible.forEach(function(c){html+=(c._action?tlBuildDayRow(c):tlBuildRow(c));});
+  if(overflow.length){
+    html+='<div class="tl-overflow" id="'+laneId+'" style="display:none;">';
+    overflow.forEach(function(c){html+=(c._action?tlBuildDayRow(c):tlBuildRow(c));});
+    html+='</div><button class="tl-view-more" onclick="var t=document.getElementById(\''+laneId+'\');var s=t.style.display!==\'none\';t.style.display=s?\'none\':\'block\';this.textContent=s?\'View '+overflow.length+' more\':\'Show less\';">View '+overflow.length+' more</button>';
+  }
+  html+='</div></div>';
+  return html;
+}
+
 async function loadTradeLanes(){
   if(!SUPABASE_URL||!SUPABASE_ANON)return;
   var container=document.getElementById('tl-container');
   if(!container)return;
   try{
-    // Load trade signals + value picks in parallel
+    // Load trade signals + value picks + day trade momentum in parallel
     var tradeP=restFetch('trade_cards_live',{select:'ticker,direction,confidence,regime_adjusted_confidence,card_tier,primary_label,timeframe,holding_days,price',order:'regime_adjusted_confidence.desc.nullslast'});
     var valueP=loadValuePicks();
+    var dayP=loadDayTrades();
     var rows=await tradeP;
     var valuePicks=await valueP;
+    var dayTradeSignals=await dayP;
 
     var buckets={day:[],swing:[],position:[]};
     if(rows&&rows.length){
@@ -7228,12 +7345,12 @@ async function loadTradeLanes(){
       });
     }
     var html='';
-    html+=tlBuildLane('Day Trade','In and out today',buckets.day);
+    html+=tlBuildDayLane(buckets.day,dayTradeSignals);
     html+=tlBuildLane('Swing Trade','3\u201314 day window',buckets.swing);
     html+=tlBuildValueLane('Value Picks','Under fair value \u00B7 strong fundamentals',valuePicks);
     var grid=document.getElementById('tl-grid');
     if(grid)grid.innerHTML=html;
-    if(rows&&rows.length||valuePicks.length)container.style.display='block';
+    if((rows&&rows.length)||valuePicks.length||dayTradeSignals.length)container.style.display='block';
     else container.style.display='none';
   }catch(e){console.warn('[TL] Load failed:',e);}
 }
