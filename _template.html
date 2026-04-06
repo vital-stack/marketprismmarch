@@ -4850,12 +4850,12 @@ body{
       <div class="strat-filter-bar" id="strat-filter-bar">
         <span class="strat-filter-label">Filter:</span>
         <div class="strat-filter-chip active" data-filter="all">All Cards</div>
-        <div class="strat-filter-chip" data-filter="unicorn" style="color:#E8B4F8;">&#9733; Unicorn</div>
-        <div class="strat-filter-chip" data-filter="platinum">&#9670; Platinum</div>
-        <div class="strat-filter-chip" data-filter="gold">&#9650; Gold</div>
-        <div class="strat-filter-chip" data-filter="surprise">&#9889; Surprise</div>
-        <div class="strat-filter-chip" data-filter="bearish">Bearish</div>
-        <div class="strat-filter-chip" data-filter="bullish">Bullish</div>
+        <div class="strat-filter-chip" data-filter="unicorn" style="color:#E8B4F8;">&#9733; Unicorn <span class="info-tip" data-tip="The rarest signals in the system. Coiled Spring (84.6% win rate) and Saturation Collapse (only 14 occurrences ever). When you see one, pay attention."><i class="info-icon">i</i></span></div>
+        <div class="strat-filter-chip" data-filter="platinum">&#9670; Platinum <span class="info-tip" data-tip="Highest-conviction signals confirmed by regime data, coordination patterns, or extreme divergence. Backtested Sharpe ratio above 1.0."><i class="info-icon">i</i></span></div>
+        <div class="strat-filter-chip" data-filter="gold">&#9650; Gold <span class="info-tip" data-tip="Strong signals with elevated confidence and fundamental backing. Reliable setups with clear narrative-to-price divergence."><i class="info-icon">i</i></span></div>
+        <div class="strat-filter-chip" data-filter="surprise">&#9889; Surprise <span class="info-tip" data-tip="Asymmetric setups: earnings catalysts, dark pool activity, short squeeze potential, or contrarian capitulation signals. Higher risk, higher reward."><i class="info-icon">i</i></span></div>
+        <div class="strat-filter-chip" data-filter="bearish">Bearish <span class="info-tip" data-tip="Signals where the narrative suggests downside risk. Price may be overextended or unsupported by fundamentals."><i class="info-icon">i</i></span></div>
+        <div class="strat-filter-chip" data-filter="bullish">Bullish <span class="info-tip" data-tip="Signals where fundamentals, momentum, or energy patterns support upside. Narrative is backed by filings and institutional positioning."><i class="info-icon">i</i></span></div>
       </div>
 
       <div class="tcg-header">
@@ -6340,9 +6340,9 @@ async function loadData(){
 
     // ── PRIMARY: trade_cards_live (pre-computed table, fast) ──
     var cardUrl = SUPABASE_URL+'/rest/v1/trade_cards_live'
-      +'?select=ticker,price,primary_label,direction,confidence,holding_days,entry_date,exit_date,description,phase,status,card_tier,trade_score,snapshot_date,sector_name,sector,industry,signal_regime,regime_direction,divergence_score'
+      +'?select=ticker,price,primary_label,direction,confidence,regime_adjusted_confidence,holding_days,entry_date,exit_date,description,phase,status,card_tier,trade_score,snapshot_date,sector_name,sector,industry,signal_regime,regime_direction,divergence_score'
       +'&confidence=gte.0.65'
-      +'&order=confidence.desc'
+      +'&order=regime_adjusted_confidence.desc.nullslast'
       +'&limit=50';
     // Divergence data from v_trade_cards (supplementary until pipeline populates trade_cards_live)
     var divUrl = SUPABASE_URL+'/rest/v1/v_trade_cards'
@@ -6434,12 +6434,13 @@ async function loadData(){
         || (isTrap
           ? 'Coordinated narrative and valuation distortion detected. Historically leads to rapid downside unwind. Expected Move: ~2–3% downside'
           : 'Price is diverging from fundamentals. Mean reversion probability elevated. Expected Move: ~2–3% downside');
-      // Confidence as integer %
-      var confPct = r.confidence != null ? Math.round(r.confidence * 100) : null;
+      // Confidence as integer % (prefer regime-adjusted)
+      var adjConf = r.regime_adjusted_confidence != null ? Number(r.regime_adjusted_confidence) : (r.confidence != null ? Number(r.confidence) : null);
+      var confPct = adjConf != null ? Math.round(adjConf * 100) : null;
       // Merge with snapshot for sector fallback
       var snap = snapshotMap[r.ticker]||{};
-      // Rarity — derived from confidence since v_trade_cards has no prism_verdict tier
-      var confVal = r.confidence || 0;
+      // Rarity — derived from adjusted confidence
+      var confVal = adjConf || 0;
       var derivedRarity = confVal >= 0.75 ? 'Breaking'
                         : confVal >= 0.55 ? 'Narrative Trap'
                         : 'Fragile';
@@ -7070,7 +7071,7 @@ function tlBuildRow(r){
 
 function tlBuildLane(title,subtitle,cards){
   if(!cards.length)return'';
-  cards.sort(function(a,b){return(Number(b.confidence)||0)-(Number(a.confidence)||0);});
+  cards.sort(function(a,b){return(Number(b.regime_adjusted_confidence||b.confidence)||0)-(Number(a.regime_adjusted_confidence||a.confidence)||0);});
   var visible=cards.slice(0,TL_LIMIT);
   var overflow=cards.slice(TL_LIMIT);
   var laneId='tl-overflow-'+title.replace(/\s/g,'-').toLowerCase();
@@ -7090,7 +7091,7 @@ async function loadTradeLanes(){
   var container=document.getElementById('tl-container');
   if(!container)return;
   try{
-    var rows=await restFetch('trade_cards_live',{select:'ticker,direction,confidence,card_tier,primary_label,timeframe,holding_days,price',order:'confidence.desc'});
+    var rows=await restFetch('trade_cards_live',{select:'ticker,direction,confidence,regime_adjusted_confidence,card_tier,primary_label,timeframe,holding_days,price',order:'regime_adjusted_confidence.desc.nullslast'});
     if(!rows||!rows.length){container.style.display='none';return;}
     var buckets={day:[],swing:[],position:[]};
     rows.forEach(function(r){
