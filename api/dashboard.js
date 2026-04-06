@@ -9,6 +9,14 @@ module.exports = (req, res) => {
 
     let html = resolveTemplate('_template.html');
 
+    // Inject Signal Lab tab partial
+    try {
+      const slTab = resolveTemplate('_signal_lab_tab.html');
+      html = html.replace('<!-- SIGNAL_LAB_INJECT -->', function() { return slTab; });
+    } catch (e) {
+      console.warn('Signal Lab tab not found:', e.message);
+    }
+
     const scholarEnabled = process.env.ANTHROPIC_KEY ? 'true' : '';
 
     html = html.replace(
