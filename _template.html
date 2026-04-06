@@ -14438,7 +14438,10 @@ function renderBoard(b,rows){
     // Use logoHTML for tickers, fall back to initial avatar for non-tickers
     var isTicker=r.name&&r.name.length<=6&&/^[A-Z]/.test(r.name);
     var avHtml=isTicker&&typeof logoHTML==='function'?logoHTML(r.name,'sm'):'<div class="lb-av" style="background:rgba(255,255,255,0.05);color:var(--mp-text-tertiary);">'+lbEsc(ini(r.name))+'</div>';
-    return '<a class="lb-row" href="'+lbEsc(r.link||'#')+'">'
+    var hasLink=r.link&&r.link.indexOf('/ticker/')===0;
+    var tag=hasLink?'a':'div';
+    var hrefAttr=hasLink?' href="'+lbEsc(r.link)+'"':'';
+    return '<'+tag+' class="lb-row"'+hrefAttr+'>'
       +'<div class="lb-rank'+rankClass(i)+'">'+(i+1)+'</div>'
       +avHtml
       +'<div class="lb-info">'
@@ -14450,8 +14453,8 @@ function renderBoard(b,rows){
         +'<div class="lb-sval">'+lbEsc(String(disp))+'</div>'
         +'<div class="lb-slbl">'+lbEsc(b.scoreLabel)+'</div>'
       +'</div>'
-      +'<div class="lb-arr">\u203a</div>'
-    +'</a>';
+      +(hasLink?'<div class="lb-arr">\u203a</div>':'')
+    +'</'+tag+'>';
   }).join('');
   return '<div class="lb-section">'
     +'<div class="lb-accent"></div>'
