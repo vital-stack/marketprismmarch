@@ -11266,7 +11266,7 @@ function tcRenderCards(){
     var qc=tcQueuedCount(s.id);
     var isBull=s.changeDir==='up';
     var deltaColor=isBull?'#00DE94':'#FF4D4D';
-    var dirColor=s.direction==='BEARISH'?'var(--mp-red)':s.direction==='BULLISH'?'var(--mp-green)':'var(--mp-cyan)';
+    var dirColor=s.direction==='BEARISH'?'#FF4D4D':s.direction==='BULLISH'?'#00DE94':'#00AEFF';
     var confPct=s.confPct||50;
     var confColor=confPct>=75?'var(--mp-green)':confPct>=55?'var(--mp-amber)':'var(--mp-cyan)';
     return '<div class="tc-sig-card'+(qc>0?' queued':'')+'" draggable="true" data-idx="'+i+'" data-id="'+s.id+'">'
@@ -11277,7 +11277,7 @@ function tcRenderCards(){
             +'<div class="tc-header-left">'
               +'<div class="tc-id"><span class="tc-ticker">'+s.ticker+'</span><span class="tc-name">'+s.name+'</span></div>'
             +'</div>'
-            +'<span class="tc-rarity" style="color:'+tierColor+';border-color:'+tierColor+'33;background:'+tierColor+'14;">'+tierIcon+' '+(s.tier||'SIGNAL')+'</span>'
+            +'<span class="tc-rarity" style="color:'+tierColor+';border-color:'+tierColor+'33;background:'+tierColor+'14;">'+tierIcon+' '+(s.tier||'SIGNAL')+(s.winRate?' \u00B7 '+s.winRate:'')+'</span>'
           +'</div>'
           +'<div class="tc-price-row">'
             +'<span class="tc-price">'+s.price+'</span>'
@@ -11813,12 +11813,18 @@ function tcBuildFromData(){
   TC_SIGNALS = src.map(function(r){
     var pct = Number(r.price_change_pct) || 0;
     var isUp = pct > 0;
-    // Move name from primary_label
-    var moveName = r.primary_label
-      ? r.primary_label.replace(/_/g,' ').toLowerCase().replace(/\b\w/g,function(c){return c.toUpperCase();})
-      : (r.biasText ? r.biasText.toUpperCase() : 'HOLD STEADY');
-    // Confidence
-    var confRaw = r.confidence != null ? Number(r.confidence) : 0.5;
+    // Move name — prefer Signal Lab regime name if available
+    var regime = r.signal_regime || '';
+    var regimeInfo = REGIME_DISPLAY ? REGIME_DISPLAY[regime] : null;
+    var moveName = regimeInfo ? regimeInfo.name
+      : r.primary_label
+        ? r.primary_label.replace(/_/g,' ').toLowerCase().replace(/\b\w/g,function(c){return c.toUpperCase();})
+        : (r.biasText ? r.biasText.toUpperCase() : 'HOLD STEADY');
+    // Win rate from regime backtest
+    var winRate = regimeInfo ? regimeInfo.acc : '';
+    // Confidence — prefer regime-adjusted
+    var confRaw = r.regime_adjusted_confidence != null ? Number(r.regime_adjusted_confidence)
+      : r.confidence != null ? Number(r.confidence) : 0.5;
     var confPct = Math.round(confRaw * 100);
     // Window
     var win = r._winOverride || (r.holding_days ? r.holding_days + (r.holding_days > 1 ? ' days' : ' day') : '3\u20137d');
@@ -11842,6 +11848,7 @@ function tcBuildFromData(){
       tier: tier, tierLabel: tierLabel, direction: direction,
       moveName: moveName.toUpperCase(),
       bias: moveName.toUpperCase(),
+      winRate: winRate,
       conf: confPct + '%', confPct: confPct,
       window: win, logo: '',
       expires: expiresStr,
