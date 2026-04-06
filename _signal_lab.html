@@ -506,7 +506,11 @@
 
   <!-- Ticker Search -->
   <div class="ticker-search">
-    <input class="ticker-input" id="ticker-input" placeholder="Ticker..." maxlength="10" autofocus>
+    <select class="ticker-input" id="ticker-select" style="width:200px;cursor:pointer;">
+      <option value="">Select ticker...</option>
+    </select>
+    <span style="font-size:12px;color:var(--mp-text-tertiary);">or</span>
+    <input class="ticker-input" id="ticker-input" placeholder="Type ticker..." maxlength="10" autofocus>
     <button class="analyze-btn" id="load-btn">Analyze</button>
   </div>
 
@@ -1271,13 +1275,25 @@ async function interpretChart() {
   btn.disabled = false;
 }
 
+// ── Populate ticker dropdown ──
+(function(){
+  const TICKERS = ['AAPL','ABNB','ABT','ABBV','ACM','ADM','ADBE','AMAT','AMD','AMT','AMZN','APD','ARM','ASTS','AVGO','AWK','AWR','AA','BA','BAC','BG','BHP','BKNG','BUD','BYND','CAT','CCJ','CDNS','CEG','CLF','CMG','CMCSA','COIN','COP','COST','CRM','CRWD','CVX','CWT','DASH','DE','DELL','DHI','DHR','DIS','DJT','DUK','EMR','ENPH','EOG','F','FCX','FSLR','GE','GIS','GM','GME','GOLD','GOOGL','GS','HAL','HD','HIMS','HMC','HOOD','HPQ','IBM','IBRX','INTC','INTU','J','JNJ','JPM','KHC','KO','LCID','LEU','LIN','LLY','LMT','LOW','LRCX','MA','MCD','MDLZ','META','MLM','MOS','MP','MRK','MRVL','MSFT','MSTR','MU','NBIS','NEM','NEE','NFLX','NIO','NKE','NOW','NVDA','NVO','OKLO','OPEN','ORCL','OXY','PANW','PEP','PFE','PLD','PLTR','PNR','PTON','PWR','PYPL','QCOM','RACE','RBLX','RDDT','RIO','RIVN','RTX','SBUX','SCCO','SLB','SMCI','SMR','SNAP','SNPS','SO','SOFI','SONY','SPOT','SQ','STN','STX','TGT','TM','TMO','TMUS','TSLA','TSM','TSN','TTEK','TTWO','TXN','UAL','UBER','UNH','UPS','URI','V','VALE','VMC','VRT','VST','VZ','WDAY','WDC','WFC','WM','WMT','WTRG','XOM','XYL'].sort();
+  const sel = document.getElementById('ticker-select');
+  if(sel) TICKERS.forEach(t => { const o = document.createElement('option'); o.value = t; o.textContent = t; sel.appendChild(o); });
+})();
+
 // ── Event handlers ──
 document.getElementById('load-btn').onclick = () => {
-  const val = document.getElementById('ticker-input').value.trim().toUpperCase().replace(/[^A-Z0-9.\-]/g, '');
+  let val = document.getElementById('ticker-input').value.trim().toUpperCase().replace(/[^A-Z0-9.\-]/g, '');
+  if (!val) val = document.getElementById('ticker-select').value;
   if (val) loadSignalLab(val);
 };
 document.getElementById('ticker-input').onkeydown = (e) => {
   if (e.key === 'Enter') document.getElementById('load-btn').click();
+};
+document.getElementById('ticker-select').onchange = function() {
+  const v = this.value;
+  if (v) { document.getElementById('ticker-input').value = ''; loadSignalLab(v); }
 };
 
 // Toggle buttons

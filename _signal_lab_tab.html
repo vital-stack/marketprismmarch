@@ -20,6 +20,15 @@
   }
   .sl-go-btn:hover { opacity: 0.85; }
   .sl-go-btn:disabled { opacity: 0.4; cursor: default; }
+  .sl-or { font-size: 12px; color: var(--mp-text-tertiary); }
+  .sl-select {
+    font-family: var(--font-body); font-size: 14px; font-weight: 500;
+    padding: 10px 16px; border-radius: 10px;
+    border: 1px solid var(--mp-border-mid); background: var(--mp-surface);
+    color: var(--mp-text-primary); width: 200px; outline: none;
+    cursor: pointer; transition: border-color 0.15s;
+  }
+  .sl-select:focus { border-color: var(--mp-blue); }
 
   /* ── Signal Lab: Section cards ── */
   .sl-card {
@@ -156,7 +165,11 @@
 
     <!-- Ticker Search -->
     <div class="sl-search">
-      <input class="sl-input" id="sl-ticker-input" placeholder="Ticker..." maxlength="10">
+      <select class="sl-select" id="sl-ticker-select">
+        <option value="">Select ticker...</option>
+      </select>
+      <span class="sl-or">or</span>
+      <input class="sl-input" id="sl-ticker-input" placeholder="Type ticker..." maxlength="10">
       <button class="sl-go-btn" id="sl-load-btn">Analyze</button>
     </div>
 
@@ -472,13 +485,28 @@
   // ── Init (called when tab activates) ──
   window.slInit=function(){
     if(SL_INIT_DONE)return;SL_INIT_DONE=true;
-    document.getElementById('sl-load-btn').onclick=function(){var v=(document.getElementById('sl-ticker-input').value||'').trim().toUpperCase().replace(/[^A-Z0-9.\-]/g,'');if(v)slLoadTicker(v);};
+    // Populate ticker dropdown from MP_DOMAINS (all tracked tickers)
+    var sel=document.getElementById('sl-ticker-select');
+    if(sel&&typeof MP_DOMAINS==='object'){
+      var tickers=Object.keys(MP_DOMAINS).sort();
+      tickers.forEach(function(t){var o=document.createElement('option');o.value=t;o.textContent=t;sel.appendChild(o);});
+    }
+    // Analyze button: prefer text input, fall back to dropdown
+    document.getElementById('sl-load-btn').onclick=function(){
+      var v=(document.getElementById('sl-ticker-input').value||'').trim().toUpperCase().replace(/[^A-Z0-9.\-]/g,'');
+      if(!v) v=document.getElementById('sl-ticker-select').value;
+      if(v) slLoadTicker(v);
+    };
     document.getElementById('sl-ticker-input').onkeydown=function(e){if(e.key==='Enter')document.getElementById('sl-load-btn').click();};
+    // Dropdown change: auto-analyze
+    document.getElementById('sl-ticker-select').onchange=function(){
+      var v=this.value;
+      if(v){document.getElementById('sl-ticker-input').value='';slLoadTicker(v);}
+    };
     document.querySelectorAll('.sl-tog').forEach(function(btn){btn.addEventListener('click',function(){var line=btn.dataset.slLine;SL_VIS[line]=!SL_VIS[line];btn.classList.toggle('active');if(SL_SNAPS.length)slRenderChart();});});
     document.querySelectorAll('.sl-tf-btn').forEach(function(btn){btn.addEventListener('click',function(){document.querySelectorAll('.sl-tf-btn').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');document.getElementById('sl-story-popup')?.classList.remove('visible');if(SL_SNAPS.length)slRenderChart();});});
     document.getElementById('sl-story-sort')?.addEventListener('change',function(){document.getElementById('sl-story-popup')?.classList.remove('visible');if(SL_SNAPS.length)slRenderChart();});
     document.getElementById('sl-interpret-btn').onclick=slInterpret;
-    document.getElementById('sl-ticker-input').focus();
   };
 })();
 </script>
