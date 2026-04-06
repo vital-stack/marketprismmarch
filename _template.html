@@ -14334,14 +14334,16 @@ var BOARDS=[
   {id:'overreaction',title:'Most Overreacted Stories',sub:'Media reaction far exceeds what facts support',color:'#FF4D4D',bg:'rgba(255,77,77,0.12)',scoreLabel:'Overreaction',
   fetch:async function(){
     try{
-      var date=await latestDate('daily_trade_labels');
+      var date=await latestDate('narrative_scorecard');
       if(date){
-        var r=await sq('daily_trade_labels?select=ticker,overreaction_ratio,prism_verdict&snapshot_date=eq.'+encodeURIComponent(date)+'&overreaction_ratio=gt.0&order=overreaction_ratio.desc&limit=10');
-        if(r.length) return r.map(function(x){return{name:x.ticker||'Unknown',meta:'OR ratio: '+(Math.round((x.overreaction_ratio||0)*100)/100)+' \u00b7 '+(x.prism_verdict||''),score:Math.round((x.overreaction_ratio||0)*100)/100,link:'/ticker/'+encodeURIComponent(x.ticker)};});
+        var r=await sq('narrative_scorecard?select=ticker,overreaction_ratio,verdict,narrative&snapshot_date=eq.'+encodeURIComponent(date)+'&overreaction_ratio=gt.0&order=overreaction_ratio.desc&limit=10');
+        if(r.length) return r.map(function(x){var or=Number(x.overreaction_ratio)||0;var narr=(x.narrative||'').slice(0,50);return{name:x.ticker||'Unknown',meta:'OR: '+(or>=1?or.toFixed(1):or.toFixed(3))+'\u00d7 \u00b7 '+(x.verdict||'')+(narr?' \u00b7 '+narr:''),score:or,scoreDisplay:or>=1?or.toFixed(1)+'\u00d7':or.toFixed(2)+'\u00d7',_scoreColor:'#FF4D4D',link:'/ticker/'+encodeURIComponent(x.ticker)};});
       }
     }catch(e){console.warn('[LB] overreaction API failed, using fallback:',e.message);}
-    // No overreaction_ratio in DATA fallback
-    return [];
+    return scorecardFallback(
+      function(s){return s.overreaction_ratio!=null&&s.overreaction_ratio>0;},
+      function(s){var or=Number(s.overreaction_ratio)||0;return{name:s.ticker,meta:'OR: '+(or>=1?or.toFixed(1):or.toFixed(3))+'\u00d7 \u00b7 '+(s.verdict||''),score:or,scoreDisplay:or>=1?or.toFixed(1)+'\u00d7':or.toFixed(2)+'\u00d7',_scoreColor:'#FF4D4D',link:'/ticker/'+encodeURIComponent(s.ticker)};},
+      function(a,b){return(b.overreaction_ratio||0)-(a.overreaction_ratio||0);},10);
   }},
   {id:'bullish',title:'Bullish Sentiment Watch',sub:'Tickers with LOVE label \u00b7 today',color:'#00DE94',bg:'rgba(0,222,148,0.12)',scoreLabel:'Reliability',
   fetch:async function(){
