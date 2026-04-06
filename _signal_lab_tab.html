@@ -456,20 +456,55 @@
   }
 
   // ── Regime detection ──
-  function slDetectRegime(){
-    if(!SL_DECAY.length||!SL_PHYSICS.length)return;
-    var ld=SL_DECAY[SL_DECAY.length-1],lp=SL_PHYSICS[SL_PHYSICS.length-1];
-    var lpr=SL_PRESSURE.length?SL_PRESSURE[SL_PRESSURE.length-1]:null;
-    var le=SL_ENERGY_T.length?SL_ENERGY_T[SL_ENERGY_T.length-1]:null;
-    var blue=ld.energy_remaining_pct??0;
-    var mA=Math.max.apply(null,SL_PHYSICS.map(function(d){return d.narrative_energy_absolute||0;}).concat([1]));
-    var yellow=((lp.narrative_energy_absolute||0)/mA)*100;
-    var purple=lpr?lpr.pressure:0;
-    var etN=le?((le.narrative_energy_t||0)/Math.max.apply(null,SL_ENERGY_T.map(function(d){return d.narrative_energy_t||0;}).concat([1]))*100):0;
+  // Regime display names and colors
+  var SL_REGIME_MAP={
+    'COILED_SPRING':    {name:'Coiled Spring',       color:'#E8B4F8'},
+    'SATURATION':       {name:'Both Maxed',          color:'var(--mp-red)'},
+    'BOTH_MAXED':       {name:'Both Maxed',          color:'var(--mp-red)'},
+    'TRIPLE_THREAT':    {name:'Triple Threat',        color:'var(--mp-violet)'},
+    'HOLLOW':           {name:'Hollow Narrative',     color:'var(--mp-amber)'},
+    'YELLOW_COLLAPSE':  {name:'Yellow Collapse',      color:'var(--mp-amber)'},
+    'FRESH_ENERGY':     {name:'Fresh Energy',         color:'var(--mp-green)'},
+    'TEMPORAL_ENERGY':  {name:'Temporal Energy',      color:'var(--mp-cyan)'},
+    'SATURATION_COLLAPSE':{name:'Saturation Collapse',color:'#E8B4F8'},
+    'NEUTRAL':          {name:'Neutral',              color:'var(--mp-text-secondary)'}
+  };
+
+  async function slDetectRegime(){
+    // Compute energy metrics for display regardless
+    var blue=0,yellow=0,purple=0,etN=0;
+    if(SL_DECAY.length&&SL_PHYSICS.length){
+      var ld=SL_DECAY[SL_DECAY.length-1],lp=SL_PHYSICS[SL_PHYSICS.length-1];
+      var lpr=SL_PRESSURE.length?SL_PRESSURE[SL_PRESSURE.length-1]:null;
+      var le=SL_ENERGY_T.length?SL_ENERGY_T[SL_ENERGY_T.length-1]:null;
+      blue=ld.energy_remaining_pct??0;
+      var mA=Math.max.apply(null,SL_PHYSICS.map(function(d){return d.narrative_energy_absolute||0;}).concat([1]));
+      yellow=((lp.narrative_energy_absolute||0)/mA)*100;
+      purple=lpr?lpr.pressure:0;
+      etN=le?((le.narrative_energy_t||0)/Math.max.apply(null,SL_ENERGY_T.map(function(d){return d.narrative_energy_t||0;}).concat([1]))*100):0;
+    }
+
+    // Try DB-sourced regime first (signal_regimes table)
     var regime='Neutral',color='var(--mp-text-secondary)';
-    if(blue>=80&&yellow>=80){regime='Both Maxed';color='var(--mp-red)';}
-    else if(blue>=80&&yellow<=20){regime='Hollow Narrative';color='var(--mp-amber)';}
-    else if(blue>=80&&yellow<=30&&purple>=15){regime='Triple Threat';color='var(--mp-violet)';}
+    try{
+      var dbRows=await restFetch('signal_regimes',{select:'signal_regime,regime_direction',ticker:'eq.'+SL_TICKER,order:'snapshot_date.desc',limit:'1'});
+      if(dbRows&&dbRows.length&&dbRows[0].signal_regime){
+        var key=dbRows[0].signal_regime.toUpperCase();
+        var mapped=SL_REGIME_MAP[key];
+        if(mapped){regime=mapped.name;color=mapped.color;}
+        else{regime=key.replace(/_/g,' ').toLowerCase().replace(/\b\w/g,function(c){return c.toUpperCase();});color='var(--mp-text-secondary)';}
+      }
+    }catch(e){console.warn('[SL] signal_regimes fetch failed, using JS fallback:',e);}
+
+    // JS fallback if DB returned Neutral or no data
+    if(regime==='Neutral'&&SL_DECAY.length&&SL_PHYSICS.length){
+      if(blue>=80&&yellow>=80){regime='Both Maxed';color='var(--mp-red)';}
+      else if(blue>=80&&yellow<=20){regime='Hollow Narrative';color='var(--mp-amber)';}
+      else if(blue>=80&&yellow<=30&&purple>=15){regime='Triple Threat';color='var(--mp-violet)';}
+      else if(blue<=15&&etN>50){regime='Coiled Spring';color='#E8B4F8';}
+      else if(yellow>50&&blue<=30){regime='Fresh Energy';color='var(--mp-green)';}
+    }
+
     var box=document.getElementById('sl-regime-box');box.style.display='block';
     document.getElementById('sl-regime-ticker').textContent=SL_TICKER;
     document.getElementById('sl-regime-name').textContent=regime;
