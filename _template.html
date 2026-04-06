@@ -10647,9 +10647,9 @@ function gcTierIcon(tier){
   return'\u25CF';
 }
 function gcConfColor(conf){
-  if(conf>=75)return'var(--mp-green)';
-  if(conf>=55)return'var(--mp-amber)';
-  return'var(--mp-cyan)';
+  if(conf>=75)return'#00DE94';
+  if(conf>=55)return'#FFB800';
+  return'#FFB800';
 }
 function gcDirClass(dir){
   var d=(dir||'').toLowerCase();
@@ -10754,11 +10754,13 @@ function buildStratCard(d){
   var coordClass=d.coordination_class||'';
   var narTone=d.narrative_tone||'';
 
+  var winRateStr=gcWinRate(d);
+
   var back='<div class="strat-back">'
     +'<div class="gc-foil"></div>'
-    +'<div class="gc-back-header">'
-      +'<div class="gc-back-ticker">'+gcEsc(d.ticker)+' \u00B7 Intel</div>'
-      +'<div class="gc-back-price">$'+fmtPrice(price)+'</div>'
+    +'<div class="gc-back-header" style="text-align:center;">'
+      +'<div class="gc-back-ticker" style="text-align:center;width:100;">'+gcEsc(d.ticker)+' \u00B7 Intel</div>'
+      +'<div class="gc-back-price" style="text-align:center;">$'+fmtPrice(price)+'</div>'
     +'</div>'
     +'<div class="gc-back-section">'
       +'<div class="gc-back-section-label"><span class="gc-label-icon">\uD83D\uDCF0</span> Story Claim</div>'
@@ -10771,10 +10773,7 @@ function buildStratCard(d){
     +'<div class="gc-back-stats">'
       +'<div class="gc-back-stat"><div class="gc-back-stat-label">Fair Value</div><div class="gc-back-stat-val">'+fv+'</div></div>'
       +'<div class="gc-back-stat"><div class="gc-back-stat-label">P/E</div><div class="gc-back-stat-val">'+pe+'</div></div>'
-      +'<div class="gc-back-stat"><div class="gc-back-stat-label">Energy</div><div class="gc-back-stat-val" style="color:'+confCol+';">'+energy+'</div></div>'
-      +'<div class="gc-back-stat"><div class="gc-back-stat-label">NRS</div><div class="gc-back-stat-val">'+nrs+'</div></div>'
-      +'<div class="gc-back-stat"><div class="gc-back-stat-label">VMS</div><div class="gc-back-stat-val">'+vms+'</div></div>'
-      +'<div class="gc-back-stat"><div class="gc-back-stat-label">Score</div><div class="gc-back-stat-val" style="color:'+confCol+';">'+scorePct+'</div></div>'
+      +(winRateStr?'<div class="gc-back-stat"><div class="gc-back-stat-label">Win Rate</div><div class="gc-back-stat-val" style="color:#38C8B8;">'+winRateStr+'</div></div>':'<div class="gc-back-stat"><div class="gc-back-stat-label">Confidence</div><div class="gc-back-stat-val" style="color:#00DE94;">'+confPct+'%</div></div>')
     +'</div>'
     +'<div class="gc-back-badges">'
       +(dpSignal!=='\u2014'?'<span class="gc-back-badge">Dark Pool: '+gcEsc(dpSignal)+(dpDir?' \u00B7 '+gcEsc(dpDir):'')+'</span>':'')
