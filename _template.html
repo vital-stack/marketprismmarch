@@ -7061,19 +7061,22 @@ function renderNarrativeCards(){
 
 // ── Trade Lanes ("What's the Play?") ──────────────────────────────────────────
 var TL_ACTIONS={
-  'NARRATIVE_TRAP':'Short or avoid','FUNDAMENTAL_DISCONNECT':'Avoid',
+  'NARRATIVE_TRAP':'Short','FUNDAMENTAL_DISCONNECT':'Short',
   'FADE_THE_HYPE':'Fade rallies','DRIFT_COMPRESSION_SHORT':'Short on bounce',
-  'AIR_POCKET_SHORT':'Stay away','ACCUMULATE':'Buy dips',
-  'MOMENTUM_CONFIRMED':'Ride the trend','FUNDAMENTAL_LONG':'Accumulate',
-  'OMISSION_CASCADE':'Avoid'
+  'AIR_POCKET_SHORT':'Short','ACCUMULATE':'Buy dips',
+  'MOMENTUM_CONFIRMED':'Ride up','FUNDAMENTAL_LONG':'Buy and hold',
+  'OMISSION_CASCADE':'Short'
 };
 var TL_LIMIT=5;
 
 function tlBuildRow(r){
   var dir=(r.direction||'').toUpperCase();
-  var dirColor=dir==='BEARISH'?'#FF4D4D':'var(--mp-cyan)';
-  var dirArrow=dir==='BEARISH'?'\u25BC':dir==='BULLISH'?'\u25B2':'';
+  var isBear=dir==='BEARISH';
+  var isBull=dir==='BULLISH';
+  var dirColor=isBear?'#FF4D4D':isBull?'#00DE94':'#00AEFF';
+  var dirArrow=isBear?'\u25BC':isBull?'\u25B2':'';
   var action=TL_ACTIONS[r.primary_label]||'Monitor';
+  var actionColor=isBear?'#FF4D4D':isBull?'#00DE94':'var(--mp-text-secondary)';
   var price=r.price?'$'+fmtPrice(Number(r.price)):'';
   var tier=(r.card_tier||'').toUpperCase();
   var tierHTML='';
@@ -7083,7 +7086,7 @@ function tlBuildRow(r){
   var logo=domain?'<img class="tl-row-logo" src="https://www.google.com/s2/favicons?domain='+domain+'&sz=32" alt="" onerror="this.style.display=\'none\';">':'';
   return '<div class="tl-row" onclick="window.location.href=\'/ticker/'+encodeURIComponent(r.ticker)+'\'">'
     +'<div class="tl-row-left">'+tierHTML+logo+'<span class="tl-row-ticker">'+esc(r.ticker)+'</span><span class="tl-row-price">'+price+'</span></div>'
-    +'<div class="tl-row-right"><span class="tl-row-action">'+esc(action)+'</span><span class="tl-row-dir" style="color:'+dirColor+';">'+dirArrow+'</span></div>'
+    +'<div class="tl-row-right"><span class="tl-row-action" style="color:'+actionColor+';">'+esc(action)+'</span><span class="tl-row-dir" style="color:'+dirColor+';">'+dirArrow+'</span></div>'
   +'</div>';
 }
 
