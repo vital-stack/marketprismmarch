@@ -4474,7 +4474,7 @@ body{
           <div class="dr-stat trap"><div class="dr-stat-val" id="dr-traps">—</div><div class="dr-stat-lbl">Active Traps</div></div>
           <div class="dr-stat surge"><div class="dr-stat-val" id="dr-surging">—</div><div class="dr-stat-lbl">Surging</div></div>
           <div class="dr-stat break"><div class="dr-stat-val" id="dr-breaking">—</div><div class="dr-stat-lbl">Breaking</div></div>
-          <div class="dr-stat"><div class="dr-stat-val" id="dr-supported" style="color:#00DE94;">—</div><div class="dr-stat-lbl">Supported</div></div>
+          <div class="dr-stat"><div class="dr-stat-val" id="dr-coordinated" style="color:#7B61FF;">—</div><div class="dr-stat-lbl">Coordinated</div></div>
         </div>
       </div>
 
@@ -6625,11 +6625,11 @@ async function loadData(){
     var drTraps=document.getElementById('dr-traps');
     var drSurging=document.getElementById('dr-surging');
     var drBreaking=document.getElementById('dr-breaking');
-    var drSupported=document.getElementById('dr-supported');
+    var drCoordinated=document.getElementById('dr-coordinated');
     if(drTraps)drTraps.textContent=DATA.filter(function(r){return r.prism_verdict==='Narrative Trap';}).length;
     if(drSurging)drSurging.textContent=DATA.filter(function(r){return r.narrative_state==='Surging';}).length;
     if(drBreaking)drBreaking.textContent=DATA.filter(function(r){return r.narrative_state==='Breaking';}).length;
-    if(drSupported)drSupported.textContent=DATA.filter(function(r){return r.prism_verdict==='Structurally Supported';}).length;
+    if(drCoordinated)drCoordinated.textContent=DATA.filter(function(r){return(r.coordination_class||'')==='LIKELY_COORDINATED';}).length;
     // Sector momentum in rail
     var drSectorList=document.getElementById('dr-sector-list');
     if(drSectorList&&DATA.length>0){
@@ -6713,8 +6713,8 @@ async function loadData(){
     // Update Signal Summary with real counts from dedicated tables
     var drTraps2=document.getElementById('dr-traps');
     if(drTraps2) drTraps2.textContent=TRAPS_DB_DATA.length;
-    var drSupported2=document.getElementById('dr-supported');
-    if(drSupported2) drSupported2.textContent=SUPPORTED_DATA.length;
+    var drCoord2=document.getElementById('dr-coordinated');
+    if(drCoord2) drCoord2.textContent=COORDINATION_DATA.filter(function(r){return r.coordination_class==='LIKELY_COORDINATED';}).length;
     // Pre-load leaderboard data so it's ready when tab is clicked
     if(typeof loadLeaderboard==='function') loadLeaderboard();
   } catch(err){
