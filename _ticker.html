@@ -454,7 +454,15 @@
     gap: 8px;
   }
   .chart-legend { display: flex; gap: 14px; flex-wrap: wrap; }
-  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-tertiary); }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-tertiary); position: relative; }
+  .leg-tip {
+    position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+    background: var(--surface2, #111927); color: var(--text-secondary); font-size: 11px;
+    padding: 6px 10px; border-radius: 6px; white-space: nowrap; pointer-events: none;
+    opacity: 0; transition: opacity 0.15s; z-index: 20; border: 1px solid var(--border);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  }
+  .legend-item:hover .leg-tip { opacity: 1; }
   .leg-line { width: 14px; height: 2px; border-radius: 1px; }
   .leg-dash { width: 14px; height: 0; border-top: 2px dashed var(--border-strong); }
   .leg-dot  { width: 7px; height: 7px; border-radius: 50%; }
@@ -3357,12 +3365,12 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
             <div class="chart-bottom-bar">
               <div class="chart-legend">
                 <div class="legend-item"><div class="leg-line" style="background:var(--text-primary);"></div> Price</div>
-                <div class="legend-item"><div class="leg-dot" style="background:#00DE94;"></div> Bullish Sentiment</div>
-                <div class="legend-item"><div class="leg-dot" style="background:#FF4D4D;"></div> Bearish Sentiment</div>
-                <div class="legend-item"><div class="leg-line" style="background:#00AEFF;opacity:0.7;border-top:2px dashed #00AEFF;height:0;width:14px;"></div> Narrative Energy</div>
-                <div class="legend-item"><div class="leg-line" style="background:#FFB800;opacity:0.7;border-top:2px dashed #FFB800;height:0;width:14px;"></div> Physics Energy</div>
-                <div class="legend-item"><div class="leg-line" style="background:#7B61FF;opacity:0.7;border-top:2px dashed #7B61FF;height:0;width:14px;"></div> Narrative Pressure</div>
-                <div class="legend-item"><div class="leg-line" style="background:#38C8B8;opacity:0.85;height:2px;width:14px;"></div> Temporal Energy</div>
+                <div class="legend-item"><div class="leg-dot" style="background:#00DE94;"></div> Bullish Sentiment<span class="leg-tip">Article sentiment on that date</span></div>
+                <div class="legend-item"><div class="leg-dot" style="background:#FF4D4D;"></div> Bearish Sentiment<span class="leg-tip">Article sentiment on that date</span></div>
+                <div class="legend-item"><div class="leg-line" style="background:#00AEFF;opacity:0.7;border-top:2px dashed #00AEFF;height:0;width:14px;"></div> Narrative Energy<span class="leg-tip">Story persistence relative to its natural half-life</span></div>
+                <div class="legend-item"><div class="leg-line" style="background:#FFB800;opacity:0.7;border-top:2px dashed #FFB800;height:0;width:14px;"></div> Physics Energy<span class="leg-tip">Raw narrative activity in the system right now</span></div>
+                <div class="legend-item"><div class="leg-line" style="background:#7B61FF;opacity:0.7;border-top:2px dashed #7B61FF;height:0;width:14px;"></div> Narrative Pressure<span class="leg-tip">Composite manipulation and risk score</span></div>
+                <div class="legend-item"><div class="leg-line" style="background:#38C8B8;opacity:0.85;height:2px;width:14px;"></div> Temporal Energy<span class="leg-tip">Freshness of narrative fuel. High = rally setup. Low = crash setup.</span></div>
               </div>
             </div>
             <div class="bear-stories-wrap" id="bear-stories-wrap" style="display:none;">
@@ -4863,7 +4871,7 @@ function drawChart(snaps, narrs) {
 
   const minP = Math.min(...prices) * 0.975;
   const maxP = Math.max(...prices) * 1.025;
-  const PAD  = { top:8, right:36, bottom:28, left:50 };
+  const PAD  = { top:8, right:52, bottom:28, left:50 };
   const CW   = W - PAD.left - PAD.right;
   const CH   = H - PAD.top  - PAD.bottom;
   const N    = snaps.length;
@@ -5016,13 +5024,30 @@ function drawChart(snaps, narrs) {
     ctx.restore();
   }
 
-  // Temporal Energy overlay (solid teal, right axis 0-100, normalized)
+  // Temporal Energy overlay (solid teal, own right axis 0-100, normalized)
   const energyTFiltered = ALL_ENERGY_T.filter(d => {
     const ds = d.snapshot_date?.slice(0,10);
     return ds && ds >= lo && ds <= hi;
   });
   if (energyTFiltered.length > 1) {
     const maxET = Math.max(...energyTFiltered.map(d => d.narrative_energy_t || 0), 1);
+    // Background bands: teal tint when energy_t_normalized > 50, red tint when < 15
+    ctx.save();
+    energyTFiltered.forEach((d, i) => {
+      const idx = dateIdx[d.snapshot_date.slice(0,10)];
+      if (idx == null) return;
+      const x = xOf(idx); const nm = (d.narrative_energy_t / maxET) * 100;
+      const nextIdx = i < energyTFiltered.length - 1 ? dateIdx[energyTFiltered[i+1].snapshot_date.slice(0,10)] : null;
+      const x2 = nextIdx != null ? xOf(nextIdx) : x + ((CW / Math.max(N-1,1)) * 0.5);
+      if (nm > 50) { ctx.fillStyle = 'rgba(56,200,184,0.06)'; ctx.fillRect(x, PAD.top, x2 - x, CH); }
+      else if (nm < 15) { ctx.fillStyle = 'rgba(255,77,77,0.06)'; ctx.fillRect(x, PAD.top, x2 - x, CH); }
+    });
+    ctx.restore();
+    // Right axis labels for Temporal Energy (0-100)
+    ctx.save(); ctx.font = '9px Inter, sans-serif'; ctx.fillStyle = '#38C8B8'; ctx.textAlign = 'left'; ctx.globalAlpha = 0.7;
+    [0, 50, 100].forEach(v => { ctx.fillText(v, W - PAD.right + 4, yEnergy(v) + 3); });
+    ctx.restore();
+    // Temporal Energy line
     ctx.save();
     ctx.setLineDash([]);
     ctx.strokeStyle = '#38C8B8'; ctx.lineWidth = 1.8; ctx.globalAlpha = 0.85;

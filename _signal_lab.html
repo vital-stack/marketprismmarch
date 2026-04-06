@@ -186,7 +186,16 @@
     transition: all 0.15s;
     user-select: none;
   }
+  .toggle-btn { position: relative; }
   .toggle-btn:hover { border-color: var(--mp-border-hover); }
+  .toggle-tip {
+    position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+    background: var(--mp-surface2, #111927); color: var(--mp-text-secondary); font-size: 11px;
+    padding: 6px 10px; border-radius: 6px; white-space: nowrap; pointer-events: none;
+    opacity: 0; transition: opacity 0.15s; z-index: 20; border: 1px solid var(--mp-border-mid);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  }
+  .toggle-btn:hover .toggle-tip { opacity: 1; }
   .toggle-btn.active { border-color: var(--color); background: var(--bg-color); color: var(--color); }
   .toggle-swatch {
     width: 10px; height: 3px; border-radius: 2px;
@@ -347,8 +356,9 @@
   /* ── AI Interpretation ── */
   .interpret-bar {
     display: flex; align-items: center; gap: 10px;
-    padding: 0 20px 12px;
+    padding: 0 20px 12px; flex-wrap: wrap;
   }
+  .interpret-sub { font-size: 11px; color: var(--mp-text-tertiary); margin-left: 4px; }
   .interpret-btn {
     display: flex; align-items: center; gap: 6px;
     font-family: var(--font-body); font-size: 12px; font-weight: 500;
@@ -522,22 +532,22 @@
       <!-- Signal Toggles -->
       <div class="signal-toggles">
         <button class="toggle-btn active" data-line="narr-energy" style="--color:#00AEFF;--bg-color:rgba(0,174,255,0.08);">
-          <span class="toggle-swatch" style="background:#00AEFF;"></span> Narrative Energy
+          <span class="toggle-swatch" style="background:#00AEFF;"></span> Narrative Energy<span class="toggle-tip">Story persistence relative to its natural half-life</span>
         </button>
         <button class="toggle-btn active" data-line="physics-energy" style="--color:#FFB800;--bg-color:rgba(255,184,0,0.08);">
-          <span class="toggle-swatch" style="background:#FFB800;"></span> Physics Energy
+          <span class="toggle-swatch" style="background:#FFB800;"></span> Physics Energy<span class="toggle-tip">Raw narrative activity in the system right now</span>
         </button>
         <button class="toggle-btn active" data-line="narr-pressure" style="--color:#7B61FF;--bg-color:rgba(123,97,255,0.08);">
-          <span class="toggle-swatch" style="background:#7B61FF;"></span> Narrative Pressure
+          <span class="toggle-swatch" style="background:#7B61FF;"></span> Narrative Pressure<span class="toggle-tip">Composite manipulation and risk score</span>
         </button>
         <button class="toggle-btn active" data-line="temporal-energy" style="--color:#38C8B8;--bg-color:rgba(56,200,184,0.08);">
-          <span class="toggle-swatch" style="background:#38C8B8;"></span> Temporal Energy
+          <span class="toggle-swatch" style="background:#38C8B8;"></span> Temporal Energy<span class="toggle-tip">Freshness of narrative fuel. High = rally setup. Low = crash setup.</span>
         </button>
         <button class="toggle-btn active" data-line="bull-dots" style="--color:#00DE94;--bg-color:rgba(0,222,148,0.08);">
-          <span class="toggle-swatch" style="background:#00DE94;border-radius:50%;width:7px;height:7px;"></span> Bullish
+          <span class="toggle-swatch" style="background:#00DE94;border-radius:50%;width:7px;height:7px;"></span> Bullish<span class="toggle-tip">Article sentiment on that date</span>
         </button>
         <button class="toggle-btn active" data-line="bear-dots" style="--color:#FF4D4D;--bg-color:rgba(255,77,77,0.08);">
-          <span class="toggle-swatch" style="background:#FF4D4D;border-radius:50%;width:7px;height:7px;"></span> Bearish
+          <span class="toggle-swatch" style="background:#FF4D4D;border-radius:50%;width:7px;height:7px;"></span> Bearish<span class="toggle-tip">Article sentiment on that date</span>
         </button>
       </div>
 
@@ -593,6 +603,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z"/></svg>
           Interpret Chart
         </button>
+        <span class="interpret-sub">Plain English explanation of current signals</span>
       </div>
       <div class="interpret-panel" id="interpret-panel">
         <div class="interpret-header">AI Signal Interpretation</div>
@@ -898,7 +909,7 @@ function drawChart(snaps, narrs) {
 
   const minP = Math.min(...prices) * 0.975;
   const maxP = Math.max(...prices) * 1.025;
-  const PAD = { top:8, right:36, bottom:28, left:50 };
+  const PAD = { top:8, right:52, bottom:28, left:50 };
   const CW = W - PAD.left - PAD.right;
   const CH = H - PAD.top - PAD.bottom;
   const N = snaps.length;
@@ -1030,11 +1041,28 @@ function drawChart(snaps, narrs) {
     }
   }
 
-  // Temporal Energy (teal solid)
+  // Temporal Energy (teal solid, own right axis 0-100)
   if (VISIBLE_LINES['temporal-energy']) {
     const etFiltered = ALL_ENERGY_T.filter(d => { const ds = d.snapshot_date?.slice(0,10); return ds && ds >= lo && ds <= hi; });
     if (etFiltered.length > 1) {
       const maxET = Math.max(...etFiltered.map(d => d.narrative_energy_t || 0), 1);
+      // Background bands: teal tint when energy_t_normalized > 50, red tint when < 15
+      ctx.save();
+      etFiltered.forEach((d, i) => {
+        const idx = dateIdx[d.snapshot_date.slice(0,10)];
+        if (idx == null) return;
+        const x = xOf(idx); const nm = (d.narrative_energy_t / maxET) * 100;
+        const nextIdx = i < etFiltered.length - 1 ? dateIdx[etFiltered[i+1].snapshot_date.slice(0,10)] : null;
+        const x2 = nextIdx != null ? xOf(nextIdx) : x + ((CW / Math.max(N-1,1)) * 0.5);
+        if (nm > 50) { ctx.fillStyle = 'rgba(56,200,184,0.06)'; ctx.fillRect(x, PAD.top, x2 - x, CH); }
+        else if (nm < 15) { ctx.fillStyle = 'rgba(255,77,77,0.06)'; ctx.fillRect(x, PAD.top, x2 - x, CH); }
+      });
+      ctx.restore();
+      // Right axis labels for Temporal Energy (0-100)
+      ctx.save(); ctx.font = '9px Inter, sans-serif'; ctx.fillStyle = '#38C8B8'; ctx.textAlign = 'left'; ctx.globalAlpha = 0.7;
+      [0, 50, 100].forEach(v => { ctx.fillText(v, W - PAD.right + 4, yEnergy(v) + 3); });
+      ctx.restore();
+      // Temporal Energy line
       ctx.save();
       ctx.setLineDash([]);
       ctx.strokeStyle = '#38C8B8'; ctx.lineWidth = 1.8; ctx.globalAlpha = 0.85;

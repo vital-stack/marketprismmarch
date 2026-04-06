@@ -49,7 +49,16 @@
     border: 1px solid var(--mp-border-mid); background: transparent;
     color: var(--mp-text-secondary); cursor: pointer; transition: all 0.15s; user-select: none;
   }
+  .sl-tog { position: relative; }
   .sl-tog:hover { border-color: var(--mp-border-hover); }
+  .sl-tog-tip {
+    position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+    background: var(--mp-surface2, #111927); color: var(--mp-text-secondary); font-size: 11px;
+    padding: 6px 10px; border-radius: 6px; white-space: nowrap; pointer-events: none;
+    opacity: 0; transition: opacity 0.15s; z-index: 20; border: 1px solid var(--mp-border-mid);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  }
+  .sl-tog:hover .sl-tog-tip { opacity: 1; }
   .sl-tog.active { border-color: var(--color); background: var(--bg-color); color: var(--color); }
   .sl-tog-sw { width: 10px; height: 3px; border-radius: 2px; }
   .sl-tog.active .sl-tog-sw { opacity: 1; }
@@ -110,7 +119,8 @@
   .sl-bear-item:hover { background: var(--surface2); cursor: pointer; }
 
   /* ── Signal Lab: AI Interpretation ── */
-  .sl-interp-bar { display: flex; align-items: center; gap: 10px; padding: 12px 20px; }
+  .sl-interp-bar { display: flex; align-items: center; gap: 10px; padding: 12px 20px; flex-wrap: wrap; }
+  .sl-interp-sub { font-size: 11px; color: var(--mp-text-tertiary); margin-left: 4px; }
   .sl-interp-btn {
     display: flex; align-items: center; gap: 8px;
     font-family: var(--font-body); font-size: 14px; font-weight: 600;
@@ -182,12 +192,12 @@
 
       <!-- Toggles -->
       <div class="sl-toggles">
-        <button class="sl-tog active" data-sl-line="narr-energy" style="--color:#00AEFF;--bg-color:rgba(0,174,255,0.08);"><span class="sl-tog-sw" style="background:#00AEFF;"></span> Narrative Energy</button>
-        <button class="sl-tog active" data-sl-line="physics-energy" style="--color:#FFB800;--bg-color:rgba(255,184,0,0.08);"><span class="sl-tog-sw" style="background:#FFB800;"></span> Physics Energy</button>
-        <button class="sl-tog active" data-sl-line="narr-pressure" style="--color:#7B61FF;--bg-color:rgba(123,97,255,0.08);"><span class="sl-tog-sw" style="background:#7B61FF;"></span> Narrative Pressure</button>
-        <button class="sl-tog active" data-sl-line="temporal-energy" style="--color:#38C8B8;--bg-color:rgba(56,200,184,0.08);"><span class="sl-tog-sw" style="background:#38C8B8;"></span> Temporal Energy</button>
-        <button class="sl-tog active" data-sl-line="bull-dots" style="--color:#00DE94;--bg-color:rgba(0,222,148,0.08);"><span class="sl-tog-sw" style="background:#00DE94;border-radius:50%;width:7px;height:7px;"></span> Bullish</button>
-        <button class="sl-tog active" data-sl-line="bear-dots" style="--color:#FF4D4D;--bg-color:rgba(255,77,77,0.08);"><span class="sl-tog-sw" style="background:#FF4D4D;border-radius:50%;width:7px;height:7px;"></span> Bearish</button>
+        <button class="sl-tog active" data-sl-line="narr-energy" style="--color:#00AEFF;--bg-color:rgba(0,174,255,0.08);"><span class="sl-tog-sw" style="background:#00AEFF;"></span> Narrative Energy<span class="sl-tog-tip">Story persistence relative to its natural half-life</span></button>
+        <button class="sl-tog active" data-sl-line="physics-energy" style="--color:#FFB800;--bg-color:rgba(255,184,0,0.08);"><span class="sl-tog-sw" style="background:#FFB800;"></span> Physics Energy<span class="sl-tog-tip">Raw narrative activity in the system right now</span></button>
+        <button class="sl-tog active" data-sl-line="narr-pressure" style="--color:#7B61FF;--bg-color:rgba(123,97,255,0.08);"><span class="sl-tog-sw" style="background:#7B61FF;"></span> Narrative Pressure<span class="sl-tog-tip">Composite manipulation and risk score</span></button>
+        <button class="sl-tog active" data-sl-line="temporal-energy" style="--color:#38C8B8;--bg-color:rgba(56,200,184,0.08);"><span class="sl-tog-sw" style="background:#38C8B8;"></span> Temporal Energy<span class="sl-tog-tip">Freshness of narrative fuel. High = rally setup. Low = crash setup.</span></button>
+        <button class="sl-tog active" data-sl-line="bull-dots" style="--color:#00DE94;--bg-color:rgba(0,222,148,0.08);"><span class="sl-tog-sw" style="background:#00DE94;border-radius:50%;width:7px;height:7px;"></span> Bullish<span class="sl-tog-tip">Article sentiment on that date</span></button>
+        <button class="sl-tog active" data-sl-line="bear-dots" style="--color:#FF4D4D;--bg-color:rgba(255,77,77,0.08);"><span class="sl-tog-sw" style="background:#FF4D4D;border-radius:50%;width:7px;height:7px;"></span> Bearish<span class="sl-tog-tip">Article sentiment on that date</span></button>
       </div>
 
       <!-- Controls -->
@@ -242,6 +252,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z"/></svg>
           Interpret Chart
         </button>
+        <span class="sl-interp-sub">Plain English explanation of current signals</span>
       </div>
       <div class="sl-interp-panel" id="sl-interpret-panel">
         <div class="sl-interp-hdr">AI Signal Interpretation</div>
@@ -365,7 +376,7 @@
     var prices=snaps.map(function(s){return s.price_close;}).filter(function(p){return p!=null;});
     if(!prices.length)return;
     var minP=Math.min.apply(null,prices)*0.975,maxP=Math.max.apply(null,prices)*1.025;
-    var PAD={top:8,right:36,bottom:28,left:50},CW=W-PAD.left-PAD.right,CH=H-PAD.top-PAD.bottom,N=snaps.length;
+    var PAD={top:8,right:52,bottom:28,left:50},CW=W-PAD.left-PAD.right,CH=H-PAD.top-PAD.bottom,N=snaps.length;
     function xOf(i){return PAD.left+(i/Math.max(N-1,1))*CW;}
     function yOf(p){return PAD.top+(1-(p-minP)/(maxP-minP))*CH;}
     function yE(v){return PAD.top+(1-Math.min(100,Math.max(0,v))/100)*CH;}
@@ -393,8 +404,25 @@
     if(SL_VIS['physics-energy']){var pf=SL_PHYSICS.filter(function(d){var ds=d.snapshot_date?.slice(0,10);return ds&&ds>=lo&&ds<=hi;});if(pf.length>1){var mA=Math.max.apply(null,pf.map(function(d){return d.narrative_energy_absolute||0;}).concat([1]));ctx.save();ctx.setLineDash([3,3]);ctx.strokeStyle='#FFB800';ctx.lineWidth=1.2;ctx.globalAlpha=0.7;ctx.beginPath();var ps=false;pf.forEach(function(d){var idx=dateIdx[d.snapshot_date.slice(0,10)];if(idx==null)return;var x=xOf(idx),nm=(d.narrative_energy_absolute/mA)*100,y2=yE(nm);if(!ps){ctx.moveTo(x,y2);ps=true;}else ctx.lineTo(x,y2);});ctx.stroke();ctx.restore();}}
     // Narrative Pressure
     if(SL_VIS['narr-pressure']){var prf=SL_PRESSURE.filter(function(d){var ds=d.snapshot_date?.slice(0,10);return ds&&ds>=lo&&ds<=hi;});if(prf.length>1){ctx.save();ctx.fillStyle='rgba(255,77,77,0.06)';var inD=false,dSX=0;prf.forEach(function(d,i){var idx=dateIdx[d.snapshot_date.slice(0,10)];if(idx==null)return;var x=xOf(idx);if(d.pressure>60&&!inD){inD=true;dSX=x;}else if((d.pressure<=60||i===prf.length-1)&&inD){var eX=d.pressure>60?x:xOf(dateIdx[prf[i-1]?.snapshot_date?.slice(0,10)]??idx);ctx.fillRect(dSX,PAD.top,eX-dSX,CH);inD=false;}});ctx.restore();ctx.save();ctx.setLineDash([3,3]);ctx.strokeStyle='#7B61FF';ctx.lineWidth=1.2;ctx.globalAlpha=0.7;ctx.beginPath();var prs=false;prf.forEach(function(d){var idx=dateIdx[d.snapshot_date.slice(0,10)];if(idx==null)return;var x=xOf(idx),y2=yE(d.pressure);if(!prs){ctx.moveTo(x,y2);prs=true;}else ctx.lineTo(x,y2);});ctx.stroke();ctx.restore();}}
-    // Temporal Energy
-    if(SL_VIS['temporal-energy']){var ef=SL_ENERGY_T.filter(function(d){var ds=d.snapshot_date?.slice(0,10);return ds&&ds>=lo&&ds<=hi;});if(ef.length>1){var mET=Math.max.apply(null,ef.map(function(d){return d.narrative_energy_t||0;}).concat([1]));ctx.save();ctx.setLineDash([]);ctx.strokeStyle='#38C8B8';ctx.lineWidth=1.8;ctx.globalAlpha=0.85;ctx.beginPath();var es=false;ef.forEach(function(d){var idx=dateIdx[d.snapshot_date.slice(0,10)];if(idx==null)return;var x=xOf(idx),nm=(d.narrative_energy_t/mET)*100,y2=yE(nm);if(!es){ctx.moveTo(x,y2);es=true;}else ctx.lineTo(x,y2);});ctx.stroke();ctx.restore();}}
+    // Temporal Energy background bands (before line so bands are behind)
+    if(SL_VIS['temporal-energy']){var ef=SL_ENERGY_T.filter(function(d){var ds=d.snapshot_date?.slice(0,10);return ds&&ds>=lo&&ds<=hi;});if(ef.length>1){var mET=Math.max.apply(null,ef.map(function(d){return d.narrative_energy_t||0;}).concat([1]));
+    // Background bands: teal tint when energy_t_normalized > 50, red tint when < 15
+    ctx.save();
+    ef.forEach(function(d,i){
+      var idx=dateIdx[d.snapshot_date.slice(0,10)];if(idx==null)return;
+      var x=xOf(idx),nm=(d.narrative_energy_t/mET)*100;
+      var nextIdx=i<ef.length-1?dateIdx[ef[i+1].snapshot_date.slice(0,10)]:null;
+      var x2=nextIdx!=null?xOf(nextIdx):x+((CW/Math.max(N-1,1))*0.5);
+      if(nm>50){ctx.fillStyle='rgba(56,200,184,0.06)';ctx.fillRect(x,PAD.top,x2-x,CH);}
+      else if(nm<15){ctx.fillStyle='rgba(255,77,77,0.06)';ctx.fillRect(x,PAD.top,x2-x,CH);}
+    });
+    ctx.restore();
+    // Right axis labels for Temporal Energy (0-100)
+    ctx.save();ctx.font='9px Inter, sans-serif';ctx.fillStyle='#38C8B8';ctx.textAlign='left';ctx.globalAlpha=0.7;
+    [0,50,100].forEach(function(v){ctx.fillText(v,W-PAD.right+4,yE(v)+3);});
+    ctx.restore();
+    // Temporal Energy line (solid teal, own 0-100 axis)
+    ctx.save();ctx.setLineDash([]);ctx.strokeStyle='#38C8B8';ctx.lineWidth=1.8;ctx.globalAlpha=0.85;ctx.beginPath();var es=false;ef.forEach(function(d){var idx=dateIdx[d.snapshot_date.slice(0,10)];if(idx==null)return;var x=xOf(idx),nm=(d.narrative_energy_t/mET)*100,y2=yE(nm);if(!es){ctx.moveTo(x,y2);es=true;}else ctx.lineTo(x,y2);});ctx.stroke();ctx.restore();}}
 
     // Sentiment dots
     var snapDates=snaps.map(function(s){return s.snapshot_date?.slice(0,10);});
