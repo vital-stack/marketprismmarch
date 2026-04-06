@@ -6605,16 +6605,34 @@ async function loadData(){
       var sectorMap={};
       DATA.forEach(function(r){
         var s=r.sector_name;if(!s)return;
-        if(!sectorMap[s])sectorMap[s]={count:0,traps:0,totalChg:0};
+        if(!sectorMap[s])sectorMap[s]={count:0,traps:0,totalChg:0,dirChg:0,surging:0,breaking:0};
         sectorMap[s].count++;
-        sectorMap[s].totalChg+=Math.abs(r.price_change_pct||0);
+        var chg=Number(r.price_change_pct)||0;
+        sectorMap[s].totalChg+=Math.abs(chg);
+        sectorMap[s].dirChg+=chg; // directional (positive = sector up, negative = down)
         if(r.prism_verdict==='Narrative Trap')sectorMap[s].traps++;
+        if(r.narrative_state==='Surging')sectorMap[s].surging++;
+        if(r.narrative_state==='Breaking')sectorMap[s].breaking++;
       });
-      var sectorArr=Object.keys(sectorMap).map(function(s){return{name:s,score:Math.min(100,Math.round(sectorMap[s].totalChg/sectorMap[s].count*20)),traps:sectorMap[s].traps};});
-      sectorArr.sort(function(a,b){return b.score-a.score;});
-      drSectorList.innerHTML=sectorArr.slice(0,12).map(function(s){
-        var c=s.score>=75?'#00DE94':s.score>=65?'#00AEFF':s.traps>0?'#FF4D4D':'var(--mp-text-muted)';
-        return '<div class="dr-sl-item"><div class="dr-sl-name">'+esc(s.name)+(s.traps>0?' <span style="color:#FF4D4D;font-size:10px;">\u26A0'+s.traps+'</span>':'')+'</div><div class="dr-sl-bar"><div class="dr-sl-fill" style="width:'+s.score+'%;background:'+c+';"></div></div><div class="dr-sl-score" style="color:'+c+';">'+s.score+'</div></div>';
+      var sectorArr=Object.keys(sectorMap).map(function(s){
+        var d=sectorMap[s];
+        var avgChg=d.dirChg/d.count; // average directional change
+        return{name:s,avgChg:avgChg,activity:d.totalChg/d.count,traps:d.traps,surging:d.surging,breaking:d.breaking,count:d.count};
+      });
+      // Sort by absolute activity (most volatile sectors first)
+      sectorArr.sort(function(a,b){return b.activity-a.activity;});
+      drSectorList.innerHTML=sectorArr.slice(0,10).map(function(s){
+        var isUp=s.avgChg>=0;
+        var pct=Math.abs(s.avgChg).toFixed(2);
+        var barWidth=Math.min(100,Math.round(s.activity*25));
+        var c=isUp?'#00DE94':'#FF4D4D';
+        var arrow=isUp?'\u25B2':'\u25BC';
+        var trapTag=s.traps>0?' <span style="color:#FF4D4D;font-size:9px;">\u26A0'+s.traps+'</span>':'';
+        return '<div class="dr-sl-item">'
+          +'<div class="dr-sl-name">'+esc(s.name)+trapTag+'</div>'
+          +'<div class="dr-sl-bar"><div class="dr-sl-fill" style="width:'+barWidth+'%;background:'+c+';"></div></div>'
+          +'<div class="dr-sl-score" style="color:'+c+';font-size:11px;">'+arrow+pct+'%</div>'
+        +'</div>';
       }).join('');
     }
     // Narrative breakdown
