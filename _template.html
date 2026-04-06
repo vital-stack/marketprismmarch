@@ -14454,8 +14454,7 @@ function renderEmpty(b){
 }
 
 async function loadLeaderboard(){
-  if(LB_BOOTED) return;
-  LB_BOOTED=true;
+  _dateCache={}; // Clear date cache so we always get fresh snapshot dates
   var loading=document.getElementById('lb-loading');
   var error=document.getElementById('lb-error');
   var body=document.getElementById('lb-body');
@@ -14500,6 +14499,7 @@ async function loadLeaderboard(){
     });
     if(loading) loading.style.display='none';
     if(body) body.style.display='block';
+    updateLBDate();
   } catch(e){
     if(loading) loading.style.display='none';
     if(error){error.style.display='block';error.textContent='Error loading leaderboard: '+e.message;}
@@ -14510,12 +14510,6 @@ async function loadLeaderboard(){
 window.refreshLeaderboard=async function refreshLeaderboard(){
   var btn=document.getElementById('lb-refresh-btn');
   if(btn) btn.classList.add('spinning');
-  LB_BOOTED=false;
-  _dateCache={};
-  var loading=document.getElementById('lb-loading');
-  var body=document.getElementById('lb-body');
-  if(loading) loading.style.display='';
-  if(body) body.style.display='none';
   await loadLeaderboard();
   updateLBDate();
   if(btn) btn.classList.remove('spinning');
