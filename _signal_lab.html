@@ -344,7 +344,52 @@
   .regime-metric { font-size: 12px; color: var(--mp-text-secondary); }
   .regime-metric span { font-weight: 600; color: var(--mp-text-primary); }
 
-  /* ── Responsive ── */
+  /* ── AI Interpretation ── */
+  .interpret-bar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 0 20px 12px;
+  }
+  .interpret-btn {
+    display: flex; align-items: center; gap: 6px;
+    font-family: var(--font-body); font-size: 12px; font-weight: 500;
+    padding: 7px 16px; border-radius: 8px;
+    border: 1px solid var(--mp-border-mid);
+    background: rgba(56,200,184,0.06);
+    color: #38C8B8; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .interpret-btn:hover { background: rgba(56,200,184,0.12); border-color: rgba(56,200,184,0.25); }
+  .interpret-btn:disabled { opacity: 0.4; cursor: default; }
+  .interpret-btn svg { width: 14px; height: 14px; }
+  .interpret-panel {
+    margin: 0 20px 16px;
+    padding: 16px 20px;
+    background: var(--mp-deep);
+    border: 1px solid var(--mp-border);
+    border-left: 3px solid #38C8B8;
+    border-radius: 10px;
+    display: none;
+  }
+  .interpret-panel.visible { display: block; }
+  .interpret-header {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: #38C8B8; font-weight: 600; margin-bottom: 8px;
+  }
+  .interpret-body {
+    font-size: 13px; color: var(--mp-text-secondary); line-height: 1.65;
+  }
+  .interpret-body strong { color: var(--mp-text-primary); }
+  .interpret-body em { color: #38C8B8; font-style: normal; }
+  .interpret-loading {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: var(--mp-text-tertiary);
+  }
+  .interpret-loading .dot-pulse {
+    display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+    background: #38C8B8; animation: pulse 1s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 0.3; } 50% { opacity: 1; } }
+
   /* ── Beta gate ── */
   .beta-gate {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -536,6 +581,18 @@
           <div class="legend-item"><div class="leg-line" style="background:#7B61FF;opacity:0.7;border-top:2px dashed #7B61FF;height:0;width:14px;"></div> Narrative Pressure</div>
           <div class="legend-item"><div class="leg-line" style="background:#38C8B8;opacity:0.85;height:2px;width:14px;"></div> Temporal Energy</div>
         </div>
+      </div>
+
+      <!-- AI Interpretation -->
+      <div class="interpret-bar">
+        <button class="interpret-btn" id="interpret-btn" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z"/></svg>
+          Interpret Chart
+        </button>
+      </div>
+      <div class="interpret-panel" id="interpret-panel">
+        <div class="interpret-header">AI Signal Interpretation</div>
+        <div class="interpret-body" id="interpret-body"></div>
       </div>
 
       <!-- Bear stories -->
@@ -1122,10 +1179,96 @@ async function loadSignalLab(ticker) {
     // Restore canvas
     document.getElementById('chart-outer').innerHTML = '<canvas id="price-canvas"></canvas><div class="chart-tip" id="chart-tip"></div><div class="story-popup" id="story-popup"><button class="popup-close" id="popup-close">&#10005;</button><div class="popup-date" id="popup-date"></div><div class="popup-headline" id="popup-headline"></div><div class="popup-body" id="popup-body"></div><div id="popup-vms"></div></div>';
     document.getElementById('popup-close').onclick = () => document.getElementById('story-popup').classList.remove('visible');
-    requestAnimationFrame(() => { renderChart(); buildBearList(); detectRegime(); });
+    requestAnimationFrame(() => {
+      renderChart(); buildBearList(); detectRegime();
+      document.getElementById('interpret-btn').disabled = false;
+      document.getElementById('interpret-panel').classList.remove('visible');
+    });
   } catch (err) {
     document.getElementById('chart-outer').innerHTML = '<div class="chart-no-data" style="color:var(--mp-red);">' + esc(err.message) + '</div>';
   }
+}
+
+// ── AI Chart Interpretation ──
+async function interpretChart() {
+  const btn = document.getElementById('interpret-btn');
+  const panel = document.getElementById('interpret-panel');
+  const body = document.getElementById('interpret-body');
+  if (!CURRENT_TICKER || !ALL_SNAPS.length) return;
+
+  btn.disabled = true;
+  panel.classList.add('visible');
+  body.innerHTML = '<div class="interpret-loading"><span class="dot-pulse"></span> Analyzing signal patterns...</div>';
+
+  // Build signal summary from current data
+  const snaps = filterSnaps();
+  const days = getActiveDays() || 'all';
+  const lo = snaps[0]?.snapshot_date?.slice(0,10) || '';
+  const hi = snaps[snaps.length-1]?.snapshot_date?.slice(0,10) || '';
+  const priceStart = snaps[0]?.price_close;
+  const priceEnd = snaps[snaps.length-1]?.price_close;
+  const priceChg = priceStart ? (((priceEnd - priceStart) / priceStart) * 100).toFixed(2) : '?';
+
+  // Get latest signal values
+  const latestDecay = ALL_DECAY.filter(d => d.snapshot_date?.slice(0,10) <= hi).slice(-5);
+  const latestPhysics = ALL_PHYSICS.filter(d => d.snapshot_date?.slice(0,10) <= hi).slice(-5);
+  const latestPressure = ALL_PRESSURE.filter(d => d.snapshot_date?.slice(0,10) <= hi).slice(-5);
+  const latestET = ALL_ENERGY_T.filter(d => d.snapshot_date?.slice(0,10) <= hi).slice(-5);
+
+  // Normalize yellow and energy_t for context
+  const maxAbs = Math.max(...ALL_PHYSICS.filter(d => d.snapshot_date?.slice(0,10) >= lo && d.snapshot_date?.slice(0,10) <= hi).map(d => d.narrative_energy_absolute || 0), 1);
+  const maxET = Math.max(...ALL_ENERGY_T.filter(d => d.snapshot_date?.slice(0,10) >= lo && d.snapshot_date?.slice(0,10) <= hi).map(d => d.narrative_energy_t || 0), 1);
+
+  function fmtSignalRow(d, field, max) {
+    const date = d.snapshot_date?.slice(0,10);
+    const raw = d[field] || 0;
+    const norm = max ? ((raw / max) * 100).toFixed(1) : raw;
+    return date + ': ' + norm;
+  }
+
+  let signalData = 'Ticker: ' + CURRENT_TICKER + '\n';
+  signalData += 'Timeframe: ' + days + ' days (' + lo + ' to ' + hi + ')\n';
+  signalData += 'Price: $' + (priceStart?.toFixed(2) || '?') + ' -> $' + (priceEnd?.toFixed(2) || '?') + ' (' + priceChg + '%)\n\n';
+
+  signalData += 'Narrative Energy (blue, last 5 points, 0-100):\n';
+  latestDecay.forEach(d => { signalData += '  ' + d.snapshot_date?.slice(0,10) + ': ' + (d.energy_remaining_pct ?? 0) + '\n'; });
+
+  signalData += '\nPhysics Energy (yellow, normalized 0-100):\n';
+  latestPhysics.forEach(d => { signalData += '  ' + fmtSignalRow(d, 'narrative_energy_absolute', maxAbs) + '\n'; });
+
+  signalData += '\nNarrative Pressure (purple, 0-100):\n';
+  latestPressure.forEach(d => { signalData += '  ' + d.snapshot_date?.slice(0,10) + ': ' + (d.pressure?.toFixed(1) || 0) + '\n'; });
+
+  signalData += '\nTemporal Energy (teal, normalized 0-100):\n';
+  latestET.forEach(d => { signalData += '  ' + fmtSignalRow(d, 'narrative_energy_t', maxET) + '\n'; });
+
+  // Include price trend context
+  signalData += '\nRecent price points:\n';
+  snaps.slice(-10).forEach(s => { signalData += '  ' + s.snapshot_date?.slice(0,10) + ': $' + s.price_close?.toFixed(2) + '\n'; });
+
+  try {
+    const resp = await fetch('/api/interpret-chart', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ticker: CURRENT_TICKER, signalData: signalData })
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      body.innerHTML = '<span style="color:var(--mp-red);">' + esc(err.error || 'Failed to get interpretation') + '</span>';
+      btn.disabled = false;
+      return;
+    }
+    const result = await resp.json();
+    // Render markdown-lite (bold, italic, line breaks)
+    let html = esc(result.interpretation || 'No interpretation generated.');
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    html = html.replace(/\n/g, '<br>');
+    body.innerHTML = html;
+  } catch (err) {
+    body.innerHTML = '<span style="color:var(--mp-red);">Error: ' + esc(err.message) + '</span>';
+  }
+  btn.disabled = false;
 }
 
 // ── Event handlers ──
@@ -1162,6 +1305,9 @@ document.getElementById('story-sort')?.addEventListener('change', () => {
   document.getElementById('story-popup')?.classList.remove('visible');
   if (ALL_SNAPS.length) renderChart();
 });
+
+// Interpret button
+document.getElementById('interpret-btn').onclick = interpretChart;
 
 // Theme toggle
 document.getElementById('theme-toggle').onclick = () => {
