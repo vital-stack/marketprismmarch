@@ -2972,13 +2972,6 @@ body{
 .strat-scene:hover .gc-foil{opacity:1;animation:gcFoilScan 2s linear infinite;}
 @keyframes gcFoilScan{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
-/* ── Card Watermark ── */
-.gc-watermark{
-  position:absolute;bottom:50px;right:12px;width:60px;height:60px;
-  pointer-events:none;z-index:1;opacity:0.04;
-  background:url('/assets/Market-Prism-Logo-Light.png') center/contain no-repeat;
-}
-
 /* Tier accent bar on top */
 .strat-front::after,.strat-back::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;z-index:4;}
 .strat-scene.tier-platinum .strat-front::after,.strat-scene.tier-platinum .strat-back::after{
@@ -3095,38 +3088,12 @@ body{
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
 
 /* Direction indicator strip */
-/* ── Regime Name (hero element) ── */
-.gc-regime-name{
-  text-align:center;padding:12px 20px 6px;
-  font-family:'Inter','DM Sans',system-ui,sans-serif;
-  font-size:20px;font-weight:800;letter-spacing:0.04em;text-transform:uppercase;
-  background:linear-gradient(135deg,#00AEFF,#00DE94);
-  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-}
-.gc-regime-name.bear{background:linear-gradient(135deg,#FF4D4D,#FFB800);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
-.gc-regime-name.bull{background:linear-gradient(135deg,#00DE94,#38C8B8);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
-
 .gc-direction-strip{
-  display:flex;align-items:center;justify-content:space-between;gap:6px;
-  padding:4px 20px 8px;
+  display:flex;align-items:center;gap:6px;
+  padding:0 20px 8px;
 }
-.gc-dir-left{display:flex;align-items:center;gap:6px;}
 .gc-dir-arrow{font-size:16px;font-weight:700;}
-.gc-dir-label{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-family:var(--font-body);}
-.gc-dir-window{font-size:12px;font-weight:600;color:var(--mp-text-muted);font-family:var(--font-body);}
-
-/* ── Win Rate Row ── */
-.gc-winrate-row{padding:6px 20px 2px;display:flex;align-items:center;gap:10px;}
-.gc-winrate-label{font-size:11px;color:var(--mp-text-muted);text-transform:uppercase;letter-spacing:.06em;font-family:var(--font-body);width:72px;flex-shrink:0;}
-.gc-winrate-track{flex:1;height:6px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;}
-.gc-winrate-fill{height:100%;border-radius:4px;background:#38C8B8;}
-.gc-winrate-val{font-size:14px;font-weight:700;color:#38C8B8;font-family:var(--font-body);width:46px;text-align:right;}
-
-/* ── Compact Footer ── */
-.gc-compact-footer{
-  display:flex;align-items:center;justify-content:space-between;gap:8px;
-  padding:10px 20px;
-}
+.gc-dir-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;font-family:var(--font-body);}
 
 /* Flip hint */
 .gc-flip-hint{
@@ -10748,12 +10715,11 @@ function buildStratCard(d){
   /* ── FRONT FACE ── */
   var front='<div class="strat-front">'
     +'<div class="gc-foil"></div>'
-    +'<div class="gc-watermark"></div>'
     +'<div class="gc-header">'
       +'<div class="gc-header-left">'
         +logoHTML(d.ticker,'sm')
         +'<div>'
-          +'<div class="gc-ticker">'+gcEsc(d.ticker)+' <span class="info-tip" data-tip="'+gcEsc(desc)+'" style="vertical-align:middle;"><i class="info-icon">i</i></span></div>'
+          +'<div class="gc-ticker">'+gcEsc(d.ticker)+'</div>'
           +'<div class="gc-sector">'+sector+(industry?' \u00B7 '+industry:'')+'</div>'
         +'</div>'
       +'</div>'
@@ -10762,27 +10728,21 @@ function buildStratCard(d){
         +'<div class="gc-change '+chClass+'">'+chSign+' '+Math.abs(chPct).toFixed(2)+'%</div>'
       +'</div>'
     +'</div>'
-    +'<div class="gc-regime-name '+(d.direction==='BEARISH'?'bear':'bull')+'">'+gcEsc(moveName)+'</div>'
+    +'<div class="gc-tier-badge '+tier+'"><span class="gc-tier-icon">'+tierIcon+'</span> '+gcEsc((d.card_tier||'SIGNAL').toUpperCase())+(gcWinRate(d)?' \u00B7 '+gcWinRate(d)+' win rate':'')+'</div>'
+    +'<div class="gc-move-name '+dirClass+'">'+gcEsc(moveName)+'</div>'
     +'<div class="gc-direction-strip">'
-      +'<div class="gc-dir-left">'
-        +'<span class="gc-dir-arrow" style="color:'+phaseCol+';">'+(d.direction==='BEARISH'?'\u25BC':d.direction==='BULLISH'?'\u25B2':'\u25C6')+'</span>'
-        +'<span class="gc-dir-label" style="color:'+phaseCol+';">'+gcAction(d)+'</span>'
-      +'</div>'
-      +(daysLeft?'<span class="gc-dir-window">'+daysLeft+'</span>':'')
+      +'<span class="gc-dir-arrow" style="color:'+phaseCol+';">'+(d.direction==='BEARISH'?'\u25BC':d.direction==='BULLISH'?'\u25B2':'\u25C6')+'</span>'
+      +'<span class="gc-dir-label" style="color:'+phaseCol+';">'+gcAction(d)+'</span>'
     +'</div>'
-    +(gcWinRate(d)?'<div class="gc-winrate-row">'
-      +'<span class="gc-winrate-label">Win Rate</span>'
-      +'<div class="gc-winrate-track"><div class="gc-winrate-fill" style="width:'+gcWinRate(d)+';"></div></div>'
-      +'<span class="gc-winrate-val">'+gcWinRate(d)+'</span>'
-    +'</div>':'')
     +'<div class="gc-conf-row">'
       +'<span class="gc-conf-label">Confidence</span>'
       +'<div class="gc-conf-track"><div class="gc-conf-fill" style="width:'+confPct+'%;background:'+confCol+';"></div></div>'
       +'<span class="gc-conf-val" style="color:'+confCol+';">'+confPct+'%</span>'
     +'</div>'
-    +'<div class="gc-compact-footer">'
-      +'<div class="gc-tier-badge '+tier+'"><span class="gc-tier-icon">'+tierIcon+'</span> '+gcEsc((d.card_tier||'SIGNAL').toUpperCase())+'</div>'
-      +'<div class="gc-expires"><span class="gc-expires-icon">\u23F3</span> '+expiresStr+(daysLeft?' <span class="gc-expires-days">('+daysLeft+')</span>':'')+'</div>'
+    +'<div class="gc-description">'+desc+'</div>'
+    +'<div class="gc-meta-row">'
+      +'<div class="gc-expires"><span class="gc-expires-icon">\u23F3</span> Play Expires: '+expiresStr+(daysLeft?' <span class="gc-expires-days">('+daysLeft+')</span>':'')+'</div>'
+      +'<div class="gc-phase-badge"><span class="gc-phase-dot" style="background:'+phaseCol+';"></span>'+phase+' \u00B7 '+status+'</div>'
     +'</div>'
     +'<div class="gc-flip-hint">'+FLIP_ROTATE_ICON+' Tap for intel</div>'
   +'</div>';
