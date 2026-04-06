@@ -2902,15 +2902,35 @@ body{
 .strat-filter-chip.active{border-color:var(--mp-cyan);color:var(--mp-cyan);background:rgba(0,174,255,0.08);}
 .strat-cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:24px;padding-bottom:40px;}
 
+/* ── Collection Stats ── */
+.collection-stats{
+  display:flex;gap:0;margin-bottom:20px;
+  background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:12px;overflow:hidden;
+}
+.cs-stat{
+  flex:1;padding:14px 16px;display:flex;flex-direction:column;align-items:center;gap:4px;
+  border-right:1px solid var(--mp-border);
+}
+.cs-stat:last-child{border-right:none;}
+.cs-val{font-size:22px;font-weight:700;color:var(--mp-text-primary);font-family:var(--font-body);}
+.cs-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--mp-text-muted);font-family:var(--font-body);}
+@media(max-width:768px){.collection-stats{flex-wrap:wrap;}.cs-stat{flex:1 1 33%;min-width:80px;}}
+
 /* ── Flip Card Scene ── */
 .strat-scene{
   perspective:1400px;cursor:pointer;
-  animation:fadeUp .4s ease both;
+  animation:cardReveal .6s cubic-bezier(0.16,1,0.3,1) both;
 }
-.strat-scene:nth-child(1){animation-delay:.04s}.strat-scene:nth-child(2){animation-delay:.09s}
-.strat-scene:nth-child(3){animation-delay:.14s}.strat-scene:nth-child(4){animation-delay:.19s}
-.strat-scene:nth-child(5){animation-delay:.24s}.strat-scene:nth-child(6){animation-delay:.29s}
-@keyframes fadeUp{from{opacity:0;transform:translateY(12px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+.strat-scene:nth-child(1){animation-delay:.06s}.strat-scene:nth-child(2){animation-delay:.14s}
+.strat-scene:nth-child(3){animation-delay:.22s}.strat-scene:nth-child(4){animation-delay:.30s}
+.strat-scene:nth-child(5){animation-delay:.38s}.strat-scene:nth-child(6){animation-delay:.46s}
+.strat-scene:nth-child(7){animation-delay:.54s}.strat-scene:nth-child(8){animation-delay:.62s}
+@keyframes cardReveal{
+  0%{opacity:0;transform:translateY(30px) scale(0.92) rotateX(8deg);filter:blur(4px);}
+  60%{opacity:1;filter:blur(0);}
+  80%{transform:translateY(-4px) scale(1.01) rotateX(0deg);}
+  100%{opacity:1;transform:translateY(0) scale(1) rotateX(0deg);filter:blur(0);}
+}
 
 .strat-flipper{
   position:relative;width:100%;
@@ -4242,28 +4262,17 @@ body{
       Leaderboard
       <span class="nav-item-badge teal" id="nav-badge-leaderboard">New</span>
     </button>
-    <button class="nav-item" data-tab="snapshots" onclick="switchTab('snapshots',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6"/></svg>
-      Ticker Snapshots
-      <span class="nav-item-badge blue" id="nav-badge-snapshots">—</span>
-    </button>
-    <button class="nav-item" data-tab="trapradar" onclick="switchTab('trapradar',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z"/><path d="M12 15.75h.007v.008H12v-.008z"/></svg>
-      Trap Radar
-      <span class="nav-item-badge" style="background:rgba(255,77,77,0.15);color:#FF4D4D;" id="nav-badge-trapradar">New</span>
-    </button>
 
-    <div class="nav-section-lbl">Research</div>
-    <button class="nav-item" data-tab="signallab" onclick="switchTab('signallab',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"/></svg>
-      Signal Lab
-      <span class="nav-item-badge" style="background:rgba(56,200,184,0.12);color:#38C8B8;border-color:rgba(56,200,184,0.25);font-size:10px;">NEW</span>
-    </button>
     <div class="nav-section-lbl">Tools</div>
     <button class="nav-item" data-tab="cards" onclick="switchTab('cards',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="8" height="13" rx="2"/><rect x="14" y="3" width="8" height="13" rx="2"/><path d="M6 19h12"/><path d="M10 21h4"/></svg>
       Trading Cards
       <span class="nav-item-badge teal" id="nav-badge-cards">New</span>
+    </button>
+    <button class="nav-item" data-tab="calendar" onclick="switchTab('calendar',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/><path d="M8.25 15h.008v.008H8.25V15zm0 2.25h.008v.008H8.25V17.25zm2.25-2.25h.008v.008H10.5V15zm0 2.25h.008v.008H10.5V17.25zm2.25-2.25h.008v.008H12.75V15zm0 2.25h.008v.008H12.75V17.25zm2.25-2.25h.008v.008H15V15zm0 2.25h.008v.008H15V17.25z"/></svg>
+      Trading Calendar
+      <span class="nav-item-badge teal" id="nav-badge-calendar">New</span>
     </button>
     <button class="nav-item" data-tab="memes" onclick="switchTab('memes',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z"/></svg>
@@ -4271,11 +4280,11 @@ body{
       <span class="nav-item-badge teal" id="nav-badge-memes">New</span>
     </button>
 
-    <div class="nav-section-lbl">Labs</div>
-    <button class="nav-item" data-tab="calendar" onclick="switchTab('calendar',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/><path d="M8.25 15h.008v.008H8.25V15zm0 2.25h.008v.008H8.25V17.25zm2.25-2.25h.008v.008H10.5V15zm0 2.25h.008v.008H10.5V17.25zm2.25-2.25h.008v.008H12.75V15zm0 2.25h.008v.008H12.75V17.25zm2.25-2.25h.008v.008H15V15zm0 2.25h.008v.008H15V17.25z"/></svg>
-      Trading Calendar
-      <span class="nav-item-badge teal" id="nav-badge-calendar">New</span>
+    <div class="nav-section-lbl">Research</div>
+    <button class="nav-item" data-tab="signallab" onclick="switchTab('signallab',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"/></svg>
+      Signal Lab
+      <span class="nav-item-badge" style="background:rgba(56,200,184,0.12);color:#38C8B8;border-color:rgba(56,200,184,0.25);font-size:10px;">NEW</span>
     </button>
     <button class="nav-item" data-tab="scorer" onclick="switchTab('scorer',this)" style="position:relative;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"/></svg>
@@ -4858,6 +4867,15 @@ body{
         <div class="strat-filter-chip" data-filter="bullish">Bullish <span class="info-tip" data-tip="Signals where fundamentals, momentum, or energy patterns support upside. Narrative is backed by filings and institutional positioning."><i class="info-icon">i</i></span></div>
       </div>
 
+      <!-- Collection Stats -->
+      <div class="collection-stats" id="collection-stats" style="display:none;">
+        <div class="cs-stat"><span class="cs-val" id="cs-total">—</span><span class="cs-label">Cards Seen</span></div>
+        <div class="cs-stat"><span class="cs-val" style="color:#E8B4F8;" id="cs-unicorn">—</span><span class="cs-label">Unicorn</span></div>
+        <div class="cs-stat"><span class="cs-val" style="color:#00AEFF;" id="cs-platinum">—</span><span class="cs-label">Platinum</span></div>
+        <div class="cs-stat"><span class="cs-val" style="color:#FFB800;" id="cs-gold">—</span><span class="cs-label">Gold</span></div>
+        <div class="cs-stat"><span class="cs-val" style="color:#00DE94;" id="cs-winrate">—</span><span class="cs-label">System Win Rate</span></div>
+      </div>
+
       <div class="tcg-header">
         <div></div>
         <span class="tcg-count" id="tcg-count"></span>
@@ -5169,8 +5187,8 @@ document.querySelectorAll('.page-header p').forEach(function(p,i){
   if(i===0) return;
 });
 // ── Tab switching (hook-based — sections register via onTabSwitch) ────────────
-var TABS = ['daily','signallab','snapshots','memes','cards','calendar','trapradar','leaderboard','scorer','help'];
-var TAB_TITLES = {daily:'Daily Brief',signallab:'Signal Lab',snapshots:'Ticker Snapshots',memes:'Market Sharing',cards:'Trading Cards',calendar:'Trading Calendar',trapradar:'Trap Radar',leaderboard:'Leaderboard',scorer:'Score Any Stock',help:'Help & Account'};
+var TABS = ['daily','leaderboard','cards','calendar','memes','signallab','scorer','help'];
+var TAB_TITLES = {daily:'Daily Brief',leaderboard:'Leaderboard',cards:'Trading Cards',calendar:'Trading Calendar',memes:'Market Sharing',signallab:'Signal Lab',scorer:'Score Any Stock',help:'Help & Account'};
 var _tabHooks = [];
 /** Register a callback to run after any tab switch. fn(id) */
 function onTabSwitch(fn){ if(typeof fn==='function') _tabHooks.push(fn); }
@@ -10660,11 +10678,46 @@ async function loadStrategyData(){
 
     STRAT_DATA=rows;
     renderStratCards(STRAT_FILTER);
+    loadCollectionStats();
   }catch(e){
     console.warn('[MP] Trade cards gallery load failed:',e);
     STRAT_DATA=[];
     renderStratCards(STRAT_FILTER);
   }
+}
+
+// ── Collection Stats ─────────────────────────────────────────────────────────
+async function loadCollectionStats(){
+  try{
+    // Count cards by tier from card_predictions (historical)
+    var predRows=await restFetch('card_predictions',{select:'card_tier',order:'snapshot_date.desc'});
+    // Count from current STRAT_DATA as well
+    var allCards=predRows||[];
+    var total=allCards.length;
+    var unicorn=allCards.filter(function(r){return(r.card_tier||'').toUpperCase()==='UNICORN';}).length;
+    var platinum=allCards.filter(function(r){return(r.card_tier||'').toUpperCase()==='PLATINUM';}).length;
+    var gold=allCards.filter(function(r){return(r.card_tier||'').toUpperCase()==='GOLD';}).length;
+
+    // System win rate from signal_combinations_log
+    var winRows=await restFetch('signal_combinations_log',{select:'direction_correct_7d',limit:'500',order:'snapshot_date.desc'});
+    var wins=0,counted=0;
+    if(winRows&&winRows.length){
+      winRows.forEach(function(r){
+        if(r.direction_correct_7d!=null){counted++;if(r.direction_correct_7d)wins++;}
+      });
+    }
+    var winRate=counted>0?Math.round(wins/counted*100):0;
+
+    // Populate UI
+    var el=document.getElementById('collection-stats');
+    if(el)el.style.display='flex';
+    var setVal=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
+    setVal('cs-total',total);
+    setVal('cs-unicorn',unicorn);
+    setVal('cs-platinum',platinum);
+    setVal('cs-gold',gold);
+    setVal('cs-winrate',winRate+'%');
+  }catch(e){console.warn('[CS] Collection stats failed:',e);}
 }
 
 function renderCardsGallery(){
