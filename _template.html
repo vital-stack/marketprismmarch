@@ -7206,83 +7206,53 @@ async function loadValuePicks(){
   }catch(e){console.warn('[VP] Value picks failed:',e);return[];}
 }
 
-// ── Day Trade Signals (momentum + dark pool) ────────────────────────────────
-async function loadDayTrades(){
-  try{
-    // Get latest + previous snapshot dates
-    var dateRows=await restFetch('ticker_snapshots',{select:'snapshot_date',order:'snapshot_date.desc',limit:'2'});
-    if(!dateRows||dateRows.length<2)return[];
-    var today=dateRows[0].snapshot_date;
-    var yesterday=dateRows[1].snapshot_date;
+// ── Day Trade Signals (from DATA — no extra API calls) ───────────────────────
+function buildDayTrades(){
+  if(!DATA||!DATA.length)return[];
+  // Build set of tickers already in trade_cards_live
+  var existingSet={};
+  if(CARD_DATA)CARD_DATA.forEach(function(c){existingSet[c.ticker]=true;});
 
-    // Fetch today + yesterday prices, and dark pool data in parallel
-    var todayP=restFetch('ticker_snapshots',{select:'ticker,price_close',snapshot_date:'eq.'+today});
-    var yesterP=restFetch('ticker_snapshots',{select:'ticker,price_close',snapshot_date:'eq.'+yesterday});
-    // Use latest dark pool data (may lag a few days behind snapshots)
-    var dpP=restFetch('ticker_dark_pool',{select:'ticker,dark_pool_signal,smart_money_direction,sample_date',order:'sample_date.desc',limit:'200'});
+  var signals=[];
+  DATA.forEach(function(r){
+    if(existingSet[r.ticker])return;
+    var changePct=Number(r.price_change_pct)||0;
+    if(Math.abs(changePct)<1.5)return;
 
-    var todaySnaps=await todayP;
-    var yesterSnaps=await yesterP;
-    var dpRows=await dpP;
+    var price=Number(r.price)||Number(r.price_close)||0;
+    if(!price)return;
 
-    if(!todaySnaps||!yesterSnaps)return[];
-    var yesterMap={};yesterSnaps.forEach(function(s){yesterMap[s.ticker]=Number(s.price_close);});
-    // Dedupe dark pool: first occurrence per ticker is latest (ordered by sample_date desc)
-    var dpMap={};if(dpRows)dpRows.forEach(function(d){if(!dpMap[d.ticker])dpMap[d.ticker]=d;});
+    // Use narrative state + verdict to refine direction
+    var state=(r.narrative_state||'').toLowerCase();
+    var verdict=(r.prism_verdict||'').toLowerCase();
+    var isTrap=verdict.indexOf('trap')>=0||state.indexOf('trap')>=0;
+    var isBreaking=state==='breaking'||verdict==='breaking';
+    var isSurging=state==='surging';
 
-    // Also get tickers already in trade_cards_live to avoid duplicates
-    var existingCards=await restFetch('trade_cards_live',{select:'ticker'});
-    var existingSet={};if(existingCards)existingCards.forEach(function(c){existingSet[c.ticker]=true;});
+    var action='',direction='';
+    if(changePct>0&&(isTrap||isBreaking)){
+      action='Short';direction='BEARISH'; // price up but narrative is bearish
+    } else if(changePct>0){
+      action='Ride up';direction='BULLISH';
+    } else if(changePct<0&&isSurging){
+      action='Buy the dip';direction='BULLISH'; // price down but narrative is bullish
+    } else {
+      action='Short';direction='BEARISH';
+    }
 
-    var signals=[];
-    todaySnaps.forEach(function(s){
-      if(existingSet[s.ticker])return; // skip if already a trade card signal
-      var price=Number(s.price_close);
-      var prev=yesterMap[s.ticker];
-      if(!price||!prev)return;
-      var changePct=((price-prev)/prev)*100;
-      if(Math.abs(changePct)<1.5)return; // need >1.5% move
-
-      var dp=dpMap[s.ticker]||{};
-      var smartDir=(dp.smart_money_direction||'').toUpperCase();
-      var dpSignal=(dp.dark_pool_signal||'').toUpperCase();
-
-      // Determine day trade signal based on momentum + dark pool
-      var action='',direction='',reason='';
-      if(changePct>0&&smartDir==='SELLING'){
-        action='Short';direction='BEARISH';reason='Pop + smart money selling';
-      } else if(changePct>0&&smartDir==='BUYING'){
-        action='Ride up';direction='BULLISH';reason='Momentum + smart money buying';
-      } else if(changePct<0&&smartDir==='BUYING'){
-        action='Buy the dip';direction='BULLISH';reason='Dip + smart money buying';
-      } else if(changePct<0&&smartDir==='SELLING'){
-        action='Short';direction='BEARISH';reason='Breakdown confirmed';
-      } else if(changePct>0){
-        action='Ride up';direction='BULLISH';reason='Momentum';
-      } else {
-        action='Short';direction='BEARISH';reason='Selling pressure';
-      }
-
-      // Confidence: bigger move + dark pool confirmation = higher
-      var conf=Math.min(1,Math.abs(changePct)/10+0.4);
-      if(smartDir&&((changePct>0&&smartDir==='SELLING')||(changePct<0&&smartDir==='BUYING')))conf+=0.15; // divergence bonus
-      if(dpSignal==='HEAVY')conf+=0.1;
-      conf=Math.min(1,conf);
-
-      signals.push({
-        ticker:s.ticker,price:price,direction:direction,
-        primary_label:action==='Short'?'NARRATIVE_TRAP':action==='Ride up'?'MOMENTUM_CONFIRMED':action==='Buy the dip'?'ACCUMULATE':'MOMENTUM_CONFIRMED',
-        _action:action,_reason:reason,
-        _changePct:changePct,
-        _dpSignal:dpSignal,_smartDir:smartDir,
-        confidence:conf,regime_adjusted_confidence:conf
-      });
+    signals.push({
+      ticker:r.ticker,price:price,direction:direction,
+      primary_label:direction==='BEARISH'?'NARRATIVE_TRAP':'MOMENTUM_CONFIRMED',
+      _action:action,
+      _changePct:changePct,
+      _dpSignal:'',_smartDir:'',
+      confidence:Math.min(1,Math.abs(changePct)/8+0.4),
+      regime_adjusted_confidence:Math.min(1,Math.abs(changePct)/8+0.4)
     });
+  });
 
-    // Sort by absolute move size (biggest movers first)
-    signals.sort(function(a,b){return Math.abs(b._changePct)-Math.abs(a._changePct);});
-    return signals;
-  }catch(e){console.warn('[DT] Day trades failed:',e);return[];}
+  signals.sort(function(a,b){return Math.abs(b._changePct)-Math.abs(a._changePct);});
+  return signals;
 }
 
 function tlBuildDayRow(r){
@@ -7328,13 +7298,12 @@ async function loadTradeLanes(){
   var container=document.getElementById('tl-container');
   if(!container)return;
   try{
-    // Load trade signals + value picks + day trade momentum in parallel
+    // Load trade signals + value picks in parallel; day trades built from DATA (already loaded)
     var tradeP=restFetch('trade_cards_live',{select:'ticker,direction,confidence,regime_adjusted_confidence,card_tier,primary_label,timeframe,holding_days,price',order:'regime_adjusted_confidence.desc.nullslast'});
     var valueP=loadValuePicks();
-    var dayP=loadDayTrades();
     var rows=await tradeP;
     var valuePicks=await valueP;
-    var dayTradeSignals=await dayP;
+    var dayTradeSignals=buildDayTrades();
 
     var buckets={day:[],swing:[],position:[]};
     if(rows&&rows.length){
