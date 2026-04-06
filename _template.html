@@ -4281,7 +4281,8 @@ body{
       Trading Calendar
       <span class="nav-item-badge teal" id="nav-badge-calendar">New</span>
     </button>
-    <button class="nav-item" data-tab="memes" onclick="switchTab('memes',this)">
+    <!-- Hidden for now — kept for future use -->
+    <button class="nav-item" data-tab="memes" onclick="switchTab('memes',this)" style="display:none;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z"/></svg>
       Market Sharing
       <span class="nav-item-badge teal" id="nav-badge-memes">New</span>
@@ -6633,13 +6634,11 @@ async function loadData(){
       drSectorList.innerHTML=sectorArr.slice(0,10).map(function(s){
         var isUp=s.avgChg>=0;
         var pct=Math.abs(s.avgChg).toFixed(2);
-        var barWidth=Math.min(100,Math.round(s.activity*25));
         var c=isUp?'#00DE94':'#FF4D4D';
         var arrow=isUp?'\u25B2':'\u25BC';
         var trapTag=s.traps>0?' <span style="color:#FF4D4D;font-size:9px;">\u26A0'+s.traps+'</span>':'';
         return '<div class="dr-sl-item">'
           +'<div class="dr-sl-name">'+esc(s.name)+trapTag+'</div>'
-          +'<div class="dr-sl-bar"><div class="dr-sl-fill" style="width:'+barWidth+'%;background:'+c+';"></div></div>'
           +'<div class="dr-sl-score" style="color:'+c+';font-size:11px;">'+arrow+pct+'%</div>'
         +'</div>';
       }).join('');
