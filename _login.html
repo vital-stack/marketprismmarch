@@ -406,6 +406,25 @@ body::before{
     }
   };
 
+  // ── Beta activation tracking ──
+  function trackBetaActivation(code, expiresIso){
+    if(!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
+    fetch(SUPABASE_URL + '/rest/v1/beta_activations', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({
+        beta_code: code,
+        expires_at: expiresIso,
+        source_page: '/login'
+      })
+    }).catch(function(){});
+  }
+
   // ── Beta Access ──
   window.handleBetaAccess = function(e){
     e.preventDefault();
@@ -420,6 +439,7 @@ body::before{
       localStorage.setItem('mp-beta-access', 'true');
       localStorage.setItem('mp-beta-tier', 'pro');
       localStorage.setItem('mp-beta-expires', expires.toISOString());
+      trackBetaActivation('prismview', expires.toISOString());
       showMsg('success','Full access granted for 14 days. Redirecting…');
       document.getElementById('btn-beta').classList.add('success');
       setTimeout(function(){ window.location.href = '/dashboard'; }, 600);
@@ -433,6 +453,7 @@ body::before{
       localStorage.setItem('mp-beta-access', 'true');
       localStorage.setItem('mp-beta-tier', 'pro');
       localStorage.setItem('mp-beta-expires', expires.toISOString());
+      trackBetaActivation('karma', expires.toISOString());
       showMsg('success','Full access granted for 7 days. Please sign up to continue.');
       document.getElementById('btn-beta').classList.add('success');
       setTimeout(function(){
@@ -451,6 +472,7 @@ body::before{
       localStorage.setItem('mp-beta-access', 'true');
       localStorage.setItem('mp-beta-tier', 'pro');
       localStorage.setItem('mp-beta-expires', expires.toISOString());
+      trackBetaActivation('stockpsycho', expires.toISOString());
       showMsg('success','Welcome from Reddit! Full access granted for 3 days.');
       document.getElementById('btn-beta').classList.add('success');
       setTimeout(function(){

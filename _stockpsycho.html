@@ -45,6 +45,7 @@ h1 em{font-style:italic;color:#4DC8F0;}
 </div>
 
 <script>
+window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '' };
 document.getElementById('activate-btn').addEventListener('click', function(e){
   e.preventDefault();
   // Set beta access tokens
@@ -54,6 +55,26 @@ document.getElementById('activate-btn').addEventListener('click', function(e){
   localStorage.setItem('mp-beta-tier', 'pro');
   localStorage.setItem('mp-beta-expires', expires.toISOString());
   localStorage.setItem('mp_auth', JSON.stringify({t: Date.now()}));
+
+  // Log activation to Supabase for tracking
+  var env = window.__env || {};
+  if(env.SUPABASE_URL && env.SUPABASE_ANON){
+    fetch(env.SUPABASE_URL + '/rest/v1/beta_activations', {
+      method: 'POST',
+      headers: {
+        'apikey': env.SUPABASE_ANON,
+        'Authorization': 'Bearer ' + env.SUPABASE_ANON,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({
+        beta_code: 'stockpsycho',
+        expires_at: expires.toISOString(),
+        source_page: '/stockpsycho'
+      })
+    }).catch(function(){}); // fire and forget
+  }
+
   // Redirect to register
   window.location.href = '/login#register';
 });
