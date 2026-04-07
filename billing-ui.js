@@ -83,9 +83,9 @@
     var daysRemaining = status === 'trialing' ? getTrialDaysRemaining(renewalDate, opts.now) : null;
     var planStates = {
       pro: {
-        buttonText: 'GET FOUNDING ACCESS — $25/YEAR',
+        buttonText: 'GET FOUNDING ACCESS — $25/MONTH',
         disabled: false,
-        metaText: 'One payment of $25 via Stripe for 12 months of full access.'
+        metaText: '$25/month rate locked in for 12 months for founding members.'
       }
     };
 
@@ -135,7 +135,7 @@
       eyebrow: 'Paid Feature',
       title: 'Subscribe to access ' + (opts.title || 'this feature'),
       body: opts.detail || 'Start your membership to unlock the full platform.',
-      cta: 'Get Full Access — $25/year'
+      cta: 'Get Full Access — $25/month'
     };
   }
 
