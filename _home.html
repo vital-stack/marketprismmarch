@@ -2745,6 +2745,66 @@ footer {
 .mp-pc-row strong{color:rgba(255,255,255,0.9);font-weight:600;}
 .mp-pc-divider{font-size:11px;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;color:rgba(0,174,255,0.5);margin:16px 0 12px;padding-top:16px;border-top:1px solid rgba(0,174,255,0.12);}
 .mp-verdict-trap{color:rgba(0,174,255,0.8);}
+
+/* ── Discovery Timeline ── */
+.mp-timeline-wrap{max-width:900px;margin:52px auto 0;position:relative;}
+.mp-timeline{display:flex;align-items:flex-start;position:relative;padding:0 12px;}
+.mp-tl-line{position:absolute;top:6px;left:12px;right:12px;height:2px;background:rgba(255,255,255,0.06);z-index:0;}
+.mp-tl-line-fill{position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(90deg,rgba(255,255,255,0.15),#00AEFF);transform:scaleX(0);transform-origin:left;transition:transform 1.8s cubic-bezier(0.16,1,0.3,1);}
+.mp-timeline.active .mp-tl-line-fill{transform:scaleX(1);}
+.mp-tl-item{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;z-index:1;}
+.mp-tl-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.15);opacity:0;transform:scale(0);transition:opacity 0.5s cubic-bezier(0.16,1,0.3,1),transform 0.5s cubic-bezier(0.16,1,0.3,1),box-shadow 0.5s ease;}
+.mp-timeline.active .mp-tl-dot{opacity:1;transform:scale(1);}
+.mp-tl-item:nth-child(2) .mp-tl-dot{transition-delay:0.2s;}
+.mp-tl-item:nth-child(3) .mp-tl-dot{transition-delay:0.5s;}
+.mp-tl-item:nth-child(4) .mp-tl-dot{transition-delay:0.8s;}
+.mp-tl-item:nth-child(5) .mp-tl-dot{transition-delay:1.1s;}
+.mp-tl-item:nth-child(6) .mp-tl-dot{transition-delay:1.4s;}
+.mp-tl-item:nth-child(7) .mp-tl-dot{transition-delay:1.7s;}
+.mp-timeline.active .mp-tl-dot{background:rgba(255,255,255,0.7);border-color:rgba(255,255,255,0.4);box-shadow:0 0 8px rgba(255,255,255,0.15);}
+.mp-tl-item.mp-tl-current .mp-tl-dot{width:16px;height:16px;margin-top:-3px;background:#00AEFF;border-color:#00AEFF;box-shadow:0 0 20px rgba(0,174,255,0.5),0 0 40px rgba(0,174,255,0.2);}
+.mp-timeline.active .mp-tl-item.mp-tl-current .mp-tl-dot{animation:glow-pulse 2s ease-in-out infinite 2.2s;}
+.mp-tl-label{margin-top:16px;text-align:center;opacity:0;transform:translateY(8px);transition:opacity 0.5s ease,transform 0.5s ease;}
+.mp-tl-item:nth-child(2) .mp-tl-label{transition-delay:0.4s;}
+.mp-tl-item:nth-child(3) .mp-tl-label{transition-delay:0.7s;}
+.mp-tl-item:nth-child(4) .mp-tl-label{transition-delay:1.0s;}
+.mp-tl-item:nth-child(5) .mp-tl-label{transition-delay:1.3s;}
+.mp-tl-item:nth-child(6) .mp-tl-label{transition-delay:1.6s;}
+.mp-tl-item:nth-child(7) .mp-tl-label{transition-delay:1.9s;}
+.mp-timeline.active .mp-tl-label{opacity:1;transform:translateY(0);}
+.mp-tl-year{font-family:var(--font-b);font-size:14px;font-weight:700;color:#F5F7FA;letter-spacing:-0.01em;}
+.mp-tl-item.mp-tl-current .mp-tl-year{color:#00AEFF;font-size:16px;}
+.mp-tl-name{font-family:var(--font-b);font-size:12px;color:rgba(255,255,255,0.45);margin-top:3px;line-height:1.35;}
+.mp-tl-item.mp-tl-current .mp-tl-name{color:rgba(0,174,255,0.8);font-weight:600;}
+.mp-tl-tagline{font-family:var(--font-b);font-size:11px;color:rgba(255,255,255,0.25);margin-top:4px;font-style:italic;}
+.mp-tl-item.mp-tl-current .mp-tl-tagline{color:rgba(0,174,255,0.5);}
+.mp-tl-bridge{text-align:center;margin-top:48px;font-family:var(--font-b);font-size:15px;color:rgba(255,255,255,0.5);line-height:1.6;max-width:560px;margin-left:auto;margin-right:auto;}
+
+/* Light theme overrides for timeline */
+.sec-bright-light .mp-tl-line{background:rgba(0,0,0,0.06);}
+.sec-bright-light .mp-tl-line-fill{background:linear-gradient(90deg,rgba(0,0,0,0.12),#00AEFF);}
+.sec-bright-light .mp-tl-dot{background:rgba(0,0,0,0.08);border-color:rgba(0,0,0,0.12);}
+.sec-bright-light .mp-timeline.active .mp-tl-dot{background:rgba(0,0,0,0.5);border-color:rgba(0,0,0,0.3);box-shadow:0 0 8px rgba(0,0,0,0.1);}
+.sec-bright-light .mp-tl-item.mp-tl-current .mp-tl-dot{background:#00AEFF;border-color:#00AEFF;box-shadow:0 0 20px rgba(0,174,255,0.4);}
+.sec-bright-light .mp-tl-year{color:#111827;}
+.sec-bright-light .mp-tl-item.mp-tl-current .mp-tl-year{color:#00AEFF;}
+.sec-bright-light .mp-tl-name{color:#6B7280;}
+.sec-bright-light .mp-tl-item.mp-tl-current .mp-tl-name{color:#0088CC;}
+.sec-bright-light .mp-tl-tagline{color:#9CA3AF;}
+.sec-bright-light .mp-tl-item.mp-tl-current .mp-tl-tagline{color:rgba(0,136,204,0.6);}
+.sec-bright-light .mp-tl-bridge{color:#6B7280;}
+
+/* Timeline responsive */
+@media(max-width:768px){
+  .mp-timeline{flex-direction:column;align-items:flex-start;gap:28px;padding-left:24px;}
+  .mp-tl-line{top:0;bottom:0;left:16px;width:2px;height:auto;right:auto;}
+  .mp-tl-line-fill{width:100%;height:100%;transform:scaleY(0);transform-origin:top;}
+  .mp-timeline.active .mp-tl-line-fill{transform:scaleY(1);}
+  .mp-tl-item{flex-direction:row;align-items:center;gap:16px;}
+  .mp-tl-label{margin-top:0;text-align:left;}
+  .mp-tl-dot{flex-shrink:0;}
+  .mp-tl-item.mp-tl-current .mp-tl-dot{margin-top:0;margin-left:-3px;}
+}
 .mp-trap-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:8px;margin-bottom:4px;border:1px solid;}
 .mp-trap-row.severe{background:rgba(255,80,80,0.04);border-color:rgba(255,80,80,0.1);}
 .mp-trap-row.moderate{background:rgba(255,184,0,0.03);border-color:rgba(255,184,0,0.1);}
@@ -3041,30 +3101,70 @@ footer {
   </div>
 </div>
 <!-- Old Live Signals + Market Radar deleted -->
-<!-- ═══ WHAT OTHERS MISS ═══ -->
-<section class="mp-sec sec-bright-light" id="mp-problem">
+<!-- ═══ DISCOVERY TIMELINE ═══ -->
+<section class="mp-sec sec-bright-light" id="mp-discovery">
   <div class="sec-glow-1"></div><div class="sec-glow-2"></div>
   <div class="mp-con">
-    <div class="mp-problem-grid">
-      <div class="mp-reveal">
-        <div class="mp-eyebrow">What others miss</div>
-        <h2 class="mp-h2">Sentiment tells you how the market feels.<br><em>We tell you if it should.</em></h2>
-        <p class="mp-lead">No other platform cross-references every media claim against SEC filings, scores source credibility by sector, and predicts when the narrative will break — all before market open.</p>
-        <a href="#mp-signal-proof" class="mp-btn-primary" style="margin-top:8px;">See the proof →</a>
-      </div>
-      <div class="mp-reveal">
-        <div class="mp-problem-card">
-          <div class="mp-pc-label">What Bloomberg Terminal shows</div>
-          <div class="mp-pc-row bad"><span class="mp-pc-icon">✗</span>Sentiment score: Bullish</div>
-          <div class="mp-pc-row bad"><span class="mp-pc-icon">✗</span>News volume: High</div>
-          <div class="mp-pc-row bad"><span class="mp-pc-icon">✗</span>Analyst consensus: Buy</div>
-          <div class="mp-pc-divider">What Market Prism finds underneath</div>
-          <div class="mp-pc-row good"><span class="mp-pc-icon">✓</span>Claims vs SEC filings: <strong>88% divergence</strong></div>
-          <div class="mp-pc-row good"><span class="mp-pc-icon">✓</span>Story lifecycle: <strong>mid-decay, 6 days left</strong></div>
-          <div class="mp-pc-row good"><span class="mp-pc-icon">✓</span>Source coordination: <strong>likely orchestrated</strong></div>
-          <div class="mp-pc-row good"><span class="mp-pc-icon">✓</span>Verdict: <strong class="mp-verdict-trap">Narrative Trap — sell window open</strong></div>
+    <div class="mp-reveal" style="text-align:center;max-width:680px;margin:0 auto;">
+      <div class="mp-eyebrow" style="justify-content:center;">A new market variable</div>
+      <h2 class="mp-h2" style="text-align:center;">Every generation found a new edge.<br><em>This one measures when stories run out of energy.</em></h2>
+    </div>
+    <div class="mp-timeline-wrap">
+      <div class="mp-timeline" id="mp-tl">
+        <div class="mp-tl-line"><div class="mp-tl-line-fill"></div></div>
+        <div class="mp-tl-item">
+          <div class="mp-tl-dot"></div>
+          <div class="mp-tl-label">
+            <div class="mp-tl-year">1724</div>
+            <div class="mp-tl-name">Candlestick Charts</div>
+            <div class="mp-tl-tagline">Price patterns become visible</div>
+          </div>
+        </div>
+        <div class="mp-tl-item">
+          <div class="mp-tl-dot"></div>
+          <div class="mp-tl-label">
+            <div class="mp-tl-year">1952</div>
+            <div class="mp-tl-name">Modern Portfolio Theory</div>
+            <div class="mp-tl-tagline">Risk becomes measurable</div>
+          </div>
+        </div>
+        <div class="mp-tl-item">
+          <div class="mp-tl-dot"></div>
+          <div class="mp-tl-label">
+            <div class="mp-tl-year">1973</div>
+            <div class="mp-tl-name">Black-Scholes</div>
+            <div class="mp-tl-tagline">Options become physics</div>
+          </div>
+        </div>
+        <div class="mp-tl-item">
+          <div class="mp-tl-dot"></div>
+          <div class="mp-tl-label">
+            <div class="mp-tl-year">1992</div>
+            <div class="mp-tl-name">Factor Investing</div>
+            <div class="mp-tl-tagline">Returns become explainable</div>
+          </div>
+        </div>
+        <div class="mp-tl-item">
+          <div class="mp-tl-dot"></div>
+          <div class="mp-tl-label">
+            <div class="mp-tl-year">2007</div>
+            <div class="mp-tl-name">Algorithmic Trading</div>
+            <div class="mp-tl-tagline">Speed becomes an edge</div>
+          </div>
+        </div>
+        <div class="mp-tl-item mp-tl-current">
+          <div class="mp-tl-dot"></div>
+          <div class="mp-tl-label">
+            <div class="mp-tl-year">2025</div>
+            <div class="mp-tl-name">Temporal Energy</div>
+            <div class="mp-tl-tagline">Narratives become predictable</div>
+          </div>
         </div>
       </div>
+    </div>
+    <div class="mp-tl-bridge mp-reveal">
+      For fifty years, markets have been explained by factors: value, momentum, size, quality. Narrative energy was the missing one. Market Prism isolated it, modeled its physics, and proved it predicts price reversals with 81.5% accuracy across 170 tickers.
+      <div style="margin-top:20px;font-size:11px;color:rgba(255,255,255,0.2);letter-spacing:0.06em;text-transform:uppercase;">Patent Pending — U.S. Provisional Application Nos. 63/971,470 · 63/971,478 · 63/974,154</div>
     </div>
   </div>
 </section>
@@ -3597,6 +3697,21 @@ document.querySelectorAll('.reveal,.reveal-left,.reveal-right,.reveal-scale,.rev
 // New section reveal observer
 var mpObs2 = new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('visible');mpObs2.unobserve(e.target);}});},{threshold:0.07});
 document.querySelectorAll('.mp-reveal').forEach(function(el){mpObs2.observe(el);});
+// ── Discovery Timeline Animation ──
+(function(){
+  var tl = document.getElementById('mp-tl');
+  if(tl){
+    var tlObs = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          e.target.classList.add('active');
+          tlObs.unobserve(e.target);
+        }
+      });
+    },{threshold:0.15});
+    tlObs.observe(tl);
+  }
+})();
 document.querySelectorAll('.features-grid,.steps,.stats-grid,.sample-grid,.radar-grid,.trust-row,.deck').forEach(g => {
   [...g.children].forEach((c,i) => { c.style.transitionDelay = (i*80)+'ms'; });
 });
