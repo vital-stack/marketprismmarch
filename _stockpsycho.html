@@ -48,16 +48,13 @@ h1 em{font-style:italic;color:#4DC8F0;}
 window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '' };
 document.getElementById('activate-btn').addEventListener('click', function(e){
   e.preventDefault();
-  // Set beta access tokens
-  var expires = new Date();
-  expires.setDate(expires.getDate() + 3);
-  localStorage.setItem('mp-beta-access', 'true');
-  localStorage.setItem('mp-beta-tier', 'pro');
-  localStorage.setItem('mp-beta-expires', expires.toISOString());
-  localStorage.setItem('mp_auth', JSON.stringify({t: Date.now()}));
+  // Mark that this user came from stockpsycho — token applied AFTER they register
+  sessionStorage.setItem('mp-pending-beta', 'stockpsycho');
 
   // Log activation to Supabase for tracking
   var env = window.__env || {};
+  var expires = new Date();
+  expires.setDate(expires.getDate() + 3);
   if(env.SUPABASE_URL && env.SUPABASE_ANON){
     fetch(env.SUPABASE_URL + '/rest/v1/beta_activations', {
       method: 'POST',
@@ -75,7 +72,7 @@ document.getElementById('activate-btn').addEventListener('click', function(e){
     }).catch(function(){}); // fire and forget
   }
 
-  // Redirect to register
+  // Redirect to register — beta token will be applied after account creation
   window.location.href = '/login#register';
 });
 </script>

@@ -506,9 +506,18 @@ body::before{
       showMsg('success','Account created! Redirecting to dashboard…');
       // Auto-sign in and redirect regardless of confirmation setting
       if(!result.data.session){
-        // If no session returned, sign in immediately
         var signIn = await supabase.auth.signInWithPassword({ email: email, password: password });
         if(signIn.error){ showMsg('info','Account created! Please sign in.'); setLoading('btn-register', false); return; }
+      }
+      // Apply pending beta token if user came from a landing page (e.g. /stockpsycho)
+      var pendingBeta = sessionStorage.getItem('mp-pending-beta');
+      if(pendingBeta === 'stockpsycho'){
+        var expires = new Date(); expires.setDate(expires.getDate() + 3);
+        localStorage.setItem('mp-beta-access', 'true');
+        localStorage.setItem('mp-beta-tier', 'pro');
+        localStorage.setItem('mp-beta-expires', expires.toISOString());
+        localStorage.setItem('mp_auth', JSON.stringify({t: Date.now()}));
+        sessionStorage.removeItem('mp-pending-beta');
       }
       setTimeout(function(){ window.location.href = '/dashboard'; }, 800);
     } catch(err){
