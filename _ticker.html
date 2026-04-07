@@ -8359,15 +8359,13 @@ window.mpLogoUrl    = mpLogoUrl;
 window.mpLogoImg    = mpLogoImg;
 window.MP_DOMAINS   = MP_DOMAINS;
 
-/* ── Info-tip hover positioning ── */
+/* ── Info-tip click + hover positioning ── */
 (function(){
   var popup = document.getElementById('info-tip-popup');
   if(!popup) return;
-  document.addEventListener('mouseover', function(e){
-    var tip = e.target.closest('.info-tip');
-    if(!tip || !tip.dataset.tip) return;
-    popup.textContent = tip.dataset.tip;
-    popup.classList.add('visible');
+  var pinned = false;
+
+  function positionPopup(tip) {
     var rect = tip.getBoundingClientRect();
     var pw = 220;
     var left = rect.left + rect.width / 2 - pw / 2;
@@ -8377,8 +8375,37 @@ window.MP_DOMAINS   = MP_DOMAINS;
     if(top + 60 > window.innerHeight) top = rect.top - popup.offsetHeight - 8;
     popup.style.left = left + 'px';
     popup.style.top = top + 'px';
+  }
+
+  document.addEventListener('click', function(e){
+    var tip = e.target.closest('.info-tip');
+    if(tip && tip.dataset.tip) {
+      e.preventDefault();
+      if(pinned && popup.classList.contains('visible')) {
+        popup.classList.remove('visible');
+        pinned = false;
+      } else {
+        popup.textContent = tip.dataset.tip;
+        popup.classList.add('visible');
+        positionPopup(tip);
+        pinned = true;
+      }
+    } else if(pinned) {
+      popup.classList.remove('visible');
+      pinned = false;
+    }
+  });
+
+  document.addEventListener('mouseover', function(e){
+    if(pinned) return;
+    var tip = e.target.closest('.info-tip');
+    if(!tip || !tip.dataset.tip) return;
+    popup.textContent = tip.dataset.tip;
+    popup.classList.add('visible');
+    positionPopup(tip);
   });
   document.addEventListener('mouseout', function(e){
+    if(pinned) return;
     var tip = e.target.closest('.info-tip');
     if(!tip) return;
     popup.classList.remove('visible');
