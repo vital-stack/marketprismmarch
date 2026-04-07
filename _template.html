@@ -4198,6 +4198,17 @@ body{
 #dash-constellation{position:fixed;top:0;left:248px;right:0;bottom:0;pointer-events:none;z-index:0;display:none;}
 @media(max-width:1100px){#dash-constellation{left:0;}}
 
+/* ── Full-page loader ── */
+.mp-page-loader{position:fixed;inset:0;z-index:9998;background:var(--mp-obsidian,#080B11);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;transition:opacity 0.4s ease,visibility 0.4s ease;}
+.mp-page-loader.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+.mp-loader-logo{height:36px;width:auto;opacity:0.7;}
+.mp-loader-spinner{width:28px;height:28px;border:2.5px solid rgba(255,255,255,0.08);border-top-color:#00AEFF;border-radius:50%;animation:mp-spin 0.8s linear infinite;}
+@keyframes mp-spin{to{transform:rotate(360deg);}}
+.mp-loader-text{font-family:'Inter',system-ui,sans-serif;font-size:13px;color:rgba(255,255,255,0.35);letter-spacing:0.02em;}
+[data-theme="light"] .mp-page-loader{background:#F8F9FC;}
+[data-theme="light"] .mp-loader-spinner{border-color:rgba(0,0,0,0.08);border-top-color:#00AEFF;}
+[data-theme="light"] .mp-loader-text{color:rgba(0,0,0,0.3);}
+
 /* ── ENTERPRISE: Loading skeletons ── */
 .mp-skeleton { position: relative; overflow: hidden; background: rgba(255,255,255,0.04); border-radius: 8px; }
 .mp-skeleton::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent); animation: mp-shimmer 1.5s infinite; }
@@ -4305,6 +4316,12 @@ body{
   };
 })();
 </script>
+<!-- ── FULL PAGE LOADER ── -->
+<div class="mp-page-loader" id="mp-page-loader">
+  <img class="mp-loader-logo" src="/assets/Market-Prism-Logo-Light.png" alt="Market Prism">
+  <div class="mp-loader-spinner"></div>
+  <div class="mp-loader-text">Loading dashboard data…</div>
+</div>
 <!-- Mobile topbar -->
 <div class="mobile-topbar">
   <button class="hamburger-btn" id="hamburger-btn" aria-label="Open menu">
@@ -13360,10 +13377,21 @@ window.refreshDailyBrief=async function(){
   }catch(e){console.warn('[DB] Refresh failed:',e);}
   if(btn){btn.disabled=false;btn.style.opacity='1';btn.querySelector('svg').style.animation='';}
 };
+// ── Dismiss page loader ──
+function dismissPageLoader(){
+  var el = document.getElementById('mp-page-loader');
+  if(el && !el.classList.contains('hidden')){
+    el.classList.add('hidden');
+    setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, 500);
+  }
+}
+// Safety timeout — dismiss after 8s no matter what
+setTimeout(dismissPageLoader, 8000);
+
 ensureDashboardAuth().then(function(user){
-  if(!user) return;
+  if(!user){ dismissPageLoader(); return; }
   loadSubscriptionStatus();
-  loadData();
+  loadData().then(dismissPageLoader).catch(dismissPageLoader);
 });
 setInterval(function(){
   ensureDashboardAuth().then(function(user){
