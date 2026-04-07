@@ -460,6 +460,17 @@
 </script>
 </head>
 <body>
+<script>
+// Auth gate — require beta code or Supabase session
+(function(){
+  var isBeta = localStorage.getItem('mp-beta-access') === 'true';
+  var betaExpires = localStorage.getItem('mp-beta-expires');
+  if(isBeta && betaExpires && new Date(betaExpires) > new Date()) return;
+  var mpAuth = localStorage.getItem('mp_auth');
+  if(mpAuth){ try{ var s=JSON.parse(mpAuth); if(s.t && (Date.now()-s.t)<24*3600000) return; }catch(e){} }
+  window.location.href='/login';
+})();
+</script>
 
 <!-- Beta Access Gate -->
 <div class="beta-gate" id="beta-gate">
