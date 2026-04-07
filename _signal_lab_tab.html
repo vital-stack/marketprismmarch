@@ -387,7 +387,7 @@
     for(var i=0;i<=4;i++){var p=minP+(maxP-minP)*(i/4),y=yOf(p);ctx.strokeStyle=slIsLight()?'#D4D6DD':'#2a3350';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(PAD.left,y);ctx.lineTo(W-PAD.right,y);ctx.stroke();ctx.fillText((p>=100?'$'+p.toFixed(0):'$'+p.toFixed(2)),PAD.left-4,y+3);}
     // X axis
     ctx.textAlign='center';var every=Math.max(1,Math.floor(N/6)),lastRI=-Infinity;
-    snaps.forEach(function(s,i){if(i%every!==0&&i!==N-1)return;if(i===N-1&&(i-lastRI)<every*0.6)return;var d=new Date(s.snapshot_date);ctx.fillText(d.toLocaleDateString('en-US',{month:'short',day:'numeric'}),xOf(i),H-PAD.bottom+14);lastRI=i;});
+    snaps.forEach(function(s,i){if(i%every!==0&&i!==N-1)return;if(i===N-1&&(i-lastRI)<every*0.4){return;}var d=new Date(s.snapshot_date+'T12:00:00');ctx.fillText(d.toLocaleDateString('en-US',{month:'short',day:'numeric'}),xOf(i),H-PAD.bottom+14);lastRI=i;});
     // Price fill
     var grad=ctx.createLinearGradient(0,PAD.top,0,H-PAD.bottom);grad.addColorStop(0,'rgba(26,110,255,0.12)');grad.addColorStop(1,'rgba(26,110,255,0)');
     ctx.beginPath();snaps.forEach(function(s,i){if(s.price_close==null)return;i===0?ctx.moveTo(xOf(i),yOf(s.price_close)):ctx.lineTo(xOf(i),yOf(s.price_close));});
