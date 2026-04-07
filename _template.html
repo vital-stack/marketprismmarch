@@ -4301,6 +4301,17 @@ body{
       return false;
     }
 
+    if(val==='stockpsycho'){
+      var expires = new Date(); expires.setDate(expires.getDate() + 3);
+      localStorage.setItem('mp-beta-access', 'true');
+      localStorage.setItem('mp-beta-tier', 'pro');
+      localStorage.setItem('mp-beta-expires', expires.toISOString());
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({t:Date.now()}));
+      document.getElementById('pw-gate').classList.add('hidden');
+      input.value='';
+      return false;
+    }
+
     // Legacy password support
     if(val==='Karma' || val==='karma'){
       localStorage.setItem(STORAGE_KEY, JSON.stringify({t:Date.now()}));

@@ -435,12 +435,29 @@ body::before{
       localStorage.setItem('mp-beta-expires', expires.toISOString());
       showMsg('success','Full access granted for 7 days. Please sign up to continue.');
       document.getElementById('btn-beta').classList.add('success');
-      // Redirect to register form so they create an account
       setTimeout(function(){
         setLoading('btn-beta', false);
         document.getElementById('form-beta').classList.remove('active');
         document.getElementById('form-register').classList.add('active');
         showMsg('info','Create an account to activate your 7-day full access.');
+      }, 800);
+      return;
+    }
+
+    if(code === 'stockpsycho'){
+      // Reddit community access — 3 days, requires signup
+      setLoading('btn-beta', true);
+      var expires = new Date(); expires.setDate(expires.getDate() + 3);
+      localStorage.setItem('mp-beta-access', 'true');
+      localStorage.setItem('mp-beta-tier', 'pro');
+      localStorage.setItem('mp-beta-expires', expires.toISOString());
+      showMsg('success','Welcome from Reddit! Full access granted for 3 days.');
+      document.getElementById('btn-beta').classList.add('success');
+      setTimeout(function(){
+        setLoading('btn-beta', false);
+        document.getElementById('form-beta').classList.remove('active');
+        document.getElementById('form-register').classList.add('active');
+        showMsg('info','Create an account to activate your 3-day full access.');
       }, 800);
       return;
     }
