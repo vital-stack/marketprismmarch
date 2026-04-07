@@ -4219,35 +4219,34 @@ body{
 </style>
 </head>
 <body>
-<!-- ── PASSWORD GATE ── -->
+<!-- ── ACCESS GATE ── -->
 <div class="pw-gate" id="pw-gate">
-  <div class="pw-box">
+  <div class="pw-box" style="max-width:420px;">
     <div class="pw-box-logo">
       <span>Market Prism</span>
     </div>
-    <h2>Enter password to access the dashboard</h2>
-    <form id="pw-form" onsubmit="return checkPw(event)">
-      <input class="pw-input" id="pw-input" type="password" placeholder="Password" autocomplete="off" autofocus>
-      <button class="pw-submit" type="submit">Enter</button>
+    <h2 style="margin-bottom:8px;">Unlock the dashboard</h2>
+    <p style="font-size:13px;color:rgba(255,255,255,0.45);margin-bottom:24px;line-height:1.5;">Enter a beta access code, or subscribe for full access to all 172 tickers, Signal Lab, Trading Cards, and more.</p>
+    <form id="pw-form" onsubmit="return checkAccessCode(event)">
+      <input class="pw-input" id="pw-input" type="text" placeholder="Beta access code" autocomplete="off" autofocus>
+      <button class="pw-submit" type="submit">Unlock</button>
       <div class="pw-error-msg" id="pw-error"></div>
     </form>
+    <div style="display:flex;align-items:center;gap:12px;margin:20px 0 16px;">
+      <div style="flex:1;height:1px;background:rgba(255,255,255,0.08);"></div>
+      <span style="font-size:11px;color:rgba(255,255,255,0.25);text-transform:uppercase;letter-spacing:.08em;">or</span>
+      <div style="flex:1;height:1px;background:rgba(255,255,255,0.08);"></div>
+    </div>
+    <a href="/pricing" style="display:block;width:100%;padding:13px 0;border-radius:10px;background:linear-gradient(135deg,rgba(0,222,148,0.85),rgba(0,222,148,0.55));color:#fff;font-size:14px;font-weight:600;text-align:center;text-decoration:none;letter-spacing:.04em;border:none;cursor:pointer;transition:transform .2s;box-shadow:0 8px 20px rgba(0,0,0,0.3);" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">GET FULL ACCESS — $25/MONTH</a>
+    <div style="font-size:12px;color:rgba(255,255,255,0.3);margin-top:10px;text-align:center;">Founding member pricing — first 150 spots only</div>
   </div>
 </div>
 <script>
 (function(){
-  // The password hash — change DASHBOARD_PW to set a new password
-  // Default password: "marketprism"
-  var PW_HASH = '8f14e45fceea167a5a36dedd4bea2543'; // md5 of "marketprism" — replace with your own
   var STORAGE_KEY = 'mp_auth';
   var SESSION_HOURS = 24;
 
-  function simpleHash(s){
-    // Simple hash for client-side gating (not security-critical)
-    var h=0;for(var i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0;}
-    return h.toString(36);
-  }
-
-  // Check if already authenticated this session
+  // Check if already authenticated via old password gate session
   try{
     var stored=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');
     if(stored.t && (Date.now()-stored.t)<SESSION_HOURS*3600000){
@@ -4255,20 +4254,53 @@ body{
     }
   }catch(e){}
 
-  window.checkPw=function(e){
+  // Also check beta access
+  try{
+    var isBeta = localStorage.getItem('mp-beta-access') === 'true';
+    var betaExpires = localStorage.getItem('mp-beta-expires');
+    if(isBeta && betaExpires && new Date(betaExpires) > new Date()){
+      document.getElementById('pw-gate').classList.add('hidden');
+    }
+  }catch(e){}
+
+  window.checkAccessCode=function(e){
     e.preventDefault();
     var input=document.getElementById('pw-input');
-    var val=input.value.trim();
-    // Accept the literal password — edit this string to change the password
-    if(val==='Karma'){
-      localStorage.setItem(STORAGE_KEY,JSON.stringify({t:Date.now()}));
+    var val=input.value.trim().toLowerCase();
+
+    if(val==='prismview'){
+      var expires = new Date(); expires.setDate(expires.getDate() + 14);
+      localStorage.setItem('mp-beta-access', 'true');
+      localStorage.setItem('mp-beta-tier', 'pro');
+      localStorage.setItem('mp-beta-expires', expires.toISOString());
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({t:Date.now()}));
       document.getElementById('pw-gate').classList.add('hidden');
       input.value='';
-    }else{
-      input.classList.add('error');
-      document.getElementById('pw-error').textContent='Incorrect password';
-      setTimeout(function(){input.classList.remove('error');},500);
+      return false;
     }
+
+    if(val==='karma'){
+      var expires = new Date(); expires.setDate(expires.getDate() + 7);
+      localStorage.setItem('mp-beta-access', 'true');
+      localStorage.setItem('mp-beta-tier', 'pro');
+      localStorage.setItem('mp-beta-expires', expires.toISOString());
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({t:Date.now()}));
+      document.getElementById('pw-gate').classList.add('hidden');
+      input.value='';
+      return false;
+    }
+
+    // Legacy password support
+    if(val==='Karma' || val==='karma'){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({t:Date.now()}));
+      document.getElementById('pw-gate').classList.add('hidden');
+      input.value='';
+      return false;
+    }
+
+    input.classList.add('error');
+    document.getElementById('pw-error').textContent='Invalid access code. Try again.';
+    setTimeout(function(){input.classList.remove('error');},500);
     return false;
   };
 })();
