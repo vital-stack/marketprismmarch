@@ -4495,15 +4495,22 @@ async function loadHero() {
     // ── Verdict Banner — immediately tells user what the signal is ──
     var verdictBanner = document.getElementById('verdict-banner');
     if(verdictBanner){
+      var fvdVal = sc.fvd_pct;
+      var fvdDir = fvdVal != null ? (fvdVal > 0 ? 'above' : 'below') : null;
+      var fvdAbs = fvdVal != null ? Math.abs(fvdVal).toFixed(1) + '%' : null;
+      var accDesc = fvdDir ? 'Stock is trading ' + fvdAbs + ' ' + fvdDir + ' fair value with clean fundamentals. The narrative supports a move higher.'
+                           : 'Clean fundamentals with narrative support for a move higher.';
+      var flDesc  = fvdDir ? 'Stock is trading ' + fvdAbs + ' ' + fvdDir + ' fundamental value. SEC filings structurally support the bullish case.'
+                           : 'SEC filings structurally support the bullish case.';
       var vActions = {
         'NARRATIVE_TRAP': {action:'Avoid or Short', desc:'The media narrative doesn\'t match the company\'s SEC filings. Price appears inflated above fundamental value.'},
         'FUNDAMENTAL_DISCONNECT': {action:'Avoid', desc:'Stock price has disconnected from fundamental value. The story driving the price isn\'t supported by official filings.'},
         'FADE_THE_HYPE': {action:'Fade Rallies', desc:'Hype is outpacing reality. The narrative has drifted far from what filings actually support.'},
         'DRIFT_COMPRESSION_SHORT': {action:'Short on Bounce', desc:'The narrative is gradually drifting from what filings show. Volatility is expanding.'},
         'AIR_POCKET_SHORT': {action:'Stay Away', desc:'The narrative supporting this stock is collapsing. Downward pressure is building.'},
-        'ACCUMULATE': {action:'Buy Dips', desc:'Stock is trading below fair value with clean fundamentals. The narrative supports a move higher.'},
+        'ACCUMULATE': {action:'Buy Dips', desc:accDesc},
         'MOMENTUM_CONFIRMED': {action:'Ride the Trend', desc:'Momentum is confirmed with strong institutional backing and credible coverage.'},
-        'FUNDAMENTAL_LONG': {action:'Accumulate', desc:'Stock is trading below fundamental value. SEC filings structurally support the bullish case.'}
+        'FUNDAMENTAL_LONG': {action:'Accumulate', desc:flDesc}
       };
       var vLabel = tc.primary_label || '';
       var vInfo = vActions[vLabel] || null;

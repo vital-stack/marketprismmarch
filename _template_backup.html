@@ -4317,7 +4317,7 @@ async function loadData(){
       return r.ok ? r.json().then(function(j){ console.log('[MP] v_trade_cards rows returned:', j.length, j.slice(0,2)); return j; }) : [];
     }).catch(function(e){ console.error('[MP] v_trade_cards fetch error:', e); return []; });
     // price fallback for cards if v_trade_cards lacks price
-    var snapP = fetch(SUPABASE_URL+'/rest/v1/ticker_snapshots?select=ticker,price,sector,industry&order=snapshot_date.desc',{headers:hdrs}).catch(function(){return null;});
+    var snapP = fetch(SUPABASE_URL+'/rest/v1/ticker_snapshots?select=ticker,price_close,sector,industry&order=snapshot_date.desc&limit=500',{headers:hdrs}).catch(function(){return null;});
 
     var res = await mainP;
     if(!res.ok) throw new Error('Supabase '+res.status);
@@ -4379,7 +4379,7 @@ async function loadData(){
         _confPct:       confPct,
         sector_name:    r.sector_name || snap.sector || '—',
         // keep price_change_pct; fallback price from snapshot if null
-        price:          r.price || snap.price || 0,
+        price:          r.price || snap.price_close || 0,
         narrative_state: derivedRarity,
         prism_verdict:  derivedRarity,
         // Suppress old noise fields
@@ -5128,7 +5128,7 @@ function getFilteredDiscover(){
       var snap = snapshotMap[t.ticker]||{};
       return {
         ticker: t.ticker,
-        price: t.current_price || snap.price || 0,
+        price: t.current_price || snap.price_close || 0,
         price_change_pct: null,
         narrative_state: 'Fragile',
         primary_driver: t.narrative || '',
@@ -7247,7 +7247,7 @@ var SENTIMENT_STYLES={
 function buildCardFrontHTML(c,i,dateStr,prefix,showActions){
   // 🛡️ Safety defaults — prevent crashes if fields are missing
   if(!c.biasText) c = Object.assign({},c,{biasText: LABEL_TO_BIAS[c.primary_label]||'Hold Steady'});
-  if(!c.price) c = Object.assign({},c,{price: (snapshotMap[c.ticker]||{}).price||0});
+  if(!c.price) c = Object.assign({},c,{price: (snapshotMap[c.ticker]||{}).price_close||0});
   if(!c.sector_name) c = Object.assign({},c,{sector_name: (snapshotMap[c.ticker]||{}).sector||'\u2014'});
   if(c.price_change_pct==null) c = Object.assign({},c,{price_change_pct:0});
   var isBull=c.price_change_pct>0;

@@ -159,7 +159,7 @@ module.exports = async (req, res) => {
       // Query multiple tables in parallel for the mentioned tickers
       var tickerFilter = 'ticker=in.(' + lookupTickers.map(function(t) { return '"' + t + '"'; }).join(',') + ')';
       var storyP = fetch(supabaseUrl + '/rest/v1/v_dash_daily_story?select=ticker,price,price_change_pct,narrative_state,primary_driver,prism_verdict,story_claim,sector_name,pe_ratio,fair_value,guidance_direction,snapshot_date&' + tickerFilter + '&order=snapshot_date.desc', { headers: hdrs }).catch(function() { return null; });
-      var snapP = fetch(supabaseUrl + '/rest/v1/ticker_snapshots?select=ticker,close,volume_day,volume_7d_avg,sector,industry,drawdown_from_peak,fcf_per_share,snapshot_date&' + tickerFilter + '&order=snapshot_date.desc', { headers: hdrs }).catch(function() { return null; });
+      var snapP = fetch(supabaseUrl + '/rest/v1/ticker_snapshots?select=ticker,price_close,volume_day,volume_7d_avg,sector,industry,drawdown_from_peak,fcf_per_share,snapshot_date&' + tickerFilter + '&order=snapshot_date.desc', { headers: hdrs }).catch(function() { return null; });
       var healthP = fetch(supabaseUrl + '/rest/v1/v_dash_narrative_health?select=ticker,narrative_health,narrative_trend,attention_trend,sentiment_score,snapshot_date&' + tickerFilter + '&order=snapshot_date.desc', { headers: hdrs }).catch(function() { return null; });
       var tradeP = fetch(supabaseUrl + '/rest/v1/trade_classifications?select=ticker,primary_label,primary_confidence,shortest_timeframe,longest_timeframe,snapshot_date&' + tickerFilter + '&order=snapshot_date.desc', { headers: hdrs }).catch(function() { return null; });
       var trapP = fetch(supabaseUrl + '/rest/v1/narrative_traps?select=ticker,narrative,fvd_pct,vms,predicted_exhaustion_days,coordination_class,drift_score,snapshot_date&' + tickerFilter + '&order=snapshot_date.desc', { headers: hdrs }).catch(function() { return null; });
@@ -196,7 +196,7 @@ module.exports = async (req, res) => {
             if (snapSeen[r.ticker]) return;
             snapSeen[r.ticker] = true;
             var parts = [];
-            if (r.close) parts.push('Close: $' + r.close);
+            if (r.price_close) parts.push('Close: $' + r.price_close);
             if (r.volume_day) parts.push('Volume: ' + r.volume_day);
             if (r.drawdown_from_peak != null) parts.push('Drawdown: ' + r.drawdown_from_peak + '%');
             if (r.sector) parts.push('Sector: ' + r.sector);
