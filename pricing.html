@@ -107,9 +107,17 @@ body::before{
 .banner.success{border-color:rgba(0,222,148,0.24);color:#98f5ca;}
 .plans{
   display:grid;
-  grid-template-columns:repeat(2,minmax(260px,1fr));
+  grid-template-columns:minmax(320px,520px);
+  justify-content:center;
   gap:20px;
 }
+.plan-badge{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 12px;border-radius:99px;background:rgba(0,222,148,0.12);color:#00DE94;border:1px solid rgba(0,222,148,0.2);margin-bottom:14px;}
+.plan-original{font-size:16px;color:var(--mp-text-tertiary);text-decoration:line-through;margin-right:8px;}
+.feature-section-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--mp-text-tertiary);margin-top:16px;margin-bottom:8px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);}
+.feature-section-label:first-child{margin-top:0;padding-top:0;border-top:none;}
+.seats-remaining{display:flex;align-items:center;gap:8px;margin-top:16px;font-size:13px;color:var(--mp-text-secondary);}
+.seats-bar{flex:1;height:6px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden;}
+.seats-fill{height:100%;background:linear-gradient(90deg,#00DE94,#00AEFF);border-radius:99px;width:0%;transition:width 1s ease;}
 .plan-card{
   position:relative;
   background:
@@ -167,6 +175,7 @@ body::before{
   .page{padding:24px 16px 56px;}
   .plans{grid-template-columns:1fr;}
   .topbar{flex-direction:column;align-items:flex-start;margin-bottom:32px;}
+  .plan-card{padding:20px 16px 16px;}
 }
 </style>
 </head>
@@ -181,41 +190,50 @@ body::before{
   </div>
 
   <div class="hero">
-    <div class="eyebrow">Plans · Billing · Stripe Checkout</div>
-    <h1>Choose your Market Prism plan.</h1>
-    <span class="accent">Upgrade when you're ready.</span>
-    <p>Checkout is handled through Stripe and linked to your existing Supabase account. If you're already signed in, you'll go straight to checkout. If not, we'll send you to the login page first.</p>
+    <div class="eyebrow">Limited launch pricing · First 150 members</div>
+    <h1>One plan. Full access.</h1>
+    <span class="accent">$25/month for early members.</span>
+    <p>Get every tool, every signal, every ticker. No tiers, no restrictions. This price is locked in for the first 150 members and will increase after that. Cancel anytime.</p>
   </div>
 
   <div class="banner" id="pricing-message" role="status" aria-live="polite"></div>
 
   <div class="plans">
-    <article class="plan-card" style="--plan-accent:#00AEFF;">
-      <div class="plan-kicker">MarketPrism Standard</div>
-      <div class="plan-name">Standard</div>
-      <div class="plan-price">$15<span style="font-size:16px;font-weight:500;color:var(--mp-text-secondary);">/month</span></div>
-      <div class="plan-desc">Core dashboard access for daily monitoring and signal review.</div>
-      <div class="feature-list">
-        <div class="feature">Daily Brief, Sector Pulse, Snapshots, Discover, Narrative History</div>
-        <div class="feature">3 ticker detail pages per day</div>
-        <div class="feature" style="color:var(--mp-text-tertiary);font-size:12px;">Trading Strategy tab on ticker pages is Pro only</div>
-      </div>
-      <button class="plan-button" type="button" data-plan-id="standard" data-price-id="price_1TEtM5PYE7k13i1B6mxsADp7">GET STANDARD</button>
-      <div class="plan-meta">Core dashboard access for daily monitoring and signal review.</div>
-    </article>
-
     <article class="plan-card" style="--plan-accent:#00DE94;">
-      <div class="plan-kicker">MarketPrism PRO</div>
-      <div class="plan-name">PRO</div>
-      <div class="plan-price">$25<span style="font-size:16px;font-weight:500;color:var(--mp-text-secondary);">/month</span></div>
-      <div class="plan-desc">Everything in Standard plus premium tools and upgradeable portal billing.</div>
+      <div class="plan-badge">Early Access &mdash; Limited to 150 members</div>
+      <div class="plan-kicker">Market Prism</div>
+      <div class="plan-name">Full Access</div>
+      <div class="plan-price"><span class="plan-original">$49</span>$25<span style="font-size:16px;font-weight:500;color:var(--mp-text-secondary);">/month</span></div>
+      <div class="plan-desc">Everything the platform offers. Narrative physics, predictive signals, and gamified intelligence &mdash; all in one membership.</div>
       <div class="feature-list">
-        <div class="feature">Everything in Standard plus Trading Cards, Leaderboard, Trading Calendar, Trap Radar</div>
-        <div class="feature">Unlimited ticker detail pages + Trading Strategy tab</div>
-        <div class="feature">Manage billing, upgrades, and cancellations in Stripe Portal</div>
+        <div class="feature-section-label">Daily Intelligence</div>
+        <div class="feature">Pre-bell Daily Brief with top conviction trades sorted by confidence</div>
+        <div class="feature">Today's biggest narratives across sectors, traps, and coordination events</div>
+        <div class="feature">Market Pulse with real-time regime indicators</div>
+
+        <div class="feature-section-label">Deep Analysis</div>
+        <div class="feature">Unlimited ticker detail pages with full forensic breakdown</div>
+        <div class="feature">Signal Lab &mdash; visualize Temporal Energy, Narrative Pressure, and Physics Energy</div>
+        <div class="feature">Price &amp; Narrative charts with story markers and AI-interpreted signal regimes</div>
+        <div class="feature">Trading Strategy tab with entry zones, risk scores, and historical analogs</div>
+
+        <div class="feature-section-label">Planning &amp; Gamification</div>
+        <div class="feature">Trading Calendar &mdash; plan trades around FOMC, earnings, OPEX, and catalysts</div>
+        <div class="feature">Trading Cards &mdash; collectible signal cards with rarity tiers and confidence scores</div>
+        <div class="feature">Leaderboard &mdash; live rankings by fair value gap and narrative strength</div>
+        <div class="feature">Score Any Stock &mdash; instant narrative forensic score on any US-listed ticker</div>
+
+        <div class="feature-section-label">Research &amp; Data</div>
+        <div class="feature">569,787 news stories scored across 172 stocks, going back to January 2021</div>
+        <div class="feature">Narrative history with story lifecycle tracking and decay metrics</div>
+        <div class="feature">SEC-verified claims, source credibility scoring, coordination detection</div>
       </div>
-      <button class="plan-button" type="button" data-plan-id="pro" data-price-id="price_1TEtLbPYE7k13i1ByCkSo2UR">GET PRO</button>
-      <div class="plan-meta">Best fit if you want premium research surfaces and full billing controls.</div>
+      <button class="plan-button" type="button" data-plan-id="pro" data-price-id="price_1TEtLbPYE7k13i1ByCkSo2UR">GET EARLY ACCESS &mdash; $25/MONTH</button>
+      <div class="plan-meta">Secure checkout via Stripe. Cancel anytime. Price locks in at $25/month for early members.</div>
+      <div class="seats-remaining">
+        <span>Spots remaining</span>
+        <div class="seats-bar"><div class="seats-fill" id="seats-fill"></div></div>
+      </div>
     </article>
   </div>
 </div>
@@ -414,6 +432,12 @@ body::before{
     .catch(function(err){
       console.error('Pricing subscription load error:', err);
     });
+
+  // Animate seats bar
+  setTimeout(function(){
+    var fill = document.getElementById('seats-fill');
+    if(fill) fill.style.width = '18%';
+  }, 400);
 })();
 </script>
 </body>
