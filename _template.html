@@ -5341,7 +5341,7 @@ function runScorer(){
         detail: 'AI-assisted scoring and premium decision support.'
       });
     }
-    setBillingFlash('error', 'Upgrade to Pro to use Score Any Stock.');
+    setBillingFlash('error', 'Subscribe to use Score Any Stock.');
     return;
   }
   var inp=document.getElementById('scorer-input');var tk=(inp.value||'').toUpperCase().trim();if(!tk)return;
@@ -5772,12 +5772,12 @@ function renderFeatureLock(requiredPlan, options){
   var config = BILLING_UI.getFeatureLockPresentation
     ? BILLING_UI.getFeatureLockPresentation(requiredPlan, options || {})
     : {
-        eyebrow: requiredPlan === 'pro' ? 'Pro Feature' : 'Standard Feature',
-        title: 'Unlock this feature',
+        eyebrow: 'Paid Feature',
+        title: 'Subscribe to access this feature',
         body: '',
-        cta: requiredPlan === 'pro' ? 'Upgrade to Pro' : 'Start Standard'
+        cta: 'Get Full Access — $25/month'
       };
-  var planClass = requiredPlan === 'pro' ? 'pro' : 'standard';
+  var planClass = 'pro';
   return '<div class="feature-lock-card ' + planClass + '">'
     + '<div class="feature-lock-eyebrow">' + esc(config.eyebrow) + '</div>'
     + '<div class="feature-lock-title">' + esc(config.title) + '</div>'
@@ -5892,7 +5892,7 @@ function renderSubscriptionOverview(subscription){
     metaAccessEl.textContent = presentation ? presentation.accessLabel : 'Upgrade Needed';
   }
   if(metaAccessCopyEl){
-    metaAccessCopyEl.textContent = presentation ? presentation.accessCopy : 'Upgrade to Pro to access Trading Cards, Leaderboard, and Trading Calendar.';
+    metaAccessCopyEl.textContent = presentation ? presentation.accessCopy : 'Subscribe to access all platform features.';
   }
   renderBillingActions(subscription);
   applyPlanAccessGating(subscription);

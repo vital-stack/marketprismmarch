@@ -1,40 +1,31 @@
 window.MP_BILLING = (function(){
+  // Single plan — all paid users get full access
   var plans = [
     {
-      id: 'standard',
-      aliases: ['basic'],
-      name: 'MarketPrism Standard',
-      priceId: 'price_1TEtM5PYE7k13i1B6mxsADp7',
-      priceLabel: '$15/mo',
-      description: 'Core dashboard access for daily monitoring and signal review.',
-      requiredRank: 1
-    },
-    {
       id: 'pro',
-      aliases: [],
-      name: 'MarketPrism PRO',
+      aliases: ['standard', 'basic'],
+      name: 'Market Prism Full Access',
       priceId: 'price_1TEtLbPYE7k13i1ByCkSo2UR',
       priceLabel: '$25/mo',
-      description: 'Everything in Standard plus premium tools and upgradeable portal billing.',
-      requiredRank: 2
+      description: 'Full platform access — every tool, every signal, every ticker.',
+      requiredRank: 1
     }
   ];
 
   var planRank = {
     none: 0,
     standard: 1,
-    pro: 2,
-    beta: 3
+    pro: 1,
+    beta: 1
   };
 
   // Set to true to temporarily unlock all features for testing.
   var dashboardAccessOverride = true;
 
-  // Admin emails — always get full pro access regardless of subscription
+  // Admin emails — always get full access regardless of subscription
   var adminEmails = ['tara@vtlbranding.com'];
 
-  // Tab gating — currently unlocked for launch. Re-enable when paid tiers are enforced:
-  // cards: 'pro', calendar: 'pro', leaderboard: 'pro', trapradar: 'pro'
+  // No locked tabs — single tier means everything is unlocked for paid users
   var lockedTabs = {};
 
   function normalize(value){
@@ -52,15 +43,11 @@ window.MP_BILLING = (function(){
     var direct = getPlanByPriceId(priceId);
     if(direct) return direct;
     var normalizedPlanId = normalize(planId);
-    return plans.find(function(plan){
-      if(normalizedPlanId === plan.id || normalizedPlanId.indexOf(plan.id) !== -1){
-        return true;
-      }
-      return (plan.aliases || []).some(function(alias){
-        var normalizedAlias = normalize(alias);
-        return normalizedPlanId === normalizedAlias || normalizedPlanId.indexOf(normalizedAlias) !== -1;
-      });
-    }) || null;
+    // Any paid plan maps to pro (full access)
+    if(normalizedPlanId && normalizedPlanId !== 'none'){
+      return plans[0];
+    }
+    return null;
   }
 
   function getPlanName(subscription){
@@ -80,16 +67,13 @@ window.MP_BILLING = (function(){
 
   function getAccessLevel(subscription){
     if(dashboardAccessOverride || isAdmin()){
-      return 'beta';
+      return 'pro';
     }
     if(subscription && subscription.user_id === 'beta'){
-      var tier = normalize(subscription.plan_id);
-      if(tier === 'pro') return 'pro';
-      if(tier === 'standard') return 'standard';
-      return 'beta';
+      return 'pro';
     }
     var plan = inferPlan(subscription && subscription.plan_id, subscription && subscription.price_id);
-    return plan ? plan.id : 'none';
+    return plan ? 'pro' : 'none';
   }
 
   function hasAccess(subscription, requiredPlan){
@@ -100,8 +84,8 @@ window.MP_BILLING = (function(){
     if(['active', 'trialing'].indexOf(status) === -1){
       return false;
     }
-    var current = getAccessLevel(subscription);
-    return (planRank[current] || 0) >= (planRank[requiredPlan] || 0);
+    // Single tier — any active/trialing subscription has full access
+    return true;
   }
 
   return {

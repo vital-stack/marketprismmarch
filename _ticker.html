@@ -3717,15 +3717,7 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
 
   <!-- ═══ TAB: STRATEGY ═══ -->
   <div class="tk-tab-panel" id="tab-strategy" style="position:relative;">
-    <!-- Pro gating overlay (hidden by default, shown by JS for non-Pro) -->
-    <div id="strategy-pro-gate" style="display:none;position:absolute;inset:0;z-index:10;display:none;align-items:center;justify-content:center;background:linear-gradient(180deg,transparent 0%,rgba(8,11,17,0.85) 30%,rgba(8,11,17,0.98) 100%);pointer-events:all;">
-      <div style="text-align:center;max-width:480px;padding:40px;">
-        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#9CA3AF;margin-bottom:16px;">Pro Feature</div>
-        <div style="font-family:'Inter',system-ui,sans-serif;font-size:28px;color:#F5F7FA;line-height:1.1;margin-bottom:12px;">Trading Strategy is a Pro feature</div>
-        <div style="font-size:14px;color:#9CA3AF;line-height:1.6;margin-bottom:24px;">Upgrade to Pro for full access to AI-powered trading strategies, historical entry zones, and sentiment-driven return analysis.</div>
-        <a href="/pricing" style="display:inline-flex;align-items:center;padding:12px 24px;border-radius:10px;background:linear-gradient(135deg,rgba(0,174,255,0.85),rgba(0,174,255,0.55));color:#fff;font-size:14px;font-weight:600;text-decoration:none;border:1px solid rgba(0,174,255,0.35);">Upgrade to Pro</a>
-      </div>
-    </div>
+    <!-- Pro gating removed — single tier, all paid users get full access -->
     <!-- Loading skeleton -->
     <div id="strategy-loading">
       <div class="section">
@@ -7369,58 +7361,8 @@ async function refreshAll() {
     } catch(e){ console.warn('Ticker gating check failed:', e); }
   }
 
-  var hasPro = BILLING.hasAccess(sub, 'pro');
-  var isTrialing = sub && sub.status === 'trialing';
-
-  // Gate Trading Strategy tab for non-Pro users
-  if(!hasPro && !isTrialing){
-    var gate = document.getElementById('strategy-pro-gate');
-    var stratPanel = document.getElementById('tab-strategy');
-    if(gate && stratPanel){
-      gate.style.display = 'flex';
-      // Blur content behind the overlay
-      Array.from(stratPanel.children).forEach(function(ch){
-        if(ch.id !== 'strategy-pro-gate'){
-          ch.style.filter = 'blur(6px)';
-          ch.style.pointerEvents = 'none';
-        }
-      });
-    }
-  }
-
-  // Pro or trialing users get unlimited ticker access
-  if(hasPro || isTrialing){
-    refreshAll();
-    return;
-  }
-
-  // Standard plan: enforce 3 unique tickers per day
-  var today = new Date().toISOString().slice(0,10);
-  var storageKey = 'mp-ticker-views-' + today;
-  var viewed = [];
-  try { viewed = JSON.parse(localStorage.getItem(storageKey) || '[]'); } catch(e){ viewed = []; }
-
-  if(viewed.indexOf(TICKER) !== -1){ refreshAll(); return; }
-  if(viewed.length < 3){
-    viewed.push(TICKER);
-    localStorage.setItem(storageKey, JSON.stringify(viewed));
-    refreshAll();
-    return;
-  }
-
-  // Over limit — show upgrade overlay
-  var overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(8,11,17,0.92);backdrop-filter:blur(8px);';
-  overlay.innerHTML = '<div style="max-width:480px;text-align:center;padding:40px;">'
-    + '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#9CA3AF;margin-bottom:16px;">Daily Limit Reached</div>'
-    + '<div style="font-family:\'Inter\',system-ui,sans-serif;font-size:32px;color:#F5F7FA;line-height:1.1;margin-bottom:16px;">Upgrade to Pro for unlimited ticker access</div>'
-    + '<div style="font-size:14px;color:#9CA3AF;line-height:1.6;margin-bottom:24px;">You\'ve viewed 3 ticker pages today on the Standard plan. Pro members get unlimited access to all ticker detail pages, plus Trading Cards, Leaderboard, Trading Calendar, and Trap Radar.</div>'
-    + '<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">'
-    + '<a href="/pricing" style="display:inline-flex;align-items:center;padding:12px 24px;border-radius:10px;background:linear-gradient(135deg,rgba(0,174,255,0.85),rgba(0,174,255,0.55));color:#fff;font-size:14px;font-weight:600;text-decoration:none;border:1px solid rgba(0,174,255,0.35);">Upgrade to Pro</a>'
-    + '<a href="/dashboard" style="display:inline-flex;align-items:center;padding:12px 24px;border-radius:10px;background:rgba(255,255,255,0.04);color:#F5F7FA;font-size:14px;font-weight:600;text-decoration:none;border:1px solid rgba(255,255,255,0.1);">Back to Dashboard</a>'
-    + '</div>'
-    + '</div>';
-  document.body.appendChild(overlay);
+  // Single tier — all paid users get full access, no daily limits
+  refreshAll();
 })();
 
 // Story feed refresh button

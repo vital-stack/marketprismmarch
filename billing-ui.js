@@ -40,21 +40,18 @@
     var status = normalizeSubscriptionStatus(subscription && subscription.status);
     var renewalDate = subscription && (subscription.current_period_end || subscription.cancel_at || subscription.ended_at);
     var daysRemaining = status === 'trialing' ? getTrialDaysRemaining(renewalDate, opts.now) : null;
-    var accessLevel = opts.accessLevel || 'none';
-    var hasPro = !!opts.hasPro;
-    var isBeta = !!(subscription && subscription.user_id === 'beta');
 
     if(status === 'trialing'){
       return {
         status: status,
         statusLabel: 'Trial',
-        planCopy: 'Your 7-day free trial is active. Explore the dashboard before choosing a paid plan.',
+        planCopy: 'Your free trial is active. Explore the full platform before subscribing.',
         renewalDateText: formatBillingDate(renewalDate),
         renewalCopy: daysRemaining === 0
-          ? 'Trial access ends today. Upgrade now to avoid losing dashboard access.'
-          : 'Trial access ends in ' + daysRemaining + ' day' + (daysRemaining === 1 ? '' : 's') + '. Upgrade before then to keep your dashboard access unlocked.',
+          ? 'Trial access ends today. Subscribe now to keep your access.'
+          : 'Trial access ends in ' + daysRemaining + ' day' + (daysRemaining === 1 ? '' : 's') + '. Subscribe before then to keep your access.',
         accessLabel: 'Trial Access',
-        accessCopy: 'Your trial currently unlocks the core paid dashboard experience until it expires.',
+        accessCopy: 'Your trial unlocks full platform access until it expires.',
         planName: opts.planName || 'Trial'
       };
     }
@@ -63,18 +60,16 @@
       status: status,
       statusLabel: status === 'past_due' ? 'Past Due' : status === 'canceled' ? 'Canceled' : status === 'active' ? 'Active' : 'Inactive',
       planCopy: status === 'active'
-        ? 'Your subscription is active and connected to Stripe checkout plus the billing portal.'
-        : isBeta
-          ? 'Beta access is active. Premium tabs stay unlocked while beta access is enabled.'
-          : 'No active subscription found. Choose a plan to unlock paid billing and premium dashboard tools.',
+        ? 'Your subscription is active. Full platform access is unlocked.'
+        : 'No active subscription found. Subscribe to unlock the full platform.',
       renewalDateText: formatBillingDate(renewalDate),
       renewalCopy: renewalDate
-        ? (status === 'canceled' ? 'This subscription is set to end on the date above.' : 'Stripe will use this date for the next renewal boundary.')
-        : 'Choose a plan and this card will show the next renewal date.',
-      accessLabel: hasPro || accessLevel === 'beta' ? 'Unlocked' : 'Upgrade Needed',
-      accessCopy: hasPro || accessLevel === 'beta'
-        ? 'Trading Cards, Leaderboard, and Trading Calendar are available on this account.'
-        : 'Upgrade to Pro to access Trading Cards, Leaderboard, and Trading Calendar.',
+        ? (status === 'canceled' ? 'Your access will end on the date above.' : 'Next renewal on the date above.')
+        : 'Subscribe and this card will show your next renewal date.',
+      accessLabel: status === 'active' ? 'Full Access' : 'Subscribe to Unlock',
+      accessCopy: status === 'active'
+        ? 'All tools unlocked: Signal Lab, Trading Cards, Leaderboard, Trading Calendar, and more.'
+        : 'Subscribe to access Signal Lab, Trading Cards, Leaderboard, Trading Calendar, and all platform features.',
       planName: opts.planName || 'No Active Plan'
     };
   }
@@ -87,40 +82,31 @@
     var formattedDate = formatBillingDate(renewalDate);
     var daysRemaining = status === 'trialing' ? getTrialDaysRemaining(renewalDate, opts.now) : null;
     var planStates = {
-      standard: {
-        buttonText: 'GET STANDARD',
-        disabled: false,
-        metaText: 'Use this if you want the core dashboard without the premium tools.'
-      },
       pro: {
-        buttonText: 'GET PRO',
+        buttonText: 'GET EARLY ACCESS — $25/MONTH',
         disabled: false,
-        metaText: 'Best fit if you want premium research surfaces and full billing controls.'
+        metaText: 'Secure checkout via Stripe. Cancel anytime. Price locks in at $25/month for early members.'
       }
     };
 
     if(status === 'trialing'){
-      planStates.standard.buttonText = 'ON TRIAL';
-      planStates.standard.disabled = true;
-      planStates.standard.metaText = 'Your trial currently includes Standard access until ' + formattedDate + '.';
-      planStates.pro.buttonText = 'UPGRADE TO PRO';
-      planStates.pro.metaText = 'Upgrade at any time to keep premium tools unlocked beyond your trial window.';
+      planStates.pro.buttonText = 'SUBSCRIBE NOW';
+      planStates.pro.metaText = 'Your trial ends ' + formattedDate + '. Subscribe to keep full access.';
       return {
         bannerType: 'info',
-        bannerText: 'Your 7-day free trial is active. ' + (daysRemaining === 0 ? 'It ends today before paid access locks.' : daysRemaining + ' day' + (daysRemaining === 1 ? '' : 's') + ' remaining before paid access locks.'),
+        bannerText: 'Your free trial is active. ' + (daysRemaining === 0 ? 'It ends today.' : daysRemaining + ' day' + (daysRemaining === 1 ? '' : 's') + ' remaining.'),
         planName: planName,
         planStates: planStates
       };
     }
 
     if(status === 'active'){
-      planStates.standard.buttonText = 'CURRENT PLAN';
-      planStates.standard.disabled = true;
-      planStates.standard.metaText = 'Your current billing is active through ' + formattedDate + '.';
-      planStates.pro.buttonText = 'CHANGE TO PRO';
+      planStates.pro.buttonText = 'CURRENT PLAN';
+      planStates.pro.disabled = true;
+      planStates.pro.metaText = 'Your subscription is active through ' + formattedDate + '.';
       return {
-        bannerType: 'info',
-        bannerText: planName + ' is active on your account.',
+        bannerType: 'success',
+        bannerText: 'You have full access to Market Prism.',
         planName: planName,
         planStates: planStates
       };
@@ -134,33 +120,22 @@
     };
   }
 
+  // Single tier — any active subscription grants full access
   function canAccessFeature(subscription, requiredPlan, options){
     var opts = options || {};
     if(opts.dashboardAccessOverride) return true;
     if(requiredPlan === 'free' || !requiredPlan) return true;
     var status = normalizeSubscriptionStatus(subscription && subscription.status);
-    if(status !== 'active' && status !== 'trialing') return false;
-    var planId = String(subscription && subscription.plan_id || '').trim().toLowerCase();
-    var current = planId.indexOf('pro') !== -1 ? 'pro' : planId.indexOf('standard') !== -1 || planId.indexOf('basic') !== -1 ? 'standard' : 'none';
-    var rank = { none: 0, standard: 1, pro: 2 };
-    return (rank[current] || 0) >= (rank[requiredPlan] || 0);
+    return status === 'active' || status === 'trialing';
   }
 
   function getFeatureLockPresentation(requiredPlan, options){
     var opts = options || {};
-    if(requiredPlan === 'pro'){
-      return {
-        eyebrow: 'Pro Feature',
-        title: 'Upgrade to access ' + (opts.title || 'this feature'),
-        body: opts.detail || 'Upgrade your plan to unlock this premium workflow.',
-        cta: 'Upgrade to Pro'
-      };
-    }
     return {
-      eyebrow: 'Standard Feature',
-      title: 'Unlock ' + (opts.title || 'this feature'),
-      body: opts.detail || 'Start a Standard subscription to continue.',
-      cta: 'Start Standard'
+      eyebrow: 'Paid Feature',
+      title: 'Subscribe to access ' + (opts.title || 'this feature'),
+      body: opts.detail || 'Start your membership to unlock the full platform.',
+      cta: 'Get Full Access — $25/month'
     };
   }
 
