@@ -7410,7 +7410,7 @@ async function loadTrapsData(){
     var maxDate=dateRows[0].snapshot_date;
 
     var cols='ticker,narrative,current_price,fvd_pct,vms,predicted_exhaustion_days,coordination_class,drift_score';
-    var res=await fetch(SUPABASE_URL+'/rest/v1/narrative_traps?select='+cols+'&snapshot_date=eq.'+encodeURIComponent(maxDate)+'&order=fvd_pct.desc&limit=10',{headers:hdrs});
+    var res=await fetch(SUPABASE_URL+'/rest/v1/narrative_traps?select='+cols+'&snapshot_date=eq.'+encodeURIComponent(maxDate)+'&order=fvd_pct.desc&limit=120',{headers:hdrs});
     if(!res.ok) return;
     TRAPS_DB_DATA=await res.json();
   }catch(e){
@@ -13029,7 +13029,7 @@ async function loadTrapRadar(){
     var maxDate = dateRows[0].snapshot_date;
 
     var cols = 'ticker,narrative,current_price,fvd_pct,vms,predicted_exhaustion_days,coordination_class,drift_score';
-    var url = SUPABASE_URL+'/rest/v1/narrative_traps?select='+cols+'&snapshot_date=eq.'+encodeURIComponent(maxDate)+'&order=fvd_pct.desc&limit=20';
+    var url = SUPABASE_URL+'/rest/v1/narrative_traps?select='+cols+'&snapshot_date=eq.'+encodeURIComponent(maxDate)+'&order=fvd_pct.desc&limit=120';
     var res = await fetch(url,{headers:hdrs});
     if(!res.ok) throw new Error('Supabase '+res.status);
     TRAP_DATA = await res.json();
