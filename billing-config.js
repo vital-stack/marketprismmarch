@@ -6,8 +6,8 @@ window.MP_BILLING = (function(){
       aliases: ['standard', 'basic'],
       name: 'Market Prism Full Access',
       priceId: 'price_1TEtLbPYE7k13i1ByCkSo2UR',
-      priceLabel: '$25/mo',
-      description: 'Full platform access — every tool, every signal, every ticker.',
+      priceLabel: '$25/yr',
+      description: 'Full platform access for 12 months — every tool, every signal, every ticker.',
       requiredRank: 1
     }
   ];
