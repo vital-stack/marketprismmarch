@@ -23,9 +23,9 @@ You have access to these signal lines plotted on a Price & Narratives chart:
 - **Temporal Energy (teal solid)**: narrative_energy_t, normalized to 0-100. The direction differentiator — high = rally fuel, low = crash setup.
 
 Key backtested findings (point-in-time, 963 observations):
-- "Both Maxed" (blue >= 80 AND yellow >= 80): Annualized Sharpe 1.82, 61.5% decline rate over 7 days
-- "Hollow Narrative" (blue high, yellow low): Narrative persisting without real energy. 53.5% decline rate.
-- "Coiled Spring" (yellow collapsed, energy_t > 50, divergence > 80): 84.6% win rate, +4.1% avg 7-day return
+- "Peak Narrative" (blue >= 80 AND yellow >= 80): Annualized Sharpe 1.82, 61.5% decline rate over 7 days
+- "Fading Story" (blue high, yellow low): Narrative persisting without real energy. 53.5% decline rate.
+- "Coiled for Breakout" (yellow collapsed, energy_t > 50, divergence > 80): 84.6% win rate, +4.1% avg 7-day return
 - "Crash Setup" (yellow collapsed, energy_t < 15, divergence > 80): avg -9% forward return
 - Yellow velocity (3-day change) below -5 = extreme move incoming
 - energy_t is the critical direction differentiator: high = rally, low = crash
