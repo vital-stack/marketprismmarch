@@ -2702,7 +2702,7 @@ body{
   background:rgba(0,222,148,.08);outline:1px solid var(--mp-teal);outline-offset:-1px;
 }
 .tc-cal-day-num{
-  font-family:var(--font-mono);font-size:10px;font-weight:500;
+  font-family:var(--font-body);font-size:10px;font-weight:500;
   color:var(--mp-text-secondary);margin-bottom:4px;
 }
 .tc-cal-day-closed{
@@ -2722,22 +2722,25 @@ body{
 .tc-cal-evt-dot{width:4px;height:4px;border-radius:50%;flex-shrink:0;}
 .tc-cal-day-queued{display:flex;flex-direction:column;gap:2px;margin-top:auto;}
 .tc-cal-chip{
-  display:flex;align-items:center;gap:3px;
-  font-family:var(--font-mono);font-size:10px;text-transform:uppercase;
+  display:flex;align-items:center;gap:4px;
+  font-family:var(--font-body);font-size:10px;text-transform:uppercase;
   letter-spacing:.05em;color:var(--mp-text-primary);
-  background:rgba(255,255,255,.05);border-radius:3px;padding:2px 4px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.06);
+  border-radius:4px;padding:3px 5px;
   animation:chipIn .2s ease-out both;
-  cursor:grab;
+  cursor:pointer;transition:background .15s,border-color .15s;
 }
+.tc-cal-chip:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.12);}
 .tc-cal-chip:active{cursor:grabbing;}
-.tc-cal-chip-dot{width:4px;height:4px;border-radius:50%;flex-shrink:0;}
+.tc-cal-chip-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
 .tc-cal-chip-rm{
-  margin-left:auto;cursor:pointer;color:var(--mp-text-tertiary);
-  font-size:11px;line-height:1;padding:0 1px;transition:color .15s;
+  margin-left:auto;cursor:pointer;color:var(--mp-text-muted);
+  font-size:12px;line-height:1;padding:1px 2px;border-radius:3px;
+  transition:color .15s,background .15s;
 }
-.tc-cal-chip-rm:hover{color:var(--mp-red);}
+.tc-cal-chip-rm:hover{color:#FF4D4D;background:rgba(255,77,77,.12);}
 .tc-cal-drop-hint{
-  font-family:var(--font-mono);font-size:10px;text-transform:uppercase;
+  font-family:var(--font-body);font-size:10px;text-transform:uppercase;
   letter-spacing:.08em;color:var(--mp-teal);text-align:center;
   margin-top:auto;display:none;
 }
@@ -2768,6 +2771,43 @@ body{
 .tc-cal-bar.bullish{background:rgba(0,222,148,0.18);color:#00DE94;border:1px solid rgba(0,222,148,0.25);}
 .tc-cal-bar.neutral{background:rgba(0,174,255,0.18);color:#00AEFF;border:1px solid rgba(0,174,255,0.25);}
 @keyframes barIn{0%{opacity:0;transform:scaleX(.8);}100%{opacity:.85;transform:scaleX(1);}}
+/* ── Trade detail popup ── */
+.tc-trade-popup{
+  position:fixed;z-index:1000;
+  background:var(--mp-surface);border:1px solid var(--mp-border-mid);
+  border-radius:12px;padding:16px;width:260px;
+  box-shadow:0 12px 40px rgba(0,0,0,.6);
+  animation:popIn .15s ease-out both;
+}
+.tc-trade-popup::before{
+  content:'';position:absolute;top:-6px;left:var(--arrow-left,20px);
+  width:12px;height:12px;background:var(--mp-surface);
+  border-left:1px solid var(--mp-border-mid);border-top:1px solid var(--mp-border-mid);
+  transform:rotate(45deg);
+}
+@keyframes popIn{0%{opacity:0;transform:translateY(4px);}100%{opacity:1;transform:translateY(0);}}
+.tc-trade-popup-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.tc-trade-popup-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.tc-trade-popup-ticker{font-family:var(--font-body);font-size:16px;font-weight:700;color:var(--mp-text-primary);}
+.tc-trade-popup-bias{font-family:var(--font-body);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;}
+.tc-trade-popup-close{
+  margin-left:auto;cursor:pointer;color:var(--mp-text-tertiary);
+  font-size:16px;line-height:1;padding:2px;transition:color .15s;
+}
+.tc-trade-popup-close:hover{color:var(--mp-text-primary);}
+.tc-trade-popup-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.tc-trade-popup-stat{display:flex;flex-direction:column;gap:2px;}
+.tc-trade-popup-stat-label{font-family:var(--font-body);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--mp-text-tertiary);}
+.tc-trade-popup-stat-value{font-family:var(--font-body);font-size:13px;font-weight:600;color:var(--mp-text-primary);}
+.tc-trade-popup-date{font-family:var(--font-body);font-size:11px;color:var(--mp-text-tertiary);margin-bottom:12px;}
+.tc-trade-popup-delete{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  width:100%;padding:8px;border:1px solid rgba(255,77,77,0.25);
+  background:rgba(255,77,77,0.08);border-radius:6px;
+  color:#FF4D4D;font-family:var(--font-body);font-size:12px;font-weight:600;
+  cursor:pointer;transition:background .15s,border-color .15s;
+}
+.tc-trade-popup-delete:hover{background:rgba(255,77,77,0.18);border-color:rgba(255,77,77,0.4);}
 /* Tooltip */
 .tc-cal-tooltip{
   position:fixed;z-index:999;pointer-events:none;
@@ -11760,6 +11800,11 @@ function tcRenderChips(dateStr,container){
       e.stopPropagation();
       tcDeleteCustomEvent(q.eventId);
     });
+    // Click chip to show detail popup
+    chip.addEventListener('click',function(e){
+      e.stopPropagation();
+      tcShowTradePopup(q, chip);
+    });
     container.appendChild(chip);
   });
 }
@@ -11808,6 +11853,9 @@ function tcRenderTradeBars(){
   // Need grid to be laid out first
   var gridRect=grid.getBoundingClientRect();
 
+  // Track how many bars occupy each row (by cell top position) for stacking
+  var rowBarCounts={};
+
   bars.forEach(function(b, barIdx){
     var startCell=cellMap[b.date];
     if(!startCell)return;
@@ -11837,9 +11885,16 @@ function tcRenderTradeBars(){
     var startRect=startCell.getBoundingClientRect();
     var endRect=lastCell.getBoundingClientRect();
 
-    // Position bar relative to grid
+    // Position bar relative to grid — stack bars in same row
+    var rowKey=Math.round(startRect.top);
+    if(!rowBarCounts[rowKey])rowBarCounts[rowKey]=0;
+    var stackIndex=rowBarCounts[rowKey];
+    rowBarCounts[rowKey]++;
+
+    var barHeight=16;
+    var barGap=3;
     var left=startRect.left-gridRect.left;
-    var top=startRect.top-gridRect.top+startRect.height-20; // Bottom of cell
+    var top=startRect.top-gridRect.top+startRect.height-20-(stackIndex*(barHeight+barGap));
     var width=(endRect.left+endRect.width)-startRect.left;
 
     // Check if bar wraps to next week row
@@ -11876,6 +11931,87 @@ function tcUpdateQueuedBadges(){
       badge.parentElement.classList.toggle('queued',qc>0);
     }
   });
+}
+
+// ── Trade detail popup ──
+var tcTradePopupEl=null;
+function tcDismissTradePopup(){
+  if(tcTradePopupEl){tcTradePopupEl.remove();tcTradePopupEl=null;}
+}
+function tcShowTradePopup(qItem, anchorEl){
+  tcDismissTradePopup();
+  var popup=document.createElement('div');
+  popup.className='tc-trade-popup';
+  var ticker=qItem.ticker||(qItem.metadata&&qItem.metadata.ticker)||'';
+  var bias=qItem.bias||(qItem.metadata&&qItem.metadata.bias)||'';
+  var conf=qItem.conf||(qItem.metadata&&qItem.metadata.conf)||'';
+  var holdDays=(qItem.metadata&&qItem.metadata.holding_days)||'';
+  var name=qItem.name||(qItem.metadata&&qItem.metadata.name)||'';
+  var dateStr=qItem.event_date||'';
+  var ac=qItem.ac||qItem.color_token||'var(--mp-cyan)';
+  var biasLower=(bias||'').toLowerCase();
+  var biasColor=biasLower.includes('fade')||biasLower.includes('short')||biasLower.includes('avoid')?'#FF4D4D':
+    biasLower.includes('ride')||biasLower.includes('add')||biasLower.includes('accumulate')?'#00DE94':'#00AEFF';
+  var dateDisplay=dateStr?new Date(dateStr+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}):'';
+
+  popup.innerHTML=
+    '<div class="tc-trade-popup-header">'+
+      '<span class="tc-trade-popup-dot" style="background:'+ac+';"></span>'+
+      '<span class="tc-trade-popup-ticker">'+ticker+'</span>'+
+      '<span class="tc-trade-popup-bias" style="color:'+biasColor+';">'+bias+'</span>'+
+      '<span class="tc-trade-popup-close">&times;</span>'+
+    '</div>'+
+    (name?'<div style="font-family:var(--font-body);font-size:12px;color:var(--mp-text-secondary);margin-bottom:8px;">'+name+'</div>':'')+
+    '<div class="tc-trade-popup-stats">'+
+      (conf?'<div class="tc-trade-popup-stat"><span class="tc-trade-popup-stat-label">Confidence</span><span class="tc-trade-popup-stat-value">'+conf+'</span></div>':'')+
+      (holdDays?'<div class="tc-trade-popup-stat"><span class="tc-trade-popup-stat-label">Hold Window</span><span class="tc-trade-popup-stat-value">'+holdDays+' days</span></div>':'')+
+    '</div>'+
+    '<div class="tc-trade-popup-date">Planned for '+dateDisplay+'</div>'+
+    '<button class="tc-trade-popup-delete" data-eventid="'+(qItem.eventId||qItem.id||'')+'">Remove from Calendar</button>';
+
+  document.body.appendChild(popup);
+  tcTradePopupEl=popup;
+
+  // Position near anchor
+  var rect=anchorEl.getBoundingClientRect();
+  var popW=260;
+  var popLeft=Math.max(8,Math.min(rect.left,window.innerWidth-popW-16));
+  var popTop=rect.bottom+8;
+  if(popTop+200>window.innerHeight)popTop=rect.top-210;
+  popup.style.left=popLeft+'px';
+  popup.style.top=popTop+'px';
+  // Adjust arrow
+  var arrowOffset=Math.max(12,Math.min(rect.left-popLeft+rect.width/2-6,popW-24));
+  popup.querySelector('.tc-trade-popup-close').style.cssText=''; // keep default
+  popup.style.setProperty('--arrow-left',arrowOffset+'px');
+  var arrow=popup.querySelector('::before');
+
+  // Close button
+  popup.querySelector('.tc-trade-popup-close').addEventListener('click',function(e){
+    e.stopPropagation();
+    tcDismissTradePopup();
+  });
+
+  // Delete button
+  popup.querySelector('.tc-trade-popup-delete').addEventListener('click',function(e){
+    e.stopPropagation();
+    var eid=this.dataset.eventid;
+    if(eid){
+      tcDeleteCustomEvent(eid);
+    }
+    tcDismissTradePopup();
+  });
+
+  // Dismiss when clicking outside
+  setTimeout(function(){
+    document.addEventListener('click',tcTradePopupOutsideClick);
+  },10);
+}
+function tcTradePopupOutsideClick(e){
+  if(tcTradePopupEl&&!tcTradePopupEl.contains(e.target)){
+    tcDismissTradePopup();
+    document.removeEventListener('click',tcTradePopupOutsideClick);
+  }
 }
 
 // ── Tooltip ──
