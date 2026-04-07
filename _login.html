@@ -462,17 +462,16 @@ body::before{
 
     setLoading('btn-register', true);
     try {
-      var result = await supabase.auth.signUp({ email: email, password: password });
+      var result = await supabase.auth.signUp({ email: email, password: password, options: { emailRedirectTo: window.location.origin + '/dashboard' } });
       if(result.error) throw result.error;
-      // Check if confirmation is required
-      if(result.data.user && !result.data.session){
-        showMsg('success','Account created! Check your email to confirm your account.');
-      } else if(result.data.session){
-        showMsg('success','Account created! Redirecting to dashboard…');
-        setTimeout(function(){ window.location.href = '/dashboard'; }, 800);
-      } else {
-        showMsg('success','Account created! Check your email to confirm your account.');
+      showMsg('success','Account created! Redirecting to dashboard…');
+      // Auto-sign in and redirect regardless of confirmation setting
+      if(!result.data.session){
+        // If no session returned, sign in immediately
+        var signIn = await supabase.auth.signInWithPassword({ email: email, password: password });
+        if(signIn.error){ showMsg('info','Account created! Please sign in.'); setLoading('btn-register', false); return; }
       }
+      setTimeout(function(){ window.location.href = '/dashboard'; }, 800);
     } catch(err){
       showMsg('error', err.message || 'Registration failed.');
     } finally {
