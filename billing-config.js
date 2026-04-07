@@ -20,7 +20,8 @@ window.MP_BILLING = (function(){
   };
 
   // Set to true to temporarily unlock all features for testing.
-  var dashboardAccessOverride = true;
+  // DISABLED — paywall is now enforced. Beta codes or paid subscription required.
+  var dashboardAccessOverride = false;
 
   // Admin emails — always get full access regardless of subscription
   var adminEmails = ['tara@vtlbranding.com'];

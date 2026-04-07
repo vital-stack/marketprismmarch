@@ -7327,7 +7327,7 @@ async function refreshAll() {
   ]);
 }
 
-// ── Ticker view gating (Standard plan: 3 unique tickers/day) ──────────────────
+// ── Ticker access gating — require beta code or paid subscription ──────────────
 (async function(){
   var BILLING = window.MP_BILLING;
   // Skip gating if billing config not loaded or override is on
@@ -7335,9 +7335,10 @@ async function refreshAll() {
 
   // Determine subscription — check beta first, then Supabase auth
   var sub = null;
+  var isAuthed = false;
   var isBeta = localStorage.getItem('mp-beta-access') === 'true';
   if(isBeta){
-    var betaTier = localStorage.getItem('mp-beta-tier') || 'standard';
+    var betaTier = localStorage.getItem('mp-beta-tier') || 'pro';
     var betaExpires = localStorage.getItem('mp-beta-expires');
     if(betaExpires && new Date(betaExpires) < new Date()){
       localStorage.removeItem('mp-beta-access');
@@ -7345,8 +7346,10 @@ async function refreshAll() {
       localStorage.removeItem('mp-beta-expires');
     } else {
       sub = { user_id: 'beta', status: 'active', plan_id: betaTier, price_id: '' };
+      isAuthed = true;
     }
-  } else {
+  }
+  if(!isAuthed){
     try {
       if(window.supabase && SUPABASE_URL && SUPABASE_ANON){
         var supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
@@ -7354,14 +7357,24 @@ async function refreshAll() {
         var user = authResult && authResult.data ? authResult.data.user : null;
         if(user){
           window._mpCurrentUserEmail = (user.email || '').toLowerCase();
+          // Admin bypass
+          if(window._mpCurrentUserEmail === 'tara@vtlbranding.com'){ isAuthed = true; }
           var res = await supa.from('subscriptions').select('*').eq('user_id', user.id).in('status', ['active','trialing']).single();
-          if(!res.error && res.data) sub = res.data;
+          if(!res.error && res.data){ sub = res.data; isAuthed = true; }
+          // Even without subscription, logged-in users can view (free preview)
+          if(user){ isAuthed = true; }
         }
       }
     } catch(e){ console.warn('Ticker gating check failed:', e); }
   }
 
-  // Single tier — all paid users get full access, no daily limits
+  // Redirect unauthenticated users to login
+  if(!isAuthed){
+    window.location.href = '/login';
+    return;
+  }
+
+  // Authenticated — load all data
   refreshAll();
 })();
 
