@@ -6508,14 +6508,23 @@ function exportReport() {
 
     // The Narrative (strength ring) — draw natively to fix SVG/absolute-position rendering
     (function drawNarrativeSection() {
-      var overall = Math.round(p.narrative_strength || 0);
-      var momentum = Math.round(p.narrative_momentum || 0);
-      var credibility = Math.round(p.narrative_credibility || 0);
-      var risk = Math.round(p.narrative_risk || 0);
-      var phase = p.narrative_phase || p.phase || '';
-      var verdict = p.narrative_verdict || p.verdict || '';
+      // Match live page calculations (renderPrimaryClaim)
+      var momentum = Math.round(p.prevailing_energy != null ? p.prevailing_energy : (p.avg_energy_remaining || 50));
+      var credibility = Math.round(p.pulse_health_score != null ? p.pulse_health_score : (p.pulse_vms || 50));
+      var coordRaw = Math.round(p.pulse_coordination || 0);
+      var fragRaw = (function() {
+        if (!p) return 0;
+        var coord = p.worst_coordination || 0;
+        var invHlth = 100 - (p.pulse_health_score != null ? p.pulse_health_score : 50);
+        var drift = Math.min(100, Math.abs(p.pulse_drift || 0));
+        return Math.round(coord * 0.35 + invHlth * 0.35 + drift * 0.30);
+      })();
+      var risk = Math.round(Math.min(100, (coordRaw * 0.6) + (fragRaw * 0.4)));
+      var overall = Math.round((momentum * 0.35) + (credibility * 0.35) + ((100 - risk) * 0.30));
+      var phase = phaseFromPulse(p);
+      var verdict = p.prevailing_verdict || 'Monitoring';
       var claim = p.prevailing_narrative || 'No prevailing narrative found';
-      var exdays = (p.nearest_exhaustion_days != null) ? (p.nearest_exhaustion_days + ' days') : null;
+      var exdays = (p.nearest_exhaustion_days != null) ? (Math.round(p.nearest_exhaustion_days) + ' days') : null;
       var oc = sc(overall);
 
       checkPage(60);
