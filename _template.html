@@ -14452,7 +14452,10 @@ var LB_BOOTED=false;
 
 function hdrs(){return{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Accept':'application/json'};}
 async function sq(path){
-  var r=await fetch(SUPABASE_URL+'/rest/v1/'+path,{headers:hdrs()});
+  var h=hdrs();
+  h['Cache-Control']='no-cache';
+  h['Pragma']='no-cache';
+  var r=await fetch(SUPABASE_URL+'/rest/v1/'+path,{headers:h,cache:'no-store'});
   if(!r.ok){
     var body=''; try{body=await r.text();}catch(_){}
     console.warn('[LB] sq failed:',r.status,path.split('?')[0],body.slice(0,200));
@@ -14528,17 +14531,21 @@ var BOARDS=[
   }},
   {id:'coordinated',title:'Most Coordinated Narratives',sub:'Highest coordination score \u00b7 possible campaigns',color:'#FF4D4D',bg:'rgba(255,77,77,0.12)',scoreLabel:'Coord Score',
   fetch:async function(){
+    try{
     var date=await latestDate('narrative_scorecard');
     if(!date) return[];
     var r=await sq('narrative_scorecard?select=ticker,coordination_score,coordination_class,narrative&snapshot_date=eq.'+encodeURIComponent(date)+'&coordination_score=gt.0&order=coordination_score.desc&limit=10');
     return r.map(function(x){return{name:x.ticker,meta:(x.coordination_class||'Unknown')+' \u00b7 '+(x.narrative||'').slice(0,55)+'\u2026',score:Math.round((x.coordination_score||0)*10)/10,link:'/ticker/'+encodeURIComponent(x.ticker)};});
+    }catch(e){console.warn('[LB] coordinated fetch failed:',e.message);return[];}
   }},
   {id:'decaying',title:'Fastest Decaying Stories',sub:'Narratives burning out soonest',color:'#FFB800',bg:'rgba(255,184,0,0.12)',scoreLabel:'Decay Rate',
   fetch:async function(){
+    try{
     var date=await latestDate('narrative_scorecard');
     if(!date) return[];
     var r=await sq('narrative_scorecard?select=ticker,decay_rate,half_life,predicted_exhaustion_days,narrative&snapshot_date=eq.'+encodeURIComponent(date)+'&decay_rate=gt.0&order=decay_rate.desc&limit=10');
     return r.map(function(x){return{name:x.ticker,meta:'Half-life: '+Math.round(x.half_life||0)+'d \u00b7 Exhaustion: '+Math.round(x.predicted_exhaustion_days||0)+'d',score:Math.round((x.decay_rate||0)*1000)/1000,link:'/ticker/'+encodeURIComponent(x.ticker)};});
+    }catch(e){console.warn('[LB] decaying fetch failed:',e.message);return[];}
   }},
   {id:'suspicion',title:'Highest Manipulation Risk',sub:'Suspicion score \u2014 possible narrative attacks',color:'#7B61FF',bg:'rgba(123,97,255,0.12)',scoreLabel:'Suspicion',
   fetch:async function(){
@@ -14610,29 +14617,38 @@ var BOARDS=[
   }},
   {id:'top-sources',title:'Top Performing Sources',sub:'Ranked by composite score · hit rate, returns & confidence',color:'#00DE94',bg:'rgba(0,222,148,0.12)',scoreLabel:'Score',
   fetch:async function(){
+    try{
     var r=await sq('source_leaderboard?select=publication_name,final_score,final_rank,tier,hit_rate,avg_signed_10d_return,article_count,confidence_score_norm&order=final_rank.asc&limit=10');
     return r.map(function(x){var fs=+(x.final_score||0);var hr=((x.hit_rate||0)*100).toFixed(1);var tier=x.tier||'';var tColor=tier==='S'?'#00DE94':tier==='A'?'#00DE94':tier==='B'?'#00AEFF':tier==='C'?'#FFB800':'#A0A8B0';return{name:x.publication_name||'Unknown',meta:hr+'% hit · '+formatEdge(x.avg_signed_10d_return)+' avg 10d · '+(x.article_count||0)+' articles · Tier '+tier,score:fs,scoreDisplay:fs.toFixed(1),_scoreColor:tColor,link:'#narrative'};});
+    }catch(e){console.warn('[LB] top-sources fetch failed:',e.message);return[];}
   }},
   {id:'weak-themes',title:'Weak / Noisy Themes',sub:'Lowest hit rate themes · unreliable narratives',color:'#FF4D4D',bg:'rgba(255,77,77,0.12)',scoreLabel:'Hit Rate %',
   fetch:async function(){
+    try{
     var r=await sq('theme_performance?select=thematic_theme,hit_rate,avg_signed_return,article_count&order=hit_rate.asc&limit=10');
     return r.map(function(x){var hr=(x.hit_rate||0)*100;var hrD=hr.toFixed(1);return{name:x.thematic_theme||'Unknown',meta:formatEdge(x.avg_signed_return)+' avg return \u00b7 '+(x.article_count||0)+' articles',score:hr,scoreDisplay:hrD+'%',_scoreColor:hr<=30?'#FF4D4D':hr<=50?'#FFB800':'#00DE94',link:'#discover'};});
+    }catch(e){console.warn('[LB] weak-themes fetch failed:',e.message);return[];}
   }},
   {id:'themes',title:'Top Themes',sub:'By sector risk & contagion level',color:'#FFB800',bg:'rgba(255,184,0,0.12)',scoreLabel:'Tickers',
   fetch:async function(){
+    try{
     var r=await sq('sector_risk_summary?select=macro_theme,contagion_level,trap_intensity,trap_count,ticker_count&macro_theme=not.is.null&order=ticker_count.desc&limit=10');
     return r.map(function(x){return{name:x.macro_theme||'Unknown',meta:x.contagion_level+' \u00b7 '+(x.trap_count||0)+' traps \u00b7 intensity '+(Math.round((x.trap_intensity||0)*100))+'%',score:x.ticker_count||0,link:'#sector'};});
+    }catch(e){console.warn('[LB] themes fetch failed:',e.message);return[];}
   }},
   {id:'political',title:'Macro & Political Events',sub:'By contagion risk across themes',color:'#FF4D4D',bg:'rgba(255,77,77,0.12)',scoreLabel:'Risk',
   fetch:async function(){
+    try{
     var naDate=await latestDate('narrative_analyses');
     var r=await sq('narrative_analyses?select=macro_theme,contagion_risk,ticker&macro_theme=not.is.null'+(naDate?'&snapshot_date=eq.'+encodeURIComponent(naDate):'')+'&order=contagion_risk.desc&limit=200');
     var map={};
     r.forEach(function(x){if(!x.macro_theme)return;if(!map[x.macro_theme])map[x.macro_theme]={risk:0,n:0};map[x.macro_theme].risk+=(x.contagion_risk||0);map[x.macro_theme].n++;});
     return Object.keys(map).map(function(t){return{name:t,meta:map[t].n+' tickers \u00b7 Avg risk: '+Math.round(map[t].risk/map[t].n),score:Math.round(map[t].risk/map[t].n),link:'#marketwide'};}).sort(function(a,b){return b.score-a.score;}).slice(0,10);
+    }catch(e){console.warn('[LB] political fetch failed:',e.message);return[];}
   }},
   {id:'consistent-signals',title:'Most Consistent Signals',sub:'Keywords with the highest return-to-noise ratio across all tickers',color:'#38C8B8',bg:'rgba(56,200,184,0.12)',scoreLabel:'Consistency',
   fetch:async function(){
+    try{
     var r=await sq('v_consistent_signals?select=keyword,keyword_type,ticker_count,avg_return_10d,avg_stddev,consistency_score,total_articles');
     return r.map(function(x){
       var kw=(x.keyword||'').replace(/_/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();});
@@ -14640,6 +14656,7 @@ var BOARDS=[
       var cs=+(x.consistency_score||0);
       return{name:kw,meta:(x.ticker_count||0)+' tickers \u00b7 Avg 10d: '+retStr+' \u00b7 '+(x.total_articles||0)+' articles',score:Math.abs(cs),scoreDisplay:cs.toFixed(2),_scoreColor:cs>=0?'#00DE94':'#FF4D4D',link:'#discover'};
     });
+    }catch(e){console.warn('[LB] consistent-signals fetch failed:',e.message);return[];}
   }},
 ];
 
@@ -14775,8 +14792,16 @@ function updateLBDate(){
 }
 updateLBDate();
 
+var _lbAutoRefresh=null;
 onTabSwitch(function(id){
-  if(id==='leaderboard') setTimeout(loadLeaderboard,50);
+  if(id==='leaderboard'){
+    setTimeout(loadLeaderboard,50);
+    // Auto-refresh every 5 minutes while on the tab
+    if(_lbAutoRefresh) clearInterval(_lbAutoRefresh);
+    _lbAutoRefresh=setInterval(function(){loadLeaderboard();},5*60*1000);
+  } else {
+    if(_lbAutoRefresh){clearInterval(_lbAutoRefresh);_lbAutoRefresh=null;}
+  }
 });
 })();
 
