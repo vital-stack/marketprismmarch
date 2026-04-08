@@ -204,17 +204,6 @@ body::before{
   .login-card{padding:28px 22px 24px;border-radius:16px;}
   .auth-tab{font-size:10px;padding:8px 0;}
 }
-/* Beta button */
-.btn-beta-glow{
-  background:linear-gradient(135deg,#00DE94,#00AEFF);
-  box-shadow:0 4px 20px rgba(0,222,148,0.3),0 0 40px rgba(0,222,148,0.1),inset 0 1px 0 rgba(255,255,255,0.15);
-  font-size:13px;font-weight:600;letter-spacing:0.08em;
-}
-.btn-beta-glow:hover{
-  background:linear-gradient(135deg,#00F5A0,#00C4FF);
-  box-shadow:0 8px 32px rgba(0,222,148,0.4),0 0 60px rgba(0,222,148,0.15),inset 0 1px 0 rgba(255,255,255,0.2);
-  transform:translateY(-2px);
-}
 /* Spinner */
 .spinner{
   display:inline-block;width:14px;height:14px;
@@ -239,8 +228,7 @@ body::before{
   <div class="login-card">
     <!-- Tabs -->
     <div class="auth-tabs">
-      <button class="auth-tab active" onclick="switchAuthTab('beta')">Beta Access</button>
-      <button class="auth-tab" onclick="switchAuthTab('signin')">Sign In</button>
+      <button class="auth-tab active" onclick="switchAuthTab('signin')">Sign In</button>
       <button class="auth-tab" onclick="switchAuthTab('register')">Register</button>
       <button class="auth-tab" onclick="switchAuthTab('reset')">Reset Password</button>
     </div>
@@ -248,21 +236,8 @@ body::before{
     <!-- Message area -->
     <div class="auth-message" id="auth-message"></div>
 
-    <!-- Beta Access Form -->
-    <form class="auth-form active" id="form-beta" onsubmit="handleBetaAccess(event)">
-      <div style="text-align:center;margin-bottom:6px;">
-        <div style="font-family:var(--font-display);font-size:18px;color:var(--mp-text-primary);margin-bottom:6px;">Have a beta code?</div>
-        <div style="font-size:13px;color:var(--mp-text-secondary);line-height:1.5;">Enter your access code to skip registration.</div>
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="beta-code">Access Code</label>
-        <input class="form-input" id="beta-code" type="text" placeholder="Enter beta code" required autocomplete="off" style="text-align:center;font-size:16px;letter-spacing:0.08em;">
-      </div>
-      <button class="btn-submit btn-beta-glow" type="submit" id="btn-beta">Enter Beta</button>
-    </form>
-
     <!-- Sign In Form -->
-    <form class="auth-form" id="form-signin" onsubmit="handleSignIn(event)">
+    <form class="auth-form active" id="form-signin" onsubmit="handleSignIn(event)">
       <div class="form-group">
         <label class="form-label" for="signin-email">Email</label>
         <input class="form-input" id="signin-email" type="email" placeholder="you@example.com" required autocomplete="email">
@@ -324,11 +299,7 @@ body::before{
 
   var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-  // Check if already logged in (Supabase session or beta code)
-  if(localStorage.getItem('mp-beta-access') === 'true'){
-    window.location.href = '/dashboard';
-    return;
-  }
+  // Check if already logged in
   supabase.auth.getSession().then(function(result){
     if(result.data.session){
       window.location.href = '/dashboard';
@@ -337,7 +308,7 @@ body::before{
 
   // ── Tab switching ──
   window.switchAuthTab = function(tab){
-    ['beta','signin','register','reset'].forEach(function(t){
+    ['signin','register','reset'].forEach(function(t){
       var form = document.getElementById('form-'+t);
       var btn = document.querySelector('.auth-tab[onclick*="'+t+'"]');
       if(form) form.classList.toggle('active', t===tab);
@@ -348,7 +319,7 @@ body::before{
 
   // Auto-switch tab from URL hash (e.g. /login#register)
   var hash = window.location.hash.replace('#','');
-  if(['beta','signin','register','reset'].indexOf(hash) !== -1){
+  if(['signin','register','reset'].indexOf(hash) !== -1){
     switchAuthTab(hash);
   }
 
@@ -404,87 +375,6 @@ body::before{
       showMsg('error', err.message || 'Sign in failed. Check your credentials.');
       setLoading('btn-signin', false);
     }
-  };
-
-  // ── Beta activation tracking ──
-  function trackBetaActivation(code, expiresIso){
-    if(!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
-    fetch(SUPABASE_URL + '/rest/v1/beta_activations', {
-      method: 'POST',
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify({
-        beta_code: code,
-        expires_at: expiresIso,
-        source_page: '/login'
-      })
-    }).catch(function(){});
-  }
-
-  // ── Beta Access ──
-  window.handleBetaAccess = function(e){
-    e.preventDefault();
-    clearMsg();
-    var code = document.getElementById('beta-code').value.trim().toLowerCase();
-    if(!code){ showMsg('error','Please enter a beta code.'); return; }
-
-    if(code === 'prismview'){
-      // Full access beta — 14 days, no signup required
-      setLoading('btn-beta', true);
-      var expires = new Date(); expires.setDate(expires.getDate() + 14);
-      localStorage.setItem('mp-beta-access', 'true');
-      localStorage.setItem('mp-beta-tier', 'pro');
-      localStorage.setItem('mp-beta-expires', expires.toISOString());
-      trackBetaActivation('prismview', expires.toISOString());
-      showMsg('success','Full access granted for 14 days. Redirecting…');
-      document.getElementById('btn-beta').classList.add('success');
-      setTimeout(function(){ window.location.href = '/dashboard'; }, 600);
-      return;
-    }
-
-    if(code === 'karma'){
-      // Full access beta — 7 days, requires signup
-      setLoading('btn-beta', true);
-      var expires = new Date(); expires.setDate(expires.getDate() + 7);
-      localStorage.setItem('mp-beta-access', 'true');
-      localStorage.setItem('mp-beta-tier', 'pro');
-      localStorage.setItem('mp-beta-expires', expires.toISOString());
-      trackBetaActivation('karma', expires.toISOString());
-      showMsg('success','Full access granted for 7 days. Please sign up to continue.');
-      document.getElementById('btn-beta').classList.add('success');
-      setTimeout(function(){
-        setLoading('btn-beta', false);
-        document.getElementById('form-beta').classList.remove('active');
-        document.getElementById('form-register').classList.add('active');
-        showMsg('info','Create an account to activate your 7-day full access.');
-      }, 800);
-      return;
-    }
-
-    if(code === 'stockpsycho'){
-      // Reddit community access — 3 days, requires signup
-      setLoading('btn-beta', true);
-      var expires = new Date(); expires.setDate(expires.getDate() + 3);
-      localStorage.setItem('mp-beta-access', 'true');
-      localStorage.setItem('mp-beta-tier', 'pro');
-      localStorage.setItem('mp-beta-expires', expires.toISOString());
-      trackBetaActivation('stockpsycho', expires.toISOString());
-      showMsg('success','Welcome from Reddit! Full access granted for 3 days.');
-      document.getElementById('btn-beta').classList.add('success');
-      setTimeout(function(){
-        setLoading('btn-beta', false);
-        document.getElementById('form-beta').classList.remove('active');
-        document.getElementById('form-register').classList.add('active');
-        showMsg('info','Create an account to activate your 3-day full access.');
-      }, 800);
-      return;
-    }
-
-    showMsg('error','Invalid beta code. Please try again.');
   };
 
   // ── Register ──
