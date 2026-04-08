@@ -4374,6 +4374,11 @@ body{
       Signal Lab
       <span class="nav-item-badge" style="background:rgba(56,200,184,0.12);color:#38C8B8;border-color:rgba(56,200,184,0.25);font-size:10px;">NEW</span>
     </button>
+    <button class="nav-item" data-tab="ticker" onclick="switchTab('ticker',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg>
+      Stock Research
+      <span class="nav-item-badge" style="background:rgba(56,200,184,0.12);color:#38C8B8;border-color:rgba(56,200,184,0.25);font-size:10px;">NEW</span>
+    </button>
 
     <div class="nav-section-lbl">Research</div>
     <button class="nav-item" data-tab="calendar" onclick="switchTab('calendar',this)">
@@ -4616,6 +4621,8 @@ body{
     </div>
 
     <!-- SIGNAL_LAB_INJECT -->
+
+    <!-- TICKER_TAB_INJECT -->
 
     <!-- ══════════════════════════════════════
          TAB: DISCOVER (Articles / Stories) — REPLACED BY SIGNAL LAB
@@ -5265,8 +5272,8 @@ document.querySelectorAll('.page-header p').forEach(function(p,i){
   if(i===0) return;
 });
 // ── Tab switching (hook-based — sections register via onTabSwitch) ────────────
-var TABS = ['daily','leaderboard','cards','calendar','memes','signallab','sector','scorer','help'];
-var TAB_TITLES = {daily:'Daily Brief',leaderboard:'Leaderboard',cards:'Trading Cards',calendar:'Trading Calendar',memes:'Market Sharing',signallab:'Signal Lab',sector:'Sector Pulse',scorer:'Score Any Stock',help:'Help & Account'};
+var TABS = ['daily','leaderboard','cards','calendar','memes','signallab','ticker','sector','scorer','help'];
+var TAB_TITLES = {daily:'Daily Brief',leaderboard:'Leaderboard',cards:'Trading Cards',calendar:'Trading Calendar',memes:'Market Sharing',signallab:'Signal Lab',ticker:'Stock Research',sector:'Sector Pulse',scorer:'Score Any Stock',help:'Help & Account'};
 var _tabHooks = [];
 /** Register a callback to run after any tab switch. fn(id) */
 function onTabSwitch(fn){ if(typeof fn==='function') _tabHooks.push(fn); }
@@ -5348,6 +5355,7 @@ function switchTab(id, btn){
     }
   }
   if(id==='signallab'&&typeof slInit==='function')setTimeout(slInit,50);
+  if(id==='ticker'&&typeof trInit==='function')setTimeout(trInit,50);
   if(id==='cards'&&typeof renderCardsGallery==='function'){TCG_RENDERED=false;setTimeout(renderCardsGallery,50);}
   if(id==='calendar'&&typeof calendarBoot==='function')setTimeout(calendarBoot,50);
   if(id==='trapradar'&&typeof initTrapRadar==='function')setTimeout(initTrapRadar,50);
@@ -7528,7 +7536,7 @@ function renderTrapsCards(){
   // Use ONLY real traps from narrative_traps table
   var traps=TRAPS_DB_DATA.filter(function(r){
     return !supportedTickers.has(r.ticker);
-  }).slice(0,5);
+  });
 
   if(traps.length>0){
     el.innerHTML=traps.map(function(r){

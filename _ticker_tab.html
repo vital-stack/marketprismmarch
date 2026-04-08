@@ -1,0 +1,151 @@
+<!-- TICKER TAB: injected into _template.html by dashboard.js -->
+
+<!-- TICKER TAB: CSS -->
+<style>
+  /* ── Ticker Research: Ticker search ── */
+  .tr-search { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .tr-input {
+    font-family: var(--font-body); font-size: 16px; font-weight: 600;
+    padding: 10px 16px; border-radius: 10px;
+    border: 1px solid var(--mp-border-mid); background: var(--mp-surface);
+    color: var(--mp-text-primary); width: 160px; text-transform: uppercase;
+    outline: none; transition: border-color 0.15s;
+  }
+  .tr-input:focus { border-color: var(--mp-blue); }
+  .tr-input::placeholder { color: var(--mp-text-tertiary); text-transform: none; font-weight: 400; }
+  .tr-go-btn {
+    font-family: var(--font-body); font-size: 14px; font-weight: 500;
+    padding: 10px 24px; border-radius: 10px; border: none; cursor: pointer;
+    background: var(--mp-blue); color: #FFFFFF; transition: opacity 0.15s;
+  }
+  .tr-go-btn:hover { opacity: 0.85; }
+  .tr-go-btn:disabled { opacity: 0.4; cursor: default; }
+  .tr-or { font-size: 12px; color: var(--mp-text-tertiary); }
+  .tr-select {
+    font-family: var(--font-body); font-size: 14px; font-weight: 500;
+    padding: 10px 16px; border-radius: 10px;
+    border: 1px solid var(--mp-border-mid); background: var(--mp-surface);
+    color: var(--mp-text-primary); width: 200px; outline: none;
+    cursor: pointer; transition: border-color 0.15s;
+  }
+  .tr-select:focus { border-color: var(--mp-blue); }
+  .tr-frame-wrap {
+    position: relative;
+    width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--mp-border);
+    background: var(--mp-surface);
+  }
+  .tr-frame-wrap iframe {
+    width: 100%;
+    height: calc(100vh - 160px);
+    border: none;
+    display: block;
+  }
+  .tr-loading {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--mp-surface);
+    font-family: var(--font-body); font-size: 13px;
+    color: var(--mp-text-tertiary);
+    transition: opacity 0.3s;
+    z-index: 2;
+  }
+  .tr-loading.hidden { opacity: 0; pointer-events: none; }
+  @media (max-width: 600px) {
+    .tr-search { flex-wrap: wrap; }
+    .tr-select { width: 100%; }
+    .tr-input { width: 100%; }
+    .tr-frame-wrap iframe { height: calc(100vh - 200px); }
+  }
+</style>
+
+<!-- TICKER TAB: HTML -->
+<div class="tab-panel" id="tab-ticker">
+
+  <!-- Ticker selector -->
+  <div class="tr-search">
+    <select class="tr-select" id="tr-ticker-select">
+      <option value="">Select a stock...</option>
+    </select>
+    <span class="tr-or">or</span>
+    <input class="tr-input" id="tr-ticker-input" type="text" placeholder="Type ticker..." maxlength="10">
+    <button class="tr-go-btn" id="tr-load-btn">Load</button>
+  </div>
+
+  <!-- Iframe container -->
+  <div class="tr-frame-wrap">
+    <div class="tr-loading" id="tr-loading">
+      <span>Loading stock research...</span>
+    </div>
+    <iframe id="tr-iframe" src="about:blank" allow="clipboard-write"></iframe>
+  </div>
+
+</div>
+
+<!-- TICKER TAB: JS -->
+<script>
+(function() {
+  var TR_INIT_DONE = false;
+  var TR_TICKER = '';
+
+  function trLoadTicker(ticker) {
+    ticker = (ticker || '').toUpperCase().trim();
+    if (!ticker) return;
+    TR_TICKER = ticker;
+    var frame = document.getElementById('tr-iframe');
+    var loading = document.getElementById('tr-loading');
+    if (!frame) return;
+    if (loading) loading.classList.remove('hidden');
+    frame.onload = function() {
+      if (loading) loading.classList.add('hidden');
+    };
+    frame.src = '/ticker/' + encodeURIComponent(ticker);
+    // Update input to reflect current ticker
+    var inp = document.getElementById('tr-ticker-input');
+    if (inp) inp.value = ticker;
+  }
+
+  window.trInit = function() {
+    if (TR_INIT_DONE) return;
+    TR_INIT_DONE = true;
+
+    // Populate dropdown from MP_DOMAINS
+    var sel = document.getElementById('tr-ticker-select');
+    if (sel && typeof MP_DOMAINS === 'object' && MP_DOMAINS) {
+      var tickers = Object.keys(MP_DOMAINS).sort();
+      for (var i = 0; i < tickers.length; i++) {
+        var opt = document.createElement('option');
+        opt.value = tickers[i];
+        opt.textContent = tickers[i] + ' — ' + (MP_DOMAINS[tickers[i]] || '');
+        sel.appendChild(opt);
+      }
+    }
+
+    // Load button
+    var btn = document.getElementById('tr-load-btn');
+    var inp = document.getElementById('tr-ticker-input');
+    if (btn) btn.addEventListener('click', function() {
+      var v = (inp && inp.value) ? inp.value : '';
+      if (v) trLoadTicker(v);
+    });
+
+    // Enter key on input
+    if (inp) inp.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { e.preventDefault(); trLoadTicker(inp.value); }
+    });
+
+    // Dropdown change
+    if (sel) sel.addEventListener('change', function() {
+      if (sel.value) {
+        trLoadTicker(sel.value);
+        if (inp) inp.value = sel.value;
+      }
+    });
+
+    // Load default ticker
+    trLoadTicker('NVDA');
+  };
+})();
+</script>

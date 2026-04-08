@@ -17,6 +17,14 @@ module.exports = (req, res) => {
       console.warn('Signal Lab tab not found:', e.message);
     }
 
+    // Inject Ticker Research tab partial
+    try {
+      const trTab = resolveTemplate('_ticker_tab.html');
+      html = html.replace('<!-- TICKER_TAB_INJECT -->', function() { return trTab; });
+    } catch (e) {
+      console.warn('Ticker tab not found:', e.message);
+    }
+
     const scholarEnabled = process.env.ANTHROPIC_KEY ? 'true' : '';
 
     html = html.replace(
