@@ -1719,6 +1719,10 @@ body{
 .skel-hm-cell{height:48px;border-radius:4px;}
 /* Loading state wrapper */
 .loading-skeleton{animation:fadeInUp 0.4s ease both;}
+.loading-tip{text-align:center;padding:18px 20px 8px;animation:fadeInUp 0.4s ease both;}
+.loading-tip-label{font-family:var(--font-body);font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--mp-blue);margin-bottom:8px;}
+.loading-tip-text{font-family:var(--font-display);font-size:17px;color:var(--mp-text-primary);line-height:1.5;opacity:0;animation:tipFade 0.5s ease forwards;}
+@keyframes tipFade{0%{opacity:0;transform:translateY(6px);}100%{opacity:1;transform:translateY(0);}}
 /* ── TABLET ── */
 @media(max-width:1100px){
   .page-content{padding:24px 24px 60px;}
@@ -6452,11 +6456,40 @@ async function loadDailyWeekCalendar(){
 }
 async function loadData(){
   var feed = document.getElementById('discover-feed');
+  var _loadTips = [
+    'analyzes 120,000+ financial articles using narrative decay physics',
+    'detects coordinated media narratives across 86 scored publications',
+    'uses Walsh decay modeling to predict when narratives lose momentum',
+    'cross-references every story claim against SEC filings for verification',
+    'tracks Narrative Trap signals with a 73% historical accuracy rate',
+    'scores source reliability using Wilson lower-bound confidence intervals',
+    'monitors dark pool activity and short interest for confirmation signals',
+    'maps upstream and downstream ticker relationships for contagion risk',
+    'generates fair value estimates using sector-specific PE and PS models',
+    'runs a physics engine that models narrative energy, half-life, and drift',
+    'identifies "Fundamental Disconnect" when price diverges from fundamentals',
+    'watches for bubble keywords that historically precede corrections',
+    'calculates regime-adjusted confidence for every trading signal',
+    'has resolved 1,000+ predictions with documented Brier score accountability'
+  ];
+  var _tipIdx = Math.floor(Math.random() * _loadTips.length);
+  var _tipEl = null;
+  var _tipInterval = null;
+  function _rotateTip(){
+    _tipIdx = (_tipIdx + 1) % _loadTips.length;
+    if(_tipEl) _tipEl.innerHTML = '<div class="loading-tip-text" style="animation:tipFade 0.5s ease forwards;">' + _loadTips[_tipIdx] + '</div>';
+  }
   feed.innerHTML = '<div class="loading-skeleton">'
     +'<div class="skel-card"><div class="skel-card-head"><div class="skel skel-pill"></div><div class="skel skel-pill" style="width:40px;"></div></div><div class="skel skel-line w80"></div><div class="skel skel-line w60" style="margin-top:8px;"></div></div>'
     +'<div class="skel-card"><div class="skel-card-head"><div class="skel skel-pill"></div><div class="skel skel-pill" style="width:40px;"></div></div><div class="skel skel-line w100"></div><div class="skel skel-line w40" style="margin-top:8px;"></div></div>'
     +'<div class="skel-card"><div class="skel-card-head"><div class="skel skel-pill"></div><div class="skel skel-pill" style="width:40px;"></div></div><div class="skel skel-line w80"></div><div class="skel skel-line w60" style="margin-top:8px;"></div></div>'
-    +'</div>';
+    +'</div>'
+    +'<div class="loading-tip"><div class="loading-tip-label">Did you know?</div><div class="loading-tip-text">Market Prism ' + _loadTips[_tipIdx] + '</div></div>';
+  _tipEl = feed.querySelector('.loading-tip');
+  _tipInterval = setInterval(function(){
+    _rotateTip();
+    if(_tipEl) _tipEl.innerHTML = '<div class="loading-tip-label">Did you know?</div><div class="loading-tip-text">Market Prism ' + _loadTips[_tipIdx] + '</div>';
+  }, 4000);
   try {
     var user = await ensureDashboardAuth();
     if(!user) return;
@@ -6755,6 +6788,7 @@ async function loadData(){
       if(!sel)return;
       sects.forEach(function(s){var o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
     });
+    if(_tipInterval){clearInterval(_tipInterval);_tipInterval=null;}
     renderDiscover();
     renderLoveHate();
     renderSnap();
@@ -6800,6 +6834,7 @@ async function loadData(){
     // Pre-load leaderboard data so it's ready when tab is clicked
     if(typeof loadLeaderboard==='function') loadLeaderboard();
   } catch(err){
+    if(_tipInterval){clearInterval(_tipInterval);_tipInterval=null;}
     feed.innerHTML='<div class="empty-state" style="color:var(--mp-red);">Failed to load: '+esc(err.message)+'<br><small style="font-size:11px;opacity:.6;">Check Supabase credentials in environment variables.</small></div>';
     // Still render static demos
     renderSectors();
