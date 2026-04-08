@@ -8,6 +8,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Market Prism — Report Builder</title>
 <script id="__env_script">window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '' };</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -223,6 +224,31 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tx);-webkit-font-smo
   </main>
 </div>
 
+<script>
+// ── Auth gate — redirect unauthenticated users to login ──
+(function(){
+  var SB_URL=(window.__env||{}).SUPABASE_URL||'';
+  var SB_KEY=(window.__env||{}).SUPABASE_ANON||'';
+  // Beta code bypass
+  if(localStorage.getItem('mp-beta-access')==='true'){
+    var betaExpires=localStorage.getItem('mp-beta-expires');
+    if(betaExpires&&new Date(betaExpires)<new Date()){
+      localStorage.removeItem('mp-beta-access');
+      localStorage.removeItem('mp-beta-tier');
+      localStorage.removeItem('mp-beta-expires');
+      window.location.href='/login';
+      return;
+    }
+    return; // beta user — allow access
+  }
+  if(!SB_URL||!SB_KEY||!window.supabase){window.location.href='/login';return;}
+  var supa=window.supabase.createClient(SB_URL,SB_KEY);
+  supa.auth.getSession().then(function(result){
+    var session=result&&result.data&&result.data.session;
+    if(!session){window.location.href='/login';return;}
+  }).catch(function(){window.location.href='/login';});
+})();
+</script>
 <script>
 (function(){
   var SB_URL=(window.__env||{}).SUPABASE_URL||'';
