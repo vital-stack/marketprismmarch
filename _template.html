@@ -4333,6 +4333,20 @@ body{
   <div class="mp-loader-spinner"></div>
   <div class="mp-loader-text">Loading dashboard data…</div>
 </div>
+<script>
+// Early safety timeout — dismiss loader even if CDN scripts are slow on mobile
+(function(){
+  var t=setTimeout(function(){
+    var el=document.getElementById('mp-page-loader');
+    if(el&&!el.classList.contains('hidden')){
+      el.classList.add('hidden');
+      document.body.style.opacity='1';
+      setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},500);
+    }
+  },6000);
+  window.__mpEarlyLoaderTimeout=t;
+})();
+</script>
 <!-- Mobile topbar -->
 <div class="mobile-topbar">
   <button class="hamburger-btn" id="hamburger-btn" aria-label="Open menu">
@@ -5203,7 +5217,7 @@ body{
 </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+<script async src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/billing-config.js"></script>
 <script src="/billing-ui.js"></script>
@@ -5368,6 +5382,15 @@ var SUPA = (window.supabase && SUPABASE_URL && SUPABASE_ANON)
   : null;
 var CURRENT_USER = null;
 var AUTH_READY = null;
+// Fetch with timeout — prevents hangs on slow mobile connections
+function fetchWithTimeout(url,opts,ms){
+  ms=ms||12000;
+  if(typeof AbortController==='undefined') return fetch(url,opts);
+  var ctrl=new AbortController();
+  var merged=Object.assign({},opts||{},{signal:ctrl.signal});
+  var timer=setTimeout(function(){ctrl.abort();},ms);
+  return fetch(url,merged).finally(function(){clearTimeout(timer);});
+}
 var BILLING = window.MP_BILLING || {lockedTabs:{},getPlanName:function(){return 'No Active Plan';},getAccessLevel:function(){return 'none';},hasAccess:function(){return false;}};
 var BILLING_UI = window.MP_BILLING_UI || {};
 var CURRENT_SUBSCRIPTION = null;
@@ -6448,18 +6471,19 @@ async function loadData(){
       +'&limit=80';
 
     // ── Fire ALL fetches in parallel (eliminates sequential waterfall) ──
-    var mainP = fetch(url,{headers:hdrs});
-    var cardP = fetch(cardUrl,{headers:hdrs}).then(function(r){
+    // Use fetchWithTimeout to prevent hangs on slow mobile connections
+    var mainP = fetchWithTimeout(url,{headers:hdrs},15000);
+    var cardP = fetchWithTimeout(cardUrl,{headers:hdrs},12000).then(function(r){
       return r.ok ? r.json() : [];
     }).catch(function(e){ console.error('[MP] trade_cards_live fetch error:', e); return []; });
-    var divP = fetch(divUrl,{headers:hdrs}).then(function(r){
+    var divP = fetchWithTimeout(divUrl,{headers:hdrs},12000).then(function(r){
       return r.ok ? r.json() : [];
     }).catch(function(){ return []; });
-    var snapP = fetch(SUPABASE_URL+'/rest/v1/ticker_snapshots?select=ticker,price_close,sector,industry&order=snapshot_date.desc&limit=500',{headers:hdrs}).catch(function(){return null;});
-    var industryP = fetch(SUPABASE_URL+'/rest/v1/ticker_industry_lookup?select=ticker,sector,industry,name,description',{headers:hdrs}).catch(function(){return null;});
+    var snapP = fetchWithTimeout(SUPABASE_URL+'/rest/v1/ticker_snapshots?select=ticker,price_close,sector,industry&order=snapshot_date.desc&limit=500',{headers:hdrs},10000).catch(function(){return null;});
+    var industryP = fetchWithTimeout(SUPABASE_URL+'/rest/v1/ticker_industry_lookup?select=ticker,sector,industry,name,description',{headers:hdrs},10000).catch(function(){return null;});
     // Date lookups for scorecard + analyses (fire in parallel, not sequentially)
-    var scDateP = fetch(SUPABASE_URL+'/rest/v1/narrative_scorecard?select=snapshot_date&order=snapshot_date.desc&limit=1',{headers:hdrs}).then(function(r){return r.ok?r.json():[];}).catch(function(){return[];});
-    var naDateP = fetch(SUPABASE_URL+'/rest/v1/narrative_analyses?select=snapshot_date&order=snapshot_date.desc&limit=1',{headers:hdrs}).then(function(r){return r.ok?r.json():[];}).catch(function(){return[];});
+    var scDateP = fetchWithTimeout(SUPABASE_URL+'/rest/v1/narrative_scorecard?select=snapshot_date&order=snapshot_date.desc&limit=1',{headers:hdrs},10000).then(function(r){return r.ok?r.json():[];}).catch(function(){return[];});
+    var naDateP = fetchWithTimeout(SUPABASE_URL+'/rest/v1/narrative_analyses?select=snapshot_date&order=snapshot_date.desc&limit=1',{headers:hdrs},10000).then(function(r){return r.ok?r.json():[];}).catch(function(){return[];});
     var qfP = restFetch('v_beta_data_quality_flags',{select:'ticker,signal_confidence_tier'}).catch(function(){return[];});
     var pfP = restFetch('pipeline_freshness',{select:'last_snapshot,days_stale,freshness_status',limit:'1'}).catch(function(){return[];});
 
@@ -6574,9 +6598,9 @@ async function loadData(){
     var naDate=naDateJ[0]&&naDateJ[0].snapshot_date;
 
     // Fire scorecard + analyses data fetches in parallel (second round)
-    var scDataP=scDate?fetch(SUPABASE_URL+'/rest/v1/narrative_scorecard?select=*&snapshot_date=eq.'+encodeURIComponent(scDate)+'&limit=500',{headers:hdrs}).then(function(r){return r.ok?r.json():[];}).catch(function(){return[];}):Promise.resolve([]);
+    var scDataP=scDate?fetchWithTimeout(SUPABASE_URL+'/rest/v1/narrative_scorecard?select=*&snapshot_date=eq.'+encodeURIComponent(scDate)+'&limit=500',{headers:hdrs},12000).then(function(r){return r.ok?r.json():[];}).catch(function(){return[];}):Promise.resolve([]);
     var naCols='ticker,narrative_tone,material_discrepancy,verdict,omission_gap_score,urgency_count,fear_greed_count,analyst_firm,macro_theme,upstream_tickers,downstream_tickers,cluster_id';
-    var naDataP=naDate?fetch(SUPABASE_URL+'/rest/v1/narrative_analyses?select='+naCols+'&snapshot_date=eq.'+encodeURIComponent(naDate)+'&limit=500',{headers:hdrs}).then(function(r){return r.ok?r.json():[];}).catch(function(){return[];}):Promise.resolve([]);
+    var naDataP=naDate?fetchWithTimeout(SUPABASE_URL+'/rest/v1/narrative_analyses?select='+naCols+'&snapshot_date=eq.'+encodeURIComponent(naDate)+'&limit=500',{headers:hdrs},12000).then(function(r){return r.ok?r.json():[];}).catch(function(){return[];}):Promise.resolve([]);
 
     // Await all four in parallel
     var overlayResults=await Promise.all([scDataP,naDataP,qfP,pfP]);
@@ -7503,14 +7527,14 @@ async function loadTrapsData(){
   var hdrs={'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Accept':'application/json'};
   try{
     // Get latest snapshot_date
-    var dateRes=await fetch(SUPABASE_URL+'/rest/v1/narrative_traps?select=snapshot_date&order=snapshot_date.desc&limit=1',{headers:hdrs});
+    var dateRes=await fetchWithTimeout(SUPABASE_URL+'/rest/v1/narrative_traps?select=snapshot_date&order=snapshot_date.desc&limit=1',{headers:hdrs},10000);
     if(!dateRes.ok) return;
     var dateRows=await dateRes.json();
     if(!dateRows.length) return;
     var maxDate=dateRows[0].snapshot_date;
 
     var cols='ticker,narrative,current_price,fvd_pct,vms,predicted_exhaustion_days,coordination_class,drift_score';
-    var res=await fetch(SUPABASE_URL+'/rest/v1/narrative_traps?select='+cols+'&snapshot_date=eq.'+encodeURIComponent(maxDate)+'&order=fvd_pct.desc&limit=120',{headers:hdrs});
+    var res=await fetchWithTimeout(SUPABASE_URL+'/rest/v1/narrative_traps?select='+cols+'&snapshot_date=eq.'+encodeURIComponent(maxDate)+'&order=fvd_pct.desc&limit=120',{headers:hdrs},10000);
     if(!res.ok) return;
     TRAPS_DB_DATA=await res.json();
   }catch(e){
@@ -7571,13 +7595,13 @@ async function loadSupportedData(){
 
   // Primary: active_supported table — pin to latest snapshot_date (same pattern as narrative_traps)
   try{
-    var dateRes=await fetch(SUPABASE_URL+'/rest/v1/active_supported?select=snapshot_date&order=snapshot_date.desc&limit=1',{headers:hdrs});
+    var dateRes=await fetchWithTimeout(SUPABASE_URL+'/rest/v1/active_supported?select=snapshot_date&order=snapshot_date.desc&limit=1',{headers:hdrs},10000);
     if(dateRes&&dateRes.ok){
       var dateRows=await dateRes.json();
       if(dateRows.length){
         var maxDate=dateRows[0].snapshot_date;
         var cols='ticker,narrative,verdict,verdict_confidence,current_price,fair_value,fvd_pct,macro_theme,synopsis,energy_remaining,coordination_score,nrs,sector_contagion_level,advanced_verdict,snapshot_date';
-        var res=await fetch(SUPABASE_URL+'/rest/v1/active_supported?select='+cols+'&snapshot_date=eq.'+encodeURIComponent(maxDate)+'&order=verdict_confidence.desc.nullslast&limit=20',{headers:hdrs});
+        var res=await fetchWithTimeout(SUPABASE_URL+'/rest/v1/active_supported?select='+cols+'&snapshot_date=eq.'+encodeURIComponent(maxDate)+'&order=verdict_confidence.desc.nullslast&limit=20',{headers:hdrs},10000);
         if(res.ok){
           SUPPORTED_DATA=await res.json();
         }
@@ -7662,13 +7686,13 @@ async function loadCoordinationData(){
   if(!SUPABASE_URL||!SUPABASE_ANON) return;
   var hdrs={'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Accept':'application/json'};
   try{
-    var dateRes=await fetch(SUPABASE_URL+'/rest/v1/coordination_alerts?select=snapshot_date&order=snapshot_date.desc&limit=1',{headers:hdrs});
+    var dateRes=await fetchWithTimeout(SUPABASE_URL+'/rest/v1/coordination_alerts?select=snapshot_date&order=snapshot_date.desc&limit=1',{headers:hdrs},10000);
     if(!dateRes.ok) return;
     var dateRows=await dateRes.json();
     if(!dateRows.length) return;
     var maxDate=dateRows[0].snapshot_date;
     var cols='ticker,narrative,current_price,coordination_score,coordination_class,sources_within_1hr,identical_phrasing_count,suspicion_score,drift_explanation,collision_class,suspicion_class,macro_theme,srs_band,source_outlet,verdict';
-    var res=await fetch(SUPABASE_URL+'/rest/v1/coordination_alerts?select='+cols+'&snapshot_date=eq.'+encodeURIComponent(maxDate)+'&order=coordination_score.desc&limit=30',{headers:hdrs});
+    var res=await fetchWithTimeout(SUPABASE_URL+'/rest/v1/coordination_alerts?select='+cols+'&snapshot_date=eq.'+encodeURIComponent(maxDate)+'&order=coordination_score.desc&limit=30',{headers:hdrs},10000);
     if(!res.ok) return;
     COORDINATION_DATA=await res.json();
   }catch(e){
@@ -10920,24 +10944,29 @@ function renderStratCards(filter){
   }
 }
 
-// ── Fetch live prices from Massive API (batch) ──
+// ── Fetch live prices from Massive API (batch, mobile-safe) ──
 async function fetchMassiveBatchPrices(tickers){
   var MASSIVE_KEY=(window.__env||{}).MASSIVE_API||'';
   if(!MASSIVE_KEY||!tickers.length)return{};
   var priceMap={};
   var to=new Date().toISOString().slice(0,10);
   var from=new Date();from.setDate(from.getDate()-5);var fromStr=from.toISOString().slice(0,10);
-  await Promise.all(tickers.map(function(t){
-    var url='https://api.massive.com/v2/aggs/ticker/'+encodeURIComponent(t)+'/range/1/day/'+fromStr+'/'+to+'?adjusted=true&sort=desc&limit=2&apiKey='+encodeURIComponent(MASSIVE_KEY);
-    return fetch(url).then(function(r){return r.ok?r.json():null;}).then(function(j){
-      if(j&&j.results&&j.results.length){
-        var latest=j.results[0];
-        var prev=j.results[1]||latest;
-        var chg=prev.c?((latest.c-prev.c)/prev.c)*100:0;
-        priceMap[t]={price:latest.c,price_change_pct:chg};
-      }
-    }).catch(function(){});
-  }));
+  // Batch in chunks of 6 to avoid overwhelming mobile connections
+  var CHUNK=6;
+  for(var i=0;i<tickers.length;i+=CHUNK){
+    var chunk=tickers.slice(i,i+CHUNK);
+    await Promise.all(chunk.map(function(t){
+      var url='https://api.massive.com/v2/aggs/ticker/'+encodeURIComponent(t)+'/range/1/day/'+fromStr+'/'+to+'?adjusted=true&sort=desc&limit=2&apiKey='+encodeURIComponent(MASSIVE_KEY);
+      return fetchWithTimeout(url,null,8000).then(function(r){return r.ok?r.json():null;}).then(function(j){
+        if(j&&j.results&&j.results.length){
+          var latest=j.results[0];
+          var prev=j.results[1]||latest;
+          var chg=prev.c?((latest.c-prev.c)/prev.c)*100:0;
+          priceMap[t]={price:latest.c,price_change_pct:chg};
+        }
+      }).catch(function(){});
+    }));
+  }
   return priceMap;
 }
 
@@ -10953,7 +10982,7 @@ async function loadStrategyData(){
       +'signal_regime,regime_direction';
     var cardUrl=SUPABASE_URL+'/rest/v1/trade_cards_live?select='+cols
       +'&order=trade_score.desc';
-    var res=await fetch(cardUrl,{headers:hdrs});
+    var res=await fetchWithTimeout(cardUrl,{headers:hdrs},15000);
     if(!res.ok)throw new Error('trade_cards_live fetch failed: '+res.status);
     var rows=await res.json();
 
@@ -11021,8 +11050,16 @@ function renderCardsGallery(){
     return;
   }
   grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--mp-text-tertiary);padding:40px;">Loading trade cards\u2026</div>';
-  loadStrategyData().then(function(){
+  // Race against a timeout to prevent indefinite hang on mobile
+  var loadP=loadStrategyData();
+  var timeoutP=new Promise(function(_,rej){setTimeout(function(){rej(new Error('timeout'));},20000);});
+  Promise.race([loadP,timeoutP]).then(function(){
     TCG_RENDERED=true;
+  }).catch(function(){
+    TCG_RENDERED=true;
+    if(!STRAT_DATA.length){
+      grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--mp-text-tertiary);padding:40px;">Cards are loading slowly. Pull down to refresh.</div>';
+    }
   });
 
   // Attach filter chip listeners
