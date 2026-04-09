@@ -149,15 +149,6 @@
 
   /* ── Signal Lab: Backtest tables ── */
   .sl-bt-pad { padding: 16px 20px 20px; }
-  .sl-bt-sub { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--mp-text-tertiary); font-weight: 500; margin-bottom: 10px; }
-  .sl-bt-tbl { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 20px; }
-  .sl-bt-tbl th { text-align: left; font-size: 11px; font-weight: 500; color: var(--mp-text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; padding: 6px 10px; border-bottom: 1px solid var(--mp-border-mid); }
-  .sl-bt-tbl td { padding: 8px 10px; border-bottom: 1px solid var(--mp-border); color: var(--mp-text-secondary); }
-  .sl-bt-tbl tr:hover td { background: rgba(255,255,255,0.02); }
-  .sl-bt-tbl .vp { color: var(--mp-green); font-weight: 500; }
-  .sl-bt-tbl .vn { color: var(--mp-red); font-weight: 500; }
-  .sl-bt-tbl .vh { color: var(--mp-blue); font-weight: 600; }
-  .sl-bt-tbl .sn { color: var(--mp-text-primary); font-weight: 500; font-size: 13px; }
   .sl-pattern-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
   .sl-pat-card { background: var(--mp-deep); border: 1px solid var(--mp-border); border-left: 3px solid var(--accent); border-radius: 10px; padding: 14px 16px; }
   .sl-pat-title { font-size: 13px; font-weight: 600; color: var(--mp-text-primary); margin-bottom: 4px; }
@@ -168,7 +159,6 @@
   .sl-regime-metrics { display: flex; gap: 24px; margin-top: 10px; flex-wrap: wrap; }
   .sl-regime-m { font-size: 12px; color: var(--mp-text-secondary); }
   .sl-regime-m span { font-weight: 600; color: var(--mp-text-primary); }
-  .sl-bt-dropdown:hover { background: rgba(255,255,255,0.02); }
   @media (max-width: 768px) { .sl-pattern-cards { grid-template-columns: 1fr; } }
 </style>
 
@@ -292,33 +282,16 @@
       </div>
     </div>
 
-    <!-- Backtest Data (collapsible, at bottom) -->
-    <div class="sl-card" id="sl-backtest-section" style="display:none;">
-      <div class="sl-bt-dropdown" id="sl-bt-toggle" style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;cursor:pointer;user-select:none;">
-        <div class="sl-card-label" style="padding:0;">Backtest Data</div>
-        <span style="font-size:12px;color:var(--mp-text-tertiary);transition:transform .15s;" id="sl-bt-arrow">&#9662;</span>
-      </div>
-      <div class="sl-bt-pad" id="sl-bt-content" style="display:none;padding-top:0;">
-
-        <!-- Sharpe table -->
-        <div class="sl-bt-sub">Strategy Performance (Point-in-Time, 7-Day Forward Returns)</div>
-        <table class="sl-bt-tbl"><thead><tr><th>Strategy</th><th>Obs</th><th>Win %</th><th>Ann. Sharpe</th><th>Ann. Return</th><th>Avg Win</th><th>Avg Loss</th></tr></thead>
-        <tbody>
-          <tr><td class="sn">SHORT: Peak Narrative <span style="font-size:10px;color:var(--mp-text-tertiary);">(blue &ge; 80, yellow &ge; 80)</span></td><td>963</td><td class="vp">61.5%</td><td class="vh">1.82</td><td class="vp">+62.1%</td><td>+4.06%</td><td>-3.07%</td></tr>
-          <tr><td class="sn">SHORT: Losing Steam <span style="font-size:10px;color:var(--mp-text-tertiary);">(vel &le; -5, blue &ge; 80)</span></td><td>411</td><td>52.3%</td><td class="vh">0.66</td><td class="vp">+29.7%</td><td>+5.07%</td><td>-4.36%</td></tr>
-          <tr><td class="sn">SHORT: Fading Story <span style="font-size:10px;color:var(--mp-text-tertiary);">(blue &ge; 80, yellow &le; 20)</span></td><td>595</td><td>53.4%</td><td class="vh">0.64</td><td class="vp">+29.4%</td><td>+5.04%</td><td>-4.57%</td></tr>
-          <tr><td class="sn">SHORT: Danger Zone <span style="font-size:10px;color:var(--mp-text-tertiary);">(blue &ge; 80, yel &le; 30, purp &ge; 15)</span></td><td>420</td><td>53.1%</td><td>0.41</td><td class="vp">+18.5%</td><td>+4.79%</td><td>-4.67%</td></tr>
-          <tr style="opacity:0.6;"><td class="sn">BASELINE: Buy & Hold</td><td>1,686</td><td class="vn">43.6%</td><td class="vn">-1.18</td><td class="vn">-47.7%</td><td>+3.82%</td><td>-4.58%</td></tr>
-        </tbody></table>
-
-        <!-- Direction differentiator -->
-        <div class="sl-bt-sub">Direction Differentiator: Temporal Energy (energy_t)</div>
-        <table class="sl-bt-tbl"><thead><tr><th>Outcome (7d)</th><th>Obs</th><th>Avg Return</th><th>Avg energy_t</th><th>Avg Yellow Vel</th><th>Avg Divergence</th></tr></thead>
-        <tbody>
-          <tr><td class="vn" style="font-weight:600;">DOWN &le; -5%</td><td>88</td><td class="vn">-9.06%</td><td style="color:var(--mp-red);font-weight:600;">7.07</td><td>-38.7</td><td>81.5</td></tr>
-          <tr><td style="color:var(--mp-text-secondary);font-weight:600;">MODERATE</td><td>265</td><td>+0.12%</td><td style="font-weight:600;">30.12</td><td>-39.9</td><td>80.6</td></tr>
-          <tr><td class="vp" style="font-weight:600;">UP &ge; +5%</td><td>58</td><td class="vp">+9.17%</td><td style="color:var(--mp-green);font-weight:600;">60.72</td><td>-43.3</td><td>86.0</td></tr>
-        </tbody></table>
+    <!-- Signal Guide PDF -->
+    <div class="sl-card" id="sl-signal-guide-section">
+      <div class="sl-card-label">Signal Guide</div>
+      <div style="padding:0 20px 20px;">
+        <object data="/research/MarketPrism_Signal_Guide_v3.pdf" type="application/pdf" style="width:100%;height:calc(100vh - 300px);border-radius:8px;border:1px solid var(--mp-border);">
+          <iframe src="/research/MarketPrism_Signal_Guide_v3.pdf" style="width:100%;height:calc(100vh - 300px);border:none;border-radius:8px;"></iframe>
+        </object>
+        <div style="margin-top:10px;text-align:right;">
+          <a href="/research/MarketPrism_Signal_Guide_v3.pdf" target="_blank" style="font-size:12px;color:var(--mp-cyan);text-decoration:none;font-family:var(--font-body);">Open PDF in new tab &#8599;</a>
+        </div>
       </div>
     </div>
 
@@ -518,7 +491,6 @@
     document.getElementById('sl-chart-ticker').textContent=ticker;
     document.getElementById('sl-chart-section').style.display='block';
     document.getElementById('sl-regimes-section').style.display='block';
-    document.getElementById('sl-backtest-section').style.display='block';
     try{
       document.getElementById('sl-chart-outer').innerHTML='<div class="sl-no-data">Loading '+slEsc(ticker)+'...</div>';
       await slLoadChart(ticker);
@@ -584,14 +556,6 @@
     document.querySelectorAll('.sl-tf-btn').forEach(function(btn){btn.addEventListener('click',function(){document.querySelectorAll('.sl-tf-btn').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');document.getElementById('sl-story-popup')?.classList.remove('visible');if(SL_SNAPS.length)slRenderChart();});});
     document.getElementById('sl-story-sort')?.addEventListener('change',function(){document.getElementById('sl-story-popup')?.classList.remove('visible');if(SL_SNAPS.length)slRenderChart();});
     document.getElementById('sl-interpret-btn').onclick=slInterpret;
-    // Backtest data dropdown toggle
-    document.getElementById('sl-bt-toggle').onclick=function(){
-      var content=document.getElementById('sl-bt-content');
-      var arrow=document.getElementById('sl-bt-arrow');
-      var open=content.style.display!=='none';
-      content.style.display=open?'none':'block';
-      arrow.style.transform=open?'':'rotate(180deg)';
-    };
     // Auto-load a default ticker so the chart is visible immediately
     var defaultTicker='NVDA';
     if(typeof MP_DOMAINS==='object'&&MP_DOMAINS[defaultTicker]){
