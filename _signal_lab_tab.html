@@ -386,6 +386,14 @@
   var SL_ALT_CHART=null;
   var SL_CURRENT_VIEW='lines';
   var SL_LIVE_TIMER=null;
+  // Stash of the last successful /api/live-quote response. Used by slInterpret
+  // to compute a live current-drawdown-vs-60d-peak for the Entry Zone block.
+  var SL_LIVE_QUOTE=null;
+  // Cached row from ticker_strategy_summary for SL_TICKER. Fetched once per
+  // ticker load (or on-demand from slInterpret if the load hasn't finished).
+  // Contains the historical backtested fields we feed the AI: best zone,
+  // avg price in that zone, avg 5d return from it, and observation count.
+  var SL_STRATEGY=null;
 
   function slEsc(s){return s?String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):'';}
   function slIsLight(){return document.documentElement.getAttribute('data-theme')==='light';}
@@ -884,6 +892,7 @@
       var q=await res.json();
       if(ticker!==SL_TICKER)return; // ticker changed mid-flight
       if(q.error||q.price==null)throw new Error(q.error||'No price');
+      SL_LIVE_QUOTE=q;
       var priceEl=document.getElementById('sl-live-price');
       var changeEl=document.getElementById('sl-live-change');
       var dotEl=document.getElementById('sl-live-dot');
@@ -947,6 +956,8 @@
   // ── Main entry ──
   async function slLoadTicker(ticker){
     SL_TICKER=ticker;
+    SL_LIVE_QUOTE=null;
+    SL_STRATEGY=null;
     document.getElementById('sl-chart-ticker').textContent=ticker;
     document.getElementById('sl-chart-section').style.display='block';
     document.getElementById('sl-regimes-section').style.display='block';
@@ -960,6 +971,14 @@
     var labelEl=document.getElementById('sl-live-label');if(labelEl)labelEl.textContent='Loading';
     if(SL_LIVE_TIMER){clearTimeout(SL_LIVE_TIMER);SL_LIVE_TIMER=null;}
     slFetchLivePrice().then(slScheduleLivePrice);
+    // Fetch the ticker_strategy_summary row in parallel. The backtested fields
+    // (best zone, avg entry price, avg 5d return, obs count) feed the Interpret
+    // Chart's Entry Zone section. We ignore latest_price_usd and
+    // latest_drawdown_vs_60d_peak from this row — those are a stale snapshot
+    // and we recompute them live in slInterpret from SL_SNAPS + SL_LIVE_QUOTE.
+    restFetch('ticker_strategy_summary',{ticker:'eq.'+ticker,limit:'1'})
+      .then(function(rows){ if(ticker===SL_TICKER && Array.isArray(rows) && rows.length) SL_STRATEGY=rows[0]; })
+      .catch(function(e){ console.warn('[SL] strategy summary fetch failed:',e); });
     try{
       document.getElementById('sl-chart-outer').innerHTML='<div class="sl-no-data">Loading '+slEsc(ticker)+'...</div>';
       await slLoadChart(ticker);
@@ -1033,14 +1052,57 @@
         'Yellow (Physics Energy, cross-ticker universe percentile, 0-100): '+(lastYellow!=null?Math.round(lastYellow):'N/A'),
         'Teal (Temporal Energy, cross-ticker universe percentile, 0-100): '+(lastTeal!=null?Math.round(lastTeal):'N/A'),
         'Purple (Narrative Pressure, composite 0-100): '+(lastPurple!=null?Math.round(lastPurple):'N/A'),
-        latestScorecard?('Regime: '+(latestScorecard.signal_regime||'NEUTRAL')):'',
+        latestScorecard?('Stored regime tag (internal code — DO NOT repeat this string in output; translate to the friendly name): '+(latestScorecard.signal_regime||'NEUTRAL')):'',
         latestScorecard?('Direction: '+(latestScorecard.regime_direction||'N/A')):'',
         latestScorecard&&latestScorecard.divergence_score!=null?('Gap score (Blue minus Yellow divergence): '+Math.round(latestScorecard.divergence_score)+' pts'):'',
-        latestScorecard?('Market regime: '+(latestScorecard.regime_class||'N/A')):'',
-        'IMPORTANT: The Blue/Yellow/Teal/Purple values above are the CURRENT chart readings. Do not cite any other numbers as "current". Yellow and Teal are cross-ticker percentile ranks against the full tracked universe (100 = top 1%, 50 = median, 0 = bottom 1%), not raw scores. Only cite numbers that appear verbatim in the data blocks; do not infer intermediate values or fabricate percentile transitions.'
+        latestScorecard?('Market regime class: '+(latestScorecard.regime_class||'N/A')):'',
+        'IMPORTANT: The Blue/Yellow/Teal/Purple values above are the CURRENT chart readings. Do not cite any other numbers as "current". Yellow and Teal are cross-ticker percentile ranks against the full tracked universe (100 = top 1%, 50 = median, 0 = bottom 1%), not raw scores. Only cite numbers that appear verbatim in the data blocks; do not infer intermediate values or fabricate percentile transitions. NEVER output the internal code names (TRIPLE_THREAT, SATURATION, HOLLOW, YELLOW_COLLAPSE, FRESH_ENERGY, COILED_SPRING, GAP_BUILDING, GAP_FIRED, SATURATION_COLLAPSE, BOTH_MAXED, NEUTRAL, DORMANT, BULL, BEAR). Always translate them to their friendly display name (for example Danger Zone, Peak Narrative, Fading Story, Losing Steam, Building Momentum, Coiled for Breakout, Dormant market, Bull market, Bear market). Before you name a signal as "active", verify every numeric threshold is actually met by the Blue/Yellow/Teal/Purple values above; if any threshold is missed, the signal is NOT active and you must say so plainly — do not claim a signal is active and then describe it as "near but not inside" the threshold.'
       ].filter(Boolean).join('\n'),
       recentNarratives.length>0?'\n--- RECENT NARRATIVE HEADLINES ---\n'+recentNarratives.join('\n'):''
     ];
+
+    // ── Entry Zone block ────────────────────────────────────────────────
+    // Backtested aggregates (best zone, avg entry price, avg 5d return, obs
+    // count) come from ticker_strategy_summary (cached in SL_STRATEGY on
+    // ticker load). Current price + current zone are computed LIVE from
+    // SL_SNAPS (trailing 60 closes) plus SL_LIVE_QUOTE (last /api/live-quote
+    // tick) — not from latest_price_usd/latest_drawdown_vs_60d_peak, which
+    // are a stale snapshot on the strategy_summary row.
+    if(SL_STRATEGY){
+      var bestZone=SL_STRATEGY.best_historical_entry_zone||null;
+      var avgEntryPrice=SL_STRATEGY.avg_price_in_best_entry_zone_usd;
+      var avgEntryReturn=SL_STRATEGY.avg_5d_return_from_best_entry_zone;
+      var entryObs=SL_STRATEGY.best_entry_zone_observations;
+      // Build trailing 60-day close series from SL_SNAPS within the filtered window fallback — actually use SL_SNAPS directly, not the time-filtered slice, so the 60d peak is always accurate regardless of the user's active timeframe selection.
+      var allCloses=(SL_SNAPS||[]).filter(function(s){return s&&s.price_close!=null;}).slice().sort(function(a,b){return a.snapshot_date<b.snapshot_date?-1:1;});
+      var last60=allCloses.slice(-60);
+      var peak60=0;
+      for(var pk=0;pk<last60.length;pk++){if(last60[pk].price_close>peak60)peak60=last60[pk].price_close;}
+      var livePx=(SL_LIVE_QUOTE&&SL_LIVE_QUOTE.price!=null)?SL_LIVE_QUOTE.price:(last60.length?last60[last60.length-1].price_close:null);
+      if(livePx!=null&&peak60>0&&livePx>peak60)peak60=livePx;
+      var currentDrawdown=(livePx!=null&&peak60>0)?((livePx-peak60)/peak60):null;
+      var currentZone=null;
+      if(currentDrawdown!=null){
+        if(currentDrawdown<-0.20)currentZone='deep_pullback';
+        else if(currentDrawdown<-0.10)currentZone='pullback';
+        else if(currentDrawdown<-0.05)currentZone='dip';
+        else currentZone='near_high';
+      }
+      var zoneBlock=[
+        '\n--- IDEAL ENTRY ZONE (historical backtest from ticker_strategy_summary) ---',
+        bestZone?('Best historical entry zone: '+bestZone+' (drawdown bucket vs trailing 60-day peak)'):'',
+        avgEntryPrice!=null?('Avg entry price historically in that zone: $'+Number(avgEntryPrice).toFixed(2)):'',
+        avgEntryReturn!=null?('Avg 5-day return after entering in that zone: '+(avgEntryReturn>=0?'+':'')+(Number(avgEntryReturn)*100).toFixed(2)+'%'):'',
+        entryObs!=null?('Sample size: '+entryObs+' historical observations'):'',
+        livePx!=null?('Current live price: $'+Number(livePx).toFixed(2)):'',
+        currentDrawdown!=null?('Current drawdown vs live trailing 60-day peak: '+(currentDrawdown>=0?'+':'')+(currentDrawdown*100).toFixed(2)+'%'):'',
+        currentZone?('Current drawdown bucket: '+currentZone):'',
+        (currentZone&&bestZone)?('Alignment: '+(currentZone===bestZone?'IN the best historical entry zone right now.':'NOT in the best historical entry zone (best is '+bestZone+', currently in '+currentZone+').')):'',
+        'Zone definitions: near_high = within 5% of 60d peak; dip = 5-10% below; pullback = 10-20% below; deep_pullback = more than 20% below. These are price drawdown buckets and do NOT move with the signal regimes above — treat them as an independent entry-timing read.'
+      ].filter(Boolean).join('\n');
+      sdParts.push(zoneBlock);
+    }
+
     var sd=sdParts.filter(Boolean).join('\n');
     try{
       var resp=await fetch('/api/interpret-chart',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ticker:SL_TICKER,signalData:sd})});

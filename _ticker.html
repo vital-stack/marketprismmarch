@@ -7105,9 +7105,15 @@ async function loadStrategyData() {
     });
 
     // ── Best Entry Zone ──
+    // The historical backtested aggregates (best zone label, avg price in zone,
+    // avg 5d return, obs count) come from ticker_strategy_summary — long-run stats
+    // that don't need to be live. But latest_price_usd and latest_drawdown_vs_60d_peak
+    // from that table are a stale snapshot, so we compute "where are we now" LIVE
+    // from ALL_SNAPS (the 60d close series already loaded for the chart) and
+    // _lastLivePrice (polled every 30s during market hours). See refreshEntryZoneLive().
     const bestZone = d.best_historical_entry_zone || '—';
+    window._STRAT_BEST_ZONE = bestZone;
     setText('strat-entry-zone', bestZone);
-    // Zone description
     const zoneDescs = {
       'near_high': 'Within 5% of 60-day peak',
       'dip': '5–10% below 60-day peak',
@@ -7123,39 +7129,10 @@ async function loadStrategyData() {
       entryRetEl.textContent = fmtPct(d.avg_5d_return_from_best_entry_zone);
       entryRetEl.style.color = d.avg_5d_return_from_best_entry_zone >= 0 ? '#00DE94' : '#FF4D4D';
     }
-    setText('strat-zone-meta', 'ticker_strategy_summary · ' + (entryObs || '—') + ' observations');
+    setText('strat-zone-meta', 'ticker_strategy_summary · ' + (entryObs || '—') + ' observations · live price');
 
-    // Current zone bar — derive from drawdown
-    const drawdown = d.latest_drawdown_vs_60d_peak;
-    const zones = [
-      { key: 'near_high', label: 'near_high (>–5%)', min: -0.05 },
-      { key: 'dip', label: 'dip (–5 to –10%)', min: -0.10 },
-      { key: 'pullback', label: 'pullback (–10 to –20%)', min: -0.20 },
-      { key: 'deep_pullback', label: 'deep pullback (<–20%)', min: -Infinity }
-    ];
-    let currentZone = 'near_high';
-    if (drawdown != null) {
-      if (drawdown < -0.20) currentZone = 'deep_pullback';
-      else if (drawdown < -0.10) currentZone = 'pullback';
-      else if (drawdown < -0.05) currentZone = 'dip';
-    }
-    const zoneBar = document.getElementById('strat-zone-pips');
-    if (zoneBar) {
-      zoneBar.innerHTML = zones.map(z => {
-        const isCurrent = z.key === currentZone;
-        const isBest = z.key === bestZone;
-        let extra = '';
-        if (isCurrent && isBest) extra = '<div style="font-size:10px;margin-top:3px;">✅ BEST ZONE · YOU ARE HERE</div>';
-        else if (isCurrent) extra = '<div style="font-size:10px;margin-top:3px;">📍 YOU ARE HERE</div>';
-        else if (isBest) extra = '<div style="font-size:10px;margin-top:3px;">✅ BEST ZONE</div>';
-        return '<div class="czb-zone' + (isCurrent ? ' active-zone' : '') + '">' +
-          (isCurrent ? '<span class="cz-pip"></span>' : '') + esc(z.label) + extra + '</div>';
-      }).join('');
-    }
-    const zonePriceEl = document.getElementById('strat-zone-price');
-    if (zonePriceEl && d.latest_price_usd != null) {
-      zonePriceEl.textContent = fmtUsd(d.latest_price_usd) + (drawdown != null ? ' · ' + fmtPct(drawdown) + ' from 60d peak' : '');
-    }
+    // Live current-zone render (recomputed from ALL_SNAPS + _lastLivePrice).
+    refreshEntryZoneLive();
 
     // ── Theme Breakdown (from article_outcomes RPC or fallback to summary) ──
     const themeContainer = document.getElementById('strat-theme-rows');
@@ -7269,6 +7246,78 @@ async function loadStrategyData() {
     const errBody = nodataEl.querySelector('.section-body');
     if (errBody) errBody.innerHTML = '<div style="padding:24px;text-align:center;color:#FF4D4D;font-size:13px;">Strategy load error: ' + (err.message || err) + '</div>';
     nodataEl.style.display = 'block';
+  }
+}
+
+// ── Live entry-zone recompute ───────────────────────────────────────────────
+// Recomputes the "Price zones today" bar + current-zone marker using the live
+// price (from _lastLivePrice) and the actual trailing 60-day peak (from
+// ALL_SNAPS). Called once when loadStrategyData finishes, and again every
+// time fetchLivePrice ticks so the "YOU ARE HERE" marker stays current.
+// Falls back to the most recent close in ALL_SNAPS if the live quote is not
+// available yet. No-ops silently if the strategy tab hasn't been loaded.
+function refreshEntryZoneLive() {
+  var bestZone = window._STRAT_BEST_ZONE;
+  if (!bestZone) return; // strategy tab hasn't loaded its summary row yet
+  var zoneBar = document.getElementById('strat-zone-pips');
+  var zonePriceEl = document.getElementById('strat-zone-price');
+  if (!zoneBar && !zonePriceEl) return;
+
+  // Pick the most recent 60 calendar days of closes from ALL_SNAPS. Wrapped in
+  // try so a TDZ error (let binding not yet initialized, e.g. if the overview
+  // tab loader is still running when fetchLivePrice first ticks) can't crash
+  // the polling loop. typeof on a let binding in the TDZ throws ReferenceError,
+  // so plain typeof guards are not enough here.
+  var snaps = [];
+  try { if (Array.isArray(ALL_SNAPS)) snaps = ALL_SNAPS; } catch(e) {}
+  var closes = snaps.filter(function(s) { return s && s.price_close != null; });
+  if (!closes.length) return;
+  // Sort ascending by date to be safe (loader already does this, but defend against future changes)
+  closes = closes.slice().sort(function(a,b){ return a.snapshot_date < b.snapshot_date ? -1 : 1; });
+  var last60 = closes.slice(-60);
+  var peak60 = 0;
+  for (var i = 0; i < last60.length; i++) { if (last60[i].price_close > peak60) peak60 = last60[i].price_close; }
+  if (!peak60) return;
+
+  // Live price: prefer the most recent /api/live-quote tick, fall back to the
+  // most recent Supabase close if the quote hasn't arrived (first paint, or
+  // the polling request failed and set the banner to "Delayed").
+  var livePrice = (typeof _lastLivePrice !== 'undefined' && _lastLivePrice && _lastLivePrice.price != null)
+    ? _lastLivePrice.price
+    : last60[last60.length - 1].price_close;
+  // If the live price is newer and higher than the 60d Supabase peak, honor it —
+  // otherwise a brand-new ATH would show a 0% drawdown until the snapshot loader
+  // catches up overnight.
+  if (livePrice > peak60) peak60 = livePrice;
+
+  var drawdown = (livePrice - peak60) / peak60;
+  var currentZone = 'near_high';
+  if (drawdown < -0.20) currentZone = 'deep_pullback';
+  else if (drawdown < -0.10) currentZone = 'pullback';
+  else if (drawdown < -0.05) currentZone = 'dip';
+
+  var zones = [
+    { key: 'near_high', label: 'near_high (>–5%)' },
+    { key: 'dip', label: 'dip (–5 to –10%)' },
+    { key: 'pullback', label: 'pullback (–10 to –20%)' },
+    { key: 'deep_pullback', label: 'deep pullback (<–20%)' }
+  ];
+  if (zoneBar) {
+    zoneBar.innerHTML = zones.map(function(z) {
+      var isCurrent = z.key === currentZone;
+      var isBest = z.key === bestZone;
+      var extra = '';
+      if (isCurrent && isBest) extra = '<div style="font-size:10px;margin-top:3px;">✅ BEST ZONE · YOU ARE HERE</div>';
+      else if (isCurrent) extra = '<div style="font-size:10px;margin-top:3px;">📍 YOU ARE HERE</div>';
+      else if (isBest) extra = '<div style="font-size:10px;margin-top:3px;">✅ BEST ZONE</div>';
+      return '<div class="czb-zone' + (isCurrent ? ' active-zone' : '') + '">' +
+        (isCurrent ? '<span class="cz-pip"></span>' : '') + esc(z.label) + extra + '</div>';
+    }).join('');
+  }
+  if (zonePriceEl) {
+    var pFmt = '$' + Number(livePrice).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+    var dFmt = ((drawdown >= 0 ? '+' : '') + (drawdown * 100).toFixed(2) + '%');
+    zonePriceEl.textContent = pFmt + ' · ' + dFmt + ' from 60d peak';
   }
 }
 
@@ -7865,6 +7914,10 @@ async function fetchLivePrice() {
     if (q.price == null) throw new Error('No price');
 
     _lastLivePrice = q;
+
+    // Re-render the Strategy tab's "Price zones today" bar so YOU ARE HERE
+    // tracks the live tick. No-ops if the Strategy tab hasn't been loaded yet.
+    try { if (typeof refreshEntryZoneLive === 'function') refreshEntryZoneLive(); } catch(e){}
 
     var dotEl = document.getElementById('live-dot');
     var labelEl = document.getElementById('live-label');
