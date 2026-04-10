@@ -9,14 +9,22 @@
 //
 // The endpoint takes { email, password }, forwards them to Supabase's
 // /auth/v1/token?grant_type=password endpoint with the anon key, and returns
-// the resulting session JSON. The browser then calls supabase.auth.setSession()
-// with the returned tokens.
+// the resulting session JSON. The browser then stores it in localStorage in
+// the format the dashboard's supabase-js client expects.
+
+// Hardcoded fallback so a missing/edited Vercel env var can't break login.
+// This URL is also referenced in _template.html (SCORER_EDGE_URL).
+const FALLBACK_SUPABASE_URL = 'https://kugfvlagaetiqtdwdfmk.supabase.co';
 
 function normalizeSupabaseUrl(raw) {
   let url = String(raw || '').trim();
   if (!url) return '';
   if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
   return url.replace(/\/+$/, '');
+}
+
+function resolveSupabaseUrl() {
+  return normalizeSupabaseUrl(process.env.SUPABASE_URL) || FALLBACK_SUPABASE_URL;
 }
 
 function readJsonBody(req) {
@@ -49,11 +57,11 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const supabaseUrl = normalizeSupabaseUrl(process.env.SUPABASE_URL);
+  const supabaseUrl = resolveSupabaseUrl();
   const supabaseAnon = (process.env.SUPABASE_ANON || '').trim();
 
-  if (!supabaseUrl || !supabaseAnon) {
-    res.status(500).json({ error: 'Auth service not configured' });
+  if (!supabaseAnon) {
+    res.status(500).json({ error: 'Auth service is missing its anon key. Please contact support.' });
     return;
   }
 

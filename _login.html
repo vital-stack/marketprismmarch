@@ -282,14 +282,24 @@ body::before{
   </div>
 </div>
 
-<!-- Supabase JS (with onerror so we can detect a blocked CDN) -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"
-        onerror="window.__supabase_cdn_failed = true;"></script>
+<!--
+  This page deliberately does NOT load the supabase-js CDN. Every other page
+  in the codebase talks to Supabase via direct REST calls (see
+  SUPABASE_INTEGRATION_REPORT.md → "All pages use direct Supabase REST calls"),
+  so the login page does the same to avoid an unnecessary third-party
+  dependency that can fail (jsDelivr outage, content blockers, etc).
+-->
 <!-- Env vars injected by server -->
 <script id="__env_script">window.__login_env = { SUPABASE_URL: '', SUPABASE_ANON: '' };</script>
 <script>
 (function(){
-  // ── Message helpers (defined first so the early-exit branches can use them) ──
+  // ── Hardcoded fallback ─────────────────────────────────────────────────
+  // If the SUPABASE_URL env var on Vercel was cleared or edited, the page
+  // would otherwise have no way to talk to Supabase. The project URL is also
+  // referenced in _template.html (SCORER_EDGE_URL), so we keep them in sync.
+  var FALLBACK_SUPABASE_URL = 'https://kugfvlagaetiqtdwdfmk.supabase.co';
+
+  // ── DOM helpers ────────────────────────────────────────────────────────
   function showMsg(type, text){
     var el = document.getElementById('auth-message');
     if(!el) return;
@@ -302,96 +312,6 @@ body::before{
     el.className = 'auth-message';
     el.textContent = '';
   }
-
-  // A network failure inside fetch() surfaces as a TypeError. Different
-  // browsers use different messages: Safari/iOS says "Load failed", Chrome
-  // says "Failed to fetch", Firefox says "NetworkError when attempting to
-  // fetch resource". Treat any of these as a transport-level failure.
-  function isNetworkError(err){
-    if(!err) return false;
-    if(err.name === 'TypeError') return true;
-    var msg = String(err.message || err).toLowerCase();
-    return msg.indexOf('load failed') !== -1
-        || msg.indexOf('failed to fetch') !== -1
-        || msg.indexOf('networkerror') !== -1
-        || msg.indexOf('network request failed') !== -1;
-  }
-
-  function networkHelpMessage(){
-    return 'Network error reaching the authentication service. '
-         + 'If you use a content blocker (1Blocker, AdGuard, Brave Shields, '
-         + 'DuckDuckGo Privacy, etc.), please disable it for marketprism.co '
-         + 'and try again.';
-  }
-
-  var env = window.__login_env || {};
-  var SUPABASE_URL  = (env.SUPABASE_URL  || '').trim();
-  var SUPABASE_ANON = (env.SUPABASE_ANON || '').trim();
-
-  // Defensive client-side normalization in case the server slipped through a
-  // bare hostname. Without a protocol, supabase-js issues a request against a
-  // relative path which iOS Safari reports as "Load failed".
-  if(SUPABASE_URL && !/^https?:\/\//i.test(SUPABASE_URL)){
-    SUPABASE_URL = 'https://' + SUPABASE_URL;
-  }
-  SUPABASE_URL = SUPABASE_URL.replace(/\/+$/, '');
-
-  if(!SUPABASE_URL || !SUPABASE_ANON){
-    showMsg('error','Authentication is not configured. Please contact support.');
-    return;
-  }
-
-  // The supabase-js CDN may have been blocked by a content blocker.
-  if(window.__supabase_cdn_failed || !window.supabase || !window.supabase.createClient){
-    showMsg('error', networkHelpMessage());
-    console.error('[login] supabase-js failed to load from CDN');
-    return;
-  }
-
-  var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-
-  // Check if already logged in. Swallow errors — a stale/expired token is not
-  // a reason to block the form from rendering.
-  try {
-    supabase.auth.getSession().then(function(result){
-      if(result && result.data && result.data.session){
-        window.location.href = '/dashboard';
-      }
-    }).catch(function(err){
-      console.warn('[login] getSession failed:', err);
-    });
-  } catch(e){
-    console.warn('[login] getSession threw:', e);
-  }
-
-  // ── Tab switching ──
-  window.switchAuthTab = function(tab){
-    ['signin','register','reset'].forEach(function(t){
-      var form = document.getElementById('form-'+t);
-      var btn = document.querySelector('.auth-tab[onclick*="'+t+'"]');
-      if(form) form.classList.toggle('active', t===tab);
-      if(btn)  btn.classList.toggle('active', t===tab);
-    });
-    clearMsg();
-  };
-
-  // Auto-switch tab from URL hash (e.g. /login#register)
-  var hash = window.location.hash.replace('#','');
-  if(['signin','register','reset'].indexOf(hash) !== -1){
-    switchAuthTab(hash);
-  }
-
-  // Pre-fill email from URL param (e.g. /login?email=foo@bar.com#register)
-  var urlParams = new URLSearchParams(window.location.search);
-  var prefillEmail = urlParams.get('email');
-  if(prefillEmail){
-    var regEmail = document.getElementById('register-email');
-    if(regEmail) regEmail.value = prefillEmail;
-    var signinEmail = document.getElementById('signin-email');
-    if(signinEmail) signinEmail.value = prefillEmail;
-  }
-
-  // ── Loading helper ──
   function setLoading(btnId, loading){
     var btn = document.getElementById(btnId);
     if(!btn) return;
@@ -404,10 +324,129 @@ body::before{
     }
   }
 
-  // Server-side fallback: when fetch() to *.supabase.co is blocked, ask our
-  // own /api/auth-login endpoint to perform the password grant and hand back
-  // the session tokens, which we then install via supabase.auth.setSession().
-  async function signInViaProxy(email, password){
+  // ── Network-error classification ───────────────────────────────────────
+  // A failed fetch() surfaces as a TypeError. Browsers disagree on the
+  // message: Safari/iOS says "Load failed", Chrome says "Failed to fetch",
+  // Firefox says "NetworkError when attempting to fetch resource".
+  function isNetworkError(err){
+    if(!err) return false;
+    if(err.name === 'TypeError') return true;
+    var msg = String(err.message || err).toLowerCase();
+    return msg.indexOf('load failed') !== -1
+        || msg.indexOf('failed to fetch') !== -1
+        || msg.indexOf('networkerror') !== -1
+        || msg.indexOf('network request failed') !== -1;
+  }
+  function networkHelpMessage(){
+    return 'Network error reaching the authentication service. '
+         + 'If you use a content blocker (1Blocker, AdGuard, Brave Shields, '
+         + 'DuckDuckGo Privacy, etc.), please disable it for marketprism.co '
+         + 'and try again.';
+  }
+
+  // ── Resolve Supabase config ────────────────────────────────────────────
+  var env = window.__login_env || {};
+  var SUPABASE_URL  = (env.SUPABASE_URL  || '').trim();
+  var SUPABASE_ANON = (env.SUPABASE_ANON || '').trim();
+
+  // Force https://, strip trailing slash, and fall back if empty.
+  if(SUPABASE_URL && !/^https?:\/\//i.test(SUPABASE_URL)){
+    SUPABASE_URL = 'https://' + SUPABASE_URL;
+  }
+  SUPABASE_URL = SUPABASE_URL.replace(/\/+$/, '') || FALLBACK_SUPABASE_URL;
+
+  if(!SUPABASE_ANON){
+    showMsg('error','Authentication is not configured. Please contact support.');
+    return;
+  }
+
+  // Storage key in the exact format supabase-js uses, so the dashboard's
+  // SUPA.auth.getSession() picks up the session we write here.
+  var PROJECT_REF = '';
+  try { PROJECT_REF = new URL(SUPABASE_URL).hostname.split('.')[0]; }
+  catch(e) { PROJECT_REF = 'kugfvlagaetiqtdwdfmk'; }
+  var STORAGE_KEY = 'sb-' + PROJECT_REF + '-auth-token';
+
+  // ── Session persistence ────────────────────────────────────────────────
+  // supabase-js v2's localStorage shape. The dashboard reads `access_token`
+  // and `expires_at` directly (see _daily.html and _heatmap.html).
+  function persistSession(payload){
+    var nowSec = Math.floor(Date.now() / 1000);
+    var expiresIn = Number(payload.expires_in) || 3600;
+    var expiresAt = Number(payload.expires_at) || (nowSec + expiresIn);
+    var session = {
+      access_token: payload.access_token,
+      token_type: payload.token_type || 'bearer',
+      expires_in: expiresIn,
+      expires_at: expiresAt,
+      refresh_token: payload.refresh_token || '',
+      user: payload.user || null,
+      provider_token: null,
+      provider_refresh_token: null,
+    };
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(session)); }
+    catch(e) { console.warn('[login] could not persist session:', e); }
+    // Legacy paywall marker used by mp-core / older pages.
+    try { localStorage.setItem('mp_auth', JSON.stringify({t: Date.now()})); }
+    catch(e) {}
+  }
+  function readStoredSession(){
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return null;
+      var parsed = JSON.parse(raw);
+      if(parsed && parsed.access_token && parsed.expires_at && (parsed.expires_at * 1000) > Date.now()){
+        return parsed;
+      }
+    } catch(e) {}
+    return null;
+  }
+
+  // Already signed in? Skip straight to the dashboard.
+  if(readStoredSession()){
+    window.location.href = '/dashboard';
+    return;
+  }
+
+  // ── Direct REST helpers ────────────────────────────────────────────────
+  // Matches the pattern used by every other page in the codebase
+  // (see SUPABASE_INTEGRATION_REPORT.md). No SDK, no CDN dependency.
+  async function supabaseAuth(path, body){
+    var resp;
+    try {
+      resp = await fetch(SUPABASE_URL + '/auth/v1/' + path, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON,
+        },
+        body: JSON.stringify(body),
+      });
+    } catch(netErr){
+      // Re-throw with a recognizable name so the caller can decide whether
+      // to fall back to the server-side proxy.
+      var e = new Error(netErr.message || 'Load failed');
+      e.name = 'TypeError';
+      throw e;
+    }
+    var text = await resp.text();
+    var data = {};
+    try { data = text ? JSON.parse(text) : {}; }
+    catch(_) { throw new Error('Unexpected response from auth server'); }
+    if(!resp.ok){
+      var msg = data.error_description || data.msg || data.error
+             || ('Auth request failed (' + resp.status + ')');
+      var err = new Error(msg);
+      err.status = resp.status;
+      throw err;
+    }
+    return data;
+  }
+
+  // Server-side proxy fallback: when *.supabase.co is unreachable from the
+  // browser (content blocker, Lockdown Mode, restrictive network) we route
+  // the request through our own origin via /api/auth-login.
+  async function proxySignIn(email, password){
     var resp = await fetch('/api/auth-login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -418,22 +457,49 @@ body::before{
     try { data = await resp.json(); }
     catch(e){ throw new Error('Unexpected response from server'); }
     if(!resp.ok){
-      var err = new Error(data && data.error ? data.error : 'Sign in failed');
-      err.proxyStatus = resp.status;
+      var err = new Error((data && data.error) || 'Sign in failed');
+      err.status = resp.status;
       throw err;
     }
-    if(!data.access_token || !data.refresh_token){
+    if(!data.access_token){
       throw new Error('Sign in succeeded but no session was returned');
     }
-    var setRes = await supabase.auth.setSession({
-      access_token: data.access_token,
-      refresh_token: data.refresh_token,
-    });
-    if(setRes && setRes.error) throw setRes.error;
-    return setRes;
+    return data;
   }
 
-  // ── Sign In ──
+  // ── Tab switching ──────────────────────────────────────────────────────
+  window.switchAuthTab = function(tab){
+    ['signin','register','reset'].forEach(function(t){
+      var form = document.getElementById('form-'+t);
+      var btn = document.querySelector('.auth-tab[onclick*="'+t+'"]');
+      if(form) form.classList.toggle('active', t===tab);
+      if(btn)  btn.classList.toggle('active', t===tab);
+    });
+    clearMsg();
+  };
+
+  var hash = window.location.hash.replace('#','');
+  if(['signin','register','reset'].indexOf(hash) !== -1){
+    switchAuthTab(hash);
+  }
+
+  var urlParams = new URLSearchParams(window.location.search);
+  var prefillEmail = urlParams.get('email');
+  if(prefillEmail){
+    var regEmail = document.getElementById('register-email');
+    if(regEmail) regEmail.value = prefillEmail;
+    var signinEmail = document.getElementById('signin-email');
+    if(signinEmail) signinEmail.value = prefillEmail;
+  }
+
+  function finishSignedIn(btnId){
+    showMsg('success','Signed in successfully. Redirecting…');
+    var btn = document.getElementById(btnId);
+    if(btn) btn.classList.add('success');
+    setTimeout(function(){ window.location.href = '/dashboard'; }, 600);
+  }
+
+  // ── Sign In ────────────────────────────────────────────────────────────
   window.handleSignIn = async function(e){
     e.preventDefault();
     clearMsg();
@@ -443,89 +509,94 @@ body::before{
 
     setLoading('btn-signin', true);
 
-    var finishSuccess = function(){
-      showMsg('success','Signed in successfully. Redirecting…');
-      document.getElementById('btn-signin').classList.add('success');
-      setTimeout(function(){ window.location.href = '/dashboard'; }, 800);
-    };
-
     try {
-      var result = await supabase.auth.signInWithPassword({ email: email, password: password });
-      if(result.error) throw result.error;
-      finishSuccess();
+      var data = await supabaseAuth('token?grant_type=password', { email: email, password: password });
+      persistSession(data);
+      finishSignedIn('btn-signin');
       return;
     } catch(err){
       console.warn('[login] direct sign-in failed:', err);
 
-      // If the failure looks like a transport problem rather than bad
-      // credentials, retry through our server-side proxy. This rescues users
-      // whose browser can't reach *.supabase.co directly (iOS Safari content
-      // blockers, Lockdown Mode, restrictive networks, etc.).
+      // Network failure → try the server-side proxy.
       if(isNetworkError(err)){
         showMsg('info','Network blocked the auth server. Retrying via secure relay…');
         try {
-          await signInViaProxy(email, password);
-          finishSuccess();
+          var proxyData = await proxySignIn(email, password);
+          persistSession(proxyData);
+          finishSignedIn('btn-signin');
           return;
         } catch(proxyErr){
           console.warn('[login] proxy sign-in failed:', proxyErr);
-          if(isNetworkError(proxyErr)){
-            showMsg('error', networkHelpMessage());
-          } else {
-            showMsg('error', proxyErr.message || 'Sign in failed. Please try again.');
-          }
+          showMsg('error', isNetworkError(proxyErr)
+            ? networkHelpMessage()
+            : (proxyErr.message || 'Sign in failed. Please try again.'));
           setLoading('btn-signin', false);
           return;
         }
       }
 
+      // Real auth error (bad credentials, unverified email, etc.) — show it.
       showMsg('error', err.message || 'Sign in failed. Check your credentials.');
       setLoading('btn-signin', false);
     }
   };
 
-  // ── Register ──
+  // ── Register ───────────────────────────────────────────────────────────
   window.handleRegister = async function(e){
     e.preventDefault();
     clearMsg();
     var email = document.getElementById('register-email').value.trim();
     var password = document.getElementById('register-password').value;
-    var confirm = document.getElementById('register-confirm').value;
+    var confirmPw = document.getElementById('register-confirm').value;
 
-    if(!email || !password || !confirm){ showMsg('error','Please fill in all fields.'); return; }
-    if(password !== confirm){ showMsg('error','Passwords do not match.'); return; }
+    if(!email || !password || !confirmPw){ showMsg('error','Please fill in all fields.'); return; }
+    if(password !== confirmPw){ showMsg('error','Passwords do not match.'); return; }
     if(password.length < 6){ showMsg('error','Password must be at least 6 characters.'); return; }
 
     setLoading('btn-register', true);
     try {
-      var result = await supabase.auth.signUp({ email: email, password: password, options: { emailRedirectTo: window.location.origin + '/dashboard' } });
-      if(result.error) throw result.error;
-      showMsg('success','Account created! Redirecting to dashboard…');
-      // Auto-sign in and redirect regardless of confirmation setting
-      if(!result.data.session){
-        var signIn = await supabase.auth.signInWithPassword({ email: email, password: password });
-        if(signIn.error){ showMsg('info','Account created! Please sign in.'); setLoading('btn-register', false); return; }
-      }
-      // Apply pending beta token if user came from a landing page (e.g. /stockpsycho)
+      var signupData = await supabaseAuth('signup', {
+        email: email,
+        password: password,
+        data: {},
+      });
+
+      // Apply pending beta token if user came from a landing page.
       var pendingBeta = sessionStorage.getItem('mp-pending-beta');
       if(pendingBeta === 'stockpsycho'){
         var expires = new Date(); expires.setDate(expires.getDate() + 3);
         localStorage.setItem('mp-beta-access', 'true');
         localStorage.setItem('mp-beta-tier', 'pro');
         localStorage.setItem('mp-beta-expires', expires.toISOString());
-        localStorage.setItem('mp_auth', JSON.stringify({t: Date.now()}));
         sessionStorage.removeItem('mp-pending-beta');
       }
-      setTimeout(function(){ window.location.href = '/dashboard'; }, 800);
+
+      // Supabase /auth/v1/signup returns a session directly when email
+      // confirmation is disabled (our config). Otherwise we have to sign in
+      // separately to get tokens.
+      if(signupData && signupData.access_token){
+        persistSession(signupData);
+      } else {
+        try {
+          var loginData = await supabaseAuth('token?grant_type=password', { email: email, password: password });
+          persistSession(loginData);
+        } catch(loginErr){
+          showMsg('info','Account created! Please sign in.');
+          setLoading('btn-register', false);
+          return;
+        }
+      }
+
+      showMsg('success','Account created! Redirecting…');
+      setTimeout(function(){ window.location.href = '/dashboard'; }, 600);
     } catch(err){
       console.warn('[login] register failed:', err);
       showMsg('error', isNetworkError(err) ? networkHelpMessage() : (err.message || 'Registration failed.'));
-    } finally {
       setLoading('btn-register', false);
     }
   };
 
-  // ── Reset Password ──
+  // ── Reset Password ─────────────────────────────────────────────────────
   window.handleReset = async function(e){
     e.preventDefault();
     clearMsg();
@@ -534,10 +605,11 @@ body::before{
 
     setLoading('btn-reset', true);
     try {
-      var result = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + '/dashboard'
+      await supabaseAuth('recover', {
+        email: email,
+        // Send the user back to /login after they click the reset link.
+        // (Supabase appends a #access_token=... fragment.)
       });
-      if(result.error) throw result.error;
       showMsg('success','Password reset link sent! Check your email inbox.');
     } catch(err){
       console.warn('[login] reset failed:', err);
