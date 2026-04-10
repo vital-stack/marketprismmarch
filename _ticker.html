@@ -1246,11 +1246,321 @@
     flex-shrink: 0;
   }
   .narr-toggle {
-    font-size: 12px;
-    color: var(--text-tertiary);
-    transition: transform 0.15s;
+    font-size: 22px;
+    line-height: 1;
+    color: rgba(255,255,255,0.55);
+    transition: transform 0.18s, color 0.18s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    text-shadow: 0 0 1px currentColor;
   }
-  .narr-toggle.open { transform: rotate(180deg); }
+  .narr-header:hover .narr-toggle { color: rgba(255,255,255,0.9); }
+  .narr-toggle.open { transform: rotate(180deg); color: rgba(255,255,255,0.9); }
+
+  /* ── Ticker fuel score summary line ── */
+  .narr-fuel-score-line {
+    font-family: var(--font-body);
+    font-size: 11px;
+    color: rgba(255,255,255,0.55);
+    letter-spacing: 0.02em;
+    margin: -4px 0 14px 0;
+    padding: 0 2px;
+  }
+  .narr-fuel-score-line strong {
+    color: rgba(255,255,255,0.85);
+    font-weight: 500;
+  }
+
+  /* ── Fuel contribution bar (inside narr-header-mid) ── */
+  .narr-fuel-wrap {
+    margin: 8px 0 10px 0;
+    padding-right: 6px;
+  }
+  .narr-fuel-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .narr-regime-pill {
+    font-size: 10px;
+    font-family: var(--font-body);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 99px;
+    border: 1px solid;
+    white-space: nowrap;
+  }
+  .narr-regime-explosive { background: rgba(255,77,77,0.08);  color: #FF6B6B; border-color: rgba(255,77,77,0.25); }
+  .narr-regime-moderate  { background: rgba(255,184,0,0.08);  color: #FFB800; border-color: rgba(255,184,0,0.25); }
+  .narr-regime-low       { background: rgba(0,174,255,0.08);  color: #00AEFF; border-color: rgba(0,174,255,0.22); }
+  .narr-regime-dormant   { background: rgba(160,168,176,0.08);color: #A0A8B0; border-color: rgba(160,168,176,0.22); }
+  .narr-fuel-pct {
+    font-size: 11px;
+    font-family: var(--font-body);
+    color: rgba(255,255,255,0.75);
+    font-weight: 500;
+  }
+  .narr-fuel-bar-track {
+    width: 100%;
+    height: 5px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .narr-fuel-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.4s cubic-bezier(0.16,1,0.3,1);
+  }
+  .narr-fuel-stats {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+    font-size: 11px;
+    font-family: var(--font-body);
+    color: rgba(255,255,255,0.55);
+  }
+  .narr-fuel-stats span { white-space: nowrap; }
+  .narr-fuel-stats .sep { color: rgba(255,255,255,0.25); }
+  .narr-fuel-stats strong {
+    color: rgba(255,255,255,0.85);
+    font-weight: 500;
+  }
+
+  /* ── Keyword chips (inside expanded body) ── */
+  .narr-kw-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 2px 0 14px 0;
+  }
+  .narr-kw-chip {
+    display: inline-flex;
+    align-items: center;
+    font-size: 12px;
+    font-family: var(--font-body);
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 99px;
+    border: 1px solid;
+    cursor: pointer;
+    transition: transform 0.12s, border-color 0.12s, background 0.12s;
+    letter-spacing: 0.01em;
+  }
+  .narr-kw-chip:hover { transform: translateY(-1px); }
+  .narr-kw-bull   { background: rgba(0,222,148,0.10); color: #5fe7b4; border-color: rgba(0,222,148,0.28); }
+  .narr-kw-bear   { background: rgba(255,77,77,0.10); color: #ff7f7f; border-color: rgba(255,77,77,0.28); }
+  .narr-kw-neutral{ background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.65); border-color: rgba(255,255,255,0.10); }
+
+  /* ── Keyword signal drawer ── */
+  .kw-drawer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+    z-index: 9998;
+  }
+  .kw-drawer-overlay.open { opacity: 1; pointer-events: auto; }
+  .kw-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    width: min(460px, 92vw);
+    background: #0E1117;
+    border-left: 1px solid rgba(255,255,255,0.08);
+    box-shadow: -12px 0 48px rgba(0,0,0,0.55);
+    transform: translateX(100%);
+    transition: transform 0.32s cubic-bezier(0.16,1,0.3,1);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    font-family: var(--font-body);
+  }
+  .kw-drawer.open { transform: translateX(0); }
+  .kw-drawer-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 20px 22px 16px 22px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .kw-drawer-title {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+  }
+  .kw-drawer-keyword {
+    font-size: 16px;
+    font-weight: 500;
+    color: #fff;
+    line-height: 1.25;
+    word-break: break-word;
+  }
+  .kw-drawer-badges {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .kw-dir-badge, .kw-conf-pill {
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 99px;
+    border: 1px solid;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .kw-dir-bullish { background: rgba(0,222,148,0.10); color: #5fe7b4; border-color: rgba(0,222,148,0.28); }
+  .kw-dir-bearish { background: rgba(255,77,77,0.10); color: #ff7f7f; border-color: rgba(255,77,77,0.28); }
+  .kw-dir-mixed   { background: rgba(255,184,0,0.10); color: #FFB800; border-color: rgba(255,184,0,0.28); }
+  .kw-dir-neutral { background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.65); border-color: rgba(255,255,255,0.14); }
+  .kw-conf-high    { background: rgba(0,174,255,0.10); color: #00AEFF; border-color: rgba(0,174,255,0.28); }
+  .kw-conf-medium  { background: rgba(255,184,0,0.10); color: #FFB800; border-color: rgba(255,184,0,0.28); }
+  .kw-conf-low     { background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.55); border-color: rgba(255,255,255,0.14); }
+  .kw-drawer-close {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.10);
+    color: rgba(255,255,255,0.7);
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s, color 0.15s;
+  }
+  .kw-drawer-close:hover { background: rgba(255,255,255,0.05); color: #fff; }
+  .kw-drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 18px 22px 22px 22px;
+  }
+  .kw-tile-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 22px;
+  }
+  .kw-tile {
+    background: #080B11;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 12px 10px;
+    text-align: center;
+  }
+  .kw-tile-lbl {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255,255,255,0.45);
+    margin-bottom: 6px;
+  }
+  .kw-tile-val {
+    font-size: 18px;
+    font-weight: 500;
+    color: #fff;
+  }
+  .kw-tile-val.pos { color: #5fe7b4; }
+  .kw-tile-val.neg { color: #ff7f7f; }
+  .kw-section-lbl {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(255,255,255,0.45);
+    margin-bottom: 10px;
+  }
+  .kw-sector-row {
+    display: grid;
+    grid-template-columns: 110px 1fr 54px;
+    gap: 10px;
+    align-items: center;
+    padding: 7px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .kw-sector-row:last-child { border-bottom: none; }
+  .kw-sector-name {
+    font-size: 12px;
+    color: rgba(255,255,255,0.8);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .kw-sector-bar-track {
+    position: relative;
+    height: 6px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .kw-sector-bar-fill {
+    position: absolute;
+    top: 0; bottom: 0;
+    border-radius: 3px;
+  }
+  .kw-sector-bar-fill.pos { background: #00DE94; left: 50%; }
+  .kw-sector-bar-fill.neg { background: #FF4D4D; right: 50%; }
+  .kw-sector-bar-track::before {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0;
+    left: 50%;
+    width: 1px;
+    background: rgba(255,255,255,0.12);
+  }
+  .kw-sector-val {
+    font-size: 12px;
+    text-align: right;
+    color: rgba(255,255,255,0.8);
+    font-weight: 500;
+  }
+  .kw-sector-val.pos { color: #5fe7b4; }
+  .kw-sector-val.neg { color: #ff7f7f; }
+  .kw-drawer-foot {
+    padding: 14px 22px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    font-size: 10px;
+    color: rgba(255,255,255,0.40);
+    letter-spacing: 0.04em;
+  }
+  .kw-drawer-loading, .kw-drawer-empty {
+    padding: 28px 8px;
+    text-align: center;
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+  }
+  @media (max-width: 640px) {
+    .kw-drawer {
+      top: auto;
+      right: 0;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 82vh;
+      border-left: none;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px 16px 0 0;
+      transform: translateY(100%);
+    }
+    .kw-drawer.open { transform: translateY(0); }
+  }
 
   /* Expanded body */
   .narr-body { display: none; border-top: 1px solid var(--mp-border); }
@@ -5667,8 +5977,9 @@ function calcNarrativeReach(citations) {
 async function loadNarratives() {
   if (!TICKER) return;
   try {
-    // Fetch narratives and price snapshots in parallel
-    const [rows, snaps] = await Promise.all([
+    // Fetch narratives, price snapshots, scorecard (for fuel bar),
+    // and article keywords in parallel
+    const [rows, snaps, scorecardRows, articleKwRows] = await Promise.all([
       sbFetch('narrative_analyses', {
         select: [
           'narrative_hash','narrative_text','verdict','source_outlet','analyst_firm',
@@ -5687,7 +5998,19 @@ async function loadNarratives() {
         ticker: `eq.${TICKER}`,
         order:  'snapshot_date.asc',
         limit:  '365'
-      })
+      }),
+      sbFetch('v_narrative_scorecard_deduped', {
+        select: 'narrative_hash,narrative_text,propagation_pressure,energy_remaining,half_life,narrative_energy_regime,snapshot_date',
+        ticker: `eq.${TICKER}`,
+        order:  'snapshot_date.desc',
+        limit:  '60'
+      }).catch(() => []),
+      sbFetch('article_signal_price_index', {
+        select: 'narrative_hash,claim_keywords',
+        ticker: `eq.${TICKER}`,
+        order:  'snapshot_date.desc',
+        limit:  '400'
+      }).catch(() => [])
     ]);
 
     // Build date → price lookup
@@ -5755,6 +6078,104 @@ async function loadNarratives() {
       citation_count: t.allCitations.length,
       allCitations: t.allCitations
     }));
+
+    // ── Merge v_narrative_scorecard_deduped fields onto each top narrative ──
+    // Build lookup by hash (latest wins since we already ordered desc) and text tokens
+    const scByHash = {};
+    const scList = [];
+    (scorecardRows || []).forEach(sc => {
+      const hash = sc.narrative_hash;
+      if (hash && !scByHash[hash]) scByHash[hash] = sc;
+      scList.push(sc);
+    });
+    function pickScorecard(nar) {
+      // Try matching by any citation hash
+      const hashes = (nar.allCitations || [nar]).map(c => c.narrative_hash).filter(Boolean);
+      for (const h of hashes) { if (scByHash[h]) return scByHash[h]; }
+      // Fall back to word overlap on narrative text
+      let best = null, bestScore = 0;
+      for (const sc of scList) {
+        const score = wordOverlap(nar.narrative_text || '', sc.narrative_text || '');
+        if (score > bestScore && score >= 0.55) { best = sc; bestScore = score; }
+      }
+      return best;
+    }
+    top.forEach(n => {
+      const sc = pickScorecard(n);
+      if (sc) {
+        if (n.propagation_pressure   == null) n.propagation_pressure   = sc.propagation_pressure;
+        if (n.energy_remaining       == null) n.energy_remaining       = sc.energy_remaining;
+        if (n.half_life              == null) n.half_life              = sc.half_life;
+        if (n.narrative_energy_regime == null) n.narrative_energy_regime = sc.narrative_energy_regime;
+      }
+    });
+
+    // ── Fuel bar math ──
+    const pressures = top.map(n => Number(n.propagation_pressure) || 0);
+    const maxPressure   = Math.max(...pressures, 0);
+    const totalPressure = pressures.reduce((s, v) => s + v, 0);
+
+    // ── Build narrative_hash → unique keyword set from article_signal_price_index ──
+    const kwByHash = {};
+    (articleKwRows || []).forEach(row => {
+      const h = row.narrative_hash;
+      if (!h) return;
+      let kws = row.claim_keywords;
+      if (typeof kws === 'string') {
+        try { kws = JSON.parse(kws); } catch { kws = kws.split(',').map(s => s.trim()); }
+      }
+      if (!Array.isArray(kws)) return;
+      if (!kwByHash[h]) kwByHash[h] = new Set();
+      kws.forEach(k => {
+        const kw = String(k || '').trim();
+        if (kw) kwByHash[h].add(kw);
+      });
+    });
+    function keywordsForNarrative(nar) {
+      const bag = new Set();
+      (nar.allCitations || [nar]).forEach(c => {
+        const s = kwByHash[c.narrative_hash];
+        if (s) s.forEach(k => bag.add(k));
+      });
+      return [...bag];
+    }
+
+    // ── Fetch signal_direction for every keyword we'll render (one batched call) ──
+    const allKws = new Set();
+    top.forEach(n => keywordsForNarrative(n).forEach(k => allKws.add(k)));
+    const kwDir = {};
+    if (allKws.size) {
+      try {
+        const inList = '(' + [...allKws].map(k => '"' + String(k).replace(/"/g,'\\"') + '"').join(',') + ')';
+        const modRows = await sbFetch('keyword_industry_signal_modifiers', {
+          select: 'keyword,signal_direction',
+          keyword: `in.${inList}`,
+          limit: '1000'
+        }).catch(() => []);
+        modRows.forEach(r => {
+          if (r && r.keyword) {
+            // Keep the strongest / first direction — collapse per-industry duplicates
+            if (!kwDir[r.keyword]) kwDir[r.keyword] = (r.signal_direction || '').toLowerCase();
+          }
+        });
+      } catch {}
+    }
+
+    // Fuel bar colors by rank (1-indexed): 1=amber, 2=cyan, 3=teal, 4+=green
+    function fuelColorForRank(rank1) {
+      if (rank1 === 1) return '#FFB800';
+      if (rank1 === 2) return '#00AEFF';
+      if (rank1 === 3) return '#38C8B8';
+      return '#00DE94';
+    }
+    function regimeClass(r) {
+      const k = String(r || '').toUpperCase();
+      if (k === 'EXPLOSIVE') return 'narr-regime-explosive';
+      if (k === 'MODERATE')  return 'narr-regime-moderate';
+      if (k === 'LOW')       return 'narr-regime-low';
+      if (k === 'DORMANT')   return 'narr-regime-dormant';
+      return '';
+    }
 
     var narrHTML = top.map((n, idx) => {
       // Verdict class
@@ -5870,11 +6291,58 @@ async function loadNarratives() {
       const itemId = `narr-${idx}`;
 
       const verdictKey = vLbl.toLowerCase();
+
+      // Fuel bar (always visible, below headline)
+      const rank1 = idx + 1;
+      const pressureVal = Number(n.propagation_pressure) || 0;
+      const barWidth = maxPressure > 0 ? (pressureVal / maxPressure) * 100 : 0;
+      const fuelPct  = totalPressure > 0 ? Math.round((pressureVal / totalPressure) * 100) : 0;
+      const fuelColor = fuelColorForRank(rank1);
+      const regimeCls = regimeClass(n.narrative_energy_regime);
+      const regimeLbl = n.narrative_energy_regime
+        ? String(n.narrative_energy_regime).toUpperCase() : '';
+      const hasFuelData = n.propagation_pressure != null
+        || n.energy_remaining != null
+        || n.half_life != null
+        || n.narrative_energy_regime != null;
+      const fuelHtml = hasFuelData ? `
+        <div class="narr-fuel-wrap">
+          <div class="narr-fuel-top">
+            ${regimeLbl ? `<span class="narr-regime-pill ${regimeCls}">${esc(regimeLbl)}</span>` : '<span></span>'}
+            ${n.propagation_pressure != null ? `<span class="narr-fuel-pct">${fuelPct}% of fuel</span>` : ''}
+          </div>
+          <div class="narr-fuel-bar-track">
+            <div class="narr-fuel-bar-fill" style="width:${barWidth.toFixed(1)}%;background:${fuelColor};"></div>
+          </div>
+          <div class="narr-fuel-stats">
+            ${n.propagation_pressure != null
+              ? `<span>propagation <strong>${Number(n.propagation_pressure).toFixed(2)}×</strong></span><span class="sep">·</span>` : ''}
+            ${n.energy_remaining != null
+              ? `<span>energy <strong>${Math.round(Number(n.energy_remaining))}%</strong></span><span class="sep">·</span>` : ''}
+            ${n.half_life != null
+              ? `<span>half-life <strong>${Math.round(Number(n.half_life))}d</strong></span>` : ''}
+          </div>
+        </div>` : '';
+
+      // Keyword chips for this narrative (dedup across its citations)
+      const narKws = keywordsForNarrative(n);
+      const kwChipsHtml = narKws.length ? `
+        <div class="narr-kw-wrap">
+          ${narKws.map(kw => {
+            const dir = (kwDir[kw] || '').toLowerCase();
+            const cls = dir === 'bullish' ? 'narr-kw-bull'
+                      : dir === 'bearish' ? 'narr-kw-bear'
+                      : 'narr-kw-neutral';
+            return `<button type="button" class="narr-kw-chip ${cls}" data-kw="${esc(kw)}">${esc(kw)}</button>`;
+          }).join('')}
+        </div>` : '';
+
       return `<div class="narr-item" data-verdict="${verdictKey}">
         <div class="narr-header" data-target="${itemId}">
           <div class="narr-rank">${idx + 1}</div>
           <div class="narr-header-mid">
             <div class="narr-text">${esc(n.narrative_text)}</div>
+            ${fuelHtml}
             <div class="narr-meta-row">
               <span class="narr-verdict ${vCls}">${vLbl}</span>
               <span class="narr-cite"><span class="narr-cite-count">${n.citation_count}</span> citation${n.citation_count !== 1 ? 's' : ''}</span>
@@ -5896,11 +6364,12 @@ async function loadNarratives() {
             </div>
           </div>
           <div class="narr-header-right">
-            <span class="narr-toggle" id="toggle-${itemId}">▾</span>
+            <span class="narr-toggle" id="toggle-${itemId}" aria-hidden="true">⌄</span>
           </div>
         </div>
         <div class="narr-body" id="${itemId}">
           <div class="narr-body-pad">
+            ${kwChipsHtml}
             ${claimHtml}
             ${prereqs.length ? `
               <div class="narr-claim-label" style="margin-bottom:8px;">Claim Verification (${n.prerequisites_met ?? prereqs.filter(p=>p.met).length}/${n.prerequisites_total ?? prereqs.length} met)</div>
@@ -5914,13 +6383,25 @@ async function loadNarratives() {
       </div>`;
     }).join('');
 
-    document.getElementById('narr-list').innerHTML = narrHTML;
-    var narrListTop = document.getElementById('narr-list-top');
-    if(narrListTop) narrListTop.innerHTML = narrHTML;
+    // Ticker fuel score summary line (above the narrative list)
+    const tickerFuelScore = (window._tickerPulseData && window._tickerPulseData.pulse_health_score != null)
+      ? Math.round(window._tickerPulseData.pulse_health_score)
+      : (_tickerPulseData && _tickerPulseData.pulse_health_score != null
+          ? Math.round(_tickerPulseData.pulse_health_score) : null);
+    const fuelScoreLineHtml = tickerFuelScore != null
+      ? `<div class="narr-fuel-score-line">Ticker fuel score: <strong>${tickerFuelScore}</strong></div>`
+      : '';
+    const fullHtml = fuelScoreLineHtml + narrHTML;
 
-    // Wire up accordion toggles (in both locations)
+    document.getElementById('narr-list').innerHTML = fullHtml;
+    var narrListTop = document.getElementById('narr-list-top');
+    if(narrListTop) narrListTop.innerHTML = fullHtml;
+
+    // Wire up accordion toggles (in both locations).
+    // Ignore clicks originating from keyword chips or other interactive children.
     document.querySelectorAll('.narr-header[data-target]').forEach(hdr => {
-      hdr.addEventListener('click', () => {
+      hdr.addEventListener('click', (e) => {
+        if (e.target.closest('.narr-kw-chip')) return;
         const id     = hdr.dataset.target;
         const body   = document.getElementById(id);
         const toggle = document.getElementById(`toggle-${id}`);
@@ -5936,11 +6417,16 @@ async function loadNarratives() {
       });
     });
 
-    // Auto-open first narrative
-    const firstBody   = document.getElementById('narr-0');
-    const firstToggle = document.getElementById('toggle-narr-0');
-    if (firstBody)   firstBody.classList.add('open');
-    if (firstToggle) firstToggle.classList.add('open');
+    // Wire keyword chip clicks → open signal drawer
+    document.querySelectorAll('.narr-kw-chip').forEach(chip => {
+      chip.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const kw = chip.getAttribute('data-kw');
+        if (kw) openKeywordDrawer(kw);
+      });
+    });
+
+    // Narrative rows are collapsed by default — no auto-open.
 
     // Wire info toggle
     document.querySelectorAll('.narr-info-btn').forEach(function(btn){
@@ -5957,6 +6443,150 @@ async function loadNarratives() {
     var narrListTopErr = document.getElementById('narr-list-top');
     if(narrListTopErr) narrListTopErr.innerHTML = `<div class="inline-err">Narratives: ${esc(err.message)}</div>`;
   }
+}
+
+// ── Keyword signal drawer (used by narrative keyword chips) ───────────────────
+function ensureKeywordDrawer() {
+  if (document.getElementById('kw-drawer')) return;
+  const overlay = document.createElement('div');
+  overlay.className = 'kw-drawer-overlay';
+  overlay.id = 'kw-drawer-overlay';
+  const drawer = document.createElement('aside');
+  drawer.className = 'kw-drawer';
+  drawer.id = 'kw-drawer';
+  drawer.setAttribute('role', 'dialog');
+  drawer.setAttribute('aria-modal', 'true');
+  drawer.innerHTML = `
+    <div class="kw-drawer-head">
+      <div class="kw-drawer-title">
+        <div class="kw-drawer-keyword" id="kw-drawer-keyword">—</div>
+        <div class="kw-drawer-badges" id="kw-drawer-badges"></div>
+      </div>
+      <button type="button" class="kw-drawer-close" id="kw-drawer-close" aria-label="Close">×</button>
+    </div>
+    <div class="kw-drawer-body" id="kw-drawer-body">
+      <div class="kw-drawer-loading">Loading signal stats…</div>
+    </div>
+    <div class="kw-drawer-foot" id="kw-drawer-foot"></div>
+  `;
+  document.body.appendChild(overlay);
+  document.body.appendChild(drawer);
+  overlay.addEventListener('click', closeKeywordDrawer);
+  drawer.querySelector('#kw-drawer-close').addEventListener('click', closeKeywordDrawer);
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && drawer.classList.contains('open')) closeKeywordDrawer();
+  });
+}
+
+function closeKeywordDrawer() {
+  const d = document.getElementById('kw-drawer');
+  const o = document.getElementById('kw-drawer-overlay');
+  if (d) d.classList.remove('open');
+  if (o) o.classList.remove('open');
+}
+
+async function openKeywordDrawer(keyword) {
+  ensureKeywordDrawer();
+  const drawer = document.getElementById('kw-drawer');
+  const overlay = document.getElementById('kw-drawer-overlay');
+  const kwEl = document.getElementById('kw-drawer-keyword');
+  const badgesEl = document.getElementById('kw-drawer-badges');
+  const bodyEl = document.getElementById('kw-drawer-body');
+  const footEl = document.getElementById('kw-drawer-foot');
+
+  kwEl.textContent = keyword;
+  badgesEl.innerHTML = '';
+  footEl.innerHTML = '';
+  bodyEl.innerHTML = '<div class="kw-drawer-loading">Loading signal stats…</div>';
+  overlay.classList.add('open');
+  drawer.classList.add('open');
+
+  let data = null;
+  try {
+    const res = await sbFetch('rpc/get_keyword_signal_stats', { p_keyword: keyword });
+    data = Array.isArray(res) ? res[0] : res;
+  } catch (err) {
+    bodyEl.innerHTML = `<div class="kw-drawer-empty">Unable to load stats for "${esc(keyword)}".</div>`;
+    return;
+  }
+  if (!data) {
+    bodyEl.innerHTML = `<div class="kw-drawer-empty">No signal data for "${esc(keyword)}".</div>`;
+    return;
+  }
+
+  // Direction badge
+  const dir = String(data.direction || '').toLowerCase();
+  const dirCls = dir === 'bullish' ? 'kw-dir-bullish'
+               : dir === 'bearish' ? 'kw-dir-bearish'
+               : dir === 'mixed'   ? 'kw-dir-mixed'
+               : 'kw-dir-neutral';
+  const dirLbl = dir ? dir.toUpperCase() : 'NEUTRAL';
+
+  // Confidence pill
+  const conf = String(data.confidence || '').toLowerCase();
+  const confCls = conf === 'high' ? 'kw-conf-high'
+                : conf === 'medium' ? 'kw-conf-medium'
+                : 'kw-conf-low';
+  const confLbl = conf ? conf.toUpperCase() : 'LOW';
+
+  badgesEl.innerHTML = `
+    <span class="kw-dir-badge ${dirCls}">${esc(dirLbl)}</span>
+    <span class="kw-conf-pill ${confCls}">${esc(confLbl)}</span>
+  `;
+
+  // Stat tiles
+  const avg = data.avg_10d_pct;
+  const avgNum = (avg != null && !isNaN(avg)) ? Number(avg) : null;
+  const avgCls = avgNum == null ? '' : (avgNum > 0 ? 'pos' : avgNum < 0 ? 'neg' : '');
+  const avgTxt = avgNum == null ? '—'
+    : (avgNum > 0 ? '+' : '') + avgNum.toFixed(2) + '%';
+  const hitRate = data.hit_rate != null ? Math.round(Number(data.hit_rate)) + '%' : '—';
+  const obs = data.total_observations != null ? Number(data.total_observations).toLocaleString() : '—';
+
+  const tilesHtml = `
+    <div class="kw-tile-row">
+      <div class="kw-tile">
+        <div class="kw-tile-lbl">Avg 10d</div>
+        <div class="kw-tile-val ${avgCls}">${esc(avgTxt)}</div>
+      </div>
+      <div class="kw-tile">
+        <div class="kw-tile-lbl">Hit rate</div>
+        <div class="kw-tile-val">${esc(hitRate)}</div>
+      </div>
+      <div class="kw-tile">
+        <div class="kw-tile-lbl">Observations</div>
+        <div class="kw-tile-val">${esc(obs)}</div>
+      </div>
+    </div>
+  `;
+
+  // Sector breakdown
+  const sectors = Array.isArray(data.sectors) ? data.sectors.slice() : [];
+  let sectorHtml = '';
+  if (sectors.length) {
+    const maxAbs = Math.max(...sectors.map(s => Math.abs(Number(s.avg_10d) || 0)), 0.0001);
+    sectors.sort((a, b) => (Math.abs(Number(b.avg_10d)||0)) - (Math.abs(Number(a.avg_10d)||0)));
+    sectorHtml = `
+      <div class="kw-section-lbl">Sector breakdown</div>
+      ${sectors.map(s => {
+        const v = Number(s.avg_10d) || 0;
+        const pct = Math.min(50, (Math.abs(v) / maxAbs) * 50);
+        const cls = v >= 0 ? 'pos' : 'neg';
+        const valTxt = (v > 0 ? '+' : '') + v.toFixed(2) + '%';
+        return `<div class="kw-sector-row">
+          <div class="kw-sector-name" title="${esc(s.sector||'')}">${esc(s.sector||'—')}</div>
+          <div class="kw-sector-bar-track">
+            <div class="kw-sector-bar-fill ${cls}" style="width:${pct.toFixed(1)}%;"></div>
+          </div>
+          <div class="kw-sector-val ${cls}">${esc(valTxt)}</div>
+        </div>`;
+      }).join('')}
+    `;
+  }
+
+  bodyEl.innerHTML = tilesHtml + sectorHtml;
+  const totalObs = data.total_observations != null ? Number(data.total_observations).toLocaleString() : '—';
+  footEl.textContent = `${totalObs} observations · keyword_industry_signal_modifiers`;
 }
 
 // ── Pulse: fetch ticker_pulse for new panels ──────────────────────────────────
