@@ -6112,6 +6112,14 @@ async function loadNarratives() {
       }
     });
 
+    // Reorder the top 5 by energy_remaining desc so the highest-energy narrative
+    // shows first. Missing energy values sort to the bottom.
+    top.sort((a, b) => {
+      const ea = a.energy_remaining == null ? -Infinity : Number(a.energy_remaining);
+      const eb = b.energy_remaining == null ? -Infinity : Number(b.energy_remaining);
+      return eb - ea;
+    });
+
     // ── Fuel bar math ──
     const pressures = top.map(n => Number(n.propagation_pressure) || 0);
     const maxPressure   = Math.max(...pressures, 0);
