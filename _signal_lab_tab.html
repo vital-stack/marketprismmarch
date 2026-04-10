@@ -64,6 +64,35 @@
   .sl-tog.active .sl-tog-sw { opacity: 1; }
   .sl-tog:not(.active) .sl-tog-sw { opacity: 0.35; }
 
+  /* ── Signal Lab: Live price bar ── */
+  .sl-live-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; padding: 14px 20px 6px; flex-wrap: wrap;
+    border-bottom: 1px solid var(--mp-border);
+  }
+  .sl-live-left { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; min-height: 32px; }
+  .sl-live-price { font-size: 26px; font-weight: 600; font-family: var(--font-body); letter-spacing: -0.02em; color: var(--mp-text-primary); line-height: 1; }
+  .sl-live-change { font-size: 13px; font-family: var(--font-body); display: inline-flex; align-items: center; gap: 4px; }
+  .sl-live-change.up { color: #00DE94; }
+  .sl-live-change.down { color: #FF4D4D; }
+  .sl-live-change.flat { color: var(--mp-text-tertiary); }
+  .sl-live-status { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--mp-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; }
+  .sl-live-status-dot { width: 7px; height: 7px; border-radius: 50%; background: #A0A8B0; flex-shrink: 0; }
+  .sl-live-status-dot.live { background: #00DE94; animation: slLivePulse 2s ease-in-out infinite; }
+  .sl-live-status-dot.stale { background: #FFB800; }
+  .sl-live-status-dot.offline { background: #A0A8B0; }
+  @keyframes slLivePulse { 0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,222,148,0.5); } 50% { opacity: 0.7; box-shadow: 0 0 0 4px rgba(0,222,148,0); } }
+  .sl-live-meta { display: flex; gap: 12px; font-size: 11px; color: var(--mp-text-tertiary); font-family: var(--font-body); flex-wrap: wrap; }
+  .sl-live-meta span { white-space: nowrap; }
+  .sl-view-page-btn {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500;
+    font-family: var(--font-body); padding: 7px 14px; border-radius: 8px;
+    background: rgba(0,174,255,0.08); color: #00AEFF; border: 1px solid rgba(0,174,255,0.22);
+    text-decoration: none; transition: all 0.15s; cursor: pointer; white-space: nowrap;
+  }
+  .sl-view-page-btn:hover { background: rgba(0,174,255,0.14); border-color: rgba(0,174,255,0.38); transform: translateY(-1px); }
+  .sl-view-page-btn svg { width: 12px; height: 12px; }
+
   /* ── Signal Lab: Chart ── */
   .sl-chart-ctl { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px 0; flex-wrap: wrap; gap: 8px; }
   .sl-tf { display: flex; gap: 2px; }
@@ -186,6 +215,23 @@
     <!-- Chart Card -->
     <div class="sl-card" id="sl-chart-section" style="display:none;">
       <div class="sl-card-label">Price & Narratives — <span id="sl-chart-ticker"></span></div>
+
+      <!-- Live Price Bar -->
+      <div class="sl-live-bar">
+        <div class="sl-live-left">
+          <div class="sl-live-price" id="sl-live-price">--</div>
+          <div class="sl-live-change" id="sl-live-change"></div>
+          <div class="sl-live-status">
+            <span class="sl-live-status-dot offline" id="sl-live-dot"></span>
+            <span id="sl-live-label">Loading</span>
+          </div>
+        </div>
+        <div class="sl-live-meta" id="sl-live-meta"></div>
+        <a class="sl-view-page-btn" id="sl-view-full-page" href="#" target="_blank" rel="noopener">
+          View full page
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M8 7h9v9"/></svg>
+        </a>
+      </div>
 
       <!-- Toggles -->
       <div class="sl-toggles">
@@ -339,6 +385,7 @@
   var SL_INIT_DONE=false;
   var SL_ALT_CHART=null;
   var SL_CURRENT_VIEW='lines';
+  var SL_LIVE_TIMER=null;
 
   function slEsc(s){return s?String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):'';}
   function slIsLight(){return document.documentElement.getAttribute('data-theme')==='light';}
@@ -827,12 +874,92 @@
     document.getElementById('sl-regime-metrics').innerHTML='<div class="sl-regime-m">Blue: <span>'+blue.toFixed(1)+'</span></div><div class="sl-regime-m">Yellow: <span>'+yellow.toFixed(1)+'</span></div><div class="sl-regime-m">Purple: <span>'+purple.toFixed(1)+'</span></div><div class="sl-regime-m">Energy_t: <span>'+etN.toFixed(1)+'</span></div>';
   }
 
+  // ── Live Price ──
+  async function slFetchLivePrice(){
+    if(!SL_TICKER)return;
+    var ticker=SL_TICKER;
+    try{
+      var res=await fetch('/api/live-quote?ticker='+encodeURIComponent(ticker));
+      if(!res.ok)throw new Error('HTTP '+res.status);
+      var q=await res.json();
+      if(ticker!==SL_TICKER)return; // ticker changed mid-flight
+      if(q.error||q.price==null)throw new Error(q.error||'No price');
+      var priceEl=document.getElementById('sl-live-price');
+      var changeEl=document.getElementById('sl-live-change');
+      var dotEl=document.getElementById('sl-live-dot');
+      var labelEl=document.getElementById('sl-live-label');
+      var metaEl=document.getElementById('sl-live-meta');
+      if(!priceEl)return;
+      var p=q.price;
+      priceEl.textContent='$'+(p>=1000?p.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):p>=100?p.toFixed(2):p.toFixed(3));
+      if(q.change!=null&&q.changePct!=null&&changeEl){
+        var isUp=q.change>0,isDn=q.change<0;
+        var arrow=isUp?'\u25B2':isDn?'\u25BC':'';
+        var sign=isUp?'+':'';
+        changeEl.className='sl-live-change '+(isUp?'up':isDn?'down':'flat');
+        changeEl.textContent=arrow+' '+sign+q.change.toFixed(2)+' ('+sign+q.changePct.toFixed(2)+'%)';
+      }
+      var now=new Date();
+      var et=new Date(now.toLocaleString('en-US',{timeZone:'America/New_York'}));
+      var day=et.getDay(),hrs=et.getHours(),mins=et.getMinutes();
+      var mktMins=hrs*60+mins;
+      var isWeekday=day>=1&&day<=5;
+      var isOpen=isWeekday&&mktMins>=570&&mktMins<960;
+      var isPre=isWeekday&&mktMins>=240&&mktMins<570;
+      var isAfter=isWeekday&&mktMins>=960&&mktMins<1200;
+      var isRealtime=q.source==='snapshot'||q.source==='last_trade';
+      if(dotEl&&labelEl){
+        if(isOpen&&isRealtime){dotEl.className='sl-live-status-dot live';labelEl.textContent='Live';}
+        else if(isOpen){dotEl.className='sl-live-status-dot stale';labelEl.textContent='Market Open';}
+        else if(isPre){dotEl.className='sl-live-status-dot stale';labelEl.textContent='Pre-Market';}
+        else if(isAfter){dotEl.className='sl-live-status-dot stale';labelEl.textContent='After Hours';}
+        else{dotEl.className='sl-live-status-dot offline';labelEl.textContent='Closed';}
+      }
+      if(metaEl){
+        var parts=[];
+        if(q.high!=null&&q.low!=null)parts.push('<span>H $'+q.high.toFixed(2)+' \u00B7 L $'+q.low.toFixed(2)+'</span>');
+        if(q.volume!=null){
+          var vol=q.volume>=1e6?(q.volume/1e6).toFixed(1)+'M':q.volume>=1e3?(q.volume/1e3).toFixed(0)+'K':q.volume;
+          parts.push('<span>Vol '+vol+'</span>');
+        }
+        if(q.prevClose!=null)parts.push('<span>Prev $'+q.prevClose.toFixed(2)+'</span>');
+        metaEl.innerHTML=parts.join('');
+      }
+    }catch(err){
+      var dotEl=document.getElementById('sl-live-dot');
+      var labelEl=document.getElementById('sl-live-label');
+      if(dotEl)dotEl.className='sl-live-status-dot offline';
+      if(labelEl)labelEl.textContent='Delayed';
+    }
+  }
+
+  function slScheduleLivePrice(){
+    if(SL_LIVE_TIMER){clearTimeout(SL_LIVE_TIMER);SL_LIVE_TIMER=null;}
+    var now=new Date();
+    var et=new Date(now.toLocaleString('en-US',{timeZone:'America/New_York'}));
+    var day=et.getDay(),hrs=et.getHours(),mins=et.getMinutes();
+    var mktMins=hrs*60+mins;
+    var isActive=day>=1&&day<=5&&mktMins>=240&&mktMins<1200;
+    var interval=isActive?30000:120000;
+    SL_LIVE_TIMER=setTimeout(function(){slFetchLivePrice().then(slScheduleLivePrice);},interval);
+  }
+
   // ── Main entry ──
   async function slLoadTicker(ticker){
     SL_TICKER=ticker;
     document.getElementById('sl-chart-ticker').textContent=ticker;
     document.getElementById('sl-chart-section').style.display='block';
     document.getElementById('sl-regimes-section').style.display='block';
+    // Live price + full-page link
+    var viewBtn=document.getElementById('sl-view-full-page');
+    if(viewBtn)viewBtn.href='/ticker/'+encodeURIComponent(ticker);
+    var priceEl=document.getElementById('sl-live-price');if(priceEl)priceEl.textContent='--';
+    var changeEl=document.getElementById('sl-live-change');if(changeEl){changeEl.textContent='';changeEl.className='sl-live-change';}
+    var metaEl=document.getElementById('sl-live-meta');if(metaEl)metaEl.innerHTML='';
+    var dotEl=document.getElementById('sl-live-dot');if(dotEl)dotEl.className='sl-live-status-dot offline';
+    var labelEl=document.getElementById('sl-live-label');if(labelEl)labelEl.textContent='Loading';
+    if(SL_LIVE_TIMER){clearTimeout(SL_LIVE_TIMER);SL_LIVE_TIMER=null;}
+    slFetchLivePrice().then(slScheduleLivePrice);
     try{
       document.getElementById('sl-chart-outer').innerHTML='<div class="sl-no-data">Loading '+slEsc(ticker)+'...</div>';
       await slLoadChart(ticker);
