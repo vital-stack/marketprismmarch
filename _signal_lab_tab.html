@@ -73,6 +73,13 @@
   }
   .sl-tf-btn:hover { color: var(--text-secondary); background: var(--surface2); }
   .sl-tf-btn.active { background: rgba(0,174,255,0.08); color: #00AEFF; border-color: rgba(0,174,255,0.20); }
+  .sl-view-toggle { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+  .sl-view-btn {
+    font-size: 11px; font-family: var(--font-body); padding: 4px 9px; border-radius: 5px;
+    border: 1px solid transparent; background: none; color: var(--text-tertiary); cursor: pointer; transition: all 0.1s;
+  }
+  .sl-view-btn:hover { color: var(--text-secondary); background: var(--surface2); }
+  .sl-view-btn.active { background: rgba(0,174,255,0.08); color: #00AEFF; border-color: rgba(0,174,255,0.20); }
   .sl-sort { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-tertiary); }
   .sl-sort-sel {
     font-size: 11px; font-family: var(--font-body); padding: 4px 8px; border-radius: 5px;
@@ -201,6 +208,11 @@
           <button class="sl-tf-btn active" data-days="365">1Y</button>
           <button class="sl-tf-btn" data-days="0">All</button>
         </div>
+        <div class="sl-view-toggle">
+          <button id="sl-view-lines" class="sl-view-btn active" data-sl-view="lines">Lines</button>
+          <button id="sl-view-candles" class="sl-view-btn" data-sl-view="candles">Narrative view</button>
+          <button id="sl-view-gap" class="sl-view-btn" data-sl-view="gap">Gap signal</button>
+        </div>
         <div class="sl-sort">
           <span>Sort stories</span>
           <select class="sl-sort-sel" id="sl-story-sort">
@@ -215,6 +227,7 @@
       <!-- Canvas -->
       <div class="sl-chart-wrap" id="sl-chart-outer" style="height:420px;">
         <canvas id="sl-price-canvas"></canvas>
+        <canvas id="slChartAlt" style="display:none;width:100%;height:100%;"></canvas>
         <div class="sl-tip" id="sl-chart-tip"></div>
         <div class="sl-popup" id="sl-story-popup">
           <button class="sl-popup-close" id="sl-popup-close">&#10005;</button>
@@ -223,6 +236,14 @@
           <div class="sl-popup-body" id="sl-popup-body"></div>
           <div id="sl-popup-vms"></div>
         </div>
+      </div>
+      <div id="sl-alt-legend" style="display:none;margin:8px 14px 0;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--text-tertiary);">
+        <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#1D9E75;display:inline-block;"></span>Gap collapsed — signal</span>
+        <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:rgba(178,185,206,0.7);display:inline-block;"></span>Gap building</span>
+        <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#D85A30;display:inline-block;"></span>Peak narrative</span>
+        <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#E24B4A;display:inline-block;"></span>Danger zone</span>
+        <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#378ADD;display:inline-block;"></span>Building momentum</span>
+        <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#888780;display:inline-block;"></span>Neutral</span>
       </div>
 
       <!-- Legend -->
@@ -314,6 +335,8 @@
   var SL_SNAPS=[], SL_NARRS=[], SL_DECAY=[], SL_PHYSICS=[], SL_PRESSURE=[], SL_ENERGY_T=[], SL_SCORECARD=[];
   var SL_TICKER='';
   var SL_INIT_DONE=false;
+  var SL_ALT_CHART=null;
+  var SL_CURRENT_VIEW='lines';
 
   function slEsc(s){return s?String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):'';}
   function slIsLight(){return document.documentElement.getAttribute('data-theme')==='light';}
@@ -335,7 +358,245 @@
     if(sort==='date-asc')rows=rows.slice().sort(function(a,b){return a.snapshot_date<b.snapshot_date?-1:1;});
     return rows;
   }
-  function slRenderChart(){var s=slFilterSnaps(),n=slFilterNarrs();if(s.length)slDrawChart(s,n);}
+  function slRenderChart(){var s=slFilterSnaps(),n=slFilterNarrs();if(s.length)slDrawChart(s,n);if(SL_CURRENT_VIEW!=='lines')slDrawAltChart(SL_CURRENT_VIEW);}
+
+  function slSetView(view){
+    SL_CURRENT_VIEW=view;
+    document.querySelectorAll('.sl-view-btn').forEach(function(b){b.classList.remove('active');});
+    var activeBtn=document.getElementById('sl-view-'+view);
+    if(activeBtn)activeBtn.classList.add('active');
+    var mainCanvas=document.getElementById('sl-price-canvas');
+    var altCanvas=document.getElementById('slChartAlt');
+    var altLegend=document.getElementById('sl-alt-legend');
+    if(view==='lines'){
+      if(mainCanvas)mainCanvas.style.display='';
+      if(altCanvas)altCanvas.style.display='none';
+      if(altLegend)altLegend.style.display='none';
+    }else{
+      if(mainCanvas)mainCanvas.style.display='none';
+      if(altCanvas)altCanvas.style.display='';
+      if(altLegend)altLegend.style.display='flex';
+      slDrawAltChart(view);
+    }
+  }
+
+  function slDrawAltChart(view){
+    var canvas=document.getElementById('slChartAlt');
+    if(!canvas)return;
+    // Ensure Chart.js is loaded before drawing
+    if(typeof window.ensureChartJS==='function'&&!window.Chart){
+      window.ensureChartJS().then(function(){slDrawAltChart(view);});
+      return;
+    }
+    if(!window.Chart)return;
+
+    if(SL_ALT_CHART){SL_ALT_CHART.destroy();SL_ALT_CHART=null;}
+
+    var snaps=slFilterSnaps();
+    if(!snaps||snaps.length<2)return;
+
+    var labels=snaps.map(function(d){return d.snapshot_date.slice(5,10);});
+    var prices=snaps.map(function(d){return d.price_close;});
+
+    function findVal(arr,date,field){
+      if(!arr)return null;
+      var row=arr.find(function(d){return d.snapshot_date&&d.snapshot_date.slice(0,10)===date.slice(0,10);});
+      return row?(row[field]!=null?row[field]:null):null;
+    }
+
+    var blueArr=snaps.map(function(d){return findVal(SL_DECAY,d.snapshot_date,'energy_remaining_pct');});
+    var yellowArr=snaps.map(function(d){return findVal(SL_PHYSICS,d.snapshot_date,'pe_rank_pct');});
+    var tealArr=snaps.map(function(d){
+      var row=SL_ENERGY_T?SL_ENERGY_T.find(function(r){return r.snapshot_date&&r.snapshot_date.slice(0,10)===d.snapshot_date.slice(0,10);}):null;
+      return row?(row.te_rank_pct!=null?row.te_rank_pct:row.narrative_energy_t):null;
+    });
+    var scorecardArr=snaps.map(function(d){
+      return SL_SCORECARD?SL_SCORECARD.find(function(r){return r.snapshot_date&&r.snapshot_date.slice(0,10)===d.snapshot_date.slice(0,10);}):null;
+    });
+
+    function getRegime(i){
+      var sc=scorecardArr[i];
+      if(sc&&sc.signal_regime)return sc.signal_regime;
+      var blue=blueArr[i]||0;
+      var yellow=yellowArr[i]||0;
+      var teal=tealArr[i]||0;
+      var gap=blue-yellow;
+      if(blue>=80&&yellow>=80)return 'SATURATION';
+      if(blue>=80&&yellow<=20)return 'HOLLOW';
+      if(blue>=80&&yellow<=30&&gap>=15)return 'TRIPLE_THREAT';
+      if(gap>=70&&teal<=20)return 'GAP_BUILDING';
+      if(gap<=10&&teal>=50)return 'GAP_FIRED';
+      if(blue<=30&&yellow>=60)return 'FRESH_ENERGY';
+      return 'NEUTRAL';
+    }
+
+    var REGIME_COLORS={
+      SATURATION:    {fill:'rgba(216,90,48,0.75)', border:'#993C1D'},
+      TRIPLE_THREAT: {fill:'rgba(226,75,74,0.75)', border:'#A32D2D'},
+      HOLLOW:        {fill:'rgba(216,90,48,0.45)', border:'#993C1D'},
+      GAP_BUILDING:  {fill:'rgba(178,185,206,0.5)', border:'#5F5E5A'},
+      GAP_FIRED:     {fill:'rgba(29,158,117,0.85)', border:'#085041'},
+      FRESH_ENERGY:  {fill:'rgba(55,138,221,0.75)', border:'#185FA5'},
+      NEUTRAL:       {fill:'rgba(136,135,128,0.45)', border:'#5F5E5A'},
+      YELLOW_COLLAPSE:{fill:'rgba(239,159,39,0.65)', border:'#854F0B'}
+    };
+    function getColor(regime,type){
+      var c=REGIME_COLORS[regime]||REGIME_COLORS.NEUTRAL;
+      return type==='border'?c.border:c.fill;
+    }
+
+    var ctx=canvas.getContext('2d');
+
+    if(view==='candles'){
+      var ohlc=prices.map(function(c,i){
+        var o=i===0?c*0.998:prices[i-1];
+        var h=Math.max(o,c)*1.004;
+        var l=Math.min(o,c)*0.996;
+        return {o:o,h:h,l:l,c:c};
+      });
+      var regimes=snaps.map(function(d,i){return getRegime(i);});
+
+      var candlePlugin={
+        id:'narrativeCandles',
+        afterDatasetsDraw:function(chart){
+          var cctx=chart.ctx;
+          var meta=chart.getDatasetMeta(0);
+          meta.data.forEach(function(bar,i){
+            var d=ohlc[i];
+            var regime=regimes[i];
+            var x=bar.x;
+            var yH=chart.scales.y.getPixelForValue(d.h);
+            var yL=chart.scales.y.getPixelForValue(d.l);
+            var yO=chart.scales.y.getPixelForValue(d.o);
+            var yC=chart.scales.y.getPixelForValue(d.c);
+            var w=Math.max((bar.width||8)*0.75,5);
+            cctx.save();
+            cctx.strokeStyle=getColor(regime,'border');
+            cctx.lineWidth=1;
+            cctx.beginPath();
+            cctx.moveTo(x,yH);
+            cctx.lineTo(x,yL);
+            cctx.stroke();
+            var top=Math.min(yO,yC);
+            var bodyH=Math.max(Math.abs(yO-yC),2);
+            cctx.fillStyle=getColor(regime,'fill');
+            cctx.strokeStyle=getColor(regime,'border');
+            cctx.lineWidth=1.5;
+            cctx.fillRect(x-w/2,top,w,bodyH);
+            cctx.strokeRect(x-w/2,top,w,bodyH);
+            cctx.restore();
+          });
+        }
+      };
+
+      SL_ALT_CHART=new Chart(ctx,{
+        type:'bar',
+        data:{
+          labels:labels,
+          datasets:[{
+            label:'Price',
+            data:prices,
+            backgroundColor:'transparent',
+            borderWidth:0
+          }]
+        },
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          plugins:{
+            legend:{display:false},
+            tooltip:{
+              callbacks:{
+                label:function(tctx){
+                  var i=tctx.dataIndex;
+                  var regime=regimes[i];
+                  var blue=blueArr[i]!=null?blueArr[i].toFixed(0):'n/a';
+                  var yellow=yellowArr[i]!=null?yellowArr[i].toFixed(0):'n/a';
+                  var teal=tealArr[i]!=null?tealArr[i].toFixed(0):'n/a';
+                  var gap=(blueArr[i]!=null&&yellowArr[i]!=null)?(blueArr[i]-yellowArr[i]).toFixed(0):'n/a';
+                  return [
+                    'Price: $'+tctx.parsed.y.toFixed(2),
+                    'Regime: '+regime,
+                    'Narrative Energy: '+blue+'%',
+                    'Physics Energy: '+yellow,
+                    'Temporal rank: '+teal+' / 100',
+                    'Gap: '+gap+' pts'
+                  ];
+                }
+              }
+            }
+          },
+          scales:{
+            x:{ticks:{maxRotation:45,autoSkip:true,maxTicksLimit:14,font:{size:11}},grid:{display:false}},
+            y:{ticks:{font:{size:11},callback:function(v){return '$'+v.toFixed(0);}},grid:{color:'rgba(136,135,128,0.12)'}}
+          }
+        },
+        plugins:[candlePlugin]
+      });
+    }else if(view==='gap'){
+      var gaps=snaps.map(function(d,i){
+        var b=blueArr[i];
+        var y=yellowArr[i];
+        return (b!=null&&y!=null)?Math.max(b-y,0):null;
+      });
+      var tealClean=tealArr.map(function(v){return v!=null?v:null;});
+      var validPrices=prices.filter(function(p){return p!=null;});
+      var priceMin=Math.min.apply(null,validPrices);
+      var priceMax=Math.max.apply(null,validPrices);
+      var priceRange=priceMax-priceMin||1;
+      var priceNorm=prices.map(function(p){return p!=null?((p-priceMin)/priceRange)*100:null;});
+
+      SL_ALT_CHART=new Chart(ctx,{
+        type:'line',
+        data:{
+          labels:labels,
+          datasets:[
+            {
+              label:'Physics/Temporal gap',
+              data:gaps,
+              borderColor:'#D85A30',
+              backgroundColor:'rgba(216,90,48,0.08)',
+              fill:true,
+              tension:0.3,
+              borderWidth:2,
+              pointRadius:3,
+              pointBackgroundColor:gaps.map(function(g){return g!=null&&g>=70?'#D85A30':'#B4B2A9';})
+            },
+            {
+              label:'Temporal rank',
+              data:tealClean,
+              borderColor:'#1D9E75',
+              backgroundColor:'transparent',
+              tension:0.3,
+              borderWidth:2,
+              pointRadius:3,
+              pointBackgroundColor:'#1D9E75',
+              borderDash:[5,3]
+            },
+            {
+              label:'Price (normalized 0-100)',
+              data:priceNorm,
+              borderColor:'#888780',
+              backgroundColor:'transparent',
+              tension:0.3,
+              borderWidth:1.5,
+              pointRadius:2,
+              borderDash:[2,2]
+            }
+          ]
+        },
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},
+          scales:{
+            x:{ticks:{maxRotation:45,autoSkip:true,maxTicksLimit:14,font:{size:11}},grid:{display:false}},
+            y:{min:0,max:105,ticks:{font:{size:11}},grid:{color:'rgba(136,135,128,0.12)'}}
+          }
+        }
+      });
+    }
+  }
 
   function slBuildBearList(){
     var bears=SL_NARRS.filter(function(n){return n.isBear;});
@@ -677,6 +938,7 @@
     };
     document.querySelectorAll('.sl-tog').forEach(function(btn){btn.addEventListener('click',function(){var line=btn.dataset.slLine;SL_VIS[line]=!SL_VIS[line];btn.classList.toggle('active');if(SL_SNAPS.length)slRenderChart();});});
     document.querySelectorAll('.sl-tf-btn').forEach(function(btn){btn.addEventListener('click',function(){document.querySelectorAll('.sl-tf-btn').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');document.getElementById('sl-story-popup')?.classList.remove('visible');if(SL_SNAPS.length)slRenderChart();});});
+    document.querySelectorAll('.sl-view-btn').forEach(function(btn){btn.addEventListener('click',function(){slSetView(btn.dataset.slView);});});
     document.getElementById('sl-story-sort')?.addEventListener('change',function(){document.getElementById('sl-story-popup')?.classList.remove('visible');if(SL_SNAPS.length)slRenderChart();});
     document.getElementById('sl-interpret-btn').onclick=slInterpret;
     // Auto-load from ?ticker= query param if present (deeplink from ticker page),
