@@ -1298,6 +1298,7 @@
     white-space: nowrap;
   }
   .narr-regime-explosive { background: rgba(255,77,77,0.08);  color: #FF6B6B; border-color: rgba(255,77,77,0.25); }
+  .narr-regime-high      { background: rgba(0,222,148,0.08);  color: #5fe7b4; border-color: rgba(0,222,148,0.25); }
   .narr-regime-moderate  { background: rgba(255,184,0,0.08);  color: #FFB800; border-color: rgba(255,184,0,0.25); }
   .narr-regime-low       { background: rgba(0,174,255,0.08);  color: #00AEFF; border-color: rgba(0,174,255,0.22); }
   .narr-regime-dormant   { background: rgba(160,168,176,0.08);color: #A0A8B0; border-color: rgba(160,168,176,0.22); }
@@ -6000,15 +6001,15 @@ async function loadNarratives() {
         limit:  '365'
       }),
       sbFetch('v_narrative_scorecard_deduped', {
-        select: 'narrative_hash,narrative_text,propagation_pressure,energy_remaining,half_life,narrative_energy_regime,snapshot_date',
+        select: 'narrative_hash,narrative,propagation_pressure,energy_remaining,half_life,narrative_energy_regime,snapshot_date',
         ticker: `eq.${TICKER}`,
         order:  'snapshot_date.desc',
         limit:  '60'
       }).catch(() => []),
       sbFetch('article_signal_price_index', {
-        select: 'narrative_hash,claim_keywords',
+        select: 'article_url,claim_keywords',
         ticker: `eq.${TICKER}`,
-        order:  'snapshot_date.desc',
+        order:  'published_date.desc',
         limit:  '400'
       }).catch(() => [])
     ]);
@@ -6080,7 +6081,8 @@ async function loadNarratives() {
     }));
 
     // ── Merge v_narrative_scorecard_deduped fields onto each top narrative ──
-    // Build lookup by hash (latest wins since we already ordered desc) and text tokens
+    // Build lookup by hash (latest wins since we already ordered desc) and text tokens.
+    // Note: scorecard view uses column `narrative` (not `narrative_text`).
     const scByHash = {};
     const scList = [];
     (scorecardRows || []).forEach(sc => {
@@ -6095,7 +6097,7 @@ async function loadNarratives() {
       // Fall back to word overlap on narrative text
       let best = null, bestScore = 0;
       for (const sc of scList) {
-        const score = wordOverlap(nar.narrative_text || '', sc.narrative_text || '');
+        const score = wordOverlap(nar.narrative_text || '', sc.narrative || '');
         if (score > bestScore && score >= 0.55) { best = sc; bestScore = score; }
       }
       return best;
@@ -6115,26 +6117,27 @@ async function loadNarratives() {
     const maxPressure   = Math.max(...pressures, 0);
     const totalPressure = pressures.reduce((s, v) => s + v, 0);
 
-    // ── Build narrative_hash → unique keyword set from article_signal_price_index ──
-    const kwByHash = {};
+    // ── Build article_url → unique keyword set from article_signal_price_index ──
+    // (that table has no narrative_hash, so we join on article_url.)
+    const kwByUrl = {};
     (articleKwRows || []).forEach(row => {
-      const h = row.narrative_hash;
-      if (!h) return;
+      const url = row.article_url;
+      if (!url) return;
       let kws = row.claim_keywords;
       if (typeof kws === 'string') {
         try { kws = JSON.parse(kws); } catch { kws = kws.split(',').map(s => s.trim()); }
       }
       if (!Array.isArray(kws)) return;
-      if (!kwByHash[h]) kwByHash[h] = new Set();
+      if (!kwByUrl[url]) kwByUrl[url] = new Set();
       kws.forEach(k => {
         const kw = String(k || '').trim();
-        if (kw) kwByHash[h].add(kw);
+        if (kw) kwByUrl[url].add(kw);
       });
     });
     function keywordsForNarrative(nar) {
       const bag = new Set();
       (nar.allCitations || [nar]).forEach(c => {
-        const s = kwByHash[c.narrative_hash];
+        const s = kwByUrl[c.article_url];
         if (s) s.forEach(k => bag.add(k));
       });
       return [...bag];
@@ -6171,6 +6174,7 @@ async function loadNarratives() {
     function regimeClass(r) {
       const k = String(r || '').toUpperCase();
       if (k === 'EXPLOSIVE') return 'narr-regime-explosive';
+      if (k === 'HIGH')      return 'narr-regime-high';
       if (k === 'MODERATE')  return 'narr-regime-moderate';
       if (k === 'LOW')       return 'narr-regime-low';
       if (k === 'DORMANT')   return 'narr-regime-dormant';
