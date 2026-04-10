@@ -7305,10 +7305,18 @@ function tlBuildValueLane(title,subtitle,cards){
 
 async function loadValuePicks(){
   try{
-    // Fetch latest snapshot date
-    var dateRows=await restFetch('ticker_snapshots',{select:'snapshot_date',order:'snapshot_date.desc',limit:'1'});
-    if(!dateRows||!dateRows.length)return[];
-    var maxDate=dateRows[0].snapshot_date;
+    // Find latest date that actually has stories with fair_value populated.
+    // (Don't key off ticker_snapshots — on delayed-pipeline days it may contain
+    //  a partial insert for today before v_dash_daily_story has fair_value rows,
+    //  which would leave Value Picks empty.)
+    var storyDateRows=await restFetch('v_dash_daily_story',{
+      select:'snapshot_date',
+      'fair_value':'not.is.null',
+      order:'snapshot_date.desc',
+      limit:'1'
+    });
+    if(!storyDateRows||!storyDateRows.length)return[];
+    var maxDate=storyDateRows[0].snapshot_date;
 
     // Fetch stories with fair value for that date
     var stories=await restFetch('v_dash_daily_story',{
@@ -7317,11 +7325,21 @@ async function loadValuePicks(){
       'fair_value':'not.is.null'
     });
 
-    // Fetch prices for that date
+    // Fetch prices for that date; fall back to most recent snapshots if that
+    // date has no ticker_snapshots rows yet.
     var snaps=await restFetch('ticker_snapshots',{
       select:'ticker,price_close',
       snapshot_date:'eq.'+maxDate
     });
+    if(!snaps||!snaps.length){
+      var fallbackDateRows=await restFetch('ticker_snapshots',{select:'snapshot_date',order:'snapshot_date.desc',limit:'1'});
+      if(fallbackDateRows&&fallbackDateRows.length){
+        snaps=await restFetch('ticker_snapshots',{
+          select:'ticker,price_close',
+          snapshot_date:'eq.'+fallbackDateRows[0].snapshot_date
+        });
+      }
+    }
 
     // Fetch Brier scores
     var sigs=await restFetch('ticker_signatures',{
