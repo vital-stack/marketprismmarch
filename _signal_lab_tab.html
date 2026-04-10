@@ -193,6 +193,8 @@
       <!-- Controls -->
       <div class="sl-chart-ctl">
         <div class="sl-tf">
+          <button class="sl-tf-btn" data-days="7">7D</button>
+          <button class="sl-tf-btn" data-days="14">14D</button>
           <button class="sl-tf-btn" data-days="30">30D</button>
           <button class="sl-tf-btn" data-days="90">90D</button>
           <button class="sl-tf-btn" data-days="180">6M</button>
@@ -358,8 +360,11 @@
     // Grid
     ctx.font='10px Inter, sans-serif';ctx.fillStyle=slIsLight()?'#8B90A0':'#8B97B8';ctx.textAlign='right';
     for(var i=0;i<=4;i++){var p=minP+(maxP-minP)*(i/4),y=yOf(p);ctx.strokeStyle=slIsLight()?'#D4D6DD':'#2a3350';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(PAD.left,y);ctx.lineTo(W-PAD.right,y);ctx.stroke();ctx.fillText((p>=100?'$'+p.toFixed(0):'$'+p.toFixed(2)),PAD.left-4,y+3);}
-    // X axis
-    ctx.textAlign='center';var every=Math.max(1,Math.floor(N/6)),lastRI=-Infinity;
+    // X axis — denser labels: show every day on <=14D, target ~10 ticks otherwise
+    ctx.textAlign='center';
+    var days=slGetDays();
+    var targetTicks=(days>0&&days<=14)?N:10;
+    var every=Math.max(1,Math.floor(N/targetTicks)),lastRI=-Infinity;
     snaps.forEach(function(s,i){if(i%every!==0&&i!==N-1)return;if(i===N-1&&(i-lastRI)<every*0.4){return;}var d=new Date(s.snapshot_date+'T12:00:00');ctx.fillText(d.toLocaleDateString('en-US',{month:'short',day:'numeric'}),xOf(i),H-PAD.bottom+14);lastRI=i;});
     // Price fill
     var grad=ctx.createLinearGradient(0,PAD.top,0,H-PAD.bottom);grad.addColorStop(0,'rgba(26,110,255,0.12)');grad.addColorStop(1,'rgba(26,110,255,0)');
@@ -397,15 +402,29 @@
     // Temporal Energy line (solid teal, own 0-100 axis)
     ctx.save();ctx.setLineDash([]);ctx.strokeStyle='#38C8B8';ctx.lineWidth=1.8;ctx.globalAlpha=0.85;ctx.beginPath();var es=false;ef.forEach(function(d){var idx=dateIdx[d.snapshot_date.slice(0,10)];if(idx==null)return;var x=xOf(idx),nm=(d.narrative_energy_t/mET)*100,y2=yE(nm);if(!es){ctx.moveTo(x,y2);es=true;}else ctx.lineTo(x,y2);});ctx.stroke();ctx.restore();}}
 
-    // Sentiment dots
+    // Sentiment dots — position by REAL calendar date, interpolating between
+    // surrounding snapshots so a story on a weekend/gap day doesn't collapse
+    // onto the previous trading day.
     var snapDates=snaps.map(function(s){return s.snapshot_date?.slice(0,10);});
-    function nearIdx(ds){var e=dateIdx[ds];if(e!=null)return e;var l=0,h=snapDates.length-1;while(l<=h){var m=(l+h)>>1;if(snapDates[m]<ds)l=m+1;else h=m-1;}if(l>=snapDates.length)return snapDates.length-1;if(l===0)return 0;return Math.abs(new Date(snapDates[l])-new Date(ds))<=Math.abs(new Date(snapDates[l-1])-new Date(ds))?l:l-1;}
+    var snapTimes=snaps.map(function(s){return new Date(s.snapshot_date+'T12:00:00').getTime();});
+    function xyOfDate(ds){
+      var t=new Date(ds+'T12:00:00').getTime();
+      if(!snapTimes.length)return null;
+      if(t<=snapTimes[0]){var s0=snaps[0];return s0.price_close==null?null:{cx:xOf(0),cy:yOf(s0.price_close)};}
+      if(t>=snapTimes[snapTimes.length-1]){var sL=snaps[snaps.length-1];return sL.price_close==null?null:{cx:xOf(snaps.length-1),cy:yOf(sL.price_close)};}
+      var l=0,h=snapTimes.length-1;
+      while(l<h-1){var m=(l+h)>>1;if(snapTimes[m]<=t)l=m;else h=m;}
+      var ta=snapTimes[l],tb=snapTimes[h],pa=snaps[l].price_close,pb=snaps[h].price_close;
+      if(pa==null||pb==null)return null;
+      var frac=(t-ta)/(tb-ta||1);
+      return{cx:xOf(l)+(xOf(h)-xOf(l))*frac,cy:yOf(pa+(pb-pa)*frac)};
+    }
     var dotHits=[];
-    narrs.forEach(function(n){if(!SL_VIS[n.isBear?'bear-dots':'bull-dots'])return;var d=n.snapshot_date?.slice(0,10);if(!d)return;var idx=nearIdx(d);if(idx==null)return;var s=snaps[idx];if(s?.price_close==null)return;var cx=xOf(idx),cy=yOf(s.price_close);ctx.beginPath();ctx.arc(cx,cy,5,0,Math.PI*2);ctx.fillStyle=n.isBear?'#FF4D4D':'#00DE94';ctx.fill();ctx.strokeStyle=slIsLight()?'#FFFFFF':'#0A0E1A';ctx.lineWidth=1.5;ctx.stroke();dotHits.push({cx:cx,cy:cy,n:n});});
+    narrs.forEach(function(n){if(!SL_VIS[n.isBear?'bear-dots':'bull-dots'])return;var d=n.snapshot_date?.slice(0,10);if(!d)return;var pos=xyOfDate(d);if(!pos)return;ctx.beginPath();ctx.arc(pos.cx,pos.cy,5,0,Math.PI*2);ctx.fillStyle=n.isBear?'#FF4D4D':'#00DE94';ctx.fill();ctx.strokeStyle=slIsLight()?'#FFFFFF':'#0A0E1A';ctx.lineWidth=1.5;ctx.stroke();dotHits.push({cx:pos.cx,cy:pos.cy,n:n});});
 
     function showPopup(hit){var n=hit.n;document.getElementById('sl-popup-date').textContent=n.snapshot_date?.slice(0,10)||'';document.getElementById('sl-popup-headline').textContent=n.source_outlet||n.verdict||'Narrative Story';document.getElementById('sl-popup-body').textContent=n.narrative_text||(n.sentiment_score!=null?'Sentiment: '+n.sentiment_score.toFixed(1):'No story text available.');document.getElementById('sl-popup-vms').innerHTML=[n.source_outlet||'',n.verdict||'',n.isBear?'Bearish':'Bullish'].filter(Boolean).join(' \u00B7 ');var px=hit.cx+10;if(px+260>W)px=hit.cx-270;var py=hit.cy-10;if(py+140>H)py=H-145;popup.style.left=(px+14)+'px';popup.style.top=(py+10)+'px';popup.classList.add('visible');}
 
-    cv.addEventListener('mousemove',function(e){var rect=cv.getBoundingClientRect(),mx=e.clientX-rect.left,my=e.clientY-rect.top;var hit=dotHits.find(function(d){return Math.hypot(mx-d.cx,my-d.cy)<8;});cv.style.cursor=hit?'pointer':'default';if(hit){tip.style.opacity='0';showPopup(hit);return;}popup.classList.remove('visible');var idx=Math.max(0,Math.min(N-1,Math.round(((mx-PAD.left)/CW)*(N-1))));var s=snaps[idx];if(!s?.price_close){tip.style.opacity='0';return;}tip.style.opacity='1';tip.textContent=new Date(s.snapshot_date).toLocaleDateString('en-US',{month:'short',day:'numeric'})+'  $'+s.price_close.toFixed(2);var tx=xOf(idx)+8;if(tx+120>W)tx=xOf(idx)-128;tip.style.left=(tx+14)+'px';tip.style.top=(my-18)+'px';});
+    cv.addEventListener('mousemove',function(e){var rect=cv.getBoundingClientRect(),mx=e.clientX-rect.left,my=e.clientY-rect.top;var hit=dotHits.find(function(d){return Math.hypot(mx-d.cx,my-d.cy)<8;});cv.style.cursor=hit?'pointer':'default';if(hit){tip.style.opacity='0';showPopup(hit);return;}if(popup.classList.contains('visible')){popup.classList.remove('visible');}var idx=Math.max(0,Math.min(N-1,Math.round(((mx-PAD.left)/CW)*(N-1))));var s=snaps[idx];if(!s?.price_close){tip.style.opacity='0';return;}tip.style.opacity='1';tip.textContent=new Date(s.snapshot_date).toLocaleDateString('en-US',{month:'short',day:'numeric'})+'  $'+s.price_close.toFixed(2);var tx=xOf(idx)+8;if(tx+120>W)tx=xOf(idx)-128;tip.style.left=(tx+14)+'px';tip.style.top=(my-18)+'px';});
     cv.addEventListener('mouseleave',function(){tip.style.opacity='0';popup.classList.remove('visible');});
     cv.addEventListener('click',function(e){var rect=cv.getBoundingClientRect(),mx=e.clientX-rect.left,my=e.clientY-rect.top;var hit=dotHits.find(function(d){return Math.hypot(mx-d.cx,my-d.cy)<8;});if(!hit){popup.classList.remove('visible');return;}showPopup(hit);});
   }
