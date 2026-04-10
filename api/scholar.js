@@ -293,7 +293,7 @@ module.exports = async (req, res) => {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'claude-haiku-4-5',
         max_tokens: 1024,
         system: SYSTEM_PROMPT,
         messages: messages,
@@ -304,7 +304,20 @@ module.exports = async (req, res) => {
     if (!response.ok) {
       var errText = await response.text();
       console.error('Claude API error:', response.status, errText);
-      return res.status(502).json({ error: 'Scholar AI is temporarily unavailable.' });
+      // Surface the upstream status + parsed error so failures are diagnosable
+      // from the UI instead of showing a generic "temporarily unavailable" fallback.
+      var upstreamErr = null;
+      try {
+        var errJson = JSON.parse(errText);
+        if (errJson && errJson.error) {
+          upstreamErr = (errJson.error.type || '') + ': ' + (errJson.error.message || '');
+        }
+      } catch (e) { /* non-JSON body; fall through */ }
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      return res.status(502).json({
+        error: 'Scholar AI error (' + response.status + ')'
+          + (upstreamErr ? ': ' + upstreamErr.slice(0, 240) : '')
+      });
     }
 
     // Set streaming headers
