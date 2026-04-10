@@ -282,29 +282,87 @@ body::before{
   </div>
 </div>
 
-<!-- Supabase JS -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<!-- Supabase JS (with onerror so we can detect a blocked CDN) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"
+        onerror="window.__supabase_cdn_failed = true;"></script>
 <!-- Env vars injected by server -->
 <script id="__env_script">window.__login_env = { SUPABASE_URL: '', SUPABASE_ANON: '' };</script>
 <script>
 (function(){
+  // ── Message helpers (defined first so the early-exit branches can use them) ──
+  function showMsg(type, text){
+    var el = document.getElementById('auth-message');
+    if(!el) return;
+    el.className = 'auth-message ' + type;
+    el.textContent = text;
+  }
+  function clearMsg(){
+    var el = document.getElementById('auth-message');
+    if(!el) return;
+    el.className = 'auth-message';
+    el.textContent = '';
+  }
+
+  // A network failure inside fetch() surfaces as a TypeError. Different
+  // browsers use different messages: Safari/iOS says "Load failed", Chrome
+  // says "Failed to fetch", Firefox says "NetworkError when attempting to
+  // fetch resource". Treat any of these as a transport-level failure.
+  function isNetworkError(err){
+    if(!err) return false;
+    if(err.name === 'TypeError') return true;
+    var msg = String(err.message || err).toLowerCase();
+    return msg.indexOf('load failed') !== -1
+        || msg.indexOf('failed to fetch') !== -1
+        || msg.indexOf('networkerror') !== -1
+        || msg.indexOf('network request failed') !== -1;
+  }
+
+  function networkHelpMessage(){
+    return 'Network error reaching the authentication service. '
+         + 'If you use a content blocker (1Blocker, AdGuard, Brave Shields, '
+         + 'DuckDuckGo Privacy, etc.), please disable it for marketprism.co '
+         + 'and try again.';
+  }
+
   var env = window.__login_env || {};
-  var SUPABASE_URL  = env.SUPABASE_URL  || '';
-  var SUPABASE_ANON = env.SUPABASE_ANON || '';
+  var SUPABASE_URL  = (env.SUPABASE_URL  || '').trim();
+  var SUPABASE_ANON = (env.SUPABASE_ANON || '').trim();
+
+  // Defensive client-side normalization in case the server slipped through a
+  // bare hostname. Without a protocol, supabase-js issues a request against a
+  // relative path which iOS Safari reports as "Load failed".
+  if(SUPABASE_URL && !/^https?:\/\//i.test(SUPABASE_URL)){
+    SUPABASE_URL = 'https://' + SUPABASE_URL;
+  }
+  SUPABASE_URL = SUPABASE_URL.replace(/\/+$/, '');
 
   if(!SUPABASE_URL || !SUPABASE_ANON){
-    showMsg('error','Supabase not configured. Contact administrator.');
+    showMsg('error','Authentication is not configured. Please contact support.');
+    return;
+  }
+
+  // The supabase-js CDN may have been blocked by a content blocker.
+  if(window.__supabase_cdn_failed || !window.supabase || !window.supabase.createClient){
+    showMsg('error', networkHelpMessage());
+    console.error('[login] supabase-js failed to load from CDN');
     return;
   }
 
   var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-  // Check if already logged in
-  supabase.auth.getSession().then(function(result){
-    if(result.data.session){
-      window.location.href = '/dashboard';
-    }
-  });
+  // Check if already logged in. Swallow errors — a stale/expired token is not
+  // a reason to block the form from rendering.
+  try {
+    supabase.auth.getSession().then(function(result){
+      if(result && result.data && result.data.session){
+        window.location.href = '/dashboard';
+      }
+    }).catch(function(err){
+      console.warn('[login] getSession failed:', err);
+    });
+  } catch(e){
+    console.warn('[login] getSession threw:', e);
+  }
 
   // ── Tab switching ──
   window.switchAuthTab = function(tab){
@@ -333,17 +391,7 @@ body::before{
     if(signinEmail) signinEmail.value = prefillEmail;
   }
 
-  // ── Message helpers ──
-  function showMsg(type, text){
-    var el = document.getElementById('auth-message');
-    el.className = 'auth-message ' + type;
-    el.textContent = text;
-  }
-  function clearMsg(){
-    var el = document.getElementById('auth-message');
-    el.className = 'auth-message';
-    el.textContent = '';
-  }
+  // ── Loading helper ──
   function setLoading(btnId, loading){
     var btn = document.getElementById(btnId);
     if(!btn) return;
@@ -356,6 +404,35 @@ body::before{
     }
   }
 
+  // Server-side fallback: when fetch() to *.supabase.co is blocked, ask our
+  // own /api/auth-login endpoint to perform the password grant and hand back
+  // the session tokens, which we then install via supabase.auth.setSession().
+  async function signInViaProxy(email, password){
+    var resp = await fetch('/api/auth-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, password: password }),
+      credentials: 'same-origin',
+    });
+    var data;
+    try { data = await resp.json(); }
+    catch(e){ throw new Error('Unexpected response from server'); }
+    if(!resp.ok){
+      var err = new Error(data && data.error ? data.error : 'Sign in failed');
+      err.proxyStatus = resp.status;
+      throw err;
+    }
+    if(!data.access_token || !data.refresh_token){
+      throw new Error('Sign in succeeded but no session was returned');
+    }
+    var setRes = await supabase.auth.setSession({
+      access_token: data.access_token,
+      refresh_token: data.refresh_token,
+    });
+    if(setRes && setRes.error) throw setRes.error;
+    return setRes;
+  }
+
   // ── Sign In ──
   window.handleSignIn = async function(e){
     e.preventDefault();
@@ -365,13 +442,43 @@ body::before{
     if(!email || !password){ showMsg('error','Please fill in all fields.'); return; }
 
     setLoading('btn-signin', true);
-    try {
-      var result = await supabase.auth.signInWithPassword({ email: email, password: password });
-      if(result.error) throw result.error;
+
+    var finishSuccess = function(){
       showMsg('success','Signed in successfully. Redirecting…');
       document.getElementById('btn-signin').classList.add('success');
       setTimeout(function(){ window.location.href = '/dashboard'; }, 800);
+    };
+
+    try {
+      var result = await supabase.auth.signInWithPassword({ email: email, password: password });
+      if(result.error) throw result.error;
+      finishSuccess();
+      return;
     } catch(err){
+      console.warn('[login] direct sign-in failed:', err);
+
+      // If the failure looks like a transport problem rather than bad
+      // credentials, retry through our server-side proxy. This rescues users
+      // whose browser can't reach *.supabase.co directly (iOS Safari content
+      // blockers, Lockdown Mode, restrictive networks, etc.).
+      if(isNetworkError(err)){
+        showMsg('info','Network blocked the auth server. Retrying via secure relay…');
+        try {
+          await signInViaProxy(email, password);
+          finishSuccess();
+          return;
+        } catch(proxyErr){
+          console.warn('[login] proxy sign-in failed:', proxyErr);
+          if(isNetworkError(proxyErr)){
+            showMsg('error', networkHelpMessage());
+          } else {
+            showMsg('error', proxyErr.message || 'Sign in failed. Please try again.');
+          }
+          setLoading('btn-signin', false);
+          return;
+        }
+      }
+
       showMsg('error', err.message || 'Sign in failed. Check your credentials.');
       setLoading('btn-signin', false);
     }
@@ -411,7 +518,8 @@ body::before{
       }
       setTimeout(function(){ window.location.href = '/dashboard'; }, 800);
     } catch(err){
-      showMsg('error', err.message || 'Registration failed.');
+      console.warn('[login] register failed:', err);
+      showMsg('error', isNetworkError(err) ? networkHelpMessage() : (err.message || 'Registration failed.'));
     } finally {
       setLoading('btn-register', false);
     }
@@ -432,7 +540,8 @@ body::before{
       if(result.error) throw result.error;
       showMsg('success','Password reset link sent! Check your email inbox.');
     } catch(err){
-      showMsg('error', err.message || 'Failed to send reset email.');
+      console.warn('[login] reset failed:', err);
+      showMsg('error', isNetworkError(err) ? networkHelpMessage() : (err.message || 'Failed to send reset email.'));
     } finally {
       setLoading('btn-reset', false);
     }
