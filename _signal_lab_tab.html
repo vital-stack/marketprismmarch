@@ -311,7 +311,7 @@
 (function(){
   // ── Namespaced globals ──
   var SL_VIS = {'narr-energy':true,'physics-energy':true,'narr-pressure':true,'temporal-energy':true,'bull-dots':true,'bear-dots':true};
-  var SL_SNAPS=[], SL_NARRS=[], SL_DECAY=[], SL_PHYSICS=[], SL_PRESSURE=[], SL_ENERGY_T=[];
+  var SL_SNAPS=[], SL_NARRS=[], SL_DECAY=[], SL_PHYSICS=[], SL_PRESSURE=[], SL_ENERGY_T=[], SL_SCORECARD=[];
   var SL_TICKER='';
   var SL_INIT_DONE=false;
 
@@ -445,7 +445,7 @@
       restFetch('narrative_analyses',{select:'snapshot_date,narrative_text,source_outlet,article_url,sentiment_score,verdict',ticker:'eq.'+ticker,order:'snapshot_date.asc',limit:'2000'}),
       restFetch('v_dash_narrative_health',{select:'snapshot_date,narrative_trend,sentiment_score',ticker:'eq.'+ticker,order:'snapshot_date.asc',limit:'2000'}),
       restFetch('decay_metrics',{select:'snapshot_date,energy_remaining_pct,day_number',ticker:'eq.'+ticker,order:'snapshot_date.asc',limit:'2000'}),
-      restFetch('narrative_scorecard',{select:'snapshot_date,narrative_energy_absolute,nrs,overreaction_ratio,coordination_score,narrative_energy_t',ticker:'eq.'+ticker,order:'snapshot_date.asc',limit:'2000'}),
+      restFetch('narrative_scorecard',{select:'snapshot_date,narrative_energy_absolute,nrs,overreaction_ratio,coordination_score,narrative_energy_t,signal_regime,regime_direction,divergence_score,regime_class,blue_energy,yellow_energy,energy_t_normalized',ticker:'eq.'+ticker,order:'snapshot_date.asc',limit:'2000'}),
       restFetch('mv_energy_t_normalized',{select:'snapshot_date,raw_et,te_rank_pct,te_rolling_q90_norm,full_coverage_day',ticker:'eq.'+ticker,order:'snapshot_date.asc',limit:'2000'})
     ]);
     SL_SNAPS=r[0].filter(function(x){return x.snapshot_date&&x.price_close!=null;});
@@ -454,10 +454,23 @@
     SL_DECAY=r[3];
     SL_PHYSICS=r[4].filter(function(x){return x.snapshot_date&&x.narrative_energy_absolute!=null;});
     SL_PRESSURE=r[4].filter(function(x){return x.snapshot_date;}).map(function(x){var nrs=x.nrs||0,or=Math.min(x.overreaction_ratio||0,50),cs=x.coordination_score||0;return{snapshot_date:x.snapshot_date,pressure:((nrs/100)*0.4+(or/50)*0.4+(cs/100)*0.2)*100};});
+    // Full scorecard row per day (signal_regime, direction, divergence, etc.)
+    // used by Interpret Chart to give Claude the current regime + context.
+    SL_SCORECARD=r[4].filter(function(x){return x.snapshot_date;}).map(function(x){return{
+      snapshot_date:x.snapshot_date,
+      signal_regime:x.signal_regime||null,
+      regime_direction:x.regime_direction||null,
+      divergence_score:x.divergence_score!=null?Number(x.divergence_score):null,
+      regime_class:x.regime_class||null,
+      blue_energy:x.blue_energy!=null?Number(x.blue_energy):null,
+      yellow_energy:x.yellow_energy!=null?Number(x.yellow_energy):null,
+      energy_t_normalized:x.energy_t_normalized!=null?Number(x.energy_t_normalized):null
+    };});
     // Temporal Energy: use cross-ticker percentile rank from mv_energy_t_normalized (stable across timeframes; universe rank).
     // Falls back to raw narrative_energy_t if the MV has no coverage for this ticker yet.
+    // narrative_energy_t is kept as an alias of te_rank_pct for any legacy caller.
     if(r[5]&&r[5].length){
-      SL_ENERGY_T=r[5].filter(function(x){return x.snapshot_date&&x.te_rank_pct!=null;}).map(function(x){return{snapshot_date:x.snapshot_date,te_rank_pct:Number(x.te_rank_pct),te_rolling_q90_norm:x.te_rolling_q90_norm!=null?Number(x.te_rolling_q90_norm):null,raw_et:x.raw_et!=null?Number(x.raw_et):null,full_coverage_day:x.full_coverage_day!==false};});
+      SL_ENERGY_T=r[5].filter(function(x){return x.snapshot_date&&x.te_rank_pct!=null;}).map(function(x){var rank=Number(x.te_rank_pct);return{snapshot_date:x.snapshot_date,te_rank_pct:rank,narrative_energy_t:rank,te_rolling_q90_norm:x.te_rolling_q90_norm!=null?Number(x.te_rolling_q90_norm):null,raw_et:x.raw_et!=null?Number(x.raw_et):null,full_coverage_day:x.full_coverage_day!==false};});
     } else {
       SL_ENERGY_T=[];
     }
@@ -551,13 +564,49 @@
     var lp=SL_PHYSICS.filter(function(d){return d.snapshot_date?.slice(0,10)<=hi;}).slice(-5);
     var lpr=SL_PRESSURE.filter(function(d){return d.snapshot_date?.slice(0,10)<=hi;}).slice(-5);
     var le=SL_ENERGY_T.filter(function(d){return d.snapshot_date?.slice(0,10)<=hi;}).slice(-5);
-    var mA=Math.max.apply(null,SL_PHYSICS.filter(function(d){var ds=d.snapshot_date?.slice(0,10);return ds>=lo&&ds<=hi;}).map(function(d){return d.narrative_energy_absolute||0;}).concat([1]));
-    var sd='Ticker: '+SL_TICKER+'\nTimeframe: '+days+' days ('+lo+' to '+hi+')\nPrice: $'+(pS?.toFixed(2)||'?')+' -> $'+(pE?.toFixed(2)||'?')+' ('+pC+'%)\n\n';
-    sd+='Narrative Energy (blue, last 5, 0-100):\n';ld.forEach(function(d){sd+='  '+d.snapshot_date?.slice(0,10)+': '+(d.energy_remaining_pct??0)+'\n';});
-    sd+='\nPhysics Energy (yellow, norm 0-100):\n';lp.forEach(function(d){sd+='  '+d.snapshot_date?.slice(0,10)+': '+((d.narrative_energy_absolute||0)/mA*100).toFixed(1)+'\n';});
-    sd+='\nNarrative Pressure (purple, 0-100):\n';lpr.forEach(function(d){sd+='  '+d.snapshot_date?.slice(0,10)+': '+(d.pressure?.toFixed(1)||0)+'\n';});
-    sd+='\nTemporal Energy (teal, cross-ticker universe rank 0-100 | raw value):\n';le.forEach(function(d){var rank=(d.te_rank_pct!=null?d.te_rank_pct.toFixed(1):'?'),raw=(d.raw_et!=null?d.raw_et.toFixed(2):'?');sd+='  '+d.snapshot_date?.slice(0,10)+': rank '+rank+' | raw '+raw+'\n';});
-    sd+='\nRecent prices:\n';snaps.slice(-10).forEach(function(s){sd+='  '+s.snapshot_date?.slice(0,10)+': $'+s.price_close?.toFixed(2)+'\n';});
+    // Physics Energy normalization: use full ticker history as the basis so the
+    // 0-100 scale is stable regardless of the visible window (same principle as
+    // Temporal Energy now uses via mv_energy_t_normalized).
+    var mA=Math.max.apply(null,SL_PHYSICS.map(function(d){return d.narrative_energy_absolute||0;}).concat([1]));
+    // Latest signal regime row within the visible window (or absolute latest if none in window).
+    var scInWindow=SL_SCORECARD.filter(function(d){var ds=d.snapshot_date?.slice(0,10);return ds>=lo&&ds<=hi;});
+    var latestScorecard=scInWindow.length?scInWindow[scInWindow.length-1]:(SL_SCORECARD.length?SL_SCORECARD[SL_SCORECARD.length-1]:null);
+    // Recent narrative headlines within the visible window (up to 8 most recent).
+    var recentNarratives=(SL_NARRS||[]).filter(function(d){var ds=d.snapshot_date?.slice(0,10);return ds>=lo&&ds<=hi;}).slice(-8).map(function(d){
+      var parts=[d.snapshot_date.slice(0,10)];
+      if(d.source_outlet)parts.push('['+d.source_outlet+']');
+      if(d.narrative_text)parts.push(String(d.narrative_text).slice(0,120));
+      if(d.sentiment_score!=null)parts.push('(sentiment: '+Number(d.sentiment_score).toFixed(2)+')');
+      if(d.verdict)parts.push('verdict: '+d.verdict);
+      return parts.join(' ');
+    });
+    var sdParts=[
+      'Ticker: '+SL_TICKER,
+      'Timeframe: '+days+' days ('+lo+' to '+hi+')',
+      'Price: $'+(pS?.toFixed(2)||'?')+' -> $'+(pE?.toFixed(2)||'?')+' ('+pC+'%)',
+      '\n--- PRICE (last 10 days) ---',
+      snaps.slice(-10).map(function(s){return s.snapshot_date.slice(0,10)+': $'+(s.price_close!=null?s.price_close.toFixed(2):'?');}).join(', '),
+      '\n--- NARRATIVE ENERGY / Blue (story persistence %, 0-100) ---',
+      ld.map(function(d){return d.snapshot_date.slice(0,10)+': '+Math.round(d.energy_remaining_pct??0);}).join(', '),
+      '\n--- PHYSICS ENERGY / Yellow (raw kinetic energy normalized 0-100, full-history basis) ---',
+      lp.map(function(d){return d.snapshot_date.slice(0,10)+': '+Math.round((d.narrative_energy_absolute||0)/mA*100);}).join(', '),
+      '\n--- TEMPORAL ENERGY / Teal (universe percentile rank | raw value) ---',
+      '(0 = lowest ET in universe that day, 100 = highest)',
+      le.map(function(d){var rank=d.te_rank_pct!=null?Math.round(d.te_rank_pct):'?';var raw=d.raw_et!=null?d.raw_et.toFixed(2):'?';return d.snapshot_date.slice(0,10)+': rank '+rank+' | raw '+raw;}).join('\n'),
+      '\n--- NARRATIVE PRESSURE / Purple (composite risk 0-100) ---',
+      lpr.map(function(d){return d.snapshot_date.slice(0,10)+': '+Math.round(d.pressure||0);}).join(', '),
+      latestScorecard?[
+        '\n--- CURRENT SIGNAL REGIME ---',
+        'Regime: '+(latestScorecard.signal_regime||'NEUTRAL'),
+        'Direction: '+(latestScorecard.regime_direction||'N/A'),
+        'Gap score (Blue minus Yellow divergence): '+(latestScorecard.divergence_score!=null?Math.round(latestScorecard.divergence_score)+' pts':'N/A'),
+        'Market regime: '+(latestScorecard.regime_class||'N/A'),
+        'Blue: '+(latestScorecard.blue_energy!=null?Math.round(latestScorecard.blue_energy):'N/A'),
+        'Yellow: '+(latestScorecard.yellow_energy!=null?Math.round(latestScorecard.yellow_energy):'N/A')
+      ].join(' | '):'',
+      recentNarratives.length>0?'\n--- RECENT NARRATIVE HEADLINES ---\n'+recentNarratives.join('\n'):''
+    ];
+    var sd=sdParts.filter(Boolean).join('\n');
     try{
       var resp=await fetch('/api/interpret-chart',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ticker:SL_TICKER,signalData:sd})});
       if(!resp.ok){var er=await resp.json().catch(function(){return{};});body.innerHTML='<span style="color:var(--mp-red);">'+slEsc(er.error||'Failed')+'</span>';btn.disabled=false;return;}
