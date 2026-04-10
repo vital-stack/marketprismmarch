@@ -2982,7 +2982,129 @@ body{
 }
 .strat-filter-chip:hover{border-color:var(--mp-cyan);color:var(--mp-cyan);}
 .strat-filter-chip.active{border-color:var(--mp-cyan);color:var(--mp-cyan);background:rgba(0,174,255,0.08);}
-.strat-cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:24px;padding-bottom:40px;}
+.strat-cards-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  gap:14px;
+  padding-bottom:40px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   TRADING CARDS — playing-card format
+   Scoped to the Trade Cards gallery only. Other uses of .card-scene
+   (carousels, daily featured cards, leaderboard) keep their sizing.
+   Ratio 5:7 ≈ 0.714 (standard poker card ~63×88mm).
+   ═══════════════════════════════════════════════════════════════════ */
+.strat-cards-grid .card-scene{
+  width:auto;                /* override the 240px fixed width */
+  aspect-ratio:5 / 7;
+  filter:drop-shadow(0 6px 18px rgba(0,0,0,0.45));
+}
+.strat-cards-grid .card-scene:hover{
+  filter:drop-shadow(0 14px 36px rgba(0,0,0,0.6));
+  transform:translateY(-5px);
+}
+.strat-cards-grid .card-flipper,
+.strat-cards-grid .card-front,
+.strat-cards-grid .card-back{height:100%;}
+.strat-cards-grid .card-front,
+.strat-cards-grid .card-back{border-radius:12px;}
+.strat-cards-grid .card-front::before,
+.strat-cards-grid .card-back::before,
+.strat-cards-grid .foil-layer,
+.strat-cards-grid .foil-scan,
+.strat-cards-grid .card-front>.tc,
+.strat-cards-grid .card-back>.card-back-inner{border-radius:12px;}
+
+/* The front face becomes a compact hero: header, price, command,
+   footer. Context/meta/sector-date/regime/action-bar all hide here
+   and live on the back face where there's room. */
+.strat-cards-grid .tc{
+  min-height:0;
+  height:100%;
+  border-radius:12px;
+}
+.strat-cards-grid .tc::before{display:none;} /* kill the 48px grid overlay */
+.strat-cards-grid .tc-body{
+  padding:14px 14px 12px;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  gap:0;
+}
+.strat-cards-grid .tc-header{margin-bottom:10px;gap:6px;}
+.strat-cards-grid .tc-header-left{gap:8px;min-width:0;flex:1;}
+.strat-cards-grid .tc-id{min-width:0;flex:1;}
+.strat-cards-grid .tc-ticker{font-size:17px;line-height:1;}
+.strat-cards-grid .tc-name{
+  font-size:11px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  max-width:100%;
+}
+.strat-cards-grid .tc-rarity{font-size:10px;padding:2px 7px;}
+.strat-cards-grid .tc-price-row{margin-bottom:10px;}
+.strat-cards-grid .tc-price{font-size:16px;}
+.strat-cards-grid .tc-change{font-size:11px;opacity:0.75;}
+.strat-cards-grid .tc-command{
+  font-size:14px;
+  line-height:1.2;
+  margin-bottom:10px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+/* Keep content visible, just tighten it to fit the playing-card frame.
+   The action button bar and regime badge hide — the whole card is
+   already clickable, and the regime badge crowds the narrow layout. */
+.strat-cards-grid .tc-regime-badge,
+.strat-cards-grid .tc-card-actions{display:none !important;}
+
+.strat-cards-grid .tc-meta-line{
+  font-size:11px;
+  margin-bottom:8px;
+  letter-spacing:0.02em;
+}
+.strat-cards-grid .tc-context{
+  font-size:12px;
+  line-height:1.45;
+  margin-bottom:0;
+  -webkit-line-clamp:2;
+}
+.strat-cards-grid .tc-sector-date{
+  font-size:10px;
+  margin-top:10px;
+  margin-bottom:10px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.strat-cards-grid .tc-foot{
+  padding-top:10px;
+  border-top:1px solid rgba(255,255,255,0.06);
+  margin-top:auto;
+}
+.strat-cards-grid .tc-state-tag{font-size:10px;letter-spacing:0.06em;}
+.strat-cards-grid .tc-view-btn{font-size:10px;padding:4px 10px;}
+.strat-cards-grid .tc-sentiment-bar{border-radius:12px 12px 0 0;}
+.strat-cards-grid .tc-dl-btn{width:26px;height:26px;top:8px;right:8px;}
+.strat-cards-grid .tc-dl-btn svg{width:12px;height:12px;}
+
+/* Back face scales to the playing-card ratio too */
+.strat-cards-grid .card-back-inner{
+  min-height:0;
+  height:100%;
+  border-radius:12px;
+}
+.strat-cards-grid .back-content{padding:14px 14px 12px;}
+
+/* Light theme overrides — keep the divider on the footer visible */
+[data-theme="light"] .strat-cards-grid .tc-foot{border-top-color:rgba(0,0,0,0.08);}
+
+/* Very narrow viewports — allow a bit wider floor so touch targets stay usable */
+@media(max-width:480px){
+  .strat-cards-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;}
+  .strat-cards-grid .tc-body,
+  .strat-cards-grid .back-content{padding:12px 12px 10px;}
+  .strat-cards-grid .tc-command{font-size:14px;}
+}
 
 /* ── Collection Stats ── */
 .collection-stats{
