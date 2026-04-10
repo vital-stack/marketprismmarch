@@ -3339,10 +3339,19 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
 
         <!-- 3. PRICE & NARRATIVES CHART -->
         <div class="section">
-          <div class="section-label">Price &amp; Narratives</div>
+          <div class="section-label" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <span>Price &amp; Narratives</span>
+            <a id="tk-open-signal-lab" href="/dashboard?tab=signallab" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;border:1px solid rgba(56,200,184,0.30);background:linear-gradient(135deg, rgba(56,200,184,0.10), rgba(0,174,255,0.06));color:#38C8B8;font-family:var(--font-body);font-size:12px;font-weight:500;text-decoration:none;transition:all .15s;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
+              Open in Signal Lab
+              <span style="opacity:0.7;">&rarr;</span>
+            </a>
+          </div>
           <div class="section-body">
             <div class="chart-controls">
               <div class="chart-timeframes">
+                <button class="tf-btn" data-days="7">7D</button>
+                <button class="tf-btn" data-days="14">14D</button>
                 <button class="tf-btn" data-days="30">30D</button>
                 <button class="tf-btn" data-days="90">90D</button>
                 <button class="tf-btn" data-days="180">6M</button>
@@ -3376,9 +3385,9 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
                 <div class="legend-item"><div class="leg-dot" style="background:#00DE94;"></div> Bullish Sentiment<span class="leg-tip">Article sentiment on that date</span></div>
                 <div class="legend-item"><div class="leg-dot" style="background:#FF4D4D;"></div> Bearish Sentiment<span class="leg-tip">Article sentiment on that date</span></div>
                 <div class="legend-item"><div class="leg-line" style="background:#00AEFF;opacity:0.7;border-top:2px dashed #00AEFF;height:0;width:14px;"></div> Narrative Energy<span class="leg-tip">Story persistence relative to its natural half-life</span></div>
-                <div class="legend-item"><div class="leg-line" style="background:#FFB800;opacity:0.7;border-top:2px dashed #FFB800;height:0;width:14px;"></div> Physics Energy<span class="leg-tip">Raw narrative activity in the system right now</span></div>
+                <div class="legend-item"><div class="leg-line" style="background:#FFB800;opacity:0.7;border-top:2px dashed #FFB800;height:0;width:14px;"></div> Physics Energy (universe rank)<span class="leg-tip">Cross-ticker percentile rank of raw narrative kinetic energy vs. full universe that day. 87 = top 13% of tickers.</span></div>
                 <div class="legend-item"><div class="leg-line" style="background:#7B61FF;opacity:0.7;border-top:2px dashed #7B61FF;height:0;width:14px;"></div> Narrative Pressure<span class="leg-tip">Composite manipulation and risk score</span></div>
-                <div class="legend-item"><div class="leg-line" style="background:#38C8B8;opacity:0.85;height:2px;width:14px;"></div> Temporal Energy<span class="leg-tip">Freshness of narrative fuel. High = rally setup. Low = crash setup.</span></div>
+                <div class="legend-item"><div class="leg-line" style="background:#38C8B8;opacity:0.85;height:2px;width:14px;"></div> Temporal Energy (universe rank)<span class="leg-tip">Cross-ticker percentile rank vs. full universe that day. 87 = top 13% of tickers. &ge;80 = rally setup, &le;15 = crash setup.</span></div>
               </div>
             </div>
             <div class="bear-stories-wrap" id="bear-stories-wrap" style="display:none;">
@@ -4711,9 +4720,13 @@ let ALL_PRESSURE = []; // narrative pressure (composite of nrs, overreaction_rat
 let ALL_ENERGY_T = []; // temporal energy (narrative_energy_t — direction differentiator)
 async function loadChart() {
   if (!TICKER) return;
+  // Point the "Open in Signal Lab" button at the current ticker.
+  const slLink = document.getElementById('tk-open-signal-lab');
+  if (slLink) slLink.href = '/dashboard?tab=signallab&ticker=' + encodeURIComponent(TICKER);
   try {
-    // Fetch prices, stories, narrative health, and decay in parallel
-    const [priceRows, storyRows, healthRows, decayRows, physicsRows] = await Promise.all([
+    // Fetch prices, stories, narrative health, decay, scorecard, and both
+    // normalized-energy materialized views in parallel.
+    const [priceRows, storyRows, healthRows, decayRows, physicsRows, peMvRows, etMvRows] = await Promise.all([
       sbFetch('ticker_snapshots', {
         select: 'snapshot_date,price_close',
         ticker: `eq.${TICKER}`,
@@ -4743,7 +4756,19 @@ async function loadChart() {
         ticker: `eq.${TICKER}`,
         order:  'snapshot_date.asc',
         limit:  '2000'
-      })
+      }),
+      sbFetch('mv_physics_energy_normalized', {
+        select: 'snapshot_date,raw_pe,pe_rank_pct,pe_rolling_q90_norm,full_coverage_day',
+        ticker: `eq.${TICKER}`,
+        order:  'snapshot_date.asc',
+        limit:  '2000'
+      }).catch(() => []),
+      sbFetch('mv_energy_t_normalized', {
+        select: 'snapshot_date,raw_et,te_rank_pct,te_rolling_q90_norm,full_coverage_day',
+        ticker: `eq.${TICKER}`,
+        order:  'snapshot_date.asc',
+        limit:  '2000'
+      }).catch(() => [])
     ]);
 
     ALL_SNAPS = priceRows.filter(r => r.snapshot_date && r.price_close != null);
@@ -4778,7 +4803,6 @@ async function loadChart() {
     });
 
     ALL_DECAY = decayRows;
-    ALL_PHYSICS = physicsRows.filter(r => r.snapshot_date && r.narrative_energy_absolute != null);
     ALL_PRESSURE = physicsRows.filter(r => r.snapshot_date).map(r => {
       const nrs = r.nrs || 0;
       const or = Math.min(r.overreaction_ratio || 0, 50);
@@ -4788,7 +4812,52 @@ async function loadChart() {
         pressure: ((nrs / 100) * 0.4 + (or / 50) * 0.4 + (cs / 100) * 0.2) * 100
       };
     });
-    ALL_ENERGY_T = physicsRows.filter(r => r.snapshot_date && r.narrative_energy_t != null);
+    // Physics Energy: use cross-ticker percentile rank from mv_physics_energy_normalized
+    // (stable across timeframes; universe rank). Falls back to raw narrative_energy_absolute
+    // from the scorecard if the MV has no coverage for this ticker yet.
+    if (peMvRows && peMvRows.length) {
+      ALL_PHYSICS = peMvRows
+        .filter(r => r.snapshot_date && r.pe_rank_pct != null)
+        .map(r => ({
+          snapshot_date: r.snapshot_date,
+          pe_rank_pct: Number(r.pe_rank_pct),
+          narrative_energy_absolute: r.raw_pe != null ? Number(r.raw_pe) : null,
+          raw_pe: r.raw_pe != null ? Number(r.raw_pe) : null,
+          full_coverage_day: r.full_coverage_day !== false
+        }));
+    } else {
+      ALL_PHYSICS = physicsRows
+        .filter(r => r.snapshot_date && r.narrative_energy_absolute != null)
+        .map(r => ({
+          snapshot_date: r.snapshot_date,
+          pe_rank_pct: null,
+          narrative_energy_absolute: Number(r.narrative_energy_absolute),
+          raw_pe: Number(r.narrative_energy_absolute),
+          full_coverage_day: true
+        }));
+    }
+    // Temporal Energy: same treatment via mv_energy_t_normalized.
+    if (etMvRows && etMvRows.length) {
+      ALL_ENERGY_T = etMvRows
+        .filter(r => r.snapshot_date && r.te_rank_pct != null)
+        .map(r => ({
+          snapshot_date: r.snapshot_date,
+          te_rank_pct: Number(r.te_rank_pct),
+          narrative_energy_t: Number(r.te_rank_pct),
+          raw_et: r.raw_et != null ? Number(r.raw_et) : null,
+          full_coverage_day: r.full_coverage_day !== false
+        }));
+    } else {
+      ALL_ENERGY_T = physicsRows
+        .filter(r => r.snapshot_date && r.narrative_energy_t != null)
+        .map(r => ({
+          snapshot_date: r.snapshot_date,
+          te_rank_pct: null,
+          narrative_energy_t: Number(r.narrative_energy_t),
+          raw_et: Number(r.narrative_energy_t),
+          full_coverage_day: true
+        }));
+    }
 
     if (!ALL_SNAPS.length) {
       document.getElementById('chart-outer').innerHTML = '<div class="chart-no-data">No price history available.</div>';
@@ -4909,15 +4978,17 @@ function drawChart(snaps, narrs) {
     ctx.fillText((p >= 100 ? '$' + p.toFixed(0) : '$' + p.toFixed(2)), PAD.left - 4, y + 3);
   }
 
-  // X axis labels — skip last label if too close to previous to prevent overlap
+  // X axis labels — target ~10 ticks, or per-day on <=14D views.
   ctx.textAlign = 'center';
-  const every = Math.max(1, Math.floor(N / 6));
+  const axisDays = getActiveDays();
+  const targetTicks = (axisDays > 0 && axisDays <= 14) ? N : 10;
+  const every = Math.max(1, Math.floor(N / targetTicks));
   let lastRenderedIdx = -Infinity;
   snaps.forEach((s, i) => {
     if (i % every !== 0 && i !== N-1) return;
     // Skip last label if it would overlap the previous rendered label
-    if (i === N-1 && (i - lastRenderedIdx) < every * 0.6) return;
-    const d = new Date(s.snapshot_date);
+    if (i === N-1 && (i - lastRenderedIdx) < every * 0.4) return;
+    const d = new Date(s.snapshot_date + 'T12:00:00');
     ctx.fillText(d.toLocaleDateString('en-US', { month:'short', day:'numeric' }), xOf(i), H - PAD.bottom + 14);
     lastRenderedIdx = i;
   });
@@ -4970,13 +5041,17 @@ function drawChart(snaps, narrs) {
     ctx.restore();
   }
 
-  // Physics Energy overlay (solid cyan, right axis 0-100, normalized)
+  // Physics Energy overlay — plots pe_rank_pct (cross-ticker percentile rank,
+  // 0-100) from mv_physics_energy_normalized. Value is already on the 0-100
+  // axis; no rescaling. Thin-coverage days are skipped. Falls back to the
+  // full-history max normalization if the MV has no rank.
   const physicsFiltered = ALL_PHYSICS.filter(d => {
     const ds = d.snapshot_date?.slice(0,10);
-    return ds && ds >= lo && ds <= hi;
+    return ds && ds >= lo && ds <= hi && d.full_coverage_day !== false;
   });
   if (physicsFiltered.length > 1) {
-    const maxAbsolute = Math.max(...physicsFiltered.map(d => d.narrative_energy_absolute || 0), 1);
+    const hasRank = physicsFiltered.some(d => d.pe_rank_pct != null);
+    const maxAbsolute = hasRank ? 1 : Math.max(...ALL_PHYSICS.map(d => d.narrative_energy_absolute || 0), 1);
     ctx.save();
     ctx.setLineDash([3,3]);
     ctx.strokeStyle = '#FFB800'; ctx.lineWidth = 1.2; ctx.globalAlpha = 0.7;
@@ -4986,8 +5061,10 @@ function drawChart(snaps, narrs) {
       const idx = dateIdx[d.snapshot_date.slice(0,10)];
       if (idx == null) return;
       const x = xOf(idx);
-      const normalized = (d.narrative_energy_absolute / maxAbsolute) * 100;
-      const y = yEnergy(normalized);
+      const value = d.pe_rank_pct != null
+        ? d.pe_rank_pct
+        : ((d.narrative_energy_absolute || 0) / maxAbsolute) * 100;
+      const y = yEnergy(value);
       if (!pStarted) { ctx.moveTo(x, y); pStarted = true; }
       else ctx.lineTo(x, y);
     });
@@ -5037,26 +5114,28 @@ function drawChart(snaps, narrs) {
     ctx.restore();
   }
 
-  // Temporal Energy overlay (solid teal, own right axis 0-100, normalized)
+  // Temporal Energy overlay — plots te_rank_pct (cross-ticker percentile rank,
+  // 0-100) from mv_energy_t_normalized. Value is already on the 0-100 axis;
+  // no rescaling. Thin-coverage days are skipped. Bands and the right axis
+  // labels also drive off the same 0-100 rank scale.
   const energyTFiltered = ALL_ENERGY_T.filter(d => {
     const ds = d.snapshot_date?.slice(0,10);
-    return ds && ds >= lo && ds <= hi;
+    return ds && ds >= lo && ds <= hi && d.full_coverage_day !== false && d.te_rank_pct != null;
   });
   if (energyTFiltered.length > 1) {
-    const maxET = Math.max(...energyTFiltered.map(d => d.narrative_energy_t || 0), 1);
-    // Background bands: teal tint when energy_t_normalized > 50, red tint when < 15
+    // Background bands: teal tint when rank > 50 (top half of universe), red tint when < 15 (bottom 15%)
     ctx.save();
     energyTFiltered.forEach((d, i) => {
       const idx = dateIdx[d.snapshot_date.slice(0,10)];
       if (idx == null) return;
-      const x = xOf(idx); const nm = (d.narrative_energy_t / maxET) * 100;
+      const x = xOf(idx); const nm = d.te_rank_pct;
       const nextIdx = i < energyTFiltered.length - 1 ? dateIdx[energyTFiltered[i+1].snapshot_date.slice(0,10)] : null;
       const x2 = nextIdx != null ? xOf(nextIdx) : x + ((CW / Math.max(N-1,1)) * 0.5);
       if (nm > 50) { ctx.fillStyle = 'rgba(56,200,184,0.06)'; ctx.fillRect(x, PAD.top, x2 - x, CH); }
       else if (nm < 15) { ctx.fillStyle = 'rgba(255,77,77,0.06)'; ctx.fillRect(x, PAD.top, x2 - x, CH); }
     });
     ctx.restore();
-    // Right axis labels for Temporal Energy (0-100)
+    // Right axis labels for Temporal Energy (0-100 percentile rank)
     ctx.save(); ctx.font = '9px Inter, sans-serif'; ctx.fillStyle = '#38C8B8'; ctx.textAlign = 'left'; ctx.globalAlpha = 0.7;
     [0, 50, 100].forEach(v => { ctx.fillText(v, W - PAD.right + 4, yEnergy(v) + 3); });
     ctx.restore();
@@ -5070,8 +5149,7 @@ function drawChart(snaps, narrs) {
       const idx = dateIdx[d.snapshot_date.slice(0,10)];
       if (idx == null) return;
       const x = xOf(idx);
-      const normalized = (d.narrative_energy_t / maxET) * 100;
-      const y = yEnergy(normalized);
+      const y = yEnergy(d.te_rank_pct);
       if (!etStarted) { ctx.moveTo(x, y); etStarted = true; }
       else ctx.lineTo(x, y);
     });
@@ -5079,42 +5157,47 @@ function drawChart(snaps, narrs) {
     ctx.restore();
   }
 
-  // Narrative sentiment dots — snap to nearest price date if no exact match
-  const snapDates = snaps.map(s => s.snapshot_date?.slice(0,10));
-  function nearestIdx(dateStr) {
-    let exact = dateIdx[dateStr];
-    if (exact != null) return exact;
-    // Binary search for closest date
-    let lo = 0, hi = snapDates.length - 1;
-    while (lo <= hi) {
-      const mid = (lo + hi) >> 1;
-      if (snapDates[mid] < dateStr) lo = mid + 1;
-      else hi = mid - 1;
+  // Narrative sentiment dots — position by REAL calendar date, interpolating
+  // between surrounding snapshots so a story on a weekend/gap day doesn't
+  // collapse onto the previous trading day. Previously, an Apr 8 story with
+  // no Apr 8 trading snapshot snapped to Apr 7, causing the hover tooltip and
+  // the story popup to disagree about the date.
+  const snapTimes = snaps.map(s => new Date(s.snapshot_date + 'T12:00:00').getTime());
+  function xyOfDate(ds) {
+    const t = new Date(ds + 'T12:00:00').getTime();
+    if (!snapTimes.length) return null;
+    if (t <= snapTimes[0]) {
+      const s0 = snaps[0];
+      return s0.price_close == null ? null : { cx: xOf(0), cy: yOf(s0.price_close) };
     }
-    if (lo >= snapDates.length) return snapDates.length - 1;
-    if (lo === 0) return 0;
-    // Pick whichever is closer
-    const dLo = Math.abs(new Date(snapDates[lo]) - new Date(dateStr));
-    const dHi = Math.abs(new Date(snapDates[lo-1]) - new Date(dateStr));
-    return dHi <= dLo ? lo - 1 : lo;
+    if (t >= snapTimes[snapTimes.length - 1]) {
+      const sL = snaps[snaps.length - 1];
+      return sL.price_close == null ? null : { cx: xOf(snaps.length - 1), cy: yOf(sL.price_close) };
+    }
+    let l = 0, h = snapTimes.length - 1;
+    while (l < h - 1) {
+      const m = (l + h) >> 1;
+      if (snapTimes[m] <= t) l = m; else h = m;
+    }
+    const ta = snapTimes[l], tb = snapTimes[h];
+    const pa = snaps[l].price_close, pb = snaps[h].price_close;
+    if (pa == null || pb == null) return null;
+    const frac = (t - ta) / (tb - ta || 1);
+    return { cx: xOf(l) + (xOf(h) - xOf(l)) * frac, cy: yOf(pa + (pb - pa) * frac) };
   }
 
   const dotHits = [];
   narrs.forEach(n => {
     const d = n.snapshot_date?.slice(0,10);
     if (!d) return;
-    const idx = nearestIdx(d);
-    if (idx == null) return;
-    const s = snaps[idx];
-    if (s?.price_close == null) return;
-    const cx = xOf(idx);
-    const cy = yOf(s.price_close);
+    const pos = xyOfDate(d);
+    if (!pos) return;
     ctx.beginPath();
-    ctx.arc(cx, cy, 5, 0, Math.PI*2);
+    ctx.arc(pos.cx, pos.cy, 5, 0, Math.PI*2);
     ctx.fillStyle   = n.isBear ? '#FF4D4D' : '#00DE94';
     ctx.fill();
     ctx.strokeStyle = isLight() ? '#FFFFFF' : '#0A0E1A'; ctx.lineWidth = 1.5; ctx.stroke();
-    dotHits.push({ cx, cy, n });
+    dotHits.push({ cx: pos.cx, cy: pos.cy, n });
   });
 
   function showStoryPopup(hit) {
@@ -5150,7 +5233,9 @@ function drawChart(snaps, narrs) {
       showStoryPopup(hit);
       return;
     }
-    popup.classList.remove('visible');
+    if (popup.classList.contains('visible')) {
+      popup.classList.remove('visible');
+    }
     const idx = Math.max(0, Math.min(N-1, Math.round(((mx - PAD.left) / CW) * (N-1))));
     const s = snaps[idx];
     if (!s?.price_close) { tip.style.opacity = '0'; return; }

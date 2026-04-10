@@ -665,8 +665,22 @@
     document.querySelectorAll('.sl-tf-btn').forEach(function(btn){btn.addEventListener('click',function(){document.querySelectorAll('.sl-tf-btn').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');document.getElementById('sl-story-popup')?.classList.remove('visible');if(SL_SNAPS.length)slRenderChart();});});
     document.getElementById('sl-story-sort')?.addEventListener('change',function(){document.getElementById('sl-story-popup')?.classList.remove('visible');if(SL_SNAPS.length)slRenderChart();});
     document.getElementById('sl-interpret-btn').onclick=slInterpret;
-    // Auto-load a default ticker so the chart is visible immediately
+    // Auto-load from ?ticker= query param if present (deeplink from ticker page),
+    // otherwise fall back to a sensible default so the chart is visible immediately.
     var defaultTicker='NVDA';
+    try{
+      var params=new URLSearchParams(window.location.search);
+      var urlTicker=(params.get('ticker')||'').trim().toUpperCase().replace(/[^A-Z0-9.\-]/g,'');
+      if(urlTicker&&typeof MP_DOMAINS==='object'&&MP_DOMAINS[urlTicker]){
+        defaultTicker=urlTicker;
+        // Clean the URL so a refresh doesn't re-trigger the deeplink.
+        if(window.history&&window.history.replaceState){
+          params.delete('ticker');
+          var q=params.toString();
+          window.history.replaceState({},'',window.location.pathname+(q?'?'+q:'')+window.location.hash);
+        }
+      }
+    }catch(e){}
     if(typeof MP_DOMAINS==='object'&&MP_DOMAINS[defaultTicker]){
       document.getElementById('sl-ticker-select').value=defaultTicker;
       slLoadTicker(defaultTicker);
