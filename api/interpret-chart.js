@@ -93,20 +93,13 @@ module.exports = async (req, res) => {
     return res.status(400).json({ error: 'ticker and signalData required' });
   }
 
-  // Pin to a dated Sonnet 4.5 snapshot for production stability. Rolling
-  // aliases occasionally route to endpoints returning 500 api_error; dated
-  // snapshots are served from the stable production path.
-  var requestBody = JSON.stringify({
-    model: 'claude-sonnet-4-5-20250929',
-    max_tokens: 800,
-    system: SYSTEM_PROMPT,
-    messages: [{
-      role: 'user',
-      content: 'Analyze the following signal data for ' + ticker + ' and interpret the chart pattern:\n\n' + signalData
-    }]
-  });
+  // Model fallback chain: prefer Sonnet 4.6 (strongest reasoning for signal
+  // interpretation), fall back to Haiku 4.5 if Sonnet returns 5xx. The previous
+  // dated Sonnet 4.5 snapshot (2025-09-29) started returning persistent 500s.
+  var MODEL_CHAIN = ['claude-sonnet-4-6', 'claude-haiku-4-5'];
+  var userMessage = 'Analyze the following signal data for ' + ticker + ' and interpret the chart pattern:\n\n' + signalData;
 
-  async function callAnthropic() {
+  async function callAnthropic(model) {
     return fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -114,35 +107,50 @@ module.exports = async (req, res) => {
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01'
       },
-      body: requestBody
+      body: JSON.stringify({
+        model: model,
+        max_tokens: 800,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: userMessage }]
+      })
     });
   }
 
   try {
-    var response = await callAnthropic();
+    var response = null;
+    var lastErrText = '';
+    var lastStatus = 0;
+    var modelUsed = null;
 
-    // Single automatic retry on transient upstream 5xx (Anthropic "api_error"
-    // Internal server error is typically a transient blip that clears on retry).
-    if (!response.ok && response.status >= 500 && response.status < 600) {
-      await new Promise(function(r){ setTimeout(r, 800); });
-      response = await callAnthropic();
+    // Try each model in the chain. For each, do one retry on transient 5xx
+    // before moving on to the next model.
+    for (var i = 0; i < MODEL_CHAIN.length; i++) {
+      var model = MODEL_CHAIN[i];
+      response = await callAnthropic(model);
+      if (!response.ok && response.status >= 500 && response.status < 600) {
+        await new Promise(function(r){ setTimeout(r, 800); });
+        response = await callAnthropic(model);
+      }
+      if (response.ok) { modelUsed = model; break; }
+      lastStatus = response.status;
+      lastErrText = await response.text();
+      console.error('Anthropic API error:', model, lastStatus, lastErrText);
+      // Only fall through to next model on upstream 5xx; client errors
+      // (4xx) indicate a bad request and won't be fixed by another model.
+      if (lastStatus < 500 || lastStatus >= 600) break;
     }
 
-    if (!response.ok) {
-      var errText = await response.text();
-      console.error('Anthropic API error:', response.status, errText);
-      // Surface the upstream status + error type/message so failures are
-      // diagnosable from the UI instead of showing a generic "AI service error".
+    if (!response || !response.ok) {
       var upstreamErr = null;
       try {
-        var errJson = JSON.parse(errText);
+        var errJson = JSON.parse(lastErrText);
         if (errJson && errJson.error) {
           upstreamErr = (errJson.error.type || '') + ': ' + (errJson.error.message || '');
         }
       } catch (e) { /* non-JSON body; fall through */ }
       res.setHeader('Access-Control-Allow-Origin', '*');
       return res.status(502).json({
-        error: 'AI service error (' + response.status + ')'
+        error: 'AI service error (' + lastStatus + ')'
           + (upstreamErr ? ': ' + upstreamErr.slice(0, 240) : '')
       });
     }
@@ -151,7 +159,7 @@ module.exports = async (req, res) => {
     var text = data.content && data.content[0] ? data.content[0].text : 'No interpretation generated.';
 
     res.setHeader('Access-Control-Allow-Origin', '*');
-    return res.status(200).json({ interpretation: text, ticker: ticker });
+    return res.status(200).json({ interpretation: text, ticker: ticker, model: modelUsed });
   } catch (err) {
     console.error('Interpret error:', err);
     return res.status(500).json({ error: 'Internal error: ' + err.message });
