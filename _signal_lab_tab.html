@@ -585,13 +585,24 @@
     var pS=snaps[0]?.price_close,pE=snaps[snaps.length-1]?.price_close;
     var pC=pS?(((pE-pS)/pS)*100).toFixed(2):'?';
     var ld=SL_DECAY.filter(function(d){return d.snapshot_date?.slice(0,10)<=hi;}).slice(-5);
-    var lp=SL_PHYSICS.filter(function(d){return d.snapshot_date?.slice(0,10)<=hi;}).slice(-5);
+    // Physics/Temporal Energy: match the chart exactly — drop thin-coverage days
+    // (full_coverage_day===false) and rows with no rank, so the AI sees the same
+    // 5 points the user sees drawn on the line.
+    var lp=SL_PHYSICS.filter(function(d){var ds=d.snapshot_date?.slice(0,10);return ds&&ds<=hi&&d.pe_rank_pct!=null&&d.full_coverage_day!==false;}).slice(-5);
     var lpr=SL_PRESSURE.filter(function(d){return d.snapshot_date?.slice(0,10)<=hi;}).slice(-5);
-    var le=SL_ENERGY_T.filter(function(d){return d.snapshot_date?.slice(0,10)<=hi;}).slice(-5);
+    var le=SL_ENERGY_T.filter(function(d){var ds=d.snapshot_date?.slice(0,10);return ds&&ds<=hi&&d.full_coverage_day!==false;}).slice(-5);
     // Physics Energy now reads pe_rank_pct from mv_physics_energy_normalized
     // (cross-ticker percentile rank). mA is only used if the MV has no rank
     // for a given row, as a last-resort fallback.
     var mA=Math.max.apply(null,SL_PHYSICS.map(function(d){return d.narrative_energy_absolute||0;}).concat([1]));
+    // Current chart readings — single source of truth. These are the exact values
+    // drawn at the right edge of the chart. The AI must anchor its interpretation
+    // on these, not on any other "blue/yellow" field that may live in the scorecard.
+    var lastBlue=ld.length?(ld[ld.length-1].energy_remaining_pct??null):null;
+    var lastYellow=null;
+    if(lp.length){var lyRow=lp[lp.length-1];lastYellow=lyRow.pe_rank_pct!=null?lyRow.pe_rank_pct:((lyRow.narrative_energy_absolute||0)/mA*100);}
+    var lastTeal=le.length?(le[le.length-1].te_rank_pct??null):null;
+    var lastPurple=lpr.length?(lpr[lpr.length-1].pressure??null):null;
     // Latest signal regime row within the visible window (or absolute latest if none in window).
     var scInWindow=SL_SCORECARD.filter(function(d){var ds=d.snapshot_date?.slice(0,10);return ds>=lo&&ds<=hi;});
     var latestScorecard=scInWindow.length?scInWindow[scInWindow.length-1]:(SL_SCORECARD.length?SL_SCORECARD[SL_SCORECARD.length-1]:null);
@@ -620,15 +631,18 @@
       le.map(function(d){var rank=d.te_rank_pct!=null?Math.round(d.te_rank_pct):'?';var raw=d.raw_et!=null?d.raw_et.toFixed(2):'?';return d.snapshot_date.slice(0,10)+': rank '+rank+' | raw '+raw;}).join('\n'),
       '\n--- NARRATIVE PRESSURE / Purple (composite risk 0-100) ---',
       lpr.map(function(d){return d.snapshot_date.slice(0,10)+': '+Math.round(d.pressure||0);}).join(', '),
-      latestScorecard?[
-        '\n--- CURRENT SIGNAL REGIME ---',
-        'Regime: '+(latestScorecard.signal_regime||'NEUTRAL'),
-        'Direction: '+(latestScorecard.regime_direction||'N/A'),
-        'Gap score (Blue minus Yellow divergence): '+(latestScorecard.divergence_score!=null?Math.round(latestScorecard.divergence_score)+' pts':'N/A'),
-        'Market regime: '+(latestScorecard.regime_class||'N/A'),
-        'Blue: '+(latestScorecard.blue_energy!=null?Math.round(latestScorecard.blue_energy):'N/A'),
-        'Yellow: '+(latestScorecard.yellow_energy!=null?Math.round(latestScorecard.yellow_energy):'N/A')
-      ].join(' | '):'',
+      [
+        '\n--- CURRENT STATE (exact values shown on the chart right now) ---',
+        'Blue (Narrative Energy, story persistence %, 0-100): '+(lastBlue!=null?Math.round(lastBlue):'N/A'),
+        'Yellow (Physics Energy, cross-ticker universe percentile, 0-100): '+(lastYellow!=null?Math.round(lastYellow):'N/A'),
+        'Teal (Temporal Energy, cross-ticker universe percentile, 0-100): '+(lastTeal!=null?Math.round(lastTeal):'N/A'),
+        'Purple (Narrative Pressure, composite 0-100): '+(lastPurple!=null?Math.round(lastPurple):'N/A'),
+        latestScorecard?('Regime: '+(latestScorecard.signal_regime||'NEUTRAL')):'',
+        latestScorecard?('Direction: '+(latestScorecard.regime_direction||'N/A')):'',
+        latestScorecard&&latestScorecard.divergence_score!=null?('Gap score (Blue minus Yellow divergence): '+Math.round(latestScorecard.divergence_score)+' pts'):'',
+        latestScorecard?('Market regime: '+(latestScorecard.regime_class||'N/A')):'',
+        'IMPORTANT: The Blue/Yellow/Teal/Purple values above are the CURRENT chart readings. Do not cite any other numbers as "current". Yellow and Teal are cross-ticker percentile ranks against the full tracked universe (100 = top 1%, 50 = median, 0 = bottom 1%), not raw scores. Only cite numbers that appear verbatim in the data blocks; do not infer intermediate values or fabricate percentile transitions.'
+      ].filter(Boolean).join('\n'),
       recentNarratives.length>0?'\n--- RECENT NARRATIVE HEADLINES ---\n'+recentNarratives.join('\n'):''
     ];
     var sd=sdParts.filter(Boolean).join('\n');
