@@ -1248,17 +1248,18 @@
   .narr-toggle {
     font-size: 22px;
     line-height: 1;
-    color: rgba(255,255,255,0.55);
+    color: rgba(255,255,255,0.75);
     transition: transform 0.18s, color 0.18s;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     width: 24px;
     height: 24px;
-    text-shadow: 0 0 1px currentColor;
+    font-weight: 700;
+    text-shadow: 0 0 1px currentColor, 0 0 1px currentColor;
   }
-  .narr-header:hover .narr-toggle { color: rgba(255,255,255,0.9); }
-  .narr-toggle.open { transform: rotate(180deg); color: rgba(255,255,255,0.9); }
+  .narr-header:hover .narr-toggle { color: #FFFFFF; }
+  .narr-toggle.open { transform: rotate(180deg); color: #FFFFFF; }
 
   /* ── Ticker fuel score summary line ── */
   .narr-fuel-score-line {
@@ -3206,6 +3207,35 @@
   .czb-zone.active-zone { border-color: rgba(0,222,148,0.4); background: rgba(0,222,148,0.08); color: #00DE94; font-weight: 600; }
   .cz-pip { display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: currentColor; margin-right: 4px; vertical-align: middle; }
 
+  /* Keyword price impact card */
+  .kpi-section {
+    background: var(--mp-surface); border: 1px solid var(--mp-border); border-radius: 16px;
+    box-shadow: var(--mp-card-shadow); overflow: hidden; margin-bottom: 20px;
+    animation: fadeUp .4s ease both; padding: 20px;
+  }
+  .kpi-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
+  .kpi-title { font-family: 'Instrument Serif', 'DM Serif Display', Georgia, serif; font-size: 18px; font-weight: 400; color: var(--mp-text-primary); letter-spacing: -0.015em; }
+  .kpi-sub { font-size: 12px; color: var(--mp-text-tertiary); margin-top: 4px; }
+  .kpi-toggle { display: inline-flex; gap: 2px; background: var(--mp-surface2); border: 1px solid var(--mp-border); border-radius: 8px; padding: 2px; }
+  .kpi-tab { background: transparent; border: none; color: var(--mp-text-tertiary); font-family: var(--font-body); font-size: 12px; font-weight: 500; padding: 6px 12px; border-radius: 6px; cursor: pointer; transition: all 0.15s; }
+  .kpi-tab:hover { color: var(--mp-text-primary); }
+  .kpi-tab.active { background: rgba(0,174,255,0.14); color: #00AEFF; }
+  .kpi-chart { display: flex; flex-direction: column; gap: 10px; }
+  .kpi-row { display: grid; grid-template-columns: 140px 1fr 70px 60px; align-items: center; gap: 10px; font-size: 12px; }
+  @media (max-width: 640px) { .kpi-row { grid-template-columns: 100px 1fr 60px 50px; gap: 6px; font-size: 11px; } }
+  .kpi-kw { color: var(--mp-text-primary); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kpi-bar-track { position: relative; height: 18px; background: transparent; }
+  .kpi-bar-track::before { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: rgba(255,255,255,0.12); }
+  .kpi-bar-fill { position: absolute; top: 3px; bottom: 3px; border-radius: 3px; }
+  .kpi-bar-fill.pos { left: 50%; background: #00DE94; box-shadow: 0 0 6px rgba(0,222,148,0.3); }
+  .kpi-bar-fill.neg { right: 50%; background: #E24B4A; box-shadow: 0 0 6px rgba(226,75,74,0.3); }
+  .kpi-bar-std { position: absolute; top: 22px; font-size: 10px; color: var(--mp-text-muted); white-space: nowrap; }
+  .kpi-val { font-family: var(--font-body); font-size: 13px; font-weight: 600; text-align: right; }
+  .kpi-val.pos { color: #00DE94; }
+  .kpi-val.neg { color: #E24B4A; }
+  .kpi-n { font-size: 11px; color: var(--mp-text-muted); text-align: right; white-space: nowrap; }
+  .kpi-note { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--mp-border); font-size: 11px; color: var(--mp-text-muted); }
+
   /* Breakdown grid — theme + publication cards */
   .breakdown-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; animation: fadeUp .45s ease both; }
   @media (max-width: 768px) { .breakdown-grid { grid-template-columns: 1fr; } }
@@ -3603,8 +3633,8 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
   <!-- ═══ TAB BAR ═══ -->
   <div class="tk-tab-bar">
     <button class="tk-tab active" data-tab="overview">Overview</button>
-    <button class="tk-tab" data-tab="companyinfo">Company Profile</button>
     <button class="tk-tab" data-tab="strategy">Trading Strategy</button>
+    <button class="tk-tab" data-tab="companyinfo">Company Profile</button>
     <button class="tk-tab" data-tab="financials">Live Market Snapshot</button>
     <button class="tk-tab" data-tab="fundamentals">Fundamentals</button>
   </div>
@@ -4128,6 +4158,23 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
           <div class="czb-zones" id="strat-zone-pips"></div>
           <div id="strat-zone-price" style="font-size:13px;color:#00AEFF;white-space:nowrap;flex-shrink:0;font-weight:500;"></div>
         </div>
+      </div>
+
+      <!-- Keyword Price Impact -->
+      <div class="kpi-section" id="strat-kpi-section" style="display:none;">
+        <div class="kpi-head">
+          <div>
+            <div class="kpi-title">Keyword price impact</div>
+            <div class="kpi-sub" id="strat-kpi-sub">How this ticker historically responds to each signal keyword</div>
+          </div>
+          <div class="kpi-toggle" role="tablist">
+            <button type="button" class="kpi-tab active" data-win="5">5d</button>
+            <button type="button" class="kpi-tab" data-win="10">10d</button>
+            <button type="button" class="kpi-tab" data-win="20">20d</button>
+          </div>
+        </div>
+        <div class="kpi-chart" id="strat-kpi-chart"></div>
+        <div class="kpi-note">n = resolved article outcomes · keyword_price_impact</div>
       </div>
 
       <!-- Theme + Publication Breakdown -->
@@ -6376,7 +6423,7 @@ async function loadNarratives() {
             </div>
           </div>
           <div class="narr-header-right">
-            <span class="narr-toggle" id="toggle-${itemId}" aria-hidden="true">⌄</span>
+            <span class="narr-toggle" id="toggle-${itemId}" aria-hidden="true">▾</span>
           </div>
         </div>
         <div class="narr-body" id="${itemId}">
@@ -7882,6 +7929,7 @@ async function loadStrategyData() {
 
     loadingEl.style.display = 'none';
     contentEl.style.display = 'block';
+    loadKeywordPriceImpact();
   } catch (err) {
     console.error('[Strategy] Load failed:', err);
     loadingEl.style.display = 'none';
@@ -7889,6 +7937,74 @@ async function loadStrategyData() {
     if (errBody) errBody.innerHTML = '<div style="padding:24px;text-align:center;color:#FF4D4D;font-size:13px;">Strategy load error: ' + (err.message || err) + '</div>';
     nodataEl.style.display = 'block';
   }
+}
+
+// ── Keyword price impact (Trading Strategy tab) ─────────────────────────────
+let KPI_ROWS = [];
+let KPI_WIN = 5;
+async function loadKeywordPriceImpact() {
+  if (!TICKER) return;
+  const section = document.getElementById('strat-kpi-section');
+  const subEl   = document.getElementById('strat-kpi-sub');
+  if (!section) return;
+  let rows = [];
+  try {
+    rows = await sbFetch('keyword_price_impact', {
+      select: 'keyword,article_count,avg_return_5d,avg_return_10d,avg_return_20d,stddev_10d',
+      ticker: `eq.${TICKER}`,
+      order:  'avg_return_5d.desc'
+    });
+  } catch (err) {
+    console.warn('[KPI] fetch failed', err);
+    return;
+  }
+  if (!Array.isArray(rows) || !rows.length) { section.style.display = 'none'; return; }
+  KPI_ROWS = rows;
+  if (subEl) subEl.textContent = 'How ' + TICKER + ' historically responds to each signal keyword';
+  section.style.display = 'block';
+  // Wire toggle buttons once
+  section.querySelectorAll('.kpi-tab').forEach(btn => {
+    if (btn.dataset.wired === '1') return;
+    btn.dataset.wired = '1';
+    btn.addEventListener('click', () => {
+      const w = Number(btn.dataset.win);
+      if (!w || w === KPI_WIN) return;
+      KPI_WIN = w;
+      section.querySelectorAll('.kpi-tab').forEach(b => b.classList.toggle('active', Number(b.dataset.win) === w));
+      renderKeywordPriceImpact();
+    });
+  });
+  renderKeywordPriceImpact();
+}
+
+function renderKeywordPriceImpact() {
+  const chart = document.getElementById('strat-kpi-chart');
+  if (!chart) return;
+  const key = 'avg_return_' + KPI_WIN + 'd';
+  const rows = KPI_ROWS.slice()
+    .map(r => ({ ...r, _val: Number(r[key]) }))
+    .filter(r => !isNaN(r._val));
+  rows.sort((a, b) => b._val - a._val);
+  if (!rows.length) { chart.innerHTML = '<div style="font-size:12px;color:var(--mp-text-muted);padding:12px 0;">No data in this window.</div>'; return; }
+  const maxAbs = Math.max(...rows.map(r => Math.abs(r._val)), 0.0001);
+  const showStd = KPI_WIN === 10;
+  chart.innerHTML = rows.map(r => {
+    const v = r._val;
+    const isPos = v >= 0;
+    const w = Math.min(50, (Math.abs(v) / maxAbs) * 50);
+    const cls = isPos ? 'pos' : 'neg';
+    const valTxt = (v > 0 ? '+' : '') + v.toFixed(2) + '%';
+    const std = showStd && r.stddev_10d != null ? Number(r.stddev_10d).toFixed(1) : null;
+    return `<div class="kpi-row">
+      <div class="kpi-kw" title="${esc(r.keyword || '')}">${esc(r.keyword || '—')}</div>
+      <div class="kpi-bar-track">
+        <div class="kpi-bar-fill ${cls}" style="width:${w.toFixed(1)}%;"></div>
+        ${std != null ? `<div class="kpi-bar-std">± ${std}%</div>` : ''}
+      </div>
+      <div class="kpi-val ${cls}">${esc(valTxt)}</div>
+      <div class="kpi-n">n=${r.article_count ?? '—'}</div>
+    </div>`;
+  }).join('');
 }
 
 // ── Live entry-zone recompute ───────────────────────────────────────────────
