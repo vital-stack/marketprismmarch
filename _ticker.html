@@ -7164,14 +7164,16 @@ async function loadStrategyData() {
       if (themes.length > 0) {
         const maxAbs = Math.max(...themes.map(t => Math.abs(t.avg_return_5d || 0)), 0.01);
         themeContainer.innerHTML = themes.slice(0, 8).map(t => {
+          // strategy_theme_breakdown RPC returns avg_return_5d already as a percentage (e.g. 4.15 = 4.15%)
           const ret = t.avg_return_5d || 0;
           const barW = Math.min(Math.abs(ret) / maxAbs * 100, 100);
           const barColor = ret >= 0 ? '#00DE94' : '#FF4D4D';
+          const retText = t.avg_return_5d != null ? (ret >= 0 ? '+' : '') + ret.toFixed(2) + '%' : '—';
           return '<div class="theme-row">' +
             '<div class="tr-name">' + esc(t.thematic_theme || 'unclassified') + '</div>' +
             '<div class="tr-articles">' + (t.article_count || 0) + ' art.</div>' +
             '<div class="tr-bar-wrap"><div class="tr-bar" style="width:' + barW + '%;background:' + barColor + ';"></div></div>' +
-            '<div class="tr-return ' + signCls(ret) + '">' + fmtPct(ret) + '</div>' +
+            '<div class="tr-return ' + signCls(ret) + '">' + retText + '</div>' +
             '</div>';
         }).join('');
       } else {
