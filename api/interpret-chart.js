@@ -102,7 +102,7 @@ module.exports = async (req, res) => {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5',
         max_tokens: 800,
         system: SYSTEM_PROMPT,
         messages: [{
@@ -115,7 +115,20 @@ module.exports = async (req, res) => {
     if (!response.ok) {
       var errText = await response.text();
       console.error('Anthropic API error:', response.status, errText);
-      return res.status(502).json({ error: 'AI service error' });
+      // Surface the upstream status + error type/message so failures are
+      // diagnosable from the UI instead of showing a generic "AI service error".
+      var upstreamErr = null;
+      try {
+        var errJson = JSON.parse(errText);
+        if (errJson && errJson.error) {
+          upstreamErr = (errJson.error.type || '') + ': ' + (errJson.error.message || '');
+        }
+      } catch (e) { /* non-JSON body; fall through */ }
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      return res.status(502).json({
+        error: 'AI service error (' + response.status + ')'
+          + (upstreamErr ? ': ' + upstreamErr.slice(0, 240) : '')
+      });
     }
 
     var data = await response.json();
