@@ -227,7 +227,9 @@
       <!-- Canvas -->
       <div class="sl-chart-wrap" id="sl-chart-outer" style="height:420px;">
         <canvas id="sl-price-canvas"></canvas>
-        <canvas id="slChartAlt" style="display:none;width:100%;height:100%;"></canvas>
+        <div id="slChartAltWrap" style="display:none;position:absolute;top:10px;left:14px;right:14px;bottom:0;">
+          <canvas id="slChartAlt"></canvas>
+        </div>
         <div class="sl-tip" id="sl-chart-tip"></div>
         <div class="sl-popup" id="sl-story-popup">
           <button class="sl-popup-close" id="sl-popup-close">&#10005;</button>
@@ -366,15 +368,15 @@
     var activeBtn=document.getElementById('sl-view-'+view);
     if(activeBtn)activeBtn.classList.add('active');
     var mainCanvas=document.getElementById('sl-price-canvas');
-    var altCanvas=document.getElementById('slChartAlt');
+    var altWrap=document.getElementById('slChartAltWrap');
     var altLegend=document.getElementById('sl-alt-legend');
     if(view==='lines'){
-      if(mainCanvas)mainCanvas.style.display='';
-      if(altCanvas)altCanvas.style.display='none';
+      if(mainCanvas)mainCanvas.style.visibility='';
+      if(altWrap)altWrap.style.display='none';
       if(altLegend)altLegend.style.display='none';
     }else{
-      if(mainCanvas)mainCanvas.style.display='none';
-      if(altCanvas)altCanvas.style.display='';
+      if(mainCanvas)mainCanvas.style.visibility='hidden';
+      if(altWrap)altWrap.style.display='block';
       if(altLegend)altLegend.style.display='flex';
       slDrawAltChart(view);
     }
@@ -382,18 +384,21 @@
 
   function slDrawAltChart(view){
     var canvas=document.getElementById('slChartAlt');
-    if(!canvas)return;
+    if(!canvas){console.warn('[SignalLab] slChartAlt canvas missing');return;}
     // Ensure Chart.js is loaded before drawing
-    if(typeof window.ensureChartJS==='function'&&!window.Chart){
-      window.ensureChartJS().then(function(){slDrawAltChart(view);});
+    if(!window.Chart){
+      if(typeof window.ensureChartJS==='function'){
+        window.ensureChartJS().then(function(){slDrawAltChart(view);}).catch(function(e){console.error('[SignalLab] Chart.js load failed',e);});
+      }else{
+        console.warn('[SignalLab] Chart.js not available and ensureChartJS missing');
+      }
       return;
     }
-    if(!window.Chart)return;
 
     if(SL_ALT_CHART){SL_ALT_CHART.destroy();SL_ALT_CHART=null;}
 
     var snaps=slFilterSnaps();
-    if(!snaps||snaps.length<2)return;
+    if(!snaps||snaps.length<2){console.warn('[SignalLab] alt chart: not enough snaps',snaps&&snaps.length);return;}
 
     var labels=snaps.map(function(d){return d.snapshot_date.slice(5,10);});
     var prices=snaps.map(function(d){return d.price_close;});
