@@ -93,24 +93,40 @@ module.exports = async (req, res) => {
     return res.status(400).json({ error: 'ticker and signalData required' });
   }
 
-  try {
-    var response = await fetch('https://api.anthropic.com/v1/messages', {
+  // Pin to a dated Sonnet 4.5 snapshot for production stability. Rolling
+  // aliases occasionally route to endpoints returning 500 api_error; dated
+  // snapshots are served from the stable production path.
+  var requestBody = JSON.stringify({
+    model: 'claude-sonnet-4-5-20250929',
+    max_tokens: 800,
+    system: SYSTEM_PROMPT,
+    messages: [{
+      role: 'user',
+      content: 'Analyze the following signal data for ' + ticker + ' and interpret the chart pattern:\n\n' + signalData
+    }]
+  });
+
+  async function callAnthropic() {
+    return fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01'
       },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
-        max_tokens: 800,
-        system: SYSTEM_PROMPT,
-        messages: [{
-          role: 'user',
-          content: 'Analyze the following signal data for ' + ticker + ' and interpret the chart pattern:\n\n' + signalData
-        }]
-      })
+      body: requestBody
     });
+  }
+
+  try {
+    var response = await callAnthropic();
+
+    // Single automatic retry on transient upstream 5xx (Anthropic "api_error"
+    // Internal server error is typically a transient blip that clears on retry).
+    if (!response.ok && response.status >= 500 && response.status < 600) {
+      await new Promise(function(r){ setTimeout(r, 800); });
+      response = await callAnthropic();
+    }
 
     if (!response.ok) {
       var errText = await response.text();
