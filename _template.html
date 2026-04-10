@@ -3792,109 +3792,137 @@ body{
 
 /* ── Narrative Cards (simplified 3-question layout) ── */
 .nf-list{display:flex;flex-direction:column;gap:12px;padding:0;}
+/* ═══ Narrative cards — enterprise / restrained palette ═══
+   Color is reserved for the direction arrow, truth icon, and the
+   brand-gradient fuel bar. Everything else sits on a neutral surface. */
 .nc-card{
   position:relative;display:flex;flex-direction:column;
-  background:#0C1018;border:1px solid rgba(255,255,255,0.06);
-  border-radius:16px;overflow:hidden;cursor:pointer;
+  background:var(--mp-surface);
+  border:1px solid var(--mp-border);
+  border-radius:12px;overflow:hidden;cursor:pointer;
   text-decoration:none;color:inherit;
-  transition:border-color .25s,box-shadow .25s,transform .25s;
-  filter:drop-shadow(0 4px 12px rgba(0,0,0,0.4));
+  transition:border-color .2s, background .2s;
 }
-.nc-card::before{
-  content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
-  background-image:linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px);
-  background-size:48px 48px;border-radius:16px;
+.nc-card::before{display:none;}
+.nc-card::after{display:none;}
+.nc-card:hover{
+  border-color:rgba(255,255,255,0.14);
+  background:var(--mp-surface2);
 }
-.nc-card::after{
-  content:'';position:absolute;top:0;left:0;right:0;height:2px;z-index:2;
-  background:var(--nc-accent,#00AEFF);
-}
-.nc-card:hover{border-color:rgba(255,255,255,0.14);transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,0.45);}
+/* Direction colors are carried on a single CSS var and only applied to
+   the direction icon and truth icon — not to backgrounds or borders. */
 .nc-card.nc-bull{--nc-accent:#00DE94;}
 .nc-card.nc-bear{--nc-accent:#FF4D4D;}
 .nc-card.nc-neutral{--nc-accent:#00AEFF;}
-.nc-body{position:relative;z-index:1;padding:20px 20px 16px;display:flex;flex-direction:column;}
-/* ── Section 1: THE NARRATIVE ── */
-.nc-narrative-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.nc-body{position:relative;z-index:1;padding:18px 18px 16px;display:flex;flex-direction:column;gap:12px;}
+/* ── Header row: logo · ticker · sector · price ── */
+.nc-narrative-head{display:flex;align-items:center;gap:10px;margin-bottom:0;}
 .nc-logo{
-  width:48px;height:48px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
-  border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);overflow:hidden;
+  width:32px;height:32px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);overflow:hidden;
 }
-.nc-logo img{width:34px;height:34px;border-radius:5px;object-fit:contain;}
-.nc-logo span{font-family:var(--font-body);font-size:14px;font-weight:600;color:var(--mp-text-tertiary);}
-.nc-tk-group{display:flex;align-items:baseline;gap:8px;flex:1;min-width:0;}
-.nc-ticker{font-family:var(--font-body);font-size:14px;font-weight:600;color:#fff;letter-spacing:-0.01em;flex-shrink:0;}
-.nc-sector-label{font-family:var(--font-body);font-size:11px;color:var(--mp-text-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.nc-price-group{display:flex;align-items:baseline;gap:6px;flex-shrink:0;margin-left:auto;}
-.nc-price{font-family:var(--font-body);font-size:13px;font-weight:500;color:var(--mp-text-secondary);}
-.nc-change{font-family:var(--font-body);font-size:12px;font-weight:600;}
+.nc-logo img{width:22px;height:22px;border-radius:4px;object-fit:contain;}
+.nc-logo span{font-family:var(--font-body);font-size:12px;font-weight:600;color:var(--mp-text-tertiary);}
+.nc-tk-group{display:flex;align-items:baseline;gap:10px;flex:1;min-width:0;}
+.nc-ticker{font-family:var(--font-body);font-size:15px;font-weight:700;color:var(--mp-text-primary);letter-spacing:-0.01em;flex-shrink:0;}
+.nc-sector-label{
+  font-family:var(--font-body);font-size:11px;font-weight:500;
+  color:var(--mp-text-tertiary);text-transform:uppercase;letter-spacing:0.05em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.nc-price-group{display:flex;align-items:baseline;gap:8px;flex-shrink:0;margin-left:auto;}
+.nc-price{font-family:var(--font-body);font-size:14px;font-weight:600;color:var(--mp-text-primary);}
+.nc-change{font-family:var(--font-body);font-size:12px;font-weight:500;}
 .nc-change-up{color:#00DE94;}
 .nc-change-dn{color:#FF4D4D;}
 .nc-change-flat{color:var(--mp-text-tertiary);}
+/* ── Narrative headline ── */
 .nc-claim{
-  font-family:var(--font-body);font-size:16px;font-weight:700;
-  line-height:1.5;color:var(--mp-text-primary);margin-bottom:12px;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  font-family:var(--font-body);font-size:14px;font-weight:500;
+  line-height:1.55;color:var(--mp-text-secondary);margin:0;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
 }
-/* ── Section 2: IS IT TRUE? ── */
+/* ── Fuel score bar (brand gradient — the one intentional accent) ── */
+.nc-fuel{
+  display:flex;flex-direction:column;gap:6px;
+  padding-top:12px;border-top:1px solid var(--mp-border);
+}
+.nc-fuel-top{
+  display:flex;align-items:center;justify-content:space-between;
+  font-family:var(--font-body);font-size:11px;font-weight:500;
+  color:var(--mp-text-tertiary);text-transform:uppercase;letter-spacing:0.06em;
+}
+.nc-fuel-top strong{color:var(--mp-text-primary);font-weight:700;letter-spacing:0;text-transform:none;font-size:13px;}
+.nc-fuel-track{
+  position:relative;height:4px;border-radius:2px;
+  background:rgba(255,255,255,0.05);overflow:hidden;
+}
+.nc-fuel-fill{
+  position:absolute;top:0;left:0;bottom:0;
+  background:linear-gradient(90deg,#00AEFF 0%,#38C8B8 55%,#00DE94 100%);
+  border-radius:2px;
+  box-shadow:0 0 8px rgba(0,174,255,0.25);
+}
+/* ── Truth row — icon keeps its intentional color, text neutral ── */
 .nc-truth-section{
   display:flex;align-items:flex-start;gap:10px;
-  padding:10px 14px;margin:0 -20px;
-  background:rgba(255,255,255,0.03);
-  border-top:1px solid rgba(255,255,255,0.06);
-  border-bottom:1px solid rgba(255,255,255,0.06);
-  margin-bottom:10px;
+  padding-top:12px;border-top:1px solid var(--mp-border);
 }
 .nc-truth-icon{
-  width:20px;height:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
-  border-radius:50%;font-size:11px;margin-top:1px;
+  width:18px;height:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  border-radius:50%;font-size:10px;font-weight:700;margin-top:2px;
 }
 .nc-truth-icon.verified{background:rgba(0,222,148,0.12);color:#00DE94;}
 .nc-truth-icon.contradicted{background:rgba(255,77,77,0.12);color:#FF4D4D;}
 .nc-truth-icon.unverified{background:rgba(0,174,255,0.10);color:#00AEFF;}
 .nc-truth-content{flex:1;min-width:0;}
 .nc-truth-verdict{
-  font-family:var(--font-body);font-size:12px;font-weight:600;
-  letter-spacing:0.02em;margin-bottom:3px;
+  font-family:var(--font-body);font-size:11px;font-weight:600;
+  letter-spacing:0.05em;text-transform:uppercase;margin-bottom:4px;
+  color:var(--mp-text-primary);
 }
-.nc-truth-verdict.verified{color:#00DE94;}
-.nc-truth-verdict.contradicted{color:#FF4D4D;}
-.nc-truth-verdict.unverified{color:#00AEFF;}
+/* Truth verdict text stays neutral — only the icon carries color. */
+.nc-truth-verdict.verified,
+.nc-truth-verdict.contradicted,
+.nc-truth-verdict.unverified{color:var(--mp-text-primary);}
 .nc-truth-reason{
-  font-family:var(--font-body);font-size:14px;font-weight:400;
-  color:var(--mp-text-secondary);line-height:1.45;
+  font-family:var(--font-body);font-size:13px;font-weight:400;
+  color:var(--mp-text-secondary);line-height:1.5;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
 }
-/* ── Section 3: WHAT TO DO ── */
-.nc-action-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-.nc-direction{
-  font-family:var(--font-body);font-size:11px;font-weight:600;
-  letter-spacing:0.06em;text-transform:uppercase;
-  padding:3px 10px;border-radius:4px;white-space:nowrap;
+/* ── Action row — single accent: the direction arrow ── */
+.nc-action-row{
+  display:flex;align-items:center;gap:12px;flex-wrap:nowrap;
+  padding-top:12px;border-top:1px solid var(--mp-border);
 }
-.nc-dir-bull{color:#00DE94;border:1px solid rgba(0,222,148,0.25);background:rgba(0,222,148,0.06);}
-.nc-dir-bear{color:#FF4D4D;border:1px solid rgba(255,77,77,0.25);background:rgba(255,77,77,0.06);}
-.nc-dir-neutral{color:#00AEFF;border:1px solid rgba(0,174,255,0.25);background:rgba(0,174,255,0.06);}
+.nc-direction{
+  font-family:var(--font-body);font-size:12px;font-weight:600;
+  letter-spacing:0.04em;
+  padding:0;border:none;background:none;white-space:nowrap;
+  color:var(--nc-accent,var(--mp-text-primary));
+}
+.nc-dir-bull{color:#00DE94;}
+.nc-dir-bear{color:#FF4D4D;}
+.nc-dir-neutral{color:var(--mp-text-secondary);}
 .nc-action-text{
   font-family:var(--font-body);font-size:12px;font-weight:400;
-  color:var(--mp-text-secondary);flex:1;min-width:0;
+  color:var(--mp-text-tertiary);flex:1;min-width:0;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
 .nc-view-link{
   font-family:var(--font-body);font-size:11px;font-weight:500;
   color:var(--mp-text-tertiary);text-decoration:none;flex-shrink:0;
-  transition:all .15s;letter-spacing:0.02em;
-  padding:4px 12px;border-radius:6px;border:1px solid rgba(255,255,255,0.10);
+  transition:color .15s;letter-spacing:0.02em;
 }
-.nc-card:hover .nc-view-link{color:#00AEFF;}
-/* ── Impact signals (compact tags below action) ── */
-.nc-signals{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;}
+.nc-card:hover .nc-view-link{color:var(--mp-text-primary);}
+/* ── Signal chips — flat, neutral, no color fills ── */
+.nc-signals{display:flex;flex-wrap:wrap;gap:6px;margin-top:0;}
 .nc-signal{
   font-family:var(--font-body);font-size:10px;font-weight:500;
-  padding:3px 10px;border-radius:99px;white-space:nowrap;
-  border:1px solid rgba(255,255,255,0.10);
-  color:var(--mp-text-secondary);background:rgba(255,255,255,0.04);
-  letter-spacing:0.02em;
+  padding:3px 8px;border-radius:4px;white-space:nowrap;
+  border:1px solid var(--mp-border);
+  color:var(--mp-text-tertiary);background:transparent;
+  letter-spacing:0.04em;text-transform:uppercase;
 }
 /* Legacy compat — keep old classes that may be referenced elsewhere */
 .nc-accent{display:none;}
@@ -3929,7 +3957,11 @@ body{
 [data-theme="light"] .nf-scroll-hint{border-top-color:rgba(0,0,0,0.06);}
 [data-theme="light"] .nc-card{background:var(--mp-surface);border-color:rgba(0,0,0,0.08);box-shadow:0 2px 8px rgba(0,0,0,0.08);}
 [data-theme="light"] .nc-card:hover{box-shadow:0 8px 24px rgba(0,0,0,0.12);border-color:rgba(0,0,0,0.14);}
-[data-theme="light"] .nc-truth-section{background:rgba(0,0,0,0.02);border-color:rgba(0,0,0,0.04);}
+[data-theme="light"] .nc-truth-section{border-top-color:rgba(0,0,0,0.06);}
+[data-theme="light"] .nc-fuel{border-top-color:rgba(0,0,0,0.06);}
+[data-theme="light"] .nc-fuel-track{background:rgba(0,0,0,0.05);}
+[data-theme="light"] .nc-action-row{border-top-color:rgba(0,0,0,0.06);}
+[data-theme="light"] .nc-signal{border-color:rgba(0,0,0,0.08);color:var(--mp-text-tertiary);}
 [data-theme="light"] .nc-card::before{opacity:0;}
 [data-theme="light"] .nc-divider{background:rgba(0,0,0,0.06);}
 [data-theme="light"] .nc-footer{border-top-color:rgba(0,0,0,0.06);background:rgba(0,0,0,0.02);}
@@ -7019,15 +7051,27 @@ function nfBuildRow(dir, logoHtml, ticker, sector, headline, verdict, href, extr
   var chgTxt=pct===0?'\u2014':(pct>0?'+':'')+pct.toFixed(2)+'%';
   var priceHTML='';
   if(extra.price!=null){
-    priceHTML='<div class="nc-price-group">'
-      +'<span class="nc-price">$'+fmtPrice(extra.price)+'</span>'
-      +'<span class="nc-change '+chgCls+'">'+chgTxt+'</span>'
+    priceHTML='<div class="nc-price-group" data-ticker="'+esc(ticker)+'">'
+      +'<span class="nc-price" data-live-price="'+esc(ticker)+'">$'+fmtPrice(extra.price)+'</span>'
+      +'<span class="nc-change '+chgCls+'" data-live-change="'+esc(ticker)+'">'+chgTxt+'</span>'
     +'</div>';
   }
 
   // ── SECTION 2: IS IT TRUE? ──
   var sc=extra._scorecard||{};
   var truthResult=nfAssessTruth(verdict,extra,sc);
+
+  // ── Fuel score (narrative energy remaining, 0–100) — brand-gradient bar ──
+  var fuelHTML='';
+  var fuelRaw=sc.energy_remaining;
+  if(fuelRaw==null&&sc.fuel_score!=null) fuelRaw=sc.fuel_score;
+  if(fuelRaw!=null){
+    var fuelPct=Math.max(0,Math.min(100,Math.round(Number(fuelRaw))));
+    fuelHTML='<div class="nc-fuel">'
+      +'<div class="nc-fuel-top"><span>Narrative fuel</span><strong>'+fuelPct+'%</strong></div>'
+      +'<div class="nc-fuel-track"><div class="nc-fuel-fill" style="width:'+fuelPct+'%;"></div></div>'
+    +'</div>';
+  }
 
   // ── SECTION 3: WHAT TO DO ──
   var dirLabel=dir==='bull'?'\u25B2 Bullish':dir==='bear'?'\u25BC Bearish':'\u25C6 Neutral';
@@ -7050,6 +7094,8 @@ function nfBuildRow(dir, logoHtml, ticker, sector, headline, verdict, href, extr
         +priceHTML
       +'</div>'
       +'<div class="nc-claim">'+esc(headline)+'</div>'
+      // Fuel bar (brand gradient — only intentional accent)
+      +fuelHTML
       // 2. IS IT TRUE?
       +'<div class="nc-truth-section">'
         +'<div class="nc-truth-icon '+truthResult.cls+'">'+truthResult.icon+'</div>'
@@ -7237,8 +7283,8 @@ function tlBuildRow(r){
   else if(tier==='GOLD')tierHTML='<span class="tl-tier tl-gold">Gold</span>';
   var domain=DOMAIN_MAP[r.ticker];
   var logo=domain?'<img class="tl-row-logo" src="https://www.google.com/s2/favicons?domain='+domain+'&sz=32" alt="" onerror="this.style.display=\'none\';">':'';
-  return '<div class="tl-row" onclick="window.location.href=\'/ticker/'+encodeURIComponent(r.ticker)+'\'">'
-    +'<div class="tl-row-left">'+tierHTML+logo+'<span class="tl-row-ticker">'+esc(r.ticker)+'</span><span class="tl-row-price">'+price+'</span></div>'
+  return '<div class="tl-row" data-ticker="'+esc(r.ticker)+'" onclick="window.location.href=\'/ticker/'+encodeURIComponent(r.ticker)+'\'">'
+    +'<div class="tl-row-left">'+tierHTML+logo+'<span class="tl-row-ticker">'+esc(r.ticker)+'</span><span class="tl-row-price" data-live-price="'+esc(r.ticker)+'">'+price+'</span></div>'
     +'<div class="tl-row-right"><span class="tl-row-action" style="color:'+actionColor+';">'+esc(action)+'</span><span class="tl-row-dir" style="color:'+dirColor+';">'+dirArrow+'</span></div>'
   +'</div>';
 }
@@ -7268,8 +7314,8 @@ function tlBuildValueRow(r){
   var price=r.price?'$'+fmtPrice(Number(r.price)):'';
   var domain=DOMAIN_MAP[r.ticker];
   var logo=domain?'<img class="tl-row-logo" src="https://www.google.com/s2/favicons?domain='+domain+'&sz=32" alt="" onerror="this.style.display=\'none\';">':'';
-  return '<div class="tl-row" onclick="window.location.href=\'/ticker/'+encodeURIComponent(r.ticker)+'\'">'
-    +'<div class="tl-row-left">'+logo+'<span class="tl-row-ticker">'+esc(r.ticker)+'</span><span class="tl-row-price">'+price+'</span></div>'
+  return '<div class="tl-row" data-ticker="'+esc(r.ticker)+'" onclick="window.location.href=\'/ticker/'+encodeURIComponent(r.ticker)+'\'">'
+    +'<div class="tl-row-left">'+logo+'<span class="tl-row-ticker">'+esc(r.ticker)+'</span><span class="tl-row-price" data-live-price="'+esc(r.ticker)+'">'+price+'</span></div>'
     +'<div class="tl-row-right"><span class="tl-row-action" style="color:#38C8B8;">'+esc(discountStr)+'</span>'
     +(revGrowth?'<span style="font-size:11px;color:var(--mp-text-muted);font-family:var(--font-body);margin-left:6px;">'+esc(revGrowth)+'</span>':'')
     +'<span class="tl-row-dir" style="color:#00DE94;">\u25B2</span></div>'
@@ -7439,8 +7485,8 @@ function tlBuildDayRow(r){
   var logo=domain?'<img class="tl-row-logo" src="https://www.google.com/s2/favicons?domain='+domain+'&sz=32" alt="" onerror="this.style.display=\'none\';">':'';
   var dpBadge='';
   if(r._dpSignal==='HEAVY')dpBadge='<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(0,174,255,0.1);color:#00AEFF;border:1px solid rgba(0,174,255,0.2);margin-left:4px;font-family:var(--font-body);">DP</span>';
-  return '<div class="tl-row" onclick="window.location.href=\'/ticker/'+encodeURIComponent(r.ticker)+'\'">'
-    +'<div class="tl-row-left">'+logo+'<span class="tl-row-ticker">'+esc(r.ticker)+'</span><span class="tl-row-price">'+price+'</span><span style="font-size:11px;color:'+changeColor+';font-family:var(--font-body);margin-left:4px;">'+changePct+'</span>'+dpBadge+'</div>'
+  return '<div class="tl-row" data-ticker="'+esc(r.ticker)+'" onclick="window.location.href=\'/ticker/'+encodeURIComponent(r.ticker)+'\'">'
+    +'<div class="tl-row-left">'+logo+'<span class="tl-row-ticker">'+esc(r.ticker)+'</span><span class="tl-row-price" data-live-price="'+esc(r.ticker)+'">'+price+'</span><span class="tl-row-change" data-live-change="'+esc(r.ticker)+'" style="font-size:11px;color:'+changeColor+';font-family:var(--font-body);margin-left:4px;">'+changePct+'</span>'+dpBadge+'</div>'
     +'<div class="tl-row-right"><span class="tl-row-action" style="color:'+actionColor+';">'+esc(r._action)+'</span><span class="tl-row-dir" style="color:'+dirColor+';">'+dirArrow+'</span></div>'
   +'</div>';
 }
@@ -13465,9 +13511,95 @@ window.refreshDailyBrief=async function(){
   if(btn){btn.disabled=true;btn.style.opacity='0.5';btn.querySelector('svg').style.animation='spin 1s linear infinite';}
   try{
     await loadData();
+    liveQuotesRefreshDaily();
   }catch(e){console.warn('[DB] Refresh failed:',e);}
   if(btn){btn.disabled=false;btn.style.opacity='1';btn.querySelector('svg').style.animation='';}
 };
+
+// ── Live quotes: batch-refresh every ticker rendered on the Daily Brief ──────
+// Reads data-live-price / data-live-change / data-ticker attributes on
+// Day Trade, Swing Trade, Value Picks and Biggest Narratives rows, pulls
+// all tickers in one batch call, and patches the DOM in place. Narrative
+// directions are NOT re-derived — only the displayed price and day change.
+var _liveQuotesTimer=null;
+var _liveQuotesInFlight=false;
+
+function _fmtLivePrice(p){
+  if(p==null)return'';
+  if(p>=1000)return'$'+p.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  if(p>=100)return'$'+p.toFixed(2);
+  return'$'+p.toFixed(3);
+}
+
+async function liveQuotesRefreshDaily(){
+  if(_liveQuotesInFlight)return;
+  var priceEls=document.querySelectorAll('[data-live-price]');
+  if(!priceEls.length)return;
+  var tickers={};
+  priceEls.forEach(function(el){
+    var t=el.getAttribute('data-live-price');
+    if(t)tickers[t]=true;
+  });
+  var list=Object.keys(tickers);
+  if(!list.length)return;
+  _liveQuotesInFlight=true;
+  try{
+    var res=await fetch('/api/live-quotes-batch?tickers='+encodeURIComponent(list.join(',')));
+    if(!res.ok){_liveQuotesInFlight=false;return;}
+    var data=await res.json();
+    var quotes=(data&&data.quotes)||{};
+    // Patch prices
+    document.querySelectorAll('[data-live-price]').forEach(function(el){
+      var t=el.getAttribute('data-live-price');
+      var q=quotes[t];
+      if(!q||q.price==null)return;
+      el.textContent=_fmtLivePrice(q.price);
+    });
+    // Patch change % (two styles: .nc-change class-based and inline-color spans)
+    document.querySelectorAll('[data-live-change]').forEach(function(el){
+      var t=el.getAttribute('data-live-change');
+      var q=quotes[t];
+      if(!q||q.changePct==null)return;
+      var pct=q.changePct;
+      var sign=pct>0?'+':'';
+      var txt=sign+pct.toFixed(2)+'%';
+      el.textContent=txt;
+      if(el.classList.contains('nc-change')){
+        el.classList.remove('nc-change-up','nc-change-dn','nc-change-flat');
+        el.classList.add(pct>0?'nc-change-up':pct<0?'nc-change-dn':'nc-change-flat');
+      }else{
+        // Inline color (Day Trade rows)
+        el.style.color=pct>=0?'#00DE94':'#FF4D4D';
+      }
+    });
+  }catch(e){
+    // Silent fail — existing Supabase prices remain visible
+  }finally{
+    _liveQuotesInFlight=false;
+  }
+}
+
+function liveQuotesSchedule(){
+  if(_liveQuotesTimer){clearTimeout(_liveQuotesTimer);_liveQuotesTimer=null;}
+  var now=new Date();
+  var et=new Date(now.toLocaleString('en-US',{timeZone:'America/New_York'}));
+  var day=et.getDay(),hrs=et.getHours(),mins=et.getMinutes();
+  var mktMins=hrs*60+mins;
+  var isActive=day>=1&&day<=5&&mktMins>=240&&mktMins<1200;
+  var interval=isActive?30000:120000;
+  _liveQuotesTimer=setTimeout(function(){
+    liveQuotesRefreshDaily().then(liveQuotesSchedule);
+  },interval);
+}
+
+// Kick off once the page is settled; loadData may still be finishing so
+// wait a tick. The scheduler then keeps it warm on 30s / 2min cadence.
+setTimeout(function(){liveQuotesRefreshDaily().then(liveQuotesSchedule);},1500);
+
+// Refresh immediately when the user tabs back in
+document.addEventListener('visibilitychange',function(){
+  if(!document.hidden){liveQuotesRefreshDaily();}
+});
 // ── Dismiss page loader ──
 function dismissPageLoader(){
   var el = document.getElementById('mp-page-loader');
