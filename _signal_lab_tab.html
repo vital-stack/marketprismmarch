@@ -183,7 +183,7 @@
       <!-- Toggles -->
       <div class="sl-toggles">
         <button class="sl-tog active" data-sl-line="narr-energy" style="--color:#00AEFF;--bg-color:rgba(0,174,255,0.08);"><span class="sl-tog-sw" style="background:#00AEFF;"></span> Narrative Energy<span class="sl-tog-tip">Story persistence relative to its natural half-life</span></button>
-        <button class="sl-tog active" data-sl-line="physics-energy" style="--color:#FFB800;--bg-color:rgba(255,184,0,0.08);"><span class="sl-tog-sw" style="background:#FFB800;"></span> Physics Energy<span class="sl-tog-tip">Raw narrative activity in the system right now</span></button>
+        <button class="sl-tog active" data-sl-line="physics-energy" style="--color:#FFB800;--bg-color:rgba(255,184,0,0.08);"><span class="sl-tog-sw" style="background:#FFB800;"></span> Physics Energy (universe rank)<span class="sl-tog-tip">Cross-ticker percentile rank of raw kinetic narrative activity vs. full universe that day. 87 = top 13% of tickers. &ge;80 = peak narrative saturation.</span></button>
         <button class="sl-tog active" data-sl-line="narr-pressure" style="--color:#7B61FF;--bg-color:rgba(123,97,255,0.08);"><span class="sl-tog-sw" style="background:#7B61FF;"></span> Narrative Pressure<span class="sl-tog-tip">Composite manipulation and risk score</span></button>
         <button class="sl-tog active" data-sl-line="temporal-energy" style="--color:#38C8B8;--bg-color:rgba(56,200,184,0.08);"><span class="sl-tog-sw" style="background:#38C8B8;"></span> Temporal Energy (universe rank)<span class="sl-tog-tip">Cross-ticker percentile rank vs. full universe that day. 87 = top 13% of tickers. &ge;80 = rally setup, &le;15 = crash setup.</span></button>
         <button class="sl-tog active" data-sl-line="bull-dots" style="--color:#00DE94;--bg-color:rgba(0,222,148,0.08);"><span class="sl-tog-sw" style="background:#00DE94;border-radius:50%;width:7px;height:7px;"></span> Bullish<span class="sl-tog-tip">Article sentiment on that date</span></button>
@@ -232,7 +232,7 @@
           <div class="sl-leg-item"><div class="sl-leg-dot" style="background:#00DE94;"></div> Bullish Sentiment</div>
           <div class="sl-leg-item"><div class="sl-leg-dot" style="background:#FF4D4D;"></div> Bearish Sentiment</div>
           <div class="sl-leg-item"><div class="sl-leg-line" style="background:#00AEFF;opacity:0.7;border-top:2px dashed #00AEFF;height:0;width:14px;"></div> Narrative Energy</div>
-          <div class="sl-leg-item"><div class="sl-leg-line" style="background:#FFB800;opacity:0.7;border-top:2px dashed #FFB800;height:0;width:14px;"></div> Physics Energy</div>
+          <div class="sl-leg-item" title="Cross-ticker percentile rank of raw narrative kinetic energy within the full universe that day. 87 = top 13% of tickers."><div class="sl-leg-line" style="background:#FFB800;opacity:0.7;border-top:2px dashed #FFB800;height:0;width:14px;"></div> Physics Energy (universe rank)</div>
           <div class="sl-leg-item"><div class="sl-leg-line" style="background:#7B61FF;opacity:0.7;border-top:2px dashed #7B61FF;height:0;width:14px;"></div> Narrative Pressure</div>
           <div class="sl-leg-item" title="Cross-ticker percentile rank within the full universe that day. 87 = top 13% of tickers."><div class="sl-leg-line" style="background:#38C8B8;opacity:0.85;height:2px;width:14px;"></div> Temporal Energy (universe rank)</div>
         </div>
@@ -241,7 +241,7 @@
       <!-- Data availability note -->
       <div style="padding:8px 14px 12px;font-size:11px;color:var(--mp-text-tertiary);font-family:var(--font-body);line-height:1.5;border-top:1px solid var(--mp-border);display:flex;align-items:flex-start;gap:8px;">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;opacity:0.7;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-        <span>Narrative Energy, Physics Energy, Narrative Pressure, and Temporal Energy are newly tracked signals. Historical coverage is limited to recent snapshots and will deepen as the system continues capturing daily data. Temporal Energy is shown as a <strong>cross-ticker percentile rank</strong> (0-100) against the full tracked universe that day &mdash; 87 = top 13% of tickers, 15 = bottom 15%.</span>
+        <span>Narrative Energy, Physics Energy, Narrative Pressure, and Temporal Energy are newly tracked signals. Historical coverage is limited to recent snapshots and will deepen as the system continues capturing daily data. Physics Energy and Temporal Energy are shown as <strong>cross-ticker percentile ranks</strong> (0-100) against the full tracked universe that day &mdash; 87 = top 13% of tickers, 15 = bottom 15%. "Peak Narrative" (blue &ge; 80 AND yellow &ge; 80) now means a ticker is in the top quintile of both Narrative Energy and Physics Energy across the universe simultaneously.</span>
       </div>
 
       <!-- AI Interpretation -->
@@ -384,8 +384,11 @@
 
     // Narrative Energy
     if(SL_VIS['narr-energy']){var df=SL_DECAY.filter(function(d){var ds=d.snapshot_date?.slice(0,10);return ds&&ds>=lo&&ds<=hi;});if(df.length>1){ctx.save();ctx.font='9px Inter, sans-serif';ctx.fillStyle='#3b82f6';ctx.textAlign='left';ctx.globalAlpha=0.7;[0,50,100].forEach(function(v){ctx.fillText(v,W-PAD.right+4,yE(v)+3);});ctx.restore();ctx.save();ctx.setLineDash([3,3]);ctx.strokeStyle='#3b82f6';ctx.lineWidth=1.2;ctx.globalAlpha=0.7;ctx.beginPath();var st=false;df.forEach(function(d){var idx=dateIdx[d.snapshot_date.slice(0,10)];if(idx==null)return;var x=xOf(idx),y2=yE(d.energy_remaining_pct??0);if(!st){ctx.moveTo(x,y2);st=true;}else ctx.lineTo(x,y2);});ctx.stroke();ctx.restore();}}
-    // Physics Energy
-    if(SL_VIS['physics-energy']){var pf=SL_PHYSICS.filter(function(d){var ds=d.snapshot_date?.slice(0,10);return ds&&ds>=lo&&ds<=hi;});if(pf.length>1){var mA=Math.max.apply(null,pf.map(function(d){return d.narrative_energy_absolute||0;}).concat([1]));ctx.save();ctx.setLineDash([3,3]);ctx.strokeStyle='#FFB800';ctx.lineWidth=1.2;ctx.globalAlpha=0.7;ctx.beginPath();var ps=false;pf.forEach(function(d){var idx=dateIdx[d.snapshot_date.slice(0,10)];if(idx==null)return;var x=xOf(idx),nm=(d.narrative_energy_absolute/mA)*100,y2=yE(nm);if(!ps){ctx.moveTo(x,y2);ps=true;}else ctx.lineTo(x,y2);});ctx.stroke();ctx.restore();}}
+    // Physics Energy — plots pe_rank_pct (cross-ticker percentile rank, 0-100)
+    // from mv_physics_energy_normalized. Value is already on the 0-100 axis; no rescaling.
+    // Thin-coverage days (full_coverage_day=false) are skipped so the line
+    // doesn't dip into a stale rank when the universe was incomplete.
+    if(SL_VIS['physics-energy']){var pf=SL_PHYSICS.filter(function(d){var ds=d.snapshot_date?.slice(0,10);return ds&&ds>=lo&&ds<=hi&&d.pe_rank_pct!=null&&d.full_coverage_day!==false;});if(pf.length>1){ctx.save();ctx.setLineDash([3,3]);ctx.strokeStyle='#FFB800';ctx.lineWidth=1.2;ctx.globalAlpha=0.7;ctx.beginPath();var ps=false;pf.forEach(function(d){var idx=dateIdx[d.snapshot_date.slice(0,10)];if(idx==null)return;var x=xOf(idx),y2=yE(d.pe_rank_pct);if(!ps){ctx.moveTo(x,y2);ps=true;}else ctx.lineTo(x,y2);});ctx.stroke();ctx.restore();}}
     // Narrative Pressure
     if(SL_VIS['narr-pressure']){var prf=SL_PRESSURE.filter(function(d){var ds=d.snapshot_date?.slice(0,10);return ds&&ds>=lo&&ds<=hi;});if(prf.length>1){ctx.save();ctx.fillStyle='rgba(255,77,77,0.06)';var inD=false,dSX=0;prf.forEach(function(d,i){var idx=dateIdx[d.snapshot_date.slice(0,10)];if(idx==null)return;var x=xOf(idx);if(d.pressure>60&&!inD){inD=true;dSX=x;}else if((d.pressure<=60||i===prf.length-1)&&inD){var eX=d.pressure>60?x:xOf(dateIdx[prf[i-1]?.snapshot_date?.slice(0,10)]??idx);ctx.fillRect(dSX,PAD.top,eX-dSX,CH);inD=false;}});ctx.restore();ctx.save();ctx.setLineDash([3,3]);ctx.strokeStyle='#7B61FF';ctx.lineWidth=1.2;ctx.globalAlpha=0.7;ctx.beginPath();var prs=false;prf.forEach(function(d){var idx=dateIdx[d.snapshot_date.slice(0,10)];if(idx==null)return;var x=xOf(idx),y2=yE(d.pressure);if(!prs){ctx.moveTo(x,y2);prs=true;}else ctx.lineTo(x,y2);});ctx.stroke();ctx.restore();}}
     // Temporal Energy — plots te_rank_pct (cross-ticker percentile rank, 0-100)
@@ -446,14 +449,23 @@
       restFetch('v_dash_narrative_health',{select:'snapshot_date,narrative_trend,sentiment_score',ticker:'eq.'+ticker,order:'snapshot_date.asc',limit:'2000'}),
       restFetch('decay_metrics',{select:'snapshot_date,energy_remaining_pct,day_number',ticker:'eq.'+ticker,order:'snapshot_date.asc',limit:'2000'}),
       restFetch('narrative_scorecard',{select:'snapshot_date,narrative_energy_absolute,nrs,overreaction_ratio,coordination_score,narrative_energy_t,signal_regime,regime_direction,blue_energy,yellow_energy,energy_t_normalized,narrative_energy_regime',ticker:'eq.'+ticker,order:'snapshot_date.asc',limit:'2000'}),
-      restFetch('mv_energy_t_normalized',{select:'snapshot_date,raw_et,te_rank_pct,te_rolling_q90_norm,full_coverage_day',ticker:'eq.'+ticker,order:'snapshot_date.asc',limit:'2000'})
+      restFetch('mv_energy_t_normalized',{select:'snapshot_date,raw_et,te_rank_pct,te_rolling_q90_norm,full_coverage_day',ticker:'eq.'+ticker,order:'snapshot_date.asc',limit:'2000'}),
+      restFetch('mv_physics_energy_normalized',{select:'snapshot_date,raw_pe,pe_rank_pct,pe_rolling_q90_norm,full_coverage_day',ticker:'eq.'+ticker,order:'snapshot_date.asc',limit:'2000'})
     ]);
     SL_SNAPS=r[0].filter(function(x){return x.snapshot_date&&x.price_close!=null;});
     var tbd={};r[2].forEach(function(h){var d=h.snapshot_date?.slice(0,10);if(d)tbd[d]=h.narrative_trend||'';});
     SL_NARRS=r[1].map(function(row){var v=(row.verdict||'').toUpperCase(),d=row.snapshot_date?.slice(0,10),trend=d?(tbd[d]||''):'';var isBear=v.includes('TRAP')||v.includes('MISLEAD')||v.includes('FALSE')||v.includes('BEARISH')||v.includes('DECLINE')||v.includes('NEGATIVE')||v.includes('NEEDS VALIDATION')||v.includes('PLAUSIBLE BUT UNVERIFIED')||trend==='Collapsing'||trend==='Weakening';return{snapshot_date:row.snapshot_date,sentiment_score:row.sentiment_score,isBear:isBear,verdict:row.verdict||'',narrative_trend:trend,narrative_text:row.narrative_text||'',source_outlet:row.source_outlet||'',article_url:row.article_url||''};});
     SL_DECAY=r[3];
-    SL_PHYSICS=r[4].filter(function(x){return x.snapshot_date&&x.narrative_energy_absolute!=null;});
     SL_PRESSURE=r[4].filter(function(x){return x.snapshot_date;}).map(function(x){var nrs=x.nrs||0,or=Math.min(x.overreaction_ratio||0,50),cs=x.coordination_score||0;return{snapshot_date:x.snapshot_date,pressure:((nrs/100)*0.4+(or/50)*0.4+(cs/100)*0.2)*100};});
+    // Physics Energy: use cross-ticker percentile rank from mv_physics_energy_normalized
+    // (stable across timeframes; universe rank). Falls back to raw narrative_energy_absolute
+    // from the scorecard if the MV has no coverage for this ticker yet.
+    // narrative_energy_absolute is kept as an alias of raw_pe for any legacy caller.
+    if(r[6]&&r[6].length){
+      SL_PHYSICS=r[6].filter(function(x){return x.snapshot_date&&x.pe_rank_pct!=null;}).map(function(x){var rank=Number(x.pe_rank_pct);var raw=x.raw_pe!=null?Number(x.raw_pe):null;return{snapshot_date:x.snapshot_date,pe_rank_pct:rank,narrative_energy_absolute:raw,raw_pe:raw,pe_rolling_q90_norm:x.pe_rolling_q90_norm!=null?Number(x.pe_rolling_q90_norm):null,full_coverage_day:x.full_coverage_day!==false};});
+    } else {
+      SL_PHYSICS=r[4].filter(function(x){return x.snapshot_date&&x.narrative_energy_absolute!=null;}).map(function(x){return{snapshot_date:x.snapshot_date,pe_rank_pct:null,narrative_energy_absolute:Number(x.narrative_energy_absolute),raw_pe:Number(x.narrative_energy_absolute),pe_rolling_q90_norm:null,full_coverage_day:true};});
+    }
     // Full scorecard row per day (signal_regime, direction, energy values, etc.)
     // used by Interpret Chart to give Claude the current regime + context.
     // divergence_score is computed as blue - yellow (the literal gap).
@@ -505,10 +517,16 @@
       var lpr=SL_PRESSURE.length?SL_PRESSURE[SL_PRESSURE.length-1]:null;
       var le=SL_ENERGY_T.length?SL_ENERGY_T[SL_ENERGY_T.length-1]:null;
       blue=ld.energy_remaining_pct??0;
-      var mA=Math.max.apply(null,SL_PHYSICS.map(function(d){return d.narrative_energy_absolute||0;}).concat([1]));
-      yellow=((lp.narrative_energy_absolute||0)/mA)*100;
+      // Physics Energy: use cross-ticker percentile rank directly from mv_physics_energy_normalized.
+      // Fall back to full-history max normalization if the MV hasn't populated a value for the latest day.
+      if(lp.pe_rank_pct!=null){
+        yellow=lp.pe_rank_pct;
+      } else {
+        var mA=Math.max.apply(null,SL_PHYSICS.map(function(d){return d.narrative_energy_absolute||0;}).concat([1]));
+        yellow=((lp.narrative_energy_absolute||0)/mA)*100;
+      }
       purple=lpr?lpr.pressure:0;
-      // Use cross-ticker percentile rank directly — already 0-100, stable across timeframes.
+      // Temporal Energy: use cross-ticker percentile rank directly — already 0-100, stable across timeframes.
       etN=le?(le.te_rank_pct||0):0;
     }
 
@@ -570,9 +588,9 @@
     var lp=SL_PHYSICS.filter(function(d){return d.snapshot_date?.slice(0,10)<=hi;}).slice(-5);
     var lpr=SL_PRESSURE.filter(function(d){return d.snapshot_date?.slice(0,10)<=hi;}).slice(-5);
     var le=SL_ENERGY_T.filter(function(d){return d.snapshot_date?.slice(0,10)<=hi;}).slice(-5);
-    // Physics Energy normalization: use full ticker history as the basis so the
-    // 0-100 scale is stable regardless of the visible window (same principle as
-    // Temporal Energy now uses via mv_energy_t_normalized).
+    // Physics Energy now reads pe_rank_pct from mv_physics_energy_normalized
+    // (cross-ticker percentile rank). mA is only used if the MV has no rank
+    // for a given row, as a last-resort fallback.
     var mA=Math.max.apply(null,SL_PHYSICS.map(function(d){return d.narrative_energy_absolute||0;}).concat([1]));
     // Latest signal regime row within the visible window (or absolute latest if none in window).
     var scInWindow=SL_SCORECARD.filter(function(d){var ds=d.snapshot_date?.slice(0,10);return ds>=lo&&ds<=hi;});
@@ -594,8 +612,9 @@
       snaps.slice(-10).map(function(s){return s.snapshot_date.slice(0,10)+': $'+(s.price_close!=null?s.price_close.toFixed(2):'?');}).join(', '),
       '\n--- NARRATIVE ENERGY / Blue (story persistence %, 0-100) ---',
       ld.map(function(d){return d.snapshot_date.slice(0,10)+': '+Math.round(d.energy_remaining_pct??0);}).join(', '),
-      '\n--- PHYSICS ENERGY / Yellow (raw kinetic energy normalized 0-100, full-history basis) ---',
-      lp.map(function(d){return d.snapshot_date.slice(0,10)+': '+Math.round((d.narrative_energy_absolute||0)/mA*100);}).join(', '),
+      '\n--- PHYSICS ENERGY / Yellow (universe percentile rank | raw value) ---',
+      '(0 = lowest raw kinetic energy in universe that day, 100 = highest)',
+      lp.map(function(d){var rank=d.pe_rank_pct!=null?Math.round(d.pe_rank_pct):Math.round((d.narrative_energy_absolute||0)/mA*100);var raw=d.raw_pe!=null?d.raw_pe.toFixed(2):(d.narrative_energy_absolute!=null?d.narrative_energy_absolute.toFixed(2):'?');return d.snapshot_date.slice(0,10)+': rank '+rank+' | raw '+raw;}).join('\n'),
       '\n--- TEMPORAL ENERGY / Teal (universe percentile rank | raw value) ---',
       '(0 = lowest ET in universe that day, 100 = highest)',
       le.map(function(d){var rank=d.te_rank_pct!=null?Math.round(d.te_rank_pct):'?';var raw=d.raw_et!=null?d.raw_et.toFixed(2):'?';return d.snapshot_date.slice(0,10)+': rank '+rank+' | raw '+raw;}).join('\n'),
