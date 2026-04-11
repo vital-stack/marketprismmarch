@@ -2982,27 +2982,28 @@ body{
 }
 .strat-filter-chip:hover{border-color:var(--mp-cyan);color:var(--mp-cyan);}
 .strat-filter-chip.active{border-color:var(--mp-cyan);color:var(--mp-cyan);background:rgba(0,174,255,0.08);}
+/* ═══════════════════════════════════════════════════════════════════
+   TRADING CARDS — playing-card format
+   Every card is locked to IDENTICAL fixed pixel dimensions — no
+   flexing, no aspect-ratio ambiguity, no content-driven stretching.
+   The grid centers itself in the page so wide screens just get more
+   empty table, not stretched cards.
+   Ratio 5:7 ≈ 0.714 (standard poker card ~63×88mm).
+   Scoped to .strat-cards-grid so carousels/featured cards are
+   untouched.
+   ═══════════════════════════════════════════════════════════════════ */
 .strat-cards-grid{
   display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
-  gap:24px 22px;
+  grid-template-columns:repeat(auto-fill, 260px);
+  grid-auto-rows:364px;                  /* 260 × 7/5 */
+  gap:28px 24px;
+  justify-content:start;
   padding-bottom:40px;
 }
 
-/* ═══════════════════════════════════════════════════════════════════
-   TRADING CARDS — playing-card format
-   Scoped to the Trade Cards gallery only. Other uses of .card-scene
-   (carousels, daily featured cards, leaderboard) keep their sizing.
-   Ratio 5:7 ≈ 0.714 (standard poker card ~63×88mm).
-
-   Every card is locked to the same height by forcing .card-front /
-   .card-back to fill the aspect-ratio box absolutely. Content that
-   overflows is clipped at the card edge, not allowed to push the
-   card taller than its neighbors.
-   ═══════════════════════════════════════════════════════════════════ */
 .strat-cards-grid .card-scene{
-  width:auto;                /* override the 240px fixed width */
-  aspect-ratio:5 / 7;
+  width:260px !important;                /* kill the base 240px */
+  height:364px;
   position:relative;
   filter:drop-shadow(0 10px 28px rgba(0,0,0,0.55));
   transition:filter .3s, transform .3s;
@@ -3030,7 +3031,7 @@ body{
    footer. Context/meta/sector-date/regime/action-bar all hide here
    and live on the back face where there's room. */
 .strat-cards-grid .tc{
-  min-height:0;
+  min-height:0 !important;
   height:100%;
   width:100%;
   border-radius:14px;
@@ -3044,6 +3045,7 @@ body{
   flex-direction:column;
   gap:0;
   box-sizing:border-box;
+  overflow:hidden;
 }
 .strat-cards-grid .tc-header{margin-bottom:10px;gap:6px;}
 .strat-cards-grid .tc-header-left{gap:8px;min-width:0;flex:1;}
@@ -3114,16 +3116,28 @@ body{
 /* Light theme overrides — keep the divider on the footer visible */
 [data-theme="light"] .strat-cards-grid .tc-foot{border-top-color:rgba(0,0,0,0.08);}
 
-/* Tablet */
+/* Tablet — slightly smaller fixed card */
 @media(max-width:900px){
-  .strat-cards-grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px 18px;}
+  .strat-cards-grid{
+    grid-template-columns:repeat(auto-fill, 220px);
+    grid-auto-rows:308px;               /* 220 × 7/5 */
+    gap:22px 18px;
+  }
+  .strat-cards-grid .card-scene{width:220px !important;height:308px;}
 }
 /* Phone */
 @media(max-width:480px){
-  .strat-cards-grid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:16px 14px;}
+  .strat-cards-grid{
+    grid-template-columns:repeat(auto-fill, 180px);
+    grid-auto-rows:252px;               /* 180 × 7/5 */
+    gap:16px 14px;
+    justify-content:center;
+  }
+  .strat-cards-grid .card-scene{width:180px !important;height:252px;}
   .strat-cards-grid .tc-body,
   .strat-cards-grid .back-content{padding:14px 14px 12px;}
-  .strat-cards-grid .tc-command{font-size:13px;}
+  .strat-cards-grid .tc-command{font-size:14px;}
+  .strat-cards-grid .tc-context{-webkit-line-clamp:2;}
 }
 
 /* ── Collection Stats ── */
