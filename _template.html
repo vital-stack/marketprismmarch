@@ -2686,6 +2686,59 @@ body{
   display:none;
 }
 .tc-sig-card.queued .tc-sig-card-queued-badge{display:block;}
+/* ══════════════════════════════════════════════════════════════════════════════
+   MOBILE TRADING CARD CRASH FIX
+   ──────────────────────────────────────────────────────────────────────────────
+   On iOS Safari the combination of filter:drop-shadow + transform-style:
+   preserve-3d + mix-blend-mode:screen + infinite foil-scan animation, running
+   on multiple trading cards at once, can exhaust the WebContent process
+   memory/GPU budget. Tapping a card then adds a synthetic mousemove + inline
+   transform write + window.location navigation on top of that, and Safari
+   kills the tab ("A problem repeatedly occurred on .../dashboard"). Strip the
+   heavy GPU effects on phones/tablets — cards still look clean with a simple
+   box-shadow and tap navigation still works.
+   ══════════════════════════════════════════════════════════════════════════════ */
+@media(max-width:768px){
+  .card-scene,
+  .strat-cards-grid .card-scene,
+  .tc-sig-card{
+    filter:none !important;
+    perspective:none !important;
+    animation:none !important;
+    opacity:1 !important;
+    transform:none !important;
+  }
+  .card-scene:hover,
+  .strat-cards-grid .card-scene:hover,
+  .tc-sig-card:hover{
+    filter:none !important;
+    transform:none !important;
+  }
+  .card-flipper{
+    transform-style:flat !important;
+    transition:none !important;
+    transform:none !important;
+  }
+  .card-scene.flipped .card-flipper{transform:none !important;}
+  .card-scene::after{display:none !important;}
+  .card-front::before,.card-back::before{display:none !important;}
+  /* mix-blend-mode:screen foil + infinite scan animation are the primary
+     GPU-cost culprits — remove on mobile. */
+  .foil-layer,.foil-scan{display:none !important;}
+  /* Cheap box-shadow replaces the GPU-expensive drop-shadow filter */
+  .card-scene .tc,
+  .card-scene .card-back-inner,
+  .tc-sig-card .tc{
+    box-shadow:0 2px 10px rgba(0,0,0,0.4);
+  }
+  /* Hover-only download button — no hover on touch, hide it */
+  .tc-dl-btn{display:none !important;}
+  /* Hide the back face on mobile (flip disabled above) to prevent layout */
+  .card-back{display:none !important;}
+  /* Make tap feedback instant and obvious */
+  .card-scene:active .tc,
+  .tc-sig-card:active .tc{transform:scale(0.98);transition:transform .1s;}
+}
 /* Calendar */
 .tc-cal-legend{display:flex;gap:10px;flex-wrap:wrap;margin-left:auto;}
 .tc-cal-legend-item{
@@ -10907,6 +10960,13 @@ function buildCardFrontHTML(c,i,dateStr,prefix,showActions){
 }
 // Attach foil + tilt interactions to a container's cards
 function attachCardInteractions(container){
+  // Skip hover-tilt mousemove handlers on touch devices. Writing inline
+  // transforms on every synthetic mousemove contributes to mobile Safari
+  // layout thrashing and OOM crashes on the dashboard. Touch users don't
+  // get the tilt effect anyway.
+  try{
+    if(window.matchMedia && window.matchMedia('(hover: none)').matches) return;
+  }catch(_){}
   container.querySelectorAll('.card-scene').forEach(function(scene,idx){
     scene.addEventListener('mousemove',function(e){
       var rect=scene.getBoundingClientRect();
