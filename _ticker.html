@@ -6273,6 +6273,11 @@ async function loadNarratives() {
       const exhaustDays = n.half_life != null ? Number(n.half_life).toFixed(1) : null;
       // Analyst from first citation
       const analystFirm = n.analyst_firm || (n.allCitations || []).map(c => c.analyst_firm).filter(Boolean)[0] || null;
+      // Narrative age — days since earliest citation
+      const citeDates = (n.allCitations || [n]).map(c => c.snapshot_date).filter(Boolean).sort();
+      const narrativeAgeDays = citeDates.length
+        ? Math.round((Date.now() - new Date(citeDates[0]).getTime()) / 86400000)
+        : null;
 
       // Quality signals
       const signals = [
@@ -6459,8 +6464,9 @@ async function loadNarratives() {
                     </div>`;
                   }).join('')}
                 </div>
-                ${analystFirm || exhaustDays ? `
+                ${analystFirm || exhaustDays || narrativeAgeDays ? `
                   <div class="narr-pi-footer">
+                    ${narrativeAgeDays != null ? `<span>Active for: <strong>${narrativeAgeDays}d</strong></span>` : ''}
                     ${analystFirm ? `<span>Analyst: <strong>${esc(analystFirm)}</strong></span>` : ''}
                     ${exhaustDays ? `<span>Exhausts in: <strong>~${exhaustDays} days</strong></span>` : ''}
                   </div>
