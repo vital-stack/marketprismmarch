@@ -14842,7 +14842,7 @@ var BOARDS=[
   fetch:async function(){
     try{
       var date=await latestDate('narrative_scorecard');
-      var rows=await sq('narrative_scorecard','ticker,coordination_score,coordination_class,nrs,drift_score,narrative_energy_absolute,verdict','snapshot_date=eq.'+date+'&coordination_score=gt.30&order=coordination_score.desc&limit=10');
+      var rows=await sq('narrative_scorecard?select=ticker,coordination_score,coordination_class,nrs,drift_score,narrative_energy_absolute,verdict&snapshot_date=eq.'+date+'&coordination_score=gt.30&order=coordination_score.desc&limit=10');
       return(rows||[]).map(function(r){var s=Number(r.coordination_score)||0;return{name:r.ticker,link:'/ticker/'+r.ticker,meta:(r.coordination_class||'')+(r.nrs?' · NRS '+Math.round(Number(r.nrs)):''),score:s,scoreDisplay:Math.round(s),_scoreColor:s>70?'#FF4D4D':s>50?'#FFB800':'#FFD700'};});
     }catch(e){return[];}
   }},
@@ -14850,7 +14850,7 @@ var BOARDS=[
   fetch:async function(){
     try{
       var date=await latestDate('narrative_scorecard');
-      var rows=await sq('narrative_scorecard','ticker,verdict,nrs,fvd_pct,coordination_score,drift_score,suspicion_score,verdict_confidence','snapshot_date=eq.'+date+'&verdict=in.(Narrative Trap,Narrative Risk)&order=verdict_confidence.desc&limit=10');
+      var rows=await sq('narrative_scorecard?select=ticker,verdict,nrs,fvd_pct,coordination_score,drift_score,suspicion_score,verdict_confidence&snapshot_date=eq.'+date+'&verdict=in.(Narrative Trap,Narrative Risk)&order=verdict_confidence.desc&limit=10');
       return(rows||[]).map(function(r){var v=r.verdict||'';var isTrap=v==='Narrative Trap';return{name:r.ticker,link:'/ticker/'+r.ticker,meta:v+(r.suspicion_score?' · Suspicion '+Math.round(Number(r.suspicion_score)):''),score:Number(r.verdict_confidence)||0,scoreDisplay:Math.round(Number(r.verdict_confidence)||0)+'%',_scoreColor:isTrap?'#FF4D4D':'#FFB800'};});
     }catch(e){return[];}
   }},
@@ -14858,7 +14858,7 @@ var BOARDS=[
   fetch:async function(){
     try{
       var date=await latestDate('narrative_scorecard');
-      var rows=await sq('narrative_scorecard','ticker,half_life,walsh_regime,narrative_energy_absolute,wks_score,nrs','snapshot_date=eq.'+date+'&half_life=not.is.null&half_life=lt.90&order=half_life.asc&limit=10');
+      var rows=await sq('narrative_scorecard?select=ticker,half_life,walsh_regime,narrative_energy_absolute,wks_score,nrs&snapshot_date=eq.'+date+'&half_life=not.is.null&half_life=lt.90&order=half_life.asc&limit=10');
       return(rows||[]).map(function(r){var hl=Number(r.half_life)||0;var regime=r.walsh_regime||'';return{name:r.ticker,link:'/ticker/'+r.ticker,meta:regime+(r.wks_score?' · WKS '+(Number(r.wks_score)>0?'+':'')+Math.round(Number(r.wks_score)):''),score:100-hl,scoreDisplay:hl.toFixed(1)+'d',_scoreColor:hl<10?'#00DE94':hl<30?'#38C8B8':'#00AEFF'};});
     }catch(e){return[];}
   }},
@@ -14866,7 +14866,7 @@ var BOARDS=[
   fetch:async function(){
     try{
       var date=await latestDate('narrative_scorecard');
-      var rows=await sq('narrative_scorecard','ticker,overreaction_ratio,fvd_pct,nrs,verdict,narrative_energy_absolute','snapshot_date=eq.'+date+'&overreaction_ratio=gt.1&order=overreaction_ratio.desc&limit=10');
+      var rows=await sq('narrative_scorecard?select=ticker,overreaction_ratio,fvd_pct,nrs,verdict,narrative_energy_absolute&snapshot_date=eq.'+date+'&overreaction_ratio=gt.1&order=overreaction_ratio.desc&limit=10');
       return(rows||[]).map(function(r){var or=Number(r.overreaction_ratio)||0;var fvd=r.fvd_pct!=null?Math.round(Number(r.fvd_pct))+'% FVD':'';return{name:r.ticker,link:'/ticker/'+r.ticker,meta:fvd+(r.verdict?' · '+r.verdict:''),score:or,scoreDisplay:or.toFixed(1)+'x',_scoreColor:or>3?'#FF4D4D':or>2?'#FFB800':'#00AEFF'};});
     }catch(e){return[];}
   }},
@@ -14876,7 +14876,7 @@ var BOARDS=[
   fetch:async function(){
     try{
       var date=await latestDate('narrative_analyses');
-      var rows=await sq('narrative_analyses','ticker,omission_gap_score,drift_score,narrative_type,source_outlet,snapshot_date','snapshot_date=eq.'+date+'&omission_gap_score=gte.40&order=omission_gap_score.desc&limit=10');
+      var rows=await sq('narrative_analyses?select=ticker,omission_gap_score,drift_score,narrative_type,source_outlet,snapshot_date&snapshot_date=eq.'+date+'&omission_gap_score=gte.40&order=omission_gap_score.desc&limit=10');
       var seen={};return(rows||[]).filter(function(r){if(seen[r.ticker])return false;seen[r.ticker]=true;return true;}).map(function(r){var og=Number(r.omission_gap_score)||0;return{name:r.ticker,link:'/ticker/'+r.ticker,meta:(r.source_outlet||'')+(r.drift_score?' · Drift '+Math.round(Number(r.drift_score)):''),score:og,scoreDisplay:Math.round(og),_scoreColor:og>70?'#FF4D4D':og>50?'#FFB800':'#7B61FF'};});
     }catch(e){return[];}
   }},
@@ -14884,7 +14884,7 @@ var BOARDS=[
   fetch:async function(){
     try{
       var date=await latestDate('narrative_scorecard');
-      var rows=await sq('narrative_scorecard','ticker,wks_score,walsh_regime,half_life,nrs,narrative_energy_absolute,verdict','snapshot_date=eq.'+date+'&wks_score=gt.10&nrs=lt.40&order=wks_score.desc&limit=10');
+      var rows=await sq('narrative_scorecard?select=ticker,wks_score,walsh_regime,half_life,nrs,narrative_energy_absolute,verdict&snapshot_date=eq.'+date+'&wks_score=gt.10&nrs=lt.40&order=wks_score.desc&limit=10');
       return(rows||[]).map(function(r){var wks=Number(r.wks_score)||0;return{name:r.ticker,link:'/ticker/'+r.ticker,meta:(r.walsh_regime||'')+(r.half_life?' · HL '+Number(r.half_life).toFixed(0)+'d':''),score:wks,scoreDisplay:'+'+Math.round(wks),_scoreColor:'#00DE94'};});
     }catch(e){return[];}
   }},
@@ -14892,10 +14892,10 @@ var BOARDS=[
   fetch:async function(){
     try{
       var date=await latestDate('narrative_analyses');
-      var naRows=await sq('narrative_analyses','analyst_name,ticker','snapshot_date=eq.'+date+'&analyst_name=not.is.null');
+      var naRows=await sq('narrative_analyses?select=analyst_name,ticker&snapshot_date=eq.'+date+'&analyst_name=not.is.null');
       if(!naRows||!naRows.length)return[];
       var activeAnalysts=[...new Set(naRows.map(function(r){return r.analyst_name;}))];
-      var atsRows=await sq('analyst_ticker_scores','analyst_name,ticker,publication_name,article_count,arb,analyst_edge,bullish_hit_rate','article_count=gte.10&order=arb.desc&limit=50');
+      var atsRows=await sq('analyst_ticker_scores?select=analyst_name,ticker,publication_name,article_count,arb,analyst_edge,bullish_hit_rate&article_count=gte.10&order=arb.desc&limit=50');
       if(!atsRows||!atsRows.length)return[];
       var seen={};return atsRows.filter(function(r){if(!activeAnalysts.includes(r.analyst_name))return false;if(seen[r.analyst_name])return false;seen[r.analyst_name]=true;return true;}).slice(0,10).map(function(r){var arb=Number(r.arb)||0;var hr=r.bullish_hit_rate!=null?Math.round(Number(r.bullish_hit_rate)*100)+'% hit':'';return{name:r.analyst_name||'Unknown',link:'/ticker/'+r.ticker,meta:(r.publication_name||'')+' · '+r.ticker+(hr?' · '+hr:''),score:arb,scoreDisplay:arb.toFixed(1),_scoreColor:arb>1?'#00DE94':arb>0?'#00AEFF':'#FFB800'};});
     }catch(e){return[];}
@@ -14903,7 +14903,7 @@ var BOARDS=[
   {id:'consistent-keywords',title:'Most Consistent Keyword Signals',sub:'Highest signal-to-noise keyword patterns',color:'#38C8B8',bg:'rgba(56,200,184,0.12)',scoreLabel:'Signal Ratio',
   fetch:async function(){
     try{
-      var rows=await sq('keyword_price_impact','ticker,keyword,keyword_type,article_count,avg_return_5d,stddev_10d','article_count=gte.20&order=avg_return_5d.desc&limit=50');
+      var rows=await sq('keyword_price_impact?select=ticker,keyword,keyword_type,article_count,avg_return_5d,stddev_10d&article_count=gte.20&order=avg_return_5d.desc&limit=50');
       if(!rows||!rows.length)return[];
       return rows.map(function(r){var ret=Number(r.avg_return_5d)||0;var std=Number(r.stddev_10d)||0;var ratio=std>0?Math.abs(ret)/std:0;return{name:r.ticker,link:'/ticker/'+r.ticker,meta:r.keyword.replace(/_/g,' ')+' · '+Number(r.article_count)+' articles',score:ratio,scoreDisplay:ratio.toFixed(2),_scoreColor:ret>0?'#00DE94':'#FF4D4D',_ret:ret};}).sort(function(a,b){return b.score-a.score;}).slice(0,10);
     }catch(e){return[];}
@@ -14914,7 +14914,7 @@ var BOARDS=[
   fetch:async function(){
     try{
       var date=await latestDate('narrative_scorecard');
-      var rows=await sq('narrative_scorecard','ticker,fvd_pct,fair_value,nrs,vms,verdict,walsh_regime','snapshot_date=eq.'+date+'&fvd_pct=lt.-5&nrs=lt.40&order=fvd_pct.asc&limit=10');
+      var rows=await sq('narrative_scorecard?select=ticker,fvd_pct,fair_value,nrs,vms,verdict,walsh_regime&snapshot_date=eq.'+date+'&fvd_pct=lt.-5&nrs=lt.40&order=fvd_pct.asc&limit=10');
       return(rows||[]).map(function(r){var disc=Math.abs(Number(r.fvd_pct)||0);return{name:r.ticker,link:'/ticker/'+r.ticker,meta:'FV $'+Number(r.fair_value||0).toFixed(0)+' · VMS '+Math.round(Number(r.vms)||0)+' · '+(r.verdict||''),score:disc,scoreDisplay:'-'+Math.round(disc)+'%',_scoreColor:'#00DE94'};});
     }catch(e){return[];}
   }},
@@ -14922,14 +14922,14 @@ var BOARDS=[
   fetch:async function(){
     try{
       var date=await latestDate('narrative_scorecard');
-      var rows=await sq('narrative_scorecard','ticker,fvd_pct,fair_value,nrs,overreaction_ratio,verdict','snapshot_date=eq.'+date+'&fvd_pct=gt.50&order=fvd_pct.desc&limit=10');
+      var rows=await sq('narrative_scorecard?select=ticker,fvd_pct,fair_value,nrs,overreaction_ratio,verdict&snapshot_date=eq.'+date+'&fvd_pct=gt.50&order=fvd_pct.desc&limit=10');
       return(rows||[]).map(function(r){var prem=Number(r.fvd_pct)||0;var or=r.overreaction_ratio!=null?Number(r.overreaction_ratio).toFixed(1)+'x':'';return{name:r.ticker,link:'/ticker/'+r.ticker,meta:(r.verdict||'')+(or?' · OR '+or:''),score:prem,scoreDisplay:'+'+Math.round(prem)+'%',_scoreColor:'#FF4D4D'};});
   }},
   {id:'strongest',title:'Strongest Daily Signals',sub:'Highest confidence verdicts today',color:'#00AEFF',bg:'rgba(0,174,255,0.12)',scoreLabel:'Confidence',
   fetch:async function(){
     try{
       var date=await latestDate('narrative_scorecard');
-      var rows=await sq('narrative_scorecard','ticker,verdict_confidence,verdict,walsh_regime,nrs,wks_score,narrative_energy_absolute','snapshot_date=eq.'+date+'&verdict_confidence=gt.50&order=verdict_confidence.desc&limit=10');
+      var rows=await sq('narrative_scorecard?select=ticker,verdict_confidence,verdict,walsh_regime,nrs,wks_score,narrative_energy_absolute&snapshot_date=eq.'+date+'&verdict_confidence=gt.50&order=verdict_confidence.desc&limit=10');
       return(rows||[]).map(function(r){var conf=Number(r.verdict_confidence)||0;return{name:r.ticker,link:'/ticker/'+r.ticker,meta:(r.verdict||'')+(r.walsh_regime?' · '+r.walsh_regime:''),score:conf,scoreDisplay:Math.round(conf)+'%',_scoreColor:conf>75?'#00DE94':conf>60?'#00AEFF':'#38C8B8'};});
     }catch(e){return[];}
   }},
@@ -14937,7 +14937,7 @@ var BOARDS=[
   fetch:async function(){
     try{
       var date=await latestDate('narrative_analyses');
-      var rows=await sq('narrative_analyses','macro_theme,ticker,nrs_score,drift_score','snapshot_date=eq.'+date+'&macro_theme=not.is.null');
+      var rows=await sq('narrative_analyses?select=macro_theme,ticker,nrs_score,drift_score&snapshot_date=eq.'+date+'&macro_theme=not.is.null');
       if(!rows||!rows.length)return[];
       var themes={};rows.forEach(function(r){var t=r.macro_theme;if(!themes[t])themes[t]={theme:t,tickers:{},nrsSum:0,driftSum:0,count:0};themes[t].tickers[r.ticker]=true;themes[t].nrsSum+=Number(r.nrs_score)||0;themes[t].driftSum+=Number(r.drift_score)||0;themes[t].count++;});
       return Object.values(themes).sort(function(a,b){return Object.keys(b.tickers).length-Object.keys(a.tickers).length;}).slice(0,10).map(function(t){var tc=Object.keys(t.tickers).length;var avgNrs=t.count?Math.round(t.nrsSum/t.count):0;return{name:t.theme.replace(/_/g,' '),meta:tc+' tickers · Avg NRS '+avgNrs,score:tc,scoreDisplay:tc,_scoreColor:tc>5?'#7B61FF':tc>3?'#00AEFF':'#38C8B8'};});
