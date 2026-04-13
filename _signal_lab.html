@@ -558,8 +558,8 @@
         <button class="toggle-btn active" data-line="mass-dots" title="Dot size = narrative mass. Color = keyword price prediction (green=bullish, red=bearish)." style="--color:#00AEFF;--bg-color:rgba(0,174,255,0.08);">
           <span class="toggle-swatch" style="background:linear-gradient(135deg,#00DE94,#A0A8B8,#FF4D4D);border-radius:50%;width:7px;height:7px;"></span> Mass Dots
         </button>
-        <button class="toggle-btn" data-line="wks-line" title="Walsh Keyword Sentiment: ticker-specific score from article keyword-to-price historical deviations. -100 to +100." style="--color:#A0A8B8;--bg-color:rgba(160,168,184,0.08);">
-          <span class="toggle-swatch" style="background:linear-gradient(90deg,#FF4D4D,#A0A8B8,#00DE94);"></span> Keyword Sentiment (WKS)
+        <button class="toggle-btn" data-line="wks-line" title="Walsh Keyword Sentiment: ticker-specific score from article keyword-to-price historical deviations. -100 to +100." style="--color:#7EC8E3;--bg-color:rgba(126,200,227,0.08);">
+          <span class="toggle-swatch" style="background:#7EC8E3;"></span> Keyword Sentiment (WKS)
         </button>
         <button class="toggle-btn active" data-line="sma-smooth" title="Smooth energy lines with a 3-day simple moving average" style="--color:#F0F4FF;--bg-color:rgba(240,244,255,0.08);">
           <span class="toggle-swatch" style="background:#F0F4FF;"></span> 3-Day SMA
@@ -1107,17 +1107,17 @@ function drawChart(snaps, narrs) {
       ctx.save(); ctx.font = '9px Inter, sans-serif'; ctx.fillStyle = '#A0A8B8'; ctx.textAlign = 'left'; ctx.globalAlpha = 0.7;
       [-100, 0, 100].forEach(v => { ctx.fillText(v, W - PAD.right + 4, yWKS(v) + 3); });
       ctx.restore();
-      // Draw WKS as segment-colored line
-      ctx.save(); ctx.setLineDash([]); ctx.lineWidth = 1.5; ctx.globalAlpha = 0.8;
-      for (let i = 1; i < massFiltered.length; i++) {
-        const prev = massFiltered[i-1], cur = massFiltered[i];
-        const idx0 = dateIdx[prev.snapshot_date.slice(0,10)], idx1 = dateIdx[cur.snapshot_date.slice(0,10)];
-        if (idx0 == null || idx1 == null) continue;
-        const avgWks = (prev.wks + cur.wks) / 2;
-        ctx.strokeStyle = avgWks > 10 ? '#00DE94' : avgWks < -10 ? '#FF4D4D' : '#A0A8B8';
-        ctx.beginPath(); ctx.moveTo(xOf(idx0), yWKS(prev.wks)); ctx.lineTo(xOf(idx1), yWKS(cur.wks)); ctx.stroke();
-      }
-      ctx.restore();
+      // Draw WKS as dotted light blue line
+      ctx.save(); ctx.setLineDash([2,3]); ctx.strokeStyle = '#7EC8E3'; ctx.lineWidth = 1.2; ctx.globalAlpha = 0.7;
+      ctx.beginPath();
+      let wksStarted = false;
+      massFiltered.forEach(d => {
+        const idx = dateIdx[d.snapshot_date.slice(0,10)];
+        if (idx == null) return;
+        const x = xOf(idx), y = yWKS(d.wks);
+        if (!wksStarted) { ctx.moveTo(x, y); wksStarted = true; } else ctx.lineTo(x, y);
+      });
+      ctx.stroke(); ctx.restore();
     }
   }
 
