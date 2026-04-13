@@ -817,6 +817,7 @@ const VISIBLE_LINES = {
 
 // ── Chart data ──
 let ALL_SNAPS = [], ALL_NARRS = [], ALL_DECAY = [], ALL_PHYSICS = [], ALL_PRESSURE = [], ALL_ENERGY_T = [], ALL_MASS = [];
+let ALL_KEYWORDS = []; // top keywords for this ticker from keyword_price_impact
 let CURRENT_TICKER = '';
 
 function getActiveDays() {
@@ -1038,7 +1039,9 @@ function drawChart(snaps, narrs) {
       const idx = nearestIdx(d); if (idx == null) return;
       const s = snaps[idx]; if (s?.price_close == null) return;
       const cx = xOf(idx), cy = yOf(s.price_close);
-      const r = m.mass >= 0.5 ? 7 : m.mass >= 0.3 ? 5 : 3;
+      const activeDays = getActiveDays();
+      const dotScale = (activeDays > 0 && activeDays <= 14) ? 1.8 : (activeDays > 0 && activeDays <= 30) ? 1.3 : 1;
+      const r = Math.round((m.mass >= 0.5 ? 7 : m.mass >= 0.3 ? 5 : 3) * dotScale);
       const color = m.wks > 10 ? '#00DE94' : m.wks < -10 ? '#FF4D4D' : '#A0A8B8';
       ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
       ctx.fillStyle = color; ctx.fill();
@@ -1055,7 +1058,15 @@ function drawChart(snaps, narrs) {
       document.getElementById('popup-headline').textContent = 'Narrative Mass Signal';
       const wksLabel = n.wks > 10 ? 'Bullish keywords' : n.wks < -10 ? 'Bearish keywords' : 'Neutral';
       document.getElementById('popup-body').textContent = 'Mass: ' + n.mass.toFixed(2) + ' · WKS: ' + (n.wks > 0 ? '+' : '') + n.wks.toFixed(1) + ' (' + wksLabel + ')';
-      document.getElementById('popup-vms').innerHTML = '';
+      let kwHtml = '';
+      if (ALL_KEYWORDS && ALL_KEYWORDS.length) {
+        const top5 = ALL_KEYWORDS.slice(0, 5);
+        kwHtml = '<div style="margin-top:6px;font-size:11px;color:var(--mp-text-tertiary);line-height:1.5;">Top keywords: ' + top5.map(k => {
+          const ret = Number(k.avg_return_5d); const clr = ret > 0 ? '#00DE94' : '#FF4D4D';
+          return '<span style="color:' + clr + ';">' + esc(k.keyword.replace(/_/g, ' ')) + '</span> <span style="opacity:0.6;">' + (ret > 0 ? '+' : '') + ret.toFixed(1) + '%</span>';
+        }).join(' · ') + '</div>';
+      }
+      document.getElementById('popup-vms').innerHTML = kwHtml;
     } else {
       document.getElementById('popup-headline').textContent = n.source_outlet || n.verdict || 'Narrative Story';
       document.getElementById('popup-body').textContent = n.narrative_text || (n.sentiment_score != null ? 'Sentiment: ' + n.sentiment_score.toFixed(1) : 'No story text available.');
@@ -1163,10 +1174,14 @@ function detectRegime() {
 // ── Main entry ──
 async function loadSignalLab(ticker) {
   CURRENT_TICKER = ticker;
+  ALL_KEYWORDS = [];
   document.getElementById('chart-ticker').textContent = ticker;
   document.title = ticker + ' Signal Lab \u2014 Market Prism';
   document.getElementById('chart-section').style.display = 'block';
   document.getElementById('backtest-section').style.display = 'block';
+  sbFetch('keyword_price_impact', { ticker: 'eq.' + ticker, select: 'keyword,keyword_type,avg_return_5d,article_count', order: 'abs(avg_return_5d).desc', limit: '10' })
+    .then(rows => { if (ticker === CURRENT_TICKER && Array.isArray(rows)) ALL_KEYWORDS = rows; })
+    .catch(e => { console.warn('[SL] keywords fetch failed:', e); });
 
   try {
     document.getElementById('chart-outer').innerHTML = '<div class="chart-no-data">Loading ' + esc(ticker) + '...</div>';

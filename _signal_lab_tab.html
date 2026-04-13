@@ -359,6 +359,7 @@
   // Stash of the last successful /api/live-quote response. Used by slInterpret
   // to compute a live current-drawdown-vs-60d-peak for the Entry Zone block.
   var SL_LIVE_QUOTE=null;
+  var SL_KEYWORDS=[];  // top keywords for this ticker from keyword_price_impact
   // Cached row from ticker_strategy_summary for SL_TICKER. Fetched once per
   // ticker load (or on-demand from slInterpret if the load hasn't finished).
   // Contains the historical backtested fields we feed the AI: best zone,
@@ -750,11 +751,12 @@
     }
     var dotHits=[];
     if(SL_VIS['mass-dots']){
+      var dotScale=(days>0&&days<=14)?1.8:(days>0&&days<=30)?1.3:1;
       var massF=SL_MASS.filter(function(d){var ds=d.snapshot_date?.slice(0,10);return ds&&ds>=lo&&ds<=hi&&d.mass>=0.1;});
       massF.forEach(function(m){
         var d=m.snapshot_date?.slice(0,10);if(!d)return;
         var pos=xyOfDate(d);if(!pos)return;
-        var r=m.mass>=0.5?7:m.mass>=0.3?5:3;
+        var r=Math.round((m.mass>=0.5?7:m.mass>=0.3?5:3)*dotScale);
         var color=m.wks>10?'#00DE94':m.wks<-10?'#FF4D4D':'#A0A8B8';
         ctx.beginPath();ctx.arc(pos.cx,pos.cy,r,0,Math.PI*2);
         ctx.fillStyle=color;ctx.fill();
@@ -763,7 +765,7 @@
       });
     }
 
-    function showPopup(hit){var n=hit.n;document.getElementById('sl-popup-date').textContent=n.snapshot_date?.slice(0,10)||'';if(n.isMassDot){document.getElementById('sl-popup-headline').textContent='Narrative Mass Signal';var wL=n.wks>10?'Bullish keywords':n.wks<-10?'Bearish keywords':'Neutral';document.getElementById('sl-popup-body').textContent='Mass: '+n.mass.toFixed(2)+' \u00B7 WKS: '+(n.wks>0?'+':'')+n.wks.toFixed(1)+' ('+wL+')';document.getElementById('sl-popup-vms').innerHTML='';}else{document.getElementById('sl-popup-headline').textContent=n.source_outlet||n.verdict||'Narrative Story';document.getElementById('sl-popup-body').textContent=n.narrative_text||(n.sentiment_score!=null?'Sentiment: '+n.sentiment_score.toFixed(1):'No story text available.');document.getElementById('sl-popup-vms').innerHTML=[n.source_outlet||'',n.verdict||''].filter(Boolean).join(' \u00B7 ');}var px=hit.cx+10;if(px+260>W)px=hit.cx-270;var py=hit.cy-10;if(py+140>H)py=H-145;popup.style.left=(px+14)+'px';popup.style.top=(py+10)+'px';popup.classList.add('visible');}
+    function showPopup(hit){var n=hit.n;document.getElementById('sl-popup-date').textContent=n.snapshot_date?.slice(0,10)||'';if(n.isMassDot){document.getElementById('sl-popup-headline').textContent='Narrative Mass Signal';var wL=n.wks>10?'Bullish keywords':n.wks<-10?'Bearish keywords':'Neutral';var bodyText='Mass: '+n.mass.toFixed(2)+' \u00B7 WKS: '+(n.wks>0?'+':'')+n.wks.toFixed(1)+' ('+wL+')';document.getElementById('sl-popup-body').textContent=bodyText;var kwHtml='';if(SL_KEYWORDS&&SL_KEYWORDS.length){var top5=SL_KEYWORDS.slice(0,5);kwHtml='<div style="margin-top:6px;font-size:11px;color:var(--mp-text-tertiary);line-height:1.5;">Top keywords: '+top5.map(function(k){var ret=Number(k.avg_return_5d);var clr=ret>0?'#00DE94':'#FF4D4D';return'<span style="color:'+clr+';">'+slEsc(k.keyword.replace(/_/g,' '))+'</span> <span style="opacity:0.6;">'+(ret>0?'+':'')+ret.toFixed(1)+'%</span>';}).join(' \u00B7 ')+'</div>';}document.getElementById('sl-popup-vms').innerHTML=kwHtml;}else{document.getElementById('sl-popup-headline').textContent=n.source_outlet||n.verdict||'Narrative Story';document.getElementById('sl-popup-body').textContent=n.narrative_text||(n.sentiment_score!=null?'Sentiment: '+n.sentiment_score.toFixed(1):'No story text available.');document.getElementById('sl-popup-vms').innerHTML=[n.source_outlet||'',n.verdict||''].filter(Boolean).join(' \u00B7 ');}var px=hit.cx+10;if(px+260>W)px=hit.cx-270;var py=hit.cy-10;if(py+140>H)py=H-145;popup.style.left=(px+14)+'px';popup.style.top=(py+10)+'px';popup.classList.add('visible');}
 
     cv.addEventListener('mousemove',function(e){var rect=cv.getBoundingClientRect(),mx=e.clientX-rect.left,my=e.clientY-rect.top;var hit=dotHits.find(function(d){return Math.hypot(mx-d.cx,my-d.cy)<8;});cv.style.cursor=hit?'pointer':'default';if(hit){tip.style.opacity='0';showPopup(hit);return;}if(popup.classList.contains('visible')){popup.classList.remove('visible');}var idx=Math.max(0,Math.min(N-1,Math.round(((mx-PAD.left)/CW)*(N-1))));var s=snaps[idx];if(!s?.price_close){tip.style.opacity='0';return;}tip.style.opacity='1';tip.textContent=new Date(s.snapshot_date).toLocaleDateString('en-US',{month:'short',day:'numeric'})+'  $'+s.price_close.toFixed(2);var tx=xOf(idx)+8;if(tx+120>W)tx=xOf(idx)-128;tip.style.left=(tx+14)+'px';tip.style.top=(my-18)+'px';});
     cv.addEventListener('mouseleave',function(){tip.style.opacity='0';popup.classList.remove('visible');});
@@ -944,6 +946,10 @@
     restFetch('ticker_strategy_summary',{ticker:'eq.'+ticker,limit:'1'})
       .then(function(rows){ if(ticker===SL_TICKER && Array.isArray(rows) && rows.length) SL_STRATEGY=rows[0]; })
       .catch(function(e){ console.warn('[SL] strategy summary fetch failed:',e); });
+    SL_KEYWORDS=[];
+    restFetch('keyword_price_impact',{ticker:'eq.'+ticker,select:'keyword,keyword_type,avg_return_5d,article_count',order:'abs(avg_return_5d).desc',limit:'10'})
+      .then(function(rows){ if(ticker===SL_TICKER && Array.isArray(rows)) SL_KEYWORDS=rows; })
+      .catch(function(e){ console.warn('[SL] keywords fetch failed:',e); });
     try{
       document.getElementById('sl-chart-outer').innerHTML='<div class="sl-no-data">Loading '+slEsc(ticker)+'...</div>';
       await slLoadChart(ticker);
