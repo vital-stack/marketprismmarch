@@ -1966,7 +1966,7 @@ body{
 [data-theme="light"] .page-header h1{color:var(--mp-text-primary);}
 [data-theme="light"] .page-header p{color:var(--mp-text-secondary);}
 /* ph-italic color handled by gradient text system */
-/* Daily Brief */
+/* Daily Plays */
 /* daily-title-italic uses gradient text animation, no color override needed */
 [data-theme="light"] .daily-desc,
 [data-theme="light"] .daily-desc strong,
@@ -4585,7 +4585,7 @@ body{
     <div class="nav-section-lbl">Daily Overview</div>
     <button class="nav-item active" data-tab="daily" onclick="switchTab('daily',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6v-3z"/></svg>
-      Daily Brief
+      Daily Plays
     </button>
     <button class="nav-item" data-tab="leaderboard" onclick="switchTab('leaderboard',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
@@ -4669,7 +4669,7 @@ body{
   <div class="scan-line"></div>
   <!-- Top bar -->
   <div class="topbar">
-    <div class="topbar-title" id="topbar-title">Daily Brief</div>
+    <div class="topbar-title" id="topbar-title">Daily Plays</div>
     <div class="topbar-center">
       <div class="scholar-bar" id="scholar-bar">
         <svg class="scholar-bar-icon" viewBox="0 0 24 24" fill="none" stroke="var(--mp-text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.5;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -4722,7 +4722,15 @@ body{
         <div class="tl-grid" id="tl-grid"></div>
       </div>
 
-      <!-- Market Narrative Summary — hidden, IDs preserved for JS compat -->
+      <!-- Sector Intelligence (embedded from Sector Pulse) -->
+      <div style="margin-top:28px;">
+        <div style="font-family:var(--font-display);font-size:18px;font-weight:400;margin-bottom:16px;">Sector Intelligence</div>
+        <div class="sector-grid" id="daily-sector-grid">
+          <!-- Populated by JS from renderSectors -->
+        </div>
+      </div>
+
+      <!-- Hidden IDs preserved for JS compat -->
       <div id="nf-summary" style="display:none;">
         <div id="nf-sum-body"></div>
         <div id="nf-sum-dominant"></div>
@@ -4730,6 +4738,8 @@ body{
         <span id="nf-sum-time"></span>
       </div>
 
+      <!-- Hidden: old sections below trade lanes (IDs preserved for JS compat) -->
+      <div style="display:none;">
       <!-- 2) TODAY'S BIGGEST NARRATIVES -->
       <div class="nf-feed">
         <div class="nf-feed-header">
@@ -4940,6 +4950,7 @@ body{
           <div class="dhm-summary" id="dhm-summary"></div>
         </div>
       </div>
+      </div><!-- /hidden old sections -->
     </div>
 
     <!-- ══════════════════════════════════════
@@ -5411,7 +5422,7 @@ body{
           </div>
           <div class="help-faq-item">
             <div class="help-faq-q">What is included in the Standard plan?</div>
-            <div class="help-faq-a">Standard ($15/mo) includes Daily Brief, Sector Pulse, Market-Wide, Ticker Snapshots, Discover, Narrative History, and up to 3 ticker detail pages per day.</div>
+            <div class="help-faq-a">Standard ($15/mo) includes Daily Plays, Sector Pulse, Market-Wide, Ticker Snapshots, Discover, Narrative History, and up to 3 ticker detail pages per day.</div>
           </div>
           <div class="help-faq-item">
             <div class="help-faq-q">What is included in the Pro plan?</div>
@@ -5526,7 +5537,7 @@ document.querySelectorAll('.page-header p').forEach(function(p,i){
 });
 // ── Tab switching (hook-based — sections register via onTabSwitch) ────────────
 var TABS = ['daily','leaderboard','cards','calendar','memes','signallab','ticker','sector','scorer','help'];
-var TAB_TITLES = {daily:'Daily Brief',leaderboard:'Leaderboard',cards:'Trading Cards',calendar:'Trading Calendar',memes:'Market Sharing',signallab:'Signal Lab',ticker:'Stock Research',sector:'Sector Pulse',scorer:'Score Any Stock',help:'Help & Account'};
+var TAB_TITLES = {daily:'Daily Plays',leaderboard:'Leaderboard',cards:'Trading Cards',calendar:'Trading Calendar',memes:'Market Sharing',signallab:'Signal Lab',ticker:'Stock Research',sector:'Sector Pulse',scorer:'Score Any Stock',help:'Help & Account'};
 var _tabHooks = [];
 /** Register a callback to run after any tab switch. fn(id) */
 function onTabSwitch(fn){ if(typeof fn==='function') _tabHooks.push(fn); }
@@ -6105,7 +6116,7 @@ function renderFeatureLock(requiredPlan, options){
     + '<div class="feature-lock-copy">' + esc(config.body) + '</div>'
     + '<div class="feature-lock-actions">'
     + '<a class="feature-lock-button primary" href="/pricing">' + esc(config.cta) + '</a>'
-    + '<button class="feature-lock-button" type="button" onclick="switchTab(\'daily\', document.querySelector(\'.nav-item[data-tab=daily]\'))">Back to Daily Brief</button>'
+    + '<button class="feature-lock-button" type="button" onclick="switchTab(\'daily\', document.querySelector(\'.nav-item[data-tab=daily]\'))">Back to Daily Plays</button>'
     + '</div>'
     + '</div>';
 }
@@ -6921,7 +6932,7 @@ async function loadData(){
         +'</a>';
       }).join('');
     }
-    // ── Populate Daily Brief right rail ──
+    // ── Populate Daily Plays right rail ──
     // Regime badge
     var drRegimeVal=document.getElementById('dr-regime-val');
     var drRegimeDetail=document.getElementById('dr-regime-detail');
@@ -7057,7 +7068,7 @@ async function loadData(){
     renderTradingCards();
   }
 }
-// ── Daily Brief: Market Pulse Strip (replaces hardcoded prices) ──────────────
+// ── Daily Plays: Market Pulse Strip (replaces hardcoded prices) ──────────────
 function renderDailyMarketPulse(){
   var strip=document.querySelector('.daily-pulse-strip');
   if(!strip||!DATA.length)return;
@@ -8806,6 +8817,30 @@ function renderSectors(){
     +'</div>';
   }).join('');
   if(filtered.length===0)grid.innerHTML='<div class="empty-state" style="grid-column:1/-1;">No sectors match current filter.</div>';
+  // Mirror into Daily Plays sector grid (unfiltered — show all sectors)
+  var dailyGrid=document.getElementById('daily-sector-grid');
+  if(dailyGrid){
+    var allCards=SECTOR_STATIC.map(function(s){
+      var rel=DATA.length>0?DATA.filter(function(r){return(SECTOR_MAP[r.ticker]||[]).includes(s.name);}):[];
+      var traps=rel.filter(function(r){return r.prism_verdict==='Narrative Trap';}).length;
+      var liveNote=rel.length?'<span class="meta-tag" style="font-size:10px;">'+traps+' trap'+(traps===1?'':'s')+' / '+rel.length+' tickers</span>':'';
+      var dir=(s.state==='Surging')?'bull':(s.state==='Fragile'||s.state==='Cooling')?'bear':(s.state==='Breaking'&&s.trap)?'bear':(s.state==='Breaking')?'bull':'neutral';
+      var sentBorderColor=dir==='bull'?'rgba(0,222,148,0.3)':dir==='bear'?'rgba(255,77,77,0.3)':'rgba(0,174,255,0.3)';
+      var sentTextColor=dir==='bull'?'#00DE94':dir==='bear'?'#FF4D4D':'#00AEFF';
+      var sentBg=dir==='bull'?'rgba(0,222,148,0.08)':dir==='bear'?'rgba(255,77,77,0.08)':'rgba(0,174,255,0.08)';
+      var sentLabel=dir==='bull'?'\u25B2 BULLISH':dir==='bear'?'\u25BC BEARISH':'\u25C6 NEUTRAL';
+      var bar_color='linear-gradient(90deg,#00AEFF,#38C8B8)';
+      return '<div class="sector-card" style="border-top:2px solid rgba(0,174,255,0.3);">'
+        +'<div class="sector-card-header"><div><div class="sector-name">'+esc(s.name)+'</div><div class="sector-sub">'+esc(s.sub)+'</div></div>'
+        +'<span class="sector-state" style="font-size:11px;padding:4px 10px;border-radius:6px;font-weight:500;letter-spacing:0.04em;text-transform:uppercase;border:1px solid '+sentBorderColor+';color:'+sentTextColor+';background:'+sentBg+';">'+sentLabel+'</span></div>'
+        +'<div class="sector-tickers-row" style="padding:0 16px 10px;border-bottom:1px solid var(--mp-border);"><div class="sector-tickers">'+s.tickers.map(function(t){return '<a href="/ticker/'+encodeURIComponent(t)+'" class="sector-ticker-chip" style="display:inline-flex;align-items:center;gap:4px;text-decoration:none;color:inherit;">'+t+'</a>';}).join('')+'</div></div>'
+        +'<div class="sector-body"><div class="sector-desc">'+esc(s.desc)+'</div>'
+        +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;"><span class="sector-state badge-stable" style="font-size:10px;padding:2px 8px;">'+s.state.toUpperCase()+'</span>'+liveNote+'</div></div>'
+        +'<div class="sector-momentum-bar"><span class="sector-bar-lbl">Momentum</span><div class="sector-bar-track"><div class="sector-bar-fill" style="width:'+s.momentum+'%;background:'+bar_color+';"></div></div><span class="sector-bar-pct">'+s.momentum+'</span></div>'
+        +'<div class="sector-footer"><span class="sector-cagr">CAGR '+s.cagr+'</span>'+liveNote+'</div></div>';
+    }).join('');
+    dailyGrid.innerHTML=allCards;
+  }
 }
 // ── STOCKS WE LOVE / HATE (dynamic) ──────────────────────────────────────────
 function renderLoveHate(){
@@ -9173,7 +9208,7 @@ function shareCard(i,e){
   else{navigator.clipboard.writeText(text).then(function(){alert('Copied to clipboard');}).catch(function(){});}
 }
 // ── Narrative History (Chart.js) ──────────────────────────────────────────────
-// Small NH chart on Daily Brief tab — now driven by NHT cache
+// Small NH chart on Daily Plays tab — now driven by NHT cache
 var nhChart=null;
 var nhRange='3m';
 async function renderNHChart(){
@@ -9700,7 +9735,7 @@ async function loadNHT(ticker){
     if(!found){var opt=document.createElement('option');opt.value=nhtTicker;opt.textContent=nhtTicker;sel.appendChild(opt);sel.value=nhtTicker;}
   }
   renderNHT();
-  renderNHChart(); // update small Daily Brief chart too
+  renderNHChart(); // update small Daily Plays chart too
 }
 
 function setNHTFilter(type,val,btn){
@@ -13616,7 +13651,7 @@ window.refreshDailyBrief=async function(){
   if(btn){btn.disabled=false;btn.style.opacity='1';btn.querySelector('svg').style.animation='';}
 };
 
-// ── Live quotes: batch-refresh every ticker rendered on the Daily Brief ──────
+// ── Live quotes: batch-refresh every ticker rendered on the Daily Plays ──────
 // Reads data-live-price / data-live-change / data-ticker attributes on
 // Day Trade, Swing Trade, Value Picks and Biggest Narratives rows, pulls
 // all tickers in one batch call, and patches the DOM in place. Narrative
