@@ -7440,7 +7440,7 @@ function tlBuildRow(r){
   var domain=DOMAIN_MAP[r.ticker];
   var logo=domain?'<img class="tl-row-logo" src="https://www.google.com/s2/favicons?domain='+domain+'&sz=32" alt="" onerror="this.style.display=\'none\';">':'';
   return '<div class="tl-row" data-ticker="'+esc(r.ticker)+'" onclick="window.location.href=\'/ticker/'+encodeURIComponent(r.ticker)+'\'">'
-    +'<div class="tl-row-left">'+tierHTML+logo+'<span class="tl-row-ticker">'+esc(r.ticker)+'</span><span class="tl-row-price" data-live-price="'+esc(r.ticker)+'">'+price+'</span></div>'
+    +'<div class="tl-row-left">'+tierHTML+logo+'<span class="tl-row-ticker">'+esc(r.ticker)+'</span><span class="tl-row-price" data-live-price="'+esc(r.ticker)+'">'+price+'</span><span class="tl-row-change" data-live-change="'+esc(r.ticker)+'" style="font-size:11px;color:var(--mp-text-tertiary);font-family:var(--font-body);margin-left:4px;"></span></div>'
     +'<div class="tl-row-right"><span class="tl-row-action" style="color:'+actionColor+';">'+esc(action)+'</span><span class="tl-row-dir" style="color:'+dirColor+';">'+dirArrow+'</span></div>'
   +'</div>';
 }
@@ -7471,7 +7471,7 @@ function tlBuildValueRow(r){
   var domain=DOMAIN_MAP[r.ticker];
   var logo=domain?'<img class="tl-row-logo" src="https://www.google.com/s2/favicons?domain='+domain+'&sz=32" alt="" onerror="this.style.display=\'none\';">':'';
   return '<div class="tl-row" data-ticker="'+esc(r.ticker)+'" onclick="window.location.href=\'/ticker/'+encodeURIComponent(r.ticker)+'\'">'
-    +'<div class="tl-row-left">'+logo+'<span class="tl-row-ticker">'+esc(r.ticker)+'</span><span class="tl-row-price" data-live-price="'+esc(r.ticker)+'">'+price+'</span></div>'
+    +'<div class="tl-row-left">'+logo+'<span class="tl-row-ticker">'+esc(r.ticker)+'</span><span class="tl-row-price" data-live-price="'+esc(r.ticker)+'">'+price+'</span><span class="tl-row-change" data-live-change="'+esc(r.ticker)+'" style="font-size:11px;color:var(--mp-text-tertiary);font-family:var(--font-body);margin-left:4px;"></span></div>'
     +'<div class="tl-row-right"><span class="tl-row-action" style="color:#38C8B8;">'+esc(discountStr)+'</span>'
     +(revGrowth?'<span style="font-size:11px;color:var(--mp-text-muted);font-family:var(--font-body);margin-left:6px;">'+esc(revGrowth)+'</span>':'')
     +'<span class="tl-row-dir" style="color:#00DE94;">\u25B2</span></div>'
@@ -7635,8 +7635,8 @@ function tlBuildDayRow(r){
   var dirArrow=isBear?'\u25BC':isBull?'\u25B2':'';
   var actionColor=isBear?'#FF4D4D':isBull?'#00DE94':'var(--mp-text-secondary)';
   var price=r.price?'$'+fmtPrice(Number(r.price)):'';
-  var changePct=r._changePct?((r._changePct>0?'+':'')+r._changePct.toFixed(2)+'%'):'';
-  var changeColor=r._changePct>=0?'#00DE94':'#FF4D4D';
+  var changePct=''; // filled by live quotes
+  var changeColor='var(--mp-text-tertiary)';
   var domain=DOMAIN_MAP[r.ticker];
   var logo=domain?'<img class="tl-row-logo" src="https://www.google.com/s2/favicons?domain='+domain+'&sz=32" alt="" onerror="this.style.display=\'none\';">':'';
   var dpBadge='';
