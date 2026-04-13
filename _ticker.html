@@ -1674,6 +1674,31 @@
   }
   .narr-pi-footer strong { color: var(--mp-text-primary); }
 
+  /* Keyword Price Outlook (overview-level) */
+  .kw-outlook {
+    background: var(--mp-surface);
+    border: 1px solid var(--mp-border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .kw-outlook .narr-pi-rows { margin-top: 4px; }
+  .kw-outlook-toggle {
+    display: block;
+    margin: 10px auto 0;
+    background: none;
+    border: 1px solid var(--mp-border);
+    border-radius: 6px;
+    color: var(--mp-text-tertiary, #A0A8B0);
+    font-size: 12px;
+    padding: 6px 16px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .kw-outlook-toggle:hover {
+    border-color: var(--mp-border-hover);
+    color: var(--mp-text-primary);
+  }
+
   /* Quality signals row */
   .narr-signals {
     display: flex;
@@ -3828,6 +3853,18 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
               <div class="skel" style="height:10px;margin-bottom:14px;border-radius:99px;"></div>
               <div class="skel" style="height:30px;border-radius:8px;"></div>
             </div>
+          </div>
+        </div>
+
+        <!-- 4b. KEYWORD PRICE OUTLOOK -->
+        <div class="section" id="kw-outlook-section" style="display:none;">
+          <div class="section-label">Keyword Price Outlook</div>
+          <div class="section-body" id="kw-outlook-body">
+            <div class="skel" style="height:18px;width:40%;margin-bottom:8px;"></div>
+            <div class="skel" style="height:12px;width:60%;margin-bottom:14px;"></div>
+            <div class="skel" style="height:14px;width:100%;margin-bottom:6px;"></div>
+            <div class="skel" style="height:14px;width:100%;margin-bottom:6px;"></div>
+            <div class="skel" style="height:14px;width:100%;"></div>
           </div>
         </div>
 
@@ -6217,6 +6254,9 @@ async function loadNarratives() {
       } catch {}
     }
 
+    // Expose keyword data globally for Keyword Price Outlook section
+    window._narrKpiData = { kpiByKeyword, activeKeywords: [...allKws] };
+
     // Fuel bar colors by rank (1-indexed): 1=amber, 2=cyan, 3=teal, 4+=green
     function fuelColorForRank(rank1) {
       if (rank1 === 1) return '#FFB800';
@@ -6535,11 +6575,119 @@ async function loadNarratives() {
       });
     });
 
+    // Render the Keyword Price Outlook section (Overview tab)
+    renderKeywordOutlook();
+
   } catch (err) {
     document.getElementById('narr-list').innerHTML =
       `<div class="inline-err">Narratives: ${esc(err.message)}</div>`;
     var narrListTopErr = document.getElementById('narr-list-top');
     if(narrListTopErr) narrListTopErr.innerHTML = `<div class="inline-err">Narratives: ${esc(err.message)}</div>`;
+  }
+}
+
+// ── Keyword Price Outlook (Overview tab, after Warranted vs Hype) ────────────
+function renderKeywordOutlook() {
+  const section = document.getElementById('kw-outlook-section');
+  const body    = document.getElementById('kw-outlook-body');
+  if (!section || !body) return;
+  const data = window._narrKpiData;
+  if (!data || !data.activeKeywords || !data.activeKeywords.length) return;
+
+  const { kpiByKeyword, activeKeywords } = data;
+
+  // Match active narrative keywords to price impact data
+  const matched = activeKeywords
+    .map(kw => kpiByKeyword[kw] ? { keyword: kw, ...kpiByKeyword[kw] } : null)
+    .filter(Boolean);
+  if (!matched.length) return;
+
+  // Blended 5-day expected move (article-count weighted)
+  let weightedSum = 0, totalArticles = 0;
+  matched.forEach(r => {
+    const cnt = Number(r.article_count) || 1;
+    const ret = Number(r.avg_return_5d) || 0;
+    weightedSum += ret * cnt;
+    totalArticles += cnt;
+  });
+  const blendedMove = totalArticles > 0 ? weightedSum / totalArticles : 0;
+
+  // Sort by absolute impact (dominant first)
+  matched.sort((a, b) => Math.abs(Number(b.avg_return_5d)||0) - Math.abs(Number(a.avg_return_5d)||0));
+
+  const dominantKw = matched.length > 1 ? matched[0].keyword : null;
+  const showCount = 5;
+  const visible = matched.slice(0, showCount);
+  const hidden  = matched.slice(showCount);
+
+  const isBull = blendedMove >= 0;
+  const moveColor = isBull ? '#00DE94' : '#FF4D4D';
+  const arrow     = isBull ? '▲' : '▼';
+  const sign      = isBull ? '+' : '';
+
+  let html = `
+    <div class="kw-outlook">
+      <div class="narr-pi-expected" style="color:${moveColor};font-size:22px;">
+        Expected 5-day move: ${arrow} ${sign}${blendedMove.toFixed(2)}%
+      </div>
+      <div class="narr-pi-basis" style="margin-bottom:16px;">
+        Based on ${matched.length} keyword${matched.length !== 1 ? 's' : ''} × ${totalArticles.toLocaleString()} historical articles from active narratives
+      </div>
+      <div class="narr-pi-rows">`;
+
+  visible.forEach(r => {
+    const ret = Number(r.avg_return_5d) || 0;
+    const isDominant = r.keyword === dominantKw;
+    const retColor = ret >= 0 ? '#00DE94' : '#FF4D4D';
+    html += `<div class="narr-pi-row">
+      <span class="narr-pi-kw">${esc(r.keyword)}</span>
+      <span class="narr-pi-articles">(${Number(r.article_count || 0).toLocaleString()} articles)</span>
+      <span class="narr-pi-return" style="color:${retColor}">
+        ${ret >= 0 ? '+' : ''}${ret.toFixed(2)}%${isDominant ? '<span class="narr-pi-dominant">← dominant</span>' : ''}
+      </span>
+    </div>`;
+  });
+
+  html += `</div>`;
+
+  // Collapsible overflow
+  if (hidden.length) {
+    html += `<div class="kw-outlook-overflow" id="kw-outlook-overflow" style="display:none;">
+      <div class="narr-pi-rows">`;
+    hidden.forEach(r => {
+      const ret = Number(r.avg_return_5d) || 0;
+      const retColor = ret >= 0 ? '#00DE94' : '#FF4D4D';
+      html += `<div class="narr-pi-row">
+        <span class="narr-pi-kw">${esc(r.keyword)}</span>
+        <span class="narr-pi-articles">(${Number(r.article_count || 0).toLocaleString()} articles)</span>
+        <span class="narr-pi-return" style="color:${retColor}">
+          ${ret >= 0 ? '+' : ''}${ret.toFixed(2)}%
+        </span>
+      </div>`;
+    });
+    html += `</div></div>
+      <button type="button" class="kw-outlook-toggle" id="kw-outlook-toggle">
+        Show ${hidden.length} more keyword${hidden.length !== 1 ? 's' : ''} ▾
+      </button>`;
+  }
+
+  html += `</div>`;
+
+  body.innerHTML = html;
+  section.style.display = '';
+
+  // Wire toggle
+  const toggleBtn = document.getElementById('kw-outlook-toggle');
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', () => {
+      const overflow = document.getElementById('kw-outlook-overflow');
+      if (!overflow) return;
+      const isOpen = overflow.style.display !== 'none';
+      overflow.style.display = isOpen ? 'none' : '';
+      toggleBtn.textContent = isOpen
+        ? `Show ${hidden.length} more keyword${hidden.length !== 1 ? 's' : ''} ▾`
+        : 'Show less ▴';
+    });
   }
 }
 
