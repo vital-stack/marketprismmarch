@@ -543,22 +543,25 @@
       <!-- Signal Toggles -->
       <div class="signal-toggles">
         <button class="toggle-btn active" data-line="narr-energy" style="--color:#00AEFF;--bg-color:rgba(0,174,255,0.08);">
-          <span class="toggle-swatch" style="background:#00AEFF;"></span> Narrative Energy<span class="toggle-tip">Story persistence relative to its natural half-life</span>
+          <span class="toggle-swatch" style="background:#00AEFF;"></span> Narrative Energy<span class="toggle-tip">Forensic narrative force (source quality × coordination × volume). Higher = more institutional coverage.</span>
         </button>
         <button class="toggle-btn active" data-line="physics-energy" style="--color:#FFB800;--bg-color:rgba(255,184,0,0.08);">
-          <span class="toggle-swatch" style="background:#FFB800;"></span> Physics Energy<span class="toggle-tip">Raw narrative activity in the system right now</span>
+          <span class="toggle-swatch" style="background:#FFB800;"></span> Physics Energy<span class="toggle-tip">Raw forensic magnitude of narrative activity in the system right now</span>
         </button>
-        <button class="toggle-btn active" data-line="narr-pressure" style="--color:#7B61FF;--bg-color:rgba(123,97,255,0.08);">
+        <button class="toggle-btn" data-line="narr-pressure" style="--color:#7B61FF;--bg-color:rgba(123,97,255,0.08);">
           <span class="toggle-swatch" style="background:#7B61FF;"></span> Narrative Pressure<span class="toggle-tip">Composite manipulation and risk score</span>
         </button>
-        <button class="toggle-btn active" data-line="temporal-energy" style="--color:#38C8B8;--bg-color:rgba(56,200,184,0.08);">
+        <button class="toggle-btn" data-line="temporal-energy" style="--color:#38C8B8;--bg-color:rgba(56,200,184,0.08);">
           <span class="toggle-swatch" style="background:#38C8B8;"></span> Temporal Energy<span class="toggle-tip">Freshness of narrative fuel. High = rally setup. Low = crash setup.</span>
         </button>
-        <button class="toggle-btn active" data-line="bull-dots" style="--color:#00DE94;--bg-color:rgba(0,222,148,0.08);">
-          <span class="toggle-swatch" style="background:#00DE94;border-radius:50%;width:7px;height:7px;"></span> Bullish<span class="toggle-tip">Article sentiment on that date</span>
+        <button class="toggle-btn active" data-line="mass-dots" style="--color:#00AEFF;--bg-color:rgba(0,174,255,0.08);">
+          <span class="toggle-swatch" style="background:linear-gradient(135deg,#00DE94,#A0A8B8,#FF4D4D);border-radius:50%;width:7px;height:7px;"></span> Mass Dots<span class="toggle-tip">Dot size = narrative mass. Color = keyword price prediction (green=bullish, red=bearish).</span>
         </button>
-        <button class="toggle-btn active" data-line="bear-dots" style="--color:#FF4D4D;--bg-color:rgba(255,77,77,0.08);">
-          <span class="toggle-swatch" style="background:#FF4D4D;border-radius:50%;width:7px;height:7px;"></span> Bearish<span class="toggle-tip">Article sentiment on that date</span>
+        <button class="toggle-btn" data-line="wks-line" style="--color:#A0A8B8;--bg-color:rgba(160,168,184,0.08);">
+          <span class="toggle-swatch" style="background:linear-gradient(90deg,#FF4D4D,#A0A8B8,#00DE94);"></span> Keyword Sentiment (WKS)<span class="toggle-tip">Walsh Keyword Sentiment: ticker-specific score from article keyword-to-price historical deviations. -100 to +100.</span>
+        </button>
+        <button class="toggle-btn active" data-line="sma-smooth" style="--color:#F0F4FF;--bg-color:rgba(240,244,255,0.08);">
+          <span class="toggle-swatch" style="background:#F0F4FF;"></span> 3-Day SMA<span class="toggle-tip">Smooth energy lines with a 3-day simple moving average</span>
         </button>
       </div>
 
@@ -599,12 +602,9 @@
       <div class="chart-bottom-bar">
         <div class="chart-legend">
           <div class="legend-item"><div class="leg-line" style="background:var(--text-primary);"></div> Price</div>
-          <div class="legend-item"><div class="leg-dot" style="background:#00DE94;"></div> Bullish Sentiment</div>
-          <div class="legend-item"><div class="leg-dot" style="background:#FF4D4D;"></div> Bearish Sentiment</div>
-          <div class="legend-item"><div class="leg-line" style="background:#00AEFF;opacity:0.7;border-top:2px dashed #00AEFF;height:0;width:14px;"></div> Narrative Energy</div>
+          <div class="legend-item" title="Dot size = narrative mass. Color = keyword price prediction (green=bullish, red=bearish)."><div class="leg-dot" style="background:linear-gradient(135deg,#00DE94,#A0A8B8,#FF4D4D);"></div> Mass Dots</div>
+          <div class="legend-item" title="Forensic narrative force (source quality × coordination × volume)."><div class="leg-line" style="background:#00AEFF;opacity:0.7;border-top:2px dashed #00AEFF;height:0;width:14px;"></div> Narrative Energy</div>
           <div class="legend-item"><div class="leg-line" style="background:#FFB800;opacity:0.7;border-top:2px dashed #FFB800;height:0;width:14px;"></div> Physics Energy</div>
-          <div class="legend-item"><div class="leg-line" style="background:#7B61FF;opacity:0.7;border-top:2px dashed #7B61FF;height:0;width:14px;"></div> Narrative Pressure</div>
-          <div class="legend-item"><div class="leg-line" style="background:#38C8B8;opacity:0.85;height:2px;width:14px;"></div> Temporal Energy</div>
         </div>
       </div>
 
@@ -836,12 +836,12 @@ function isLight() { return document.documentElement.getAttribute('data-theme') 
 // ── Toggle state ──
 const VISIBLE_LINES = {
   'narr-energy': true, 'physics-energy': true,
-  'narr-pressure': true, 'temporal-energy': true,
-  'bull-dots': true, 'bear-dots': true
+  'narr-pressure': false, 'temporal-energy': false,
+  'mass-dots': true, 'wks-line': false, 'sma-smooth': true
 };
 
 // ── Chart data ──
-let ALL_SNAPS = [], ALL_NARRS = [], ALL_DECAY = [], ALL_PHYSICS = [], ALL_PRESSURE = [], ALL_ENERGY_T = [];
+let ALL_SNAPS = [], ALL_NARRS = [], ALL_DECAY = [], ALL_PHYSICS = [], ALL_PRESSURE = [], ALL_ENERGY_T = [], ALL_MASS = [];
 let CURRENT_TICKER = '';
 
 function getActiveDays() {
@@ -897,6 +897,14 @@ function buildBearList() {
 }
 
 // ── Draw Chart (with toggle support) ──
+function sma3(arr, key) {
+  return arr.map((d, i) => {
+    if (i < 2) return d;
+    const v = ((d[key] ?? 0) + (arr[i-1][key] ?? 0) + (arr[i-2][key] ?? 0)) / 3;
+    return Object.assign({}, d, { [key]: v });
+  });
+}
+
 function drawChart(snaps, narrs) {
   const outer = document.getElementById('chart-outer');
   const canvas = document.getElementById('price-canvas');
@@ -975,7 +983,8 @@ function drawChart(snaps, narrs) {
 
   // Narrative Energy (blue dashed)
   if (VISIBLE_LINES['narr-energy']) {
-    const decayFiltered = ALL_DECAY.filter(d => { const ds = d.snapshot_date?.slice(0,10); return ds && ds >= lo && ds <= hi; });
+    let decayFiltered = ALL_DECAY.filter(d => { const ds = d.snapshot_date?.slice(0,10); return ds && ds >= lo && ds <= hi; });
+    if (VISIBLE_LINES['sma-smooth']) decayFiltered = sma3(decayFiltered, 'energy_remaining_pct');
     if (decayFiltered.length > 1) {
       ctx.save();
       ctx.font = '9px Inter, sans-serif';
@@ -999,7 +1008,8 @@ function drawChart(snaps, narrs) {
 
   // Physics Energy (yellow dashed)
   if (VISIBLE_LINES['physics-energy']) {
-    const physicsFiltered = ALL_PHYSICS.filter(d => { const ds = d.snapshot_date?.slice(0,10); return ds && ds >= lo && ds <= hi; });
+    let physicsFiltered = ALL_PHYSICS.filter(d => { const ds = d.snapshot_date?.slice(0,10); return ds && ds >= lo && ds <= hi; });
+    if (VISIBLE_LINES['sma-smooth']) physicsFiltered = sma3(physicsFiltered, 'narrative_energy_absolute');
     if (physicsFiltered.length > 1) {
       const maxAbs = Math.max(...physicsFiltered.map(d => d.narrative_energy_absolute || 0), 1);
       ctx.save();
@@ -1054,7 +1064,8 @@ function drawChart(snaps, narrs) {
 
   // Temporal Energy (teal solid, own right axis 0-100)
   if (VISIBLE_LINES['temporal-energy']) {
-    const etFiltered = ALL_ENERGY_T.filter(d => { const ds = d.snapshot_date?.slice(0,10); return ds && ds >= lo && ds <= hi; });
+    let etFiltered = ALL_ENERGY_T.filter(d => { const ds = d.snapshot_date?.slice(0,10); return ds && ds >= lo && ds <= hi; });
+    if (VISIBLE_LINES['sma-smooth']) etFiltered = sma3(etFiltered, 'narrative_energy_t');
     if (etFiltered.length > 1) {
       const maxET = Math.max(...etFiltered.map(d => d.narrative_energy_t || 0), 1);
       // Background bands: teal tint when energy_t_normalized > 50, red tint when < 15
@@ -1090,7 +1101,30 @@ function drawChart(snaps, narrs) {
     }
   }
 
-  // Sentiment dots
+  // WKS line (optional, -100 to +100)
+  if (VISIBLE_LINES['wks-line']) {
+    let massFiltered = ALL_MASS.filter(d => { const ds = d.snapshot_date?.slice(0,10); return ds && ds >= lo && ds <= hi; });
+    if (VISIBLE_LINES['sma-smooth']) massFiltered = sma3(massFiltered, 'wks');
+    if (massFiltered.length > 1) {
+      function yWKS(v) { return PAD.top + (1 - (v + 100) / 200) * CH; }
+      ctx.save(); ctx.font = '9px Inter, sans-serif'; ctx.fillStyle = '#A0A8B8'; ctx.textAlign = 'left'; ctx.globalAlpha = 0.7;
+      [-100, 0, 100].forEach(v => { ctx.fillText(v, W - PAD.right + 4, yWKS(v) + 3); });
+      ctx.restore();
+      // Draw WKS as segment-colored line
+      ctx.save(); ctx.setLineDash([]); ctx.lineWidth = 1.5; ctx.globalAlpha = 0.8;
+      for (let i = 1; i < massFiltered.length; i++) {
+        const prev = massFiltered[i-1], cur = massFiltered[i];
+        const idx0 = dateIdx[prev.snapshot_date.slice(0,10)], idx1 = dateIdx[cur.snapshot_date.slice(0,10)];
+        if (idx0 == null || idx1 == null) continue;
+        const avgWks = (prev.wks + cur.wks) / 2;
+        ctx.strokeStyle = avgWks > 10 ? '#00DE94' : avgWks < -10 ? '#FF4D4D' : '#A0A8B8';
+        ctx.beginPath(); ctx.moveTo(xOf(idx0), yWKS(prev.wks)); ctx.lineTo(xOf(idx1), yWKS(cur.wks)); ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+
+  // Mass dots (size = narrative mass, color = WKS direction)
   const snapDates = snaps.map(s => s.snapshot_date?.slice(0,10));
   function nearestIdx(dateStr) {
     let exact = dateIdx[dateStr]; if (exact != null) return exact;
@@ -1102,25 +1136,36 @@ function drawChart(snaps, narrs) {
   }
 
   const dotHits = [];
-  narrs.forEach(n => {
-    if (!VISIBLE_LINES[n.isBear ? 'bear-dots' : 'bull-dots']) return;
-    const d = n.snapshot_date?.slice(0,10); if (!d) return;
-    const idx = nearestIdx(d); if (idx == null) return;
-    const s = snaps[idx]; if (s?.price_close == null) return;
-    const cx = xOf(idx), cy = yOf(s.price_close);
-    ctx.beginPath(); ctx.arc(cx, cy, 5, 0, Math.PI*2);
-    ctx.fillStyle = n.isBear ? '#FF4D4D' : '#00DE94'; ctx.fill();
-    ctx.strokeStyle = isLight() ? '#FFFFFF' : '#0A0E1A'; ctx.lineWidth = 1.5; ctx.stroke();
-    dotHits.push({ cx, cy, n });
-  });
+  if (VISIBLE_LINES['mass-dots']) {
+    const massFiltered = ALL_MASS.filter(d => { const ds = d.snapshot_date?.slice(0,10); return ds && ds >= lo && ds <= hi && d.mass >= 0.1; });
+    massFiltered.forEach(m => {
+      const d = m.snapshot_date?.slice(0,10); if (!d) return;
+      const idx = nearestIdx(d); if (idx == null) return;
+      const s = snaps[idx]; if (s?.price_close == null) return;
+      const cx = xOf(idx), cy = yOf(s.price_close);
+      const r = m.mass >= 0.5 ? 7 : m.mass >= 0.3 ? 5 : 3;
+      const color = m.wks > 10 ? '#00DE94' : m.wks < -10 ? '#FF4D4D' : '#A0A8B8';
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
+      ctx.fillStyle = color; ctx.fill();
+      ctx.strokeStyle = isLight() ? '#FFFFFF' : '#0A0E1A'; ctx.lineWidth = 1.5; ctx.stroke();
+      dotHits.push({ cx, cy, n: { snapshot_date: m.snapshot_date, mass: m.mass, wks: m.wks, isMassDot: true } });
+    });
+  }
 
   // Story popup
   function showStoryPopup(hit) {
     const n = hit.n;
     document.getElementById('popup-date').textContent = n.snapshot_date?.slice(0,10) || '';
-    document.getElementById('popup-headline').textContent = n.source_outlet || n.verdict || 'Narrative Story';
-    document.getElementById('popup-body').textContent = n.narrative_text || (n.sentiment_score != null ? 'Sentiment: ' + n.sentiment_score.toFixed(1) : 'No story text available.');
-    document.getElementById('popup-vms').innerHTML = [n.source_outlet||'', n.verdict||'', n.isBear?'Bearish':'Bullish'].filter(Boolean).join(' \u00B7 ');
+    if (n.isMassDot) {
+      document.getElementById('popup-headline').textContent = 'Narrative Mass Signal';
+      const wksLabel = n.wks > 10 ? 'Bullish keywords' : n.wks < -10 ? 'Bearish keywords' : 'Neutral';
+      document.getElementById('popup-body').textContent = 'Mass: ' + n.mass.toFixed(2) + ' · WKS: ' + (n.wks > 0 ? '+' : '') + n.wks.toFixed(1) + ' (' + wksLabel + ')';
+      document.getElementById('popup-vms').innerHTML = '';
+    } else {
+      document.getElementById('popup-headline').textContent = n.source_outlet || n.verdict || 'Narrative Story';
+      document.getElementById('popup-body').textContent = n.narrative_text || (n.sentiment_score != null ? 'Sentiment: ' + n.sentiment_score.toFixed(1) : 'No story text available.');
+      document.getElementById('popup-vms').innerHTML = [n.source_outlet||'', n.verdict||''].filter(Boolean).join(' · ');
+    }
     let px = hit.cx + 10; if (px + 260 > W) px = hit.cx - 270;
     let py = hit.cy - 10; if (py + 140 > H) py = H - 145;
     popup.style.left = (px + 14) + 'px'; popup.style.top = (py + 10) + 'px';
@@ -1159,7 +1204,7 @@ async function loadChart(ticker) {
     sbFetch('narrative_analyses', { select: 'snapshot_date,narrative_text,source_outlet,article_url,sentiment_score,verdict', ticker: 'eq.' + ticker, order: 'snapshot_date.asc', limit: '2000' }),
     sbFetch('v_dash_narrative_health', { select: 'snapshot_date,narrative_trend,sentiment_score', ticker: 'eq.' + ticker, order: 'snapshot_date.asc', limit: '2000' }),
     sbFetch('decay_metrics', { select: 'snapshot_date,energy_remaining_pct,day_number', ticker: 'eq.' + ticker, order: 'snapshot_date.asc', limit: '2000' }),
-    sbFetch('narrative_scorecard', { select: 'snapshot_date,narrative_energy_absolute,nrs,overreaction_ratio,coordination_score,narrative_energy_t', ticker: 'eq.' + ticker, order: 'snapshot_date.asc', limit: '2000' })
+    sbFetch('narrative_scorecard', { select: 'snapshot_date,narrative_energy_absolute,nrs,overreaction_ratio,coordination_score,narrative_energy_t,wks_score,narrative_mass_score', ticker: 'eq.' + ticker, order: 'snapshot_date.asc', limit: '2000' })
   ]);
 
   ALL_SNAPS = priceRows.filter(r => r.snapshot_date && r.price_close != null);
@@ -1185,6 +1230,11 @@ async function loadChart(ticker) {
     return { snapshot_date: r.snapshot_date, pressure: ((nrs / 100) * 0.4 + (or / 50) * 0.4 + (cs / 100) * 0.2) * 100 };
   });
   ALL_ENERGY_T = scorecardRows.filter(r => r.snapshot_date && r.narrative_energy_t != null);
+  ALL_MASS = scorecardRows.filter(r => r.snapshot_date).map(r => ({
+    snapshot_date: r.snapshot_date,
+    mass: r.narrative_mass_score != null ? Number(r.narrative_mass_score) : 0,
+    wks: r.wks_score != null ? Number(r.wks_score) : 0
+  }));
 }
 
 // ── Live regime detection ──
