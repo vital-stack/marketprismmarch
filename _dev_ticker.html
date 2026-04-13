@@ -3324,7 +3324,7 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
               <div class="chart-legend">
                 <div class="legend-item"><div class="leg-line" style="background:var(--text-primary);"></div> Price</div>
                 <div class="legend-item" title="Dot size = narrative mass. Color = keyword price prediction (green=bullish, red=bearish)."><div class="leg-dot" style="background:linear-gradient(135deg,#00DE94,#A0A8B8,#FF4D4D);"></div> Mass Dots</div>
-                <div class="legend-item" title="Forensic narrative force (source quality × coordination × volume)."><div class="leg-line" style="background:#00AEFF;opacity:0.7;border-top:2px dashed #00AEFF;height:0;width:14px;"></div> Narrative Energy</div>
+                <div class="legend-item" title="Forensic narrative force (source quality × coordination × volume)."><div style="width:14px;height:10px;background:#3b82f6;opacity:0.45;border-radius:1px;"></div> Narrative Energy</div>
               </div>
             </div>
             <div class="bear-stories-wrap" id="bear-stories-wrap" style="display:none;">
@@ -4712,29 +4712,18 @@ function drawChart(snaps, narrs) {
   });
   decayFiltered = sma3(decayFiltered, 'energy_remaining_pct');
   if (decayFiltered.length > 1) {
-    // Right axis ticks for energy
-    ctx.save();
-    ctx.font = `9px Inter, sans-serif`;
-    ctx.fillStyle = '#3b82f6'; ctx.textAlign = 'left'; ctx.globalAlpha = 0.7;
-    [0, 50, 100].forEach(v => {
-      ctx.fillText(v, W - PAD.right + 4, yEnergy(v) + 3);
-    });
-    ctx.restore();
-
-    ctx.save();
-    ctx.setLineDash([3,3]);
-    ctx.strokeStyle = '#3b82f6'; ctx.lineWidth = 1.2; ctx.globalAlpha = 0.7;
-    ctx.beginPath();
-    let started = false;
+    const barMax = CH * 0.25;
+    const barW = Math.max(1, (CW / Math.max(N-1, 1)) * 0.6);
+    ctx.save(); ctx.globalAlpha = 0.35;
     decayFiltered.forEach(d => {
       const idx = dateIdx[d.snapshot_date.slice(0,10)];
       if (idx == null) return;
       const x = xOf(idx);
-      const y = yEnergy(d.energy_remaining_pct ?? 0);
-      if (!started) { ctx.moveTo(x, y); started = true; }
-      else ctx.lineTo(x, y);
+      const pct = Math.min(100, Math.max(0, d.energy_remaining_pct ?? 0));
+      const h = (pct / 100) * barMax;
+      ctx.fillStyle = '#3b82f6';
+      ctx.fillRect(x - barW/2, PAD.top + CH - h, barW, h);
     });
-    ctx.stroke();
     ctx.restore();
   }
 

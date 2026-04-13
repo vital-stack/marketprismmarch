@@ -291,7 +291,7 @@
         <div class="sl-legend">
           <div class="sl-leg-item"><div class="sl-leg-line" style="background:var(--text-primary);"></div> Price</div>
           <div class="sl-leg-item" title="Dot size = narrative mass. Color = keyword price prediction (green=bullish, red=bearish)."><div class="sl-leg-dot" style="background:linear-gradient(135deg,#00DE94,#A0A8B8,#FF4D4D);"></div> Mass Dots</div>
-          <div class="sl-leg-item" title="Forensic narrative force (source quality × coordination × volume)."><div class="sl-leg-line" style="background:#00AEFF;opacity:0.7;border-top:2px dashed #00AEFF;height:0;width:14px;"></div> Narrative Energy</div>
+          <div class="sl-leg-item" title="Forensic narrative force (source quality × coordination × volume)."><div style="width:14px;height:10px;background:#3b82f6;opacity:0.45;border-radius:1px;"></div> Narrative Energy</div>
           <div class="sl-leg-item" title="Cross-ticker percentile rank of raw forensic magnitude within the full universe that day."><div class="sl-leg-line" style="background:#FFB800;opacity:0.7;border-top:2px dashed #FFB800;height:0;width:14px;"></div> Physics Energy (universe rank)</div>
         </div>
       </div>
@@ -685,8 +685,8 @@
 
     var lo=snaps[0]?.snapshot_date?.slice(0,10)||'',hi=snaps[snaps.length-1]?.snapshot_date?.slice(0,10)||'';
 
-    // Narrative Energy
-    if(SL_VIS['narr-energy']){var df=SL_DECAY.filter(function(d){var ds=d.snapshot_date?.slice(0,10);return ds&&ds>=lo&&ds<=hi;});if(SL_VIS['sma-smooth'])df=slSma3(df,'energy_remaining_pct');if(df.length>1){ctx.save();ctx.font='9px Inter, sans-serif';ctx.fillStyle='#3b82f6';ctx.textAlign='left';ctx.globalAlpha=0.7;[0,50,100].forEach(function(v){ctx.fillText(v,W-PAD.right+4,yE(v)+3);});ctx.restore();ctx.save();ctx.setLineDash([3,3]);ctx.strokeStyle='#3b82f6';ctx.lineWidth=1.2;ctx.globalAlpha=0.7;ctx.beginPath();var st=false;df.forEach(function(d){var idx=dateIdx[d.snapshot_date.slice(0,10)];if(idx==null)return;var x=xOf(idx),y2=yE(d.energy_remaining_pct??0);if(!st){ctx.moveTo(x,y2);st=true;}else ctx.lineTo(x,y2);});ctx.stroke();ctx.restore();}}
+    // Narrative Energy — volume-style bars at bottom
+    if(SL_VIS['narr-energy']){var df=SL_DECAY.filter(function(d){var ds=d.snapshot_date?.slice(0,10);return ds&&ds>=lo&&ds<=hi;});if(SL_VIS['sma-smooth'])df=slSma3(df,'energy_remaining_pct');if(df.length>1){var barMax=CH*0.25;var barW=Math.max(1,CW/Math.max(N-1,1)*0.6);ctx.save();ctx.globalAlpha=0.35;df.forEach(function(d){var idx=dateIdx[d.snapshot_date.slice(0,10)];if(idx==null)return;var x=xOf(idx);var pct=Math.min(100,Math.max(0,d.energy_remaining_pct??0));var h=pct/100*barMax;ctx.fillStyle='#3b82f6';ctx.fillRect(x-barW/2,PAD.top+CH-h,barW,h);});ctx.restore();}}
     // Physics Energy — plots pe_rank_pct (cross-ticker percentile rank, 0-100)
     // from mv_physics_energy_normalized. Value is already on the 0-100 axis; no rescaling.
     // Thin-coverage days (full_coverage_day=false) are skipped so the line
