@@ -1597,39 +1597,82 @@
     color: var(--text-tertiary);
   }
 
-  /* 4-step checks */
-  .narr-checks {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1px;
-    background: var(--mp-border);
+  /* Narrative Price Impact block */
+  .narr-price-impact {
+    background: var(--mp-surface);
     border: 1px solid var(--mp-border);
-    border-radius: 7px;
-    overflow: hidden;
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+  }
+  .narr-pi-title {
+    font-family: 'Inter', 'DM Sans', system-ui, sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--mp-text-tertiary, #A0A8B0);
     margin-bottom: 12px;
   }
-  @media (max-width: 480px) { .narr-checks { grid-template-columns: 1fr; } }
-  .narr-check {
-    background: var(--mp-surface);
-    padding: 10px 14px;
+  .narr-pi-expected {
+    font-family: 'Inter', 'DM Sans', system-ui, sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .narr-pi-basis {
+    font-size: 12px;
+    color: var(--mp-text-muted, rgba(255,255,255,0.3));
+    margin-bottom: 14px;
+  }
+  .narr-pi-rows {
     display: flex;
-    align-items: flex-start;
-    gap: 8px;
+    flex-direction: column;
+    gap: 0;
   }
-  .narr-check-icon {
+  .narr-pi-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-top: 1px solid rgba(255,255,255,0.04);
+  }
+  .narr-pi-row:first-child { border-top: none; }
+  .narr-pi-kw {
+    font-family: 'Inter', 'DM Sans', system-ui, sans-serif;
+    font-size: 13px;
+    color: var(--mp-text-primary);
+  }
+  .narr-pi-return {
+    font-family: 'Inter', 'DM Sans', system-ui, sans-serif;
     font-size: 14px;
-    font-weight: 700;
-    flex-shrink: 0;
-    margin-top: 1px;
+    font-weight: 600;
+    min-width: 64px;
+    text-align: right;
   }
-  .narr-check-text { font-size: 14px; color: var(--mp-text-primary); line-height: 1.5; }
-  .narr-check-label {
+  .narr-pi-articles {
+    font-size: 11px;
+    color: var(--mp-text-muted, rgba(255,255,255,0.3));
+    min-width: 100px;
+    text-align: right;
+  }
+  .narr-pi-dominant {
     font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text-tertiary);
-    margin-bottom: 2px;
+    color: #FFB800;
+    margin-left: 6px;
+    font-weight: 600;
   }
+  .narr-pi-footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    font-size: 12px;
+    color: var(--mp-text-tertiary, #A0A8B0);
+  }
+  .narr-pi-footer strong { color: var(--mp-text-primary); }
 
   /* Quality signals row */
   .narr-signals {
@@ -6159,6 +6202,21 @@ async function loadNarratives() {
       } catch {}
     }
 
+    // ── Fetch keyword_price_impact for this ticker (one batched call) ──
+    const kpiByKeyword = {};
+    if (TICKER) {
+      try {
+        const kpiRows = await sbFetch('keyword_price_impact', {
+          select: 'keyword,article_count,avg_return_5d',
+          ticker: `eq.${TICKER}`,
+          limit: '1000'
+        }).catch(() => []);
+        (kpiRows || []).forEach(r => {
+          if (r && r.keyword) kpiByKeyword[r.keyword] = r;
+        });
+      } catch {}
+    }
+
     // Fuel bar colors by rank (1-indexed): 1=amber, 2=cyan, 3=teal, 4+=green
     function fuelColorForRank(rank1) {
       if (rank1 === 1) return '#FFB800';
@@ -6185,27 +6243,36 @@ async function loadNarratives() {
       const vLbl = v.includes('MISLEAD') || v.includes('FALSE') ? 'Misleading'
         : v.includes('TRAP') ? 'Trap' : 'Monitoring';
 
-      // Parse prerequisites
-      let prereqs = [];
-      if (n.prerequisites_json) {
-        try {
-          const raw = typeof n.prerequisites_json === 'string'
-            ? JSON.parse(n.prerequisites_json) : n.prerequisites_json;
-          prereqs = Array.isArray(raw) ? raw : Object.values(raw);
-        } catch { prereqs = []; }
+      // ── Narrative Price Impact (replaces old claim verification) ──
+      const narKwsForImpact = keywordsForNarrative(n);
+      const matchedKpi = narKwsForImpact
+        .map(kw => kpiByKeyword[kw] ? { keyword: kw, ...kpiByKeyword[kw] } : null)
+        .filter(Boolean);
+      // Compute blended expected 5-day move (weighted by article_count)
+      let blendedMove = null;
+      let totalArticles = 0;
+      let kwCount = matchedKpi.length;
+      if (kwCount > 0) {
+        let weightedSum = 0;
+        matchedKpi.forEach(r => {
+          const cnt = Number(r.article_count) || 1;
+          const ret = Number(r.avg_return_5d) || 0;
+          weightedSum += ret * cnt;
+          totalArticles += cnt;
+        });
+        blendedMove = totalArticles > 0 ? weightedSum / totalArticles : 0;
       }
-
-      // 4-step checks (up to 4)
-      const checksHtml = prereqs.slice(0, 4).map(p => {
-        const isMet = p.met === true
-          || String(p.status || '').toUpperCase() === 'MET';
-        return `<div class="narr-check">
-          <span class="narr-check-icon" style="color:${isMet ? '#22c55e' : '#FF4D4D'}">${isMet ? '✓' : '✗'}</span>
-          <div>
-            <div class="narr-check-text">${esc(p.condition || p.text || p.description || '—')}</div>
-          </div>
-        </div>`;
-      }).join('');
+      // Find dominant keyword (largest absolute impact)
+      let dominantKw = null;
+      if (matchedKpi.length > 1) {
+        dominantKw = matchedKpi.reduce((a, b) =>
+          Math.abs(Number(b.avg_return_5d)||0) > Math.abs(Number(a.avg_return_5d)||0) ? b : a
+        ).keyword;
+      }
+      // Exhaustion from half_life
+      const exhaustDays = n.half_life != null ? Number(n.half_life).toFixed(1) : null;
+      // Analyst from first citation
+      const analystFirm = n.analyst_firm || (n.allCitations || []).map(c => c.analyst_firm).filter(Boolean)[0] || null;
 
       // Quality signals
       const signals = [
@@ -6370,9 +6437,35 @@ async function loadNarratives() {
           <div class="narr-body-pad">
             ${kwChipsHtml}
             ${claimHtml}
-            ${prereqs.length ? `
-              <div class="narr-claim-label" style="margin-bottom:8px;">Claim Verification (${n.prerequisites_met ?? prereqs.filter(p=>p.met).length}/${n.prerequisites_total ?? prereqs.length} met)</div>
-              <div class="narr-checks">${checksHtml}</div>
+            ${matchedKpi.length ? `
+              <div class="narr-price-impact">
+                <div class="narr-pi-title">Narrative Price Impact</div>
+                ${blendedMove != null ? `
+                  <div class="narr-pi-expected" style="color:${blendedMove >= 0 ? '#00DE94' : '#FF4D4D'}">
+                    Expected 5-day move: ${blendedMove >= 0 ? '▲' : '▼'} ${blendedMove >= 0 ? '+' : ''}${blendedMove.toFixed(2)}%
+                  </div>
+                  <div class="narr-pi-basis">Based on ${kwCount} keyword${kwCount !== 1 ? 's' : ''} × ${totalArticles.toLocaleString()} historical articles</div>
+                ` : ''}
+                <div class="narr-pi-rows">
+                  ${matchedKpi.map(r => {
+                    const ret = Number(r.avg_return_5d) || 0;
+                    const isDominant = r.keyword === dominantKw;
+                    return `<div class="narr-pi-row">
+                      <span class="narr-pi-kw">${esc(r.keyword)}</span>
+                      <span class="narr-pi-articles">(${Number(r.article_count || 0).toLocaleString()} articles)</span>
+                      <span class="narr-pi-return" style="color:${ret >= 0 ? '#00DE94' : '#FF4D4D'}">
+                        ${ret >= 0 ? '+' : ''}${ret.toFixed(2)}%${isDominant ? '<span class="narr-pi-dominant">← dominant</span>' : ''}
+                      </span>
+                    </div>`;
+                  }).join('')}
+                </div>
+                ${analystFirm || exhaustDays ? `
+                  <div class="narr-pi-footer">
+                    ${analystFirm ? `<span>Analyst: <strong>${esc(analystFirm)}</strong></span>` : ''}
+                    ${exhaustDays ? `<span>Exhausts in: <strong>~${exhaustDays} days</strong></span>` : ''}
+                  </div>
+                ` : ''}
+              </div>
             ` : ''}
             ${signalsHtml ? `<div class="narr-signals">${signalsHtml}</div>` : ''}
             ${flagHtml}
