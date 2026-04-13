@@ -686,7 +686,7 @@
     var lo=snaps[0]?.snapshot_date?.slice(0,10)||'',hi=snaps[snaps.length-1]?.snapshot_date?.slice(0,10)||'';
 
     // Narrative Energy — volume-style bars at bottom
-    if(SL_VIS['narr-energy']){var df=SL_DECAY.filter(function(d){var ds=d.snapshot_date?.slice(0,10);return ds&&ds>=lo&&ds<=hi;});if(SL_VIS['sma-smooth'])df=slSma3(df,'energy_remaining_pct');if(df.length>1){var barMax=CH*0.25;var barW=Math.max(1,CW/Math.max(N-1,1)*0.6);ctx.save();ctx.globalAlpha=0.35;df.forEach(function(d){var idx=dateIdx[d.snapshot_date.slice(0,10)];if(idx==null)return;var x=xOf(idx);var pct=Math.min(100,Math.max(0,d.energy_remaining_pct??0));var h=pct/100*barMax;ctx.fillStyle='#3b82f6';ctx.fillRect(x-barW/2,PAD.top+CH-h,barW,h);});ctx.restore();}}
+    if(SL_VIS['narr-energy']){var df=SL_DECAY.filter(function(d){var ds=d.snapshot_date?.slice(0,10);return ds&&ds>=lo&&ds<=hi;});if(SL_VIS['sma-smooth'])df=slSma3(df,'energy_remaining_pct');if(df.length>1){var barMax=CH*0.12;var barW=Math.max(1,CW/Math.max(N-1,1)*0.6);ctx.save();ctx.globalAlpha=0.35;df.forEach(function(d){var idx=dateIdx[d.snapshot_date.slice(0,10)];if(idx==null)return;var x=xOf(idx);var pct=Math.min(100,Math.max(0,d.energy_remaining_pct??0));var h=pct/100*barMax;ctx.fillStyle='#3b82f6';ctx.fillRect(x-barW/2,PAD.top+CH-h,barW,h);});ctx.restore();}}
     // Physics Energy — plots pe_rank_pct (cross-ticker percentile rank, 0-100)
     // from mv_physics_energy_normalized. Value is already on the 0-100 axis; no rescaling.
     // Thin-coverage days (full_coverage_day=false) are skipped so the line
