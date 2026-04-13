@@ -39,6 +39,9 @@ module.exports = async (req, res) => {
         const price = lastTrade.p || day.c || prevDay.c;
         if (price) {
           const prevClose = prevDay.c || null;
+          const regularClose = day.c || null;
+          // After-hours: if lastTrade price differs from day close, it's an extended-hours trade
+          const ahPrice = (lastTrade.p && regularClose && Math.abs(lastTrade.p - regularClose) > 0.005) ? lastTrade.p : null;
           result = {
             ticker,
             price,
@@ -51,6 +54,9 @@ module.exports = async (req, res) => {
             prevClose,
             bid: lastQuote.p || null,
             ask: lastQuote.P || null,
+            afterHours: ahPrice,
+            ahChange: (ahPrice && regularClose) ? Number((ahPrice - regularClose).toFixed(2)) : null,
+            ahChangePct: (ahPrice && regularClose) ? Number(((ahPrice - regularClose) / regularClose * 100).toFixed(2)) : null,
             timestamp: lastTrade.t || snap.updated || null,
             source: 'snapshot'
           };

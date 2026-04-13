@@ -4783,6 +4783,7 @@ async function loadHero() {
         </div>
         <div class="live-price-main" id="live-price">${fmtPrice(r.price)}</div>
         <div class="live-change ${delta.cls}" id="live-change">${delta.txt}</div>
+        <div class="live-ah" id="live-ah" style="display:none;font-size:12px;color:var(--mp-text-tertiary);font-family:var(--font-body);margin-top:2px;"></div>
         ${r.fair_value != null ? `<div class="hero-fv"><span class="info-tip" data-tip="Market Prism Fair Value is estimated using a composite of discounted cash flow (DCF) models, sector-relative multiples, and earnings quality adjustments — cross-referenced with narrative sentiment and institutional positioning data.">Market Prism Fair Value<i class="info-icon">i</i></span> <span>$${fmtPrice(r.fair_value)}</span></div>` : ''}
         <div class="live-meta" id="live-meta"></div>
       </div>`;
@@ -8638,6 +8639,22 @@ async function fetchLivePrice() {
         '<span class="chg-amount">' + (isDn ? '<span class="chg-arrow-dn">' : isUp ? '<span class="chg-arrow-up">' : '<span>') + arrow + '</span> ' +
         sign + q.change.toFixed(2) + '</span>' +
         '<span>(' + sign + q.changePct.toFixed(2) + '%)</span>';
+    }
+
+    // After-hours price display
+    var ahEl = document.getElementById('live-ah');
+    if (ahEl) {
+      if (q.afterHours != null && q.ahChange != null) {
+        var ahUp = q.ahChange > 0;
+        var ahDn = q.ahChange < 0;
+        var ahClr = ahUp ? '#00DE94' : ahDn ? '#FF4D4D' : 'var(--mp-text-tertiary)';
+        var ahSign = ahUp ? '+' : '';
+        var ahPx = q.afterHours >= 100 ? q.afterHours.toFixed(2) : q.afterHours.toFixed(3);
+        ahEl.innerHTML = 'After Hours <span style="color:' + ahClr + ';">$' + ahPx + ' ' + ahSign + q.ahChange.toFixed(2) + ' (' + ahSign + q.ahChangePct.toFixed(2) + '%)</span>';
+        ahEl.style.display = 'block';
+      } else {
+        ahEl.style.display = 'none';
+      }
     }
 
     // Determine market status + data freshness
