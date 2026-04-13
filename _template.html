@@ -8673,13 +8673,15 @@ async function loadSectorsFromSummaries(){
       return 'low';
     }
 
+    // Preserve original CAGR values from static data
+    var cagrMap={};SECTOR_STATIC.forEach(function(s){if(s.cagr&&s.cagr!=='—')cagrMap[s.name]=s.cagr;});
     SECTOR_STATIC=rows.map(function(r){
       var tickers=typeof r.tickers==='string'?JSON.parse(r.tickers):(r.tickers||[]);
       return {
         name:r.scope_key||'',
         sub:tickers.slice(0,3).join(', '),
         state:statusToState(r.status),
-        cagr:'—',
+        cagr:cagrMap[r.scope_key]||'—',
         momentum:Math.round(r.momentum_score||0),
         risk:statusToRisk(r.status),
         desc:r.body||'',
