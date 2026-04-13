@@ -6946,14 +6946,7 @@ async function loadData(){
         drEarnings.innerHTML='<div style="font-size:11px;color:var(--mp-text-muted);">No upcoming earnings in next 30 days.</div>';
       }
     }
-    var drTraps=document.getElementById('dr-traps');
-    var drSurging=document.getElementById('dr-surging');
-    var drBreaking=document.getElementById('dr-breaking');
-    var drCoordinated=document.getElementById('dr-coordinated');
-    if(drTraps)drTraps.textContent=DATA.filter(function(r){return r.prism_verdict==='Narrative Trap';}).length;
-    if(drSurging)drSurging.textContent=DATA.filter(function(r){return r.narrative_state==='Surging';}).length;
-    if(drBreaking)drBreaking.textContent=DATA.filter(function(r){return r.narrative_state==='Breaking';}).length;
-    if(drCoordinated)drCoordinated.textContent=DATA.filter(function(r){return(r.coordination_class||'')==='LIKELY_COORDINATED';}).length;
+    // Signal summary boxes are now updated by loadTradeLanes() from narrative_scorecard
     // Sector momentum in rail
     var drSectorList=document.getElementById('dr-sector-list');
     if(drSectorList&&DATA.length>0){
@@ -7051,11 +7044,7 @@ async function loadData(){
     renderSupportedCards();
     renderTrapsCards();
     renderCoordinationCards();
-    // Update Signal Summary with real counts from dedicated tables
-    var drTraps2=document.getElementById('dr-traps');
-    if(drTraps2) drTraps2.textContent=TRAPS_DB_DATA.length;
-    var drCoord2=document.getElementById('dr-coordinated');
-    if(drCoord2) drCoord2.textContent=COORDINATION_DATA.filter(function(r){return r.coordination_class==='LIKELY_COORDINATED';}).length;
+    // Signal summary boxes are now updated by loadTradeLanes() from narrative_scorecard
     // Pre-load leaderboard data so it's ready when tab is clicked
     if(typeof loadLeaderboard==='function') loadLeaderboard();
   } catch(err){
@@ -7415,255 +7404,62 @@ function renderNarrativeCards(){
 }
 
 // ── Trade Lanes ("What's the Play?") ──────────────────────────────────────────
-var TL_ACTIONS={
-  'NARRATIVE_TRAP':'Short','FUNDAMENTAL_DISCONNECT':'Short',
-  'FADE_THE_HYPE':'Fade rallies','DRIFT_COMPRESSION_SHORT':'Short on bounce',
-  'AIR_POCKET_SHORT':'Short','ACCUMULATE':'Buy dips',
-  'MOMENTUM_CONFIRMED':'Ride up','FUNDAMENTAL_LONG':'Buy and hold',
-  'OMISSION_CASCADE':'Short'
-};
+// All three lanes (Day Trade, Swing, Value) now query narrative_scorecard directly.
 var TL_LIMIT=5;
+var TL_SCORECARD=[]; // cached scorecard rows for signal summary boxes
 
 function tlBuildRow(r){
-  var dir=(r.direction||'').toUpperCase();
-  var isBear=dir==='BEARISH';
-  var isBull=dir==='BULLISH';
-  var dirColor=isBear?'#FF4D4D':isBull?'#00DE94':'#00AEFF';
-  var dirArrow=isBear?'\u25BC':isBull?'\u25B2':'';
-  var action=TL_ACTIONS[r.primary_label]||'Monitor';
-  var actionColor=isBear?'#FF4D4D':isBull?'#00DE94':'var(--mp-text-secondary)';
-  var price=r.price?'$'+fmtPrice(Number(r.price)):'';
-  var tier=(r.card_tier||'').toUpperCase();
-  var tierHTML='';
-  if(tier==='PLATINUM')tierHTML='<span class="tl-tier tl-plat">Plat</span>';
-  else if(tier==='GOLD')tierHTML='<span class="tl-tier tl-gold">Gold</span>';
-  var domain=DOMAIN_MAP[r.ticker];
-  var logo=domain?'<img class="tl-row-logo" src="https://www.google.com/s2/favicons?domain='+domain+'&sz=32" alt="" onerror="this.style.display=\'none\';">':'';
-  return '<div class="tl-row" data-ticker="'+esc(r.ticker)+'" onclick="window.location.href=\'/ticker/'+encodeURIComponent(r.ticker)+'\'">'
-    +'<div class="tl-row-left">'+tierHTML+logo+'<span class="tl-row-ticker">'+esc(r.ticker)+'</span><span class="tl-row-price" data-live-price="'+esc(r.ticker)+'">'+price+'</span><span class="tl-row-change" data-live-change="'+esc(r.ticker)+'" style="font-size:11px;color:var(--mp-text-tertiary);font-family:var(--font-body);margin-left:4px;"></span></div>'
-    +'<div class="tl-row-right"><span class="tl-row-action" style="color:'+actionColor+';">'+esc(action)+'</span><span class="tl-row-dir" style="color:'+dirColor+';">'+dirArrow+'</span></div>'
-  +'</div>';
-}
-
-function tlBuildLane(title,subtitle,cards){
-  if(!cards.length)return'';
-  cards.sort(function(a,b){return(Number(b.regime_adjusted_confidence||b.confidence)||0)-(Number(a.regime_adjusted_confidence||a.confidence)||0);});
-  var visible=cards.slice(0,TL_LIMIT);
-  var overflow=cards.slice(TL_LIMIT);
-  var laneId='tl-overflow-'+title.replace(/\s/g,'-').toLowerCase();
-  var html='<div class="tl-lane"><div class="tl-lane-header"><div><div class="tl-lane-title">'+esc(title)+'</div><div class="tl-lane-sub">'+esc(subtitle)+' \u00B7 '+cards.length+' signals</div></div></div><div class="tl-lane-rows">';
-  visible.forEach(function(c){html+=tlBuildRow(c);});
-  if(overflow.length){
-    html+='<div class="tl-overflow" id="'+laneId+'" style="display:none;">';
-    overflow.forEach(function(c){html+=tlBuildRow(c);});
-    html+='</div><button class="tl-view-more" onclick="var t=document.getElementById(\''+laneId+'\');var s=t.style.display!==\'none\';t.style.display=s?\'none\':\'block\';this.textContent=s?\'View '+overflow.length+' more\':\'Show less\';">View '+overflow.length+' more</button>';
-  }
-  html+='</div></div>';
-  return html;
-}
-
-// ── Value Picks Row ──
-function tlBuildValueRow(r){
-  var discount=r._discount;
-  var discountStr=discount!=null?Math.abs(discount).toFixed(1)+'% under FV':'';
-  var revGrowth=r.revenue_growth_pct!=null?'+'+Number(r.revenue_growth_pct).toFixed(1)+'% rev':'';
-  var price=r.price?'$'+fmtPrice(Number(r.price)):'';
-  var domain=DOMAIN_MAP[r.ticker];
-  var logo=domain?'<img class="tl-row-logo" src="https://www.google.com/s2/favicons?domain='+domain+'&sz=32" alt="" onerror="this.style.display=\'none\';">':'';
-  return '<div class="tl-row" data-ticker="'+esc(r.ticker)+'" onclick="window.location.href=\'/ticker/'+encodeURIComponent(r.ticker)+'\'">'
-    +'<div class="tl-row-left">'+logo+'<span class="tl-row-ticker">'+esc(r.ticker)+'</span><span class="tl-row-price" data-live-price="'+esc(r.ticker)+'">'+price+'</span><span class="tl-row-change" data-live-change="'+esc(r.ticker)+'" style="font-size:11px;color:var(--mp-text-tertiary);font-family:var(--font-body);margin-left:4px;"></span></div>'
-    +'<div class="tl-row-right"><span class="tl-row-action" style="color:#38C8B8;">'+esc(discountStr)+'</span>'
-    +(revGrowth?'<span style="font-size:11px;color:var(--mp-text-muted);font-family:var(--font-body);margin-left:6px;">'+esc(revGrowth)+'</span>':'')
-    +'<span class="tl-row-dir" style="color:#00DE94;">\u25B2</span></div>'
-  +'</div>';
-}
-
-function tlBuildValueLane(title,subtitle,cards){
-  if(!cards.length)return'';
-  var visible=cards.slice(0,TL_LIMIT);
-  var overflow=cards.slice(TL_LIMIT);
-  var laneId='tl-overflow-value-picks';
-  var html='<div class="tl-lane"><div class="tl-lane-header"><div><div class="tl-lane-title">'+esc(title)+'</div><div class="tl-lane-sub">'+esc(subtitle)+' \u00B7 '+cards.length+' picks</div></div></div><div class="tl-lane-rows">';
-  visible.forEach(function(c){html+=tlBuildValueRow(c);});
-  if(overflow.length){
-    html+='<div class="tl-overflow" id="'+laneId+'" style="display:none;">';
-    overflow.forEach(function(c){html+=tlBuildValueRow(c);});
-    html+='</div><button class="tl-view-more" onclick="var t=document.getElementById(\''+laneId+'\');var s=t.style.display!==\'none\';t.style.display=s?\'none\':\'block\';this.textContent=s?\'View '+overflow.length+' more\':\'Show less\';">View '+overflow.length+' more</button>';
-  }
-  html+='</div></div>';
-  return html;
-}
-
-async function loadValuePicks(){
-  try{
-    // Find latest date that actually has stories with fair_value populated.
-    // (Don't key off ticker_snapshots — on delayed-pipeline days it may contain
-    //  a partial insert for today before v_dash_daily_story has fair_value rows,
-    //  which would leave Value Picks empty.)
-    var storyDateRows=await restFetch('v_dash_daily_story',{
-      select:'snapshot_date',
-      'fair_value':'not.is.null',
-      order:'snapshot_date.desc',
-      limit:'1'
-    });
-    if(!storyDateRows||!storyDateRows.length)return[];
-    var maxDate=storyDateRows[0].snapshot_date;
-
-    // Fetch stories with fair value for that date
-    var stories=await restFetch('v_dash_daily_story',{
-      select:'ticker,fair_value,pe_ratio,revenue_growth_pct,sector_name,narrative_state',
-      snapshot_date:'eq.'+maxDate,
-      'fair_value':'not.is.null'
-    });
-
-    // Fetch prices for that date; fall back to most recent snapshots if that
-    // date has no ticker_snapshots rows yet.
-    var snaps=await restFetch('ticker_snapshots',{
-      select:'ticker,price_close',
-      snapshot_date:'eq.'+maxDate
-    });
-    if(!snaps||!snaps.length){
-      var fallbackDateRows=await restFetch('ticker_snapshots',{select:'snapshot_date',order:'snapshot_date.desc',limit:'1'});
-      if(fallbackDateRows&&fallbackDateRows.length){
-        snaps=await restFetch('ticker_snapshots',{
-          select:'ticker,price_close',
-          snapshot_date:'eq.'+fallbackDateRows[0].snapshot_date
-        });
-      }
-    }
-
-    // Fetch Brier scores
-    var sigs=await restFetch('ticker_signatures',{
-      select:'ticker,brier_score_overall',
-      'brier_score_overall':'not.is.null'
-    });
-
-    // Fetch active bearish signals to exclude from value picks
-    var bearishCards=await restFetch('trade_cards_live',{
-      select:'ticker,direction',
-      direction:'eq.BEARISH'
-    });
-    var bearishSet={};
-    if(bearishCards)bearishCards.forEach(function(c){bearishSet[c.ticker]=true;});
-
-    if(!stories||!snaps)return[];
-    var priceMap={};snaps.forEach(function(s){priceMap[s.ticker]=Number(s.price_close);});
-    var brierMap={};if(sigs)sigs.forEach(function(s){brierMap[s.ticker]=Number(s.brier_score_overall);});
-
-    var picks=[];
-    stories.forEach(function(d){
-      // Skip tickers with active bearish trade signals
-      if(bearishSet[d.ticker])return;
-      var price=priceMap[d.ticker];
-      var fv=Number(d.fair_value);
-      if(!price||!fv||fv<=0)return;
-      var discount=((price-fv)/fv)*100;
-      // Under fair value, reasonable range, positive revenue growth
-      if(discount>=-35&&discount<=-2&&Number(d.revenue_growth_pct)>0){
-        picks.push({
-          ticker:d.ticker,
-          price:price,
-          fair_value:fv,
-          _discount:discount,
-          revenue_growth_pct:d.revenue_growth_pct,
-          pe_ratio:d.pe_ratio,
-          sector_name:d.sector_name,
-          brier:brierMap[d.ticker]||1
-        });
-      }
-    });
-
-    // Sort: lowest Brier first (most predictable), then deepest discount
-    picks.sort(function(a,b){return(a.brier-b.brier)||((a._discount)-(b._discount));});
-    return picks;
-  }catch(e){console.warn('[VP] Value picks failed:',e);return[];}
-}
-
-// ── Day Trade Signals (from DATA — no extra API calls) ───────────────────────
-function buildDayTrades(){
-  if(!DATA||!DATA.length)return[];
-  // Build set of tickers already in trade_cards_live
-  var existingSet={};
-  if(CARD_DATA)CARD_DATA.forEach(function(c){existingSet[c.ticker]=true;});
-
-  var signals=[];
-  DATA.forEach(function(r){
-    if(existingSet[r.ticker])return;
-    var changePct=Number(r.price_change_pct)||0;
-    if(Math.abs(changePct)<1.5)return;
-
-    var price=Number(r.price)||Number(r.price_close)||0;
-    if(!price)return;
-
-    // Use narrative state + verdict to refine direction
-    var state=(r.narrative_state||'').toLowerCase();
-    var verdict=(r.prism_verdict||'').toLowerCase();
-    var isTrap=verdict.indexOf('trap')>=0||state.indexOf('trap')>=0;
-    var isBreaking=state==='breaking'||verdict==='breaking';
-    var isSurging=state==='surging';
-
-    var action='',direction='';
-    if(changePct>0&&(isTrap||isBreaking)){
-      action='Short';direction='BEARISH'; // price up but narrative is bearish
-    } else if(changePct>0){
-      action='Ride up';direction='BULLISH';
-    } else if(changePct<0&&isSurging){
-      action='Buy the dip';direction='BULLISH'; // price down but narrative is bullish
-    } else {
-      action='Short';direction='BEARISH';
-    }
-
-    signals.push({
-      ticker:r.ticker,price:price,direction:direction,
-      primary_label:direction==='BEARISH'?'NARRATIVE_TRAP':'MOMENTUM_CONFIRMED',
-      _action:action,
-      _changePct:changePct,
-      _dpSignal:'',_smartDir:'',
-      confidence:Math.min(1,Math.abs(changePct)/8+0.4),
-      regime_adjusted_confidence:Math.min(1,Math.abs(changePct)/8+0.4)
-    });
-  });
-
-  signals.sort(function(a,b){return Math.abs(b._changePct)-Math.abs(a._changePct);});
-  return signals;
-}
-
-function tlBuildDayRow(r){
   var isBear=r.direction==='BEARISH';
   var isBull=r.direction==='BULLISH';
   var dirColor=isBear?'#FF4D4D':isBull?'#00DE94':'#00AEFF';
   var dirArrow=isBear?'\u25BC':isBull?'\u25B2':'';
   var actionColor=isBear?'#FF4D4D':isBull?'#00DE94':'var(--mp-text-secondary)';
   var price=r.price?'$'+fmtPrice(Number(r.price)):'';
-  var changePct=''; // filled by live quotes
-  var changeColor='var(--mp-text-tertiary)';
+  var badge='';
+  if(r._badge==='Gold')badge='<span class="tl-tier tl-gold">Gold</span>';
+  else if(r._badge==='EXHAUSTING')badge='<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(56,200,184,0.1);color:#38C8B8;border:1px solid rgba(56,200,184,0.2);margin-left:4px;font-family:var(--font-body);">Exhausting</span>';
+  else if(r._badge==='CLEAR_PATH')badge='<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(0,222,148,0.1);color:#00DE94;border:1px solid rgba(0,222,148,0.2);margin-left:4px;font-family:var(--font-body);">Clear Path</span>';
   var domain=DOMAIN_MAP[r.ticker];
   var logo=domain?'<img class="tl-row-logo" src="https://www.google.com/s2/favicons?domain='+domain+'&sz=32" alt="" onerror="this.style.display=\'none\';">':'';
-  var dpBadge='';
-  if(r._dpSignal==='HEAVY')dpBadge='<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(0,174,255,0.1);color:#00AEFF;border:1px solid rgba(0,174,255,0.2);margin-left:4px;font-family:var(--font-body);">DP</span>';
   return '<div class="tl-row" data-ticker="'+esc(r.ticker)+'" onclick="window.location.href=\'/ticker/'+encodeURIComponent(r.ticker)+'\'">'
-    +'<div class="tl-row-left">'+logo+'<span class="tl-row-ticker">'+esc(r.ticker)+'</span><span class="tl-row-price" data-live-price="'+esc(r.ticker)+'">'+price+'</span><span class="tl-row-change" data-live-change="'+esc(r.ticker)+'" style="font-size:11px;color:'+changeColor+';font-family:var(--font-body);margin-left:4px;">'+changePct+'</span>'+dpBadge+'</div>'
+    +'<div class="tl-row-left">'+logo+'<span class="tl-row-ticker">'+esc(r.ticker)+'</span><span class="tl-row-price" data-live-price="'+esc(r.ticker)+'">'+price+'</span><span class="tl-row-change" data-live-change="'+esc(r.ticker)+'" style="font-size:11px;color:var(--mp-text-tertiary);font-family:var(--font-body);margin-left:4px;"></span>'+badge+'</div>'
     +'<div class="tl-row-right"><span class="tl-row-action" style="color:'+actionColor+';">'+esc(r._action)+'</span><span class="tl-row-dir" style="color:'+dirColor+';">'+dirArrow+'</span></div>'
   +'</div>';
 }
 
-function tlBuildDayLane(existingDayCards,dayTradeSignals){
-  // Merge: existing trade_cards_live day trades first, then momentum signals
-  var all=existingDayCards.concat(dayTradeSignals);
-  if(!all.length)return'';
-  var laneId='tl-overflow-day-trade';
-  var html='<div class="tl-lane"><div class="tl-lane-header"><div><div class="tl-lane-title">Day Trade</div><div class="tl-lane-sub">In and out today \u00B7 '+all.length+' signals</div></div></div><div class="tl-lane-rows">';
-  // Existing cards use normal row, momentum signals use day row
-  var visible=all.slice(0,TL_LIMIT);
-  var overflow=all.slice(TL_LIMIT);
-  visible.forEach(function(c){html+=(c._action?tlBuildDayRow(c):tlBuildRow(c));});
+function tlBuildLane(title,subtitle,cards,laneId){
+  if(!cards.length)return'';
+  var visible=cards.slice(0,TL_LIMIT);
+  var overflow=cards.slice(TL_LIMIT);
+  var id=laneId||'tl-overflow-'+title.replace(/\s/g,'-').toLowerCase();
+  var html='<div class="tl-lane"><div class="tl-lane-header"><div><div class="tl-lane-title">'+esc(title)+'</div><div class="tl-lane-sub">'+esc(subtitle)+' \u00B7 '+cards.length+' signals</div></div></div><div class="tl-lane-rows">';
+  visible.forEach(function(c){html+=c._isValue?tlBuildValueRow(c):tlBuildRow(c);});
   if(overflow.length){
-    html+='<div class="tl-overflow" id="'+laneId+'" style="display:none;">';
-    overflow.forEach(function(c){html+=(c._action?tlBuildDayRow(c):tlBuildRow(c));});
-    html+='</div><button class="tl-view-more" onclick="var t=document.getElementById(\''+laneId+'\');var s=t.style.display!==\'none\';t.style.display=s?\'none\':\'block\';this.textContent=s?\'View '+overflow.length+' more\':\'Show less\';">View '+overflow.length+' more</button>';
+    html+='<div class="tl-overflow" id="'+id+'" style="display:none;">';
+    overflow.forEach(function(c){html+=c._isValue?tlBuildValueRow(c):tlBuildRow(c);});
+    html+='</div><button class="tl-view-more" onclick="var t=document.getElementById(\''+id+'\');var s=t.style.display!==\'none\';t.style.display=s?\'none\':\'block\';this.textContent=s?\'View '+overflow.length+' more\':\'Show less\';">View '+overflow.length+' more</button>';
   }
   html+='</div></div>';
   return html;
+}
+
+function tlBuildValueRow(r){
+  var discountStr=r._discount!=null?Math.abs(r._discount).toFixed(1)+'% under FV':'';
+  var revGrowth=r._revGrowth!=null&&r._revGrowth>0?'+'+Number(r._revGrowth).toFixed(1)+'% rev':'';
+  var price=r.price?'$'+fmtPrice(Number(r.price)):'';
+  var verdictBadge='';
+  if(r._verdictLabel){
+    var vClr=r._verdictLabel.indexOf('Supported')>=0?'#00DE94':'#00AEFF';
+    verdictBadge='<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(0,174,255,0.08);color:'+vClr+';border:1px solid rgba(0,174,255,0.15);margin-left:4px;font-family:var(--font-body);">'+esc(r._verdictLabel)+'</span>';
+  }
+  var domain=DOMAIN_MAP[r.ticker];
+  var logo=domain?'<img class="tl-row-logo" src="https://www.google.com/s2/favicons?domain='+domain+'&sz=32" alt="" onerror="this.style.display=\'none\';">':'';
+  return '<div class="tl-row" data-ticker="'+esc(r.ticker)+'" onclick="window.location.href=\'/ticker/'+encodeURIComponent(r.ticker)+'\'">'
+    +'<div class="tl-row-left">'+logo+'<span class="tl-row-ticker">'+esc(r.ticker)+'</span><span class="tl-row-price" data-live-price="'+esc(r.ticker)+'">'+price+'</span><span class="tl-row-change" data-live-change="'+esc(r.ticker)+'" style="font-size:11px;color:var(--mp-text-tertiary);font-family:var(--font-body);margin-left:4px;"></span>'+verdictBadge+'</div>'
+    +'<div class="tl-row-right"><span class="tl-row-action" style="color:#38C8B8;">'+esc(discountStr)+'</span>'
+    +(revGrowth?'<span style="font-size:11px;color:var(--mp-text-muted);font-family:var(--font-body);margin-left:6px;">'+esc(revGrowth)+'</span>':'')
+    +'<span class="tl-row-dir" style="color:#00DE94;">\u25B2</span></div>'
+  +'</div>';
 }
 
 async function loadTradeLanes(){
@@ -7671,31 +7467,119 @@ async function loadTradeLanes(){
   var container=document.getElementById('tl-container');
   if(!container)return;
   try{
-    // Load trade signals + value picks in parallel; day trades built from DATA (already loaded)
-    var tradeP=restFetch('trade_cards_live',{select:'ticker,direction,confidence,regime_adjusted_confidence,card_tier,primary_label,timeframe,holding_days,price',order:'regime_adjusted_confidence.desc.nullslast'});
-    var valueP=loadValuePicks();
-    var rows=await tradeP;
-    var valuePicks=await valueP;
-    var dayTradeSignals=buildDayTrades();
+    // Find the latest scorecard date (may be today or most recent pipeline run)
+    var dateRows=await restFetch('narrative_scorecard',{select:'snapshot_date',order:'snapshot_date.desc',limit:'1'});
+    if(!dateRows||!dateRows.length){container.style.display='none';return;}
+    var scDate=dateRows[0].snapshot_date;
 
-    var buckets={day:[],swing:[],position:[]};
-    if(rows&&rows.length){
-      rows.forEach(function(r){
-        var tf=(r.timeframe||'').toLowerCase();
-        if(tf==='day')buckets.day.push(r);
-        else if(tf==='swing')buckets.swing.push(r);
-        else if(tf==='position')buckets.position.push(r);
-        else{var hd=r.holding_days||7;if(hd<=2)buckets.day.push(r);else if(hd<=14)buckets.swing.push(r);else buckets.position.push(r);}
+    // Fetch scorecard + prices + earnings in parallel
+    var scP=restFetch('narrative_scorecard',{
+      select:'ticker,half_life,nrs,wks_score,walsh_regime,verdict_confidence,predicted_exhaustion_days,narrative_energy_absolute,narrative_mass_score,coordination_score,drift_score,fvd_pct,fair_value,vms,verdict',
+      snapshot_date:'eq.'+scDate
+    });
+    var priceP=restFetch('ticker_snapshots',{
+      select:'ticker,price_close,revenue_growth_yoy',
+      snapshot_date:'eq.'+scDate
+    });
+    var earnP=restFetch('earnings_context',{
+      select:'ticker,days_to_earnings,earnings_surprise_pct',
+      snapshot_date:'eq.'+scDate
+    }).catch(function(){return[];});
+
+    var scRows=await scP;
+    var priceRows=await priceP;
+    var earnRows=await earnP;
+
+    // Build lookup maps
+    var priceMap={},revMap={};
+    if(priceRows)priceRows.forEach(function(p){priceMap[p.ticker]=Number(p.price_close);revMap[p.ticker]=p.revenue_growth_yoy!=null?Number(p.revenue_growth_yoy):null;});
+    var earnMap={};
+    if(earnRows)earnRows.forEach(function(e){earnMap[e.ticker]=e;});
+
+    // Enrich scorecard rows with price + earnings
+    var enriched=(scRows||[]).map(function(r){
+      return Object.assign({},r,{
+        price:priceMap[r.ticker]||null,
+        _revGrowth:revMap[r.ticker],
+        _earn:earnMap[r.ticker]||null,
+        half_life:Number(r.half_life)||0,
+        nrs:Number(r.nrs)||0,
+        wks_score:Number(r.wks_score)||0,
+        verdict_confidence:Number(r.verdict_confidence)||0,
+        narrative_energy_absolute:Number(r.narrative_energy_absolute)||0,
+        narrative_mass_score:Number(r.narrative_mass_score)||0,
+        coordination_score:Number(r.coordination_score)||0,
+        fvd_pct:r.fvd_pct!=null?Number(r.fvd_pct):null,
+        vms:r.vms!=null?Number(r.vms):null
       });
-    }
+    }).filter(function(r){return r.price;});
+
+    // Cache for signal summary boxes
+    TL_SCORECARD=enriched;
+
+    // ── DAY TRADE: half_life < 15 OR nrs > 50 OR post-earnings miss ──
+    var dayTrades=enriched.filter(function(r){
+      var postMiss=r._earn&&r._earn.days_to_earnings>=-5&&r._earn.days_to_earnings<=0&&Number(r._earn.earnings_surprise_pct||0)<-0.05;
+      return r.half_life<15||r.nrs>50||postMiss;
+    }).map(function(r){
+      var postMiss=r._earn&&r._earn.days_to_earnings>=-5&&r._earn.days_to_earnings<=0&&Number(r._earn.earnings_surprise_pct||0)<-0.05;
+      var action,direction;
+      if(r.half_life<10&&r.wks_score>10){action='Ride Up';direction='BULLISH';}
+      else if(r.half_life<10&&r.wks_score<-10){action='Fade';direction='BEARISH';}
+      else if(r.nrs>50){action='Short';direction='BEARISH';}
+      else if(postMiss){action='Short';direction='BEARISH';}
+      else{action='Short';direction='BEARISH';}
+      return Object.assign({},r,{_action:action,direction:direction,_conviction:r.verdict_confidence,_badge:r.walsh_regime});
+    });
+    dayTrades.sort(function(a,b){return b._conviction-a._conviction;});
+    dayTrades=dayTrades.slice(0,20);
+
+    // ── SWING TRADE: CLEAR_PATH, PERSISTENT+NRS, high mass, strong WKS ──
+    var swingTrades=enriched.filter(function(r){
+      return r.walsh_regime==='CLEAR_PATH'
+        ||(r.walsh_regime==='PERSISTENT'&&r.nrs>35&&r.narrative_energy_absolute>400)
+        ||(r.narrative_mass_score>0.5&&r.coordination_score>40)
+        ||(Math.abs(r.wks_score)>20&&r.nrs<30&&r.half_life<30);
+    }).map(function(r){
+      var action,direction,conviction;
+      if(r.walsh_regime==='CLEAR_PATH'){action='Long';direction='BULLISH';conviction=85;}
+      else if(r.walsh_regime==='PERSISTENT'&&r.nrs>35){action='Short';direction='BEARISH';conviction=r.nrs>50?75:65;}
+      else if(r.narrative_mass_score>0.5&&r.coordination_score>40){action='Short';direction='BEARISH';conviction=60;}
+      else if(r.wks_score>20&&r.nrs<30){action='Long';direction='BULLISH';conviction=r.verdict_confidence;}
+      else{action='Short';direction='BEARISH';conviction=r.verdict_confidence;}
+      var badge=r.walsh_regime==='CLEAR_PATH'?'Gold':null;
+      return Object.assign({},r,{_action:action,direction:direction,_conviction:conviction,_badge:badge});
+    });
+    swingTrades.sort(function(a,b){return b._conviction-a._conviction;});
+    swingTrades=swingTrades.slice(0,20);
+
+    // ── VALUE PICKS: fvd_pct < -5, nrs < 40, vms > 50, not PERSISTENT ──
+    var valuePicks=enriched.filter(function(r){
+      return r.fvd_pct!=null&&r.fvd_pct<-5&&r.nrs<40&&r.vms!=null&&r.vms>50&&r.walsh_regime!=='PERSISTENT';
+    }).map(function(r){
+      return Object.assign({},r,{_isValue:true,_discount:r.fvd_pct,_verdictLabel:r.verdict||'',direction:'BULLISH',_action:'Long'});
+    });
+    valuePicks.sort(function(a,b){return a.fvd_pct-b.fvd_pct;});
+    valuePicks=valuePicks.slice(0,20);
+
+    // ── Render ──
     var html='';
-    html+=tlBuildDayLane(buckets.day,dayTradeSignals);
-    html+=tlBuildLane('Swing Trade','3\u201314 day window',buckets.swing);
-    html+=tlBuildValueLane('Value Picks','Under fair value \u00B7 strong fundamentals',valuePicks);
+    html+=tlBuildLane('Day Trade','In and out today',dayTrades,'tl-overflow-day-trade');
+    html+=tlBuildLane('Swing Trade','3\u201314 day window',swingTrades,'tl-overflow-swing-trade');
+    html+=tlBuildLane('Value Picks','Under fair value \u00B7 strong fundamentals',valuePicks,'tl-overflow-value-picks');
     var grid=document.getElementById('tl-grid');
     if(grid)grid.innerHTML=html;
-    if((rows&&rows.length)||valuePicks.length||dayTradeSignals.length)container.style.display='block';
-    else container.style.display='none';
+    container.style.display=(dayTrades.length||swingTrades.length||valuePicks.length)?'block':'none';
+
+    // ── Update signal summary boxes ──
+    var drTraps=document.getElementById('dr-traps');
+    var drSurging=document.getElementById('dr-surging');
+    var drBreaking=document.getElementById('dr-breaking');
+    var drCoord=document.getElementById('dr-coordinated');
+    if(drTraps)drTraps.textContent=enriched.filter(function(r){var v=(r.verdict||'');return v==='Narrative Trap'||v==='Narrative Risk';}).length;
+    if(drSurging)drSurging.textContent=enriched.filter(function(r){return r.walsh_regime==='EXHAUSTING';}).length;
+    if(drBreaking)drBreaking.textContent=enriched.filter(function(r){return(r.walsh_regime==='CLEAR_PATH'||r.walsh_regime==='EXHAUSTING')&&r.half_life<10;}).length;
+    if(drCoord)drCoord.textContent=enriched.filter(function(r){return r.coordination_score>40;}).length;
   }catch(e){console.warn('[TL] Load failed:',e);}
 }
 
