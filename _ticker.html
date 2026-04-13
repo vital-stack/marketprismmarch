@@ -3723,12 +3723,11 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
             <div class="chart-bottom-bar">
               <div class="chart-legend">
                 <div class="legend-item"><div class="leg-line" style="background:var(--text-primary);"></div> Price</div>
-                <div class="legend-item"><div class="leg-dot" style="background:#00DE94;"></div> Bullish Sentiment<span class="leg-tip">Article sentiment on that date</span></div>
-                <div class="legend-item"><div class="leg-dot" style="background:#FF4D4D;"></div> Bearish Sentiment<span class="leg-tip">Article sentiment on that date</span></div>
-                <div class="legend-item"><div class="leg-line" style="background:#00AEFF;opacity:0.7;border-top:2px dashed #00AEFF;height:0;width:14px;"></div> Narrative Energy<span class="leg-tip">Story persistence relative to its natural half-life</span></div>
-                <div class="legend-item"><div class="leg-line" style="background:#FFB800;opacity:0.7;border-top:2px dashed #FFB800;height:0;width:14px;"></div> Physics Energy (universe rank)<span class="leg-tip">Cross-ticker percentile rank of raw narrative kinetic energy vs. full universe that day. 87 = top 13% of tickers.</span></div>
-                <div class="legend-item"><div class="leg-line" style="background:#7B61FF;opacity:0.7;border-top:2px dashed #7B61FF;height:0;width:14px;"></div> Narrative Pressure<span class="leg-tip">Composite manipulation and risk score</span></div>
-                <div class="legend-item"><div class="leg-line" style="background:#38C8B8;opacity:0.85;height:2px;width:14px;"></div> Temporal Energy (universe rank)<span class="leg-tip">Cross-ticker percentile rank vs. full universe that day. 87 = top 13% of tickers. &ge;80 = rally setup, &le;15 = crash setup.</span></div>
+                <div class="legend-item" title="Dot size = narrative mass. Color = keyword price prediction (green=bullish, red=bearish)."><div class="leg-dot" style="background:linear-gradient(135deg,#00DE94,#A0A8B8,#FF4D4D);"></div> Mass Dots</div>
+                <div class="legend-item" title="Forensic narrative force (source quality × coordination × volume)."><div class="leg-line" style="background:#00AEFF;opacity:0.7;border-top:2px dashed #00AEFF;height:0;width:14px;"></div> Narrative Energy</div>
+                <div class="legend-item" title="Cross-ticker percentile rank of raw forensic magnitude vs. full universe that day."><div class="leg-line" style="background:#FFB800;opacity:0.7;border-top:2px dashed #FFB800;height:0;width:14px;"></div> Physics Energy (universe rank)</div>
+                <div class="legend-item"><div class="leg-line" style="background:#7B61FF;opacity:0.7;border-top:2px dashed #7B61FF;height:0;width:14px;"></div> Narrative Pressure</div>
+                <div class="legend-item"><div class="leg-line" style="background:#38C8B8;opacity:0.85;height:2px;width:14px;"></div> Temporal Energy (universe rank)</div>
               </div>
             </div>
             <div class="bear-stories-wrap" id="bear-stories-wrap" style="display:none;">
@@ -5076,6 +5075,14 @@ let ALL_DECAY = [];   // narrative energy time series
 let ALL_PHYSICS = []; // physics energy (narrative_energy_absolute from narrative_scorecard)
 let ALL_PRESSURE = []; // narrative pressure (composite of nrs, overreaction_ratio, coordination_score)
 let ALL_ENERGY_T = []; // temporal energy (narrative_energy_t — direction differentiator)
+let ALL_MASS = [];    // mass dots: { snapshot_date, mass, wks }
+function sma3(arr, key) {
+  return arr.map((d, i) => {
+    if (i < 2) return d;
+    const v = ((d[key] ?? 0) + (arr[i-1][key] ?? 0) + (arr[i-2][key] ?? 0)) / 3;
+    return Object.assign({}, d, { [key]: v });
+  });
+}
 async function loadChart() {
   if (!TICKER) return;
   // Point the "Open in Signal Lab" button at the current ticker.
@@ -5110,7 +5117,7 @@ async function loadChart() {
         limit:  '2000'
       }),
       sbFetch('narrative_scorecard', {
-        select: 'snapshot_date,narrative_energy_absolute,nrs,overreaction_ratio,coordination_score,narrative_energy_t',
+        select: 'snapshot_date,narrative_energy_absolute,nrs,overreaction_ratio,coordination_score,narrative_energy_t,wks_score,narrative_mass_score',
         ticker: `eq.${TICKER}`,
         order:  'snapshot_date.asc',
         limit:  '2000'
@@ -5216,6 +5223,12 @@ async function loadChart() {
           full_coverage_day: true
         }));
     }
+
+    ALL_MASS = physicsRows.filter(r => r.snapshot_date).map(r => ({
+      snapshot_date: r.snapshot_date,
+      mass: r.narrative_mass_score != null ? Number(r.narrative_mass_score) : 0,
+      wks: r.wks_score != null ? Number(r.wks_score) : 0
+    }));
 
     if (!ALL_SNAPS.length) {
       document.getElementById('chart-outer').innerHTML = '<div class="chart-no-data">No price history available.</div>';
@@ -5368,10 +5381,11 @@ function drawChart(snaps, narrs) {
   // Narrative energy overlay (blue dashed, right axis 0-100)
   const lo = snaps[0]?.snapshot_date?.slice(0,10) || '';
   const hi = snaps[snaps.length-1]?.snapshot_date?.slice(0,10) || '';
-  const decayFiltered = ALL_DECAY.filter(d => {
+  let decayFiltered = ALL_DECAY.filter(d => {
     const ds = d.snapshot_date?.slice(0,10);
     return ds && ds >= lo && ds <= hi;
   });
+  decayFiltered = sma3(decayFiltered, 'energy_remaining_pct');
   if (decayFiltered.length > 1) {
     // Right axis ticks for energy
     ctx.save();
@@ -5403,10 +5417,11 @@ function drawChart(snaps, narrs) {
   // 0-100) from mv_physics_energy_normalized. Value is already on the 0-100
   // axis; no rescaling. Thin-coverage days are skipped. Falls back to the
   // full-history max normalization if the MV has no rank.
-  const physicsFiltered = ALL_PHYSICS.filter(d => {
+  let physicsFiltered = ALL_PHYSICS.filter(d => {
     const ds = d.snapshot_date?.slice(0,10);
     return ds && ds >= lo && ds <= hi && d.full_coverage_day !== false;
   });
+  physicsFiltered = sma3(physicsFiltered, 'pe_rank_pct');
   if (physicsFiltered.length > 1) {
     const hasRank = physicsFiltered.some(d => d.pe_rank_pct != null);
     const maxAbsolute = hasRank ? 1 : Math.max(...ALL_PHYSICS.map(d => d.narrative_energy_absolute || 0), 1);
@@ -5515,11 +5530,9 @@ function drawChart(snaps, narrs) {
     ctx.restore();
   }
 
-  // Narrative sentiment dots — position by REAL calendar date, interpolating
-  // between surrounding snapshots so a story on a weekend/gap day doesn't
-  // collapse onto the previous trading day. Previously, an Apr 8 story with
-  // no Apr 8 trading snapshot snapped to Apr 7, causing the hover tooltip and
-  // the story popup to disagree about the date.
+  // Mass dots — position by REAL calendar date, interpolating between
+  // surrounding snapshots so a dot on a weekend/gap day doesn't collapse
+  // onto the previous trading day.
   const snapTimes = snaps.map(s => new Date(s.snapshot_date + 'T12:00:00').getTime());
   function xyOfDate(ds) {
     const t = new Date(ds + 'T12:00:00').getTime();
@@ -5545,30 +5558,38 @@ function drawChart(snaps, narrs) {
   }
 
   const dotHits = [];
-  narrs.forEach(n => {
-    const d = n.snapshot_date?.slice(0,10);
+  const massFiltered = ALL_MASS.filter(d => {
+    const ds = d.snapshot_date?.slice(0,10);
+    return ds && ds >= lo && ds <= hi && d.mass >= 0.1;
+  });
+  massFiltered.forEach(m => {
+    const d = m.snapshot_date?.slice(0,10);
     if (!d) return;
     const pos = xyOfDate(d);
     if (!pos) return;
+    const r = m.mass >= 0.5 ? 7 : m.mass >= 0.3 ? 5 : 3;
+    const color = m.wks > 10 ? '#00DE94' : m.wks < -10 ? '#FF4D4D' : '#A0A8B8';
     ctx.beginPath();
-    ctx.arc(pos.cx, pos.cy, 5, 0, Math.PI*2);
-    ctx.fillStyle   = n.isBear ? '#FF4D4D' : '#00DE94';
-    ctx.fill();
+    ctx.arc(pos.cx, pos.cy, r, 0, Math.PI*2);
+    ctx.fillStyle = color; ctx.fill();
     ctx.strokeStyle = isLight() ? '#FFFFFF' : '#0A0E1A'; ctx.lineWidth = 1.5; ctx.stroke();
-    dotHits.push({ cx: pos.cx, cy: pos.cy, n });
+    dotHits.push({ cx: pos.cx, cy: pos.cy, n: { snapshot_date: m.snapshot_date, mass: m.mass, wks: m.wks, isMassDot: true } });
   });
 
   function showStoryPopup(hit) {
     const n = hit.n;
     document.getElementById('popup-date').textContent = n.snapshot_date?.slice(0,10) || '';
-    document.getElementById('popup-headline').textContent = n.source_outlet || n.verdict || 'Narrative Story';
-    const storyText = n.narrative_text || (n.sentiment_score != null ? `Sentiment: ${n.sentiment_score.toFixed(1)}` : 'No story text available.');
-    document.getElementById('popup-body').textContent = storyText;
-
-    const outlet = n.source_outlet || '';
-    const verdictTag = n.verdict || '';
-    const sentimentTag = n.isBear ? 'Bearish' : 'Bullish';
-    document.getElementById('popup-vms').innerHTML = [outlet, verdictTag, sentimentTag].filter(Boolean).join(' · ');
+    if (n.isMassDot) {
+      document.getElementById('popup-headline').textContent = 'Narrative Mass Signal';
+      const wksLabel = n.wks > 10 ? 'Bullish keywords' : n.wks < -10 ? 'Bearish keywords' : 'Neutral';
+      document.getElementById('popup-body').textContent = `Mass: ${n.mass.toFixed(2)} · WKS: ${n.wks > 0 ? '+' : ''}${n.wks.toFixed(1)} (${wksLabel})`;
+      document.getElementById('popup-vms').innerHTML = '';
+    } else {
+      document.getElementById('popup-headline').textContent = n.source_outlet || n.verdict || 'Narrative Story';
+      const storyText = n.narrative_text || (n.sentiment_score != null ? `Sentiment: ${n.sentiment_score.toFixed(1)}` : 'No story text available.');
+      document.getElementById('popup-body').textContent = storyText;
+      document.getElementById('popup-vms').innerHTML = [n.source_outlet || '', n.verdict || ''].filter(Boolean).join(' · ');
+    }
 
     let px = hit.cx + 10;
     if (px + 260 > W) px = hit.cx - 270;
