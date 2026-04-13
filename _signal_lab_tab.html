@@ -1123,11 +1123,11 @@
   // ── Init (called when tab activates) ──
   window.slInit=function(){
     if(SL_INIT_DONE)return;SL_INIT_DONE=true;
-    // Populate ticker dropdown from MP_DOMAINS (all tracked tickers)
+    // Populate ticker dropdown — curated Signal Lab tickers with best forensic coverage
+    var SL_TICKERS=['AMZN','HD','CRM','GE','DIS','NVDA','V','INTC','MU','AMAT','MSFT','META','AVGO','XOM','GS','AMD','GOOGL','AAPL','UNH','NFLX','RDDT'];
     var sel=document.getElementById('sl-ticker-select');
-    if(sel&&typeof MP_DOMAINS==='object'){
-      var tickers=Object.keys(MP_DOMAINS).sort();
-      tickers.forEach(function(t){var o=document.createElement('option');o.value=t;o.textContent=t;sel.appendChild(o);});
+    if(sel){
+      SL_TICKERS.forEach(function(t){var o=document.createElement('option');o.value=t;o.textContent=t;sel.appendChild(o);});
     }
     // Analyze button: prefer text input, fall back to dropdown
     document.getElementById('sl-load-btn').onclick=function(){
@@ -1152,7 +1152,7 @@
     try{
       var params=new URLSearchParams(window.location.search);
       var urlTicker=(params.get('ticker')||'').trim().toUpperCase().replace(/[^A-Z0-9.\-]/g,'');
-      if(urlTicker&&typeof MP_DOMAINS==='object'&&MP_DOMAINS[urlTicker]){
+      if(urlTicker&&SL_TICKERS.indexOf(urlTicker)!==-1){
         defaultTicker=urlTicker;
         // Clean the URL so a refresh doesn't re-trigger the deeplink.
         if(window.history&&window.history.replaceState){
@@ -1162,7 +1162,7 @@
         }
       }
     }catch(e){}
-    if(typeof MP_DOMAINS==='object'&&MP_DOMAINS[defaultTicker]){
+    if(SL_TICKERS.indexOf(defaultTicker)!==-1){
       document.getElementById('sl-ticker-select').value=defaultTicker;
       slLoadTicker(defaultTicker);
     }
