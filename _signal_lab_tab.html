@@ -964,65 +964,73 @@
     var lo=snaps[0]?.snapshot_date?.slice(0,10)||'',hi=snaps[snaps.length-1]?.snapshot_date?.slice(0,10)||'';
     var pS=snaps[0]?.price_close,pE=snaps[snaps.length-1]?.price_close;
     var pC=pS?(((pE-pS)/pS)*100).toFixed(2):'?';
-    var ld=SL_DECAY.filter(function(d){return d.snapshot_date?.slice(0,10)<=hi;}).slice(-5);
-    // Physics/Temporal Energy: match the chart exactly — drop thin-coverage days
-    // (full_coverage_day===false) and rows with no rank, so the AI sees the same
-    // 5 points the user sees drawn on the line.
-    var lp=SL_PHYSICS.filter(function(d){var ds=d.snapshot_date?.slice(0,10);return ds&&ds<=hi&&d.pe_rank_pct!=null&&d.full_coverage_day!==false;}).slice(-5);
-    var lpr=SL_PRESSURE.filter(function(d){return d.snapshot_date?.slice(0,10)<=hi;}).slice(-5);
-    var le=SL_ENERGY_T.filter(function(d){var ds=d.snapshot_date?.slice(0,10);return ds&&ds<=hi&&d.full_coverage_day!==false;}).slice(-5);
-    // Physics Energy now reads pe_rank_pct from mv_physics_energy_normalized
-    // (cross-ticker percentile rank). mA is only used if the MV has no rank
-    // for a given row, as a last-resort fallback.
-    var mA=Math.max.apply(null,SL_PHYSICS.map(function(d){return d.narrative_energy_absolute||0;}).concat([1]));
-    // Current chart readings — single source of truth. These are the exact values
-    // drawn at the right edge of the chart. The AI must anchor its interpretation
-    // on these, not on any other "blue/yellow" field that may live in the scorecard.
-    var lastBlue=ld.length?(ld[ld.length-1].energy_remaining_pct??null):null;
-    var lastYellow=null;
-    if(lp.length){var lyRow=lp[lp.length-1];lastYellow=lyRow.pe_rank_pct!=null?lyRow.pe_rank_pct:((lyRow.narrative_energy_absolute||0)/mA*100);}
-    var lastTeal=le.length?(le[le.length-1].te_rank_pct??null):null;
-    var lastPurple=lpr.length?(lpr[lpr.length-1].pressure??null):null;
-    // Latest signal regime row within the visible window (or absolute latest if none in window).
-    var scInWindow=SL_SCORECARD.filter(function(d){var ds=d.snapshot_date?.slice(0,10);return ds>=lo&&ds<=hi;});
-    var latestScorecard=scInWindow.length?scInWindow[scInWindow.length-1]:(SL_SCORECARD.length?SL_SCORECARD[SL_SCORECARD.length-1]:null);
-    // Recent narrative headlines within the visible window (up to 8 most recent).
+
+    // Compute Narrative Force + Risk Pressure series for the visible window
+    var blueByDate={};SL_DECAY.forEach(function(d){var ds=d.snapshot_date?.slice(0,10);if(ds)blueByDate[ds]=d.energy_remaining_pct??0;});
+    var yellowByDate={};SL_PHYSICS.forEach(function(d){var ds=d.snapshot_date?.slice(0,10);if(ds&&d.pe_rank_pct!=null)yellowByDate[ds]=d.pe_rank_pct;});
+    var pressureByDate={};SL_PRESSURE.forEach(function(d){var ds=d.snapshot_date?.slice(0,10);if(ds)pressureByDate[ds]=d.pressure;});
+
+    // Build force series
+    var allDates={};[SL_DECAY,SL_PHYSICS,SL_PRESSURE].forEach(function(arr){arr.forEach(function(d){var ds=d.snapshot_date?.slice(0,10);if(ds&&ds>=lo&&ds<=hi)allDates[ds]=true;});});
+    var forceSeries=Object.keys(allDates).sort().map(function(ds){
+      var yel=yellowByDate[ds]!=null?yellowByDate[ds]:0;
+      var blu=blueByDate[ds]!=null?blueByDate[ds]:0;
+      return{date:ds,force:(yel*0.6)+((100-blu)*0.4),risk:pressureByDate[ds]||0,blue:blu};
+    });
+    var lastF=forceSeries.length?forceSeries[forceSeries.length-1]:null;
+    var lastForce=lastF?lastF.force:0;
+    var lastRisk=lastF?lastF.risk:0;
+    var lastBlue=lastF?lastF.blue:0;
+
+    // Determine current regime
+    var regime='Neutral';
+    if(lastForce>60&&lastRisk<20)regime='Building';
+    else if(lastForce<30&&lastBlue<50)regime='Recovering';
+    else if(lastForce>40&&lastRisk>20)regime='Pressure';
+    else if(lastForce<40&&lastBlue>80)regime='Fading';
+
+    // Recent mass dots (WKS signals)
+    var recentMass=(SL_MASS||[]).filter(function(d){var ds=d.snapshot_date?.slice(0,10);return ds>=lo&&ds<=hi&&d.mass>=0.1;}).slice(-8).map(function(d){
+      var wksLabel=d.wks>10?'bullish':d.wks<-10?'bearish':'neutral';
+      return d.snapshot_date.slice(0,10)+': mass='+d.mass.toFixed(2)+' wks='+(d.wks>0?'+':'')+d.wks.toFixed(1)+' ('+wksLabel+')';
+    });
+
+    // Recent narrative headlines
     var recentNarratives=(SL_NARRS||[]).filter(function(d){var ds=d.snapshot_date?.slice(0,10);return ds>=lo&&ds<=hi;}).slice(-8).map(function(d){
       var parts=[d.snapshot_date.slice(0,10)];
       if(d.source_outlet)parts.push('['+d.source_outlet+']');
       if(d.narrative_text)parts.push(String(d.narrative_text).slice(0,120));
-      if(d.sentiment_score!=null)parts.push('(sentiment: '+Number(d.sentiment_score).toFixed(2)+')');
       if(d.verdict)parts.push('verdict: '+d.verdict);
       return parts.join(' ');
     });
+
+    var last5=forceSeries.slice(-5);
     var sdParts=[
       'Ticker: '+SL_TICKER,
       'Timeframe: '+days+' days ('+lo+' to '+hi+')',
       'Price: $'+(pS?.toFixed(2)||'?')+' -> $'+(pE?.toFixed(2)||'?')+' ('+pC+'%)',
       '\n--- PRICE (last 10 days) ---',
       snaps.slice(-10).map(function(s){return s.snapshot_date.slice(0,10)+': $'+(s.price_close!=null?s.price_close.toFixed(2):'?');}).join(', '),
-      '\n--- NARRATIVE ENERGY / Blue (story persistence %, 0-100) ---',
-      ld.map(function(d){return d.snapshot_date.slice(0,10)+': '+Math.round(d.energy_remaining_pct??0);}).join(', '),
-      '\n--- PHYSICS ENERGY / Yellow (universe percentile rank | raw value) ---',
-      '(0 = lowest raw kinetic energy in universe that day, 100 = highest)',
-      lp.map(function(d){var rank=d.pe_rank_pct!=null?Math.round(d.pe_rank_pct):Math.round((d.narrative_energy_absolute||0)/mA*100);var raw=d.raw_pe!=null?d.raw_pe.toFixed(2):(d.narrative_energy_absolute!=null?d.narrative_energy_absolute.toFixed(2):'?');return d.snapshot_date.slice(0,10)+': rank '+rank+' | raw '+raw;}).join('\n'),
-      '\n--- TEMPORAL ENERGY / Teal (universe percentile rank | raw value) ---',
-      '(0 = lowest ET in universe that day, 100 = highest)',
-      le.map(function(d){var rank=d.te_rank_pct!=null?Math.round(d.te_rank_pct):'?';var raw=d.raw_et!=null?d.raw_et.toFixed(2):'?';return d.snapshot_date.slice(0,10)+': rank '+rank+' | raw '+raw;}).join('\n'),
-      '\n--- NARRATIVE PRESSURE / Purple (composite risk 0-100) ---',
-      lpr.map(function(d){return d.snapshot_date.slice(0,10)+': '+Math.round(d.pressure||0);}).join(', '),
-      [
-        '\n--- CURRENT STATE (exact values shown on the chart right now) ---',
-        'Blue (Narrative Energy, story persistence %, 0-100): '+(lastBlue!=null?Math.round(lastBlue):'N/A'),
-        'Yellow (Physics Energy, cross-ticker universe percentile, 0-100): '+(lastYellow!=null?Math.round(lastYellow):'N/A'),
-        'Teal (Temporal Energy, cross-ticker universe percentile, 0-100): '+(lastTeal!=null?Math.round(lastTeal):'N/A'),
-        'Purple (Narrative Pressure, composite 0-100): '+(lastPurple!=null?Math.round(lastPurple):'N/A'),
-        latestScorecard?('Stored regime tag (internal code — DO NOT repeat this string in output; translate to the friendly name): '+(latestScorecard.signal_regime||'NEUTRAL')):'',
-        latestScorecard?('Direction: '+(latestScorecard.regime_direction||'N/A')):'',
-        latestScorecard&&latestScorecard.divergence_score!=null?('Gap score (Blue minus Yellow divergence): '+Math.round(latestScorecard.divergence_score)+' pts'):'',
-        latestScorecard?('Market regime class: '+(latestScorecard.regime_class||'N/A')):'',
-        'IMPORTANT: The Blue/Yellow/Teal/Purple values above are the CURRENT chart readings. Do not cite any other numbers as "current". Yellow and Teal are cross-ticker percentile ranks against the full tracked universe (100 = top 1%, 50 = median, 0 = bottom 1%), not raw scores. Only cite numbers that appear verbatim in the data blocks; do not infer intermediate values or fabricate percentile transitions. NEVER output the internal code names (TRIPLE_THREAT, SATURATION, HOLLOW, YELLOW_COLLAPSE, FRESH_ENERGY, COILED_SPRING, GAP_BUILDING, GAP_FIRED, SATURATION_COLLAPSE, BOTH_MAXED, NEUTRAL, DORMANT, BULL, BEAR). Always translate them to their friendly display name (for example Danger Zone, Peak Narrative, Fading Story, Losing Steam, Building Momentum, Coiled for Breakout, Dormant market, Bull market, Bear market). Before you name a signal as "active", verify every numeric threshold is actually met by the Blue/Yellow/Teal/Purple values above; if any threshold is missed, the signal is NOT active and you must say so plainly — do not claim a signal is active and then describe it as "near but not inside" the threshold.'
-      ].filter(Boolean).join('\n'),
+      '\n--- NARRATIVE FORCE (teal line, 0-100, last 5 days) ---',
+      'Formula: (Physics Energy × 0.6) + ((100 − Energy Remaining) × 0.4)',
+      'Rising = narrative momentum building (bullish). Falling = exhausted.',
+      last5.map(function(d){return d.date+': Force='+Math.round(d.force);}).join(', '),
+      '\n--- RISK PRESSURE (orange line, 0-100, last 5 days) ---',
+      'NRS-weighted composite risk. Above 20 = bearish pressure detected.',
+      last5.map(function(d){return d.date+': Risk='+Math.round(d.risk);}).join(', '),
+      '\n--- CURRENT STATE ---',
+      'Narrative Force: '+Math.round(lastForce)+' (0-100)',
+      'Risk Pressure: '+Math.round(lastRisk)+' (0-100)',
+      'Energy Remaining (Blue): '+Math.round(lastBlue)+'%',
+      'Current Regime: '+regime,
+      '\nRegime definitions:',
+      '  Building (green): Force > 60, Risk < 20 — narrative momentum accelerating cleanly',
+      '  Recovering (light green): Force < 30, Blue < 50 — old narrative dying, price recovers',
+      '  Pressure (red): Force > 40, Risk > 20 — forensic risk detected alongside active narratives',
+      '  Fading (orange): Force < 40, Blue > 80 — entrenched narrative with no force, price grinds down',
+      '  Neutral: default — no strong directional signal',
+      '\nIMPORTANT: Only cite numbers that appear verbatim in the data above. The chart shows exactly two lines (Narrative Force in teal, Risk Pressure in orange-red) plus mass dots on the price line. Do not reference old line names (Blue, Yellow, Teal, Purple, Physics Energy, Temporal Energy, Narrative Pressure). Use only "Narrative Force", "Risk Pressure", "Mass Dots", and regime names (Building, Recovering, Pressure, Fading, Neutral).',
+      recentMass.length>0?'\n--- RECENT MASS DOTS (WKS keyword signals) ---\n'+recentMass.join('\n'):'',
       recentNarratives.length>0?'\n--- RECENT NARRATIVE HEADLINES ---\n'+recentNarratives.join('\n'):''
     ];
 

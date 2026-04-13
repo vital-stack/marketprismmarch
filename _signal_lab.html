@@ -1208,42 +1208,71 @@ async function interpretChart() {
   const priceEnd = snaps[snaps.length-1]?.price_close;
   const priceChg = priceStart ? (((priceEnd - priceStart) / priceStart) * 100).toFixed(2) : '?';
 
-  // Get latest signal values
-  const latestDecay = ALL_DECAY.filter(d => d.snapshot_date?.slice(0,10) <= hi).slice(-5);
-  const latestPhysics = ALL_PHYSICS.filter(d => d.snapshot_date?.slice(0,10) <= hi).slice(-5);
-  const latestPressure = ALL_PRESSURE.filter(d => d.snapshot_date?.slice(0,10) <= hi).slice(-5);
-  const latestET = ALL_ENERGY_T.filter(d => d.snapshot_date?.slice(0,10) <= hi).slice(-5);
+  // Compute Narrative Force + Risk Pressure series
+  const blueByDate = {}; ALL_DECAY.forEach(d => { const ds = d.snapshot_date?.slice(0,10); if (ds) blueByDate[ds] = d.energy_remaining_pct ?? 0; });
+  const maxAbs = Math.max(...ALL_PHYSICS.map(d => d.narrative_energy_absolute || 0), 1);
+  const yellowByDate = {}; ALL_PHYSICS.forEach(d => { const ds = d.snapshot_date?.slice(0,10); if (ds) yellowByDate[ds] = ((d.narrative_energy_absolute || 0) / maxAbs) * 100; });
+  const pressureByDate = {}; ALL_PRESSURE.forEach(d => { const ds = d.snapshot_date?.slice(0,10); if (ds) pressureByDate[ds] = d.pressure; });
 
-  // Normalize yellow and energy_t for context
-  const maxAbs = Math.max(...ALL_PHYSICS.filter(d => d.snapshot_date?.slice(0,10) >= lo && d.snapshot_date?.slice(0,10) <= hi).map(d => d.narrative_energy_absolute || 0), 1);
-  const maxET = Math.max(...ALL_ENERGY_T.filter(d => d.snapshot_date?.slice(0,10) >= lo && d.snapshot_date?.slice(0,10) <= hi).map(d => d.narrative_energy_t || 0), 1);
+  const allDates = {};
+  [ALL_DECAY, ALL_PHYSICS, ALL_PRESSURE].forEach(arr => arr.forEach(d => { const ds = d.snapshot_date?.slice(0,10); if (ds && ds >= lo && ds <= hi) allDates[ds] = true; }));
+  const forceSeries = Object.keys(allDates).sort().map(ds => {
+    const yel = yellowByDate[ds] != null ? yellowByDate[ds] : 0;
+    const blu = blueByDate[ds] != null ? blueByDate[ds] : 0;
+    return { date: ds, force: (yel * 0.6) + ((100 - blu) * 0.4), risk: pressureByDate[ds] || 0, blue: blu };
+  });
 
-  function fmtSignalRow(d, field, max) {
-    const date = d.snapshot_date?.slice(0,10);
-    const raw = d[field] || 0;
-    const norm = max ? ((raw / max) * 100).toFixed(1) : raw;
-    return date + ': ' + norm;
-  }
+  const lastF = forceSeries.length ? forceSeries[forceSeries.length - 1] : null;
+  const lastForce = lastF ? lastF.force : 0;
+  const lastRisk = lastF ? lastF.risk : 0;
+  const lastBlue = lastF ? lastF.blue : 0;
 
+  let regime = 'Neutral';
+  if (lastForce > 60 && lastRisk < 20) regime = 'Building';
+  else if (lastForce < 30 && lastBlue < 50) regime = 'Recovering';
+  else if (lastForce > 40 && lastRisk > 20) regime = 'Pressure';
+  else if (lastForce < 40 && lastBlue > 80) regime = 'Fading';
+
+  const recentMass = (ALL_MASS || []).filter(d => { const ds = d.snapshot_date?.slice(0,10); return ds >= lo && ds <= hi && d.mass >= 0.1; }).slice(-8).map(d => {
+    const wL = d.wks > 10 ? 'bullish' : d.wks < -10 ? 'bearish' : 'neutral';
+    return d.snapshot_date.slice(0,10) + ': mass=' + d.mass.toFixed(2) + ' wks=' + (d.wks > 0 ? '+' : '') + d.wks.toFixed(1) + ' (' + wL + ')';
+  });
+
+  const last5 = forceSeries.slice(-5);
   let signalData = 'Ticker: ' + CURRENT_TICKER + '\n';
   signalData += 'Timeframe: ' + days + ' days (' + lo + ' to ' + hi + ')\n';
-  signalData += 'Price: $' + (priceStart?.toFixed(2) || '?') + ' -> $' + (priceEnd?.toFixed(2) || '?') + ' (' + priceChg + '%)\n\n';
-
-  signalData += 'Narrative Energy (blue, last 5 points, 0-100):\n';
-  latestDecay.forEach(d => { signalData += '  ' + d.snapshot_date?.slice(0,10) + ': ' + (d.energy_remaining_pct ?? 0) + '\n'; });
-
-  signalData += '\nPhysics Energy (yellow, normalized 0-100):\n';
-  latestPhysics.forEach(d => { signalData += '  ' + fmtSignalRow(d, 'narrative_energy_absolute', maxAbs) + '\n'; });
-
-  signalData += '\nNarrative Pressure (purple, 0-100):\n';
-  latestPressure.forEach(d => { signalData += '  ' + d.snapshot_date?.slice(0,10) + ': ' + (d.pressure?.toFixed(1) || 0) + '\n'; });
-
-  signalData += '\nTemporal Energy (teal, normalized 0-100):\n';
-  latestET.forEach(d => { signalData += '  ' + fmtSignalRow(d, 'narrative_energy_t', maxET) + '\n'; });
-
-  // Include price trend context
-  signalData += '\nRecent price points:\n';
-  snaps.slice(-10).forEach(s => { signalData += '  ' + s.snapshot_date?.slice(0,10) + ': $' + s.price_close?.toFixed(2) + '\n'; });
+  signalData += 'Price: $' + (priceStart?.toFixed(2) || '?') + ' -> $' + (priceEnd?.toFixed(2) || '?') + ' (' + priceChg + '%)\n';
+  signalData += '\n--- PRICE (last 10 days) ---\n';
+  signalData += snaps.slice(-10).map(s => s.snapshot_date.slice(0,10) + ': $' + (s.price_close != null ? s.price_close.toFixed(2) : '?')).join(', ') + '\n';
+  signalData += '\n--- NARRATIVE FORCE (teal line, 0-100, last 5 days) ---\n';
+  signalData += 'Formula: (Physics Energy × 0.6) + ((100 − Energy Remaining) × 0.4)\n';
+  signalData += 'Rising = narrative momentum building (bullish). Falling = exhausted.\n';
+  signalData += last5.map(d => d.date + ': Force=' + Math.round(d.force)).join(', ') + '\n';
+  signalData += '\n--- RISK PRESSURE (orange line, 0-100, last 5 days) ---\n';
+  signalData += 'NRS-weighted composite risk. Above 20 = bearish pressure detected.\n';
+  signalData += last5.map(d => d.date + ': Risk=' + Math.round(d.risk)).join(', ') + '\n';
+  signalData += '\n--- CURRENT STATE ---\n';
+  signalData += 'Narrative Force: ' + Math.round(lastForce) + ' (0-100)\n';
+  signalData += 'Risk Pressure: ' + Math.round(lastRisk) + ' (0-100)\n';
+  signalData += 'Energy Remaining (Blue): ' + Math.round(lastBlue) + '%\n';
+  signalData += 'Current Regime: ' + regime + '\n';
+  signalData += '\nRegime definitions:\n';
+  signalData += '  Building (green): Force > 60, Risk < 20 — narrative momentum accelerating cleanly\n';
+  signalData += '  Recovering (light green): Force < 30, Blue < 50 — old narrative dying, price recovers\n';
+  signalData += '  Pressure (red): Force > 40, Risk > 20 — forensic risk detected alongside active narratives\n';
+  signalData += '  Fading (orange): Force < 40, Blue > 80 — entrenched narrative with no force, price grinds down\n';
+  signalData += '  Neutral: default — no strong directional signal\n';
+  signalData += '\nIMPORTANT: Only cite numbers that appear verbatim above. The chart shows two lines (Narrative Force in teal, Risk Pressure in orange-red) plus mass dots on the price line. Do not reference old line names (Blue, Yellow, Teal, Purple, Physics Energy, Temporal Energy, Narrative Pressure). Use only "Narrative Force", "Risk Pressure", "Mass Dots", and regime names.\n';
+  if (recentMass.length > 0) signalData += '\n--- RECENT MASS DOTS (WKS keyword signals) ---\n' + recentMass.join('\n') + '\n';
+  // Recent narrative headlines
+  const recentNarrs = (ALL_NARRS || []).filter(d => { const ds = d.snapshot_date?.slice(0,10); return ds >= lo && ds <= hi; }).slice(-8).map(d => {
+    const parts = [d.snapshot_date.slice(0,10)];
+    if (d.source_outlet) parts.push('[' + d.source_outlet + ']');
+    if (d.narrative_text) parts.push(String(d.narrative_text).slice(0, 120));
+    if (d.verdict) parts.push('verdict: ' + d.verdict);
+    return parts.join(' ');
+  });
+  if (recentNarrs.length > 0) signalData += '\n--- RECENT NARRATIVE HEADLINES ---\n' + recentNarrs.join('\n') + '\n';
 
   try {
     const resp = await fetch('/api/interpret-chart', {
