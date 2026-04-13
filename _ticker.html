@@ -6179,12 +6179,21 @@ async function loadNarratives() {
       }
     });
 
-    // Reorder the top 5 by energy_remaining desc so the highest-energy narrative
-    // shows first. Missing energy values sort to the bottom.
+    // Reorder by composite: latest article date → energy regime (explosive first) → citation count
+    const regimeRank = { EXPLOSIVE: 5, HIGH: 4, MODERATE: 3, LOW: 2, DORMANT: 1 };
     top.sort((a, b) => {
-      const ea = a.energy_remaining == null ? -Infinity : Number(a.energy_remaining);
-      const eb = b.energy_remaining == null ? -Infinity : Number(b.energy_remaining);
-      return eb - ea;
+      // 1. Latest article date (newest first)
+      const allDatesA = (a.allCitations || [a]).map(c => c.snapshot_date).filter(Boolean);
+      const allDatesB = (b.allCitations || [b]).map(c => c.snapshot_date).filter(Boolean);
+      const latestA = allDatesA.length ? allDatesA.sort().pop() : '';
+      const latestB = allDatesB.length ? allDatesB.sort().pop() : '';
+      if (latestA !== latestB) return latestB.localeCompare(latestA);
+      // 2. Energy regime (explosive > high > moderate > low > dormant)
+      const ra = regimeRank[String(a.narrative_energy_regime || '').toUpperCase()] || 0;
+      const rb = regimeRank[String(b.narrative_energy_regime || '').toUpperCase()] || 0;
+      if (ra !== rb) return rb - ra;
+      // 3. Citation count (most cited first)
+      return (b.citation_count || 0) - (a.citation_count || 0);
     });
 
     // ── Fuel bar math ──
