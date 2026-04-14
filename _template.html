@@ -14780,11 +14780,17 @@ function renderBoard(b,rows){
     var hasLink=r.link&&r.link.indexOf('/ticker/')===0;
     var tag=hasLink?'a':'div';
     var hrefAttr=hasLink?' href="'+lbEsc(r.link)+'"':'';
+    // Live price + day-change % — only for ticker rows. Populated by
+    // liveQuotesRefreshDaily() on its 30s/2min cadence.
+    var liveBits=hasLink
+      ? '<span data-live-price="'+lbEsc(r.name)+'" style="font-size:11px;color:var(--mp-text-tertiary);font-weight:500;margin-left:8px;font-family:var(--font-body);"></span>'
+        +'<span data-live-change="'+lbEsc(r.name)+'" style="font-size:10px;margin-left:4px;font-family:var(--font-body);"></span>'
+      : '';
     return '<'+tag+' class="lb-row"'+hrefAttr+'>'
       +'<div class="lb-rank'+rankClass(i)+'">'+(i+1)+'</div>'
       +avHtml
       +'<div class="lb-info">'
-        +'<div class="lb-name">'+lbEsc(r.name)+'</div>'
+        +'<div class="lb-name">'+lbEsc(r.name)+liveBits+'</div>'
         +'<div class="lb-meta">'+lbEsc(r.meta||'')+'</div>'
         +'<div class="lb-bar-wrap"><div class="lb-bar" style="width:'+pct+'%;background:rgba(255,255,255,0.2);"></div></div>'
       +'</div>'
@@ -14864,6 +14870,9 @@ async function loadLeaderboard(){
     if(loading) loading.style.display='none';
     if(body) body.style.display='block';
     updateLBDate();
+    // Populate the live price/change spans on the freshly-rendered rows
+    // without waiting for the next scheduled tick (up to 30s).
+    if(typeof liveQuotesRefreshDaily==='function'){setTimeout(liveQuotesRefreshDaily,50);}
   } catch(e){
     if(loading) loading.style.display='none';
     if(error){error.style.display='block';error.textContent='Error loading leaderboard: '+e.message;}
