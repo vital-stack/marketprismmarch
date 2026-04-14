@@ -184,6 +184,19 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tx);-webkit-font-smo
 </style>
 </head>
 <body>
+<script>
+// Auth gate — require beta code or Supabase session. localStorage is shared
+// across same-origin iframes, so the Market Sharing tab inside the authed
+// dashboard continues to work without re-authenticating.
+(function(){
+  var isBeta = localStorage.getItem('mp-beta-access') === 'true';
+  var betaExpires = localStorage.getItem('mp-beta-expires');
+  if(isBeta && betaExpires && new Date(betaExpires) > new Date()) return;
+  var mpAuth = localStorage.getItem('mp_auth');
+  if(mpAuth){ try{ var s=JSON.parse(mpAuth); if(s.t && (Date.now()-s.t) < 24*3600000) return; }catch(e){} }
+  window.location.href = '/login';
+})();
+</script>
 <div class="app">
   <aside class="sidebar">
     <div class="sb-section">
