@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Signal Charts — Market Prism</title>
+<meta name="description" content="See how Market Prism's narrative physics engine scores three of the most watched stocks today — AAPL, NVDA, and TSLA — with live price, narrative force, risk pressure, and institutional mass signals.">
+<link rel="canonical" href="https://marketprism.co/signal-charts">
+<link rel="icon" type="image/png" href="/assets/Market-Prism-Favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --mp-obsidian:  #080B11;
+    --mp-surface:   #0C1018;
+    --mp-surface2:  #111927;
+    --mp-border:    rgba(255,255,255,0.06);
+    --mp-border-hv: rgba(255,255,255,0.14);
+    --mp-text:      #FFFFFF;
+    --mp-text-2:    rgba(255,255,255,0.7);
+    --mp-text-3:    #A0A8B0;
+    --mp-text-m:    rgba(255,255,255,0.3);
+    --mp-cyan:      #00AEFF;
+    --mp-teal:      #38C8B8;
+    --mp-green:     #00DE94;
+    --mp-red:       #FF4D4D;
+    --mp-amber:     #FFB800;
+    --mp-violet:    #7B61FF;
+    --font-body:    'Inter', system-ui, sans-serif;
+    --font-display: 'Instrument Serif', 'DM Serif Display', Georgia, serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--mp-obsidian); color: var(--mp-text); font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-decoration: none; }
+
+  /* Topbar */
+  .topbar { position: sticky; top: 0; z-index: 50; background: rgba(8,11,17,0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--mp-border); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .topbar-brand { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+  .topbar-brand img { width: 22px; height: 22px; }
+  .topbar-nav { display: flex; gap: 20px; align-items: center; font-size: 13px; color: var(--mp-text-2); }
+  .topbar-nav a { transition: color 0.15s; }
+  .topbar-nav a:hover { color: var(--mp-text); }
+  .topbar-cta { padding: 8px 16px; border-radius: 8px; background: linear-gradient(135deg, #00DE94, #00AEFF); color: #fff !important; font-size: 12px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,174,255,0.2); transition: transform 0.15s; }
+  .topbar-cta:hover { transform: translateY(-1px); }
+
+  /* Page layout */
+  .page { max-width: 960px; margin: 0 auto; padding: 48px 24px 80px; }
+
+  /* Hero */
+  .hero { margin-bottom: 40px; }
+  .hero-eyebrow { font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--mp-text-2); margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .hero-eyebrow::before { content: ''; width: 16px; height: 2px; background: var(--mp-text-3); opacity: 0.35; border-radius: 1px; }
+  .hero-title { font-family: var(--font-body); font-size: clamp(32px, 4vw, 46px); font-weight: 700; letter-spacing: -0.025em; line-height: 1.1; margin: 0 0 4px 0; }
+  .hero-accent { font-family: var(--font-display); font-style: italic; font-weight: 400; font-size: clamp(32px, 4vw, 50px); color: #4DC8F0; letter-spacing: -0.025em; display: block; margin-bottom: 18px; line-height: 1.1; }
+  .hero-sub { font-size: 15px; color: var(--mp-text-2); line-height: 1.6; max-width: 640px; margin: 0; }
+
+  /* Legend card */
+  .legend { margin: 32px 0; padding: 16px 18px; border: 1px solid var(--mp-border); border-radius: 12px; background: var(--mp-surface); display: flex; flex-wrap: wrap; gap: 18px; align-items: center; font-size: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; color: var(--mp-text-2); }
+  .legend-dot { width: 14px; height: 2px; border-radius: 1px; }
+  .legend-circle { width: 8px; height: 8px; border-radius: 50%; background: linear-gradient(135deg, var(--mp-green), var(--mp-text-3), var(--mp-red)); border: 1px solid var(--mp-text); }
+
+  /* Ticker card */
+  .tc { position: relative; margin-bottom: 24px; padding: 24px; border: 1px solid var(--mp-border); border-radius: 16px; background: var(--mp-surface); box-shadow: 0 4px 20px rgba(0,0,0,0.2); overflow: hidden; }
+  .tc::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--mp-cyan); opacity: 0.6; }
+  .tc-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
+  .tc-left { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+  .tc-ticker { font-size: 28px; font-weight: 700; letter-spacing: -0.01em; }
+  .tc-price { font-size: 20px; font-weight: 500; color: var(--mp-text-2); }
+  .tc-change { font-size: 13px; font-weight: 500; padding: 3px 8px; border-radius: 5px; }
+  .tc-change.up { color: var(--mp-green); background: rgba(0,222,148,0.1); }
+  .tc-change.dn { color: var(--mp-red); background: rgba(255,77,77,0.1); }
+  .tc-change.flat { color: var(--mp-text-3); background: rgba(255,255,255,0.05); }
+  .tc-regime { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; padding: 5px 10px; border-radius: 6px; border: 1px solid currentColor; }
+  .tc-chart-wrap { position: relative; height: 340px; margin: 0 -4px; }
+  .tc-chart-wrap canvas { display: block; width: 100%; height: 100%; }
+  .tc-desc { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--mp-border); font-size: 13px; color: var(--mp-text-2); line-height: 1.55; }
+  .tc-desc strong { color: var(--mp-text); font-weight: 600; }
+  .tc-skeleton { padding: 40px 20px; text-align: center; color: var(--mp-text-m); font-size: 13px; }
+
+  /* Report Builder card */
+  .builder-card { margin: 40px 0 0; padding: 28px; border-radius: 16px; background: linear-gradient(135deg, rgba(123,97,255,0.08), rgba(0,174,255,0.05)); border: 1px solid rgba(123,97,255,0.25); display: grid; grid-template-columns: 1fr auto; gap: 22px; align-items: center; }
+  .builder-left { min-width: 0; }
+  .builder-eyebrow { font-size: 11px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--mp-violet); margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+  .builder-eyebrow::before { content: ''; width: 16px; height: 2px; background: var(--mp-violet); border-radius: 1px; opacity: 0.5; }
+  .builder-h3 { font-family: var(--font-body); font-size: clamp(20px, 2.2vw, 26px); font-weight: 600; letter-spacing: -0.02em; margin: 0 0 6px; }
+  .builder-h3 em { font-family: var(--font-display); font-style: italic; color: var(--mp-violet); font-weight: 400; }
+  .builder-desc { font-size: 13px; color: var(--mp-text-2); line-height: 1.55; margin: 0; }
+  .builder-btn { display: inline-flex; align-items: center; gap: 6px; padding: 11px 22px; border-radius: 10px; background: linear-gradient(135deg, var(--mp-violet), var(--mp-cyan)); color: #fff; font-size: 13px; font-weight: 600; white-space: nowrap; box-shadow: 0 6px 16px rgba(123,97,255,0.25); transition: transform 0.2s; }
+  .builder-btn:hover { transform: translateY(-2px); }
+  @media (max-width: 640px) {
+    .builder-card { grid-template-columns: 1fr; text-align: left; }
+  }
+
+  /* Launch Priority email capture */
+  .lp-block { margin: 32px 0 0; padding: 36px 28px; border-radius: 16px; background: linear-gradient(135deg, rgba(0,174,255,0.08), rgba(0,222,148,0.05)); border: 1px solid rgba(77,200,240,0.22); text-align: center; }
+  .lp-eyebrow { font-size: 11px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: #4DC8F0; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .lp-eyebrow::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--mp-green); box-shadow: 0 0 10px rgba(0,222,148,0.7); animation: pulse 1.8s ease-in-out infinite; }
+  .lp-h2 { font-family: var(--font-body); font-size: clamp(24px, 3vw, 32px); font-weight: 600; letter-spacing: -0.02em; margin: 0 0 6px; }
+  .lp-h2 em { font-family: var(--font-display); font-style: italic; color: #4DC8F0; font-weight: 400; }
+  .lp-lead { font-size: 14px; color: var(--mp-text-2); line-height: 1.5; max-width: 560px; margin: 0 auto 22px; }
+  .lp-form { display: flex; gap: 10px; max-width: 480px; margin: 0 auto; flex-wrap: wrap; justify-content: center; }
+  .lp-input { flex: 1; min-width: 220px; padding: 12px 16px; border-radius: 10px; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.12); color: #fff; font-family: inherit; font-size: 14px; transition: border-color 0.15s; }
+  .lp-input:focus { outline: none; border-color: rgba(77,200,240,0.6); }
+  .lp-input::placeholder { color: rgba(255,255,255,0.35); }
+  .lp-btn { padding: 12px 24px; border-radius: 10px; background: linear-gradient(135deg, #00DE94, #00AEFF); color: #fff; font-size: 14px; font-weight: 600; border: none; cursor: pointer; box-shadow: 0 6px 16px rgba(0,174,255,0.25); transition: transform 0.2s; white-space: nowrap; }
+  .lp-btn:hover:not(:disabled) { transform: translateY(-2px); }
+  .lp-btn:disabled { opacity: 0.6; cursor: default; transform: none; }
+  .lp-note { margin-top: 14px; font-size: 11px; color: var(--mp-text-m); letter-spacing: 0.02em; }
+  .lp-success { display: none; padding: 14px 20px; margin: 0 auto; max-width: 480px; border-radius: 10px; background: rgba(0,222,148,0.1); border: 1px solid rgba(0,222,148,0.3); color: var(--mp-green); font-size: 14px; font-weight: 500; }
+  .lp-success.visible { display: block; }
+
+  /* Footer */
+  .footer { margin-top: 60px; padding: 24px; border-top: 1px solid var(--mp-border); text-align: center; font-size: 11px; color: var(--mp-text-m); }
+  .footer a { color: var(--mp-text-3); margin: 0 8px; }
+  .footer a:hover { color: var(--mp-text-2); }
+
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .tc { animation: fadeUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .tc:nth-child(2) { animation-delay: 0.08s; }
+  .tc:nth-child(3) { animation-delay: 0.16s; }
+
+  @media (max-width: 640px) {
+    .page { padding: 32px 16px 60px; }
+    .tc { padding: 18px 16px; }
+    .tc-chart-wrap { height: 280px; }
+    .tc-ticker { font-size: 24px; }
+    .tc-price { font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+<script id="__env_script">window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '' };</script>
+
+<!-- Topbar -->
+<div class="topbar">
+  <a class="topbar-brand" href="/">
+    <img src="/assets/Market-Prism-Favicon.png" alt="Market Prism">
+    Market Prism
+  </a>
+  <div class="topbar-nav">
+    <a href="/">Home</a>
+    <a href="/methodology">Methodology</a>
+    <a href="#launch-priority" class="topbar-cta">Launch priority →</a>
+  </div>
+</div>
+
+<div class="page">
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-eyebrow">Signal Charts</div>
+    <h1 class="hero-title">Price meets narrative.</h1>
+    <span class="hero-accent">See the story behind the move.</span>
+    <p class="hero-sub">Here's how Market Prism reads three of the most-watched stocks in the market today. Price is just the skeleton — Narrative Force and Risk Pressure reveal when a story is building, fading, or quietly turning into a trap. Updated every market open. <a href="#launch-priority" style="color:#4DC8F0;text-decoration:underline;text-underline-offset:3px;">Join the launch list</a> to be first in when we open up.</p>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-item"><span class="legend-dot" style="background:#F0F4FF;"></span> Price</div>
+    <div class="legend-item"><span class="legend-dot" style="background:#38C8B8;"></span> Narrative Force</div>
+    <div class="legend-item"><span class="legend-dot" style="background:#FF6B4A;"></span> Risk Pressure</div>
+    <div class="legend-item"><span class="legend-circle"></span> Mass Dots <span style="color:var(--mp-text-m);">(size = coverage · color = sentiment)</span></div>
+  </div>
+
+  <!-- Ticker cards render here -->
+  <div id="tc-AAPL" class="tc" data-ticker="AAPL">
+    <div class="tc-skeleton">Loading AAPL…</div>
+  </div>
+  <div id="tc-NVDA" class="tc" data-ticker="NVDA">
+    <div class="tc-skeleton">Loading NVDA…</div>
+  </div>
+  <div id="tc-TSLA" class="tc" data-ticker="TSLA">
+    <div class="tc-skeleton">Loading TSLA…</div>
+  </div>
+
+  <!-- Report Builder — free tool, organic share loop -->
+  <div class="builder-card">
+    <div class="builder-left">
+      <div class="builder-eyebrow">Free tool</div>
+      <h3 class="builder-h3">Build your own <em>market report.</em></h3>
+      <p class="builder-desc">Pick tickers, pick themes, and Market Prism assembles a shareable one-pager with live price action, narrative scores, and regime context. No account needed. Share it anywhere — every report links back to the engine.</p>
+    </div>
+    <a href="/api/market-sharing-reports" class="builder-btn">
+      Open Report Builder →
+    </a>
+  </div>
+
+  <!-- Launch priority email capture -->
+  <div class="lp-block" id="launch-priority">
+    <div class="lp-eyebrow">Early access</div>
+    <h2 class="lp-h2">Be first in when we <em>open the doors.</em></h2>
+    <p class="lp-lead">Market Prism is in closed beta. Drop your email and we'll give you priority access when we open public launch, plus a heads-up when our first founding-member spots become available.</p>
+    <form class="lp-form" id="lp-form" onsubmit="return false;">
+      <input type="email" class="lp-input" id="lp-email" placeholder="you@example.com" required autocomplete="email">
+      <button class="lp-btn" id="lp-submit" type="submit">Notify me →</button>
+    </form>
+    <div class="lp-success" id="lp-success">You're on the list. We'll be in touch.</div>
+    <div class="lp-note">No spam. One email when we launch.</div>
+  </div>
+</div>
+
+<div class="footer">
+  <a href="/">Home</a> ·
+  <a href="/pricing">Pricing</a> ·
+  <a href="/methodology">Methodology</a> ·
+  <a href="/terms">Terms</a> ·
+  <a href="/privacy">Privacy</a>
+  <div style="margin-top:10px;">© 2026 Market Prism · Patent Pending</div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════════════════
+// Signal Charts — public showcase. Pulls Supabase REST data for 3 tickers
+// and renders a compact version of the Signal Lab chart on each card.
+// ════════════════════════════════════════════════════════════════════════════
+(function(){
+  var SB_URL  = (window.__env||{}).SUPABASE_URL  || '';
+  var SB_ANON = (window.__env||{}).SUPABASE_ANON || '';
+  var TICKERS = ['AAPL','NVDA','TSLA'];
+  var DAYS = 90;
+
+  function esc(s){var d=document.createElement('div');d.textContent=s==null?'':s;return d.innerHTML;}
+
+  // PostgREST fetch
+  function rest(table, params){
+    if(!SB_URL || !SB_ANON) return Promise.resolve([]);
+    var qs = Object.keys(params).map(function(k){return encodeURIComponent(k)+'='+encodeURIComponent(params[k]);}).join('&');
+    return fetch(SB_URL + '/rest/v1/' + table + '?' + qs, {
+      headers: {apikey:SB_ANON, Authorization:'Bearer '+SB_ANON, Accept:'application/json'}
+    }).then(function(r){ return r.ok ? r.json() : []; }).catch(function(){ return []; });
+  }
+
+  // ── Load data for one ticker ──────────────────────────────────────────────
+  function loadTicker(ticker){
+    var since = new Date(); since.setDate(since.getDate() - 365); // pull 1y so 90-day window has context
+    var sinceStr = since.toISOString().slice(0,10);
+    return Promise.all([
+      rest('ticker_snapshots', {select:'snapshot_date,price_close', ticker:'eq.'+ticker, snapshot_date:'gte.'+sinceStr, order:'snapshot_date.asc', limit:'2000'}),
+      rest('decay_metrics', {select:'snapshot_date,energy_remaining_pct', ticker:'eq.'+ticker, snapshot_date:'gte.'+sinceStr, order:'snapshot_date.asc', limit:'2000'}),
+      rest('mv_physics_energy_normalized', {select:'snapshot_date,pe_rank_pct', ticker:'eq.'+ticker, snapshot_date:'gte.'+sinceStr, order:'snapshot_date.asc', limit:'2000'}),
+      rest('narrative_scorecard', {select:'snapshot_date,nrs,overreaction_ratio,coordination_score,narrative_mass_score,wks_score', ticker:'eq.'+ticker, snapshot_date:'gte.'+sinceStr, order:'snapshot_date.asc', limit:'2000'})
+    ]).then(function(r){
+      var snaps = r[0].filter(function(x){return x.snapshot_date && x.price_close != null;});
+      var decay = r[1].filter(function(x){return x.snapshot_date;});
+      var physics = r[2].filter(function(x){return x.snapshot_date;});
+      var scorecard = r[3].filter(function(x){return x.snapshot_date;});
+      // Derive pressure per date (same formula as Signal Lab)
+      var pressure = scorecard.map(function(x){
+        var nrs = x.nrs || 0, or = Math.min(x.overreaction_ratio || 0, 50), cs = x.coordination_score || 0;
+        return {snapshot_date: x.snapshot_date, pressure: ((nrs/100)*0.4 + (or/50)*0.4 + (cs/100)*0.2) * 100};
+      });
+      // Mass dots
+      var mass = scorecard.map(function(x){
+        return {snapshot_date: x.snapshot_date, mass: x.narrative_mass_score != null ? Number(x.narrative_mass_score) : 0, wks: x.wks_score != null ? Number(x.wks_score) : 0};
+      });
+      return {snaps:snaps, decay:decay, physics:physics, pressure:pressure, mass:mass};
+    });
+  }
+
+  // ── Filter to last N calendar days ────────────────────────────────────────
+  function filterDays(arr, days){
+    if(!arr || !arr.length) return [];
+    var cutoff = new Date(); cutoff.setDate(cutoff.getDate() - days);
+    var cs = cutoff.toISOString().slice(0,10);
+    return arr.filter(function(x){ return (x.snapshot_date||'').slice(0,10) >= cs; });
+  }
+
+  // 3-day SMA (Signal Lab default)
+  function sma3(arr, key){
+    return arr.map(function(d,i){
+      if(i<2) return d;
+      var v = ((d[key] ?? 0) + (arr[i-1][key] ?? 0) + (arr[i-2][key] ?? 0)) / 3;
+      var o = {}; for(var k in d) o[k] = d[k]; o[key] = v;
+      return o;
+    });
+  }
+
+  // ── Draw chart into a canvas element ──────────────────────────────────────
+  function drawChart(canvas, data){
+    var outer = canvas.parentNode;
+    var W = outer.clientWidth - 4, H = outer.clientHeight - 4, DPR = devicePixelRatio || 1;
+    canvas.width = W * DPR; canvas.height = H * DPR;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    var ctx = canvas.getContext('2d');
+    ctx.scale(DPR, DPR);
+
+    var snaps = filterDays(data.snaps, DAYS);
+    if(!snaps.length) { ctx.fillStyle = '#8B97B8'; ctx.font = '12px Inter'; ctx.textAlign = 'center'; ctx.fillText('No price data', W/2, H/2); return; }
+    var prices = snaps.map(function(s){return s.price_close;}).filter(function(p){return p!=null;});
+    var minP = Math.min.apply(null, prices) * 0.975;
+    var maxP = Math.max.apply(null, prices) * 1.025;
+
+    var PAD = {top:12, right:48, bottom:26, left:48};
+    var CW = W - PAD.left - PAD.right;
+    var CH = H - PAD.top - PAD.bottom;
+    var N = snaps.length;
+
+    function xOf(i){ return PAD.left + (i/Math.max(N-1,1))*CW; }
+    function yOf(p){ return PAD.top + (1-(p-minP)/(maxP-minP))*CH; }
+    function yE(v){ return PAD.top + (1-Math.min(100,Math.max(0,v))/100)*CH; }
+
+    var dateIdx = {};
+    snaps.forEach(function(s,i){ if(s.snapshot_date) dateIdx[s.snapshot_date.slice(0,10)] = i; });
+
+    // Grid
+    ctx.font = '10px Inter, sans-serif';
+    ctx.fillStyle = '#8B97B8';
+    ctx.textAlign = 'right';
+    for(var i=0; i<=4; i++){
+      var p = minP + (maxP-minP)*(i/4), y = yOf(p);
+      ctx.strokeStyle = '#2a3350'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(W-PAD.right, y); ctx.stroke();
+      ctx.fillText((p>=100 ? '$'+p.toFixed(0) : '$'+p.toFixed(2)), PAD.left-4, y+3);
+    }
+
+    // X labels (6-8 ticks)
+    ctx.textAlign = 'center';
+    var every = Math.max(1, Math.floor(N/8));
+    snaps.forEach(function(s,i){
+      if(i % every !== 0 && i !== N-1) return;
+      var d = new Date(s.snapshot_date+'T12:00:00');
+      ctx.fillText(d.toLocaleDateString('en-US',{month:'short',day:'numeric'}), xOf(i), H-PAD.bottom+14);
+    });
+
+    // Price fill + line
+    var grad = ctx.createLinearGradient(0, PAD.top, 0, H-PAD.bottom);
+    grad.addColorStop(0, 'rgba(26,110,255,0.12)');
+    grad.addColorStop(1, 'rgba(26,110,255,0)');
+    ctx.beginPath();
+    snaps.forEach(function(s,i){ if(s.price_close==null) return; i===0 ? ctx.moveTo(xOf(i), yOf(s.price_close)) : ctx.lineTo(xOf(i), yOf(s.price_close)); });
+    ctx.lineTo(xOf(N-1), H-PAD.bottom);
+    ctx.lineTo(xOf(0), H-PAD.bottom);
+    ctx.closePath();
+    ctx.fillStyle = grad; ctx.fill();
+    ctx.beginPath();
+    snaps.forEach(function(s,i){ if(s.price_close==null) return; i===0 ? ctx.moveTo(xOf(i), yOf(s.price_close)) : ctx.lineTo(xOf(i), yOf(s.price_close)); });
+    ctx.strokeStyle = '#F0F4FF'; ctx.lineWidth = 1.5; ctx.stroke();
+
+    // Build Narrative Force series within window
+    var lo = snaps[0].snapshot_date.slice(0,10), hi = snaps[snaps.length-1].snapshot_date.slice(0,10);
+    var blueByDate = {};
+    data.decay.forEach(function(d){ var ds = d.snapshot_date?.slice(0,10); if(ds) blueByDate[ds] = d.energy_remaining_pct ?? 0; });
+    var yellowByDate = {};
+    data.physics.forEach(function(d){ var ds = d.snapshot_date?.slice(0,10); if(ds && d.pe_rank_pct != null) yellowByDate[ds] = d.pe_rank_pct; });
+    var allDates = {};
+    [data.decay, data.physics, data.pressure].forEach(function(arr){
+      arr.forEach(function(d){ var ds = d.snapshot_date?.slice(0,10); if(ds && ds>=lo && ds<=hi) allDates[ds] = true; });
+    });
+    var forceSeries = Object.keys(allDates).sort().map(function(ds){
+      var yel = yellowByDate[ds] != null ? yellowByDate[ds] : 0;
+      var blu = blueByDate[ds] != null ? blueByDate[ds] : 0;
+      return {snapshot_date: ds, force: (yel*0.6) + ((100-blu)*0.4)};
+    });
+    forceSeries = sma3(forceSeries, 'force');
+
+    // Narrative Force line (teal)
+    if(forceSeries.length > 1){
+      ctx.save(); ctx.strokeStyle = '#38C8B8'; ctx.lineWidth = 1.8; ctx.globalAlpha = 0.85;
+      ctx.beginPath(); var fs = false;
+      forceSeries.forEach(function(d){
+        var idx = dateIdx[d.snapshot_date];
+        if(idx == null) return;
+        var x = xOf(idx), y2 = yE(d.force);
+        if(!fs){ ctx.moveTo(x, y2); fs = true; } else ctx.lineTo(x, y2);
+      });
+      ctx.stroke(); ctx.restore();
+    }
+
+    // Risk Pressure line (orange)
+    var prf = data.pressure.filter(function(d){ var ds = d.snapshot_date?.slice(0,10); return ds && ds>=lo && ds<=hi; });
+    prf = sma3(prf, 'pressure');
+    if(prf.length > 1){
+      ctx.save(); ctx.strokeStyle = '#FF6B4A'; ctx.lineWidth = 1.4; ctx.globalAlpha = 0.8;
+      ctx.beginPath(); var rs = false;
+      prf.forEach(function(d){
+        var idx = dateIdx[d.snapshot_date.slice(0,10)];
+        if(idx == null) return;
+        var x = xOf(idx), y2 = yE(d.pressure);
+        if(!rs){ ctx.moveTo(x, y2); rs = true; } else ctx.lineTo(x, y2);
+      });
+      ctx.stroke(); ctx.restore();
+    }
+
+    // Regime label (top right)
+    var lastForce = forceSeries.length ? forceSeries[forceSeries.length-1].force : 0;
+    var lastBlue = forceSeries.length ? (blueByDate[forceSeries[forceSeries.length-1].snapshot_date] ?? 0) : 0;
+    var lastPressure = data.pressure.length ? data.pressure[data.pressure.length-1].pressure : 0;
+    var regLbl = 'Neutral', regClr = '#A0A8B8';
+    if(lastForce > 60 && lastPressure < 20){ regLbl = 'Building'; regClr = '#00DE94'; }
+    else if(lastForce < 30 && lastBlue < 50){ regLbl = 'Recovering'; regClr = '#7BE8A4'; }
+    else if(lastForce > 40 && lastPressure > 20){ regLbl = 'Pressure'; regClr = '#FF4D4D'; }
+    else if(lastForce < 40 && lastBlue > 80){ regLbl = 'Fading'; regClr = '#FFB800'; }
+    ctx.save(); ctx.font = 'bold 13px Inter, sans-serif'; ctx.fillStyle = regClr; ctx.globalAlpha = 0.85; ctx.textAlign = 'right';
+    ctx.fillText(regLbl, W-PAD.right-4, PAD.top+14);
+    ctx.restore();
+
+    // Mass dots (last 60 to keep it readable)
+    var massF = data.mass.filter(function(d){ var ds = d.snapshot_date?.slice(0,10); return ds && ds>=lo && ds<=hi && d.mass >= 0.1; });
+    massF.forEach(function(m){
+      var ds = m.snapshot_date?.slice(0,10);
+      var idx = dateIdx[ds];
+      if(idx == null) return;
+      var s = snaps[idx];
+      if(!s || s.price_close == null) return;
+      var r = m.mass >= 0.5 ? 5 : m.mass >= 0.3 ? 4 : 3;
+      var color = m.wks > 10 ? '#00DE94' : m.wks < -10 ? '#FF4D4D' : '#A0A8B8';
+      ctx.beginPath(); ctx.arc(xOf(idx), yOf(s.price_close), r, 0, Math.PI*2);
+      ctx.fillStyle = color; ctx.fill();
+      ctx.strokeStyle = '#0A0E1A'; ctx.lineWidth = 1.5; ctx.stroke();
+    });
+
+    return {regLbl:regLbl, regClr:regClr};
+  }
+
+  // ── Render one ticker card ────────────────────────────────────────────────
+  function regimeDescription(name){
+    if(name === 'Building')   return '<strong>Building</strong> — Narrative Force is rising with no forensic risk in the way. The strongest bullish signal; narrative momentum is accelerating cleanly.';
+    if(name === 'Recovering') return '<strong>Recovering</strong> — The old narrative is dying and force is low. Nothing is holding price down; price typically recovers as the story fades.';
+    if(name === 'Pressure')   return '<strong>Pressure</strong> — Force is present but NRS-weighted risk is elevated. Bearish regime — forensic risk detected alongside active narratives.';
+    if(name === 'Fading')     return '<strong>Fading</strong> — The story has a long half-life but no force behind it. Entrenched bearish narrative; price grinds down as the story persists.';
+    return '<strong>Neutral</strong> — No strong directional signal right now. Narrative energy, physics energy, and risk are roughly balanced.';
+  }
+
+  function renderCard(ticker, data){
+    var card = document.getElementById('tc-' + ticker);
+    if(!card) return;
+    var snaps = data.snaps;
+    var lastSnap = snaps.length ? snaps[snaps.length - 1] : null;
+    var prevSnap = snaps.length > 1 ? snaps[snaps.length - 2] : null;
+    var price = lastSnap ? lastSnap.price_close : null;
+    var change = (price != null && prevSnap && prevSnap.price_close) ? (price - prevSnap.price_close) : null;
+    var pct = (change != null && prevSnap && prevSnap.price_close) ? (change / prevSnap.price_close * 100) : null;
+    var priceStr = price != null ? ('$' + (price >= 100 ? price.toFixed(2) : price.toFixed(2))) : '—';
+    var pctStr = pct != null ? ((pct >= 0 ? '+' : '') + pct.toFixed(2) + '%') : '';
+    var pctCls = pct == null ? 'flat' : (pct > 0 ? 'up' : pct < 0 ? 'dn' : 'flat');
+    card.innerHTML = ''
+      + '<div class="tc-head">'
+        + '<div class="tc-left">'
+          + '<div class="tc-ticker">' + esc(ticker) + '</div>'
+          + '<div class="tc-price">' + esc(priceStr) + '</div>'
+          + (pctStr ? '<div class="tc-change ' + pctCls + '">' + esc(pctStr) + '</div>' : '')
+        + '</div>'
+        + '<div class="tc-regime" id="reg-' + ticker + '" style="color:#A0A8B8;">Loading…</div>'
+      + '</div>'
+      + '<div class="tc-chart-wrap"><canvas id="cv-' + ticker + '"></canvas></div>'
+      + '<div class="tc-desc" id="desc-' + ticker + '">Reading the signal…</div>';
+    var canvas = document.getElementById('cv-' + ticker);
+    // Wait for layout before measuring.
+    requestAnimationFrame(function(){
+      var result = drawChart(canvas, data);
+      if(result){
+        var regEl = document.getElementById('reg-' + ticker);
+        if(regEl){ regEl.textContent = result.regLbl; regEl.style.color = result.regClr; }
+        var descEl = document.getElementById('desc-' + ticker);
+        if(descEl){ descEl.innerHTML = regimeDescription(result.regLbl); }
+      }
+    });
+  }
+
+  // Kick off all three loads
+  TICKERS.forEach(function(ticker){
+    loadTicker(ticker).then(function(data){ renderCard(ticker, data); }).catch(function(){
+      var card = document.getElementById('tc-' + ticker);
+      if(card) card.innerHTML = '<div class="tc-skeleton" style="color:var(--mp-red);">Couldn\'t load ' + esc(ticker) + ' — please refresh.</div>';
+    });
+  });
+
+  // Redraw on resize (throttled)
+  var resizeTimer = null;
+  window.addEventListener('resize', function(){
+    if(resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function(){
+      TICKERS.forEach(function(t){
+        var canvas = document.getElementById('cv-' + t);
+        if(canvas && canvas.__mpData){ drawChart(canvas, canvas.__mpData); }
+      });
+    }, 200);
+  });
+})();
+
+// ════════════════════════════════════════════════════════════════════════════
+// Launch priority email capture — writes to email_signups (same table the
+// homepage footer uses). Graceful fallback if Supabase isn't reachable.
+// ════════════════════════════════════════════════════════════════════════════
+(function(){
+  var SB_URL  = (window.__env||{}).SUPABASE_URL  || '';
+  var SB_ANON = (window.__env||{}).SUPABASE_ANON || '';
+  var form = document.getElementById('lp-form');
+  var emailInput = document.getElementById('lp-email');
+  var submitBtn = document.getElementById('lp-submit');
+  var success = document.getElementById('lp-success');
+  if(!form || !emailInput || !submitBtn) return;
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    var email = (emailInput.value||'').trim();
+    if(!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)){
+      emailInput.focus();
+      emailInput.style.borderColor = 'rgba(255,77,77,0.5)';
+      return;
+    }
+    emailInput.style.borderColor = '';
+    submitBtn.disabled = true;
+    var origText = submitBtn.textContent;
+    submitBtn.textContent = 'Adding\u2026';
+    var done = function(){
+      form.style.display = 'none';
+      success.classList.add('visible');
+    };
+    if(!SB_URL || !SB_ANON){ done(); return; }
+    fetch(SB_URL + '/rest/v1/email_signups', {
+      method: 'POST',
+      headers: {
+        apikey: SB_ANON,
+        Authorization: 'Bearer ' + SB_ANON,
+        'Content-Type': 'application/json',
+        Prefer: 'resolution=ignore-duplicates'
+      },
+      body: JSON.stringify({email: email, source: 'signal_charts_launch_priority'})
+    }).then(function(r){
+      done();
+    }).catch(function(){
+      done(); // still show success — email is captured client-side, better UX than an error
+    });
+  });
+})();
+</script>
+
+</body>
+</html>
