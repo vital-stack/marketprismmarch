@@ -8658,6 +8658,58 @@ function filterSectors(f,btn){
   if(btn)btn.classList.add('active');
   renderSectors();
 }
+// Override each sector card's BULLISH/BEARISH/NEUTRAL badge with a direction
+// derived from today's actual price moves of the sector's tickers. Called
+// after every successful liveQuotesRefreshDaily. Intraday-responsive; replaces
+// the nightly narrative-status-based label.
+function updateSectorSentimentFromLive(quotes){
+  if(!quotes || typeof SECTOR_STATIC === 'undefined' || !SECTOR_STATIC || !SECTOR_STATIC.length) return;
+  SECTOR_STATIC.forEach(function(sec){
+    var tickers = (sec.tickers||[]);
+    var changes = [];
+    tickers.forEach(function(t){
+      var q = quotes[t];
+      if(q && q.changePct != null && isFinite(q.changePct)) changes.push(Number(q.changePct));
+    });
+    if(!changes.length) return;
+    var sum = 0, up = 0, dn = 0;
+    for(var i=0;i<changes.length;i++){
+      sum += changes[i];
+      if(changes[i] > 0) up++;
+      else if(changes[i] < 0) dn++;
+    }
+    var avg = sum / changes.length;
+    var dir;
+    if(avg >= 0.5) dir = 'bull';
+    else if(avg <= -0.5) dir = 'bear';
+    else dir = 'neutral';
+    var label = dir==='bull'?'\u25B2 BULLISH':dir==='bear'?'\u25BC BEARISH':'\u25C6 NEUTRAL';
+    var clr = dir==='bull'?'#00DE94':dir==='bear'?'#FF4D4D':'#00AEFF';
+    var border = dir==='bull'?'rgba(0,222,148,0.3)':dir==='bear'?'rgba(255,77,77,0.3)':'rgba(0,174,255,0.3)';
+    var bg = dir==='bull'?'rgba(0,222,148,0.08)':dir==='bear'?'rgba(255,77,77,0.08)':'rgba(0,174,255,0.08)';
+    var tooltip = 'Avg day change: ' + (avg>=0?'+':'') + avg.toFixed(2) + '% · ' + up + ' up / ' + dn + ' down (' + changes.length + ' tickers)';
+    // Update the big state badge (inside .sector-card-header) on every
+    // sector card whose name matches. We iterate .sector-card elements
+    // rather than relying on a specific selector so this works for both
+    // the Sector tab grid and the Daily Plays mirror grid.
+    var cards = document.querySelectorAll('.sector-card');
+    for(var c=0;c<cards.length;c++){
+      var nameEl = cards[c].querySelector('.sector-name');
+      if(!nameEl) continue;
+      if((nameEl.textContent||'').trim() !== sec.name) continue;
+      var header = cards[c].querySelector('.sector-card-header');
+      if(!header) continue;
+      var badge = header.querySelector('.sector-state');
+      if(!badge) continue;
+      badge.textContent = label;
+      badge.style.color = clr;
+      badge.style.borderColor = border;
+      badge.style.background = bg;
+      badge.title = tooltip;
+    }
+  });
+}
+
 // Chip used inside sector cards — includes data-live-price/data-live-change
 // placeholders so liveQuotesRefreshDaily() picks them up on its 30s cadence.
 function sectorChipHTML(t){
@@ -8759,7 +8811,13 @@ function renderSectors(){
     }).join('');
     dailyGrid.innerHTML=allCards;
   }
-  // Live-price MutationObserver will auto-fire on the newly-inserted chips.
+  // Live-price MutationObserver auto-fires on the newly-inserted chips.
+  // If quotes are already cached, override the sector BULLISH/BEARISH
+  // badges immediately so the first paint is price-accurate instead of
+  // briefly showing the stale narrative-status label.
+  if(window.__LIVE_QUOTES_CACHE && typeof updateSectorSentimentFromLive==='function'){
+    try{updateSectorSentimentFromLive(window.__LIVE_QUOTES_CACHE);}catch(_){}
+  }
 }
 // ── STOCKS WE LOVE / HATE (dynamic) ──────────────────────────────────────────
 function renderLoveHate(){
@@ -13594,6 +13652,9 @@ async function liveQuotesRefreshDaily(){
     var data=await res.json();
     var quotes=(data&&data.quotes)||{};
     ok=Object.keys(quotes).length>0;
+    // Stash quotes so other renderers (sector sentiment override) can reuse
+    // this single fetch without re-calling the batch endpoint.
+    window.__LIVE_QUOTES_CACHE=quotes;
     document.querySelectorAll('[data-live-price]').forEach(function(el){
       var t=el.getAttribute('data-live-price');
       var q=quotes[t];
@@ -13614,6 +13675,10 @@ async function liveQuotesRefreshDaily(){
         el.style.color=pct>=0?'#00DE94':'#FF4D4D';
       }
     });
+    // Recompute sector BULLISH/BEARISH badges from today's actual price moves
+    if(typeof updateSectorSentimentFromLive==='function'){
+      try{updateSectorSentimentFromLive(quotes);}catch(_){}
+    }
   }catch(e){
     // Silent fail — existing Supabase prices remain visible.
   }finally{
