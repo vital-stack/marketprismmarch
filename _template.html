@@ -13102,8 +13102,19 @@ tcSaveQueued = function(){
 };
 
 function tcGetDefaultStaticEventsForDate(dateStr){
-  var base = tcStaticEventsBase ? tcStaticEventsBase(dateStr).slice() : [];
-  (LIVE_EARNINGS_BY_DATE[dateStr] || []).forEach(function(row){
+  var liveRows = LIVE_EARNINGS_BY_DATE[dateStr] || [];
+  var staticBase = tcStaticEventsBase ? tcStaticEventsBase(dateStr).slice() : [];
+  // When live earnings exist for this date, drop the hardcoded 'earn' events
+  // (TC_EARNINGS_2026 stub) to prevent duplicate ticker labels. Keep all other
+  // static event types (FOMC, OPEX, holidays, quad witching).
+  var base = liveRows.length
+    ? staticBase.filter(function(ev){return ev.type!=='earn';})
+    : staticBase;
+  // Dedupe by ticker in case the same ticker appears twice in live rows.
+  var seen = {};
+  liveRows.forEach(function(row){
+    if(!row.ticker||seen[row.ticker])return;
+    seen[row.ticker]=true;
     base.push({
       type:'earn',
       color:'var(--mp-teal)',
