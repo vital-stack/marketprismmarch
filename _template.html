@@ -4692,24 +4692,18 @@ body{
     <div class="daily-grid">
     <div class="daily-content">
 
-      <!-- HERO BANNER -->
-      <div class="daily-hero-banner">
-        <div class="dhb-inner">
-          <div class="dhb-dateline">
-            <span>Market Prism</span><span class="sep">·</span>
-            <span>Daily Intelligence</span><span class="sep">·</span>
-            <span id="daily-date-tag"></span>
-          </div>
-          <div class="dhb-h">Your market briefing.<em>Every morning.</em></div>
-        </div>
+      <!-- HERO HEADER -->
+      <div class="page-header" style="margin-bottom:24px;">
+        <div class="ph-eyebrow">Market Prism · Daily Intelligence</div>
+        <h1>Daily Plays.</h1>
+        <span class="ph-italic">Your market briefing. Every morning.</span>
+        <p>Conviction-ranked signals across day trades, swing setups, momentum, value picks, and narrative traps — refreshed daily from the narrative scorecard.</p>
       </div>
-
-      <!-- Refresh bar -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-        <span style="font-size:11px;color:var(--mp-text-muted);font-family:var(--font-body);">Data refreshes with each pipeline run. Loading may take 5–8 seconds.</span>
-        <button id="daily-refresh-btn" onclick="refreshDailyBrief()" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;border:1px solid var(--mp-border);background:var(--mp-surface);color:var(--mp-text-secondary);font-size:12px;font-weight:500;font-family:var(--font-body);cursor:pointer;transition:all .15s;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0115.36-6.36L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 01-15.36 6.36L3 16"/></svg>
-          Refresh
+      <div class="lb-toolbar">
+        <span class="lb-toolbar-date" id="daily-date-tag"></span>
+        <button class="lb-refresh-btn" id="daily-refresh-btn" onclick="refreshDailyBrief()" title="Refresh daily plays">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          <span>Refresh</span>
         </button>
       </div>
 
@@ -5532,7 +5526,7 @@ var dateStr = new Date().toLocaleDateString('en-US',{weekday:'short',month:'shor
 var el = document.getElementById('topbar-date');
 if(el) el.textContent = dateStr;
 var dailyDateTag = document.getElementById('daily-date-tag');
-if(dailyDateTag) dailyDateTag.textContent = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+if(dailyDateTag) dailyDateTag.textContent = 'Last updated: '+new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'})+' \u00b7 '+new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
 var nfFeedDate = document.getElementById('nf-feed-date');
 if(nfFeedDate) nfFeedDate.textContent = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
 document.querySelectorAll('.page-header p').forEach(function(p,i){
