@@ -3121,19 +3121,18 @@ body{
 @media(max-width:768px){.collection-stats{flex-wrap:wrap;}.cs-stat{flex:1 1 33%;min-width:80px;}}
 
 /* ── Flip Card Scene ── */
+/* ── Gallery Card Scene (clean enterprise) ── */
 .strat-scene{
   perspective:1400px;cursor:pointer;
-  animation:cardReveal .6s cubic-bezier(0.16,1,0.3,1) both;
+  animation:cardReveal .5s cubic-bezier(0.16,1,0.3,1) both;
 }
-.strat-scene:nth-child(1){animation-delay:.06s}.strat-scene:nth-child(2){animation-delay:.14s}
-.strat-scene:nth-child(3){animation-delay:.22s}.strat-scene:nth-child(4){animation-delay:.30s}
-.strat-scene:nth-child(5){animation-delay:.38s}.strat-scene:nth-child(6){animation-delay:.46s}
-.strat-scene:nth-child(7){animation-delay:.54s}.strat-scene:nth-child(8){animation-delay:.62s}
+.strat-scene:nth-child(1){animation-delay:.04s}.strat-scene:nth-child(2){animation-delay:.08s}
+.strat-scene:nth-child(3){animation-delay:.12s}.strat-scene:nth-child(4){animation-delay:.16s}
+.strat-scene:nth-child(5){animation-delay:.20s}.strat-scene:nth-child(6){animation-delay:.24s}
+.strat-scene:nth-child(7){animation-delay:.28s}.strat-scene:nth-child(8){animation-delay:.32s}
 @keyframes cardReveal{
-  0%{opacity:0;transform:translateY(30px) scale(0.92) rotateX(8deg);filter:blur(4px);}
-  60%{opacity:1;filter:blur(0);}
-  80%{transform:translateY(-4px) scale(1.01) rotateX(0deg);}
-  100%{opacity:1;transform:translateY(0) scale(1) rotateX(0deg);filter:blur(0);}
+  0%{opacity:0;transform:translateY(16px);}
+  100%{opacity:1;transform:translateY(0);}
 }
 
 .strat-flipper{
@@ -3145,10 +3144,9 @@ body{
 
 .strat-front,.strat-back{
   backface-visibility:hidden;-webkit-backface-visibility:hidden;
-  border-radius:16px;overflow:hidden;
+  border-radius:12px;overflow:hidden;
   background:var(--mp-surface);
   border:1px solid var(--mp-border);
-  box-shadow:0 4px 16px rgba(0,0,0,0.5);
   position:relative;
 }
 .strat-front{z-index:2;}
@@ -3157,158 +3155,95 @@ body{
   transform:rotateY(180deg);z-index:1;
   overflow-y:auto;
 }
-
-/* Holographic grid overlay */
-.strat-front::before,.strat-back::before{
-  content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:0;
-  background-image:linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px);
-  background-size:48px 48px;
-}
 .strat-front>*,.strat-back>*{position:relative;z-index:1;}
+/* Hide foil on front */
+.strat-front .gc-foil{display:none;}
+.strat-scene:hover .strat-front{border-color:var(--mp-border-hover, rgba(255,255,255,0.14));}
+.strat-scene:hover{transform:translateY(-2px);}
+.strat-scene.flipped:hover{transform:translateY(-2px);}
 
-/* Foil shimmer overlay */
-.strat-front .gc-foil,.strat-back .gc-foil{
-  position:absolute;inset:0;pointer-events:none;z-index:3;border-radius:inherit;
-  background:linear-gradient(125deg,transparent 30%,rgba(255,255,255,0.06) 45%,transparent 60%);
-  background-size:200% 200%;
-  opacity:0;transition:opacity .3s;
-}
-.strat-scene:hover .gc-foil{opacity:1;animation:gcFoilScan 2s linear infinite;}
-@keyframes gcFoilScan{0%{background-position:200% 0}100%{background-position:-200% 0}}
+/* Accent bar — direction-colored, set via inline style */
+.gc-accent-bar{position:absolute;top:0;left:0;right:0;height:3px;z-index:4;border-radius:12px 12px 0 0;}
 
-/* Tier accent bar on top */
-.strat-front::after,.strat-back::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;z-index:4;}
-.strat-scene.tier-platinum .strat-front::after,.strat-scene.tier-platinum .strat-back::after{
-  background:linear-gradient(90deg,#00AEFF,#ffffff80,#00AEFF);background-size:200% 100%;animation:shimmerBar 3s linear infinite;
-}
-.strat-scene.tier-gold .strat-front::after,.strat-scene.tier-gold .strat-back::after{
-  background:linear-gradient(90deg,#FFB800,#FFD700,#FFB800);background-size:200% 100%;animation:shimmerBar 3s linear infinite;
-}
-.strat-scene.tier-surprise .strat-front::after,.strat-scene.tier-surprise .strat-back::after{
-  background:linear-gradient(90deg,#7B61FF,#B97CFF,#7B61FF);background-size:200% 100%;animation:shimmerBar 2s linear infinite;
-}
-.strat-scene.tier-default .strat-front::after,.strat-scene.tier-default .strat-back::after{
-  background:rgba(255,255,255,0.08);
-}
-@keyframes shimmerBar{0%{background-position:200% 0}100%{background-position:-200% 0}}
-
-/* Tier-specific border glow on hover */
-.strat-scene.tier-platinum:hover .strat-front,.strat-scene.tier-platinum:hover .strat-back{border-color:rgba(0,174,255,0.35);box-shadow:0 0 24px rgba(0,174,255,0.15),0 12px 32px rgba(0,0,0,0.5);}
-.strat-scene.tier-gold:hover .strat-front,.strat-scene.tier-gold:hover .strat-back{border-color:rgba(255,184,0,0.35);box-shadow:0 0 24px rgba(255,184,0,0.15),0 12px 32px rgba(0,0,0,0.5);}
-.strat-scene.tier-surprise:hover .strat-front,.strat-scene.tier-surprise:hover .strat-back{border-color:rgba(123,97,255,0.35);box-shadow:0 0 24px rgba(123,97,255,0.15),0 12px 32px rgba(0,0,0,0.5);}
-.strat-scene:hover{transform:translateY(-6px);}
-.strat-scene.flipped:hover{transform:translateY(-6px);}
-
-/* ── FRONT FACE ── */
+/* ── FRONT FACE (clean) ── */
 .gc-header{
-  padding:16px 20px 12px;
+  padding:16px 18px 12px;
   display:flex;justify-content:space-between;align-items:flex-start;
 }
 .gc-header-left{display:flex;align-items:center;gap:10px;}
-.gc-ticker{font-family:var(--font-body);font-size:20px;font-weight:700;color:var(--mp-text-primary);letter-spacing:0.02em;}
-.gc-sector{font-size:12px;color:var(--mp-text-tertiary);margin-top:1px;}
+.gc-ticker{font-family:'Inter',var(--font-body),sans-serif;font-size:18px;font-weight:700;color:#FFFFFF;letter-spacing:-0.02em;}
+.gc-sector{display:none;}
 .gc-price-col{text-align:right;}
-.gc-price{font-family:var(--font-body);font-size:18px;font-weight:600;color:var(--mp-text-primary);}
-.gc-change{font-size:13px;font-weight:600;margin-top:2px;}
-.gc-change.up{color:var(--mp-green);}
-.gc-change.dn{color:var(--mp-red);}
+.gc-price{font-family:'Inter',var(--font-body),sans-serif;font-size:18px;font-weight:600;color:#FFFFFF;}
+.gc-change{font-size:12px;font-weight:500;margin-top:2px;}
+.gc-change.up{color:#00DE94;}
+.gc-change.dn{color:#FF4D4D;}
 
-/* Tier badge */
+/* Tier badge — small, subtle */
 .gc-tier-badge{
-  display:inline-flex;align-items:center;gap:5px;
-  padding:4px 10px;border-radius:6px;
-  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
-  font-family:var(--font-body);margin:0 20px;
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 8px;border-radius:4px;
+  font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;
+  font-family:'Inter',var(--font-body),sans-serif;margin:0 18px;
 }
-.gc-tier-badge.platinum{background:rgba(0,174,255,0.1);color:#00AEFF;border:1px solid rgba(0,174,255,0.2);}
-.gc-tier-badge.gold{background:rgba(255,184,0,0.1);color:#FFB800;border:1px solid rgba(255,184,0,0.2);}
-.gc-tier-badge.surprise{background:rgba(123,97,255,0.1);color:#B97CFF;border:1px solid rgba(123,97,255,0.2);}
-.gc-tier-badge.default{background:rgba(255,255,255,0.04);color:var(--mp-text-muted);border:1px solid var(--mp-border);}
-.gc-tier-icon{font-size:12px;}
+.gc-tier-badge.platinum{background:rgba(0,174,255,0.08);color:#00AEFF;border:1px solid rgba(0,174,255,0.15);}
+.gc-tier-badge.gold{background:rgba(255,184,0,0.08);color:#FFB800;border:1px solid rgba(255,184,0,0.15);}
+.gc-tier-badge.surprise{background:rgba(123,97,255,0.08);color:#B97CFF;border:1px solid rgba(123,97,255,0.15);}
+.gc-tier-badge.default{background:rgba(255,255,255,0.03);color:var(--mp-text-muted);border:1px solid var(--mp-border);}
+.gc-tier-icon{font-size:10px;}
 
-/* Move name */
+/* Move name — white, clean */
 .gc-move-name{
-  font-family:'Inter',var(--font-body),sans-serif;font-size:20px;font-weight:700;
-  text-transform:uppercase;letter-spacing:-.01em;
-  padding:12px 20px 4px;line-height:1.2;text-align:center;
-  background:linear-gradient(135deg,#00AEFF,#00DE94);
-  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-}
-.gc-move-name.dir-bearish,.gc-move-name.dir-bullish,.gc-move-name.dir-neutral{
-  background:linear-gradient(135deg,#00AEFF,#00DE94);
-  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  font-family:'Inter',var(--font-body),sans-serif;font-size:16px;font-weight:700;
+  text-transform:uppercase;letter-spacing:0.02em;
+  padding:8px 18px 4px;line-height:1.2;
+  color:#FFFFFF;
 }
 
-/* Confidence bar */
-.gc-conf-row{padding:8px 20px 4px;display:flex;align-items:center;gap:10px;}
-.gc-conf-label{font-size:11px;color:var(--mp-text-muted);text-transform:uppercase;letter-spacing:.06em;font-family:var(--font-body);width:72px;flex-shrink:0;}
-.gc-conf-track{flex:1;height:6px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;position:relative;}
-.gc-conf-fill{height:100%;border-radius:4px;transition:width 1s cubic-bezier(0.22,1,0.36,1);position:relative;}
-.gc-conf-fill::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2));animation:confShine 2s ease infinite;}
-@keyframes confShine{0%,100%{opacity:0}50%{opacity:1}}
-.gc-conf-val{font-size:14px;font-weight:700;font-family:var(--font-body);width:38px;text-align:right;}
-
-/* Trade Score ring */
-.gc-score-row{padding:6px 20px 4px;display:flex;align-items:center;gap:12px;}
-.gc-score-ring{
-  width:40px;height:40px;border-radius:50%;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;
-  font-size:13px;font-weight:700;color:#fff;font-family:var(--font-body);
-  position:relative;
+/* Direction pill */
+.gc-direction-strip{
+  display:flex;align-items:center;gap:6px;
+  padding:0 18px 12px;
 }
-.gc-score-ring svg{position:absolute;inset:0;transform:rotate(-90deg);}
-.gc-score-ring circle{fill:none;stroke-width:3;stroke-linecap:round;}
-.gc-score-ring .ring-bg{stroke:rgba(255,255,255,0.06);}
-.gc-score-ring .ring-fg{transition:stroke-dashoffset 1.2s cubic-bezier(0.22,1,0.36,1);}
-.gc-score-label{font-size:12px;color:var(--mp-text-muted);font-family:var(--font-body);}
-.gc-score-tier-label{font-size:11px;color:var(--mp-text-tertiary);margin-top:2px;line-height:1.4;}
+.gc-dir-arrow{font-size:12px;font-weight:700;}
+.gc-dir-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;font-family:'Inter',var(--font-body),sans-serif;}
 
-/* Description */
-.gc-description{
-  font-size:13px;color:var(--mp-text-secondary);line-height:1.6;
-  padding:10px 20px 6px;
-  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
-}
+/* Confidence — simple inline */
+.gc-conf-row{padding:0 18px 8px;display:flex;align-items:center;gap:8px;}
+.gc-conf-label{font-size:11px;color:var(--mp-text-muted);text-transform:uppercase;letter-spacing:.04em;font-family:'Inter',var(--font-body),sans-serif;flex-shrink:0;}
+.gc-conf-track{flex:1;height:4px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;}
+.gc-conf-fill{height:100%;border-radius:3px;background:rgba(255,255,255,0.3);}
+.gc-conf-val{font-size:13px;font-weight:600;font-family:'Inter',var(--font-body),sans-serif;color:var(--mp-text-secondary);}
 
 /* Play Expires + Phase */
 .gc-meta-row{
   display:flex;align-items:center;justify-content:space-between;gap:8px;
-  padding:10px 20px;
+  padding:8px 18px;
 }
 .gc-expires{
-  font-size:12px;color:var(--mp-text-muted);font-family:var(--font-body);
-  display:flex;align-items:center;gap:6px;
+  font-size:11px;color:var(--mp-text-muted);font-family:'Inter',var(--font-body),sans-serif;
+  display:flex;align-items:center;gap:4px;
 }
-.gc-expires-icon{font-size:14px;}
-.gc-expires-days{font-weight:700;color:var(--mp-amber);font-size:13px;}
+.gc-expires-icon{font-size:12px;}
+.gc-expires-days{font-weight:700;color:var(--mp-amber);font-size:12px;}
 .gc-phase-badge{
-  display:inline-flex;align-items:center;gap:5px;
-  font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;
-  color:var(--mp-text-muted);font-family:var(--font-body);
-  padding:3px 10px;border-radius:10px;background:rgba(255,255,255,0.04);
-  border:1px solid var(--mp-border);
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;
+  color:var(--mp-text-muted);font-family:'Inter',var(--font-body),sans-serif;
 }
-.gc-phase-dot{width:6px;height:6px;border-radius:50%;animation:pulse 2s ease infinite;}
+.gc-phase-dot{width:5px;height:5px;border-radius:50%;animation:pulse 2s ease infinite;}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
 
-/* Direction indicator strip */
-.gc-direction-strip{
-  display:flex;align-items:center;justify-content:center;gap:6px;
-  padding:0 20px 12px;
-}
-.gc-dir-arrow{font-size:16px;font-weight:700;}
-.gc-dir-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;font-family:var(--font-body);}
-
-/* Flip hint */
+/* Flip hint footer */
 .gc-flip-hint{
-  display:flex;align-items:center;justify-content:center;gap:8px;
-  padding:10px 20px;background:var(--mp-surface2);
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  padding:10px 18px;
   border-top:1px solid var(--mp-border);
-  font-size:12px;color:var(--mp-text-muted);letter-spacing:.03em;
-  transition:color .2s,background .2s;
+  font-size:11px;color:var(--mp-text-muted);letter-spacing:.02em;
+  transition:color .15s;
 }
-.gc-flip-hint svg{width:16px;height:16px;fill:currentColor;transition:transform .3s;}
-.strat-scene:hover .gc-flip-hint{color:var(--mp-cyan);background:rgba(0,174,255,0.04);}
+.gc-flip-hint svg{width:14px;height:14px;fill:currentColor;transition:transform .3s;}
+.strat-scene:hover .gc-flip-hint{color:var(--mp-text-secondary);}
 .strat-scene:hover .gc-flip-hint svg{transform:rotateY(180deg);}
 
 /* ── BACK FACE ── */
@@ -11015,36 +10950,33 @@ function buildStratCard(d){
   var nrs=d.nrs!=null?Math.round(Number(d.nrs)):'\u2014';
   var vms=d.vms!=null?Math.round(Number(d.vms)):'\u2014';
 
-  /* ── FRONT FACE ── */
+  /* ── FRONT FACE (clean enterprise) ── */
   var front='<div class="strat-front">'
-    +'<div class="gc-foil"></div>'
-    +'<div class="gc-tier-badge '+tier+'" style="margin:16px 20px 0;"><span class="gc-tier-icon">'+tierIcon+'</span> '+gcEsc((d.card_tier||'SIGNAL').toUpperCase())+'</div>'
+    +'<div class="gc-accent-bar" style="background:'+phaseCol+';"></div>'
+    +'<div class="gc-tier-badge '+tier+'"><span class="gc-tier-icon">'+tierIcon+'</span> '+gcEsc((d.card_tier||'SIGNAL').toUpperCase())+'</div>'
     +'<div class="gc-header">'
       +'<div class="gc-header-left">'
         +logoHTML(d.ticker,'sm')
-        +'<div>'
-          +'<div class="gc-ticker">'+gcEsc(d.ticker)+'</div>'
-          +'<div class="gc-sector">'+sector+(industry?' \u00B7 '+industry:'')+'</div>'
-        +'</div>'
+        +'<div class="gc-ticker">'+gcEsc(d.ticker)+'</div>'
       +'</div>'
       +'<div class="gc-price-col">'
         +'<div class="gc-price">$'+fmtPrice(price)+'</div>'
         +'<div class="gc-change '+chClass+'">'+chSign+' '+Math.abs(chPct).toFixed(2)+'%</div>'
       +'</div>'
     +'</div>'
-    +'<div class="gc-move-name '+dirClass+'">'+gcEsc(moveName)+'</div>'
+    +'<div class="gc-move-name">'+gcEsc(moveName)+'</div>'
     +'<div class="gc-direction-strip">'
       +'<span class="gc-dir-arrow" style="color:'+phaseCol+';">'+(d.direction==='BEARISH'?'\u25BC':d.direction==='BULLISH'?'\u25B2':'\u25C6')+'</span>'
       +'<span class="gc-dir-label" style="color:'+phaseCol+';">'+gcAction(d)+'</span>'
     +'</div>'
     +'<div class="gc-conf-row">'
       +'<span class="gc-conf-label">Confidence</span>'
-      +'<div class="gc-conf-track"><div class="gc-conf-fill" style="width:'+confPct+'%;background:rgba(255,255,255,0.35);"></div></div>'
-      +'<span class="gc-conf-val" style="color:rgba(255,255,255,0.85);">'+confPct+'%</span>'
+      +'<div class="gc-conf-track"><div class="gc-conf-fill" style="width:'+confPct+'%;"></div></div>'
+      +'<span class="gc-conf-val">'+confPct+'%</span>'
     +'</div>'
     +'<div class="gc-meta-row">'
-      +'<div class="gc-expires"><span class="gc-expires-icon">\u23F3</span> Play Expires: '+expiresStr+(daysLeft?' <span class="gc-expires-days">('+daysLeft+')</span>':'')+'</div>'
-      +'<div class="gc-phase-badge"><span class="gc-phase-dot" style="background:'+phaseCol+';"></span>'+phase+' \u00B7 '+status+'</div>'
+      +'<div class="gc-expires">Expires: '+expiresStr+(daysLeft?' <span class="gc-expires-days">('+daysLeft+')</span>':'')+'</div>'
+      +'<div class="gc-phase-badge"><span class="gc-phase-dot" style="background:'+phaseCol+';"></span>'+phase+'</div>'
     +'</div>'
     +'<div class="gc-flip-hint">'+FLIP_ROTATE_ICON+' Tap for intel</div>'
   +'</div>';
