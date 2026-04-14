@@ -7496,10 +7496,17 @@ async function loadTradeLanes(){
   var container=document.getElementById('tl-container');
   if(!container)return;
   try{
-    // Find the latest scorecard date (may be today or most recent pipeline run)
-    var dateRows=await restFetch('narrative_scorecard',{select:'snapshot_date',order:'snapshot_date.desc',limit:'1'});
+    // Find the latest scorecard date with a full dataset (>=100 rows).
+    // Partial pipeline runs can create a new date with only ~50 rows — skip those.
+    var dateRows=await restFetch('narrative_scorecard',{select:'snapshot_date',order:'snapshot_date.desc',limit:'5'});
     if(!dateRows||!dateRows.length){container.style.display='none';return;}
-    var scDate=dateRows[0].snapshot_date;
+    var scDate=null;
+    for(var di=0;di<dateRows.length;di++){
+      var testDate=dateRows[di].snapshot_date;
+      var countRows=await restFetch('narrative_scorecard',{select:'ticker',snapshot_date:'eq.'+testDate,limit:'101'});
+      if(countRows&&countRows.length>=100){scDate=testDate;break;}
+    }
+    if(!scDate){scDate=dateRows[0].snapshot_date;}
 
     // Fetch scorecard + prices + earnings in parallel
     var scP=restFetch('narrative_scorecard',{
