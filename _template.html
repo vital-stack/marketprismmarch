@@ -2330,22 +2330,19 @@ body{
   0%{opacity:0;transform:translateY(24px) scale(0.97);}
   100%{opacity:1;transform:translateY(0) scale(1);}
 }
+/* ── Card Scene (3D flip container) ── */
 .card-scene{
   width:240px;perspective:1400px;cursor:pointer;flex-shrink:0;
   animation:cardDrop 0.6s cubic-bezier(0.16,1,0.3,1) both;opacity:0;
   position:relative;
-  filter:drop-shadow(0 4px 12px rgba(0,0,0,0.4));
-  transition:filter .3s,transform .3s;
+  transition:transform .2s;
 }
-.card-scene:hover{
-  filter:drop-shadow(0 12px 32px rgba(0,0,0,0.6));
-  transform:translateY(-4px);
-}
+.card-scene:hover{ transform:translateY(-2px); }
 .card-scene:nth-child(1){animation-delay:0.05s;}
-.card-scene:nth-child(2){animation-delay:0.12s;}
-.card-scene:nth-child(3){animation-delay:0.19s;}
-.card-scene:nth-child(4){animation-delay:0.26s;}
-.card-scene:nth-child(5){animation-delay:0.33s;}
+.card-scene:nth-child(2){animation-delay:0.10s;}
+.card-scene:nth-child(3){animation-delay:0.15s;}
+.card-scene:nth-child(4){animation-delay:0.20s;}
+.card-scene:nth-child(5){animation-delay:0.25s;}
 .card-flipper{
   position:relative;width:100%;
   transform-style:preserve-3d;
@@ -2354,94 +2351,59 @@ body{
 .card-scene.flipped .card-flipper{transform:rotateY(180deg);}
 .card-front,.card-back{
   width:100%;backface-visibility:hidden;-webkit-backface-visibility:hidden;
-  border-radius:16px;overflow:hidden;position:relative;
+  border-radius:12px;overflow:hidden;position:relative;
   padding:0;
 }
 .card-back{position:absolute;top:0;left:0;transform:rotateY(180deg);}
-/* Clean border — no rotating gradient */
-.card-front::before,.card-back::before{
-  content:'';position:absolute;inset:0;z-index:0;
-  border-radius:16px;
-  border:1px solid rgba(255,255,255,0.08);
-  pointer-events:none;
-}
-.card-scene:hover .card-front::before,.card-scene:hover .card-back::before{
-  border-color:rgba(255,255,255,0.14);
-}
-/* Subtle outer glow on hover */
-.card-scene::after{
-  content:'';position:absolute;inset:-4px;border-radius:20px;
-  background:rgba(255,255,255,0.04);
-  filter:blur(16px);opacity:0;transition:opacity .4s;z-index:-1;pointer-events:none;
-}
-.card-scene:hover::after{opacity:0.5;}
-/* Inner card */
 .card-front>.tc,.card-back>.card-back-inner{
-  position:relative;z-index:1;border-radius:16px;overflow:hidden;
+  position:relative;z-index:1;border-radius:12px;overflow:hidden;
 }
-/* Subtle foil effects */
-.foil-layer{
-  position:absolute;inset:0;border-radius:16px;pointer-events:none;
-  opacity:0.5;transition:opacity 0.3s;z-index:10;mix-blend-mode:screen;
-  background:linear-gradient(135deg,transparent 0%,rgba(255,255,255,0.03) 30%,rgba(255,255,255,0.06) 50%,rgba(255,255,255,0.03) 70%,transparent 100%);
-}
-.foil-scan{position:absolute;inset:0;border-radius:16px;pointer-events:none;opacity:1;z-index:11;overflow:hidden;}
-.foil-scan::after{
-  content:'';position:absolute;top:-100%;left:-15%;width:130%;height:50%;
-  background:linear-gradient(180deg,transparent 0%,rgba(255,255,255,0.02) 35%,rgba(255,255,255,0.06) 50%,rgba(255,255,255,0.02) 65%,transparent 100%);
-  transform:skewX(-12deg);animation:scanMove 5s ease-in-out infinite;
-}
-@keyframes scanMove{0%{top:-100%;}100%{top:210%;}}
-.card-scene:hover .foil-layer{opacity:1;}
-.card-scene:hover .foil-scan::after{
-  background:linear-gradient(180deg,transparent 0%,rgba(255,255,255,0.04) 35%,rgba(255,255,255,0.10) 50%,rgba(255,255,255,0.04) 65%,transparent 100%);
-}
+/* Foil layers hidden on front — kept for back compatibility */
+.card-front .foil-layer,.card-front .foil-scan{display:none;}
 
-/* ── Card Front Layout ── */
+/* ── Card Front Layout (clean enterprise) ── */
 .tc{
-  background:var(--card-bg, #0C1018);
-  border:1px solid rgba(255,255,255,0.06);
-  display:flex;flex-direction:column;position:relative;border-radius:16px;
-  min-height:360px;
+  background:var(--mp-surface, #0C1018);
+  border:1px solid var(--mp-border, rgba(255,255,255,0.06));
+  display:flex;flex-direction:column;position:relative;border-radius:12px;
   overflow:hidden;
+  transition:border-color .15s;
 }
-.tc::before{
-  content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
-  background:var(--card-line-pattern, linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px));
-  background-size:48px 48px;
-  opacity:1;
-}
-.tc-body{position:relative;z-index:1;padding:20px 20px 16px;display:flex;flex-direction:column;flex:1;}
+.card-scene:hover .tc{ border-color:var(--mp-border-hover, rgba(255,255,255,0.14)); }
+.tc-body{position:relative;z-index:1;padding:16px 18px 14px;display:flex;flex-direction:column;flex:1;}
 /* 1. HEADER */
-.tc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.tc-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;}
 .tc-header-left{display:flex;align-items:center;gap:10px;}
 .tc-logo-wrap{
   width:32px;height:32px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
   border-radius:8px;font-family:'Inter', sans-serif;font-size:11px;font-weight:600;
   letter-spacing:.02em;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);
 }
-.tc-id{display:flex;flex-direction:column;gap:1px;}
-.tc-ticker{font-family:'Inter',var(--font-body),sans-serif;font-size:16px;font-weight:700;letter-spacing:-0.01em;color:#FFFFFF;line-height:1;}
-.tc-name{font-family:'Inter',var(--font-body),sans-serif;font-size:11px;font-weight:400;color:rgba(255,255,255,0.7);letter-spacing:0;}
+.tc-id{display:flex;flex-direction:column;gap:2px;}
+.tc-ticker{font-family:'Inter',var(--font-body),sans-serif;font-size:18px;font-weight:700;letter-spacing:-0.02em;color:#FFFFFF;line-height:1;}
+.tc-name{font-family:'Inter',var(--font-body),sans-serif;font-size:11px;font-weight:400;color:var(--mp-text-tertiary, #A0A8B0);letter-spacing:0;line-height:1.3;}
 .tc-rarity{
-  font-family:'Inter', sans-serif;font-size:11px;font-weight:500;
+  font-family:'Inter', sans-serif;font-size:9px;font-weight:600;
   letter-spacing:0.06em;text-transform:uppercase;padding:2px 8px;
-  border-radius:20px;border:1px solid;white-space:nowrap;flex-shrink:0;opacity:0.65;
+  border-radius:4px;border:1px solid;white-space:nowrap;flex-shrink:0;margin-top:2px;
 }
 /* 2. PRICE ROW */
-.tc-price-row{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;}
-.tc-price{font-family:'Inter', sans-serif;font-size:15px;font-weight:500;letter-spacing:-0.02em;color:#fff;line-height:1;}
-.tc-change{font-family:'Inter', sans-serif;font-size:10px;font-weight:400;letter-spacing:-0.01em;opacity:0.6;}
-/* 3. COMMAND (dominant) */
+.tc-price-row{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px;}
+.tc-price{font-family:'Inter', sans-serif;font-size:20px;font-weight:600;letter-spacing:-0.02em;color:#fff;line-height:1;}
+.tc-change{font-family:'Inter', sans-serif;font-size:12px;font-weight:500;letter-spacing:-0.01em;}
+/* 3. COMMAND (pill badge) */
 .tc-command{
-  font-family:'Inter',var(--font-body),sans-serif;font-size:17px;font-weight:600;
-  letter-spacing:-0.02em;text-transform:uppercase;line-height:1.1;
-  margin-bottom:10px;color:#FFFFFF !important;opacity:0.9;
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:'Inter',var(--font-body),sans-serif;font-size:13px;font-weight:600;
+  letter-spacing:0.04em;text-transform:uppercase;line-height:1;
+  margin-bottom:12px;padding:6px 12px;border-radius:6px;
+  background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);
+  color:#FFFFFF;width:fit-content;
 }
 /* 4. META LINE */
 .tc-meta-line{
   font-family:'Inter', sans-serif;font-size:11px;font-weight:400;
-  color:#A0A8B0;letter-spacing:0.02em;margin-bottom:12px;
+  color:var(--mp-text-tertiary, #A0A8B0);letter-spacing:0.02em;margin-bottom:10px;
 }
 /* 5. CONTEXT */
 .tc-context{
@@ -2451,30 +2413,34 @@ body{
 }
 /* 6. SECTOR + DATE */
 .tc-sector-date{
-  font-family:'Inter', sans-serif;font-size:10px;font-weight:400;
-  color:#A0A8B0;letter-spacing:0.02em;margin-top:14px;margin-bottom:12px;
+  font-family:'Inter', sans-serif;font-size:11px;font-weight:400;
+  color:var(--mp-text-muted, rgba(255,255,255,0.3));margin-top:12px;margin-bottom:10px;
 }
-/* 6b. RARITY ACCENT STRIP */
+/* 6b. ACCENT STRIP (top) */
 .tc-sentiment-bar{
-  position:absolute;top:0;left:0;right:0;height:2px;z-index:2;
-  border-radius:16px 16px 0 0;
+  position:absolute;top:0;left:0;right:0;height:3px;z-index:2;
+  border-radius:12px 12px 0 0;
 }
 /* 7. FOOTER */
-.tc-foot{display:flex;align-items:center;justify-content:space-between;}
+.tc-foot{
+  display:flex;align-items:center;justify-content:space-between;
+  padding-top:10px;border-top:1px solid var(--mp-border, rgba(255,255,255,0.06));
+  margin-top:4px;
+}
 .tc-state-tag{
   display:flex;align-items:center;gap:6px;
-  font-family:'Inter', sans-serif;font-size:11px;font-weight:500;
-  letter-spacing:0.08em;text-transform:uppercase;color:#A0A8B0;
+  font-family:'Inter', sans-serif;font-size:10px;font-weight:500;
+  letter-spacing:0.06em;text-transform:uppercase;color:var(--mp-text-tertiary, #A0A8B0);
 }
 .tc-state-tag .tc-pulse{width:5px;height:5px;border-radius:50%;animation:blink 2s ease infinite;flex-shrink:0;}
 .tc-view-btn{
-  font-family:'Inter', sans-serif;font-size:10px;font-weight:500;
-  letter-spacing:0.04em;text-transform:uppercase;
+  font-family:'Inter', sans-serif;font-size:11px;font-weight:500;
+  letter-spacing:0.02em;
   padding:5px 14px;border-radius:6px;
-  border:1px solid rgba(255,255,255,0.12);background:transparent;
-  color:rgba(255,255,255,0.7);cursor:pointer;transition:all .2s;
+  border:1px solid var(--mp-border, rgba(255,255,255,0.08));background:transparent;
+  color:var(--mp-text-secondary);cursor:pointer;transition:all .15s;
 }
-.tc-view-btn:hover{border-color:rgba(255,255,255,0.25);color:#fff;background:rgba(255,255,255,0.04);}
+.tc-view-btn:hover{border-color:var(--mp-border-hover);color:#fff;background:rgba(255,255,255,0.04);}
 /* Gallery action bar */
 /* ── Card Download Button (all cards) ── */
 .tc-dl-btn{
@@ -10814,16 +10780,13 @@ function buildCardFrontHTML(c,i,dateStr,prefix,showActions){
   }
   // Phase label
   var phaseLabel=(c.narrative_state||c.phase||'Active').toUpperCase();
-  return '<div class="card-scene" style="'+styleVars+';cursor:pointer;" onclick="window.location.href=\'/ticker/'+encodeURIComponent(c.ticker)+'\'">'
+  var cmdColor = isBull ? '#00DE94' : sentiment === 'bear' ? '#FF4D4D' : '#FFB800';
+  return '<div class="card-scene" style="cursor:pointer;" onclick="window.location.href=\'/ticker/'+encodeURIComponent(c.ticker)+'\'">'
     +'<div class="card-flipper">'
       // ── CARD FRONT ──
       +'<div class="card-front" style="position:relative;">'
-        +'<div class="foil-layer"></div><div class="foil-scan"></div>'
-        +'<button class="tc-dl-btn" title="Download card as image" onclick="event.stopPropagation();downloadCard(this)">'
-          +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'
-        +'</button>'
         +'<div class="tc">'
-          +'<div class="tc-sentiment-bar" style="background:'+rarity.color+';"></div>'
+          +'<div class="tc-sentiment-bar" style="background:'+cmdColor+';"></div>'
           +'<div class="tc-body">'
             // 1. Header
             +'<div class="tc-header">'
@@ -10835,24 +10798,19 @@ function buildCardFrontHTML(c,i,dateStr,prefix,showActions){
             // 2. Price row
             +'<div class="tc-price-row">'
               +'<span class="tc-price">$'+fmtPrice(c.price)+'</span>'
-              +'<span class="tc-change" style="color:'+deltaColor+';">'+(isBull?'\u25B2':'\u25BC')+' '+Math.abs(c.price_change_pct||0).toFixed(2)+'%</span>'
+              +'<span class="tc-change" style="color:'+(isBull?'#00DE94':'#FF4D4D')+';">'+(isBull?'\u25B2':'\u25BC')+' '+Math.abs(c.price_change_pct||0).toFixed(2)+'%</span>'
             +'</div>'
-            // 3. Command (white for all cards)
-            +'<div class="tc-command">'+(c.biasText||'Signal').toUpperCase()+'</div>'
-            // 4. Meta line
-            +'<div class="tc-meta-line">'+conf+'% \u2022 '+winTxt+' \u2022 ACTIVE</div>'
-            // 4b. Regime badge (divergence signal)
-            +(c.signal_regime && c.signal_regime !== 'NEUTRAL' ? '<div class="tc-regime-badge" style="margin:6px 0 2px;display:inline-flex;align-items:center;gap:4px;font-size:10px;font-family:var(--font-body);padding:3px 8px;border-radius:99px;border:1px solid '+(c.regime_direction==='BEARISH'?'rgba(255,77,77,0.25)':c.regime_direction==='BULLISH'?'rgba(0,222,148,0.25)':'rgba(0,174,255,0.25)')+';background:'+(c.regime_direction==='BEARISH'?'rgba(255,77,77,0.08)':c.regime_direction==='BULLISH'?'rgba(0,222,148,0.08)':'rgba(0,174,255,0.08)')+';color:'+(c.regime_direction==='BEARISH'?'#FF4D4D':c.regime_direction==='BULLISH'?'#00DE94':'#00AEFF')+';">'+c.signal_regime.replace(/_/g,' ')+'</div>' : '')
-            // 5. Context
+            // 3. Command (pill badge)
+            +'<div class="tc-command" style="border-color:'+hexToRgba(cmdColor,0.2)+';background:'+hexToRgba(cmdColor,0.06)+';color:'+cmdColor+';">'+(c.biasText||'Signal').toUpperCase()+'</div>'
+            // 4. Context
             +'<div class="tc-context">'+signalPrimary+'</div>'
-            // 6. Sector + date
-            +'<div class="tc-sector-date">'+esc(companyName)+(companyIndustry?' \u00B7 '+esc(companyIndustry):'')+' \u2022 Play Expires: '+moveDateStr+'</div>'
-            // 7. Footer
+            // 5. Meta line
+            +'<div class="tc-meta-line">'+conf+'% conf \u00B7 '+winTxt+' \u00B7 Expires '+moveDateStr+'</div>'
+            // 6. Footer
             +'<div class="tc-foot">'
-              +'<span class="tc-state-tag"><span class="tc-pulse" style="background:'+borderColor+';"></span>'+phaseLabel+' \u2022 LIVE</span>'
-              +'<button class="tc-view-btn" onclick="event.stopPropagation();window.location.href=\'/ticker/'+encodeURIComponent(c.ticker)+'\'">View</button>'
+              +'<span class="tc-state-tag"><span class="tc-pulse" style="background:'+cmdColor+';"></span>'+phaseLabel+'</span>'
+              +'<button class="tc-view-btn" onclick="event.stopPropagation();window.location.href=\'/ticker/'+encodeURIComponent(c.ticker)+'\'">View \u2192</button>'
             +'</div>'
-            // Gallery actions
             +actionsHTML
           +'</div>'
         +'</div>'
@@ -10892,26 +10850,7 @@ function buildCardFrontHTML(c,i,dateStr,prefix,showActions){
 }
 // Attach foil + tilt interactions to a container's cards
 function attachCardInteractions(container){
-  container.querySelectorAll('.card-scene').forEach(function(scene,idx){
-    scene.addEventListener('mousemove',function(e){
-      var rect=scene.getBoundingClientRect();
-      var x=((e.clientX-rect.left)/rect.width)*100;
-      var y=((e.clientY-rect.top)/rect.height)*100;
-      scene.querySelectorAll('.foil-layer').forEach(function(el){
-        el.style.setProperty('--mx',x+'%');
-        el.style.setProperty('--my',y+'%');
-      });
-      var rotX=((y-50)/50)*-5;
-      var rotY=((x-50)/50)*5;
-      var isFlipped=scene.classList.contains('flipped');
-      scene.querySelector('.card-flipper').style.transform=
-        (isFlipped?'rotateY(180deg) ':'')+'rotateX('+rotX+'deg) rotateY('+(isFlipped?180+rotY:rotY)+'deg)';
-    });
-    scene.addEventListener('mouseleave',function(){
-      var isFlipped=scene.classList.contains('flipped');
-      scene.querySelector('.card-flipper').style.transform=isFlipped?'rotateY(180deg)':'rotateY(0deg)';
-    });
-  });
+  // No-op — foil/3D tilt removed. Flip is handled via CSS class toggle.
 }
 function renderTradingCards(){
   var deck=document.getElementById('trading-deck');
