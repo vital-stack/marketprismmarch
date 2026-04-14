@@ -1247,7 +1247,11 @@
           if (n.textContent && n.textContent.indexOf('Narrative Force') !== -1 && n.textContent.indexOf('teal') !== -1) n.remove();
         });
 
-        // Copy the active canvas content to the clone
+        // Copy the active canvas content to the clone.
+        // slDrawChart() sets inline pixel width/height on the live canvas based on
+        // the user's browser width. If those carry over into the 900px clone (with
+        // overflow:hidden on the outer wrap) the right side of the chart gets
+        // clipped. Strip the inline size + let CSS scale the full pixel buffer.
         var origCanvas = document.getElementById('sl-price-canvas');
         var cloneCanvas = clone.querySelector('#sl-price-canvas');
         if (origCanvas && cloneCanvas) {
@@ -1255,6 +1259,13 @@
           cloneCanvas.width = origCanvas.width;
           cloneCanvas.height = origCanvas.height;
           ctx.drawImage(origCanvas, 0, 0);
+          cloneCanvas.style.width = '100%';
+          cloneCanvas.style.height = '100%';
+        }
+        var cloneChartOuter = clone.querySelector('#sl-chart-outer');
+        if (cloneChartOuter) {
+          cloneChartOuter.style.overflow = 'hidden';
+          cloneChartOuter.style.width = '100%';
         }
         var altWrap = document.getElementById('slChartAltWrap');
         if (altWrap && altWrap.style.display !== 'none') {
@@ -1265,6 +1276,8 @@
             cloneAlt.width = origAlt.width;
             cloneAlt.height = origAlt.height;
             ctxAlt.drawImage(origAlt, 0, 0);
+            cloneAlt.style.width = '100%';
+            cloneAlt.style.height = '100%';
           }
         }
 
