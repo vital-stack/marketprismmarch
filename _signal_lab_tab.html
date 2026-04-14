@@ -848,20 +848,20 @@
       }
     }
 
-    // Regime label on chart — single word, color-coded
-    if(forceSeries.length&&SL_PRESSURE.length){
+    // Regime label on chart — single word, color-coded. Always shown so every
+    // chart has a visible signal state in the upper right (falls back to
+    // "Neutral" when the ticker doesn't match one of the four named regimes).
+    if(forceSeries.length){
       var lastForce=forceSeries[forceSeries.length-1].force;
       var lastBlue=blueByDate[forceSeries[forceSeries.length-1].snapshot_date]??0;
-      var lastPressure=SL_PRESSURE[SL_PRESSURE.length-1].pressure;
-      var regLbl='',regClr='';
+      var lastPressure=(SL_PRESSURE&&SL_PRESSURE.length)?SL_PRESSURE[SL_PRESSURE.length-1].pressure:0;
+      var regLbl='Neutral',regClr='#A0A8B8';
       if(lastForce>60&&lastPressure<20){regLbl='Building';regClr='#00DE94';}
       else if(lastForce<30&&lastBlue<50){regLbl='Recovering';regClr='#7BE8A4';}
       else if(lastForce>40&&lastPressure>20){regLbl='Pressure';regClr='#FF4D4D';}
       else if(lastForce<40&&lastBlue>80){regLbl='Fading';regClr='#FFB800';}
-      if(regLbl){
-        ctx.save();ctx.font='bold 13px Inter, sans-serif';ctx.fillStyle=regClr;ctx.globalAlpha=0.85;ctx.textAlign='right';
-        ctx.fillText(regLbl,W-PAD.right-4,PAD.top+16);ctx.restore();
-      }
+      ctx.save();ctx.font='bold 13px Inter, sans-serif';ctx.fillStyle=regClr;ctx.globalAlpha=0.85;ctx.textAlign='right';
+      ctx.fillText(regLbl,W-PAD.right-4,PAD.top+16);ctx.restore();
     }
 
     // Mass dots — position by REAL calendar date, interpolating between
