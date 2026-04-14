@@ -735,6 +735,27 @@ body{
 .tl-view-more{width:100%;padding:10px 16px;border:none;border-top:1px solid var(--mp-border);background:none;color:var(--mp-text-muted);font-size:12px;font-weight:500;font-family:var(--font-body);cursor:pointer;transition:all .12s;text-align:center;}
 .tl-view-more:hover{background:var(--mp-surface2);color:var(--mp-text-secondary);}
 
+/* ── AI Picks lane (violet accent, editorial feel) ── */
+.tl-lane.tl-ai{border:1px solid rgba(123,97,255,0.28);box-shadow:0 0 0 1px rgba(123,97,255,0.06),0 8px 24px rgba(123,97,255,0.08);}
+.tl-lane.tl-ai .tl-lane-header{border-bottom-color:rgba(123,97,255,0.2);background:linear-gradient(180deg,rgba(123,97,255,0.08),rgba(123,97,255,0) 85%);}
+.tl-lane.tl-ai .tl-lane-title{font-family:'Instrument Serif','DM Serif Display',Georgia,serif;font-weight:400;font-size:18px;letter-spacing:-0.02em;}
+.tl-lane.tl-ai .tl-lane-sub{font-size:11px;color:var(--mp-text-muted);}
+.tl-ai-badge{font-size:9px;font-weight:700;letter-spacing:.08em;padding:2px 7px;border-radius:3px;background:rgba(123,97,255,0.15);color:#9B87FF;border:1px solid rgba(123,97,255,0.32);font-family:var(--font-body);text-transform:uppercase;margin-left:auto;}
+.tl-ai-row{padding:12px 16px;border-bottom:1px solid var(--mp-border);cursor:pointer;transition:background .12s;}
+.tl-ai-row:last-child{border-bottom:none;}
+.tl-ai-row:hover{background:var(--mp-surface2);}
+.tl-ai-row-top{display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap;}
+.tl-ai-ticker{font-size:15px;font-weight:700;color:var(--mp-text-primary);font-family:var(--font-body);}
+.tl-ai-price{font-size:12px;color:var(--mp-text-muted);font-family:var(--font-body);}
+.tl-ai-action{font-size:13px;font-weight:600;font-family:var(--font-body);margin-left:auto;}
+.tl-ai-dir{font-size:12px;font-weight:700;}
+.tl-ai-conv{font-size:10px;font-weight:600;letter-spacing:.05em;padding:2px 7px;border-radius:3px;background:rgba(123,97,255,0.12);color:#9B87FF;border:1px solid rgba(123,97,255,0.26);font-family:var(--font-body);}
+.tl-ai-thesis{font-size:12px;color:var(--mp-text-secondary);line-height:1.55;font-family:var(--font-body);}
+.tl-ai-empty{padding:24px 18px;text-align:center;font-size:12px;color:var(--mp-text-muted);font-family:var(--font-body);}
+.tl-ai-loading{padding:24px 18px;text-align:center;font-size:12px;color:var(--mp-text-muted);font-family:var(--font-body);display:flex;align-items:center;justify-content:center;gap:10px;}
+.tl-ai-spinner{width:12px;height:12px;border:2px solid rgba(123,97,255,0.2);border-top-color:#9B87FF;border-radius:50%;animation:tlAiSpin 0.9s linear infinite;}
+@keyframes tlAiSpin{to{transform:rotate(360deg);}}
+
 /* System notice banner (outage / delay) */
 .system-notice{
   display:flex;align-items:flex-start;gap:14px;
@@ -7535,7 +7556,7 @@ async function loadTradeLanes(){
     });
     traps=traps.slice(0,20);
 
-    // ═══ Render 6 lanes ═══
+    // ═══ Render 6 lanes + AI Picks lane (appended last to fill trailing grid slot) ═══
     var html='';
     html+=tlBuildLane('Day Trade','In and out today',dayTrades,'tl-overflow-day-trade');
     html+=tlBuildLane('Swing Trade','5\u20137 day window',swingTrades,'tl-overflow-swing-trade');
@@ -7543,9 +7564,20 @@ async function loadTradeLanes(){
     html+=tlBuildLane('Earnings Play','Earnings-driven opportunities',earningsPlays,'tl-overflow-earnings');
     html+=tlBuildLane('Value Picks','Under fair value \u00B7 strong fundamentals',valuePicks,'tl-overflow-value-picks');
     html+=tlBuildLane('Narrative Traps','Active manipulation alerts',traps,'tl-overflow-traps');
+    // AI Picks lane — populated by loadAiPicks() below
+    html+='<div class="tl-lane tl-ai" id="tl-ai-lane">'
+      +'<div class="tl-lane-header">'
+        +'<div><div class="tl-lane-title">Top AI Picks</div><div class="tl-lane-sub">Cross-signal synthesis \u00B7 Claude</div></div>'
+        +'<span class="tl-ai-badge">AI</span>'
+      +'</div>'
+      +'<div class="tl-lane-rows" id="tl-ai-body"><div class="tl-ai-loading"><span class="tl-ai-spinner"></span><span>Synthesizing picks\u2026</span></div></div>'
+    +'</div>';
     var grid=document.getElementById('tl-grid');
     if(grid)grid.innerHTML=html;
     container.style.display=(dayTrades.length||swingTrades.length||momentum.length||earningsPlays.length||valuePicks.length||traps.length)?'block':'none';
+
+    // Fire off AI picks (non-blocking — lane populates when ready)
+    loadAiPicks(scDate,enriched);
 
     // ═══ Signal summary boxes ═══
     var drTraps=document.getElementById('dr-traps');
@@ -7557,6 +7589,71 @@ async function loadTradeLanes(){
     if(drBreaking)drBreaking.textContent=enriched.filter(function(r){return r.half_life<15;}).length;
     if(drCoord)drCoord.textContent=earningsPlays.filter(function(r){return r._dte>=0&&r._dte<=5;}).length;
   }catch(e){console.warn('[TL] Load failed:',e);}
+}
+
+// ── Top AI Picks (Claude) ──────────────────────────────────────────────────
+var _AI_PICKS_INFLIGHT=null;
+async function loadAiPicks(snapshotDate,enriched){
+  var body=document.getElementById('tl-ai-body');
+  if(!body||!snapshotDate||!enriched||!enriched.length)return;
+  // Avoid duplicate calls if loadTradeLanes re-runs
+  if(_AI_PICKS_INFLIGHT===snapshotDate)return;
+  _AI_PICKS_INFLIGHT=snapshotDate;
+  try{
+    // Compact payload — strip to just what the endpoint scorer uses
+    var rows=enriched.map(function(r){
+      return{
+        ticker:r.ticker,price:r.price,nrs:r.nrs,wks_score:r.wks_score,
+        walsh_regime:r.walsh_regime,narrative_energy_absolute:r.narrative_energy_absolute,
+        narrative_energy_regime:r.narrative_energy_regime,narrative_mass_score:r.narrative_mass_score,
+        coordination_score:r.coordination_score,drift_score:r.drift_score,half_life:r.half_life,
+        fvd_pct:r.fvd_pct,vms:r.vms,verdict:r.verdict,verdict_confidence:r.verdict_confidence,
+        _earn:r._earn?{days_to_earnings:r._earn.days_to_earnings,earnings_surprise_pct:r._earn.earnings_surprise_pct}:null
+      };
+    });
+    var res=await fetch('/api/top-ai-picks',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({snapshot_date:snapshotDate,rows:rows})
+    });
+    if(!res.ok){throw new Error('AI picks '+res.status);}
+    var data=await res.json();
+    renderAiPicks(data.picks||[]);
+  }catch(e){
+    console.warn('[AI Picks] Load failed:',e);
+    if(body)body.innerHTML='<div class="tl-ai-empty">AI picks unavailable right now.</div>';
+  }finally{
+    _AI_PICKS_INFLIGHT=null;
+  }
+}
+
+function renderAiPicks(picks){
+  var body=document.getElementById('tl-ai-body');
+  if(!body)return;
+  if(!picks.length){
+    body.innerHTML='<div class="tl-ai-empty">No high-conviction picks for this snapshot.</div>';
+    return;
+  }
+  var priceMap={};
+  (TL_SCORECARD||[]).forEach(function(r){priceMap[r.ticker]=r.price;});
+  var rows=picks.slice(0,6).map(function(p){
+    var dirArrow=p.direction==='BULLISH'?'\u25B2':p.direction==='BEARISH'?'\u25BC':'\u25CF';
+    var dirColor=p.direction==='BULLISH'?'#00DE94':p.direction==='BEARISH'?'#FF4D4D':'#00AEFF';
+    var actionColor=p.action==='Long'?'#00DE94':p.action==='Short'?'#FF4D4D':'#FFB800';
+    var px=priceMap[p.ticker];
+    var priceStr=px?'$'+fmtPrice(Number(px)):'';
+    return'<div class="tl-ai-row" onclick="window.location.href=\'/ticker/'+encodeURIComponent(p.ticker)+'\'">'
+      +'<div class="tl-ai-row-top">'
+        +'<span class="tl-ai-ticker">'+esc(p.ticker)+'</span>'
+        +(priceStr?'<span class="tl-ai-price" data-live-price="'+esc(p.ticker)+'">'+priceStr+'</span>':'')
+        +'<span class="tl-ai-conv">'+Math.round(p.conviction)+'</span>'
+        +'<span class="tl-ai-action" style="color:'+actionColor+';margin-left:auto;">'+esc(p.action)+'</span>'
+        +'<span class="tl-ai-dir" style="color:'+dirColor+';">'+dirArrow+'</span>'
+      +'</div>'
+      +'<div class="tl-ai-thesis">'+esc(p.thesis||'')+'</div>'
+    +'</div>';
+  }).join('');
+  body.innerHTML=rows;
 }
 
 function renderMiniTradingCards(){
