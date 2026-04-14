@@ -735,24 +735,11 @@ body{
 .tl-view-more{width:100%;padding:10px 16px;border:none;border-top:1px solid var(--mp-border);background:none;color:var(--mp-text-muted);font-size:12px;font-weight:500;font-family:var(--font-body);cursor:pointer;transition:all .12s;text-align:center;}
 .tl-view-more:hover{background:var(--mp-surface2);color:var(--mp-text-secondary);}
 
-/* ── AI Picks lane (violet accent, editorial feel) ── */
-.tl-lane.tl-ai{border:1px solid rgba(123,97,255,0.28);box-shadow:0 0 0 1px rgba(123,97,255,0.06),0 8px 24px rgba(123,97,255,0.08);}
-.tl-lane.tl-ai .tl-lane-header{border-bottom-color:rgba(123,97,255,0.2);background:linear-gradient(180deg,rgba(123,97,255,0.08),rgba(123,97,255,0) 85%);}
-.tl-lane.tl-ai .tl-lane-title{font-family:'Instrument Serif','DM Serif Display',Georgia,serif;font-weight:400;font-size:18px;letter-spacing:-0.02em;}
-.tl-lane.tl-ai .tl-lane-sub{font-size:11px;color:var(--mp-text-muted);}
-.tl-ai-badge{font-size:9px;font-weight:700;letter-spacing:.08em;padding:2px 7px;border-radius:3px;background:rgba(123,97,255,0.15);color:#9B87FF;border:1px solid rgba(123,97,255,0.32);font-family:var(--font-body);text-transform:uppercase;margin-left:auto;}
-.tl-ai-row{padding:12px 16px;border-bottom:1px solid var(--mp-border);cursor:pointer;transition:background .12s;}
-.tl-ai-row:last-child{border-bottom:none;}
-.tl-ai-row:hover{background:var(--mp-surface2);}
-.tl-ai-row-top{display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap;}
-.tl-ai-ticker{font-size:15px;font-weight:700;color:var(--mp-text-primary);font-family:var(--font-body);}
-.tl-ai-price{font-size:12px;color:var(--mp-text-muted);font-family:var(--font-body);}
-.tl-ai-action{font-size:13px;font-weight:600;font-family:var(--font-body);margin-left:auto;}
-.tl-ai-dir{font-size:12px;font-weight:700;}
-.tl-ai-conv{font-size:10px;font-weight:600;letter-spacing:.05em;padding:2px 7px;border-radius:3px;background:rgba(123,97,255,0.12);color:#9B87FF;border:1px solid rgba(123,97,255,0.26);font-family:var(--font-body);}
-.tl-ai-thesis{font-size:12px;color:var(--mp-text-secondary);line-height:1.55;font-family:var(--font-body);}
-.tl-ai-empty{padding:24px 18px;text-align:center;font-size:12px;color:var(--mp-text-muted);font-family:var(--font-body);}
-.tl-ai-loading{padding:24px 18px;text-align:center;font-size:12px;color:var(--mp-text-muted);font-family:var(--font-body);display:flex;align-items:center;justify-content:center;gap:10px;}
+/* ── AI Picks lane (matches standard .tl-lane; subtle violet accent only) ── */
+.tl-ai-badge{font-size:9px;font-weight:700;letter-spacing:.08em;padding:2px 6px;border-radius:3px;background:rgba(123,97,255,0.14);color:#9B87FF;border:1px solid rgba(123,97,255,0.3);font-family:var(--font-body);text-transform:uppercase;margin-left:auto;}
+.tl-row-conv{font-size:9px;font-weight:600;padding:1px 5px;border-radius:3px;background:rgba(123,97,255,0.12);color:#9B87FF;border:1px solid rgba(123,97,255,0.26);font-family:var(--font-body);margin-left:4px;}
+.tl-ai-empty{padding:24px 16px;text-align:center;font-size:12px;color:var(--mp-text-muted);font-family:var(--font-body);}
+.tl-ai-loading{padding:24px 16px;text-align:center;font-size:12px;color:var(--mp-text-muted);font-family:var(--font-body);display:flex;align-items:center;justify-content:center;gap:10px;}
 .tl-ai-spinner{width:12px;height:12px;border:2px solid rgba(123,97,255,0.2);border-top-color:#9B87FF;border-radius:50%;animation:tlAiSpin 0.9s linear infinite;}
 @keyframes tlAiSpin{to{transform:rotate(360deg);}}
 
@@ -7642,15 +7629,18 @@ function renderAiPicks(picks){
     var actionColor=p.action==='Long'?'#00DE94':p.action==='Short'?'#FF4D4D':'#FFB800';
     var px=priceMap[p.ticker];
     var priceStr=px?'$'+fmtPrice(Number(px)):'';
-    return'<div class="tl-ai-row" onclick="window.location.href=\'/ticker/'+encodeURIComponent(p.ticker)+'\'">'
-      +'<div class="tl-ai-row-top">'
-        +'<span class="tl-ai-ticker">'+esc(p.ticker)+'</span>'
-        +(priceStr?'<span class="tl-ai-price" data-live-price="'+esc(p.ticker)+'">'+priceStr+'</span>':'')
-        +'<span class="tl-ai-conv">'+Math.round(p.conviction)+'</span>'
-        +'<span class="tl-ai-action" style="color:'+actionColor+';margin-left:auto;">'+esc(p.action)+'</span>'
-        +'<span class="tl-ai-dir" style="color:'+dirColor+';">'+dirArrow+'</span>'
+    var thesis=p.thesis||'';
+    return '<div class="tl-row" data-ticker="'+esc(p.ticker)+'" title="'+esc(thesis)+'" onclick="window.location.href=\'/ticker/'+encodeURIComponent(p.ticker)+'\'">'
+      +'<div class="tl-row-left">'
+        +'<span class="tl-row-ticker">'+esc(p.ticker)+'</span>'
+        +'<span class="tl-row-price" data-live-price="'+esc(p.ticker)+'">'+priceStr+'</span>'
+        +'<span class="tl-row-change" data-live-change="'+esc(p.ticker)+'" style="font-size:11px;color:var(--mp-text-tertiary);font-family:var(--font-body);margin-left:4px;"></span>'
+        +'<span class="tl-row-conv">'+Math.round(p.conviction)+'</span>'
       +'</div>'
-      +'<div class="tl-ai-thesis">'+esc(p.thesis||'')+'</div>'
+      +'<div class="tl-row-right">'
+        +'<span class="tl-row-action" style="color:'+actionColor+';">'+esc(p.action)+'</span>'
+        +'<span class="tl-row-dir" style="color:'+dirColor+';">'+dirArrow+'</span>'
+      +'</div>'
     +'</div>';
   }).join('');
   body.innerHTML=rows;
