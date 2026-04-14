@@ -300,7 +300,8 @@
         </div>
         <div class="sl-view-toggle">
           <button id="sl-view-lines" class="sl-view-btn active" data-sl-view="lines">Lines</button>
-          <button id="sl-view-candles" class="sl-view-btn" data-sl-view="candles">Narrative view</button>
+          <button id="sl-view-candles" class="sl-view-btn" data-sl-view="candles" title="Real OHLC candles from Massive market data">Candles</button>
+          <button id="sl-view-regime" class="sl-view-btn" data-sl-view="regime" title="Regime-colored bars (signal context, not real OHLC)">Regime bars</button>
         </div>
       </div>
 
@@ -396,6 +397,9 @@
   // ── Namespaced globals ──
   var SL_VIS = {'narr-force':true,'risk-pressure':true,'mass-dots':true,'sma-smooth':true};
   var SL_SNAPS=[], SL_NARRS=[], SL_DECAY=[], SL_PHYSICS=[], SL_PRESSURE=[], SL_ENERGY_T=[], SL_SCORECARD=[], SL_MASS=[];
+  // OHLC series from /api/price-history (Massive/Polygon daily aggs). Keyed by
+  // ticker and lazy-loaded the first time the Candles view is activated.
+  var SL_OHLC_CACHE={};
   var SL_TICKER='';
   var SL_INIT_DONE=false;
   var SL_ALT_CHART=null;
@@ -431,7 +435,35 @@
     if(sort==='date-asc')rows=rows.slice().sort(function(a,b){return a.snapshot_date<b.snapshot_date?-1:1;});
     return rows;
   }
-  function slRenderChart(){var s=slFilterSnaps(),n=slFilterNarrs();if(s.length)slDrawChart(s,n);if(SL_CURRENT_VIEW!=='lines')slDrawAltChart(SL_CURRENT_VIEW);}
+  // Lazy-fetch real OHLC (open/high/low/close) for the active ticker from Massive.
+  async function slFetchOHLC(ticker){
+    if(!ticker)return null;
+    if(SL_OHLC_CACHE[ticker])return SL_OHLC_CACHE[ticker];
+    try{
+      var res=await fetch('/api/price-history?ticker='+encodeURIComponent(ticker)+'&days=730');
+      if(!res.ok)throw new Error('HTTP '+res.status);
+      var j=await res.json();
+      var rows=(j.series||[]).filter(function(r){return r&&r.snapshot_date&&r.price_close!=null;});
+      SL_OHLC_CACHE[ticker]=rows;
+      return rows;
+    }catch(e){console.warn('[SignalLab] OHLC fetch failed',e);return null;}
+  }
+  function slFilterOHLC(){
+    var rows=SL_OHLC_CACHE[SL_TICKER];if(!rows||!rows.length)return null;
+    var days=slGetDays();if(!days)return rows;
+    var c=new Date();c.setDate(c.getDate()-days);var cs=c.toISOString().slice(0,10);
+    return rows.filter(function(s){return s.snapshot_date>=cs;});
+  }
+  function slRenderChart(){
+    var n=slFilterNarrs();
+    var useCandles=SL_CURRENT_VIEW==='candles';
+    var ohlc=useCandles?slFilterOHLC():null;
+    // If candles requested but OHLC not yet loaded, fall back to closes so the
+    // chart still renders; slSetView triggers a fetch and re-render.
+    var s=(useCandles&&ohlc&&ohlc.length)?ohlc:slFilterSnaps();
+    if(s.length)slDrawChart(s,n,useCandles&&ohlc&&ohlc.length>0);
+    if(SL_CURRENT_VIEW==='regime')slDrawAltChart('regime');
+  }
 
   function slSetView(view){
     SL_CURRENT_VIEW=view;
@@ -441,15 +473,25 @@
     var mainCanvas=document.getElementById('sl-price-canvas');
     var altWrap=document.getElementById('slChartAltWrap');
     var altLegend=document.getElementById('sl-alt-legend');
-    if(view==='lines'){
-      if(mainCanvas)mainCanvas.style.visibility='';
-      if(altWrap)altWrap.style.display='none';
-      if(altLegend)altLegend.style.display='none';
-    }else{
+    if(view==='regime'){
+      // Regime-colored bars live on the alt (Chart.js) canvas
       if(mainCanvas)mainCanvas.style.visibility='hidden';
       if(altWrap)altWrap.style.display='block';
       if(altLegend)altLegend.style.display='flex';
-      slDrawAltChart(view);
+      slDrawAltChart('regime');
+      return;
+    }
+    // Both 'lines' and 'candles' render on the main canvas
+    if(mainCanvas)mainCanvas.style.visibility='';
+    if(altWrap)altWrap.style.display='none';
+    if(altLegend)altLegend.style.display='none';
+    if(view==='candles'){
+      // Lazy-load Massive OHLC on first activation; render immediately with
+      // closes if fetch hasn't finished, then re-render once data arrives.
+      slRenderChart();
+      slFetchOHLC(SL_TICKER).then(function(rows){if(rows&&SL_CURRENT_VIEW==='candles')slRenderChart();});
+    }else{
+      slRenderChart();
     }
   }
 
@@ -526,7 +568,9 @@
 
     var ctx=canvas.getContext('2d');
 
-    if(view==='candles'){
+    if(view==='regime'||view==='candles'){
+      // Synthetic regime-colored bars (not real OHLC — see Candles view for that).
+      // Accepts legacy 'candles' value for backwards compatibility.
       var ohlc=prices.map(function(c,i){
         var o=i===0?c*0.998:prices[i-1];
         var h=Math.max(o,c)*1.004;
@@ -689,7 +733,7 @@
   function slSma3(arr,key){return arr.map(function(d,i){if(i<2)return d;var v=((d[key]??0)+(arr[i-1][key]??0)+(arr[i-2][key]??0))/3;var o={};for(var k in d)o[k]=d[k];o[key]=v;return o;});}
 
   // ── Draw Chart ──
-  function slDrawChart(snaps,narrs){
+  function slDrawChart(snaps,narrs,drawCandles){
     var outer=document.getElementById('sl-chart-outer'),canvas=document.getElementById('sl-price-canvas');
     var tip=document.getElementById('sl-chart-tip'),popup=document.getElementById('sl-story-popup');
     var fresh=canvas.cloneNode(false);outer.replaceChild(fresh,canvas);
@@ -698,7 +742,17 @@
     cv.width=W*DPR;cv.height=H*DPR;cv.style.width=W+'px';cv.style.height=H+'px';ctx.scale(DPR,DPR);
     var prices=snaps.map(function(s){return s.price_close;}).filter(function(p){return p!=null;});
     if(!prices.length)return;
-    var minP=Math.min.apply(null,prices)*0.975,maxP=Math.max.apply(null,prices)*1.025;
+    // Y-range: expand to include highs/lows when real OHLC is available.
+    var minP,maxP;
+    if(drawCandles){
+      var lows=snaps.map(function(s){return s.price_low!=null?s.price_low:s.price_close;}).filter(function(p){return p!=null;});
+      var highs=snaps.map(function(s){return s.price_high!=null?s.price_high:s.price_close;}).filter(function(p){return p!=null;});
+      minP=Math.min.apply(null,lows)*0.99;
+      maxP=Math.max.apply(null,highs)*1.01;
+    }else{
+      minP=Math.min.apply(null,prices)*0.975;
+      maxP=Math.max.apply(null,prices)*1.025;
+    }
     var PAD={top:8,right:52,bottom:28,left:50},CW=W-PAD.left-PAD.right,CH=H-PAD.top-PAD.bottom,N=snaps.length;
     function xOf(i){return PAD.left+(i/Math.max(N-1,1))*CW;}
     function yOf(p){return PAD.top+(1-(p-minP)/(maxP-minP))*CH;}
@@ -714,13 +768,38 @@
     var targetTicks=(days>0&&days<=14)?N:10;
     var every=Math.max(1,Math.floor(N/targetTicks)),lastRI=-Infinity;
     snaps.forEach(function(s,i){if(i%every!==0&&i!==N-1)return;if(i===N-1&&(i-lastRI)<every*0.4){return;}var d=new Date(s.snapshot_date+'T12:00:00');ctx.fillText(d.toLocaleDateString('en-US',{month:'short',day:'numeric'}),xOf(i),H-PAD.bottom+14);lastRI=i;});
-    // Price fill
-    var grad=ctx.createLinearGradient(0,PAD.top,0,H-PAD.bottom);grad.addColorStop(0,'rgba(26,110,255,0.12)');grad.addColorStop(1,'rgba(26,110,255,0)');
-    ctx.beginPath();snaps.forEach(function(s,i){if(s.price_close==null)return;i===0?ctx.moveTo(xOf(i),yOf(s.price_close)):ctx.lineTo(xOf(i),yOf(s.price_close));});
-    ctx.lineTo(xOf(N-1),H-PAD.bottom);ctx.lineTo(xOf(0),H-PAD.bottom);ctx.closePath();ctx.fillStyle=grad;ctx.fill();
-    // Price line
-    ctx.beginPath();ctx.setLineDash([]);snaps.forEach(function(s,i){if(s.price_close==null)return;i===0?ctx.moveTo(xOf(i),yOf(s.price_close)):ctx.lineTo(xOf(i),yOf(s.price_close));});
-    ctx.strokeStyle=slIsLight()?'#3b82f6':'#F0F4FF';ctx.lineWidth=1.5;ctx.stroke();
+    if(drawCandles){
+      // Real OHLC candlesticks from Massive market data.
+      var stepPx=CW/Math.max(N-1,1);
+      var bodyW=Math.max(2,Math.min(10,stepPx*0.6));
+      var upClr=slIsLight()?'#1D9E75':'#00DE94';
+      var dnClr=slIsLight()?'#C8372A':'#FF4D4D';
+      snaps.forEach(function(s,i){
+        if(s.price_close==null)return;
+        var o=s.price_open!=null?s.price_open:s.price_close;
+        var c=s.price_close;
+        var h=s.price_high!=null?s.price_high:Math.max(o,c);
+        var l=s.price_low!=null?s.price_low:Math.min(o,c);
+        var x=Math.round(xOf(i))+0.5;
+        var up=c>=o;
+        ctx.strokeStyle=up?upClr:dnClr;ctx.fillStyle=up?upClr:dnClr;ctx.lineWidth=1;
+        // Wick
+        ctx.beginPath();ctx.moveTo(x,yOf(h));ctx.lineTo(x,yOf(l));ctx.stroke();
+        // Body
+        var yOpen=yOf(o),yClose=yOf(c);
+        var top=Math.min(yOpen,yClose),bot=Math.max(yOpen,yClose);
+        var bh=Math.max(1,bot-top);
+        ctx.fillRect(x-bodyW/2,top,bodyW,bh);
+      });
+    }else{
+      // Price fill
+      var grad=ctx.createLinearGradient(0,PAD.top,0,H-PAD.bottom);grad.addColorStop(0,'rgba(26,110,255,0.12)');grad.addColorStop(1,'rgba(26,110,255,0)');
+      ctx.beginPath();snaps.forEach(function(s,i){if(s.price_close==null)return;i===0?ctx.moveTo(xOf(i),yOf(s.price_close)):ctx.lineTo(xOf(i),yOf(s.price_close));});
+      ctx.lineTo(xOf(N-1),H-PAD.bottom);ctx.lineTo(xOf(0),H-PAD.bottom);ctx.closePath();ctx.fillStyle=grad;ctx.fill();
+      // Price line
+      ctx.beginPath();ctx.setLineDash([]);snaps.forEach(function(s,i){if(s.price_close==null)return;i===0?ctx.moveTo(xOf(i),yOf(s.price_close)):ctx.lineTo(xOf(i),yOf(s.price_close));});
+      ctx.strokeStyle=slIsLight()?'#3b82f6':'#F0F4FF';ctx.lineWidth=1.5;ctx.stroke();
+    }
 
     var lo=snaps[0]?.snapshot_date?.slice(0,10)||'',hi=snaps[snaps.length-1]?.snapshot_date?.slice(0,10)||'';
 
