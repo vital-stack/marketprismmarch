@@ -8759,10 +8759,7 @@ function renderSectors(){
     }).join('');
     dailyGrid.innerHTML=allCards;
   }
-  // Fresh DOM has empty price/change placeholders — ping the live-quotes
-  // refresher so sector chips populate right away instead of waiting for
-  // the next scheduled 30s tick.
-  if(typeof liveQuotesRefreshDaily==='function'){setTimeout(liveQuotesRefreshDaily,50);}
+  // Live-price MutationObserver will auto-fire on the newly-inserted chips.
 }
 // ── STOCKS WE LOVE / HATE (dynamic) ──────────────────────────────────────────
 function renderLoveHate(){
@@ -13543,13 +13540,16 @@ window.refreshDailyBrief=async function(){
   if(btn){btn.disabled=false;btn.style.opacity='1';btn.querySelector('svg').style.animation='';}
 };
 
-// ── Live quotes: batch-refresh every ticker rendered on the Daily Plays ──────
-// Reads data-live-price / data-live-change / data-ticker attributes on
-// Day Trade, Swing Trade, Value Picks and Biggest Narratives rows, pulls
-// all tickers in one batch call, and patches the DOM in place. Narrative
-// directions are NOT re-derived — only the displayed price and day change.
+// ── Live quotes: batch-refresh every ticker rendered on the page ─────────────
+// Reads data-live-price / data-live-change attributes across Daily Plays,
+// Leaderboard, Sector cards, etc., pulls all tickers in ONE batch call, and
+// patches the DOM in place. Narrative directions are NOT re-derived — only
+// displayed price and day change.
 var _liveQuotesTimer=null;
 var _liveQuotesInFlight=false;
+var _liveQuotesObserver=null;
+var _liveQuotesKickPending=false;
+var _liveQuotesFastRetryTimer=null;
 
 function _fmtLivePrice(p){
   if(p==null)return'';
@@ -13557,6 +13557,12 @@ function _fmtLivePrice(p){
   if(p>=100)return'$'+p.toFixed(2);
   return'$'+p.toFixed(3);
 }
+
+// Warm the serverless function early so cold-start doesn't cost the user.
+// Triggered as soon as this script runs.
+(function warmLiveQuotesEndpoint(){
+  try{fetch('/api/live-quotes-batch?tickers=SPY',{method:'GET',cache:'no-store'}).catch(function(){});}catch(_){}
+})();
 
 async function liveQuotesRefreshDaily(){
   if(_liveQuotesInFlight)return;
@@ -13570,40 +13576,65 @@ async function liveQuotesRefreshDaily(){
   var list=Object.keys(tickers);
   if(!list.length)return;
   _liveQuotesInFlight=true;
+  var ok=false;
   try{
     var res=await fetch('/api/live-quotes-batch?tickers='+encodeURIComponent(list.join(',')));
-    if(!res.ok){_liveQuotesInFlight=false;return;}
+    if(!res.ok){return;}
     var data=await res.json();
     var quotes=(data&&data.quotes)||{};
-    // Patch prices
+    ok=Object.keys(quotes).length>0;
     document.querySelectorAll('[data-live-price]').forEach(function(el){
       var t=el.getAttribute('data-live-price');
       var q=quotes[t];
       if(!q||q.price==null)return;
       el.textContent=_fmtLivePrice(q.price);
     });
-    // Patch change % (two styles: .nc-change class-based and inline-color spans)
     document.querySelectorAll('[data-live-change]').forEach(function(el){
       var t=el.getAttribute('data-live-change');
       var q=quotes[t];
       if(!q||q.changePct==null)return;
       var pct=q.changePct;
       var sign=pct>0?'+':'';
-      var txt=sign+pct.toFixed(2)+'%';
-      el.textContent=txt;
+      el.textContent=sign+pct.toFixed(2)+'%';
       if(el.classList.contains('nc-change')){
         el.classList.remove('nc-change-up','nc-change-dn','nc-change-flat');
         el.classList.add(pct>0?'nc-change-up':pct<0?'nc-change-dn':'nc-change-flat');
       }else{
-        // Inline color (Day Trade rows)
         el.style.color=pct>=0?'#00DE94':'#FF4D4D';
       }
     });
   }catch(e){
-    // Silent fail — existing Supabase prices remain visible
+    // Silent fail — existing Supabase prices remain visible.
   }finally{
     _liveQuotesInFlight=false;
   }
+  // If the fetch failed OR some rows are still empty, schedule a fast retry
+  // instead of waiting for the next 30s scheduled tick.
+  if(!ok){_liveQuotesFastRetry(2000);return;}
+  var anyEmpty=false;
+  document.querySelectorAll('[data-live-change]').forEach(function(el){
+    if(!el.textContent)anyEmpty=true;
+  });
+  if(anyEmpty)_liveQuotesFastRetry(3000);
+}
+
+function _liveQuotesFastRetry(ms){
+  if(_liveQuotesFastRetryTimer){clearTimeout(_liveQuotesFastRetryTimer);}
+  _liveQuotesFastRetryTimer=setTimeout(function(){
+    _liveQuotesFastRetryTimer=null;
+    liveQuotesRefreshDaily();
+  },ms);
+}
+
+// Debounced kick — coalesces rapid DOM mutations (renderBoard, renderSectors,
+// loadTradeLanes, etc.) into a single fetch.
+function _liveQuotesKick(){
+  if(_liveQuotesKickPending)return;
+  _liveQuotesKickPending=true;
+  setTimeout(function(){
+    _liveQuotesKickPending=false;
+    liveQuotesRefreshDaily();
+  },300);
 }
 
 function liveQuotesSchedule(){
@@ -13619,9 +13650,32 @@ function liveQuotesSchedule(){
   },interval);
 }
 
-// Kick off once the page is settled; loadData may still be finishing so
-// wait a tick. The scheduler then keeps it warm on 30s / 2min cadence.
-setTimeout(function(){liveQuotesRefreshDaily().then(liveQuotesSchedule);},1500);
+// Watch the whole page — any async render that adds new [data-live-price]
+// nodes (Leaderboard loads after Supabase, Daily Plays async, etc.) triggers
+// an immediate debounced kick, so prices appear within ~300ms of render
+// instead of waiting for the next 30s scheduled tick.
+function _liveQuotesInstallObserver(){
+  if(_liveQuotesObserver||!window.MutationObserver)return;
+  _liveQuotesObserver=new MutationObserver(function(muts){
+    for(var i=0;i<muts.length;i++){
+      var m=muts[i];
+      for(var j=0;j<m.addedNodes.length;j++){
+        var n=m.addedNodes[j];
+        if(n.nodeType!==1)continue;
+        if(n.hasAttribute&&n.hasAttribute('data-live-price')){_liveQuotesKick();return;}
+        if(n.querySelector&&n.querySelector('[data-live-price]')){_liveQuotesKick();return;}
+      }
+    }
+  });
+  _liveQuotesObserver.observe(document.body,{childList:true,subtree:true});
+}
+
+// Initial kick — reduced from 1500ms to 400ms. The MutationObserver catches
+// anything that renders later.
+setTimeout(function(){
+  _liveQuotesInstallObserver();
+  liveQuotesRefreshDaily().then(liveQuotesSchedule);
+},400);
 
 // Refresh immediately when the user tabs back in
 document.addEventListener('visibilitychange',function(){
@@ -14870,9 +14924,7 @@ async function loadLeaderboard(){
     if(loading) loading.style.display='none';
     if(body) body.style.display='block';
     updateLBDate();
-    // Populate the live price/change spans on the freshly-rendered rows
-    // without waiting for the next scheduled tick (up to 30s).
-    if(typeof liveQuotesRefreshDaily==='function'){setTimeout(liveQuotesRefreshDaily,50);}
+    // Live-price MutationObserver will auto-fire on the newly-inserted rows.
   } catch(e){
     if(loading) loading.style.display='none';
     if(error){error.style.display='block';error.textContent='Error loading leaderboard: '+e.message;}
