@@ -5998,6 +5998,22 @@ function getSubscriptionAccent(status){
 }
 
 function canAccessFeature(requiredPlan){
+  // Beta-code users (entered a valid code like "karma"/"prismview"/"stockpsycho" on the
+  // password gate) get full access while the code is unexpired. This check is
+  // synchronous and independent of CURRENT_SUBSCRIPTION, so gated features work on
+  // first render even before getSubscription() resolves.
+  try {
+    if(localStorage.getItem('mp-beta-access') === 'true'){
+      var betaExpires = localStorage.getItem('mp-beta-expires');
+      if(!betaExpires || new Date(betaExpires) > new Date()) return true;
+    }
+  } catch(_){}
+  // BILLING.hasAccess honors admin emails + dashboardAccessOverride + subscription status.
+  // BILLING_UI.canAccessFeature only knows about subscription status, so admins would be
+  // paywalled if we delegated there first. Check BILLING.hasAccess first.
+  if(BILLING && typeof BILLING.hasAccess === 'function'){
+    if(BILLING.hasAccess(CURRENT_SUBSCRIPTION, requiredPlan)) return true;
+  }
   if(BILLING_UI.canAccessFeature){
     return BILLING_UI.canAccessFeature(CURRENT_SUBSCRIPTION, requiredPlan, {
       dashboardAccessOverride: !!BILLING.dashboardAccessOverride
