@@ -1984,6 +1984,49 @@ body{
 [data-theme="light"] .page-header h1{color:var(--mp-text-primary);}
 [data-theme="light"] .page-header p{color:var(--mp-text-secondary);}
 /* ph-italic color handled by gradient text system */
+/* ── Track Record (validation) ─────────────────────────────────────────────── */
+.val-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px;}
+@media(max-width:980px){.val-stats{grid-template-columns:repeat(2,1fr);}}
+.val-stat{background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:12px;padding:16px 18px;}
+.val-stat-label{font-size:11px;color:var(--mp-text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;font-family:var(--font-body);}
+.val-stat-value{font-size:22px;font-weight:600;color:var(--mp-text-primary);font-family:var(--font-body);line-height:1.15;}
+.val-stat-sub{font-size:11px;color:var(--mp-text-tertiary);margin-top:4px;font-family:var(--font-body);}
+.val-stat-value.pos{color:var(--mp-green);}
+.val-stat-value.neg{color:var(--mp-red);}
+.val-chart-block{background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:16px;padding:20px 20px 24px;margin-bottom:20px;}
+.val-chart-row{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;}
+@media(max-width:980px){.val-chart-row{grid-template-columns:1fr;}}
+.val-chart-head{margin-bottom:14px;}
+.val-chart-title{font-size:14px;font-weight:600;color:var(--mp-text-primary);font-family:var(--font-body);margin-bottom:3px;}
+.val-chart-sub{font-size:13px;color:var(--mp-text-tertiary);font-family:var(--font-body);}
+.val-chart-wrap{width:100%;position:relative;}
+.val-chart-wrap svg{display:block;width:100%;height:auto;}
+/* Signal bar rows */
+.val-bar-row{display:grid;grid-template-columns:130px 1fr 130px;gap:12px;align-items:center;padding:6px 0;font-family:var(--font-body);font-size:13px;}
+.val-bar-row-name{color:var(--mp-text-secondary);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.val-bar-row-track{position:relative;height:10px;background:rgba(255,255,255,0.04);border-radius:5px;overflow:hidden;}
+.val-bar-row-fill{position:absolute;left:0;top:0;bottom:0;border-radius:5px;}
+.val-bar-row-meta{color:var(--mp-text-tertiary);font-size:11px;text-align:right;font-variant-numeric:tabular-nums;}
+.val-bar-row-value{color:var(--mp-text-primary);font-weight:600;font-variant-numeric:tabular-nums;margin-right:6px;}
+/* Trade table */
+.val-table-block{background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:16px;padding:20px;margin-bottom:40px;}
+.val-table-filters{display:flex;gap:8px;margin:10px 0 14px;flex-wrap:wrap;}
+.val-chip{padding:5px 14px;font-size:12px;font-family:var(--font-body);font-weight:500;background:rgba(255,255,255,0.04);border:1px solid var(--mp-border);color:var(--mp-text-secondary);border-radius:999px;cursor:pointer;transition:all .15s;}
+.val-chip:hover{background:rgba(0,174,255,0.08);border-color:rgba(0,174,255,0.3);color:var(--mp-cyan);}
+.val-chip.active{background:var(--mp-cyan);border-color:var(--mp-cyan);color:#fff;}
+.val-table-wrap{overflow-x:auto;}
+.val-table{width:100%;border-collapse:collapse;font-family:var(--font-body);font-size:13px;}
+.val-table thead th{text-align:left;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mp-text-tertiary);border-bottom:1px solid var(--mp-border);font-weight:600;}
+.val-table tbody tr{border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer;transition:background .12s;}
+.val-table tbody tr:hover{background:rgba(0,174,255,0.05);}
+.val-table td{padding:10px 12px;color:var(--mp-text-secondary);vertical-align:middle;}
+.val-table td.ticker{color:var(--mp-text-primary);font-weight:600;}
+.val-table td.num{font-variant-numeric:tabular-nums;text-align:right;}
+.val-table td.pos{color:var(--mp-green);}
+.val-table td.neg{color:var(--mp-red);}
+.val-dir-pill{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;}
+.val-dir-long{background:rgba(0,222,148,0.1);color:var(--mp-green);border:1px solid rgba(0,222,148,0.2);}
+.val-dir-short{background:rgba(255,77,77,0.1);color:var(--mp-red);border:1px solid rgba(255,77,77,0.2);}
 /* Daily Plays */
 /* daily-title-italic uses gradient text animation, no color override needed */
 [data-theme="light"] .daily-desc,
@@ -4528,6 +4571,11 @@ body{
       Stock Research
       <span class="nav-item-badge" style="background:rgba(56,200,184,0.12);color:#38C8B8;border-color:rgba(56,200,184,0.25);font-size:10px;">NEW</span>
     </button>
+    <button class="nav-item" data-tab="validation" onclick="switchTab('validation',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-5"/><circle cx="18" cy="9" r="1.25"/></svg>
+      Track Record
+      <span class="nav-item-badge teal" id="nav-badge-validation">NEW</span>
+    </button>
 
     <div class="nav-section-lbl">Research</div>
     <button class="nav-item" data-tab="calendar" onclick="switchTab('calendar',this)">
@@ -5139,6 +5187,58 @@ body{
     <div class="tcg-toast" id="tcg-toast"></div>
 
     <!-- ══════════════════════════════════════
+         TAB: TRACK RECORD (paper trades validation)
+    ═══════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-validation">
+      <div class="page-header" style="margin-bottom:24px;">
+        <div class="ph-eyebrow">Market Prism · Proof of concept</div>
+        <h1>Track Record.</h1>
+        <span class="ph-italic">Every trade, every regime, nothing hidden.</span>
+        <p>Live paper trades placed by the signal engine from January 2025 through today &mdash; spanning rallies, corrections, and volatility regimes.</p>
+      </div>
+      <div id="val-loading" style="text-align:center;padding:60px 0;color:var(--mp-text-tertiary);font-size:14px;">Loading validation data&hellip;</div>
+      <div id="val-error" style="display:none;color:#FF4D4D;font-size:13px;padding:20px 0;"></div>
+      <div id="val-body" style="display:none;">
+        <div class="val-stats" id="val-stats"></div>
+        <div class="val-chart-block">
+          <div class="val-chart-head">
+            <div class="val-chart-title">Cumulative performance</div>
+            <div class="val-chart-sub" id="val-chart1-sub">Equal-weight cumulative return of all closed trades</div>
+          </div>
+          <div class="val-chart-wrap" id="val-equity-chart"></div>
+        </div>
+        <div class="val-chart-row">
+          <div class="val-chart-block">
+            <div class="val-chart-head">
+              <div class="val-chart-title">Average return per trade</div>
+              <div class="val-chart-sub">By signal type &middot; deeper green = higher win rate</div>
+            </div>
+            <div id="val-bar-avg"></div>
+          </div>
+          <div class="val-chart-block">
+            <div class="val-chart-head">
+              <div class="val-chart-title">Annualized return</div>
+              <div class="val-chart-sub">Avg return &times; (365 / avg hold days)</div>
+            </div>
+            <div id="val-bar-ann"></div>
+          </div>
+        </div>
+        <div class="val-table-block">
+          <div class="val-chart-head">
+            <div class="val-chart-title">Recent trades</div>
+            <div class="val-chart-sub"><span id="val-table-count"></span> most recent closed trades &middot; click a row for the ticker page</div>
+          </div>
+          <div class="val-table-filters" id="val-table-filters">
+            <button class="val-chip active" data-filter="all">All</button>
+            <button class="val-chip" data-filter="wins">Wins</button>
+            <button class="val-chip" data-filter="losers">Losers</button>
+          </div>
+          <div class="val-table-wrap" id="val-table"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
          TAB: LEADERBOARD
     ═══════════════════════════════════════ -->
     <div class="tab-panel" id="tab-leaderboard">
@@ -5463,8 +5563,8 @@ document.querySelectorAll('.page-header p').forEach(function(p,i){
   if(i===0) return;
 });
 // ── Tab switching (hook-based — sections register via onTabSwitch) ────────────
-var TABS = ['daily','leaderboard','cards','calendar','memes','signallab','ticker','sector','scorer','help'];
-var TAB_TITLES = {daily:'Daily Plays',leaderboard:'Leaderboard',cards:'Trading Cards',calendar:'Trading Calendar',memes:'Market Sharing',signallab:'Signal Lab',ticker:'Stock Research',sector:'Sector Pulse',scorer:'Score Any Stock',help:'Help & Account'};
+var TABS = ['daily','leaderboard','cards','calendar','memes','signallab','ticker','sector','scorer','validation','help'];
+var TAB_TITLES = {daily:'Daily Plays',leaderboard:'Leaderboard',cards:'Trading Cards',calendar:'Trading Calendar',memes:'Market Sharing',signallab:'Signal Lab',ticker:'Stock Research',sector:'Sector Pulse',scorer:'Score Any Stock',validation:'Track Record',help:'Help & Account'};
 var _tabHooks = [];
 /** Register a callback to run after any tab switch. fn(id) */
 function onTabSwitch(fn){ if(typeof fn==='function') _tabHooks.push(fn); }
@@ -7559,6 +7659,260 @@ async function loadTradeLanes(){
     if(drCoord)drCoord.textContent=buckets.EARNINGS_PLAY.filter(function(r){return r.days_to_earnings!=null&&Number(r.days_to_earnings)>=0&&Number(r.days_to_earnings)<=5;}).length;
   }catch(e){console.warn('[TL] Load failed:',e);}
 }
+
+// ── Track Record (paper_trades validation) ───────────────────────────────────
+var _VAL_LOADED=false;
+var _VAL_TRADES=[];
+var _VAL_CURRENT_FILTER='all';
+var VAL_SIGNAL_LABELS={
+  'FWOR_VMS_QUALITY':'Fear+Greed · Quality',
+  'FWOR_VMS':'Fear+Greed · VMS',
+  'BOTH_MAXED_LONG':'Signal Confluence · Long',
+  'BOTH_MAXED':'Signal Confluence',
+  'EXHAUST_HIGHCONF':'Exhaustion · High Conv',
+  'EXHAUSTING':'Exhausting Narrative',
+  'SRS_VMS_GAP':'Source Gap · VMS',
+  'DUAL_CONFLUENCE_T1':'Dual Confluence T1',
+  'LOW_MASS':'Low Narrative Mass',
+  'CLEAR_PATH':'Clear Path',
+  'GREED_VMS':'Greed · VMS',
+  'ACS_LOW':'Abnormal Activity Low',
+  'FVD_DISCOUNT':'Fair Value Discount',
+  'NRS_SPIKE':'NRS Spike',
+  'NARRATIVE_TRAP':'Narrative Trap'
+};
+function valFmtPct(n,digits){if(n==null||isNaN(n))return'\u2014';var d=digits!=null?digits:2;var sign=n>0?'+':n<0?'\u2212':'';return sign+Math.abs(Number(n)).toFixed(d)+'%';}
+function valFmtDate(s){if(!s)return'';try{return new Date(s+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'});}catch(_){return s;}}
+function valSignalLabel(b){if(!b)return'Other';return VAL_SIGNAL_LABELS[b]||b.replace(/_/g,' ').toLowerCase().replace(/\b\w/g,function(c){return c.toUpperCase();});}
+function valRenderStats(trades){
+  var closed=trades.filter(function(t){return t.status==='CLOSED';});
+  var n=closed.length;
+  var wins=closed.filter(function(t){return t.pnl_pct!=null&&Number(t.pnl_pct)>0;}).length;
+  var winRate=n?(wins/n*100):0;
+  var sumPnl=closed.reduce(function(a,t){return a+(t.pnl_pct!=null?Number(t.pnl_pct):0);},0);
+  var avgPnl=n?(sumPnl/n):0;
+  var spyArr=closed.filter(function(t){return t.excess_return_pct!=null;}).map(function(t){return Number(t.excess_return_pct);});
+  var avgAlpha=spyArr.length?spyArr.reduce(function(a,b){return a+b;},0)/spyArr.length:null;
+  var dates=closed.map(function(t){return t.entry_date;}).filter(Boolean).sort();
+  var first=dates[0];var last=dates[dates.length-1]||dates[0];
+  var months=first&&last?Math.max(1,Math.round(((new Date(last)-new Date(first))/(1000*60*60*24))/30.4)):0;
+  var el=document.getElementById('val-stats');
+  if(!el)return;
+  el.innerHTML=''
+    +'<div class="val-stat"><div class="val-stat-label">Trades</div><div class="val-stat-value">'+n.toLocaleString()+'</div><div class="val-stat-sub">closed positions</div></div>'
+    +'<div class="val-stat"><div class="val-stat-label">Win rate</div><div class="val-stat-value '+(winRate>=55?'pos':'')+'">'+winRate.toFixed(1)+'%</div><div class="val-stat-sub">'+wins.toLocaleString()+' winners / '+(n-wins).toLocaleString()+' losers</div></div>'
+    +'<div class="val-stat"><div class="val-stat-label">Avg return</div><div class="val-stat-value '+(avgPnl>0?'pos':avgPnl<0?'neg':'')+'">'+valFmtPct(avgPnl,2)+'</div><div class="val-stat-sub">per trade</div></div>'
+    +'<div class="val-stat"><div class="val-stat-label">Alpha vs SPY</div><div class="val-stat-value '+(avgAlpha!=null&&avgAlpha>0?'pos':avgAlpha<0?'neg':'')+'">'+(avgAlpha!=null?valFmtPct(avgAlpha,2):'\u2014')+'</div><div class="val-stat-sub">avg excess return</div></div>'
+    +'<div class="val-stat"><div class="val-stat-label">Track period</div><div class="val-stat-value" style="font-size:16px;">'+valFmtDate(first)+' \u2192 '+valFmtDate(last)+'</div><div class="val-stat-sub">'+months+' months &middot; every regime</div></div>';
+}
+function valRenderEquityChart(trades){
+  var wrap=document.getElementById('val-equity-chart');
+  if(!wrap)return;
+  // Group closed trades by exit_date, sum pnl_pct per day, then cumulate
+  var byDay={};
+  trades.forEach(function(t){
+    if(t.status!=='CLOSED'||!t.exit_date||t.pnl_pct==null)return;
+    byDay[t.exit_date]=(byDay[t.exit_date]||0)+Number(t.pnl_pct);
+  });
+  var days=Object.keys(byDay).sort();
+  if(!days.length){wrap.innerHTML='<div style="padding:20px;color:var(--mp-text-muted);text-align:center;">No closed trades yet.</div>';return;}
+  var cum=0;var points=days.map(function(d){cum+=byDay[d];return{date:d,cum:cum};});
+  // SPY cumulative — avg SPY return on each day, cumulated (proxy)
+  var spyByDay={};
+  trades.forEach(function(t){
+    if(t.status!=='CLOSED'||!t.exit_date||t.spy_return_pct==null)return;
+    if(!spyByDay[t.exit_date])spyByDay[t.exit_date]={sum:0,n:0};
+    spyByDay[t.exit_date].sum+=Number(t.spy_return_pct);
+    spyByDay[t.exit_date].n+=1;
+  });
+  var spyCum=0;var spyPoints=days.map(function(d){var r=spyByDay[d]?(spyByDay[d].sum/spyByDay[d].n):0;spyCum+=r;return{date:d,cum:spyCum};});
+  // Dimensions
+  var W=1080,H=320,padL=56,padR=16,padT=16,padB=36;
+  var iw=W-padL-padR,ih=H-padT-padB;
+  var allY=points.map(function(p){return p.cum;}).concat(spyPoints.map(function(p){return p.cum;}));
+  var minY=Math.min.apply(null,allY);var maxY=Math.max.apply(null,allY);
+  if(minY===maxY){maxY=minY+1;}
+  var yPad=(maxY-minY)*0.08;minY-=yPad;maxY+=yPad;
+  function xOf(i){return padL+(i/(points.length-1||1))*iw;}
+  function yOf(v){return padT+ih-((v-minY)/(maxY-minY))*ih;}
+  // Build paths
+  function path(pts){return pts.map(function(p,i){return(i===0?'M':'L')+xOf(i).toFixed(1)+' '+yOf(p.cum).toFixed(1);}).join(' ');}
+  var mainPath=path(points);
+  var spyPath=path(spyPoints);
+  var areaPath=mainPath+' L '+xOf(points.length-1).toFixed(1)+' '+(padT+ih).toFixed(1)+' L '+xOf(0).toFixed(1)+' '+(padT+ih).toFixed(1)+' Z';
+  // Y gridlines (4 steps)
+  var steps=4;var ticks=[];
+  for(var i=0;i<=steps;i++){var v=minY+(maxY-minY)*(i/steps);ticks.push(v);}
+  var gridHTML=ticks.map(function(v){var y=yOf(v).toFixed(1);return'<line x1="'+padL+'" y1="'+y+'" x2="'+(W-padR)+'" y2="'+y+'" stroke="rgba(255,255,255,0.05)" stroke-width="1"/><text x="'+(padL-6)+'" y="'+(Number(y)+4).toFixed(1)+'" text-anchor="end" font-size="11" font-family="Inter,sans-serif" fill="var(--mp-text-tertiary)">'+(v>=0?'+':'')+v.toFixed(0)+'%</text>';}).join('');
+  // X labels — first, midpoint, last
+  var xLabels=[0,Math.floor(points.length/2),points.length-1].map(function(idx){if(idx<0||idx>=points.length)return'';var p=points[idx];var x=xOf(idx).toFixed(1);return'<text x="'+x+'" y="'+(padT+ih+20)+'" text-anchor="middle" font-size="11" font-family="Inter,sans-serif" fill="var(--mp-text-tertiary)">'+valFmtDate(p.date)+'</text>';}).join('');
+  var last=points[points.length-1];
+  var lastSpy=spyPoints[spyPoints.length-1];
+  var finalLabel='<text x="'+(W-padR-4)+'" y="'+(yOf(last.cum)-8).toFixed(1)+'" text-anchor="end" font-size="12" font-family="Inter,sans-serif" fill="var(--mp-green)" font-weight="600">Prism '+valFmtPct(last.cum,1)+'</text>';
+  var finalSpyLabel='<text x="'+(W-padR-4)+'" y="'+(yOf(lastSpy.cum)+16).toFixed(1)+'" text-anchor="end" font-size="12" font-family="Inter,sans-serif" fill="var(--mp-text-tertiary)">SPY '+valFmtPct(lastSpy.cum,1)+'</text>';
+  wrap.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Cumulative performance chart">'
+    +'<defs><linearGradient id="val-area-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00DE94" stop-opacity="0.24"/><stop offset="100%" stop-color="#00DE94" stop-opacity="0"/></linearGradient></defs>'
+    +gridHTML
+    +'<path d="'+areaPath+'" fill="url(#val-area-grad)"/>'
+    +'<path d="'+spyPath+'" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.5" stroke-dasharray="4 4"/>'
+    +'<path d="'+mainPath+'" fill="none" stroke="#00DE94" stroke-width="2"/>'
+    +xLabels
+    +finalLabel
+    +finalSpyLabel
+    +'</svg>';
+  var sub=document.getElementById('val-chart1-sub');
+  if(sub)sub.textContent='Equal-weight cumulative return of all closed trades vs. SPY dashed line';
+}
+function valAggregateBySignal(trades){
+  var map={};
+  trades.forEach(function(t){
+    if(t.status!=='CLOSED'||t.pnl_pct==null)return;
+    var key=t.signal_basis||'__OTHER__';
+    if(!map[key])map[key]={key:key,name:valSignalLabel(key),n:0,wins:0,sumPnl:0,sumDays:0};
+    var row=map[key];
+    row.n+=1;
+    if(Number(t.pnl_pct)>0)row.wins+=1;
+    row.sumPnl+=Number(t.pnl_pct);
+    row.sumDays+=(t.days_held!=null?Number(t.days_held):0);
+  });
+  var out=Object.keys(map).map(function(k){
+    var r=map[k];
+    r.avg_pnl=r.n?(r.sumPnl/r.n):0;
+    r.win_rate=r.n?(r.wins/r.n*100):0;
+    r.avg_days=r.n?(r.sumDays/r.n):0;
+    r.annualized=r.avg_days>0?r.avg_pnl*(365/r.avg_days):0;
+    return r;
+  });
+  return out;
+}
+function valBarColor(winRate){
+  // Continuous green→amber→red scale based on win rate
+  if(winRate>=70)return '#00DE94';
+  if(winRate>=60)return '#5fe7b4';
+  if(winRate>=50)return '#38C8B8';
+  if(winRate>=40)return '#FFB800';
+  return '#FF4D4D';
+}
+function valRenderSignalBars(wrapId,rows,valueKey,fmtValue){
+  var el=document.getElementById(wrapId);
+  if(!el)return;
+  // Sort by value desc
+  rows=rows.slice().sort(function(a,b){return (b[valueKey]||0)-(a[valueKey]||0);});
+  // Anchor scale to reliable samples (N >= 10) so small-N outliers don't squash the rest
+  var reliable=rows.filter(function(r){return r.n>=10;});
+  var scaleBasis=reliable.length?reliable:rows;
+  var maxAbs=Math.max.apply(null,scaleBasis.map(function(r){return Math.abs(r[valueKey]||0);}));
+  if(maxAbs===0||!isFinite(maxAbs))maxAbs=1;
+  el.innerHTML=rows.map(function(r){
+    var v=r[valueKey]||0;
+    var wRaw=Math.abs(v)/maxAbs*100;
+    var w=Math.max(2,Math.min(100,wRaw));
+    var color=v<0?'#FF4D4D':valBarColor(r.win_rate);
+    var sampleNote=r.n<10?' <span style="color:var(--mp-amber);">(small N)</span>':'';
+    return '<div class="val-bar-row">'
+      +'<div class="val-bar-row-name" title="'+r.name.replace(/"/g,'&quot;')+'">'+r.name+'</div>'
+      +'<div class="val-bar-row-track"><div class="val-bar-row-fill" style="width:'+w.toFixed(1)+'%;background:'+color+';"></div></div>'
+      +'<div class="val-bar-row-meta"><span class="val-bar-row-value">'+fmtValue(v)+'</span>'+r.n+' &middot; '+r.win_rate.toFixed(0)+'% win'+sampleNote+'</div>'
+    +'</div>';
+  }).join('');
+}
+function valRenderTable(){
+  var wrap=document.getElementById('val-table');
+  var cntEl=document.getElementById('val-table-count');
+  if(!wrap)return;
+  var closed=_VAL_TRADES.filter(function(t){return t.status==='CLOSED';});
+  var filtered=closed;
+  if(_VAL_CURRENT_FILTER==='wins')filtered=closed.filter(function(t){return t.pnl_pct!=null&&Number(t.pnl_pct)>0;});
+  else if(_VAL_CURRENT_FILTER==='losers')filtered=closed.filter(function(t){return t.pnl_pct!=null&&Number(t.pnl_pct)<=0;});
+  filtered.sort(function(a,b){return(b.exit_date||'').localeCompare(a.exit_date||'');});
+  var rows=filtered.slice(0,200);
+  if(cntEl)cntEl.textContent=rows.length.toLocaleString();
+  if(!rows.length){wrap.innerHTML='<div style="padding:20px;color:var(--mp-text-muted);text-align:center;">No trades match this filter.</div>';return;}
+  var html='<table class="val-table"><thead><tr>'
+    +'<th>Ticker</th>'
+    +'<th>Dir</th>'
+    +'<th>Signal</th>'
+    +'<th>Entered</th>'
+    +'<th>Exited</th>'
+    +'<th class="num">Days</th>'
+    +'<th class="num">PnL%</th>'
+    +'<th class="num">vs SPY</th>'
+    +'<th>Reason</th>'
+    +'</tr></thead><tbody>';
+  html+=rows.map(function(t){
+    var pnl=t.pnl_pct!=null?Number(t.pnl_pct):null;
+    var excess=t.excess_return_pct!=null?Number(t.excess_return_pct):null;
+    var dir=(t.direction||'').toUpperCase();
+    var dirCls=dir==='LONG'?'val-dir-long':dir==='SHORT'?'val-dir-short':'';
+    var reason=(t.exit_reason||'').split('(')[0].trim().replace(/_/g,' ');
+    return '<tr onclick="window.location.href=\'/ticker/'+encodeURIComponent(t.ticker)+'\'">'
+      +'<td class="ticker">'+esc(t.ticker||'')+'</td>'
+      +'<td>'+(dirCls?'<span class="val-dir-pill '+dirCls+'">'+dir+'</span>':esc(dir))+'</td>'
+      +'<td>'+esc(valSignalLabel(t.signal_basis))+'</td>'
+      +'<td>'+valFmtDate(t.entry_date)+'</td>'
+      +'<td>'+valFmtDate(t.exit_date)+'</td>'
+      +'<td class="num">'+(t.days_held!=null?t.days_held:'\u2014')+'</td>'
+      +'<td class="num '+(pnl!=null&&pnl>0?'pos':pnl!=null&&pnl<0?'neg':'')+'">'+(pnl!=null?valFmtPct(pnl,2):'\u2014')+'</td>'
+      +'<td class="num '+(excess!=null&&excess>0?'pos':excess!=null&&excess<0?'neg':'')+'">'+(excess!=null?valFmtPct(excess,2):'\u2014')+'</td>'
+      +'<td style="color:var(--mp-text-tertiary);">'+esc(reason||'\u2014')+'</td>'
+    +'</tr>';
+  }).join('');
+  html+='</tbody></table>';
+  wrap.innerHTML=html;
+}
+async function loadValidation(force){
+  if(_VAL_LOADED&&!force)return;
+  var loading=document.getElementById('val-loading');
+  var body=document.getElementById('val-body');
+  var err=document.getElementById('val-error');
+  if(!loading||!body)return;
+  if(!SUPABASE_URL||!SUPABASE_ANON){
+    loading.style.display='none';
+    if(err){err.style.display='block';err.textContent='Supabase not configured.';}
+    return;
+  }
+  try{
+    // Fetch all paper trades — 1,555 rows, small enough to pull in one request
+    var rows=await restFetch('paper_trades',{
+      select:'ticker,direction,signal_basis,entry_date,entry_price,entry_confidence,exit_date,exit_price,exit_reason,pnl_pct,days_held,status,spy_return_pct,excess_return_pct,planned_exit_date,sector,trade_type',
+      order:'entry_date.desc',
+      limit:'2000'
+    });
+    if(!rows||!rows.length){
+      loading.style.display='none';
+      if(err){err.style.display='block';err.textContent='No paper trades yet.';}
+      return;
+    }
+    _VAL_TRADES=rows;
+    _VAL_LOADED=true;
+    valRenderStats(rows);
+    valRenderEquityChart(rows);
+    var byS=valAggregateBySignal(rows);
+    valRenderSignalBars('val-bar-avg',byS,'avg_pnl',function(v){return valFmtPct(v,2);});
+    valRenderSignalBars('val-bar-ann',byS,'annualized',function(v){return valFmtPct(v,0);});
+    valRenderTable();
+    // Wire filter chips (once)
+    var filters=document.getElementById('val-table-filters');
+    if(filters&&!filters._wired){
+      filters._wired=true;
+      filters.querySelectorAll('.val-chip').forEach(function(chip){
+        chip.addEventListener('click',function(){
+          filters.querySelectorAll('.val-chip').forEach(function(c){c.classList.remove('active');});
+          this.classList.add('active');
+          _VAL_CURRENT_FILTER=this.dataset.filter;
+          valRenderTable();
+        });
+      });
+    }
+    loading.style.display='none';
+    body.style.display='block';
+  }catch(e){
+    console.warn('[VAL] Load failed:',e);
+    loading.style.display='none';
+    if(err){err.style.display='block';err.textContent='Failed to load validation data: '+(e.message||e);}
+  }
+}
+onTabSwitch(function(id){if(id==='validation')loadValidation();});
 
 // ── Top AI Picks (Claude) ──────────────────────────────────────────────────
 var _AI_PICKS_INFLIGHT=null;
