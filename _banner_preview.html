@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<title>Verdict Banner Preview · Market Prism</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --mp-obsidian:#080B11; --mp-surface:#0C1018; --mp-surface2:#111927;
+    --mp-border:rgba(255,255,255,0.06); --mp-border-hover:rgba(255,255,255,0.14);
+    --mp-text-primary:#FFFFFF; --mp-text-secondary:rgba(255,255,255,0.7);
+    --mp-text-tertiary:#A0A8B0; --mp-text-muted:rgba(255,255,255,0.3);
+    --mp-cyan:#00AEFF; --mp-green:#00DE94; --mp-red:#FF4D4D; --mp-amber:#FFB800;
+    --font-body:'Inter','DM Sans',system-ui,sans-serif;
+    --font-display:'Instrument Serif','DM Serif Display',Georgia,serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; background:var(--mp-obsidian); color:var(--mp-text-primary); font-family:var(--font-body); }
+  body { padding: 40px 24px 80px; }
+
+  .page-head { max-width: 1200px; margin: 0 auto 32px; }
+  .page-head h1 { font-family: var(--font-display); font-weight: 400; font-size: 32px; letter-spacing: -0.025em; margin: 0 0 8px; }
+  .page-head p { color: var(--mp-text-tertiary); font-size: 14px; margin: 0; max-width: 720px; line-height: 1.6; }
+
+  .variant-head {
+    max-width: 1200px; margin: 36px auto 10px;
+    font-size: 13px; color: var(--mp-text-muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600;
+  }
+  .variant-sub {
+    max-width: 1200px; margin: 0 auto 12px;
+    font-size: 12px; color: var(--mp-text-tertiary); font-style: italic;
+  }
+
+  .banner-wrap { max-width: 1200px; margin: 0 auto; }
+
+  /* Real verdict-banner styles — copied verbatim from _ticker.html */
+  .verdict-banner {
+    background: var(--mp-surface);
+    border: 1px solid var(--mp-border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    border-left: 4px solid var(--mp-text-muted);
+    position: relative;
+  }
+  .vb-top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .vb-verdict { font-size: 16px; font-weight: 700; }
+  .vb-action { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 5px; text-transform: uppercase; letter-spacing: .04em; }
+  .vb-desc { font-size: 14px; color: var(--mp-text-secondary); line-height: 1.65; }
+  .vb-rebuttal { font-size: 13px; color: var(--mp-text-tertiary); line-height: 1.6; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--mp-border); }
+
+  .legend {
+    max-width: 1200px; margin: 48px auto 0;
+    background: var(--mp-surface); border: 1px solid var(--mp-border);
+    border-radius: 16px; padding: 20px 24px;
+  }
+  .legend h3 { font-family: var(--font-display); font-weight: 400; font-size: 18px; margin: 0 0 14px; }
+  .legend p { font-size: 13px; color: var(--mp-text-secondary); line-height: 1.65; margin: 0 0 10px; }
+  .legend strong { color: var(--mp-text-primary); }
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>Verdict banner — redesign preview</h1>
+  <p>Each banner below shows the restructured ticker-page verdict for a different scorecard + primary_label combo. The <strong>headline is now the Daily Plays lane + action</strong> (from the shared classifier), so a user clicking through from a Daily Plays card sees the same verdict. The structural label (e.g. <em>Fundamental Disconnect</em>) is demoted to a small grey tag. Forensic rebuttal paragraph is unchanged.</p>
+</div>
+
+<div class="banner-wrap" id="banner-stage"></div>
+
+<div class="legend">
+  <h3>What changed vs today</h3>
+  <p><strong>Headline source:</strong> was <code>trade_classifications.primary_label</code>. Now <code>classifyLane(scorecard, earnings)</code> — the same function that will be extracted to power Daily Plays lanes, so lane + banner can never drift.</p>
+  <p><strong>Structural label:</strong> demoted from the primary verdict to a small grey tag in the top row. Still visible, still readable, no longer the loudest signal on the page.</p>
+  <p><strong>Freshness:</strong> new "Updated X ago" timestamp from <code>narrative_scorecard.snapshot_date</code>. Small engagement hook for repeat visits.</p>
+  <p><strong>Forensic rebuttal:</strong> unchanged. Still pulls from <code>v_dash_daily_story.forensic_rebuttal</code> and remains the trust/evidence layer.</p>
+  <p><strong>Fallback:</strong> when no lane matches (rare — most names hit at least one), the banner falls back to the old structural-label behaviour so nothing ever renders blank.</p>
+</div>
+
+<script>
+  // ── The same helper functions that now live in _ticker.html ──────────────
+  function classifyLane(sc, earn) {
+    if (!sc) return null;
+    var hl=+sc.half_life||0, nrs=+sc.nrs||0, wks=+sc.wks_score||0, drift=+sc.drift_score||0;
+    var coord=+sc.coordination_score||0, nea=+sc.narrative_energy_absolute||0;
+    var fvd = sc.fvd_pct!=null?+sc.fvd_pct:null, vms = sc.vms!=null?+sc.vms:null;
+    var walsh = sc.walsh_regime||'', verdict = sc.verdict||'';
+    if (verdict==='Narrative Trap' || verdict==='Narrative Risk') {
+      return { lane:'Narrative Trap', action: verdict==='Narrative Trap'?'Avoid / Short':'Caution', color:'#FF4D4D',
+               reason:'Coverage outpacing what filings support — active manipulation/risk flag.' };
+    }
+    if (earn && earn.days_to_earnings!=null) {
+      var dte=+earn.days_to_earnings, surp=+(earn.earnings_surprise_pct||0);
+      if (dte>=-7 && dte<=35) {
+        if (dte===0) return {lane:'Earnings Play',action:'Watch',color:'#FF4D4D',reason:'Earnings today — post-print move likely binary.'};
+        if (dte>0 && dte<=3) return {lane:'Earnings Play',action:'Watch',color:'#FF4D4D',reason:'Earnings imminent — volatility expanding into print.'};
+        if (dte>=4 && dte<=14 && nrs<40) return {lane:'Earnings Play',action:'Pre-Run Long',color:'#FFB800',reason:'Pre-earnings drift setup — narrative runway with manageable saturation.'};
+        if (dte>=15 && dte<=35 && Math.abs(surp)>=0.15) return {lane:'Earnings Play',action:'Big-Mover Watch',color:'#FFB800',reason:'Historical surprise ±'+Math.round(Math.abs(surp)*100)+'% — big-move candidate into next print.'};
+        if (dte>=15 && dte<=35 && nrs<40) return {lane:'Earnings Play',action:'Pre-Run Long',color:'#FFB800',reason:'Pre-earnings window opening — narrative runway intact.'};
+      }
+    }
+    if (hl>0 && hl<15 && wks>0) return {lane:'Day Trade',action:'Ride Up',color:'#00DE94',reason:'Narrative decaying fast with positive price bias — intraday follow-through.'};
+    if (hl>0 && hl<15) return {lane:'Day Trade',action:'Fade',color:'#FF4D4D',reason:'Narrative decaying fast with weak price support — intraday fade.'};
+    if (nrs>50 && drift>40) return {lane:'Day Trade',action:'Short',color:'#FF4D4D',reason:'High narrative saturation + widening drift — short-term fade setup.'};
+    if (walsh==='CLEAR_PATH') return {lane:'Swing Trade',action:'Long',color:'#00DE94',reason:'Clean narrative path — 5-7 day runway with structural support.'};
+    if (walsh==='PERSISTENT' && nrs>40 && nea>400) return {lane:'Swing Trade',action:'Short',color:'#FF4D4D',reason:'Persistent regime with high saturation — 5-7 day fade window.'};
+    if (nea>500 && nrs<35) return {lane:'Momentum',action:'Long',color:'#00AEFF',reason:'Narrative energy surging with room to run — momentum trend intact.'};
+    if (fvd!=null && fvd<-5 && nrs<40 && vms!=null && vms>50 && walsh!=='PERSISTENT') {
+      return {lane:'Value Pick',action:'Accumulate',color:'#00DE94',reason: Math.abs(fvd).toFixed(1)+'% below fair value with strong fundamentals.'};
+    }
+    return null;
+  }
+
+  function vLabelToStructural(vLabel, sc) {
+    if (!vLabel) return null;
+    var fvd = sc && sc.fvd_pct!=null ? +sc.fvd_pct : null;
+    var fvdAbs = fvd!=null ? Math.abs(fvd).toFixed(1)+'%' : null;
+    var fvdDir = fvd!=null ? (fvd>0?'above':'below') : null;
+    var fvdPhrase = fvdDir ? fvdAbs+' '+fvdDir+' fundamental value' : 'disconnected from fundamental value';
+    var pretty = vLabel.replace(/_/g,' ').toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
+    var map = {
+      'NARRATIVE_TRAP':          {action:'Avoid or Short',  color:'#FF4D4D', desc:'The media narrative doesn\'t match the company\'s SEC filings.'},
+      'FUNDAMENTAL_DISCONNECT':  {action:'Avoid',           color:'#FF4D4D', desc:'Stock price is '+fvdPhrase+'. The story driving the price isn\'t supported by official filings.'},
+      'FADE_THE_HYPE':           {action:'Fade Rallies',    color:'#FF4D4D', desc:'Hype is outpacing reality — the narrative has drifted far from what filings support.'},
+      'ACCUMULATE':              {action:'Buy Dips',        color:'#00AEFF', desc:'Clean fundamentals with narrative support for a move higher.'},
+      'MOMENTUM_CONFIRMED':      {action:'Ride the Trend',  color:'#00AEFF', desc:'Momentum confirmed with institutional backing.'},
+      'FUNDAMENTAL_LONG':        {action:'Accumulate',      color:'#00AEFF', desc:'SEC filings structurally support the bullish case.'}
+    };
+    var e = map[vLabel];
+    if (!e) return {label:pretty, action:'Monitor', color:'rgba(255,255,255,0.3)', desc:''};
+    return {label:pretty, action:e.action, color:e.color, desc:e.desc};
+  }
+
+  // ── Banner renderer — identical logic to _ticker.html's new banner block ──
+  function renderBanner(scenario) {
+    var sc = scenario.sc, tc = scenario.tc, r = scenario.r, earn = scenario.earn;
+    var lane = classifyLane(sc, earn);
+    var structuralInfo = vLabelToStructural(tc.primary_label, sc);
+    var headline, action, color, reason;
+    if (lane) { headline=lane.lane; action=lane.action; color=lane.color; reason=lane.reason; }
+    else if (structuralInfo) { headline=structuralInfo.label; action=structuralInfo.action; color=structuralInfo.color; reason=structuralInfo.desc; }
+    else { headline=sc.verdict||'Monitoring'; action='Monitor'; color='rgba(255,255,255,0.3)'; reason=''; }
+
+    var freshness = '';
+    if (sc.snapshot_date) {
+      var ageDays = Math.floor((Date.now()-new Date(sc.snapshot_date+'T00:00:00Z').getTime())/(1000*60*60*24));
+      freshness = ageDays<=0?'Updated today':(ageDays===1?'Updated 1d ago':'Updated '+ageDays+'d ago');
+    }
+
+    var structuralTag = '';
+    if (lane && structuralInfo && structuralInfo.label.toLowerCase()!==headline.toLowerCase()) {
+      structuralTag = '<span style="background:rgba(255,255,255,0.04);color:var(--mp-text-tertiary);border:1px solid var(--mp-border);font-size:10px;font-weight:600;padding:3px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.05em;">'+structuralInfo.label+'</span>';
+    }
+
+    return ''
+      + '<div class="variant-head">'+scenario.title+'</div>'
+      + '<div class="variant-sub">'+scenario.sub+'</div>'
+      + '<div class="verdict-banner" style="border-left-color:'+color+';">'
+        + '<div class="vb-top" style="justify-content:space-between;">'
+          + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'
+            + '<span class="vb-verdict" style="color:'+color+';">'+headline+'</span>'
+            + '<span class="vb-action" style="background:'+color+'14;color:'+color+';border:1px solid '+color+'33;">'+action+'</span>'
+            + structuralTag
+          + '</div>'
+          + (freshness?'<span style="font-size:11px;color:var(--mp-text-muted);white-space:nowrap;">'+freshness+'</span>':'')
+        + '</div>'
+        + (reason?'<div class="vb-desc">'+reason+'</div>':'')
+        + (r.forensic_rebuttal?'<div class="vb-rebuttal">'+r.forensic_rebuttal+'</div>':'')
+      + '</div>';
+  }
+
+  // ── Scenarios matching real Daily Plays lane outputs ─────────────────────
+  var today = '2026-04-15';
+  var scenarios = [
+    {
+      title:'NVO · Day Trade (Fade) — was "Fundamental Disconnect / AVOID"',
+      sub:'The original confusion case. Headline now matches what Daily Plays says; "Fundamental Disconnect" moves down into a tag.',
+      sc:{half_life:10, wks_score:-0.2, nrs:30, drift_score:20, coordination_score:10, narrative_energy_absolute:200, verdict:'Monitoring', fvd_pct:-27.7, snapshot_date:today},
+      tc:{primary_label:'FUNDAMENTAL_DISCONNECT'},
+      r:{forensic_rebuttal:"The company just beat earnings expectations last quarter. Many outlets published similar warnings at the same time, but these concerns don't appear prominently in official company filings. The stock currently trades below what fundamentals suggest it's worth."},
+      earn:null
+    },
+    {
+      title:'TSLA · Earnings Play (Watch) — 2 days out',
+      sub:'Earnings window beats other lane matches. Red action because imminent.',
+      sc:{half_life:0, nrs:45, drift_score:25, coordination_score:15, narrative_energy_absolute:420, verdict:'Monitoring', fvd_pct:12.4, vms:55, walsh_regime:'', snapshot_date:today},
+      tc:{primary_label:'FADE_THE_HYPE'},
+      r:{forensic_rebuttal:"Robotaxi narrative inflated ahead of delivery numbers. Street positioning crowded long with historical surprise ±25% — post-print direction likely binary."},
+      earn:{days_to_earnings:2, earnings_surprise_pct:0.25}
+    },
+    {
+      title:'AMD · Earnings Play (Big-Mover Watch) — 20 days out',
+      sub:'Beyond the Pre-Run window but historical surprise ≥15% flags big-move potential.',
+      sc:{half_life:20, nrs:30, drift_score:15, coordination_score:8, narrative_energy_absolute:350, verdict:'Monitoring', fvd_pct:-8.2, vms:62, walsh_regime:'', snapshot_date:today},
+      tc:{primary_label:'ACCUMULATE'},
+      r:{forensic_rebuttal:"Data-center GPU share narrative gaining credibility with independent filings support. Historical earnings surprise averages +23% — big-mover candidate into next print."},
+      earn:{days_to_earnings:20, earnings_surprise_pct:0.2339}
+    },
+    {
+      title:'MSFT · Swing Trade (Long) — CLEAR_PATH regime',
+      sub:'Walsh regime headline the banner even without an earnings window.',
+      sc:{half_life:30, nrs:25, drift_score:10, coordination_score:5, narrative_energy_absolute:300, verdict:'Structurally Supported', fvd_pct:-3.1, vms:72, walsh_regime:'CLEAR_PATH', snapshot_date:today},
+      tc:{primary_label:'FUNDAMENTAL_LONG'},
+      r:{forensic_rebuttal:"AI capex narrative supported by GAAP capital expenditure lines in the 10-Q. Azure growth rate tracks consensus; no narrative/fundamental gap detected."},
+      earn:null
+    },
+    {
+      title:'Fake-SPAC-XYZ · Narrative Trap — headline already bearish',
+      sub:'When the scorecard verdict is "Narrative Trap", it takes the headline directly.',
+      sc:{half_life:40, nrs:70, drift_score:55, coordination_score:45, narrative_energy_absolute:600, verdict:'Narrative Trap', fvd_pct:180, vms:35, walsh_regime:'PERSISTENT', snapshot_date:today},
+      tc:{primary_label:'NARRATIVE_TRAP'},
+      r:{forensic_rebuttal:"Coordination score 45 with 70% narrative saturation. Forensic filings audit flags revenue concentration inconsistencies. Price is 180% above fundamental value."},
+      earn:null
+    },
+    {
+      title:'GOOGL · Momentum (Long)',
+      sub:'Narrative energy surging with room to run — headline pulls from Momentum lane.',
+      sc:{half_life:25, nrs:28, drift_score:20, coordination_score:10, narrative_energy_absolute:620, verdict:'Monitoring', fvd_pct:-2.5, vms:68, walsh_regime:'', snapshot_date:today},
+      tc:{primary_label:'MOMENTUM_CONFIRMED'},
+      r:{forensic_rebuttal:"Advertising revenue growth matches street estimates; cloud segment beat materially. No narrative inflation detected."},
+      earn:{days_to_earnings:14, earnings_surprise_pct:0.0805}  // still has earnings but >14d so Momentum wins
+    }
+  ];
+
+  document.getElementById('banner-stage').innerHTML = scenarios.map(renderBanner).join('');
+</script>
+
+</body>
+</html>

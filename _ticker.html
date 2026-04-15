@@ -4701,6 +4701,119 @@ function stateClass(s) {
   return ({ Breaking:'badge-breaking', Surging:'badge-surging', Fragile:'badge-fragile', Stable:'badge-stable' })[s] || 'badge-stable';
 }
 
+// ── Lane classifier ──────────────────────────────────────────────────────────
+// Mirrors the Daily Plays lane logic in _template.html so the ticker-page
+// banner reads from the same rule book. A ticker can match multiple lanes;
+// priority below surfaces the most time-critical/actionable first.
+// Returns {lane, action, direction, color, reason} or null if no match.
+function classifyLane(sc, earn) {
+  if (!sc) return null;
+  var hl     = Number(sc.half_life) || 0;
+  var nrs    = Number(sc.nrs) || 0;
+  var wks    = Number(sc.wks_score) || 0;
+  var drift  = Number(sc.drift_score) || 0;
+  var coord  = Number(sc.coordination_score) || 0;
+  var nea    = Number(sc.narrative_energy_absolute) || 0;
+  var fvd    = sc.fvd_pct != null ? Number(sc.fvd_pct) : null;
+  var vms    = sc.vms != null ? Number(sc.vms) : null;
+  var walsh  = sc.walsh_regime || '';
+  var verdict= sc.verdict || '';
+
+  // 1. Narrative Trap — strongest bearish structural warning
+  if (verdict === 'Narrative Trap' || verdict === 'Narrative Risk') {
+    return {
+      lane: 'Narrative Trap',
+      action: verdict === 'Narrative Trap' ? 'Avoid / Short' : 'Caution',
+      direction: 'BEARISH',
+      color: '#FF4D4D',
+      reason: 'Coverage outpacing what filings support — active manipulation/risk flag.'
+    };
+  }
+
+  // 2. Earnings Play — time-critical window
+  if (earn && earn.days_to_earnings != null) {
+    var dte  = Number(earn.days_to_earnings);
+    var surp = Number(earn.earnings_surprise_pct || 0);
+    if (dte >= -7 && dte <= 35) {
+      if (dte === 0)               return { lane:'Earnings Play', action:'Watch', color:'#FF4D4D', reason:'Earnings today — post-print move likely binary.' };
+      if (dte > 0 && dte <= 3)     return { lane:'Earnings Play', action:'Watch', color:'#FF4D4D', reason:'Earnings imminent — volatility expanding into print.' };
+      if (dte >= 4 && dte <= 14 && nrs < 40) return { lane:'Earnings Play', action:'Pre-Run Long', direction:'BULLISH', color:'#FFB800', reason:'Pre-earnings drift setup — narrative runway with manageable saturation.' };
+      if (dte >= 15 && dte <= 35 && Math.abs(surp) >= 0.15) return { lane:'Earnings Play', action:'Big-Mover Watch', color:'#FFB800', reason:'Historical surprise ±'+Math.round(Math.abs(surp)*100)+'% — big-move candidate into next print.' };
+      if (dte >= 15 && dte <= 35 && nrs < 40) return { lane:'Earnings Play', action:'Pre-Run Long', direction:'BULLISH', color:'#FFB800', reason:'Pre-earnings window opening — narrative runway intact.' };
+      if (dte >= -5 && dte <= 0 && surp < -0.05) return { lane:'Earnings Play', action:'Post-Miss Short', direction:'BEARISH', color:'#FF4D4D', reason:'Recent earnings miss — fade the bounce.' };
+      if (dte >= -5 && dte <= 0 && surp > 0.05)  return { lane:'Earnings Play', action:'Post-Beat Caution', color:'#FFB800', reason:'Post-beat — watch for exhaustion fade.' };
+      return { lane:'Earnings Play', action:'Watch', color:'#FFB800', reason:'Earnings window active.' };
+    }
+  }
+
+  // 3. Day Trade — half_life or short-term drift
+  if (hl > 0 && hl < 15 && wks > 0) {
+    return { lane:'Day Trade', action:'Ride Up', direction:'BULLISH', color:'#00DE94',
+             reason:'Narrative decaying fast with positive price bias — intraday follow-through.' };
+  }
+  if (hl > 0 && hl < 15) {
+    return { lane:'Day Trade', action:'Fade', direction:'BEARISH', color:'#FF4D4D',
+             reason:'Narrative decaying fast with weak price support — intraday fade.' };
+  }
+  if (nrs > 50 && drift > 40) {
+    return { lane:'Day Trade', action:'Short', direction:'BEARISH', color:'#FF4D4D',
+             reason:'High narrative saturation + widening drift — short-term fade setup.' };
+  }
+
+  // 4. Swing Trade — walsh regime + combo setups
+  if (walsh === 'CLEAR_PATH') {
+    return { lane:'Swing Trade', action:'Long', direction:'BULLISH', color:'#00DE94',
+             reason:'Clean narrative path — 5-7 day runway with structural support.' };
+  }
+  if (walsh === 'PERSISTENT' && nrs > 40 && nea > 400) {
+    return { lane:'Swing Trade', action:'Short', direction:'BEARISH', color:'#FF4D4D',
+             reason:'Persistent regime with high saturation — 5-7 day fade window.' };
+  }
+  if (drift > 60 && coord > 30 && nrs > 40) {
+    return { lane:'Swing Trade', action:'Short', direction:'BEARISH', color:'#FF4D4D',
+             reason:'Drift expanding with coordinated coverage — multi-day short setup.' };
+  }
+
+  // 5. Momentum
+  if (nea > 500 && nrs < 35) {
+    return { lane:'Momentum', action:'Long', direction:'BULLISH', color:'#00AEFF',
+             reason:'Narrative energy surging with room to run — momentum trend intact.' };
+  }
+
+  // 6. Value Pick
+  if (fvd != null && fvd < -5 && nrs < 40 && vms != null && vms > 50 && walsh !== 'PERSISTENT') {
+    return { lane:'Value Pick', action:'Accumulate', direction:'BULLISH', color:'#00DE94',
+             reason: Math.abs(fvd).toFixed(1) + '% below fair value with strong fundamentals.' };
+  }
+
+  return null;
+}
+
+// Maps trade_classifications.primary_label to the demoted structural tag shown
+// in the banner when the lane classifier has already taken the headline. Also
+// used as the FALLBACK headline when no lane matches (legacy behavior).
+function vLabelToStructural(vLabel, sc) {
+  if (!vLabel) return null;
+  var fvd = sc && sc.fvd_pct != null ? Number(sc.fvd_pct) : null;
+  var fvdAbs = fvd != null ? Math.abs(fvd).toFixed(1) + '%' : null;
+  var fvdDir = fvd != null ? (fvd > 0 ? 'above' : 'below') : null;
+  var fvdPhrase = fvdDir ? fvdAbs + ' ' + fvdDir + ' fundamental value' : 'disconnected from fundamental value';
+  var prettyLabel = vLabel.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, function(c){return c.toUpperCase();});
+  var map = {
+    'NARRATIVE_TRAP':          { action:'Avoid or Short',  color:'#FF4D4D', desc:'The media narrative doesn\'t match the company\'s SEC filings.' },
+    'FUNDAMENTAL_DISCONNECT':  { action:'Avoid',           color:'#FF4D4D', desc:'Stock price is ' + fvdPhrase + '. The story driving the price isn\'t supported by official filings.' },
+    'FADE_THE_HYPE':           { action:'Fade Rallies',    color:'#FF4D4D', desc:'Hype is outpacing reality — the narrative has drifted far from what filings support.' },
+    'DRIFT_COMPRESSION_SHORT': { action:'Short on Bounce', color:'#FF4D4D', desc:'The narrative is drifting from what filings show. Volatility expanding.' },
+    'AIR_POCKET_SHORT':        { action:'Stay Away',       color:'#FF4D4D', desc:'The narrative supporting this stock is collapsing. Downward pressure building.' },
+    'ACCUMULATE':              { action:'Buy Dips',        color:'var(--mp-cyan)', desc:'Clean fundamentals with narrative support for a move higher.' },
+    'MOMENTUM_CONFIRMED':      { action:'Ride the Trend',  color:'var(--mp-cyan)', desc:'Momentum confirmed with institutional backing.' },
+    'FUNDAMENTAL_LONG':        { action:'Accumulate',      color:'var(--mp-cyan)', desc:'SEC filings structurally support the bullish case.' }
+  };
+  var entry = map[vLabel];
+  if (!entry) return { label: prettyLabel, action: 'Monitor', color: 'var(--mp-text-muted)', desc: '' };
+  return { label: prettyLabel, action: entry.action, color: entry.color, desc: entry.desc };
+}
+
 // ── 1. Hero + Forensic ───────────────────────────────────────────────────────
 async function loadHero() {
   if (!TICKER) return null;
@@ -4721,7 +4834,7 @@ async function loadHero() {
       'sector_trap_flag','sector_trap_name','days_to_options_expiry','next_options_expiry'
     ].join(',');
 
-    const [rows, healthRows, snapRows, tradeRows, scorecardRows, cvRows] = await Promise.all([
+    const [rows, healthRows, snapRows, tradeRows, scorecardRows, cvRows, earnContextRows] = await Promise.all([
       sbFetch('v_dash_daily_story', { select: cols, ticker: `eq.${TICKER}`, order: 'snapshot_date.desc', limit: '1' }),
       sbFetch('v_dash_narrative_health', {
         select: 'narrative_health,narrative_trend,attention_trend',
@@ -4741,9 +4854,9 @@ async function loadHero() {
         order:  'snapshot_date.desc',
         limit:  '1'
       }),
-      // Fetch this ticker's scorecard for leaderboard-style badges
+      // Fetch this ticker's scorecard for leaderboard-style badges + banner lane classifier
       sbFetch('narrative_scorecard', {
-        select: 'ticker,fvd_pct,vms,coordination_score,decay_rate,suspicion_score,energy_remaining,verdict,narrative',
+        select: 'ticker,fvd_pct,vms,coordination_score,decay_rate,suspicion_score,energy_remaining,verdict,narrative,half_life,nrs,wks_score,walsh_regime,drift_score,narrative_energy_absolute,narrative_energy_regime,snapshot_date',
         ticker: `eq.${TICKER}`,
         order:  'snapshot_date.desc',
         limit:  '1'
@@ -4751,6 +4864,13 @@ async function loadHero() {
       // Fetch financials from claim_verifications (most recent earnings data)
       sbFetch('claim_verifications', {
         select: 'sec_revenue,sec_eps,sec_gross_margin,sec_net_margin,sec_operating_margin,benzinga_eps_actual,benzinga_eps_estimate,benzinga_eps_surprise_pct,benzinga_revenue_actual,benzinga_revenue_surprise_pct,benzinga_fiscal_period,form_type,filing_date,period_of_report,vms_score',
+        ticker: `eq.${TICKER}`,
+        order:  'snapshot_date.desc',
+        limit:  '1'
+      }).catch(function(){ return []; }),
+      // Earnings context for the banner's lane classifier (drives "Earnings Play" lane assignment)
+      sbFetch('earnings_context', {
+        select: 'ticker,days_to_earnings,earnings_surprise_pct,next_earnings_date',
         ticker: `eq.${TICKER}`,
         order:  'snapshot_date.desc',
         limit:  '1'
@@ -4855,11 +4975,45 @@ async function loadHero() {
       `<span class="hero-insight-badge" style="background:${b.bg};color:${b.color};border:1px solid ${b.border};">${esc(b.label)}</span>`
     ).join('');
 
+    // ── Earnings pill — prominent, color-coded by proximity ──
+    // days_to_earnings comes from v_dash_daily_story. Color tiers:
+    //   <=3d  → red (imminent),  4-14d → amber (pre-earnings), 15-35d → cyan,
+    //   past  → muted "Xd ago". Date is computed client-side from today + dte.
+    let earningsPill = '';
+    if (r.days_to_earnings != null) {
+      const dte = Number(r.days_to_earnings);
+      let eColor, eBg, eBorder, eLabel;
+      if (dte < 0) {
+        eColor = '#A0A8B0'; eBg = 'rgba(160,168,176,0.08)'; eBorder = 'rgba(160,168,176,0.20)';
+        eLabel = 'Earnings ' + Math.abs(dte) + 'd ago';
+      } else if (dte === 0) {
+        eColor = '#FF4D4D'; eBg = 'rgba(255,77,77,0.12)'; eBorder = 'rgba(255,77,77,0.30)';
+        eLabel = 'Earnings today';
+      } else if (dte <= 3) {
+        eColor = '#FF4D4D'; eBg = 'rgba(255,77,77,0.10)'; eBorder = 'rgba(255,77,77,0.25)';
+        eLabel = 'Earnings in ' + dte + 'd';
+      } else if (dte <= 14) {
+        eColor = '#FFB800'; eBg = 'rgba(255,184,0,0.08)'; eBorder = 'rgba(255,184,0,0.20)';
+        eLabel = 'Earnings in ' + dte + 'd';
+      } else {
+        eColor = '#00AEFF'; eBg = 'rgba(0,174,255,0.08)'; eBorder = 'rgba(0,174,255,0.20)';
+        eLabel = 'Earnings in ' + dte + 'd';
+      }
+      // Append date for names within ~4 weeks so users get a concrete calendar anchor
+      if (dte >= 0 && dte <= 28) {
+        const eDate = new Date();
+        eDate.setDate(eDate.getDate() + dte);
+        eLabel += ' · ' + eDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      }
+      earningsPill = `<span class="hero-insight-badge" style="background:${eBg};color:${eColor};border:1px solid ${eBorder};font-weight:600;">${eLabel}</span>`;
+    }
+
     document.getElementById('hero').innerHTML = `
       <div class="hero-left">
         ${(function(t){var d=window.MP_DOMAINS&&window.MP_DOMAINS[t];return d?'<img src="https://www.google.com/s2/favicons?domain='+d+'&sz=128" alt="'+t+'" class="hero-ticker-logo" onerror="this.style.display=\'none\'">':'';})( r.ticker )}
         <div class="hero-ticker-row">
           <span class="hero-ticker">${esc(r.ticker)}</span>
+          ${earningsPill}
           ${insightHtml || `<span class="hero-state-badge ${stateClass(r.narrative_state)}">${esc(r.narrative_state || '—')}</span>`}
         </div>
         <div class="hero-claim">${esc(r.primary_driver || r.story_claim || '')}</div>
@@ -4952,50 +5106,73 @@ async function loadHero() {
         <div class="metric-sub">${esc(r.institutional_positioning || 'Institutional')}</div>
       </div>`;
 
-    // ── Verdict Banner — immediately tells user what the signal is ──
+    // ── Verdict Banner ──
+    // Redesigned to align with Daily Plays: the HEADLINE is now the ticker's
+    // lane + action from the shared classifier (same logic as _template.html's
+    // Daily Plays lanes), so a user clicking through from "Day Trade · Fade"
+    // on Daily Plays sees "Day Trade · FADE" on the banner. The structural
+    // label (e.g. FUNDAMENTAL_DISCONNECT) is demoted to a small tag. Forensic
+    // rebuttal paragraph is unchanged — it remains the trust/evidence layer.
     var verdictBanner = document.getElementById('verdict-banner');
     if(verdictBanner){
-      var fvdVal = sc.fvd_pct;
-      var fvdDir = fvdVal != null ? (fvdVal > 0 ? 'above' : 'below') : null;
-      var fvdAbs = fvdVal != null ? Math.abs(fvdVal).toFixed(1) + '%' : null;
-      var fvdPhrase = fvdDir ? fvdAbs + ' ' + fvdDir + ' fundamental value' : 'disconnected from fundamental value';
-      var accDesc = fvdDir ? 'Stock is trading ' + fvdAbs + ' ' + fvdDir + ' fair value with clean fundamentals. The narrative supports a move higher.'
-                           : 'Clean fundamentals with narrative support for a move higher.';
-      var flDesc  = fvdDir ? 'Stock is trading ' + fvdAbs + ' ' + fvdDir + ' fundamental value. SEC filings structurally support the bullish case.'
-                           : 'SEC filings structurally support the bullish case.';
-      var trapDesc = fvdDir ? 'The media narrative doesn\'t match the company\'s SEC filings. Price is trading ' + fvdAbs + ' ' + fvdDir + ' fundamental value.'
-                            : 'The media narrative doesn\'t match the company\'s SEC filings. Price appears inflated above fundamental value.';
-      var fdDesc  = 'Stock price is trading ' + fvdPhrase + '. The story driving the price isn\'t supported by official filings.';
-      var fhDesc  = fvdDir ? 'Hype is outpacing reality. Stock is ' + fvdAbs + ' ' + fvdDir + ' fundamental value \u2014 the narrative has drifted far from what filings support.'
-                           : 'Hype is outpacing reality. The narrative has drifted far from what filings actually support.';
-      var vActions = {
-        'NARRATIVE_TRAP': {action:'Avoid or Short', desc:trapDesc},
-        'FUNDAMENTAL_DISCONNECT': {action:'Avoid', desc:fdDesc},
-        'FADE_THE_HYPE': {action:'Fade Rallies', desc:fhDesc},
-        'DRIFT_COMPRESSION_SHORT': {action:'Short on Bounce', desc:'The narrative is gradually drifting from what filings show. Volatility is expanding.'},
-        'AIR_POCKET_SHORT': {action:'Stay Away', desc:'The narrative supporting this stock is collapsing. Downward pressure is building.'},
-        'ACCUMULATE': {action:'Buy Dips', desc:accDesc},
-        'MOMENTUM_CONFIRMED': {action:'Ride the Trend', desc:'Momentum is confirmed with strong institutional backing and credible coverage.'},
-        'FUNDAMENTAL_LONG': {action:'Accumulate', desc:flDesc}
-      };
+      var earn = (earnContextRows || [])[0] || null;
+      var lane = classifyLane(sc, earn);
+
+      // Fallback — if no lane matches, fall back to the structural label so
+      // the banner still says something useful (matches the old behavior for
+      // names that don't hit any active lane today).
       var vLabel = tc.primary_label || '';
-      var vInfo = vActions[vLabel] || null;
-      var isTrap = verdict === 'Narrative Trap' || (vLabel && vLabel.indexOf('TRAP') !== -1) || (vLabel && vLabel.indexOf('DISCONNECT') !== -1) || (vLabel && vLabel.indexOf('FADE') !== -1) || (vLabel && vLabel.indexOf('AIR_POCKET') !== -1);
-      var isSupported = verdict === 'Structurally Supported' || vLabel === 'ACCUMULATE' || vLabel === 'MOMENTUM_CONFIRMED' || vLabel === 'FUNDAMENTAL_LONG';
-      var bannerColor = isTrap ? '#FF4D4D' : isSupported ? 'var(--mp-cyan)' : 'var(--mp-text-muted)';
-      var bannerAction = vInfo ? vInfo.action : (isTrap ? 'Caution' : isSupported ? 'Favorable' : 'Monitoring');
-      var bannerDesc = vInfo ? vInfo.desc : (r.forensic_rebuttal || r.story_claim || '');
-      var bannerVerdictLabel = vLabel ? vLabel.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, function(c){return c.toUpperCase();}) : verdict;
+      var structuralInfo = vLabelToStructural(vLabel, sc);
+
+      // Pick the headline source: lane classifier wins when present.
+      var headline, action, color, reason;
+      if (lane) {
+        headline = lane.lane;
+        action = lane.action;
+        color = lane.color;
+        reason = lane.reason;
+      } else if (structuralInfo) {
+        headline = structuralInfo.label;
+        action = structuralInfo.action;
+        color = structuralInfo.color;
+        reason = structuralInfo.desc;
+      } else {
+        headline = verdict || 'Monitoring';
+        action = 'Monitor';
+        color = 'var(--mp-text-muted)';
+        reason = r.forensic_rebuttal || r.story_claim || '';
+      }
+
+      // Freshness — "Updated X ago" using the scorecard snapshot_date
+      var freshness = '';
+      if (sc.snapshot_date) {
+        var ageMs = Date.now() - new Date(sc.snapshot_date + 'T00:00:00Z').getTime();
+        var ageDays = Math.floor(ageMs / (1000*60*60*24));
+        freshness = ageDays <= 0 ? 'Updated today'
+                  : ageDays === 1 ? 'Updated 1d ago'
+                  : 'Updated ' + ageDays + 'd ago';
+      }
+
+      // Demote the structural label to a tag if the lane classifier produced
+      // the headline AND the structural label adds different information.
+      var structuralTag = '';
+      if (lane && structuralInfo && structuralInfo.label.toLowerCase() !== headline.toLowerCase()) {
+        structuralTag = '<span class="vb-tag" style="background:rgba(255,255,255,0.04);color:var(--mp-text-tertiary);border:1px solid var(--mp-border);font-size:10px;font-weight:600;padding:3px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.05em;">'+esc(structuralInfo.label)+'</span>';
+      }
 
       verdictBanner.style.display = 'block';
-      verdictBanner.style.borderLeftColor = bannerColor;
+      verdictBanner.style.borderLeftColor = color;
       verdictBanner.innerHTML =
-        '<div class="vb-top">'
-          + '<span class="vb-verdict" style="color:'+bannerColor+';">'+esc(bannerVerdictLabel)+'</span>'
-          + '<span class="vb-action" style="background:'+bannerColor+'14;color:'+bannerColor+';border:1px solid '+bannerColor+'33;">'+esc(bannerAction)+'</span>'
+        '<div class="vb-top" style="justify-content:space-between;">'
+          + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'
+            + '<span class="vb-verdict" style="color:'+color+';">'+esc(headline)+'</span>'
+            + '<span class="vb-action" style="background:'+color+'14;color:'+color+';border:1px solid '+color+'33;">'+esc(action)+'</span>'
+            + structuralTag
+          + '</div>'
+          + (freshness ? '<span style="font-size:11px;color:var(--mp-text-muted);font-family:var(--font-body);white-space:nowrap;">'+esc(freshness)+'</span>' : '')
         + '</div>'
-        + '<div class="vb-desc">'+esc(bannerDesc)+'</div>'
-        + (r.forensic_rebuttal && vInfo ? '<div class="vb-rebuttal">'+esc(r.forensic_rebuttal)+'</div>' : '');
+        + (reason ? '<div class="vb-desc">'+esc(reason)+'</div>' : '')
+        + (r.forensic_rebuttal ? '<div class="vb-rebuttal">'+esc(r.forensic_rebuttal)+'</div>' : '');
     }
 
     // ── Sector Intelligence panel (loaded separately from Supabase) ──

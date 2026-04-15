@@ -4207,11 +4207,44 @@ async function loadHero() {
       `<span class="hero-insight-badge" style="background:${b.bg};color:${b.color};border:1px solid ${b.border};">${esc(b.label)}</span>`
     ).join('');
 
+    // ── Earnings pill — prominent, color-coded by proximity ──
+    // days_to_earnings comes from v_dash_daily_story. Color tiers:
+    //   <=3d  → red (imminent),  4-14d → amber (pre-earnings), 15+d → cyan,
+    //   past  → muted "Xd ago". Date is computed client-side from today + dte.
+    let earningsPill = '';
+    if (r.days_to_earnings != null) {
+      const dte = Number(r.days_to_earnings);
+      let eColor, eBg, eBorder, eLabel;
+      if (dte < 0) {
+        eColor = '#A0A8B0'; eBg = 'rgba(160,168,176,0.08)'; eBorder = 'rgba(160,168,176,0.20)';
+        eLabel = 'Earnings ' + Math.abs(dte) + 'd ago';
+      } else if (dte === 0) {
+        eColor = '#FF4D4D'; eBg = 'rgba(255,77,77,0.12)'; eBorder = 'rgba(255,77,77,0.30)';
+        eLabel = 'Earnings today';
+      } else if (dte <= 3) {
+        eColor = '#FF4D4D'; eBg = 'rgba(255,77,77,0.10)'; eBorder = 'rgba(255,77,77,0.25)';
+        eLabel = 'Earnings in ' + dte + 'd';
+      } else if (dte <= 14) {
+        eColor = '#FFB800'; eBg = 'rgba(255,184,0,0.08)'; eBorder = 'rgba(255,184,0,0.20)';
+        eLabel = 'Earnings in ' + dte + 'd';
+      } else {
+        eColor = '#00AEFF'; eBg = 'rgba(0,174,255,0.08)'; eBorder = 'rgba(0,174,255,0.20)';
+        eLabel = 'Earnings in ' + dte + 'd';
+      }
+      if (dte >= 0 && dte <= 28) {
+        const eDate = new Date();
+        eDate.setDate(eDate.getDate() + dte);
+        eLabel += ' · ' + eDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      }
+      earningsPill = `<span class="hero-insight-badge" style="background:${eBg};color:${eColor};border:1px solid ${eBorder};font-weight:600;">${eLabel}</span>`;
+    }
+
     document.getElementById('hero').innerHTML = `
       <div class="hero-left">
         ${(function(t){var d=window.MP_DOMAINS&&window.MP_DOMAINS[t];return d?'<img src="https://www.google.com/s2/favicons?domain='+d+'&sz=128" alt="'+t+'" class="hero-ticker-logo" onerror="this.style.display=\'none\'">':'';})( r.ticker )}
         <div class="hero-ticker-row">
           <span class="hero-ticker">${esc(r.ticker)}</span>
+          ${earningsPill}
           ${insightHtml || `<span class="hero-state-badge ${stateClass(r.narrative_state)}">${esc(r.narrative_state || '—')}</span>`}
         </div>
         <div class="hero-claim">${esc(r.primary_driver || r.story_claim || '')}</div>

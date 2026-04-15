@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<title>Earnings Pill Preview · Market Prism</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --mp-obsidian:     #080B11;
+    --mp-surface:      #0C1018;
+    --mp-surface2:     #111927;
+    --mp-border:       rgba(255,255,255,0.06);
+    --mp-border-hover: rgba(255,255,255,0.14);
+    --mp-text-primary:   #FFFFFF;
+    --mp-text-secondary: rgba(255,255,255,0.7);
+    --mp-text-tertiary:  #A0A8B0;
+    --mp-text-muted:     rgba(255,255,255,0.3);
+    --mp-cyan:    #00AEFF;
+    --mp-green:   #00DE94;
+    --mp-red:     #FF4D4D;
+    --mp-amber:   #FFB800;
+    --font-body: 'Inter', 'DM Sans', system-ui, sans-serif;
+    --font-display: 'Instrument Serif', 'DM Serif Display', Georgia, serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; background: var(--mp-obsidian); color: var(--mp-text-primary); font-family: var(--font-body); }
+  body { padding: 40px 24px 80px; }
+
+  .page-head {
+    max-width: 1200px; margin: 0 auto 32px;
+  }
+  .page-head h1 {
+    font-family: var(--font-display); font-weight: 400; font-size: 32px;
+    letter-spacing: -0.025em; margin: 0 0 8px;
+  }
+  .page-head p { color: var(--mp-text-tertiary); font-size: 14px; margin: 0; max-width: 640px; line-height: 1.5; }
+
+  .variant-head {
+    max-width: 1200px; margin: 32px auto 12px;
+    font-size: 13px; color: var(--mp-text-muted); text-transform: uppercase; letter-spacing: 0.08em;
+    font-weight: 600;
+  }
+  .variant-sub {
+    max-width: 1200px; margin: 0 auto 14px;
+    font-size: 12px; color: var(--mp-text-tertiary); font-style: italic;
+  }
+
+  /* ── Hero shell (copied from _ticker.html) ── */
+  .ticker-hero {
+    max-width: 1200px; margin: 0 auto;
+    padding: 36px 40px 32px;
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 32px;
+    background: var(--mp-surface);
+    border: 1px solid var(--mp-border);
+    border-radius: 18px;
+    position: relative; overflow: hidden;
+  }
+  .ticker-hero::before {
+    content: ""; position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+  }
+  .hero-left, .hero-right { position: relative; z-index: 1; }
+  .hero-left { flex: 1; min-width: 0; }
+  .hero-right { text-align: right; flex-shrink: 0; }
+
+  .hero-ticker-row {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap;
+  }
+  .hero-ticker-logo {
+    width: 56px; height: 56px; border-radius: 12px; object-fit: contain;
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10);
+    padding: 6px; flex-shrink: 0;
+  }
+  .hero-ticker {
+    font-size: 40px; font-weight: 700; letter-spacing: -0.03em;
+  }
+  .hero-claim {
+    font-size: 15px; color: #D1D5DB; line-height: 1.6; max-width: 700px;
+    margin-top: 10px; margin-bottom: 16px;
+  }
+  .hero-sector { font-size: 12px; color: var(--mp-text-tertiary); margin-top: 4px; font-style: italic; }
+
+  /* Insight badges (pills) */
+  .hero-insight-badge {
+    font-size: 11px; font-weight: 500; padding: 4px 12px; border-radius: 99px;
+    letter-spacing: 0.02em; white-space: nowrap;
+  }
+
+  /* Right side */
+  .live-price-row { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-bottom: 2px; }
+  .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #00DE94; animation: livePulse 2s ease-in-out infinite; }
+  @keyframes livePulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,222,148,0.5); }
+    50% { opacity: 0.7; box-shadow: 0 0 0 4px rgba(0,222,148,0); }
+  }
+  .live-label { font-size: 11px; color: rgba(0,222,148,0.7); text-transform: uppercase; letter-spacing: 0.05em; }
+  .live-price-main { font-size: 38px; font-weight: 600; letter-spacing: -0.03em; color: #F5F7FA; line-height: 1; }
+  .live-change { font-size: 14px; margin-top: 4px; }
+  .live-change.pos { color: var(--mp-green); }
+  .live-change.neg { color: var(--mp-red); }
+  .hero-fv { font-size: 12px; color: var(--mp-text-tertiary); margin-top: 6px; display: flex; justify-content: flex-end; gap: 5px; }
+  .hero-fv span { color: var(--mp-text-secondary); }
+
+  .legend {
+    max-width: 1200px; margin: 48px auto 0;
+    background: var(--mp-surface); border: 1px solid var(--mp-border);
+    border-radius: 16px; padding: 20px 24px;
+  }
+  .legend h3 {
+    font-family: var(--font-display); font-weight: 400; font-size: 18px;
+    margin: 0 0 14px;
+  }
+  .legend-row { display: flex; align-items: center; gap: 16px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .legend-row:last-child { border-bottom: none; }
+  .legend-row .pill-cell { min-width: 220px; }
+  .legend-row .pill-desc { font-size: 13px; color: var(--mp-text-secondary); line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>Earnings pill — preview</h1>
+  <p>Standalone preview of the Earnings pill added to the ticker page hero. Each variant below shows how the hero renders for a different days-to-earnings value. No Supabase connection required.</p>
+</div>
+
+<!-- Variant 1: Imminent (red) — 2 days out -->
+<div class="variant-head">Variant 1 · Imminent (≤ 3 days)</div>
+<div class="variant-sub">Red pill — appears when earnings are within 3 days, or today.</div>
+<div class="ticker-hero">
+  <div class="hero-left">
+    <div class="hero-ticker-row">
+      <span class="hero-ticker">TSLA</span>
+      <span class="hero-insight-badge" style="background:rgba(255,77,77,0.10);color:#FF4D4D;border:1px solid rgba(255,77,77,0.25);font-weight:600;" id="pill-imminent"></span>
+      <span class="hero-insight-badge" style="background:rgba(255,77,77,0.08);color:#FF4D4D;border:1px solid rgba(255,77,77,0.20);">High Hype Gap</span>
+      <span class="hero-insight-badge" style="background:rgba(255,184,0,0.08);color:#FFB800;border:1px solid rgba(255,184,0,0.20);">Narrative Fading</span>
+    </div>
+    <div class="hero-claim">Robotaxi narrative inflated ahead of delivery numbers. Street positioning crowded long.</div>
+    <div class="hero-sector">Electric Vehicles</div>
+  </div>
+  <div class="hero-right">
+    <div class="live-price-row"><span class="live-dot"></span><span class="live-label">Live</span></div>
+    <div class="live-price-main">$214.73</div>
+    <div class="live-change neg">▼ -2.41%</div>
+    <div class="hero-fv">Market Prism Fair Value <span>$178.00</span></div>
+  </div>
+</div>
+
+<!-- Variant 2: Pre-earnings window (amber) — 7 days out -->
+<div class="variant-head">Variant 2 · Pre-earnings window (4–14 days)</div>
+<div class="variant-sub">Amber pill — inside the window Daily Plays flags as Pre-Run Long / Pre-Earnings.</div>
+<div class="ticker-hero">
+  <div class="hero-left">
+    <div class="hero-ticker-row">
+      <span class="hero-ticker">META</span>
+      <span class="hero-insight-badge" style="background:rgba(255,184,0,0.08);color:#FFB800;border:1px solid rgba(255,184,0,0.20);font-weight:600;" id="pill-window"></span>
+      <span class="hero-insight-badge" style="background:rgba(0,174,255,0.08);color:#00AEFF;border:1px solid rgba(0,174,255,0.20);">High Energy</span>
+    </div>
+    <div class="hero-claim">AI infrastructure spend guidance expected to firm; consensus revenue growth bar already raised twice this quarter.</div>
+    <div class="hero-sector">Social / Advertising</div>
+  </div>
+  <div class="hero-right">
+    <div class="live-price-row"><span class="live-dot"></span><span class="live-label">Live</span></div>
+    <div class="live-price-main">$612.85</div>
+    <div class="live-change pos">▲ +1.08%</div>
+    <div class="hero-fv">Market Prism Fair Value <span>$598.00</span></div>
+  </div>
+</div>
+
+<!-- Variant 3: Upcoming (cyan) — 20 days out -->
+<div class="variant-head">Variant 3 · Upcoming (15 – 28 days)</div>
+<div class="variant-sub">Cyan pill — shows a calendar anchor for names within roughly 4 weeks.</div>
+<div class="ticker-hero">
+  <div class="hero-left">
+    <div class="hero-ticker-row">
+      <span class="hero-ticker">AMD</span>
+      <span class="hero-insight-badge" style="background:rgba(0,174,255,0.08);color:#00AEFF;border:1px solid rgba(0,174,255,0.20);font-weight:600;" id="pill-upcoming"></span>
+      <span class="hero-insight-badge" style="background:rgba(0,222,148,0.08);color:#00DE94;border:1px solid rgba(0,222,148,0.20);">Under Fair Value</span>
+    </div>
+    <div class="hero-claim">Data-center GPU share narrative gaining credibility. Historical earnings surprise +23% — big-mover candidate into next print.</div>
+    <div class="hero-sector">Semiconductors</div>
+  </div>
+  <div class="hero-right">
+    <div class="live-price-row"><span class="live-dot"></span><span class="live-label">Live</span></div>
+    <div class="live-price-main">$148.20</div>
+    <div class="live-change pos">▲ +0.82%</div>
+    <div class="hero-fv">Market Prism Fair Value <span>$168.00</span></div>
+  </div>
+</div>
+
+<!-- Variant 4: Distant (cyan, no date) — 60 days out -->
+<div class="variant-head">Variant 4 · Distant (&gt; 28 days)</div>
+<div class="variant-sub">Cyan pill, countdown only — no calendar anchor for far-out reports.</div>
+<div class="ticker-hero">
+  <div class="hero-left">
+    <div class="hero-ticker-row">
+      <span class="hero-ticker">AAPL</span>
+      <span class="hero-insight-badge" style="background:rgba(0,174,255,0.08);color:#00AEFF;border:1px solid rgba(0,174,255,0.20);font-weight:600;" id="pill-distant"></span>
+      <span class="hero-insight-badge" style="background:rgba(0,222,148,0.08);color:#00DE94;border:1px solid rgba(0,222,148,0.20);">Fundamentally Supported</span>
+    </div>
+    <div class="hero-claim">iPhone 17 pricing power narrative holding; services margin expansion theme still intact.</div>
+    <div class="hero-sector">Consumer Electronics</div>
+  </div>
+  <div class="hero-right">
+    <div class="live-price-row"><span class="live-dot"></span><span class="live-label">Live</span></div>
+    <div class="live-price-main">$223.45</div>
+    <div class="live-change pos">▲ +0.31%</div>
+    <div class="hero-fv">Market Prism Fair Value <span>$235.00</span></div>
+  </div>
+</div>
+
+<!-- Variant 5: Post-earnings (muted) — 4 days ago -->
+<div class="variant-head">Variant 5 · Post-earnings (past)</div>
+<div class="variant-sub">Muted pill — shows "Earnings Xd ago" after the event has passed.</div>
+<div class="ticker-hero">
+  <div class="hero-left">
+    <div class="hero-ticker-row">
+      <span class="hero-ticker">NFLX</span>
+      <span class="hero-insight-badge" style="background:rgba(160,168,176,0.08);color:#A0A8B0;border:1px solid rgba(160,168,176,0.20);font-weight:600;" id="pill-past"></span>
+      <span class="hero-insight-badge" style="background:rgba(160,168,176,0.08);color:#A0A8B0;border:1px solid rgba(160,168,176,0.20);">Story Exhausted</span>
+    </div>
+    <div class="hero-claim">Subscriber growth beat priced in; post-beat fade setup developing as narrative energy drains.</div>
+    <div class="hero-sector">Streaming</div>
+  </div>
+  <div class="hero-right">
+    <div class="live-price-row"><span class="live-dot"></span><span class="live-label">Live</span></div>
+    <div class="live-price-main">$842.10</div>
+    <div class="live-change neg">▼ -1.12%</div>
+    <div class="hero-fv">Market Prism Fair Value <span>$810.00</span></div>
+  </div>
+</div>
+
+<!-- Variant 6: Today -->
+<div class="variant-head">Variant 6 · Earnings today</div>
+<div class="variant-sub">Strongest red — the highest-urgency state.</div>
+<div class="ticker-hero">
+  <div class="hero-left">
+    <div class="hero-ticker-row">
+      <span class="hero-ticker">SMCI</span>
+      <span class="hero-insight-badge" style="background:rgba(255,77,77,0.12);color:#FF4D4D;border:1px solid rgba(255,77,77,0.30);font-weight:600;" id="pill-today"></span>
+      <span class="hero-insight-badge" style="background:rgba(255,77,77,0.08);color:#FF4D4D;border:1px solid rgba(255,77,77,0.20);">Coordinated Narrative</span>
+    </div>
+    <div class="hero-claim">Historical surprise ±50%. Implied move largest in semis cohort — post-print direction binary.</div>
+    <div class="hero-sector">Servers</div>
+  </div>
+  <div class="hero-right">
+    <div class="live-price-row"><span class="live-dot"></span><span class="live-label">Live</span></div>
+    <div class="live-price-main">$38.62</div>
+    <div class="live-change neg">▼ -3.80%</div>
+    <div class="hero-fv">Market Prism Fair Value <span>$42.00</span></div>
+  </div>
+</div>
+
+<!-- Color legend -->
+<div class="legend">
+  <h3>Color tiers at a glance</h3>
+  <div class="legend-row">
+    <div class="pill-cell">
+      <span class="hero-insight-badge" style="background:rgba(255,77,77,0.12);color:#FF4D4D;border:1px solid rgba(255,77,77,0.30);font-weight:600;">Earnings today</span>
+    </div>
+    <div class="pill-desc">Day of print. Highest urgency.</div>
+  </div>
+  <div class="legend-row">
+    <div class="pill-cell">
+      <span class="hero-insight-badge" style="background:rgba(255,77,77,0.10);color:#FF4D4D;border:1px solid rgba(255,77,77,0.25);font-weight:600;">Earnings in 2d · Apr 17</span>
+    </div>
+    <div class="pill-desc">1–3 days out. Red. Imminent — matches the Daily Plays "Imminent" Earnings lane.</div>
+  </div>
+  <div class="legend-row">
+    <div class="pill-cell">
+      <span class="hero-insight-badge" style="background:rgba(255,184,0,0.08);color:#FFB800;border:1px solid rgba(255,184,0,0.20);font-weight:600;">Earnings in 7d · Apr 22</span>
+    </div>
+    <div class="pill-desc">4–14 days out. Amber. Pre-earnings window — matches Daily Plays "Pre-Run Long" / "Pre-Earnings" lane.</div>
+  </div>
+  <div class="legend-row">
+    <div class="pill-cell">
+      <span class="hero-insight-badge" style="background:rgba(0,174,255,0.08);color:#00AEFF;border:1px solid rgba(0,174,255,0.20);font-weight:600;">Earnings in 20d · May 5</span>
+    </div>
+    <div class="pill-desc">15–28 days out. Cyan. Upcoming — includes a calendar date anchor for context.</div>
+  </div>
+  <div class="legend-row">
+    <div class="pill-cell">
+      <span class="hero-insight-badge" style="background:rgba(0,174,255,0.08);color:#00AEFF;border:1px solid rgba(0,174,255,0.20);font-weight:600;">Earnings in 60d</span>
+    </div>
+    <div class="pill-desc">&gt; 28 days. Cyan without date — too far out for a calendar anchor to feel urgent.</div>
+  </div>
+  <div class="legend-row">
+    <div class="pill-cell">
+      <span class="hero-insight-badge" style="background:rgba(160,168,176,0.08);color:#A0A8B0;border:1px solid rgba(160,168,176,0.20);font-weight:600;">Earnings 4d ago</span>
+    </div>
+    <div class="pill-desc">Past earnings. Muted gray. Stays visible for a short window so the post-print read is still contextual.</div>
+  </div>
+</div>
+
+<script>
+  // Compute calendar anchor dates client-side just like the real code does,
+  // so the preview always shows real upcoming dates relative to "today".
+  function fmtDate(daysAhead) {
+    const d = new Date();
+    d.setDate(d.getDate() + daysAhead);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+  document.getElementById('pill-imminent').textContent = 'Earnings in 2d · ' + fmtDate(2);
+  document.getElementById('pill-window').textContent   = 'Earnings in 7d · ' + fmtDate(7);
+  document.getElementById('pill-upcoming').textContent = 'Earnings in 20d · ' + fmtDate(20);
+  document.getElementById('pill-distant').textContent  = 'Earnings in 60d';
+  document.getElementById('pill-past').textContent     = 'Earnings 4d ago';
+  document.getElementById('pill-today').textContent    = 'Earnings today';
+</script>
+
+</body>
+</html>
