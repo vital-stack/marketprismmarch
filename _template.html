@@ -1985,8 +1985,7 @@ body{
 [data-theme="light"] .page-header p{color:var(--mp-text-secondary);}
 /* ph-italic color handled by gradient text system */
 /* ── Track Record (validation) ─────────────────────────────────────────────── */
-.val-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px;}
-@media(max-width:980px){.val-stats{grid-template-columns:repeat(2,1fr);}}
+.val-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:24px;}
 .val-stat{background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:12px;padding:16px 18px;}
 .val-stat-label{font-size:11px;color:var(--mp-text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;font-family:var(--font-body);}
 .val-stat-value{font-size:22px;font-weight:600;color:var(--mp-text-primary);font-family:var(--font-body);line-height:1.15;}
@@ -5226,7 +5225,7 @@ body{
         <div class="val-table-block">
           <div class="val-chart-head">
             <div class="val-chart-title">Recent trades</div>
-            <div class="val-chart-sub"><span id="val-table-count"></span> most recent closed trades &middot; click a row for the ticker page</div>
+            <div class="val-chart-sub"><span id="val-table-count"></span> closed trades &middot; click a row for ticker detail &middot; <a href="mailto:hello@marketprism.co?subject=Full paper-trade ledger request" style="color:var(--mp-cyan);text-decoration:none;">email us for the full ledger</a></div>
           </div>
           <div class="val-table-filters" id="val-table-filters">
             <button class="val-chip active" data-filter="all">All</button>
@@ -7695,10 +7694,17 @@ function valRenderStats(trades){
   var avgAlpha=spyArr.length?spyArr.reduce(function(a,b){return a+b;},0)/spyArr.length:null;
   var dates=closed.map(function(t){return t.entry_date;}).filter(Boolean).sort();
   var first=dates[0];var last=dates[dates.length-1]||dates[0];
-  var months=first&&last?Math.max(1,Math.round(((new Date(last)-new Date(first))/(1000*60*60*24))/30.4)):0;
+  var daysElapsed=first&&last?Math.max(1,(new Date(last+'T00:00:00')-new Date(first+'T00:00:00'))/(1000*60*60*24)):0;
+  var months=daysElapsed?Math.max(1,Math.round(daysElapsed/30.4)):0;
+  // Annualized return: take the avg trade return and extrapolate one trade-slot firing
+  // year-round at the average hold duration. Matches the per-signal annualized bar chart.
+  var holdArr=closed.filter(function(t){return t.days_held!=null;}).map(function(t){return Number(t.days_held);});
+  var avgDays=holdArr.length?holdArr.reduce(function(a,b){return a+b;},0)/holdArr.length:0;
+  var annualized=avgDays>0?(avgPnl*(365/avgDays)):0;
   var el=document.getElementById('val-stats');
   if(!el)return;
   el.innerHTML=''
+    +'<div class="val-stat"><div class="val-stat-label">Annualized return</div><div class="val-stat-value '+(annualized>0?'pos':annualized<0?'neg':'')+'">'+valFmtPct(annualized,1)+'</div><div class="val-stat-sub">per trade slot &middot; '+avgDays.toFixed(1)+'d avg hold</div></div>'
     +'<div class="val-stat"><div class="val-stat-label">Trades</div><div class="val-stat-value">'+n.toLocaleString()+'</div><div class="val-stat-sub">closed positions</div></div>'
     +'<div class="val-stat"><div class="val-stat-label">Win rate</div><div class="val-stat-value '+(winRate>=55?'pos':'')+'">'+winRate.toFixed(1)+'%</div><div class="val-stat-sub">'+wins.toLocaleString()+' winners / '+(n-wins).toLocaleString()+' losers</div></div>'
     +'<div class="val-stat"><div class="val-stat-label">Avg return</div><div class="val-stat-value '+(avgPnl>0?'pos':avgPnl<0?'neg':'')+'">'+valFmtPct(avgPnl,2)+'</div><div class="val-stat-sub">per trade</div></div>'
@@ -7825,8 +7831,8 @@ function valRenderTable(){
   if(_VAL_CURRENT_FILTER==='wins')filtered=closed.filter(function(t){return t.pnl_pct!=null&&Number(t.pnl_pct)>0;});
   else if(_VAL_CURRENT_FILTER==='losers')filtered=closed.filter(function(t){return t.pnl_pct!=null&&Number(t.pnl_pct)<=0;});
   filtered.sort(function(a,b){return(b.exit_date||'').localeCompare(a.exit_date||'');});
-  var rows=filtered.slice(0,200);
-  if(cntEl)cntEl.textContent=rows.length.toLocaleString();
+  var rows=filtered.slice(0,500);
+  if(cntEl)cntEl.textContent='Showing '+rows.length.toLocaleString()+' of '+filtered.length.toLocaleString();
   if(!rows.length){wrap.innerHTML='<div style="padding:20px;color:var(--mp-text-muted);text-align:center;">No trades match this filter.</div>';return;}
   var html='<table class="val-table"><thead><tr>'
     +'<th>Ticker</th>'
@@ -7889,6 +7895,9 @@ async function loadValidation(force){
       rows=rows.concat(page);
       if(page.length<PAGE)break;
     }
+    // Hide retired/experimental signal classes from the validation record
+    var EXCLUDED_SIGNALS={'NARRATIVE_TRAP':true};
+    rows=rows.filter(function(r){return r.signal_basis&&!EXCLUDED_SIGNALS[r.signal_basis];});
     if(!rows.length){
       loading.style.display='none';
       if(err){err.style.display='block';err.textContent='No paper trades yet.';}
