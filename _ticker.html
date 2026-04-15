@@ -4656,6 +4656,15 @@ document.getElementById('nav-ticker').textContent = TICKER;
 var feedTickerEl = document.getElementById('tk-feed-ticker');
 if (feedTickerEl) feedTickerEl.textContent = TICKER;
 
+// Kick off the live-quote request in parallel with the Supabase fetches so
+// it's already in flight (or resolved) by the time the hero DOM renders.
+// fetchLivePrice() will consume this cached promise on its first call.
+var _livePrefetch = TICKER
+  ? fetch('/api/live-quote?ticker=' + encodeURIComponent(TICKER))
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .catch(function(){ return null; })
+  : null;
+
 async function sbFetch(table, params) {
   const qs = Object.entries(params || {})
     .filter(([, v]) => v !== undefined && v !== null && v !== '')
@@ -4867,6 +4876,12 @@ async function loadHero() {
         ${r.fair_value != null ? `<div class="hero-fv"><span class="info-tip" data-tip="Market Prism Fair Value is estimated using a composite of discounted cash flow (DCF) models, sector-relative multiples, and earnings quality adjustments — cross-referenced with narrative sentiment and institutional positioning data.">Market Prism Fair Value<i class="info-icon">i</i></span> <span>$${fmtPrice(r.fair_value)}</span></div>` : ''}
         <div class="live-meta" id="live-meta"></div>
       </div>`;
+
+    // Hero DOM now exists — populate the live price immediately from the
+    // prefetched /api/live-quote response (or trigger a fresh fetch if that
+    // prefetch failed). Without this, the first price update has to wait for
+    // the poll interval in scheduleLivePrice (30s during market hours, 2m otherwise).
+    try { fetchLivePrice(); } catch(e){}
 
     // Update feed ticker
     const feedTicker = document.getElementById('tk-feed-ticker');
@@ -8861,9 +8876,17 @@ var _lastLivePrice = null;
 async function fetchLivePrice() {
   if (!TICKER) return;
   try {
-    var res = await fetch('/api/live-quote?ticker=' + encodeURIComponent(TICKER));
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    var q = await res.json();
+    var q;
+    if (_livePrefetch) {
+      // First call: consume the in-flight request started at page load.
+      q = await _livePrefetch;
+      _livePrefetch = null;
+    }
+    if (!q) {
+      var res = await fetch('/api/live-quote?ticker=' + encodeURIComponent(TICKER));
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      q = await res.json();
+    }
     if (q.error) throw new Error(q.error);
     if (q.price == null) throw new Error('No price');
 
