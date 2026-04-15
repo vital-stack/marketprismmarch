@@ -7398,7 +7398,10 @@ function tlBuildValueRow(r){
   var verdictBadge='';
   if(r._verdictLabel){
     var vClr=r._verdictLabel.indexOf('Supported')>=0?'#00DE94':'#00AEFF';
-    verdictBadge='<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(0,174,255,0.08);color:'+vClr+';border:1px solid rgba(0,174,255,0.15);margin-left:4px;font-family:var(--font-body);">'+esc(r._verdictLabel)+'</span>';
+    // Shorten "Exhausted Narrative" → "Exhausted" so the pill doesn't overflow
+    // the card gutter in narrower breakpoints.
+    var vLbl=r._verdictLabel==='Exhausted Narrative'?'Exhausted':r._verdictLabel;
+    verdictBadge='<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(0,174,255,0.08);color:'+vClr+';border:1px solid rgba(0,174,255,0.15);margin-left:4px;font-family:var(--font-body);white-space:nowrap;">'+esc(vLbl)+'</span>';
   }
   var domain=DOMAIN_MAP[r.ticker];
   var logo='';
