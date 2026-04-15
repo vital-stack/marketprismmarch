@@ -7500,22 +7500,31 @@ async function loadTradeLanes(){
     momentum=momentum.slice(0,20);
 
     // ═══ TABLE 4: EARNINGS PLAY ═══
+    // Window widened to -7..35 so larger-move candidates (AAPL, PLTR, AMD, SMCI, NVDA)
+    // aren't filtered out just because they're 2-5 weeks away.
     var earningsPlays=enriched.filter(function(r){
       var e=r._earn;
       if(!e||e.days_to_earnings==null)return false;
       var dte=Number(e.days_to_earnings);
-      return dte>=-7&&dte<=14;
+      return dte>=-7&&dte<=35;
     }).map(function(r){
       var e=r._earn;
       var dte=Number(e.days_to_earnings);
       var surp=Number(e.earnings_surprise_pct||0);
+      var absSurp=Math.abs(surp);
       var playType,action,direction,badge;
       if(dte>=0&&dte<=3){playType='Imminent';action='Watch';direction=null;badge='IMMINENT';}
       else if(dte>=4&&dte<=14&&r.nrs<40){playType='Pre-Run Long';action='Long';direction='BULLISH';badge='PRERUN';}
+      else if(dte>=4&&dte<=14){playType='Pre-Earnings';action='Watch';direction=null;badge='PRERUN';}
+      else if(dte>=15&&dte<=35&&absSurp>=0.15){playType='Big-Mover Watch';action='Watch';direction=null;badge='BIGMOVE';}
+      else if(dte>=15&&dte<=35&&r.nrs<40){playType='Pre-Run Long';action='Long';direction='BULLISH';badge='PRERUN';}
+      else if(dte>=15&&dte<=35){playType='Pre-Earnings';action='Watch';direction=null;badge='PRERUN';}
       else if(dte>=-5&&dte<=0&&surp<-0.05){playType='Post-Miss Short';action='Short';direction='BEARISH';badge='POSTMISS';}
       else if(dte>=-5&&dte<=0&&surp>0.05){playType='Post-Beat';action='Caution';direction=null;badge='POSTBEAT';}
       else{playType='Watch';action='Watch';direction=null;badge=null;}
-      return Object.assign({},r,{_action:action,direction:direction,_conviction:Math.abs(dte),_playType:playType,_badge:badge,_dte:dte,_nextEarn:e.next_earnings_date||''});
+      // Rank: closer earnings first, but promote names with a large historical surprise
+      // (proxy for big-move potential) within the same dte tier.
+      return Object.assign({},r,{_action:action,direction:direction,_conviction:Math.abs(dte)-Math.min(absSurp*20,10),_playType:playType,_badge:badge,_dte:dte,_absSurp:absSurp,_nextEarn:e.next_earnings_date||''});
     });
     earningsPlays.sort(function(a,b){return a._conviction-b._conviction;});
     earningsPlays=earningsPlays.slice(0,20);
