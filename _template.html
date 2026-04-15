@@ -7872,13 +7872,23 @@ async function loadValidation(force){
     return;
   }
   try{
-    // Fetch all paper trades — 1,555 rows, small enough to pull in one request
-    var rows=await restFetch('paper_trades',{
-      select:'ticker,direction,signal_basis,entry_date,entry_price,entry_confidence,exit_date,exit_price,exit_reason,pnl_pct,days_held,status,spy_return_pct,excess_return_pct,planned_exit_date,sector,trade_type',
-      order:'entry_date.desc',
-      limit:'2000'
-    });
-    if(!rows||!rows.length){
+    // Fetch all paper trades from Jan 1 2025 onwards. PostgREST caps each request at
+    // 1,000 rows regardless of the limit param, so we page through until exhausted.
+    var PAGE=1000;
+    var rows=[];
+    for(var offset=0;offset<10000;offset+=PAGE){
+      var page=await restFetch('paper_trades',{
+        select:'ticker,direction,signal_basis,entry_date,entry_price,entry_confidence,exit_date,exit_price,exit_reason,pnl_pct,days_held,status,spy_return_pct,excess_return_pct,planned_exit_date,sector,trade_type',
+        'entry_date':'gte.2025-01-01',
+        order:'entry_date.asc',
+        limit:String(PAGE),
+        offset:String(offset)
+      });
+      if(!page||!page.length)break;
+      rows=rows.concat(page);
+      if(page.length<PAGE)break;
+    }
+    if(!rows.length){
       loading.style.display='none';
       if(err){err.style.display='block';err.textContent='No paper trades yet.';}
       return;
