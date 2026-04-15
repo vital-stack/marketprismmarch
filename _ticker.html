@@ -3682,21 +3682,9 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
   <!-- ── Verdict Banner — immediately visible on page load ── -->
   <div class="verdict-banner" id="verdict-banner" style="display:none;"></div>
 
-  <!-- ── Scholar Ask Bar + Inline Chat ── -->
-  <div class="ticker-scholar-bar" id="ticker-scholar-bar">
-    <svg class="ticker-scholar-icon" viewBox="0 0 32 32" fill="none"><path d="M16 28c-6 0-10-4.5-10-10C6 12 10 6 16 6s10 6 10 12c0 5.5-4 10-10 10z" fill="none" stroke="var(--mp-blue)" stroke-width="1.5" opacity="0.6"/><circle cx="12" cy="15" r="2" fill="var(--mp-blue)" opacity="0.7"/><circle cx="20" cy="15" r="2" fill="var(--mp-blue)" opacity="0.7"/></svg>
-    <input class="ticker-scholar-input" id="ticker-scholar-input" placeholder="Ask Market Scholar about this ticker..." autocomplete="off">
-    <span class="ticker-scholar-tag">AI</span>
-  </div>
-  <div class="ticker-scholar-chat" id="ticker-scholar-chat" style="display:none;">
-    <div class="ticker-scholar-messages" id="ticker-scholar-messages"></div>
-    <div class="ticker-scholar-input-wrap">
-      <input class="ticker-scholar-follow-input" id="ticker-scholar-follow" placeholder="Ask a follow-up..." autocomplete="off">
-      <button class="ticker-scholar-send" id="ticker-scholar-send" disabled>
-        <svg viewBox="0 0 14 14" fill="none"><path d="M1 7h12M8 2l5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-    </div>
-  </div>
+  <!-- Ask Market Scholar AI bar removed — replaced by the sidebar AI section. -->
+  <!-- Attached script at the bottom of the file is guarded with a null check. -->
+
 
   <!-- ═══ TAB BAR ═══ -->
   <div class="tk-tab-bar">
@@ -3935,66 +3923,14 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
           </div>
         </div>
 
-        <!-- 8. STORY FEED (moved from right column) -->
-        <div class="tk-feed-bottom">
-          <div class="section">
-            <div class="section-label">
-              Active Narratives
-              <span class="section-label-sub">Story Feed</span>
-            </div>
-            <div class="section-body">
-              <div class="tk-feed" id="tk-feed" style="position:static;max-height:none;overflow:visible;">
-                <div class="tk-feed-header" style="padding:12px 20px;">
-                  <span class="tk-feed-ticker" id="tk-feed-ticker">&mdash;</span>
-                  <span class="tk-feed-title">Latest Stories</span>
-                  <button class="tk-feed-refresh" id="tk-feed-refresh" title="Refresh stories">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-                  </button>
-                </div>
-                <div class="tk-feed-list" id="tk-feed-list">
-                  <div class="tk-feed-empty">Loading stories...</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <!-- Story Feed moved to the right sidebar -->
 
       </div><!-- /tk-col-left -->
 
-      <!-- ── Right Sidebar ── -->
+      <!-- ── Right Sidebar — slimmed to 3 cards: AI · Key Signals · Story Feed ── -->
       <div class="tk-sidebar">
 
-        <!-- Exhaustion Countdown -->
-        <div class="tk-sb-card" id="tk-exhaust-card">
-          <div class="tk-exhaust-hero">
-            <div class="tk-exhaust-days" id="tk-exhaust-days">—</div>
-            <div class="tk-exhaust-lbl">Days to Narrative Exhaustion</div>
-            <div class="tk-exhaust-sub" id="tk-exhaust-sub">Loading…</div>
-          </div>
-          <div style="padding:12px 16px;border-top:1px solid var(--mp-border);display:flex;justify-content:space-between;align-items:center;">
-            <div style="font-size:13px;color:var(--mp-text-muted);">PRISM verdict</div>
-            <div style="font-size:13px;font-weight:600;" id="tk-sb-verdict">—</div>
-          </div>
-        </div>
-
-        <!-- Pulse Metrics -->
-        <div class="tk-sb-card" id="tk-pulse-card">
-          <div class="tk-sb-hdr">
-            <div class="tk-sb-title">Pulse Metrics</div>
-            <div class="tk-sb-meta">ticker_pulse</div>
-          </div>
-          <div class="tk-sb-stats" id="tk-sb-stats">
-            <div class="tk-sb-stat"><div class="tk-sb-stat-val" id="tk-sb-sentiment">—</div><div class="tk-sb-stat-lbl">Net Sentiment</div></div>
-            <div class="tk-sb-stat"><div class="tk-sb-stat-val" id="tk-sb-health">—</div><div class="tk-sb-stat-lbl">Health Score</div></div>
-            <div class="tk-sb-stat"><div class="tk-sb-stat-val" id="tk-sb-fvd">—</div><div class="tk-sb-stat-lbl">FVD%</div></div>
-            <div class="tk-sb-stat"><div class="tk-sb-stat-val" id="tk-sb-active">—</div><div class="tk-sb-stat-lbl">Active Narr.</div></div>
-            <div class="tk-sb-stat"><div class="tk-sb-stat-val" id="tk-sb-coord">—</div><div class="tk-sb-stat-lbl">Coordinated</div></div>
-            <div class="tk-sb-stat"><div class="tk-sb-stat-val" id="tk-sb-traps">—</div><div class="tk-sb-stat-lbl">Trap Count</div></div>
-          </div>
-          <div style="padding:0 16px 14px;" id="tk-sb-pulse-extra"></div>
-        </div>
-
-        <!-- ASK MARKET SCHOLAR — Sidebar AI Section -->
+        <!-- ASK MARKET SCHOLAR — Sidebar AI Section (moved to top) -->
         <div class="tk-sb-card scholar-hero-section" id="scholar-hero-section" style="overflow:hidden;position:relative;">
           <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#00AEFF,#00DE94,#7B61FF);opacity:0.7;"></div>
           <div class="scholar-hero-inner" style="padding:18px;background:transparent;border:none;border-radius:0;">
@@ -4030,35 +3966,55 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
           </div>
         </div>
 
-        <!-- Signal Labels -->
-        <div class="tk-sb-card" id="tk-signal-card">
+        <!-- Key Signals — single compact card replacing Exhaustion / Pulse / Signal Labels / PRISM / Intel -->
+        <div class="tk-sb-card" id="tk-key-signals-card">
           <div class="tk-sb-hdr">
-            <div class="tk-sb-title">Signal Labels</div>
-            <div class="tk-sb-meta">trade_classifications</div>
+            <div class="tk-sb-title">Key Signals</div>
+            <div class="tk-sb-meta">narrative_scorecard</div>
           </div>
-          <div class="tk-signal-block" id="tk-signal-block">
-            <div style="font-size:11px;color:var(--mp-text-muted);padding:8px;">Loading…</div>
+          <div style="padding:14px 16px;display:flex;flex-direction:column;gap:12px;">
+            <!-- WKS row with bar -->
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;">
+                <span style="font-size:12px;color:var(--mp-text-secondary);">WKS Score</span>
+                <span id="tk-ks-wks-val" style="font-size:13px;font-weight:600;font-family:var(--font-body);">—</span>
+              </div>
+              <div style="position:relative;height:4px;background:var(--mp-surface2);border-radius:2px;overflow:hidden;">
+                <div style="position:absolute;top:0;left:50%;width:1px;height:100%;background:rgba(255,255,255,0.15);z-index:1;"></div>
+                <div id="tk-ks-wks-fill" style="position:absolute;top:0;height:100%;background:var(--mp-text-muted);transition:all .3s;"></div>
+              </div>
+            </div>
+            <!-- FVD / half-life / coordination rows -->
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;">
+              <span style="color:var(--mp-text-secondary);">Fair-value Gap</span>
+              <span id="tk-ks-fvd" style="font-weight:600;font-family:var(--font-body);">—</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;">
+              <span style="color:var(--mp-text-secondary);">Narrative Half-life</span>
+              <span id="tk-ks-half" style="font-weight:600;font-family:var(--font-body);">—</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;">
+              <span style="color:var(--mp-text-secondary);">Coordination</span>
+              <span id="tk-ks-coord" style="font-weight:600;font-family:var(--font-body);">—</span>
+            </div>
+            <!-- Structural tag row (primary_label demoted here) -->
+            <div id="tk-ks-tag-row" style="display:flex;flex-wrap:wrap;gap:6px;padding-top:4px;border-top:1px solid var(--mp-border);margin-top:2px;"></div>
           </div>
         </div>
 
-        <!-- PRISM Scores -->
-        <div class="tk-sb-card" id="tk-prism-card">
+        <!-- Latest Stories — moved from left column, sticky within sidebar -->
+        <div class="tk-sb-card" id="tk-feed-card" style="position:sticky;top:20px;">
           <div class="tk-sb-hdr">
-            <div class="tk-sb-title">PRISM Scores</div>
-            <div class="tk-sb-meta">ticker_pulse</div>
+            <div class="tk-sb-title">Latest Stories</div>
+            <button class="tk-feed-refresh" id="tk-feed-refresh" title="Refresh stories" style="background:none;border:1px solid var(--mp-border);color:var(--mp-text-muted);border-radius:6px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            </button>
           </div>
-          <div class="tk-prism-block" id="tk-prism-block">
-            <div style="font-size:11px;color:var(--mp-text-muted);">Loading…</div>
-          </div>
-        </div>
-
-        <!-- Intelligence Summary -->
-        <div class="tk-sb-card" id="tk-intel-card">
-          <div class="tk-sb-hdr">
-            <div class="tk-sb-title" id="tk-intel-title">Intelligence Summary</div>
-          </div>
-          <div class="tk-intel-qa" id="tk-intel-qa">
-            <div style="font-size:11px;color:var(--mp-text-muted);">Loading…</div>
+          <div class="tk-feed" id="tk-feed" style="position:static;max-height:none;overflow:visible;">
+            <input type="hidden" id="tk-feed-ticker" value="">
+            <div class="tk-feed-list" id="tk-feed-list">
+              <div class="tk-feed-empty" style="padding:16px;font-size:12px;color:var(--mp-text-muted);">Loading stories…</div>
+            </div>
           </div>
         </div>
 
@@ -7307,6 +7263,89 @@ function renderWarranted(p) {
 // ── Render: Sidebar panels ───────────────────────────────────────────────────
 function renderSidebar(p, h) {
   if (!p) return;
+
+  // ── Key Signals card (replaces Exhaustion / Pulse Metrics / PRISM Scores / Signal Labels / Intel) ──
+  // Reads from the scorecard (passed through heroData._scorecard by loadHero)
+  // with a pulse-table fallback for each metric so the card is never blank on
+  // tickers that have pulse data but no scorecard row yet.
+  var sc = (h && h._scorecard) || {};
+  var wks   = sc.wks_score       != null ? Number(sc.wks_score)       : null;
+  var fvd   = sc.fvd_pct         != null ? Number(sc.fvd_pct)         : (p.fvd_pct != null ? Number(p.fvd_pct) : null);
+  var hl    = sc.half_life       != null ? Number(sc.half_life)       : null;
+  var coord = sc.coordination_score != null ? Number(sc.coordination_score) : (p.coordinated_count != null ? Number(p.coordinated_count) : null);
+
+  var wksValEl = document.getElementById('tk-ks-wks-val');
+  var wksFillEl = document.getElementById('tk-ks-wks-fill');
+  if (wksValEl) {
+    wksValEl.textContent = wks != null ? (wks > 0 ? '+' : '') + wks.toFixed(2) : '\u2014';
+    wksValEl.style.color = wks == null ? 'var(--mp-text-muted)'
+      : wks >  0.1 ? '#00DE94'
+      : wks < -0.1 ? '#FF4D4D'
+      : 'var(--mp-text-tertiary)';
+  }
+  if (wksFillEl) {
+    // WKS sits in roughly [-1, 1]. Bar fills from the center (50%) toward the
+    // direction of the score; width = |wks|*50%, positioned left or right.
+    var wksColor = wks == null ? 'var(--mp-text-muted)'
+      : wks >  0.1 ? '#00DE94'
+      : wks < -0.1 ? '#FF4D4D'
+      : 'var(--mp-amber)';
+    var wksMag = wks != null ? Math.min(Math.abs(wks), 1) * 50 : 0;
+    if (wks != null && wks >= 0) {
+      wksFillEl.style.left = '50%';
+      wksFillEl.style.width = wksMag + '%';
+    } else if (wks != null) {
+      wksFillEl.style.left = (50 - wksMag) + '%';
+      wksFillEl.style.width = wksMag + '%';
+    } else {
+      wksFillEl.style.left = '50%';
+      wksFillEl.style.width = '0%';
+    }
+    wksFillEl.style.background = wksColor;
+  }
+
+  var fvdEl2 = document.getElementById('tk-ks-fvd');
+  if (fvdEl2) {
+    fvdEl2.textContent = fvd != null ? (fvd > 0 ? '+' : '') + fvd.toFixed(1) + '%' : '\u2014';
+    fvdEl2.style.color = fvd == null ? '' : fvd >  5 ? '#FFB800' : fvd < -5 ? '#00DE94' : 'var(--mp-text-tertiary)';
+  }
+
+  var hlEl = document.getElementById('tk-ks-half');
+  if (hlEl) {
+    hlEl.textContent = hl != null ? hl.toFixed(0) + 'd' : '\u2014';
+    hlEl.style.color = hl == null ? '' : hl < 15 ? '#FF4D4D' : hl < 45 ? '#FFB800' : '';
+  }
+
+  var coordEl2 = document.getElementById('tk-ks-coord');
+  if (coordEl2) {
+    // If coord came from narrative_scorecard it's 0-100; from pulse it's a raw count.
+    var coordIsScore = sc.coordination_score != null;
+    coordEl2.textContent = coord != null ? (coordIsScore ? Math.round(coord) + ' / 100' : Math.round(coord)) : '\u2014';
+    coordEl2.style.color = coord == null ? ''
+      : coordIsScore ? (coord > 60 ? '#FF4D4D' : coord > 30 ? '#FFB800' : '')
+      : (coord > 0 ? 'var(--mp-blue)' : '');
+  }
+
+  // Structural tag — demoted primary_label
+  var tagRowEl = document.getElementById('tk-ks-tag-row');
+  var tc = (h && h._tc) || {};
+  if (tagRowEl) {
+    if (tc.primary_label && typeof vLabelToStructural === 'function') {
+      var info = vLabelToStructural(tc.primary_label, sc);
+      if (info) {
+        tagRowEl.innerHTML = '<span style="background:rgba(255,255,255,0.04);color:var(--mp-text-tertiary);border:1px solid var(--mp-border);font-size:10px;font-weight:600;padding:3px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.05em;">'+esc(info.label)+'</span>';
+      } else {
+        tagRowEl.style.display = 'none';
+      }
+    } else {
+      tagRowEl.style.display = 'none';
+    }
+  }
+
+  // ── Legacy populators below — target elements that no longer exist on this
+  // page but the `if (el)` guards mean they all no-op safely. Kept in case
+  // other sidebar variants still mount these IDs.
+  //
   // Exhaustion
   var exDays = p.nearest_exhaustion_days != null ? Math.round(p.nearest_exhaustion_days) : null;
   var exEl = document.getElementById('tk-exhaust-days');
