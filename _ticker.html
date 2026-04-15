@@ -3973,10 +3973,10 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
             <div class="tk-sb-meta">narrative_scorecard</div>
           </div>
           <div style="padding:14px 16px;display:flex;flex-direction:column;gap:12px;">
-            <!-- WKS row with bar -->
+            <!-- Prism Sentiment row with bar (sourced from narrative_scorecard.current_sentiment, -100..+100) -->
             <div>
               <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;">
-                <span style="font-size:12px;color:var(--mp-text-secondary);">WKS Score</span>
+                <span style="font-size:12px;color:var(--mp-text-secondary);">Prism Sentiment</span>
                 <span id="tk-ks-wks-val" style="font-size:13px;font-weight:600;font-family:var(--font-body);">—</span>
               </div>
               <div style="position:relative;height:4px;background:var(--mp-surface2);border-radius:2px;overflow:hidden;">
@@ -4812,7 +4812,7 @@ async function loadHero() {
       }),
       // Fetch this ticker's scorecard for leaderboard-style badges + banner lane classifier
       sbFetch('narrative_scorecard', {
-        select: 'ticker,fvd_pct,vms,coordination_score,decay_rate,suspicion_score,energy_remaining,verdict,narrative,half_life,nrs,wks_score,walsh_regime,drift_score,narrative_energy_absolute,narrative_energy_regime,snapshot_date',
+        select: 'ticker,fvd_pct,vms,coordination_score,decay_rate,suspicion_score,energy_remaining,verdict,narrative,half_life,nrs,wks_score,current_sentiment,walsh_regime,drift_score,narrative_energy_absolute,narrative_energy_regime,snapshot_date',
         ticker: `eq.${TICKER}`,
         order:  'snapshot_date.desc',
         limit:  '1'
@@ -7269,7 +7269,15 @@ function renderSidebar(p, h) {
   // with a pulse-table fallback for each metric so the card is never blank on
   // tickers that have pulse data but no scorecard row yet.
   var sc = (h && h._scorecard) || {};
-  var wks   = sc.wks_score       != null ? Number(sc.wks_score)       : null;
+  // "Prism Sentiment" is narrative_scorecard.current_sentiment (range -100..+100).
+  // wks_score (range -1..+1) is kept as a legacy fallback for older snapshot rows
+  // that predate current_sentiment — scale it up by 100 so the bar math stays valid.
+  var sentiment = null;
+  if (sc.current_sentiment != null) {
+    sentiment = Number(sc.current_sentiment);
+  } else if (sc.wks_score != null) {
+    sentiment = Number(sc.wks_score) * 100;
+  }
   var fvd   = sc.fvd_pct         != null ? Number(sc.fvd_pct)         : (p.fvd_pct != null ? Number(p.fvd_pct) : null);
   var hl    = sc.half_life       != null ? Number(sc.half_life)       : null;
   var coord = sc.coordination_score != null ? Number(sc.coordination_score) : (p.coordinated_count != null ? Number(p.coordinated_count) : null);
@@ -7277,24 +7285,24 @@ function renderSidebar(p, h) {
   var wksValEl = document.getElementById('tk-ks-wks-val');
   var wksFillEl = document.getElementById('tk-ks-wks-fill');
   if (wksValEl) {
-    wksValEl.textContent = wks != null ? (wks > 0 ? '+' : '') + wks.toFixed(2) : '\u2014';
-    wksValEl.style.color = wks == null ? 'var(--mp-text-muted)'
-      : wks >  0.1 ? '#00DE94'
-      : wks < -0.1 ? '#FF4D4D'
+    wksValEl.textContent = sentiment != null ? (sentiment > 0 ? '+' : '') + sentiment.toFixed(0) : '\u2014';
+    wksValEl.style.color = sentiment == null ? 'var(--mp-text-muted)'
+      : sentiment >  10 ? '#00DE94'
+      : sentiment < -10 ? '#FF4D4D'
       : 'var(--mp-text-tertiary)';
   }
   if (wksFillEl) {
-    // WKS sits in roughly [-1, 1]. Bar fills from the center (50%) toward the
-    // direction of the score; width = |wks|*50%, positioned left or right.
-    var wksColor = wks == null ? 'var(--mp-text-muted)'
-      : wks >  0.1 ? '#00DE94'
-      : wks < -0.1 ? '#FF4D4D'
+    // Prism Sentiment sits in [-100, 100]. Bar fills from the center (50%) toward
+    // the direction of the score; width = |sentiment|/100 * 50%, positioned L or R.
+    var wksColor = sentiment == null ? 'var(--mp-text-muted)'
+      : sentiment >  10 ? '#00DE94'
+      : sentiment < -10 ? '#FF4D4D'
       : 'var(--mp-amber)';
-    var wksMag = wks != null ? Math.min(Math.abs(wks), 1) * 50 : 0;
-    if (wks != null && wks >= 0) {
+    var wksMag = sentiment != null ? Math.min(Math.abs(sentiment), 100) / 100 * 50 : 0;
+    if (sentiment != null && sentiment >= 0) {
       wksFillEl.style.left = '50%';
       wksFillEl.style.width = wksMag + '%';
-    } else if (wks != null) {
+    } else if (sentiment != null) {
       wksFillEl.style.left = (50 - wksMag) + '%';
       wksFillEl.style.width = wksMag + '%';
     } else {
