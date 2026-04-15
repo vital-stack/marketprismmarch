@@ -7695,16 +7695,18 @@ function valRenderStats(trades){
   var dates=closed.map(function(t){return t.entry_date;}).filter(Boolean).sort();
   var first=dates[0];var last=dates[dates.length-1]||dates[0];
   var daysElapsed=first&&last?Math.max(1,(new Date(last+'T00:00:00')-new Date(first+'T00:00:00'))/(1000*60*60*24)):0;
+  var years=daysElapsed/365.25;
   var months=daysElapsed?Math.max(1,Math.round(daysElapsed/30.4)):0;
-  // Annualized return: take the avg trade return and extrapolate one trade-slot firing
-  // year-round at the average hold duration. Matches the per-signal annualized bar chart.
-  var holdArr=closed.filter(function(t){return t.days_held!=null;}).map(function(t){return Number(t.days_held);});
-  var avgDays=holdArr.length?holdArr.reduce(function(a,b){return a+b;},0)/holdArr.length:0;
-  var annualized=avgDays>0?(avgPnl*(365/avgDays)):0;
+  // Annualized return — portfolio-sized model: $50K capital, $2,500 per position (20
+  // concurrent slots). Each trade contributes (pnl_pct × $2,500) in dollar P&L against
+  // the $50K base, so total return % = sumPnl / 20. Annualize by dividing by years.
+  var PORTFOLIO_SLOTS=20;
+  var totalReturnPct=sumPnl/PORTFOLIO_SLOTS;
+  var annualized=years>0?(totalReturnPct/years):0;
   var el=document.getElementById('val-stats');
   if(!el)return;
   el.innerHTML=''
-    +'<div class="val-stat"><div class="val-stat-label">Annualized return</div><div class="val-stat-value '+(annualized>0?'pos':annualized<0?'neg':'')+'">'+valFmtPct(annualized,1)+'</div><div class="val-stat-sub">per trade slot &middot; '+avgDays.toFixed(1)+'d avg hold</div></div>'
+    +'<div class="val-stat"><div class="val-stat-label">Annualized return</div><div class="val-stat-value '+(annualized>0?'pos':annualized<0?'neg':'')+'">'+valFmtPct(annualized,1)+'</div><div class="val-stat-sub">'+valFmtPct(totalReturnPct,1)+' total &middot; $50K base &middot; 20 slots</div></div>'
     +'<div class="val-stat"><div class="val-stat-label">Trades</div><div class="val-stat-value">'+n.toLocaleString()+'</div><div class="val-stat-sub">closed positions</div></div>'
     +'<div class="val-stat"><div class="val-stat-label">Win rate</div><div class="val-stat-value '+(winRate>=55?'pos':'')+'">'+winRate.toFixed(1)+'%</div><div class="val-stat-sub">'+wins.toLocaleString()+' winners / '+(n-wins).toLocaleString()+' losers</div></div>'
     +'<div class="val-stat"><div class="val-stat-label">Avg return</div><div class="val-stat-value '+(avgPnl>0?'pos':avgPnl<0?'neg':'')+'">'+valFmtPct(avgPnl,2)+'</div><div class="val-stat-sub">per trade</div></div>'
