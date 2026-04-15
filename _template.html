@@ -7341,37 +7341,34 @@ function renderNarrativeCards(){
 var TL_LIMIT=5;
 var TL_SCORECARD=[]; // cached scorecard rows for signal summary boxes
 
+// Format a percent number (e.g. 0.728 → "+0.7%", -2.1 → "−2.1%")
+function tlFmtReturnPct(p){
+  if(p==null)return'';
+  var n=Number(p);
+  if(isNaN(n))return'';
+  var sign=n>0?'+':n<0?'\u2212':'';
+  return sign+Math.abs(n).toFixed(1)+'%';
+}
+
+// Resolve expected move direction → {arrow, color}
+function tlDir(r){
+  var ed=(r.expected_direction||'').toUpperCase();
+  if(!ed){var td=(r.trade_direction||'').toUpperCase();ed=td==='SHORT'?'DOWN':td==='LONG'?'UP':'';}
+  var up=ed==='UP',down=ed==='DOWN';
+  return{
+    up:up,down:down,
+    color:up?'#00DE94':down?'#FF4D4D':'#A0A8B8',
+    arrow:up?'\u25B2':down?'\u25BC':''
+  };
+}
+
 function tlBuildRow(r){
-  var isBear=r.direction==='BEARISH';
-  var isBull=r.direction==='BULLISH';
-  var isFade=r._action==='Fade';
-  var dirColor=isFade?'#FFB800':isBear?'#FF4D4D':isBull?'#00DE94':'#A0A8B8';
-  var dirArrow=isBear||isFade?'\u25BC':isBull?'\u25B2':'';
-  var actionColor=isFade?'#FFB800':isBear?'#FF4D4D':isBull?'#00DE94':'var(--mp-text-secondary)';
-  // Earnings plays: show days to earnings in action
-  var actionText=r._action||'';
-  if(r._dte!=null){var d=Number(r._dte);actionText+=' ('+(d>=0?d+'d to':Math.abs(d)+'d post')+')';}
+  var d=tlDir(r);
+  var chip=r._chip||'';
   var price=r.price?'$'+fmtPrice(Number(r.price)):'';
-  var badge='';
-  var _b=r._badge||'';
-  if(_b==='Gold')badge='<span class="tl-tier tl-gold">Gold</span>';
-  else if(_b==='EXHAUSTING')badge='<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(56,200,184,0.1);color:#38C8B8;border:1px solid rgba(56,200,184,0.2);margin-left:4px;font-family:var(--font-body);">Exhausting</span>';
-  else if(_b==='CLEAR_PATH')badge='<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(0,222,148,0.1);color:#00DE94;border:1px solid rgba(0,222,148,0.2);margin-left:4px;font-family:var(--font-body);">Clear Path</span>';
-  else if(_b==='PERSISTENT')badge='<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(255,77,77,0.1);color:#FF4D4D;border:1px solid rgba(255,77,77,0.2);margin-left:4px;font-family:var(--font-body);">Pressure</span>';
-  else if(_b==='DRIFT')badge='<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(255,184,0,0.1);color:#FFB800;border:1px solid rgba(255,184,0,0.2);margin-left:4px;font-family:var(--font-body);">Drift Short</span>';
-  else if(_b==='EXPLOSIVE')badge='<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(255,77,77,0.1);color:#FF6B6B;border:1px solid rgba(255,77,77,0.2);margin-left:4px;font-family:var(--font-body);">Explosive</span>';
-  else if(_b==='HIGH')badge='<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(0,222,148,0.1);color:#5fe7b4;border:1px solid rgba(0,222,148,0.2);margin-left:4px;font-family:var(--font-body);">High</span>';
-  else if(_b==='IMMINENT')badge='<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(255,184,0,0.1);color:#FFB800;border:1px solid rgba(255,184,0,0.2);margin-left:4px;font-family:var(--font-body);">Imminent</span>';
-  else if(_b==='PRERUN')badge='<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(0,222,148,0.1);color:#00DE94;border:1px solid rgba(0,222,148,0.2);margin-left:4px;font-family:var(--font-body);">Pre-Run</span>';
-  else if(_b==='POSTMISS')badge='<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(255,77,77,0.1);color:#FF4D4D;border:1px solid rgba(255,77,77,0.2);margin-left:4px;font-family:var(--font-body);">Post-Miss</span>';
-  else if(_b==='POSTBEAT')badge='<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(160,168,184,0.1);color:#A0A8B8;border:1px solid rgba(160,168,184,0.2);margin-left:4px;font-family:var(--font-body);">Post-Beat</span>';
-  else if(_b==='TRAP')badge='<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(255,77,77,0.15);color:#FF4D4D;border:1px solid rgba(255,77,77,0.3);margin-left:4px;font-family:var(--font-body);font-weight:600;">TRAP</span>';
-  else if(_b==='RISK')badge='<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(255,184,0,0.12);color:#FFB800;border:1px solid rgba(255,184,0,0.25);margin-left:4px;font-family:var(--font-body);font-weight:600;">RISK</span>';
-  var domain=DOMAIN_MAP[r.ticker];
-  var logo='';
   return '<div class="tl-row" data-ticker="'+esc(r.ticker)+'" onclick="window.location.href=\'/ticker/'+encodeURIComponent(r.ticker)+'\'">'
-    +'<div class="tl-row-left">'+logo+'<span class="tl-row-ticker">'+esc(r.ticker)+'</span><span class="tl-row-price" data-live-price="'+esc(r.ticker)+'">'+price+'</span><span class="tl-row-change" data-live-change="'+esc(r.ticker)+'" style="font-size:11px;color:var(--mp-text-tertiary);font-family:var(--font-body);margin-left:4px;"></span>'+badge+'</div>'
-    +'<div class="tl-row-right"><span class="tl-row-action" style="color:'+actionColor+';">'+esc(actionText)+'</span><span class="tl-row-dir" style="color:'+dirColor+';">'+dirArrow+'</span></div>'
+    +'<div class="tl-row-left"><span class="tl-row-ticker">'+esc(r.ticker)+'</span><span class="tl-row-price" data-live-price="'+esc(r.ticker)+'">'+price+'</span><span class="tl-row-change" data-live-change="'+esc(r.ticker)+'" style="font-size:11px;color:var(--mp-text-tertiary);font-family:var(--font-body);margin-left:4px;"></span></div>'
+    +'<div class="tl-row-right"><span class="tl-row-action" style="color:'+d.color+';">'+esc(chip)+'</span><span class="tl-row-dir" style="color:'+d.color+';">'+d.arrow+'</span></div>'
   +'</div>';
 }
 
@@ -7392,24 +7389,19 @@ function tlBuildLane(title,subtitle,cards,laneId){
 }
 
 function tlBuildValueRow(r){
-  var discountStr=r._discount!=null?Math.abs(r._discount).toFixed(1)+'% under FV':'';
-  var revGrowth=r._revGrowth!=null&&r._revGrowth>0?'+'+Number(r._revGrowth).toFixed(1)+'% rev':'';
+  var discountStr=r._discount!=null?Math.abs(Number(r._discount)).toFixed(1)+'% under FV':'';
+  var chip=r._chip||'';
   var price=r.price?'$'+fmtPrice(Number(r.price)):'';
-  var verdictBadge='';
-  if(r._verdictLabel){
-    var vClr=r._verdictLabel.indexOf('Supported')>=0?'#00DE94':'#00AEFF';
-    // Shorten "Exhausted Narrative" → "Exhausted" so the pill doesn't overflow
-    // the card gutter in narrower breakpoints.
-    var vLbl=r._verdictLabel==='Exhausted Narrative'?'Exhausted':r._verdictLabel;
-    verdictBadge='<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(0,174,255,0.08);color:'+vClr+';border:1px solid rgba(0,174,255,0.15);margin-left:4px;font-family:var(--font-body);white-space:nowrap;">'+esc(vLbl)+'</span>';
-  }
-  var domain=DOMAIN_MAP[r.ticker];
-  var logo='';
+  var d=tlDir(r);
+  // Value picks default to up-arrow/green if no direction resolved
+  var arrowColor=d.down?'#FF4D4D':'#00DE94';
+  var arrow=d.down?'\u25BC':'\u25B2';
+  var chipColor=d.down?'#FF4D4D':'#00DE94';
   return '<div class="tl-row" data-ticker="'+esc(r.ticker)+'" onclick="window.location.href=\'/ticker/'+encodeURIComponent(r.ticker)+'\'">'
-    +'<div class="tl-row-left">'+logo+'<span class="tl-row-ticker">'+esc(r.ticker)+'</span><span class="tl-row-price" data-live-price="'+esc(r.ticker)+'">'+price+'</span><span class="tl-row-change" data-live-change="'+esc(r.ticker)+'" style="font-size:11px;color:var(--mp-text-tertiary);font-family:var(--font-body);margin-left:4px;"></span>'+verdictBadge+'</div>'
+    +'<div class="tl-row-left"><span class="tl-row-ticker">'+esc(r.ticker)+'</span><span class="tl-row-price" data-live-price="'+esc(r.ticker)+'">'+price+'</span><span class="tl-row-change" data-live-change="'+esc(r.ticker)+'" style="font-size:11px;color:var(--mp-text-tertiary);font-family:var(--font-body);margin-left:4px;"></span></div>'
     +'<div class="tl-row-right"><span class="tl-row-action" style="color:#38C8B8;">'+esc(discountStr)+'</span>'
-    +(revGrowth?'<span style="font-size:11px;color:var(--mp-text-muted);font-family:var(--font-body);margin-left:6px;">'+esc(revGrowth)+'</span>':'')
-    +'<span class="tl-row-dir" style="color:#00DE94;">\u25B2</span></div>'
+    +(chip?'<span style="font-size:11px;color:'+chipColor+';font-family:var(--font-body);margin-left:6px;">'+esc(chip)+'</span>':'')
+    +'<span class="tl-row-dir" style="color:'+arrowColor+';">'+arrow+'</span></div>'
   +'</div>';
 }
 
@@ -7418,43 +7410,36 @@ async function loadTradeLanes(){
   var container=document.getElementById('tl-container');
   if(!container)return;
   try{
-    // Find the latest scorecard date with a full dataset (>=100 rows).
-    // Partial pipeline runs can create a new date with only ~50 rows — skip those.
-    var dateRows=await restFetch('narrative_scorecard',{select:'snapshot_date',order:'snapshot_date.desc',limit:'5'});
+    // Latest snapshot from the daily plays table (source of truth for lane rows)
+    var dateRows=await restFetch('t_daily_plays_top10_enhanced',{select:'snapshot_date',order:'snapshot_date.desc',limit:'1'});
     if(!dateRows||!dateRows.length){container.style.display='none';return;}
-    var scDate=null;
-    for(var di=0;di<dateRows.length;di++){
-      var testDate=dateRows[di].snapshot_date;
-      var countRows=await restFetch('narrative_scorecard',{select:'ticker',snapshot_date:'eq.'+testDate,limit:'101'});
-      if(countRows&&countRows.length>=100){scDate=testDate;break;}
-    }
-    if(!scDate){scDate=dateRows[0].snapshot_date;}
+    var scDate=dateRows[0].snapshot_date;
 
-    // Fetch scorecard + prices + earnings in parallel
+    // Pull all lane rows (pre-ranked, 10 per lane)
+    var playsP=restFetch('t_daily_plays_top10_enhanced',{
+      select:'ticker,lane,lane_rank,price,verdict,trade_direction,expected_direction,target_pct,suggested_hold_days,forecast_5d_return_pct,forecast_10d_return_pct,forecast_20d_return_pct,forecast_5d_prob_up,days_to_earnings,next_earnings_date,fvd_pct,fair_value,ideal_entry_price,ideal_exit_price,ideal_stop_price',
+      snapshot_date:'eq.'+scDate,
+      order:'lane_rank.asc'
+    });
+
+    // Scorecard + earnings — still fed to AI picks and signal summary boxes
     var scP=restFetch('narrative_scorecard',{
       select:'ticker,half_life,nrs,wks_score,walsh_regime,verdict_confidence,predicted_exhaustion_days,narrative_energy_absolute,narrative_mass_score,coordination_score,drift_score,fvd_pct,fair_value,vms,verdict,narrative_energy_regime',
       snapshot_date:'eq.'+scDate
     });
-    var priceP=restFetch('ticker_snapshots',{
-      select:'ticker,price_close,revenue_growth_yoy',
-      snapshot_date:'eq.'+scDate
-    });
-    var earnP=restFetch('earnings_context',{
-      select:'ticker,days_to_earnings,earnings_surprise_pct,next_earnings_date',
-      snapshot_date:'eq.'+scDate
-    }).catch(function(){return[];});
+    var priceP=restFetch('ticker_snapshots',{select:'ticker,price_close,revenue_growth_yoy',snapshot_date:'eq.'+scDate});
+    var earnP=restFetch('earnings_context',{select:'ticker,days_to_earnings,earnings_surprise_pct,next_earnings_date',snapshot_date:'eq.'+scDate}).catch(function(){return[];});
 
+    var plays=await playsP;
     var scRows=await scP;
     var priceRows=await priceP;
     var earnRows=await earnP;
 
-    // Build lookup maps
+    // Enrich scorecard rows (for AI picks + summary boxes only)
     var priceMap={},revMap={};
     if(priceRows)priceRows.forEach(function(p){priceMap[p.ticker]=Number(p.price_close);revMap[p.ticker]=p.revenue_growth_yoy!=null?Number(p.revenue_growth_yoy):null;});
     var earnMap={};
     if(earnRows)earnRows.forEach(function(e){earnMap[e.ticker]=e;});
-
-    // Enrich scorecard rows with price + earnings
     var enriched=(scRows||[]).map(function(r){
       return Object.assign({},r,{
         price:priceMap[r.ticker]||null,
@@ -7472,113 +7457,53 @@ async function loadTradeLanes(){
         vms:r.vms!=null?Number(r.vms):null
       });
     }).filter(function(r){return r.price;});
-
     TL_SCORECARD=enriched;
 
-    // ═══ TABLE 1: DAY TRADE ═══
-    var dayTrades=enriched.filter(function(r){
-      return r.half_life<15||(r.nrs>50&&r.drift_score>40);
-    }).map(function(r){
-      var action,direction,convSort;
-      if(r.half_life<15&&r.wks_score>0){action='Ride Up';direction='BULLISH';}
-      else if(r.half_life<15&&r.wks_score<=0){action='Fade';direction='BEARISH';}
-      else if(r.nrs>50&&r.drift_score>40){action='Short';direction='BEARISH';}
-      else{action='Short';direction='BEARISH';}
-      convSort=(r.nrs>50&&r.drift_score>40)?r.nrs:(100-r.half_life);
-      return Object.assign({},r,{_action:action,direction:direction,_conviction:convSort,_badge:r.walsh_regime});
+    // Bucket plays by lane, building the per-lane right-side chip
+    var buckets={DAY_TRADE:[],SWING_TRADE:[],MOMENTUM:[],EARNINGS_PLAY:[],VALUE_PICK:[],NARRATIVE_TRAP:[]};
+    (plays||[]).forEach(function(p){
+      if(!buckets[p.lane])return;
+      var row=Object.assign({},p);
+      var hold=row.suggested_hold_days!=null?Number(row.suggested_hold_days):null;
+      var ret5=row.forecast_5d_return_pct!=null?Number(row.forecast_5d_return_pct):null;
+      var ret10=row.forecast_10d_return_pct!=null?Number(row.forecast_10d_return_pct):null;
+      var ret20=row.forecast_20d_return_pct!=null?Number(row.forecast_20d_return_pct):null;
+      var tgt=row.target_pct!=null?Number(row.target_pct):null;
+      var dte=row.days_to_earnings!=null?Number(row.days_to_earnings):null;
+      if(p.lane==='DAY_TRADE'){
+        var v=tgt!=null?tgt:ret5;
+        row._chip=v!=null?tlFmtReturnPct(v)+' today':'';
+      } else if(p.lane==='SWING_TRADE'){
+        var h=hold||5;
+        row._chip=ret5!=null?tlFmtReturnPct(ret5)+' \u00B7 '+h+'d':h+'d';
+      } else if(p.lane==='MOMENTUM'){
+        var mv=ret10!=null?ret10:ret5;var mh=hold||10;
+        row._chip=mv!=null?tlFmtReturnPct(mv)+' \u00B7 '+mh+'d':'';
+      } else if(p.lane==='EARNINGS_PLAY'){
+        row._chip=dte!=null?(dte>=0?'Earnings in '+dte+'d':Math.abs(dte)+'d post-earnings'):'';
+      } else if(p.lane==='VALUE_PICK'){
+        row._isValue=true;
+        row._discount=row.fvd_pct;
+        var vv=ret20!=null?ret20:(ret10!=null?ret10:ret5);var vh=hold||20;
+        row._chip=vv!=null?tlFmtReturnPct(vv)+' \u00B7 '+vh+'d':'';
+      } else if(p.lane==='NARRATIVE_TRAP'){
+        var tv=ret5!=null?ret5:(tgt!=null?-Math.abs(tgt):null);var th=hold||5;
+        row._chip=tv!=null?tlFmtReturnPct(tv)+' \u00B7 '+th+'d':'';
+      }
+      buckets[p.lane].push(row);
     });
-    dayTrades.sort(function(a,b){return b._conviction-a._conviction;});
-    dayTrades=dayTrades.slice(0,20);
-
-    // ═══ TABLE 2: SWING TRADE ═══
-    var swingTrades=enriched.filter(function(r){
-      return r.walsh_regime==='CLEAR_PATH'
-        ||(r.walsh_regime==='PERSISTENT'&&r.nrs>40&&r.narrative_energy_absolute>400)
-        ||(r.drift_score>60&&r.coordination_score>30&&r.nrs>40);
-    }).map(function(r){
-      var action,direction,conviction;
-      if(r.walsh_regime==='CLEAR_PATH'){action='Long';direction='BULLISH';conviction=90;}
-      else if(r.walsh_regime==='PERSISTENT'&&r.nrs>50){action='Short';direction='BEARISH';conviction=80;}
-      else if(r.drift_score>60&&r.coordination_score>30){action='Short';direction='BEARISH';conviction=75;}
-      else if(r.walsh_regime==='PERSISTENT'){action='Short';direction='BEARISH';conviction=65;}
-      else{action='Long';direction='BULLISH';conviction=r.verdict_confidence;}
-      var badge=r.walsh_regime==='CLEAR_PATH'?'CLEAR_PATH':r.walsh_regime==='PERSISTENT'?'PERSISTENT':(r.drift_score>60?'DRIFT':null);
-      return Object.assign({},r,{_action:action,direction:direction,_conviction:conviction,_badge:badge});
+    Object.keys(buckets).forEach(function(k){
+      buckets[k].sort(function(a,b){return(Number(a.lane_rank)||99)-(Number(b.lane_rank)||99);});
     });
-    swingTrades.sort(function(a,b){return b._conviction-a._conviction;});
-    swingTrades=swingTrades.slice(0,20);
-
-    // ═══ TABLE 3: MOMENTUM ═══
-    var momentum=enriched.filter(function(r){
-      return r.narrative_energy_absolute>500&&r.nrs<35;
-    }).map(function(r){
-      var badge=r.narrative_energy_regime||'';
-      return Object.assign({},r,{_action:'Long',direction:'BULLISH',_conviction:r.narrative_energy_absolute,_badge:badge==='EXPLOSIVE'?'EXPLOSIVE':badge==='HIGH'?'HIGH':null});
-    });
-    momentum.sort(function(a,b){return b._conviction-a._conviction;});
-    momentum=momentum.slice(0,20);
-
-    // ═══ TABLE 4: EARNINGS PLAY ═══
-    // Window widened to -7..35 so larger-move candidates (AAPL, PLTR, AMD, SMCI, NVDA)
-    // aren't filtered out just because they're 2-5 weeks away.
-    var earningsPlays=enriched.filter(function(r){
-      var e=r._earn;
-      if(!e||e.days_to_earnings==null)return false;
-      var dte=Number(e.days_to_earnings);
-      return dte>=-7&&dte<=35;
-    }).map(function(r){
-      var e=r._earn;
-      var dte=Number(e.days_to_earnings);
-      var surp=Number(e.earnings_surprise_pct||0);
-      var absSurp=Math.abs(surp);
-      var playType,action,direction,badge;
-      if(dte>=0&&dte<=3){playType='Imminent';action='Watch';direction=null;badge='IMMINENT';}
-      else if(dte>=4&&dte<=14&&r.nrs<40){playType='Pre-Run Long';action='Long';direction='BULLISH';badge='PRERUN';}
-      else if(dte>=4&&dte<=14){playType='Pre-Earnings';action='Watch';direction=null;badge='PRERUN';}
-      else if(dte>=15&&dte<=35&&absSurp>=0.15){playType='Big-Mover Watch';action='Watch';direction=null;badge='BIGMOVE';}
-      else if(dte>=15&&dte<=35&&r.nrs<40){playType='Pre-Run Long';action='Long';direction='BULLISH';badge='PRERUN';}
-      else if(dte>=15&&dte<=35){playType='Pre-Earnings';action='Watch';direction=null;badge='PRERUN';}
-      else if(dte>=-5&&dte<=0&&surp<-0.05){playType='Post-Miss Short';action='Short';direction='BEARISH';badge='POSTMISS';}
-      else if(dte>=-5&&dte<=0&&surp>0.05){playType='Post-Beat';action='Caution';direction=null;badge='POSTBEAT';}
-      else{playType='Watch';action='Watch';direction=null;badge=null;}
-      // Rank: closer earnings first, but promote names with a large historical surprise
-      // (proxy for big-move potential) within the same dte tier.
-      return Object.assign({},r,{_action:action,direction:direction,_conviction:Math.abs(dte)-Math.min(absSurp*20,10),_playType:playType,_badge:badge,_dte:dte,_absSurp:absSurp,_nextEarn:e.next_earnings_date||''});
-    });
-    earningsPlays.sort(function(a,b){return a._conviction-b._conviction;});
-    earningsPlays=earningsPlays.slice(0,20);
-
-    // ═══ TABLE 5: VALUE PICKS ═══
-    var valuePicks=enriched.filter(function(r){
-      return r.fvd_pct!=null&&r.fvd_pct<-5&&r.nrs<40&&r.vms!=null&&r.vms>50&&r.walsh_regime!=='PERSISTENT';
-    }).map(function(r){
-      return Object.assign({},r,{_isValue:true,_discount:r.fvd_pct,_verdictLabel:r.verdict||'',direction:'BULLISH',_action:'Long'});
-    });
-    valuePicks.sort(function(a,b){return a.fvd_pct-b.fvd_pct;});
-    valuePicks=valuePicks.slice(0,20);
-
-    // ═══ TABLE 6: NARRATIVE TRAPS ═══
-    var traps=enriched.filter(function(r){
-      return r.verdict==='Narrative Trap'||r.verdict==='Narrative Risk';
-    }).map(function(r){
-      var alertLevel=r.verdict==='Narrative Trap'?'TRAP':'RISK';
-      return Object.assign({},r,{_action:'Short',direction:'BEARISH',_conviction:r.fvd_pct!=null?r.fvd_pct:0,_badge:alertLevel,_alertLevel:alertLevel});
-    });
-    traps.sort(function(a,b){
-      var ao=a._alertLevel==='TRAP'?0:1,bo=b._alertLevel==='TRAP'?0:1;
-      if(ao!==bo)return ao-bo;
-      return(b.fvd_pct||0)-(a.fvd_pct||0);
-    });
-    traps=traps.slice(0,20);
 
     // ═══ Render 6 lanes + AI Picks lane (appended last to fill trailing grid slot) ═══
     var html='';
-    html+=tlBuildLane('Day Trade','In and out today',dayTrades,'tl-overflow-day-trade');
-    html+=tlBuildLane('Swing Trade','5\u20137 day window',swingTrades,'tl-overflow-swing-trade');
-    html+=tlBuildLane('Momentum','Trending with narrative support',momentum,'tl-overflow-momentum');
-    html+=tlBuildLane('Earnings Play','Earnings-driven opportunities',earningsPlays,'tl-overflow-earnings');
-    html+=tlBuildLane('Value Picks','Under fair value \u00B7 strong fundamentals',valuePicks,'tl-overflow-value-picks');
-    html+=tlBuildLane('Narrative Traps','Active manipulation alerts',traps,'tl-overflow-traps');
+    html+=tlBuildLane('Day Trade','In and out today',buckets.DAY_TRADE,'tl-overflow-day-trade');
+    html+=tlBuildLane('Swing Trade','5\u20137 day window',buckets.SWING_TRADE,'tl-overflow-swing-trade');
+    html+=tlBuildLane('Momentum','Trending with narrative support',buckets.MOMENTUM,'tl-overflow-momentum');
+    html+=tlBuildLane('Earnings Play','Earnings-driven opportunities',buckets.EARNINGS_PLAY,'tl-overflow-earnings');
+    html+=tlBuildLane('Value Picks','Under fair value \u00B7 strong fundamentals',buckets.VALUE_PICK,'tl-overflow-value-picks');
+    html+=tlBuildLane('Narrative Traps','Active manipulation alerts',buckets.NARRATIVE_TRAP,'tl-overflow-traps');
     // AI Picks lane — populated by loadAiPicks() below
     html+='<div class="tl-lane tl-ai" id="tl-ai-lane">'
       +'<div class="tl-lane-header">'
@@ -7589,7 +7514,8 @@ async function loadTradeLanes(){
     +'</div>';
     var grid=document.getElementById('tl-grid');
     if(grid)grid.innerHTML=html;
-    container.style.display=(dayTrades.length||swingTrades.length||momentum.length||earningsPlays.length||valuePicks.length||traps.length)?'block':'none';
+    var anyLane=(buckets.DAY_TRADE.length||buckets.SWING_TRADE.length||buckets.MOMENTUM.length||buckets.EARNINGS_PLAY.length||buckets.VALUE_PICK.length||buckets.NARRATIVE_TRAP.length);
+    container.style.display=anyLane?'block':'none';
 
     // Fire off AI picks (non-blocking — lane populates when ready)
     loadAiPicks(scDate,enriched);
@@ -7602,7 +7528,7 @@ async function loadTradeLanes(){
     if(drTraps)drTraps.textContent=enriched.filter(function(r){return r.verdict==='Narrative Trap';}).length;
     if(drSurging)drSurging.textContent=enriched.filter(function(r){return r.verdict==='Narrative Risk';}).length;
     if(drBreaking)drBreaking.textContent=enriched.filter(function(r){return r.half_life<15;}).length;
-    if(drCoord)drCoord.textContent=earningsPlays.filter(function(r){return r._dte>=0&&r._dte<=5;}).length;
+    if(drCoord)drCoord.textContent=buckets.EARNINGS_PLAY.filter(function(r){return r.days_to_earnings!=null&&Number(r.days_to_earnings)>=0&&Number(r.days_to_earnings)<=5;}).length;
   }catch(e){console.warn('[TL] Load failed:',e);}
 }
 
