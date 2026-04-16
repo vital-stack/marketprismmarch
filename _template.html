@@ -724,9 +724,15 @@ body{
 .tl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start;}
 @media(max-width:1024px){.tl-grid{grid-template-columns:1fr;}}
 .tl-lane{background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:12px;overflow:hidden;}
-.tl-lane-header{padding:12px 16px;border-bottom:1px solid var(--mp-border);display:flex;align-items:center;gap:8px;}
+.tl-lane-header{padding:12px 16px;border-bottom:1px solid var(--mp-border);display:flex;align-items:center;justify-content:space-between;gap:8px;}
 .tl-lane-title{font-size:14px;font-weight:700;font-family:var(--font-body);color:var(--mp-text-primary);}
 .tl-lane-sub{font-size:11px;color:var(--mp-text-muted);}
+.tl-lane-meta{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.tl-lane-date{font-size:10px;color:var(--mp-text-muted);font-family:var(--font-body);}
+.tl-lane-refresh{background:none;border:1px solid var(--mp-border);border-radius:6px;padding:3px 8px;font-size:10px;color:var(--mp-text-tertiary);cursor:pointer;font-family:var(--font-body);transition:all .2s;display:flex;align-items:center;gap:4px;}
+.tl-lane-refresh:hover{border-color:var(--mp-border-hover);color:var(--mp-text-primary);background:rgba(255,255,255,0.04);}
+.tl-lane-refresh svg{width:10px;height:10px;}
+.tl-lane-refresh.spinning svg{animation:lb-spin .8s linear infinite;}
 .tl-lane-rows{display:flex;flex-direction:column;}
 .tl-row{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--mp-border);cursor:pointer;transition:background .12s;}
 .tl-row:last-child{border-bottom:none;}
@@ -735,7 +741,7 @@ body{
 .tl-row-logo{width:18px;height:18px;border-radius:4px;object-fit:contain;flex-shrink:0;}
 .tl-row-ticker{font-size:14px;font-weight:700;color:var(--mp-text-primary);font-family:var(--font-body);white-space:nowrap;flex-shrink:0;}
 .tl-row-price{font-size:13px;color:var(--mp-text-secondary);font-family:var(--font-body);margin-left:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.tl-row-right{display:flex;align-items:center;gap:6px;flex-shrink:0;white-space:nowrap;margin-left:auto;padding-left:8px;min-width:150px;justify-content:flex-end;}
+.tl-row-right{display:flex;align-items:center;gap:6px;flex-shrink:0;white-space:nowrap;margin-left:auto;padding-left:8px;width:170px;justify-content:flex-end;}
 .tl-row-pred{display:flex;flex-direction:column;align-items:flex-end;gap:1px;text-align:right;}
 .tl-row-pred-label{font-size:9px;font-weight:600;letter-spacing:0.06em;color:rgba(0,174,255,0.5);font-family:var(--font-body);text-transform:uppercase;}
 .tl-row-action{font-size:13px;font-weight:500;color:var(--mp-text-secondary);font-family:var(--font-body);white-space:nowrap;}
@@ -7519,12 +7525,25 @@ function tlBuildRow(r){
   +'</div>';
 }
 
+function _tlFormatDate(){
+  var d=new Date();
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+}
+function _tlRefreshAll(){
+  document.querySelectorAll('.tl-lane-refresh').forEach(function(b){b.classList.add('spinning');});
+  liveQuotesRefreshDaily().then(function(){
+    setTimeout(function(){document.querySelectorAll('.tl-lane-refresh').forEach(function(b){b.classList.remove('spinning');});},600);
+  });
+}
 function tlBuildLane(title,subtitle,cards,laneId){
   if(!cards.length)return'';
   var visible=cards.slice(0,TL_LIMIT);
   var overflow=cards.slice(TL_LIMIT);
   var id=laneId||'tl-overflow-'+title.replace(/\s/g,'-').toLowerCase();
-  var html='<div class="tl-lane"><div class="tl-lane-header"><div><div class="tl-lane-title">'+esc(title)+'</div><div class="tl-lane-sub">'+esc(subtitle)+' \u00B7 '+cards.length+' signals</div></div></div><div class="tl-lane-rows">';
+  var html='<div class="tl-lane"><div class="tl-lane-header"><div><div class="tl-lane-title">'+esc(title)+'</div><div class="tl-lane-sub">'+esc(subtitle)+' \u00B7 '+cards.length+' signals</div></div>'
+    +'<div class="tl-lane-meta"><span class="tl-lane-date">'+_tlFormatDate()+'</span>'
+    +'<button class="tl-lane-refresh" onclick="event.stopPropagation();_tlRefreshAll();" title="Refresh prices"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg></button></div>'
+    +'</div><div class="tl-lane-rows">';
   visible.forEach(function(c){html+=c._isValue?tlBuildValueRow(c):tlBuildRow(c);});
   if(overflow.length){
     html+='<div class="tl-overflow" id="'+id+'" style="display:none;">';
