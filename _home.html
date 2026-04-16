@@ -4634,34 +4634,44 @@ window.MP_DOMAINS   = MP_DOMAINS;
       var scDate=dRows[0].snapshot_date;
 
       // Fetch Day Trade rows
-      var pRes=await fetch(SB_URL+'/rest/v1/t_daily_plays_top10_enhanced?select=ticker,price,target_pct,forecast_5d_return_pct,expected_direction,trade_direction,lane_rank&lane=eq.DAY_TRADE&snapshot_date=eq.'+encodeURIComponent(scDate)+'&order=lane_rank.asc&limit=5',{headers:hdrs});
+      var pRes=await fetch(SB_URL+'/rest/v1/t_daily_plays_top10_enhanced?select=ticker,price,target_pct,forecast_5d_return_pct,expected_direction,trade_direction,lane_rank&lane=eq.DAY_TRADE&snapshot_date=eq.'+encodeURIComponent(scDate)+'&order=lane_rank.asc&limit=10',{headers:hdrs});
       if(!pRes.ok)return;
       var plays=await pRes.json();
       if(!plays.length)return;
 
-      var container=document.getElementById('hlc-rows');
-      if(!container)return;
-      container.innerHTML=plays.map(function(r){
+      function resolvePlay(r){
         var tgt=r.target_pct!=null?Number(r.target_pct):null;
         var ret5=r.forecast_5d_return_pct!=null?Number(r.forecast_5d_return_pct):null;
         var v=tgt!=null?tgt:ret5;
-        var chip=v!=null?fmtRet(v)+' today':'today';
-        var price=r.price?'$'+fmtP(Number(r.price)):'';
         var ed=(r.expected_direction||'').toUpperCase();
         if(!ed||ed==='FLAT'||ed==='NEUTRAL'){var td=(r.trade_direction||'').toUpperCase();ed=td==='SHORT'?'DOWN':td==='LONG'?'UP':'';}
-        var up=ed==='UP',down=ed==='DOWN';
-        var arrowColor=up?'#00DE94':down?'#FF4D4D':'#A0A8B8';
-        var arrow=up?'\u25B2':down?'\u25BC':'';
-        var dirAttr=up?'up':down?'down':'';
+        return{v:v,up:ed==='UP',down:ed==='DOWN',dirAttr:ed==='UP'?'up':ed==='DOWN'?'down':''};
+      }
+
+      var container=document.getElementById('hlc-rows');
+      if(!container)return;
+      // Show top 5 as visible rows
+      var visibleHtml=plays.slice(0,5).map(function(r){
+        var p=resolvePlay(r);
+        var chip=p.v!=null?fmtRet(p.v)+' today':'today';
+        var price=r.price?'$'+fmtP(Number(r.price)):'';
+        var arrowColor=p.up?'#00DE94':p.down?'#FF4D4D':'#A0A8B8';
+        var arrow=p.up?'\u25B2':p.down?'\u25BC':'';
         return '<div class="hlc-row">'
           +'<div class="hlc-row-left"><span class="hlc-ticker">'+esc(r.ticker)+'</span><span class="hlc-price" data-hlc-price="'+esc(r.ticker)+'">'+price+'</span><span class="hlc-change" data-hlc-change="'+esc(r.ticker)+'"></span></div>'
           +'<div class="hlc-row-right">'
             +'<div class="hlc-pred"><span class="hlc-pred-label">Prism Est.</span><span class="hlc-pred-val">'+esc(chip)+'</span></div>'
             +'<span class="hlc-arrow" style="color:'+arrowColor+';">'+arrow+'</span>'
-            +(dirAttr?'<span class="hlc-hit" data-hlc-hit="'+esc(r.ticker)+'" data-hlc-dir="'+dirAttr+'"'+(v!=null?' data-hlc-pct="'+v+'"':'')+'></span>':'')
+            +(p.dirAttr?'<span class="hlc-hit" data-hlc-hit="'+esc(r.ticker)+'" data-hlc-dir="'+p.dirAttr+'"'+(p.v!=null?' data-hlc-pct="'+p.v+'"':'')+'></span>':'')
           +'</div>'
         +'</div>';
       }).join('');
+      // Hidden hit trackers for remaining rows (count toward hit rate but not displayed)
+      var hiddenHtml=plays.slice(5).map(function(r){
+        var p=resolvePlay(r);
+        return p.dirAttr?'<span style="display:none;" class="hlc-hit" data-hlc-hit="'+esc(r.ticker)+'" data-hlc-dir="'+p.dirAttr+'"'+(p.v!=null?' data-hlc-pct="'+p.v+'"':'')+'></span>':'';
+      }).join('');
+      container.innerHTML=visibleHtml+hiddenHtml;
 
       // Fetch live quotes
       var tickers=plays.map(function(r){return r.ticker;}).join(',');
