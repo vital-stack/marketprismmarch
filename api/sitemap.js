@@ -13,6 +13,7 @@ module.exports = async (req, res) => {
       { loc: '/methodology', priority: '0.6', changefreq: 'monthly' },
       { loc: '/terms', priority: '0.3', changefreq: 'yearly' },
       { loc: '/privacy', priority: '0.3', changefreq: 'yearly' },
+      { loc: '/faq', priority: '0.8', changefreq: 'monthly' },
       { loc: '/signalstudies', priority: '0.7', changefreq: 'weekly' },
       { loc: '/stockpsycho', priority: '0.6', changefreq: 'weekly' },
       { loc: '/signal-charts', priority: '0.6', changefreq: 'weekly' },
