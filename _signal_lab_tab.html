@@ -821,9 +821,14 @@
     var blueByDate={};SL_DECAY.forEach(function(d){var ds=d.snapshot_date?.slice(0,10);if(ds)blueByDate[ds]=d.energy_remaining_pct??0;});
     var yellowByDate={};SL_PHYSICS.forEach(function(d){var ds=d.snapshot_date?.slice(0,10);if(ds&&d.pe_rank_pct!=null)yellowByDate[ds]=d.pe_rank_pct;});
     var allDates={};[SL_DECAY,SL_PHYSICS,SL_PRESSURE].forEach(function(arr){arr.forEach(function(d){var ds=d.snapshot_date?.slice(0,10);if(ds&&ds>=lo&&ds<=hi)allDates[ds]=true;});});
+    var _lastYel=null,_lastBlu=null;
     var forceSeries=Object.keys(allDates).sort().map(function(ds){
-      var yel=yellowByDate[ds]!=null?yellowByDate[ds]:0;
-      var blu=blueByDate[ds]!=null?blueByDate[ds]:0;
+      var yel=yellowByDate[ds]!=null?yellowByDate[ds]:_lastYel;
+      var blu=blueByDate[ds]!=null?blueByDate[ds]:_lastBlu;
+      if(yel!=null)_lastYel=yel;
+      if(blu!=null)_lastBlu=blu;
+      if(yel==null)yel=0;
+      if(blu==null)blu=0;
       return{snapshot_date:ds,force:(yel*0.6)+((100-blu)*0.4)};
     });
     if(SL_VIS['sma-smooth'])forceSeries=slSma3(forceSeries,'force');
@@ -1126,11 +1131,16 @@
     var yellowByDate={};SL_PHYSICS.forEach(function(d){var ds=d.snapshot_date?.slice(0,10);if(ds&&d.pe_rank_pct!=null)yellowByDate[ds]=d.pe_rank_pct;});
     var pressureByDate={};SL_PRESSURE.forEach(function(d){var ds=d.snapshot_date?.slice(0,10);if(ds)pressureByDate[ds]=d.pressure;});
 
-    // Build force series
+    // Build force series (carry forward last known yellow/blue to avoid false zero drops)
     var allDates={};[SL_DECAY,SL_PHYSICS,SL_PRESSURE].forEach(function(arr){arr.forEach(function(d){var ds=d.snapshot_date?.slice(0,10);if(ds&&ds>=lo&&ds<=hi)allDates[ds]=true;});});
+    var _iLastYel=null,_iLastBlu=null;
     var forceSeries=Object.keys(allDates).sort().map(function(ds){
-      var yel=yellowByDate[ds]!=null?yellowByDate[ds]:0;
-      var blu=blueByDate[ds]!=null?blueByDate[ds]:0;
+      var yel=yellowByDate[ds]!=null?yellowByDate[ds]:_iLastYel;
+      var blu=blueByDate[ds]!=null?blueByDate[ds]:_iLastBlu;
+      if(yel!=null)_iLastYel=yel;
+      if(blu!=null)_iLastBlu=blu;
+      if(yel==null)yel=0;
+      if(blu==null)blu=0;
       return{date:ds,force:(yel*0.6)+((100-blu)*0.4),risk:pressureByDate[ds]||0,blue:blu};
     });
     var lastF=forceSeries.length?forceSeries[forceSeries.length-1]:null;
