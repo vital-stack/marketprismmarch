@@ -4624,14 +4624,31 @@ window.MP_DOMAINS   = MP_DOMAINS;
         dateEl.textContent=dd.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
       }
 
-      // Sort: hits first, then by lane_rank — so visible 5 includes winners
+      // Fetch live Polygon quotes for ALL 10 tickers to determine hits from intraday data
+      var allTickers=plays.map(function(r){return r.ticker;}).join(',');
+      var qRes=await fetch('/api/live-quotes-batch?tickers='+encodeURIComponent(allTickers));
+      var quotes=(qRes.ok?await qRes.json():{}).quotes||{};
+
+      // Compute hits from intraday high/low (matches dashboard logic)
+      plays.forEach(function(r){
+        var predPct=r.predicted_return_pct!=null?Math.abs(Number(r.predicted_return_pct)):null;
+        var q=quotes[r.ticker];
+        var isLong=r.direction==='LONG';
+        r._liveHit=false;
+        if(q&&q.prevClose&&predPct!=null&&predPct>0){
+          if(isLong&&q.dayHigh!=null) r._liveHit=((q.dayHigh-q.prevClose)/q.prevClose)*100>=predPct;
+          else if(!isLong&&q.dayLow!=null) r._liveHit=((q.prevClose-q.dayLow)/q.prevClose)*100>=predPct;
+        }
+      });
+
+      // Sort: live hits first, then by lane_rank
       var sorted=plays.slice().sort(function(a,b){
-        if(a.hit&&!b.hit)return -1;if(!a.hit&&b.hit)return 1;
+        if(a._liveHit&&!b._liveHit)return -1;if(!a._liveHit&&b._liveHit)return 1;
         return(a.lane_rank||99)-(b.lane_rank||99);
       });
 
-      // Count hits from ALL rows (before slicing)
-      var totalHits=plays.filter(function(r){return r.hit;}).length;
+      // Count hits from ALL 10 rows
+      var totalHits=plays.filter(function(r){return r._liveHit;}).length;
       var badge=document.getElementById('hlc-hits');
       if(badge){
         var color=totalHits/plays.length>=0.3?'#00DE94':'#FF4D4D';
@@ -4640,16 +4657,20 @@ window.MP_DOMAINS   = MP_DOMAINS;
 
       var container=document.getElementById('hlc-rows');
       if(!container)return;
-      container.innerHTML=sorted.slice(0,5).map(function(r){
+      var visible=sorted.slice(0,5);
+      container.innerHTML=visible.map(function(r){
         var predPct=r.predicted_return_pct!=null?Number(r.predicted_return_pct):null;
         var chip=predPct!=null?fmtRet(predPct)+' today':'today';
-        var price=r.entry_price?'$'+fmtP(Number(r.entry_price)):'';
+        var q=quotes[r.ticker];
+        var price=q&&q.price?'$'+fmtP(q.price):(r.entry_price?'$'+fmtP(Number(r.entry_price)):'');
         var isLong=r.direction==='LONG';
         var arrowColor=isLong?'#00DE94':'#FF4D4D';
         var arrow=isLong?'\u25B2':'\u25BC';
-        var hitIcon=r.hit?'<span class="hlc-hit hlc-hit-yes">\u2713</span>':'<span class="hlc-hit hlc-hit-no">\u2717</span>';
+        var changeTxt='',changeColor='';
+        if(q&&q.changePct!=null){changeTxt=(q.changePct>0?'+':'')+q.changePct.toFixed(2)+'%';changeColor=q.changePct>=0?'#00DE94':'#FF4D4D';}
+        var hitIcon=r._liveHit?'<span class="hlc-hit hlc-hit-yes">\u2713</span>':'<span class="hlc-hit hlc-hit-no">\u2717</span>';
         return '<div class="hlc-row">'
-          +'<div class="hlc-row-left"><span class="hlc-ticker">'+esc(r.ticker)+'</span><span class="hlc-price" data-hlc-price="'+esc(r.ticker)+'">'+price+'</span><span class="hlc-change" data-hlc-change="'+esc(r.ticker)+'"></span></div>'
+          +'<div class="hlc-row-left"><span class="hlc-ticker">'+esc(r.ticker)+'</span><span class="hlc-price">'+price+'</span>'+(changeTxt?'<span class="hlc-change" style="color:'+changeColor+';">'+changeTxt+'</span>':'')+'</div>'
           +'<div class="hlc-row-right">'
             +'<div class="hlc-pred"><span class="hlc-pred-label">Prism Est.</span><span class="hlc-pred-val">'+esc(chip)+'</span></div>'
             +'<span class="hlc-arrow" style="color:'+arrowColor+';">'+arrow+'</span>'
@@ -4657,32 +4678,7 @@ window.MP_DOMAINS   = MP_DOMAINS;
           +'</div>'
         +'</div>';
       }).join('');
-
-      // Fetch live quotes for price updates
-      var tickers=sorted.slice(0,5).map(function(r){return r.ticker;}).join(',');
-      refreshHeroQuotes(tickers);
-      setInterval(function(){refreshHeroQuotes(tickers);},30000);
     }catch(e){console.warn('[HeroCard]',e);}
-  }
-
-  async function refreshHeroQuotes(tickers){
-    try{
-      var res=await fetch('/api/live-quotes-batch?tickers='+encodeURIComponent(tickers));
-      if(!res.ok)return;
-      var data=await res.json();
-      var q=data.quotes||{};
-      document.querySelectorAll('[data-hlc-price]').forEach(function(el){
-        var t=el.getAttribute('data-hlc-price');
-        if(q[t]&&q[t].price!=null)el.textContent='$'+fmtP(q[t].price);
-      });
-      document.querySelectorAll('[data-hlc-change]').forEach(function(el){
-        var t=el.getAttribute('data-hlc-change');
-        if(!q[t]||q[t].changePct==null)return;
-        var pct=q[t].changePct;
-        el.textContent=(pct>0?'+':'')+pct.toFixed(2)+'%';
-        el.style.color=pct>=0?'#00DE94':'#FF4D4D';
-      });
-    }catch(e){}
   }
 
   loadHeroCard();
