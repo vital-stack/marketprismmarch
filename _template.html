@@ -7619,6 +7619,27 @@ async function loadTradeLanes(){
       }
       buckets[p.lane].push(row);
     });
+    // ── Supplement Earnings Play lane with earnings_context tickers not already present ──
+    var earnTickers={};
+    buckets.EARNINGS_PLAY.forEach(function(r){earnTickers[r.ticker]=true;});
+    if(earnRows&&earnRows.length){
+      earnRows.filter(function(e){return !earnTickers[e.ticker]&&e.days_to_earnings!=null&&Number(e.days_to_earnings)>=0&&Number(e.days_to_earnings)<=30;})
+        .sort(function(a,b){return Number(a.days_to_earnings)-Number(b.days_to_earnings);})
+        .forEach(function(e){
+          var dte=Number(e.days_to_earnings);
+          var p=priceMap[e.ticker]||null;
+          buckets.EARNINGS_PLAY.push({
+            ticker:e.ticker,
+            price:p,
+            days_to_earnings:dte,
+            next_earnings_date:e.next_earnings_date,
+            expected_direction:'UP',
+            lane_rank:90+dte,
+            _chip:dte>=0?'Earnings in '+dte+'d':Math.abs(dte)+'d post-earnings'
+          });
+        });
+    }
+
     Object.keys(buckets).forEach(function(k){
       buckets[k].sort(function(a,b){return(Number(a.lane_rank)||99)-(Number(b.lane_rank)||99);});
     });
