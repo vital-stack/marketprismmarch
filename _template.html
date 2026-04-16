@@ -7539,7 +7539,7 @@ function tlBuildRow(r){
     +'<div class="tl-row-right">'
       +(chip?'<div class="tl-row-pred"><span class="tl-row-pred-label">Prism Est.</span><span class="tl-row-action" style="color:var(--mp-text-primary);">'+esc(chip)+'</span></div>':'')
       +'<span class="tl-row-dir" style="color:'+d.color+';">'+d.arrow+'</span>'
-      +(dirAttr?'<span class="tl-row-hit" data-prism-hit="'+esc(r.ticker)+'" data-prism-dir="'+dirAttr+'"'+(r._predPct!=null?' data-prism-pct="'+Number(r._predPct)+'"':'')+'></span>':'')
+      +(dirAttr?'<span class="tl-row-hit" data-prism-hit="'+esc(r.ticker)+'" data-prism-dir="'+dirAttr+'"'+(r._predPct!=null?' data-prism-pct="'+Number(r._predPct)+'"':'')+(r.price?' data-prism-entry="'+Number(r.price)+'"':'')+'></span>':'')
     +'</div>'
   +'</div>';
 }
@@ -7587,7 +7587,7 @@ function tlBuildValueRow(r){
     +'<div class="tl-row-right">'
     +(chip?'<div class="tl-row-pred"><span class="tl-row-pred-label">Prism Est.</span><span class="tl-row-action" style="color:var(--mp-text-primary);">'+esc(chip)+'</span></div>':'')
     +'<span class="tl-row-dir" style="color:'+arrowColor+';">'+arrow+'</span>'
-    +'<span class="tl-row-hit" data-prism-hit="'+esc(r.ticker)+'" data-prism-dir="'+dirAttr+'"'+(r._predPct!=null?' data-prism-pct="'+Number(r._predPct)+'"':'')+'></span></div>'
+    +'<span class="tl-row-hit" data-prism-hit="'+esc(r.ticker)+'" data-prism-dir="'+dirAttr+'"'+(r._predPct!=null?' data-prism-pct="'+Number(r._predPct)+'"':'')+(r.price?' data-prism-entry="'+Number(r.price)+'"':'')+'></span></div>'
   +'</div>';
 }
 
@@ -14479,30 +14479,38 @@ async function liveQuotesRefreshDaily(){
       try{renderSectorMomentumRail(quotes);}catch(_){}
     }
     // Evaluate Prism Prediction hits: did intraday price reach the predicted %?
+    // Once a hit is detected it stays permanently (data-prism-locked="1").
+    // For multi-day trades (Swing/Momentum/Value), the entry price from the
+    // plays table is used instead of prevClose so the % is measured from the
+    // original call, not today's open.
     document.querySelectorAll('[data-prism-hit]').forEach(function(el){
+      // Already confirmed hit — don't re-evaluate
+      if(el.getAttribute('data-prism-locked')==='1')return;
       var t=el.getAttribute('data-prism-hit');
       var dir=el.getAttribute('data-prism-dir');
       var predPct=el.hasAttribute('data-prism-pct')?Number(el.getAttribute('data-prism-pct')):null;
       var q=quotes[t];
-      if(!q||!q.prevClose)return;
+      if(!q)return;
+      // Use entry price if available (multi-day trades), otherwise prevClose
+      var entryStr=el.getAttribute('data-prism-entry');
+      var basePrice=entryStr?Number(entryStr):(q.prevClose||null);
+      if(!basePrice)return;
       var isHit=false;
       if(predPct!=null&&predPct!==0){
-        // Check if intraday range reached the predicted return %
         var targetPct=Math.abs(predPct);
         if(dir==='up'&&q.dayHigh!=null){
-          var bestUpPct=((q.dayHigh-q.prevClose)/q.prevClose)*100;
-          isHit=bestUpPct>=targetPct;
+          isHit=((q.dayHigh-basePrice)/basePrice)*100>=targetPct;
         }else if(dir==='down'&&q.dayLow!=null){
-          var bestDownPct=((q.prevClose-q.dayLow)/q.prevClose)*100;
-          isHit=bestDownPct>=targetPct;
+          isHit=((basePrice-q.dayLow)/basePrice)*100>=targetPct;
         }
       }else{
-        // No specific % predicted — check if direction was correct at all
-        if(dir==='up') isHit=q.dayHigh!=null&&q.dayHigh>q.prevClose;
-        else if(dir==='down') isHit=q.dayLow!=null&&q.dayLow<q.prevClose;
+        if(dir==='up') isHit=q.dayHigh!=null&&q.dayHigh>basePrice;
+        else if(dir==='down') isHit=q.dayLow!=null&&q.dayLow<basePrice;
       }
       el.textContent=isHit?'\u2713':'\u2717';
       el.className='tl-row-hit visible '+(isHit?'hit':'miss');
+      // Lock hits permanently so they don't un-check on price pullback
+      if(isHit)el.setAttribute('data-prism-locked','1');
     });
     // Update per-lane hit counters in headers
     document.querySelectorAll('.tl-lane').forEach(function(lane){
