@@ -5220,6 +5220,16 @@ body{
          TAB: TRACK RECORD (paper trades validation)
     ═══════════════════════════════════════ -->
     <div class="tab-panel" id="tab-validation">
+      <!-- Access gate: require code "168" to view Track Record -->
+      <div id="tr-gate" style="max-width:420px;margin:80px auto 0;text-align:center;padding:40px 32px;background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:16px;">
+        <div style="font-size:36px;margin-bottom:16px;">&#128274;</div>
+        <h2 style="font-family:var(--font-display);font-size:28px;font-weight:400;color:var(--mp-text-primary);margin-bottom:8px;letter-spacing:-0.02em;">Track Record</h2>
+        <p style="font-size:13px;color:var(--mp-text-tertiary);line-height:1.6;margin-bottom:24px;">Enter your access code to view live paper trade performance.</p>
+        <input type="password" id="tr-gate-code" placeholder="Access code" autocomplete="off" style="width:100%;padding:12px 16px;font-size:14px;background:var(--mp-surface2);border:1px solid var(--mp-border);border-radius:10px;color:var(--mp-text-primary);font-family:var(--font-body);text-align:center;letter-spacing:0.1em;margin-bottom:12px;outline:none;transition:border-color .2s;" onkeydown="if(event.key==='Enter')trGateSubmit();">
+        <div id="tr-gate-error" style="display:none;font-size:12px;color:#FF4D4D;margin-bottom:12px;">Incorrect code. Try again.</div>
+        <button onclick="trGateSubmit()" style="width:100%;padding:12px 24px;background:linear-gradient(135deg,#00DE94,#00AEFF);border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;transition:transform .2s;" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">Unlock</button>
+      </div>
+      <div id="tr-content" style="display:none;">
       <div class="page-header" style="margin-bottom:24px;">
         <div class="ph-eyebrow">Market Prism · Proof of concept</div>
         <h1>Track Record.</h1>
@@ -5285,6 +5295,7 @@ body{
           <div class="val-table-wrap" id="val-table"></div>
         </div>
       </div>
+      </div><!-- /tr-content -->
     </div>
 
     <!-- ══════════════════════════════════════
@@ -8104,7 +8115,48 @@ async function loadValidation(force){
     if(err){err.style.display='block';err.textContent='Failed to load validation data: '+(e.message||e);}
   }
 }
-onTabSwitch(function(id){if(id==='validation'){loadValidation();loadTrackedPlays();}});
+// ── Track Record access gate ──────────────────────────────────────────────
+// Requires code "168" to unlock. Remembered in localStorage per browser.
+var TR_GATE_CODE='168';
+var TR_GATE_STORAGE='mp-tr-unlocked';
+function trGateIsUnlocked(){
+  try{return localStorage.getItem(TR_GATE_STORAGE)==='1';}catch(_){return false;}
+}
+function trGateShow(unlocked){
+  var gate=document.getElementById('tr-gate');
+  var content=document.getElementById('tr-content');
+  if(gate)gate.style.display=unlocked?'none':'block';
+  if(content)content.style.display=unlocked?'block':'none';
+}
+function trGateSubmit(){
+  var input=document.getElementById('tr-gate-code');
+  var err=document.getElementById('tr-gate-error');
+  if(!input)return;
+  if(input.value.trim()===TR_GATE_CODE){
+    try{localStorage.setItem(TR_GATE_STORAGE,'1');}catch(_){}
+    trGateShow(true);
+    loadValidation();
+    loadTrackedPlays();
+  }else{
+    if(err)err.style.display='block';
+    input.value='';
+    input.focus();
+  }
+}
+window.trGateSubmit=trGateSubmit;
+
+onTabSwitch(function(id){
+  if(id==='validation'){
+    if(trGateIsUnlocked()){
+      trGateShow(true);
+      loadValidation();
+      loadTrackedPlays();
+    }else{
+      trGateShow(false);
+      setTimeout(function(){var i=document.getElementById('tr-gate-code');if(i)i.focus();},100);
+    }
+  }
+});
 
 // ── Live Tracked Plays (from tracked_daily_plays) ─────────────────────────
 var _TP_LOADED=false;
