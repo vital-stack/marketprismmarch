@@ -733,6 +733,7 @@ body{
 .tl-lane-refresh:hover{border-color:var(--mp-border-hover);color:var(--mp-text-primary);background:rgba(255,255,255,0.04);}
 .tl-lane-refresh svg{width:10px;height:10px;}
 .tl-lane-refresh.spinning svg{animation:lb-spin .8s linear infinite;}
+.tl-lane-hits{font-size:10px;font-weight:600;margin-left:4px;}
 .tl-lane-rows{display:flex;flex-direction:column;}
 .tl-row{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--mp-border);cursor:pointer;transition:background .12s;}
 .tl-row:last-child{border-bottom:none;}
@@ -7540,7 +7541,8 @@ function tlBuildLane(title,subtitle,cards,laneId){
   var visible=cards.slice(0,TL_LIMIT);
   var overflow=cards.slice(TL_LIMIT);
   var id=laneId||'tl-overflow-'+title.replace(/\s/g,'-').toLowerCase();
-  var html='<div class="tl-lane"><div class="tl-lane-header"><div><div class="tl-lane-title">'+esc(title)+'</div><div class="tl-lane-sub">'+esc(subtitle)+' \u00B7 '+cards.length+' signals</div></div>'
+  var laneSlug=id||'tl-overflow-'+title.replace(/\s/g,'-').toLowerCase();
+  var html='<div class="tl-lane" id="lane-'+laneSlug+'"><div class="tl-lane-header"><div><div class="tl-lane-title">'+esc(title)+'</div><div class="tl-lane-sub">'+esc(subtitle)+' \u00B7 '+cards.length+' signals <span class="tl-lane-hits" id="hits-'+laneSlug+'"></span></div></div>'
     +'<div class="tl-lane-meta"><span class="tl-lane-date">'+_tlFormatDate()+'</span>'
     +'<button class="tl-lane-refresh" onclick="event.stopPropagation();_tlRefreshAll();" title="Refresh prices"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg></button></div>'
     +'</div><div class="tl-lane-rows">';
@@ -14483,6 +14485,18 @@ async function liveQuotesRefreshDaily(){
       }
       el.textContent=isHit?'\u2713':'\u2717';
       el.className='tl-row-hit visible '+(isHit?'hit':'miss');
+    });
+    // Update per-lane hit counters in headers
+    document.querySelectorAll('.tl-lane').forEach(function(lane){
+      var hitEls=lane.querySelectorAll('.tl-row-hit.visible');
+      if(!hitEls.length)return;
+      var hits=0,total=hitEls.length;
+      hitEls.forEach(function(h){if(h.classList.contains('hit'))hits++;});
+      var badge=lane.querySelector('.tl-lane-hits');
+      if(badge){
+        var color=hits/total>=0.5?'#00DE94':'#FF4D4D';
+        badge.innerHTML='\u00B7 <span style="color:'+color+';">'+hits+'/'+total+' hit</span>';
+      }
     });
   }catch(e){
     // Silent fail — existing Supabase prices remain visible.
