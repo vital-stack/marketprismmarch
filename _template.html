@@ -6987,11 +6987,11 @@ async function loadData(){
     // Upcoming earnings in rail
     var drEarnings=document.getElementById('dr-earnings');
     if(drEarnings&&DATA.length>0){
-      var withEarnings=DATA.filter(function(r){return r.days_to_earnings!=null&&r.days_to_earnings<=30;}).sort(function(a,b){return(a.days_to_earnings||999)-(b.days_to_earnings||999);}).slice(0,5);
+      var withEarnings=DATA.map(function(r){return Object.assign({},r,{_dte:liveDTE(r)});}).filter(function(r){return r._dte!=null&&r._dte>=0&&r._dte<=30;}).sort(function(a,b){return a._dte-b._dte;}).slice(0,5);
       if(withEarnings.length){
         drEarnings.innerHTML=withEarnings.map(function(r){
           return '<div class="dr-earn-row">'
-            +'<div class="dr-earn-date">'+r.days_to_earnings+'d</div>'
+            +'<div class="dr-earn-date">'+(r._dte===0?'Today':r._dte+'d')+'</div>'
             +'<div class="dr-earn-main"><div class="dr-earn-ticker">'+esc(r.ticker)+'</div><div class="dr-earn-name">'+esc(r.sector_name||'')+'</div></div>'
           +'</div>';
         }).join('');
@@ -7441,6 +7441,19 @@ function tlToggleInfo(btn){
   btn.setAttribute('aria-expanded', open ? 'false' : 'true');
 }
 
+// Recalculate days-to-earnings from next_earnings_date relative to today.
+// Falls back to the stale snapshot value if no date is available.
+function liveDTE(row){
+  var ned=row.next_earnings_date;
+  if(ned){
+    var p=ned.split('-');
+    var ed=new Date(Number(p[0]),Number(p[1])-1,Number(p[2]));
+    var now=new Date();now.setHours(0,0,0,0);
+    return Math.round((ed-now)/86400000);
+  }
+  return row.days_to_earnings!=null?Number(row.days_to_earnings):null;
+}
+
 // Format a percent number (e.g. 0.728 → "+0.7%", -2.1 → "−2.1%")
 function tlFmtReturnPct(p){
   if(p==null)return'';
@@ -7567,7 +7580,7 @@ async function loadTradeLanes(){
       var ret10=row.forecast_10d_return_pct!=null?Number(row.forecast_10d_return_pct):null;
       var ret20=row.forecast_20d_return_pct!=null?Number(row.forecast_20d_return_pct):null;
       var tgt=row.target_pct!=null?Number(row.target_pct):null;
-      var dte=row.days_to_earnings!=null?Number(row.days_to_earnings):null;
+      var dte=liveDTE(row);
       if(p.lane==='DAY_TRADE'){
         var v=tgt!=null?tgt:ret5;
         row._chip=v!=null?tlFmtReturnPct(v)+' today':'today';
@@ -7578,7 +7591,7 @@ async function loadTradeLanes(){
         var mv=ret10!=null?ret10:ret5;var mh=hold||10;
         row._chip=mv!=null?tlFmtReturnPct(mv)+' \u00B7 '+mh+'d':mh+'d';
       } else if(p.lane==='EARNINGS_PLAY'){
-        row._chip=dte!=null?(dte>=0?'Earnings in '+dte+'d':Math.abs(dte)+'d post-earnings'):'';
+        row._chip=dte!=null?(dte===0?'Earnings today':dte>0?'Earnings in '+dte+'d':Math.abs(dte)+'d post-earnings'):'';
       } else if(p.lane==='VALUE_PICK'){
         row._isValue=true;
         row._discount=row.fvd_pct;
@@ -7594,10 +7607,10 @@ async function loadTradeLanes(){
     var earnTickers={};
     buckets.EARNINGS_PLAY.forEach(function(r){earnTickers[r.ticker]=true;});
     if(earnRows&&earnRows.length){
-      earnRows.filter(function(e){return !earnTickers[e.ticker]&&e.days_to_earnings!=null&&Number(e.days_to_earnings)>=0&&Number(e.days_to_earnings)<=30;})
-        .sort(function(a,b){return Number(a.days_to_earnings)-Number(b.days_to_earnings);})
+      earnRows.filter(function(e){var d=liveDTE(e);return d!=null&&d>=0&&d<=30&&!earnTickers[e.ticker];})
+        .sort(function(a,b){return liveDTE(a)-liveDTE(b);})
         .forEach(function(e){
-          var dte=Number(e.days_to_earnings);
+          var dte=liveDTE(e);
           var p=priceMap[e.ticker]||null;
           buckets.EARNINGS_PLAY.push({
             ticker:e.ticker,
@@ -7606,7 +7619,7 @@ async function loadTradeLanes(){
             next_earnings_date:e.next_earnings_date,
             expected_direction:'UP',
             lane_rank:90+dte,
-            _chip:dte>=0?'Earnings in '+dte+'d':Math.abs(dte)+'d post-earnings'
+            _chip:dte===0?'Earnings today':dte>0?'Earnings in '+dte+'d':Math.abs(dte)+'d post-earnings'
           });
         });
     }
@@ -7647,7 +7660,7 @@ async function loadTradeLanes(){
     if(drTraps)drTraps.textContent=enriched.filter(function(r){return r.verdict==='Narrative Trap';}).length;
     if(drSurging)drSurging.textContent=enriched.filter(function(r){return r.verdict==='Narrative Risk';}).length;
     if(drBreaking)drBreaking.textContent=enriched.filter(function(r){return r.half_life<15;}).length;
-    if(drCoord)drCoord.textContent=buckets.EARNINGS_PLAY.filter(function(r){return r.days_to_earnings!=null&&Number(r.days_to_earnings)>=0&&Number(r.days_to_earnings)<=5;}).length;
+    if(drCoord)drCoord.textContent=buckets.EARNINGS_PLAY.filter(function(r){var d=liveDTE(r);return d!=null&&d>=0&&d<=5;}).length;
   }catch(e){console.warn('[TL] Load failed:',e);}
 }
 

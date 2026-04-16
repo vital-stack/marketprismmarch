@@ -4687,8 +4687,17 @@ function classifyLane(sc, earn) {
   }
 
   // 2. Earnings Play — time-critical window
-  if (earn && earn.days_to_earnings != null) {
-    var dte  = Number(earn.days_to_earnings);
+  // Recalculate dte from next_earnings_date so it's relative to today
+  if (earn && (earn.next_earnings_date || earn.days_to_earnings != null)) {
+    var dte;
+    if (earn.next_earnings_date) {
+      var _ep = earn.next_earnings_date.split('-');
+      var _ed = new Date(Number(_ep[0]), Number(_ep[1]) - 1, Number(_ep[2]));
+      var _now = new Date(); _now.setHours(0,0,0,0);
+      dte = Math.round((_ed - _now) / 86400000);
+    } else {
+      dte = Number(earn.days_to_earnings);
+    }
     var surp = Number(earn.earnings_surprise_pct || 0);
     if (dte >= -7 && dte <= 35) {
       if (dte === 0)               return { lane:'Earnings Play', action:'Watch', color:'#FF4D4D', reason:'Earnings today — post-print move likely binary.' };
@@ -4932,36 +4941,49 @@ async function loadHero() {
     ).join('');
 
     // ── Earnings pill — prominent, color-coded by proximity ──
-    // days_to_earnings comes from v_dash_daily_story. Color tiers:
-    //   <=3d  → red (imminent),  4-14d → amber (pre-earnings), 15-35d → cyan,
-    //   past  → muted "Xd ago". Date is computed client-side from today + dte.
+    // Recalculate days_to_earnings from next_earnings_date relative to TODAY
+    // so the badge stays accurate regardless of when the snapshot was taken.
+    // Sources: earnings_context (preferred) or v_dash_daily_story fallback.
     let earningsPill = '';
-    if (r.days_to_earnings != null) {
-      const dte = Number(r.days_to_earnings);
-      let eColor, eBg, eBorder, eLabel;
-      if (dte < 0) {
-        eColor = '#A0A8B0'; eBg = 'rgba(160,168,176,0.08)'; eBorder = 'rgba(160,168,176,0.20)';
-        eLabel = 'Earnings ' + Math.abs(dte) + 'd ago';
-      } else if (dte === 0) {
-        eColor = '#FF4D4D'; eBg = 'rgba(255,77,77,0.12)'; eBorder = 'rgba(255,77,77,0.30)';
-        eLabel = 'Earnings today';
-      } else if (dte <= 3) {
-        eColor = '#FF4D4D'; eBg = 'rgba(255,77,77,0.10)'; eBorder = 'rgba(255,77,77,0.25)';
-        eLabel = 'Earnings in ' + dte + 'd';
-      } else if (dte <= 14) {
-        eColor = '#FFB800'; eBg = 'rgba(255,184,0,0.08)'; eBorder = 'rgba(255,184,0,0.20)';
-        eLabel = 'Earnings in ' + dte + 'd';
-      } else {
-        eColor = '#00AEFF'; eBg = 'rgba(0,174,255,0.08)'; eBorder = 'rgba(0,174,255,0.20)';
-        eLabel = 'Earnings in ' + dte + 'd';
+    {
+      const earnCtx = (earnContextRows || [])[0] || {};
+      const nextDate = earnCtx.next_earnings_date || r.next_earnings_date;
+      let dte = null;
+      if (nextDate) {
+        // Parse YYYY-MM-DD as local date (avoid timezone shift)
+        const parts = nextDate.split('-');
+        const earnDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        const now = new Date(); now.setHours(0,0,0,0);
+        dte = Math.round((earnDate - now) / 86400000);
+      } else if (r.days_to_earnings != null) {
+        dte = Number(r.days_to_earnings);
       }
-      // Append date for names within ~4 weeks so users get a concrete calendar anchor
-      if (dte >= 0 && dte <= 28) {
-        const eDate = new Date();
-        eDate.setDate(eDate.getDate() + dte);
-        eLabel += ' · ' + eDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      if (dte != null) {
+        let eColor, eBg, eBorder, eLabel;
+        if (dte < 0) {
+          eColor = '#A0A8B0'; eBg = 'rgba(160,168,176,0.08)'; eBorder = 'rgba(160,168,176,0.20)';
+          eLabel = 'Earnings ' + Math.abs(dte) + 'd ago';
+        } else if (dte === 0) {
+          eColor = '#FF4D4D'; eBg = 'rgba(255,77,77,0.12)'; eBorder = 'rgba(255,77,77,0.30)';
+          eLabel = 'Earnings today';
+        } else if (dte <= 3) {
+          eColor = '#FF4D4D'; eBg = 'rgba(255,77,77,0.10)'; eBorder = 'rgba(255,77,77,0.25)';
+          eLabel = 'Earnings in ' + dte + 'd';
+        } else if (dte <= 14) {
+          eColor = '#FFB800'; eBg = 'rgba(255,184,0,0.08)'; eBorder = 'rgba(255,184,0,0.20)';
+          eLabel = 'Earnings in ' + dte + 'd';
+        } else {
+          eColor = '#00AEFF'; eBg = 'rgba(0,174,255,0.08)'; eBorder = 'rgba(0,174,255,0.20)';
+          eLabel = 'Earnings in ' + dte + 'd';
+        }
+        // Append actual earnings date (not today+dte) for concrete calendar anchor
+        if (nextDate && dte >= -7 && dte <= 28) {
+          const parts = nextDate.split('-');
+          const earnDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+          eLabel += ' · ' + earnDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+        earningsPill = `<span class="hero-insight-badge" style="background:${eBg};color:${eColor};border:1px solid ${eBorder};font-weight:600;">${eLabel}</span>`;
       }
-      earningsPill = `<span class="hero-insight-badge" style="background:${eBg};color:${eColor};border:1px solid ${eBorder};font-weight:600;">${eLabel}</span>`;
     }
 
     document.getElementById('hero').innerHTML = `
