@@ -734,7 +734,7 @@ body{
 .tl-row-left{display:flex;align-items:center;gap:8px;min-width:0;flex:1;overflow:hidden;}
 .tl-row-logo{width:18px;height:18px;border-radius:4px;object-fit:contain;flex-shrink:0;}
 .tl-row-ticker{font-size:14px;font-weight:700;color:var(--mp-text-primary);font-family:var(--font-body);white-space:nowrap;flex-shrink:0;}
-.tl-row-price{font-size:12px;color:var(--mp-text-muted);font-family:var(--font-body);margin-left:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tl-row-price{font-size:13px;color:var(--mp-text-secondary);font-family:var(--font-body);margin-left:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .tl-row-right{display:flex;align-items:center;gap:10px;flex-shrink:0;white-space:nowrap;margin-left:8px;}
 .tl-row-action{font-size:13px;font-weight:500;color:var(--mp-text-secondary);font-family:var(--font-body);white-space:nowrap;}
 .tl-row-dir{font-size:12px;font-weight:700;}
@@ -7063,8 +7063,7 @@ async function loadData(){
     renderDiscover();
     renderLoveHate();
     renderSnap();
-    renderSectors();
-    renderTrapChart();
+    // Sectors render after DB fetch — see loadSectorsFromSummaries() below
     MEME_DATA=MEME_SEED.slice(); // reset so renderMemes re-merges from CARD_DATA
     renderMemes();
     loadDiscoverHeatmap();
@@ -7088,9 +7087,12 @@ async function loadData(){
     if(typeof tcCalBooted!=='undefined'&&tcCalBooted&&typeof tcRenderCards==='function') tcRenderCards();
     // Sync stories column height after cards have rendered
     requestAnimationFrame(function(){setTimeout(syncStoriesHeight,300);});
-    // Load live summaries from daily_summaries table (non-blocking)
+    // Load live summaries from daily_summaries table
     fillMarketNarrative();
-    loadSectorsFromSummaries();
+    await loadSectorsFromSummaries();
+    // Fallback: if DB fetch failed silently, render with hardcoded SECTOR_STATIC
+    renderSectors();
+    renderTrapChart();
     loadMarketWideFromSummaries();
     // Load supported + traps + coordination from their actual DB tables, then render
     await Promise.all([loadSupportedData(), loadTrapsData(), loadCoordinationData()]);
@@ -7599,23 +7601,23 @@ async function loadTradeLanes(){
       var dte=row.days_to_earnings!=null?Number(row.days_to_earnings):null;
       if(p.lane==='DAY_TRADE'){
         var v=tgt!=null?tgt:ret5;
-        row._chip=v!=null?tlFmtReturnPct(v)+' today':'';
+        row._chip=v!=null?tlFmtReturnPct(v)+' today':'today';
       } else if(p.lane==='SWING_TRADE'){
         var h=hold||5;
         row._chip=ret5!=null?tlFmtReturnPct(ret5)+' \u00B7 '+h+'d':h+'d';
       } else if(p.lane==='MOMENTUM'){
         var mv=ret10!=null?ret10:ret5;var mh=hold||10;
-        row._chip=mv!=null?tlFmtReturnPct(mv)+' \u00B7 '+mh+'d':'';
+        row._chip=mv!=null?tlFmtReturnPct(mv)+' \u00B7 '+mh+'d':mh+'d';
       } else if(p.lane==='EARNINGS_PLAY'){
         row._chip=dte!=null?(dte>=0?'Earnings in '+dte+'d':Math.abs(dte)+'d post-earnings'):'';
       } else if(p.lane==='VALUE_PICK'){
         row._isValue=true;
         row._discount=row.fvd_pct;
         var vv=ret20!=null?ret20:(ret10!=null?ret10:ret5);var vh=hold||20;
-        row._chip=vv!=null?tlFmtReturnPct(vv)+' \u00B7 '+vh+'d':'';
+        row._chip=vv!=null?tlFmtReturnPct(vv)+' \u00B7 '+vh+'d':vh+'d';
       } else if(p.lane==='NARRATIVE_TRAP'){
         var tv=ret5!=null?ret5:(tgt!=null?-Math.abs(tgt):null);var th=hold||5;
-        row._chip=tv!=null?tlFmtReturnPct(tv)+' \u00B7 '+th+'d':'';
+        row._chip=tv!=null?tlFmtReturnPct(tv)+' \u00B7 '+th+'d':th+'d';
       }
       buckets[p.lane].push(row);
     });
@@ -8607,7 +8609,7 @@ function renderMarketWidePage(){
       +(momentum?'<div class="sector-momentum-bar">'
         +'<span class="sector-bar-lbl">Momentum</span>'
         +'<div class="sector-bar-track"><div class="sector-bar-fill" style="width:'+momentum+'%;background:'+bar_color+';"></div></div>'
-        +'<span class="sector-bar-pct">'+momentum+'</span>'
+        +'<span class="sector-bar-pct">'+momentum+'%</span>'
       +'</div>':'')
     +'</div>';
   }).join('');
@@ -9334,7 +9336,7 @@ function renderSectors(){
       +'<div class="sector-momentum-bar">'
         +'<span class="sector-bar-lbl">Momentum</span>'
         +'<div class="sector-bar-track"><div class="sector-bar-fill" style="width:'+s.momentum+'%;background:'+bar_color+';"></div></div>'
-        +'<span class="sector-bar-pct">'+s.momentum+'</span>'
+        +'<span class="sector-bar-pct">'+s.momentum+'%</span>'
       +'</div>'
       +'<div class="sector-footer">'
         +'<span class="sector-cagr">CAGR '+s.cagr+'</span>'
@@ -9363,7 +9365,7 @@ function renderSectors(){
         +'<div class="sector-tickers-row" style="padding:0 16px 10px;border-bottom:1px solid var(--mp-border);"><div class="sector-tickers">'+s.tickers.map(sectorChipHTML).join('')+'</div></div>'
         +'<div class="sector-body"><div class="sector-desc">'+esc(s.desc)+'</div>'
         +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;"><span class="sector-state badge-stable" style="font-size:10px;padding:2px 8px;">'+s.state.toUpperCase()+'</span>'+liveNote+'</div></div>'
-        +'<div class="sector-momentum-bar"><span class="sector-bar-lbl">Momentum</span><div class="sector-bar-track"><div class="sector-bar-fill" style="width:'+s.momentum+'%;background:'+bar_color+';"></div></div><span class="sector-bar-pct">'+s.momentum+'</span></div>'
+        +'<div class="sector-momentum-bar"><span class="sector-bar-lbl">Momentum</span><div class="sector-bar-track"><div class="sector-bar-fill" style="width:'+s.momentum+'%;background:'+bar_color+';"></div></div><span class="sector-bar-pct">'+s.momentum+'%</span></div>'
         +'<div class="sector-footer"><span class="sector-cagr">CAGR '+s.cagr+'</span>'+liveNote+'</div></div>';
     }).join('');
     dailyGrid.innerHTML=allCards;
