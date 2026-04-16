@@ -70,6 +70,8 @@ module.exports = async (req, res) => {
             change: prevClose ? Number((price - prevClose).toFixed(2)) : null,
             changePct: prevClose ? Number(((price - prevClose) / prevClose * 100).toFixed(2)) : null,
             prevClose: prevClose ? Number(prevClose) : null,
+            dayHigh: day.h ? Number(day.h) : null,
+            dayLow: day.l ? Number(day.l) : null,
             source: lastTrade.p ? 'snapshot_live' : 'snapshot_close'
           };
           anySuccess = true;

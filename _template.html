@@ -735,9 +735,15 @@ body{
 .tl-row-logo{width:18px;height:18px;border-radius:4px;object-fit:contain;flex-shrink:0;}
 .tl-row-ticker{font-size:14px;font-weight:700;color:var(--mp-text-primary);font-family:var(--font-body);white-space:nowrap;flex-shrink:0;}
 .tl-row-price{font-size:13px;color:var(--mp-text-secondary);font-family:var(--font-body);margin-left:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.tl-row-right{display:flex;align-items:center;gap:10px;flex-shrink:0;white-space:nowrap;margin-left:8px;}
+.tl-row-right{display:flex;align-items:center;gap:6px;flex-shrink:0;white-space:nowrap;margin-left:8px;}
+.tl-row-pred{display:flex;flex-direction:column;align-items:flex-end;gap:1px;}
+.tl-row-pred-label{font-size:9px;font-weight:600;letter-spacing:0.06em;color:rgba(0,174,255,0.5);font-family:var(--font-body);text-transform:uppercase;}
 .tl-row-action{font-size:13px;font-weight:500;color:var(--mp-text-secondary);font-family:var(--font-body);white-space:nowrap;}
 .tl-row-dir{font-size:12px;font-weight:700;}
+.tl-row-hit{font-size:12px;font-weight:700;margin-left:2px;opacity:0;transition:opacity .3s;}
+.tl-row-hit.visible{opacity:1;}
+.tl-row-hit.hit{color:#00DE94;}
+.tl-row-hit.miss{color:#FF4D4D;}
 .tl-tier{font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;font-family:var(--font-body);letter-spacing:.03em;flex-shrink:0;}
 .tl-plat{background:rgba(0,174,255,0.1);color:var(--mp-cyan);border:1px solid rgba(0,174,255,0.15);}
 .tl-gold{background:rgba(255,255,255,0.04);color:var(--mp-text-tertiary);border:1px solid var(--mp-border);}
@@ -7479,9 +7485,14 @@ function tlBuildRow(r){
   var d=tlDir(r);
   var chip=r._chip||'';
   var price=r.price?'$'+fmtPrice(Number(r.price)):'';
+  var dirAttr=d.up?'up':d.down?'down':'';
   return '<div class="tl-row" data-ticker="'+esc(r.ticker)+'" onclick="window.location.href=\'/ticker/'+encodeURIComponent(r.ticker)+'\'">'
     +'<div class="tl-row-left"><span class="tl-row-ticker">'+esc(r.ticker)+'</span><span class="tl-row-price" data-live-price="'+esc(r.ticker)+'">'+price+'</span><span class="tl-row-change" data-live-change="'+esc(r.ticker)+'" style="font-size:11px;color:var(--mp-text-tertiary);font-family:var(--font-body);margin-left:4px;"></span></div>'
-    +'<div class="tl-row-right"><span class="tl-row-action" style="color:var(--mp-text-primary);">'+esc(chip)+'</span><span class="tl-row-dir" style="color:'+d.color+';">'+d.arrow+'</span></div>'
+    +'<div class="tl-row-right">'
+      +(chip?'<div class="tl-row-pred"><span class="tl-row-pred-label">Prism</span><span class="tl-row-action" style="color:var(--mp-text-primary);">'+esc(chip)+'</span></div>':'')
+      +'<span class="tl-row-dir" style="color:'+d.color+';">'+d.arrow+'</span>'
+      +(dirAttr?'<span class="tl-row-hit" data-prism-hit="'+esc(r.ticker)+'" data-prism-dir="'+dirAttr+'"></span>':'')
+    +'</div>'
   +'</div>';
 }
 
@@ -7508,11 +7519,13 @@ function tlBuildValueRow(r){
   // Value picks default to up-arrow/green if no direction resolved
   var arrowColor=d.down?'#FF4D4D':'#00DE94';
   var arrow=d.down?'\u25BC':'\u25B2';
+  var dirAttr=d.down?'down':'up';
   return '<div class="tl-row" data-ticker="'+esc(r.ticker)+'" onclick="window.location.href=\'/ticker/'+encodeURIComponent(r.ticker)+'\'">'
     +'<div class="tl-row-left"><span class="tl-row-ticker">'+esc(r.ticker)+'</span><span class="tl-row-price" data-live-price="'+esc(r.ticker)+'">'+price+'</span><span class="tl-row-change" data-live-change="'+esc(r.ticker)+'" style="font-size:11px;color:var(--mp-text-tertiary);font-family:var(--font-body);margin-left:4px;"></span></div>'
     +'<div class="tl-row-right">'
-    +(chip?'<span class="tl-row-action" style="color:var(--mp-text-primary);">'+esc(chip)+'</span>':'')
-    +'<span class="tl-row-dir" style="color:'+arrowColor+';">'+arrow+'</span></div>'
+    +(chip?'<div class="tl-row-pred"><span class="tl-row-pred-label">Prism</span><span class="tl-row-action" style="color:var(--mp-text-primary);">'+esc(chip)+'</span></div>':'')
+    +'<span class="tl-row-dir" style="color:'+arrowColor+';">'+arrow+'</span>'
+    +'<span class="tl-row-hit" data-prism-hit="'+esc(r.ticker)+'" data-prism-dir="'+dirAttr+'"></span></div>'
   +'</div>';
 }
 
@@ -14277,6 +14290,23 @@ async function liveQuotesRefreshDaily(){
     if(typeof renderSectorMomentumRail==='function'){
       try{renderSectorMomentumRail(quotes);}catch(_){}
     }
+    // Evaluate Prism Prediction hits: did intraday price confirm direction?
+    document.querySelectorAll('[data-prism-hit]').forEach(function(el){
+      var t=el.getAttribute('data-prism-hit');
+      var dir=el.getAttribute('data-prism-dir');
+      var q=quotes[t];
+      if(!q||!q.prevClose)return;
+      var isHit=false;
+      if(dir==='up'){
+        // Bullish prediction: hit if intraday high exceeded previous close
+        isHit=q.dayHigh!=null&&q.dayHigh>q.prevClose;
+      }else if(dir==='down'){
+        // Bearish prediction: hit if intraday low dropped below previous close
+        isHit=q.dayLow!=null&&q.dayLow<q.prevClose;
+      }
+      el.textContent=isHit?'\u2713':'\u2717';
+      el.className='tl-row-hit visible '+(isHit?'hit':'miss');
+    });
   }catch(e){
     // Silent fail — existing Supabase prices remain visible.
   }finally{
