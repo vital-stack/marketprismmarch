@@ -7379,7 +7379,7 @@ function nfMarketImpactScore(r){
   if(v.indexOf('trap')>=0) score+=5;
   else if(v.indexOf('supported')>=0) score+=3;
   // Boost: close to earnings (catalyst)
-  if(r.days_to_earnings!=null&&r.days_to_earnings<=14) score+=3;
+  var _sd=liveDTE(r);if(_sd!=null&&_sd>=0&&_sd<=14) score+=3;
   return score;
 }
 
@@ -7410,7 +7410,7 @@ function renderNarrativeCards(){
       sc.mda_snippet=sc.mda_snippet||r.mda_snippet||'';
       return nfBuildRow(dir, nfLogoHTML(r.ticker), r.ticker, r.sector_name||'', r.story_claim, verdict, '/ticker/'+encodeURIComponent(r.ticker), {
         price:r.price, pricePct:pct, state:r.narrative_state,
-        daysToEarnings:r.days_to_earnings,
+        daysToEarnings:liveDTE(r),
         _scorecard:sc,
         _reason:r.forensic_rebuttal||r.primary_driver||''
       });
@@ -8887,7 +8887,8 @@ function buildStoryCardHTML(r,idx){
   var energy=r.source_energy_regime||r.energy_regime||'';
   if(energy==='EXPLOSIVE')energyTag='<div class="disc-nc-tag energy">\u26A1 Explosive</div>';
   else if(energy==='HIGH')energyTag='<div class="disc-nc-tag energy">\uD83D\uDD25 High Energy</div>';
-  var earningsTag=(r.days_to_earnings!=null&&r.days_to_earnings<60)?'<div class="disc-nc-tag earnings">\uD83D\uDCC5 '+r.days_to_earnings+'d to earnings</div>':'';
+  var _dte=liveDTE(r);
+  var earningsTag=(_dte!=null&&_dte>=0&&_dte<60)?'<div class="disc-nc-tag earnings">\uD83D\uDCC5 '+(_dte===0?'Earnings today':_dte+'d to earnings')+'</div>':'';
   var sectorTrapTag=r.sector_trap_flag?'<div class="disc-nc-tag omission">\uD83D\uDD3A Sector Trap</div>':'';
 
   return '<div class="disc-nc '+stCls+'" onclick="window.location.href=\'/ticker/'+encodeURIComponent(r.ticker)+'\'" style="cursor:pointer;">'
@@ -8946,7 +8947,8 @@ function buildForensicHTML(r){
       +(r.pe_ratio!=null?'<div class="forensic-row"><span class="forensic-row-label">P/E Ratio</span><span class="forensic-row-val">'+r.pe_ratio.toFixed(1)+'x</span></div>':'')
       +(r.fair_value!=null?'<div class="forensic-row"><span class="forensic-row-label">Fair Value</span><span class="forensic-row-val">$'+r.fair_value.toFixed(2)+'</span></div>':'')
       +(fvd!=null?'<div class="forensic-row"><span class="forensic-row-label">Valuation</span><span class="forensic-row-val">'+Math.abs(fvd).toFixed(0)+'% '+(fvd<0?'undervalued':'overvalued')+'</span></div>':'')
-      +(r.days_to_earnings!=null?'<div class="forensic-row"><span class="forensic-row-label">Earnings</span><span class="forensic-row-val">'+r.days_to_earnings+'d</span></div>':'')
+      +(function(){var _d=liveDTE(r);return _d!=null?'<div class="forensic-row"><span class="forensic-row-label">Earnings</span><span class="forensic-row-val">'+(_d===0?'Today':_d>0?_d+'d':Math.abs(_d)+'d ago')+'</span></div>':'';})()
+
       +(r.guidance_direction&&r.guidance_direction!=='Neutral'?'<div class="forensic-row"><span class="forensic-row-label">Guidance</span><span class="forensic-row-val">'+esc(r.guidance_direction)+'</span></div>':'')
       +'<div style="margin-top:12px;"><a href="/ticker/'+encodeURIComponent(r.ticker)+'" style="font-family:var(--font-mono);font-size:10px;color:var(--mp-text-secondary);text-decoration:none;letter-spacing:.06em;text-transform:uppercase;transition:color .2s;" onmouseover="this.style.color=\'var(--mp-text-primary)\'" onmouseout="this.style.color=\'var(--mp-text-secondary)\'">Full analysis →</a></div>'
     +'</div>'
@@ -10976,7 +10978,7 @@ async function generateReport(){
         roundRect(mx,y,cw,22,3,surface);
         var fmStats=[];
         if(r.pe_ratio!=null)fmStats.push({label:'P/E Ratio',val:r.pe_ratio.toFixed(1)+'x'});
-        if(r.days_to_earnings!=null)fmStats.push({label:'Days to Earnings',val:String(r.days_to_earnings),c:r.days_to_earnings<=14?amber:white});
+        var _imgDte=liveDTE(r);if(_imgDte!=null)fmStats.push({label:'Days to Earnings',val:_imgDte===0?'Today':String(_imgDte),c:_imgDte<=14?amber:white});
         if(r.guidance_direction)fmStats.push({label:'Guidance',val:r.guidance_direction,c:r.guidance_direction.toLowerCase().indexOf('up')!==-1?green:r.guidance_direction.toLowerCase().indexOf('down')!==-1?red:white});
         if(r.institutional_positioning)fmStats.push({label:'Institutional',val:r.institutional_positioning});
         if(sc.vms!=null)fmStats.push({label:'Reliability (VMS)',val:Math.round(sc.vms),c:sc.vms>=80?green:sc.vms<=25?amber:white});
@@ -11915,7 +11917,7 @@ async function renderLeaderboardCards(){
   var accent3='#A78BFA';
   var earnContent = earnRows.length>0
     ? earnRows.map(function(r,i){
-        var days=r.days_to_earnings!=null?r.days_to_earnings+'d':'—';
+        var _ld=liveDTE(r);var days=_ld!=null?(_ld===0?'Today':_ld+'d'):'—';
         var guide=r.guidance_direction&&r.guidance_direction!=='Neutral'?r.guidance_direction:'—';
         return lbRow(i+1,r.ticker,days,guide,accent3);
       }).join('')
@@ -13937,7 +13939,8 @@ function getLiveSignalBias(row, story){
   if((story && story.prism_verdict === 'Structurally Supported') || row.narrative_earnings_alignment === 'ALIGNED'){
     return { text:'RIDE THE TREND', rarity:'Epic', color:'var(--mp-teal)' };
   }
-  if((row.days_to_earnings || 0) <= 7){
+  var _biasDte=liveDTE(row);
+  if(_biasDte!=null&&_biasDte>=0&&_biasDte<=7){
     return { text:'WATCH EARNINGS', rarity:'Uncommon', color:'var(--mp-blue)' };
   }
   return { text:'HOLD STEADY', rarity:'Common', color:'var(--mp-text-secondary)' };
@@ -13947,16 +13950,18 @@ async function loadTradingCalendarLive(){
   if(!canAccessFeature('pro')) return;
   if(!SUPABASE_URL || !SUPABASE_ANON) return;
   var rows = await restFetch('earnings_window_active', {
-    select:'ticker,days_to_earnings,earnings_position,earnings_window_flag,narrative_earnings_alignment,eps_actual,revenue_actual,earnings_surprise_pct,data_source,snapshot_date',
+    select:'ticker,days_to_earnings,next_earnings_date,earnings_position,earnings_window_flag,narrative_earnings_alignment,eps_actual,revenue_actual,earnings_surprise_pct,data_source,snapshot_date',
     order:'days_to_earnings.asc,ticker.asc',
     limit:'120'
   }).catch(function(){ return []; });
   LIVE_EARNINGS_ROWS = (rows || []).filter(function(row){
-    return row && row.ticker && row.snapshot_date && row.days_to_earnings != null && row.days_to_earnings >= 0;
+    if(!row||!row.ticker)return false;
+    var d=liveDTE(row);
+    return d!=null&&d>=-7;
   });
   LIVE_EARNINGS_BY_DATE = {};
   LIVE_EARNINGS_ROWS.forEach(function(row){
-    var eventDate = addDaysISO(row.snapshot_date, row.days_to_earnings || 0);
+    var eventDate = row.next_earnings_date || addDaysISO(row.snapshot_date, row.days_to_earnings || 0);
     if(!LIVE_EARNINGS_BY_DATE[eventDate]) LIVE_EARNINGS_BY_DATE[eventDate] = [];
     LIVE_EARNINGS_BY_DATE[eventDate].push(row);
   });
