@@ -3137,7 +3137,7 @@ footer {
       <div class="dash-preview">
         <div class="hero-live-card" id="hero-live-card">
           <div class="hlc-header">
-            <div><div class="hlc-title">Day Trade</div><div class="hlc-sub">In and out today <span class="hlc-hits" id="hlc-hits"></span></div></div>
+            <div><div class="hlc-title">Day Trade</div><div class="hlc-sub"><span id="hlc-date"></span> <span class="hlc-hits" id="hlc-hits"></span></div></div>
             <div class="hlc-live"><span class="hlc-dot"></span>LIVE</div>
           </div>
           <div class="hlc-rows" id="hlc-rows">
@@ -4621,48 +4621,56 @@ window.MP_DOMAINS   = MP_DOMAINS;
       if(!dRows.length)return;
       var scDate=dRows[0].snapshot_date;
 
-      // Fetch Day Trade rows
-      var pRes=await fetch(SB_URL+'/rest/v1/t_daily_plays_top10_enhanced?select=ticker,price,target_pct,forecast_5d_return_pct,expected_direction,trade_direction,lane_rank&lane=eq.DAY_TRADE&snapshot_date=eq.'+encodeURIComponent(scDate)+'&order=lane_rank.asc&limit=10',{headers:hdrs});
-      if(!pRes.ok)return;
-      var plays=await pRes.json();
+      // Fetch from tracked_daily_plays (has pre-computed hit status)
+      var tRes=await fetch(SB_URL+'/rest/v1/tracked_daily_plays?select=ticker,entry_price,predicted_return_pct,direction,hit,lane_rank&lane=eq.DAY_TRADE&snapshot_date=eq.'+encodeURIComponent(scDate)+'&order=lane_rank.asc&limit=10',{headers:hdrs});
+      if(!tRes.ok)return;
+      var plays=await tRes.json();
       if(!plays.length)return;
 
-      function resolvePlay(r){
-        var tgt=r.target_pct!=null?Number(r.target_pct):null;
-        var ret5=r.forecast_5d_return_pct!=null?Number(r.forecast_5d_return_pct):null;
-        var v=tgt!=null?tgt:ret5;
-        var ed=(r.expected_direction||'').toUpperCase();
-        if(!ed||ed==='FLAT'||ed==='NEUTRAL'){var td=(r.trade_direction||'').toUpperCase();ed=td==='SHORT'?'DOWN':td==='LONG'?'UP':'';}
-        return{v:v,up:ed==='UP',down:ed==='DOWN',dirAttr:ed==='UP'?'up':ed==='DOWN'?'down':''};
+      // Set date in header
+      var dateEl=document.getElementById('hlc-date');
+      if(dateEl){
+        var dp=scDate.split('-');
+        var dd=new Date(Number(dp[0]),Number(dp[1])-1,Number(dp[2]));
+        dateEl.textContent=dd.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+      }
+
+      // Sort: hits first, then by lane_rank — so visible 5 includes winners
+      var sorted=plays.slice().sort(function(a,b){
+        if(a.hit&&!b.hit)return -1;if(!a.hit&&b.hit)return 1;
+        return(a.lane_rank||99)-(b.lane_rank||99);
+      });
+
+      // Count hits from ALL rows (before slicing)
+      var totalHits=plays.filter(function(r){return r.hit;}).length;
+      var badge=document.getElementById('hlc-hits');
+      if(badge){
+        var color=totalHits/plays.length>=0.3?'#00DE94':'#FF4D4D';
+        badge.innerHTML='\u00B7 <span style="color:'+color+';">'+totalHits+'/'+plays.length+' hit</span>';
       }
 
       var container=document.getElementById('hlc-rows');
       if(!container)return;
-      // Show top 5 as visible rows
-      var visibleHtml=plays.slice(0,5).map(function(r){
-        var p=resolvePlay(r);
-        var chip=p.v!=null?fmtRet(p.v)+' today':'today';
-        var price=r.price?'$'+fmtP(Number(r.price)):'';
-        var arrowColor=p.up?'#00DE94':p.down?'#FF4D4D':'#A0A8B8';
-        var arrow=p.up?'\u25B2':p.down?'\u25BC':'';
+      container.innerHTML=sorted.slice(0,5).map(function(r){
+        var predPct=r.predicted_return_pct!=null?Number(r.predicted_return_pct):null;
+        var chip=predPct!=null?fmtRet(predPct)+' today':'today';
+        var price=r.entry_price?'$'+fmtP(Number(r.entry_price)):'';
+        var isLong=r.direction==='LONG';
+        var arrowColor=isLong?'#00DE94':'#FF4D4D';
+        var arrow=isLong?'\u25B2':'\u25BC';
+        var hitIcon=r.hit?'<span class="hlc-hit hlc-hit-yes">\u2713</span>':'<span class="hlc-hit hlc-hit-no">\u2717</span>';
         return '<div class="hlc-row">'
           +'<div class="hlc-row-left"><span class="hlc-ticker">'+esc(r.ticker)+'</span><span class="hlc-price" data-hlc-price="'+esc(r.ticker)+'">'+price+'</span><span class="hlc-change" data-hlc-change="'+esc(r.ticker)+'"></span></div>'
           +'<div class="hlc-row-right">'
             +'<div class="hlc-pred"><span class="hlc-pred-label">Prism Est.</span><span class="hlc-pred-val">'+esc(chip)+'</span></div>'
             +'<span class="hlc-arrow" style="color:'+arrowColor+';">'+arrow+'</span>'
-            +(p.dirAttr?'<span class="hlc-hit" data-hlc-hit="'+esc(r.ticker)+'" data-hlc-dir="'+p.dirAttr+'"'+(p.v!=null?' data-hlc-pct="'+p.v+'"':'')+'></span>':'')
+            +hitIcon
           +'</div>'
         +'</div>';
       }).join('');
-      // Hidden hit trackers for remaining rows (count toward hit rate but not displayed)
-      var hiddenHtml=plays.slice(5).map(function(r){
-        var p=resolvePlay(r);
-        return p.dirAttr?'<span style="display:none;" class="hlc-hit" data-hlc-hit="'+esc(r.ticker)+'" data-hlc-dir="'+p.dirAttr+'"'+(p.v!=null?' data-hlc-pct="'+p.v+'"':'')+'></span>':'';
-      }).join('');
-      container.innerHTML=visibleHtml+hiddenHtml;
 
-      // Fetch live quotes
-      var tickers=plays.map(function(r){return r.ticker;}).join(',');
+      // Fetch live quotes for price updates
+      var tickers=sorted.slice(0,5).map(function(r){return r.ticker;}).join(',');
       refreshHeroQuotes(tickers);
       setInterval(function(){refreshHeroQuotes(tickers);},30000);
     }catch(e){console.warn('[HeroCard]',e);}
@@ -4685,31 +4693,6 @@ window.MP_DOMAINS   = MP_DOMAINS;
         el.textContent=(pct>0?'+':'')+pct.toFixed(2)+'%';
         el.style.color=pct>=0?'#00DE94':'#FF4D4D';
       });
-      // Hit check
-      var hits=0,total=0;
-      document.querySelectorAll('[data-hlc-hit]').forEach(function(el){
-        var t=el.getAttribute('data-hlc-hit');
-        var dir=el.getAttribute('data-hlc-dir');
-        var predPct=el.hasAttribute('data-hlc-pct')?Number(el.getAttribute('data-hlc-pct')):null;
-        if(!q[t]||!q[t].prevClose)return;
-        var isHit=false;
-        if(predPct!=null&&predPct!==0){
-          var targetPct=Math.abs(predPct);
-          if(dir==='up'&&q[t].dayHigh!=null)isHit=((q[t].dayHigh-q[t].prevClose)/q[t].prevClose)*100>=targetPct;
-          else if(dir==='down'&&q[t].dayLow!=null)isHit=((q[t].prevClose-q[t].dayLow)/q[t].prevClose)*100>=targetPct;
-        }else{
-          if(dir==='up')isHit=q[t].dayHigh!=null&&q[t].dayHigh>q[t].prevClose;
-          else if(dir==='down')isHit=q[t].dayLow!=null&&q[t].dayLow<q[t].prevClose;
-        }
-        el.textContent=isHit?'\u2713':'\u2717';
-        el.className='hlc-hit '+(isHit?'hlc-hit-yes':'hlc-hit-no');
-        total++;if(isHit)hits++;
-      });
-      var badge=document.getElementById('hlc-hits');
-      if(badge&&total>0){
-        var color=hits/total>=0.5?'#00DE94':'#FF4D4D';
-        badge.innerHTML='\u00B7 <span style="color:'+color+';">'+hits+'/'+total+' hit</span>';
-      }
     }catch(e){}
   }
 
