@@ -7472,7 +7472,11 @@ function tlFmtReturnPct(p){
 // Resolve expected move direction → {arrow, color}
 function tlDir(r){
   var ed=(r.expected_direction||'').toUpperCase();
-  if(!ed){var td=(r.trade_direction||'').toUpperCase();ed=td==='SHORT'?'DOWN':td==='LONG'?'UP':'';}
+  // FLAT or empty: fall through to trade_direction
+  if(!ed||ed==='FLAT'||ed==='NEUTRAL'){
+    var td=(r.trade_direction||'').toUpperCase();
+    ed=td==='SHORT'?'DOWN':td==='LONG'?'UP':'';
+  }
   var up=ed==='UP',down=ed==='DOWN';
   return{
     up:up,down:down,
