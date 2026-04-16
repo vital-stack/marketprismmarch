@@ -7000,40 +7000,9 @@ async function loadData(){
       }
     }
     // Signal summary boxes are now updated by loadTradeLanes() from narrative_scorecard
-    // Sector momentum in rail
-    var drSectorList=document.getElementById('dr-sector-list');
-    if(drSectorList&&DATA.length>0){
-      var sectorMap={};
-      DATA.forEach(function(r){
-        var s=r.sector_name;if(!s)return;
-        if(!sectorMap[s])sectorMap[s]={count:0,traps:0,totalChg:0,dirChg:0,surging:0,breaking:0};
-        sectorMap[s].count++;
-        var chg=Number(r.price_change_pct)||0;
-        sectorMap[s].totalChg+=Math.abs(chg);
-        sectorMap[s].dirChg+=chg; // directional (positive = sector up, negative = down)
-        if(r.prism_verdict==='Narrative Trap')sectorMap[s].traps++;
-        if(r.narrative_state==='Surging')sectorMap[s].surging++;
-        if(r.narrative_state==='Breaking')sectorMap[s].breaking++;
-      });
-      var sectorArr=Object.keys(sectorMap).map(function(s){
-        var d=sectorMap[s];
-        var avgChg=d.dirChg/d.count; // average directional change
-        return{name:s,avgChg:avgChg,activity:d.totalChg/d.count,traps:d.traps,surging:d.surging,breaking:d.breaking,count:d.count};
-      });
-      // Sort by absolute activity (most volatile sectors first)
-      sectorArr.sort(function(a,b){return b.activity-a.activity;});
-      drSectorList.innerHTML=sectorArr.slice(0,10).map(function(s){
-        var isUp=s.avgChg>=0;
-        var pct=Math.abs(s.avgChg).toFixed(2);
-        var c=isUp?'#00DE94':'#FF4D4D';
-        var arrow=isUp?'\u25B2':'\u25BC';
-        var trapTag=s.traps>0?' <span style="color:#FF4D4D;font-size:9px;">\u26A0'+s.traps+'</span>':'';
-        return '<div class="dr-sl-item">'
-          +'<div class="dr-sl-name">'+esc(s.name)+trapTag+'</div>'
-          +'<div class="dr-sl-score" style="color:'+c+';font-size:11px;">'+arrow+pct+'%</div>'
-        +'</div>';
-      }).join('');
-    }
+    // Sector momentum in rail — initial render from pipeline data,
+    // then overridden by live quotes via updateSectorMomentumRail()
+    renderSectorMomentumRail();
     // Narrative breakdown
     var narrEl=document.getElementById('daily-narr-breakdown');
     if(narrEl&&DATA.length>0){
@@ -9267,6 +9236,54 @@ function updateSectorSentimentFromLive(quotes){
       badge.title = tooltip;
     }
   });
+}
+
+// ── Sector Momentum Rail (Daily Plays sidebar) ──────────────────────────────
+// Renders the sector % change list in the right rail. Uses live quotes when
+// available; falls back to pipeline price_change_pct from DATA.
+function renderSectorMomentumRail(quotes){
+  var drSectorList=document.getElementById('dr-sector-list');
+  if(!drSectorList||!DATA.length)return;
+  var sectorMap={};
+  DATA.forEach(function(r){
+    var s=r.sector_name;if(!s)return;
+    if(!sectorMap[s])sectorMap[s]={tickers:[],traps:0};
+    sectorMap[s].tickers.push(r.ticker);
+    if(r.prism_verdict==='Narrative Trap')sectorMap[s].traps++;
+  });
+  var q=quotes||window.__LIVE_QUOTES_CACHE||{};
+  var hasLive=Object.keys(q).length>0;
+  var sectorArr=Object.keys(sectorMap).map(function(s){
+    var d=sectorMap[s];
+    var dirChg=0,totalChg=0,counted=0;
+    d.tickers.forEach(function(t){
+      var chg=0;
+      if(hasLive&&q[t]&&q[t].changePct!=null){
+        chg=q[t].changePct;
+      }else{
+        var row=DATA.find(function(r){return r.ticker===t;});
+        chg=row?Number(row.price_change_pct)||0:0;
+      }
+      dirChg+=chg;
+      totalChg+=Math.abs(chg);
+      counted++;
+    });
+    var avg=counted?dirChg/counted:0;
+    var activity=counted?totalChg/counted:0;
+    return{name:s,avgChg:avg,activity:activity,traps:d.traps,count:counted};
+  });
+  sectorArr.sort(function(a,b){return b.activity-a.activity;});
+  drSectorList.innerHTML=sectorArr.slice(0,10).map(function(s){
+    var isUp=s.avgChg>=0;
+    var pct=Math.abs(s.avgChg).toFixed(2);
+    var c=isUp?'#00DE94':'#FF4D4D';
+    var arrow=isUp?'\u25B2':'\u25BC';
+    var trapTag=s.traps>0?' <span style="color:#FF4D4D;font-size:9px;">\u26A0'+s.traps+'</span>':'';
+    return '<div class="dr-sl-item">'
+      +'<div class="dr-sl-name">'+esc(s.name)+trapTag+'</div>'
+      +'<div class="dr-sl-score" style="color:'+c+';font-size:11px;">'+arrow+pct+'%</div>'
+    +'</div>';
+  }).join('');
 }
 
 // Chip used inside sector cards — includes data-live-price/data-live-change
@@ -14237,6 +14254,10 @@ async function liveQuotesRefreshDaily(){
     // Recompute sector BULLISH/BEARISH badges from today's actual price moves
     if(typeof updateSectorSentimentFromLive==='function'){
       try{updateSectorSentimentFromLive(quotes);}catch(_){}
+    }
+    // Refresh sector momentum sidebar with live change percentages
+    if(typeof renderSectorMomentumRail==='function'){
+      try{renderSectorMomentumRail(quotes);}catch(_){}
     }
   }catch(e){
     // Silent fail — existing Supabase prices remain visible.
