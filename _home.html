@@ -998,16 +998,45 @@ h1 em {
   position: relative;
   animation: float-gentle 6s ease-in-out infinite;
 }
-/* Hero composite image */
-.dash-hero-img {
-  width: 135%;
-  max-width: none;
-  height: auto;
-  display: block;
-  filter: drop-shadow(0 32px 80px rgba(0,0,0,.6)) drop-shadow(0 0 60px rgba(0,174,255,0.08));
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
+/* Hero live Day Trade card */
+.hero-live-card{
+  width:380px;max-width:90vw;
+  background:#0C1018;
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:16px;
+  overflow:hidden;
+  filter:drop-shadow(0 32px 80px rgba(0,0,0,.6)) drop-shadow(0 0 60px rgba(0,174,255,0.08));
+  font-family:'Inter','DM Sans',system-ui,sans-serif;
 }
+.hero-live-card::before{
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:0;border-radius:16px;
+  background:linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px);
+  background-size:48px 48px;
+}
+.hlc-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.06);position:relative;z-index:1;}
+.hlc-title{font-size:15px;font-weight:700;color:#fff;}
+.hlc-sub{font-size:11px;color:rgba(255,255,255,0.35);margin-top:2px;}
+.hlc-hits{font-size:10px;font-weight:600;margin-left:4px;}
+.hlc-live{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:600;color:#00DE94;letter-spacing:0.06em;}
+.hlc-dot{width:6px;height:6px;border-radius:50%;background:#00DE94;animation:hlc-pulse 2s ease-in-out infinite;}
+@keyframes hlc-pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.hlc-rows{position:relative;z-index:1;}
+.hlc-loading{padding:40px 18px;text-align:center;font-size:12px;color:rgba(255,255,255,0.25);}
+.hlc-row{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-bottom:1px solid rgba(255,255,255,0.04);transition:background .15s;}
+.hlc-row:last-child{border-bottom:none;}
+.hlc-row:hover{background:rgba(255,255,255,0.03);}
+.hlc-row-left{display:flex;align-items:center;gap:8px;min-width:0;flex:1;overflow:hidden;}
+.hlc-ticker{font-size:13px;font-weight:700;color:#fff;flex-shrink:0;}
+.hlc-price{font-size:12px;color:rgba(255,255,255,0.5);margin-left:2px;}
+.hlc-change{font-size:11px;margin-left:4px;}
+.hlc-row-right{display:flex;align-items:center;gap:6px;flex-shrink:0;width:150px;justify-content:flex-end;}
+.hlc-pred{display:flex;flex-direction:column;align-items:flex-end;gap:1px;}
+.hlc-pred-label{font-size:9px;font-weight:600;letter-spacing:0.06em;color:rgba(0,174,255,0.5);text-transform:uppercase;}
+.hlc-pred-val{font-size:12px;font-weight:500;color:#fff;}
+.hlc-arrow{font-size:11px;font-weight:700;}
+.hlc-hit{font-size:11px;font-weight:700;}
+.hlc-hit-yes{color:#00DE94;}
+.hlc-hit-no{color:#FF4D4D;}
 .dp-titlebar {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
@@ -3125,10 +3154,18 @@ footer {
       </div>
       <div style="margin-top:16px;font-family:var(--font-b);font-size:11px;color:rgba(255,255,255,0.25);letter-spacing:0.06em;text-transform:uppercase;">Patent Pending — U.S. Provisional Application Nos. 63/971,470 · 63/971,478 · 63/974,154</div>
     </div>
-    <!-- Right: dashboard composite -->
+    <!-- Right: live Day Trade card -->
     <div class="hero-right" style="position:relative;">
       <div class="dash-preview">
-        <img class="dash-hero-img" src="assets/Market-Prism-Dashboard views copy.png" alt="Market Prism Dashboard Views" loading="eager">
+        <div class="hero-live-card" id="hero-live-card">
+          <div class="hlc-header">
+            <div><div class="hlc-title">Day Trade</div><div class="hlc-sub">In and out today <span class="hlc-hits" id="hlc-hits"></span></div></div>
+            <div class="hlc-live"><span class="hlc-dot"></span>LIVE</div>
+          </div>
+          <div class="hlc-rows" id="hlc-rows">
+            <div class="hlc-loading">Loading today's signals&hellip;</div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -4573,6 +4610,112 @@ window.MP_DOMAINS   = MP_DOMAINS;
       });
     });
   }
+})();
+</script>
+<script>
+// ── Hero Live Day Trade Card ──────────────────────────────────────────────
+(function(){
+  var SB_URL=(window.__env||{}).SUPABASE_URL||'';
+  var SB_ANON=(window.__env||{}).SUPABASE_ANON||'';
+  if(!SB_URL||!SB_ANON)return;
+  var hdrs={'apikey':SB_ANON,'Authorization':'Bearer '+SB_ANON,'Accept':'application/json'};
+
+  function fmtP(p){return p>=100?p.toFixed(2):p.toFixed(3);}
+  function fmtRet(v){if(v==null)return'';var n=Number(v);var s=n>0?'+':n<0?'\u2212':'';return s+Math.abs(n).toFixed(1)+'%';}
+  function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+  async function loadHeroCard(){
+    try{
+      // Get latest snapshot date
+      var dRes=await fetch(SB_URL+'/rest/v1/t_daily_plays_top10_enhanced?select=snapshot_date&order=snapshot_date.desc&limit=1',{headers:hdrs});
+      if(!dRes.ok)return;
+      var dRows=await dRes.json();
+      if(!dRows.length)return;
+      var scDate=dRows[0].snapshot_date;
+
+      // Fetch Day Trade rows
+      var pRes=await fetch(SB_URL+'/rest/v1/t_daily_plays_top10_enhanced?select=ticker,price,target_pct,forecast_5d_return_pct,expected_direction,trade_direction,lane_rank&lane=eq.DAY_TRADE&snapshot_date=eq.'+encodeURIComponent(scDate)+'&order=lane_rank.asc&limit=5',{headers:hdrs});
+      if(!pRes.ok)return;
+      var plays=await pRes.json();
+      if(!plays.length)return;
+
+      var container=document.getElementById('hlc-rows');
+      if(!container)return;
+      container.innerHTML=plays.map(function(r){
+        var tgt=r.target_pct!=null?Number(r.target_pct):null;
+        var ret5=r.forecast_5d_return_pct!=null?Number(r.forecast_5d_return_pct):null;
+        var v=tgt!=null?tgt:ret5;
+        var chip=v!=null?fmtRet(v)+' today':'today';
+        var price=r.price?'$'+fmtP(Number(r.price)):'';
+        var ed=(r.expected_direction||'').toUpperCase();
+        if(!ed||ed==='FLAT'||ed==='NEUTRAL'){var td=(r.trade_direction||'').toUpperCase();ed=td==='SHORT'?'DOWN':td==='LONG'?'UP':'';}
+        var up=ed==='UP',down=ed==='DOWN';
+        var arrowColor=up?'#00DE94':down?'#FF4D4D':'#A0A8B8';
+        var arrow=up?'\u25B2':down?'\u25BC':'';
+        var dirAttr=up?'up':down?'down':'';
+        return '<div class="hlc-row">'
+          +'<div class="hlc-row-left"><span class="hlc-ticker">'+esc(r.ticker)+'</span><span class="hlc-price" data-hlc-price="'+esc(r.ticker)+'">'+price+'</span><span class="hlc-change" data-hlc-change="'+esc(r.ticker)+'"></span></div>'
+          +'<div class="hlc-row-right">'
+            +'<div class="hlc-pred"><span class="hlc-pred-label">Prism Est.</span><span class="hlc-pred-val">'+esc(chip)+'</span></div>'
+            +'<span class="hlc-arrow" style="color:'+arrowColor+';">'+arrow+'</span>'
+            +(dirAttr?'<span class="hlc-hit" data-hlc-hit="'+esc(r.ticker)+'" data-hlc-dir="'+dirAttr+'"'+(v!=null?' data-hlc-pct="'+v+'"':'')+'></span>':'')
+          +'</div>'
+        +'</div>';
+      }).join('');
+
+      // Fetch live quotes
+      var tickers=plays.map(function(r){return r.ticker;}).join(',');
+      refreshHeroQuotes(tickers);
+      setInterval(function(){refreshHeroQuotes(tickers);},30000);
+    }catch(e){console.warn('[HeroCard]',e);}
+  }
+
+  async function refreshHeroQuotes(tickers){
+    try{
+      var res=await fetch('/api/live-quotes-batch?tickers='+encodeURIComponent(tickers));
+      if(!res.ok)return;
+      var data=await res.json();
+      var q=data.quotes||{};
+      document.querySelectorAll('[data-hlc-price]').forEach(function(el){
+        var t=el.getAttribute('data-hlc-price');
+        if(q[t]&&q[t].price!=null)el.textContent='$'+fmtP(q[t].price);
+      });
+      document.querySelectorAll('[data-hlc-change]').forEach(function(el){
+        var t=el.getAttribute('data-hlc-change');
+        if(!q[t]||q[t].changePct==null)return;
+        var pct=q[t].changePct;
+        el.textContent=(pct>0?'+':'')+pct.toFixed(2)+'%';
+        el.style.color=pct>=0?'#00DE94':'#FF4D4D';
+      });
+      // Hit check
+      var hits=0,total=0;
+      document.querySelectorAll('[data-hlc-hit]').forEach(function(el){
+        var t=el.getAttribute('data-hlc-hit');
+        var dir=el.getAttribute('data-hlc-dir');
+        var predPct=el.hasAttribute('data-hlc-pct')?Number(el.getAttribute('data-hlc-pct')):null;
+        if(!q[t]||!q[t].prevClose)return;
+        var isHit=false;
+        if(predPct!=null&&predPct!==0){
+          var targetPct=Math.abs(predPct);
+          if(dir==='up'&&q[t].dayHigh!=null)isHit=((q[t].dayHigh-q[t].prevClose)/q[t].prevClose)*100>=targetPct;
+          else if(dir==='down'&&q[t].dayLow!=null)isHit=((q[t].prevClose-q[t].dayLow)/q[t].prevClose)*100>=targetPct;
+        }else{
+          if(dir==='up')isHit=q[t].dayHigh!=null&&q[t].dayHigh>q[t].prevClose;
+          else if(dir==='down')isHit=q[t].dayLow!=null&&q[t].dayLow<q[t].prevClose;
+        }
+        el.textContent=isHit?'\u2713':'\u2717';
+        el.className='hlc-hit '+(isHit?'hlc-hit-yes':'hlc-hit-no');
+        total++;if(isHit)hits++;
+      });
+      var badge=document.getElementById('hlc-hits');
+      if(badge&&total>0){
+        var color=hits/total>=0.5?'#00DE94':'#FF4D4D';
+        badge.innerHTML='\u00B7 <span style="color:'+color+';">'+hits+'/'+total+' hit</span>';
+      }
+    }catch(e){}
+  }
+
+  loadHeroCard();
 })();
 </script>
 </body>
