@@ -282,7 +282,7 @@ body{
 /* ── TOPBAR CENTER — SCHOLAR BAR ── */
 .topbar-center{flex:1;display:flex;justify-content:center;max-width:520px;margin:0 auto;}
 .scholar-bar{
-  display:flex;align-items:center;gap:10px;width:100%;
+  display:flex;align-items:center;gap:10px;width:100%;position:relative;
   padding:9px 16px;border-radius:12px;
   border:1px solid rgba(0,0,0,0.08);
   background:#FAFBFC;
@@ -325,6 +325,23 @@ body{
   background:rgba(255,255,255,0.04);
   line-height:1;flex-shrink:0;
 }
+.scholar-dropdown{
+  display:none;position:absolute;top:100%;left:0;right:0;z-index:999;
+  background:var(--mp-surface);border:1px solid var(--mp-border-hover);
+  border-radius:0 0 12px 12px;max-height:320px;overflow-y:auto;
+  box-shadow:0 12px 40px rgba(0,0,0,0.5);
+}
+.scholar-dropdown.open{display:block;}
+.scholar-dd-item{
+  display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;
+  border-bottom:1px solid rgba(255,255,255,0.03);transition:background .12s;
+}
+.scholar-dd-item:last-child{border-bottom:none;}
+.scholar-dd-item:hover,.scholar-dd-item.active{background:rgba(255,255,255,0.05);}
+.scholar-dd-ticker{font-size:13px;font-weight:700;color:var(--mp-text-primary);min-width:50px;font-family:var(--font-body);}
+.scholar-dd-name{font-size:12px;color:var(--mp-text-tertiary);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.scholar-dd-sector{font-size:10px;color:var(--mp-text-muted);flex-shrink:0;}
+.scholar-dd-empty{padding:16px;text-align:center;font-size:12px;color:var(--mp-text-muted);}
 /* ── PAGE CONTENT ── */
 .page-content{padding:24px 28px 64px;flex:1;overflow-x:hidden;max-width:100%;}
 .tab-panel{display:none;}
@@ -4652,8 +4669,9 @@ body{
     <div class="topbar-center">
       <div class="scholar-bar" id="scholar-bar">
         <svg class="scholar-bar-icon" viewBox="0 0 24 24" fill="none" stroke="var(--mp-text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.5;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input class="scholar-bar-input" id="scholar-bar-input" placeholder="Search any ticker… e.g. AAPL, NVDA, TSLA" autocomplete="off">
+        <input class="scholar-bar-input" id="scholar-bar-input" placeholder="Search 172 tickers… e.g. AAPL, NVDA, TSLA" autocomplete="off">
         <kbd class="scholar-bar-kbd">⌘K</kbd>
+        <div class="scholar-dropdown" id="scholar-dropdown"></div>
       </div>
     </div>
     <div class="topbar-right">
@@ -14972,13 +14990,76 @@ document.addEventListener('visibilitychange',function(){
   // ── Topbar Quick Lookup integration ──
   var barInput = document.getElementById('scholar-bar-input');
   if(barInput){
-    // Enter in bar → navigate to ticker page
+    // ── Ticker autocomplete dropdown ──
+    var _ddEl=document.getElementById('scholar-dropdown');
+    var _ddTickers=[];
+    var _ddIdx=-1;
+    // Load ticker list once
+    if(SUPABASE_URL&&SUPABASE_ANON){
+      fetch(SUPABASE_URL+'/rest/v1/ticker_industry_lookup?select=ticker,name,sector&order=ticker.asc&limit=300',{
+        headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Accept':'application/json'}
+      }).then(function(r){return r.ok?r.json():[];}).then(function(rows){
+        _ddTickers=(rows||[]).filter(function(r){return r.ticker;});
+        // Update placeholder with actual count
+        if(_ddTickers.length>0)barInput.placeholder='Search '+_ddTickers.length+' tickers\u2026 e.g. AAPL, NVDA, TSLA';
+      }).catch(function(){});
+    }
+    function ddRender(matches){
+      if(!_ddEl)return;
+      if(!matches.length){_ddEl.innerHTML='<div class="scholar-dd-empty">No matching tickers</div>';_ddEl.classList.add('open');return;}
+      _ddIdx=-1;
+      _ddEl.innerHTML=matches.slice(0,12).map(function(r,i){
+        return '<div class="scholar-dd-item" data-ticker="'+r.ticker+'" data-idx="'+i+'">'
+          +'<span class="scholar-dd-ticker">'+r.ticker+'</span>'
+          +'<span class="scholar-dd-name">'+(r.name||'')+'</span>'
+          +'<span class="scholar-dd-sector">'+(r.sector||'')+'</span>'
+        +'</div>';
+      }).join('');
+      _ddEl.classList.add('open');
+      _ddEl.querySelectorAll('.scholar-dd-item').forEach(function(item){
+        item.addEventListener('mousedown',function(e){
+          e.preventDefault();
+          window.location.href='/ticker/'+encodeURIComponent(this.dataset.ticker);
+        });
+      });
+    }
+    function ddClose(){if(_ddEl)_ddEl.classList.remove('open');_ddIdx=-1;}
+    function ddHighlight(idx){
+      var items=_ddEl?_ddEl.querySelectorAll('.scholar-dd-item'):[];
+      items.forEach(function(it){it.classList.remove('active');});
+      if(idx>=0&&idx<items.length){items[idx].classList.add('active');items[idx].scrollIntoView({block:'nearest'});}
+    }
+
+    barInput.addEventListener('input',function(){
+      var q=this.value.trim().toUpperCase();
+      if(!q){ddClose();return;}
+      var matches=_ddTickers.filter(function(r){
+        return r.ticker.indexOf(q)===0||(r.name&&r.name.toUpperCase().indexOf(q)!==-1);
+      });
+      ddRender(matches);
+    });
+    barInput.addEventListener('focus',function(){
+      var q=this.value.trim().toUpperCase();
+      if(!q&&_ddTickers.length){ddRender(_ddTickers.slice(0,12));return;}
+      if(q){var m=_ddTickers.filter(function(r){return r.ticker.indexOf(q)===0||(r.name&&r.name.toUpperCase().indexOf(q)!==-1);});ddRender(m);}
+    });
+    barInput.addEventListener('blur',function(){setTimeout(ddClose,150);});
+
+    // Enter in bar → navigate to ticker page (with dropdown support)
     barInput.addEventListener('keydown', function(e){
-      if(e.key === 'Enter' && this.value.trim()){
+      var items=_ddEl?_ddEl.querySelectorAll('.scholar-dd-item'):[];
+      if(e.key==='ArrowDown'){e.preventDefault();_ddIdx=Math.min(_ddIdx+1,items.length-1);ddHighlight(_ddIdx);return;}
+      if(e.key==='ArrowUp'){e.preventDefault();_ddIdx=Math.max(_ddIdx-1,0);ddHighlight(_ddIdx);return;}
+      if(e.key==='Escape'){ddClose();return;}
+      if(e.key === 'Enter'){
         e.preventDefault();
-        var v = this.value.trim().toUpperCase();
-        this.value = '';
-        window.location.href = '/ticker/' + encodeURIComponent(v);
+        if(_ddIdx>=0&&items[_ddIdx]){window.location.href='/ticker/'+encodeURIComponent(items[_ddIdx].dataset.ticker);return;}
+        if(this.value.trim()){
+          var v = this.value.trim().toUpperCase();
+          this.value = '';
+          ddClose();
+          window.location.href = '/ticker/' + encodeURIComponent(v);
+        }
       }
     });
     // Click on bar → focus it
