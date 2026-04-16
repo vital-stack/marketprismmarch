@@ -5201,6 +5201,25 @@ body{
         <span class="ph-italic">Every trade, every regime, nothing hidden.</span>
         <p>Live paper trades placed by the signal engine from January 2025 through today &mdash; spanning rallies, corrections, and volatility regimes.</p>
       </div>
+      <!-- ── Live Tracked Plays (from tracked_daily_plays) ── -->
+      <div class="val-chart-block" id="tp-section" style="margin-bottom:24px;">
+        <div class="val-chart-head">
+          <div class="val-chart-title">Live Tracked Plays</div>
+          <div class="val-chart-sub">Daily Plays predictions tracked from entry through hold period</div>
+        </div>
+        <div id="tp-stats" style="display:flex;gap:12px;flex-wrap:wrap;margin:12px 0;"></div>
+        <div class="val-table-filters" id="tp-filters">
+          <button class="val-chip active" data-tpf="all">All</button>
+          <button class="val-chip" data-tpf="open">Open</button>
+          <button class="val-chip" data-tpf="hit">Hits</button>
+          <button class="val-chip" data-tpf="closed">Closed</button>
+          <button class="val-chip" data-tpf="miss">Misses</button>
+        </div>
+        <div class="val-table-wrap" id="tp-table" style="font-size:13px;">
+          <div style="padding:20px;text-align:center;color:var(--mp-text-tertiary);">Loading tracked plays&hellip;</div>
+        </div>
+      </div>
+
       <div id="val-loading" style="text-align:center;padding:60px 0;color:var(--mp-text-tertiary);font-size:14px;">Loading validation data&hellip;</div>
       <div id="val-error" style="display:none;color:#FF4D4D;font-size:13px;padding:20px 0;"></div>
       <div id="val-body" style="display:none;">
@@ -7604,11 +7623,11 @@ async function loadTradeLanes(){
         row._predPct=v;
       } else if(p.lane==='SWING_TRADE'){
         var h=hold||5;
-        row._chip=ret5!=null?tlFmtReturnPct(ret5)+' \u00B7 '+h+'d':h+'d';
+        row._chip=ret5!=null?tlFmtReturnPct(ret5)+' \u00B7 Day 1/'+h:'Day 1/'+h;
         row._predPct=ret5;
       } else if(p.lane==='MOMENTUM'){
         var mv=ret10!=null?ret10:ret5;var mh=hold||10;
-        row._chip=mv!=null?tlFmtReturnPct(mv)+' \u00B7 '+mh+'d':mh+'d';
+        row._chip=mv!=null?tlFmtReturnPct(mv)+' \u00B7 Day 1/'+mh:'Day 1/'+mh;
         row._predPct=mv;
       } else if(p.lane==='EARNINGS_PLAY'){
         row._chip=dte!=null?(dte===0?'Earnings today':dte>0?'Earnings in '+dte+'d':Math.abs(dte)+'d post-earnings'):'';
@@ -7617,11 +7636,11 @@ async function loadTradeLanes(){
         row._isValue=true;
         row._discount=row.fvd_pct;
         var vv=ret20!=null?ret20:(ret10!=null?ret10:ret5);var vh=hold||20;
-        row._chip=vv!=null?tlFmtReturnPct(vv)+' \u00B7 '+vh+'d':vh+'d';
+        row._chip=vv!=null?tlFmtReturnPct(vv)+' \u00B7 Day 1/'+vh:'Day 1/'+vh;
         row._predPct=vv;
       } else if(p.lane==='NARRATIVE_TRAP'){
         var tv=ret5!=null?ret5:(tgt!=null?-Math.abs(tgt):null);var th=hold||5;
-        row._chip=tv!=null?tlFmtReturnPct(tv)+' \u00B7 '+th+'d':th+'d';
+        row._chip=tv!=null?tlFmtReturnPct(tv)+' \u00B7 Day 1/'+th:'Day 1/'+th;
         row._predPct=tv;
       }
       buckets[p.lane].push(row);
@@ -7962,7 +7981,127 @@ async function loadValidation(force){
     if(err){err.style.display='block';err.textContent='Failed to load validation data: '+(e.message||e);}
   }
 }
-onTabSwitch(function(id){if(id==='validation')loadValidation();});
+onTabSwitch(function(id){if(id==='validation'){loadValidation();loadTrackedPlays();}});
+
+// ── Live Tracked Plays (from tracked_daily_plays) ─────────────────────────
+var _TP_LOADED=false;
+var _TP_DATA=[];
+var _TP_FILTER='all';
+
+async function loadTrackedPlays(){
+  if(_TP_LOADED)return;
+  if(!SUPABASE_URL||!SUPABASE_ANON)return;
+  try{
+    var rows=await restFetch('tracked_daily_plays',{
+      select:'ticker,lane,direction,entry_date,entry_price,predicted_return_pct,predicted_hold_days,planned_exit_date,current_price,current_return_pct,best_return_pct,worst_return_pct,days_elapsed,hit,hit_date,status,exit_price,exit_return_pct,excess_return_pct',
+      order:'entry_date.desc,lane.asc,lane_rank.asc',
+      limit:'500'
+    });
+    _TP_DATA=rows||[];
+    _TP_LOADED=true;
+    tpRenderStats();
+    tpRenderTable();
+    // Wire filter chips
+    var filters=document.getElementById('tp-filters');
+    if(filters&&!filters._wired){
+      filters._wired=true;
+      filters.querySelectorAll('.val-chip').forEach(function(chip){
+        chip.addEventListener('click',function(){
+          filters.querySelectorAll('.val-chip').forEach(function(c){c.classList.remove('active');});
+          this.classList.add('active');
+          _TP_FILTER=this.dataset.tpf;
+          tpRenderTable();
+        });
+      });
+    }
+  }catch(e){
+    console.warn('[TP] Load failed:',e);
+    var tbl=document.getElementById('tp-table');
+    if(tbl)tbl.innerHTML='<div style="padding:16px;color:var(--mp-text-tertiary);">Failed to load tracked plays.</div>';
+  }
+}
+
+function tpRenderStats(){
+  var el=document.getElementById('tp-stats');
+  if(!el||!_TP_DATA.length)return;
+  var total=_TP_DATA.length;
+  var open=_TP_DATA.filter(function(r){return r.status==='OPEN';}).length;
+  var closed=_TP_DATA.filter(function(r){return r.status!=='OPEN';}).length;
+  var hits=_TP_DATA.filter(function(r){return r.hit;}).length;
+  var hitRate=closed>0?Math.round(_TP_DATA.filter(function(r){return r.status!=='OPEN'&&r.hit;}).length/closed*100):0;
+  var avgRet=closed>0?(_TP_DATA.filter(function(r){return r.exit_return_pct!=null;}).reduce(function(s,r){return s+Number(r.exit_return_pct);},0)/closed):0;
+  function stat(label,val,color){
+    return '<div style="background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:10px;padding:10px 16px;min-width:80px;">'
+      +'<div style="font-size:18px;font-weight:700;color:'+(color||'var(--mp-text-primary)')+';font-family:var(--font-body);">'+val+'</div>'
+      +'<div style="font-size:11px;color:var(--mp-text-tertiary);margin-top:2px;">'+label+'</div></div>';
+  }
+  el.innerHTML=stat('Tracked',total,'#00AEFF')
+    +stat('Open',open,'#FFB800')
+    +stat('Closed',closed,'var(--mp-text-primary)')
+    +stat('Hits',hits,'#00DE94')
+    +stat('Hit Rate',hitRate+'%',hitRate>=50?'#00DE94':'#FF4D4D')
+    +stat('Avg Return',avgRet>=0?'+'+avgRet.toFixed(2)+'%':avgRet.toFixed(2)+'%',avgRet>=0?'#00DE94':'#FF4D4D');
+}
+
+function tpRenderTable(){
+  var el=document.getElementById('tp-table');
+  if(!el)return;
+  var data=_TP_DATA;
+  if(_TP_FILTER==='open')data=data.filter(function(r){return r.status==='OPEN';});
+  else if(_TP_FILTER==='hit')data=data.filter(function(r){return r.hit;});
+  else if(_TP_FILTER==='closed')data=data.filter(function(r){return r.status!=='OPEN';});
+  else if(_TP_FILTER==='miss')data=data.filter(function(r){return r.status!=='OPEN'&&!r.hit;});
+  if(!data.length){el.innerHTML='<div style="padding:16px;color:var(--mp-text-tertiary);">No trades match this filter.</div>';return;}
+  var laneLabels={DAY_TRADE:'Day',SWING_TRADE:'Swing',MOMENTUM:'Mom',VALUE_PICK:'Value',NARRATIVE_TRAP:'Trap'};
+  var html='<table style="width:100%;border-collapse:collapse;font-family:var(--font-body);font-size:12px;">'
+    +'<thead><tr style="border-bottom:1px solid var(--mp-border);color:var(--mp-text-tertiary);text-align:left;">'
+    +'<th style="padding:8px 6px;">Ticker</th>'
+    +'<th style="padding:8px 6px;">Lane</th>'
+    +'<th style="padding:8px 6px;">Dir</th>'
+    +'<th style="padding:8px 6px;">Entry</th>'
+    +'<th style="padding:8px 6px;">Price</th>'
+    +'<th style="padding:8px 6px;">Progress</th>'
+    +'<th style="padding:8px 6px;">Return</th>'
+    +'<th style="padding:8px 6px;">Predicted</th>'
+    +'<th style="padding:8px 6px;">Best</th>'
+    +'<th style="padding:8px 6px;">Hit</th>'
+    +'<th style="padding:8px 6px;">Status</th>'
+    +'</tr></thead><tbody>';
+  data.forEach(function(r){
+    var retPct=r.status==='OPEN'?r.current_return_pct:r.exit_return_pct;
+    var retVal=retPct!=null?Number(retPct):null;
+    var retColor=retVal!=null?(retVal>=0?'#00DE94':'#FF4D4D'):'var(--mp-text-tertiary)';
+    var retStr=retVal!=null?(retVal>=0?'+':'')+retVal.toFixed(2)+'%':'\u2014';
+    var predStr=r.predicted_return_pct!=null?(Number(r.predicted_return_pct)>=0?'+':'')+Number(r.predicted_return_pct).toFixed(1)+'%':'\u2014';
+    var bestVal=r.best_return_pct!=null?Number(r.best_return_pct):null;
+    var bestStr=bestVal!=null?(bestVal>=0?'+':'')+bestVal.toFixed(2)+'%':'\u2014';
+    var days=r.days_elapsed||0;
+    var hold=r.predicted_hold_days||1;
+    var pctDone=Math.min(Math.round(days/hold*100),100);
+    var progressBar='<div style="display:flex;align-items:center;gap:4px;">'
+      +'<div style="width:40px;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;">'
+      +'<div style="width:'+pctDone+'%;height:100%;background:'+(r.status==='OPEN'?'#00AEFF':'#A0A8B0')+';border-radius:2px;"></div></div>'
+      +'<span>'+days+'/'+hold+'</span></div>';
+    var hitIcon=r.hit?'<span style="color:#00DE94;">\u2713</span>':'<span style="color:var(--mp-text-muted);">\u2717</span>';
+    var statusColor=r.status==='OPEN'?'#FFB800':r.status==='HIT'?'#00DE94':'var(--mp-text-tertiary)';
+    var dirColor=r.direction==='LONG'?'#00DE94':'#FF4D4D';
+    html+='<tr style="border-bottom:1px solid rgba(255,255,255,0.03);cursor:pointer;" onclick="window.location.href=\'/ticker/'+esc(r.ticker)+'\'">'
+      +'<td style="padding:7px 6px;font-weight:600;color:var(--mp-text-primary);">'+esc(r.ticker)+'</td>'
+      +'<td style="padding:7px 6px;color:var(--mp-text-tertiary);">'+(laneLabels[r.lane]||r.lane)+'</td>'
+      +'<td style="padding:7px 6px;color:'+dirColor+';font-weight:600;">'+esc(r.direction||'')+'</td>'
+      +'<td style="padding:7px 6px;color:var(--mp-text-tertiary);">'+esc(r.entry_date||'')+'</td>'
+      +'<td style="padding:7px 6px;">$'+(r.entry_price?Number(r.entry_price).toFixed(2):'\u2014')+'</td>'
+      +'<td style="padding:7px 6px;">'+progressBar+'</td>'
+      +'<td style="padding:7px 6px;font-weight:600;color:'+retColor+';">'+retStr+'</td>'
+      +'<td style="padding:7px 6px;color:var(--mp-text-secondary);">'+predStr+'</td>'
+      +'<td style="padding:7px 6px;color:'+(bestVal!=null&&bestVal>=0?'#00DE94':'#FF4D4D')+';">'+bestStr+'</td>'
+      +'<td style="padding:7px 6px;">'+hitIcon+'</td>'
+      +'<td style="padding:7px 6px;font-size:10px;font-weight:600;color:'+statusColor+';text-transform:uppercase;">'+esc(r.status||'')+'</td>'
+      +'</tr>';
+  });
+  html+='</tbody></table>';
+  el.innerHTML=html;
+}
 
 // ── Top AI Picks (Claude) ──────────────────────────────────────────────────
 var _AI_PICKS_INFLIGHT=null;
@@ -8024,9 +8163,8 @@ function renderAiPicks(picks){
         +'<span class="tl-row-conv">'+Math.round(p.conviction)+'</span>'
       +'</div>'
       +'<div class="tl-row-right">'
-        +'<div class="tl-row-pred"><span class="tl-row-pred-label">Prism</span><span class="tl-row-action" style="color:'+actionColor+';">'+esc(p.action)+'</span></div>'
+        +'<span class="tl-row-action" style="color:'+actionColor+';">'+esc(p.action)+'</span>'
         +'<span class="tl-row-dir" style="color:'+dirColor+';">'+dirArrow+'</span>'
-        +'<span class="tl-row-hit" data-prism-hit="'+esc(p.ticker)+'" data-prism-dir="'+(p.direction==='BULLISH'?'up':p.direction==='BEARISH'?'down':'')+'"></span>'
       +'</div>'
     +'</div>';
   }).join('');
