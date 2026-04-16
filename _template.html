@@ -7491,7 +7491,7 @@ function tlBuildRow(r){
     +'<div class="tl-row-right">'
       +(chip?'<div class="tl-row-pred"><span class="tl-row-pred-label">Prism</span><span class="tl-row-action" style="color:var(--mp-text-primary);">'+esc(chip)+'</span></div>':'')
       +'<span class="tl-row-dir" style="color:'+d.color+';">'+d.arrow+'</span>'
-      +(dirAttr?'<span class="tl-row-hit" data-prism-hit="'+esc(r.ticker)+'" data-prism-dir="'+dirAttr+'"></span>':'')
+      +(dirAttr?'<span class="tl-row-hit" data-prism-hit="'+esc(r.ticker)+'" data-prism-dir="'+dirAttr+'"'+(r._predPct!=null?' data-prism-pct="'+Number(r._predPct)+'"':'')+'></span>':'')
     +'</div>'
   +'</div>';
 }
@@ -7525,7 +7525,7 @@ function tlBuildValueRow(r){
     +'<div class="tl-row-right">'
     +(chip?'<div class="tl-row-pred"><span class="tl-row-pred-label">Prism</span><span class="tl-row-action" style="color:var(--mp-text-primary);">'+esc(chip)+'</span></div>':'')
     +'<span class="tl-row-dir" style="color:'+arrowColor+';">'+arrow+'</span>'
-    +'<span class="tl-row-hit" data-prism-hit="'+esc(r.ticker)+'" data-prism-dir="'+dirAttr+'"></span></div>'
+    +'<span class="tl-row-hit" data-prism-hit="'+esc(r.ticker)+'" data-prism-dir="'+dirAttr+'"'+(r._predPct!=null?' data-prism-pct="'+Number(r._predPct)+'"':'')+'></span></div>'
   +'</div>';
 }
 
@@ -7597,22 +7597,28 @@ async function loadTradeLanes(){
       if(p.lane==='DAY_TRADE'){
         var v=tgt!=null?tgt:ret5;
         row._chip=v!=null?tlFmtReturnPct(v)+' today':'today';
+        row._predPct=v;
       } else if(p.lane==='SWING_TRADE'){
         var h=hold||5;
         row._chip=ret5!=null?tlFmtReturnPct(ret5)+' \u00B7 '+h+'d':h+'d';
+        row._predPct=ret5;
       } else if(p.lane==='MOMENTUM'){
         var mv=ret10!=null?ret10:ret5;var mh=hold||10;
         row._chip=mv!=null?tlFmtReturnPct(mv)+' \u00B7 '+mh+'d':mh+'d';
+        row._predPct=mv;
       } else if(p.lane==='EARNINGS_PLAY'){
         row._chip=dte!=null?(dte===0?'Earnings today':dte>0?'Earnings in '+dte+'d':Math.abs(dte)+'d post-earnings'):'';
+        row._predPct=null;
       } else if(p.lane==='VALUE_PICK'){
         row._isValue=true;
         row._discount=row.fvd_pct;
         var vv=ret20!=null?ret20:(ret10!=null?ret10:ret5);var vh=hold||20;
         row._chip=vv!=null?tlFmtReturnPct(vv)+' \u00B7 '+vh+'d':vh+'d';
+        row._predPct=vv;
       } else if(p.lane==='NARRATIVE_TRAP'){
         var tv=ret5!=null?ret5:(tgt!=null?-Math.abs(tgt):null);var th=hold||5;
         row._chip=tv!=null?tlFmtReturnPct(tv)+' \u00B7 '+th+'d':th+'d';
+        row._predPct=tv;
       }
       buckets[p.lane].push(row);
     });
@@ -14291,19 +14297,28 @@ async function liveQuotesRefreshDaily(){
     if(typeof renderSectorMomentumRail==='function'){
       try{renderSectorMomentumRail(quotes);}catch(_){}
     }
-    // Evaluate Prism Prediction hits: did intraday price confirm direction?
+    // Evaluate Prism Prediction hits: did intraday price reach the predicted %?
     document.querySelectorAll('[data-prism-hit]').forEach(function(el){
       var t=el.getAttribute('data-prism-hit');
       var dir=el.getAttribute('data-prism-dir');
+      var predPct=el.hasAttribute('data-prism-pct')?Number(el.getAttribute('data-prism-pct')):null;
       var q=quotes[t];
       if(!q||!q.prevClose)return;
       var isHit=false;
-      if(dir==='up'){
-        // Bullish prediction: hit if intraday high exceeded previous close
-        isHit=q.dayHigh!=null&&q.dayHigh>q.prevClose;
-      }else if(dir==='down'){
-        // Bearish prediction: hit if intraday low dropped below previous close
-        isHit=q.dayLow!=null&&q.dayLow<q.prevClose;
+      if(predPct!=null&&predPct!==0){
+        // Check if intraday range reached the predicted return %
+        var targetPct=Math.abs(predPct);
+        if(dir==='up'&&q.dayHigh!=null){
+          var bestUpPct=((q.dayHigh-q.prevClose)/q.prevClose)*100;
+          isHit=bestUpPct>=targetPct;
+        }else if(dir==='down'&&q.dayLow!=null){
+          var bestDownPct=((q.prevClose-q.dayLow)/q.prevClose)*100;
+          isHit=bestDownPct>=targetPct;
+        }
+      }else{
+        // No specific % predicted — check if direction was correct at all
+        if(dir==='up') isHit=q.dayHigh!=null&&q.dayHigh>q.prevClose;
+        else if(dir==='down') isHit=q.dayLow!=null&&q.dayLow<q.prevClose;
       }
       el.textContent=isHit?'\u2713':'\u2717';
       el.className='tl-row-hit visible '+(isHit?'hit':'miss');
