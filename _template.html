@@ -7808,7 +7808,49 @@ var VAL_SIGNAL_LABELS={
 function valFmtPct(n,digits){if(n==null||isNaN(n))return'\u2014';var d=digits!=null?digits:2;var sign=n>0?'+':n<0?'\u2212':'';return sign+Math.abs(Number(n)).toFixed(d)+'%';}
 function valFmtDate(s){if(!s)return'';try{return new Date(s+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'});}catch(_){return s;}}
 function valSignalLabel(b){if(!b)return'Other';return VAL_SIGNAL_LABELS[b]||b.replace(/_/g,' ').toLowerCase().replace(/\b\w/g,function(c){return c.toUpperCase();});}
+// Cached overall stats from track_record_stats (populated by daily cron).
+// If available, render instantly; otherwise fall back to on-the-fly compute.
+var _VAL_CACHED_STATS=null;
+async function _valFetchCachedStats(){
+  if(!SUPABASE_URL||!SUPABASE_ANON)return null;
+  try{
+    var rows=await restFetch('track_record_stats',{
+      select:'total_trades,winners,losers,win_rate,avg_return_pct,total_return_pct,annualized_return_pct,alpha_vs_spy_pct,sharpe_ratio,avg_hold_days,period_start,period_end,computed_at',
+      scope:'eq.overall',
+      is_current:'eq.true',
+      limit:'1'
+    });
+    return rows&&rows[0]?rows[0]:null;
+  }catch(e){return null;}
+}
+
+function _valRenderStatsFromCache(c){
+  var el=document.getElementById('val-stats');
+  if(!el)return;
+  var n=Number(c.total_trades)||0;
+  var wins=Number(c.winners)||0;
+  var losers=Number(c.losers)||0;
+  var winRate=Number(c.win_rate)||0;
+  var avgPnl=Number(c.avg_return_pct)||0;
+  var totalReturnPct=Number(c.total_return_pct)/20;
+  var annualized=Number(c.annualized_return_pct)||0;
+  var avgAlpha=c.alpha_vs_spy_pct!=null?Number(c.alpha_vs_spy_pct):null;
+  var first=c.period_start;
+  var last=c.period_end;
+  var daysElapsed=first&&last?Math.max(1,(new Date(last+'T00:00:00')-new Date(first+'T00:00:00'))/(1000*60*60*24)):0;
+  var months=daysElapsed?Math.max(1,Math.round(daysElapsed/30.4)):0;
+  el.innerHTML=''
+    +'<div class="val-stat"><div class="val-stat-label">Annualized return</div><div class="val-stat-value '+(annualized>0?'pos':annualized<0?'neg':'')+'">'+valFmtPct(annualized,1)+'</div><div class="val-stat-sub">'+valFmtPct(totalReturnPct,1)+' total &middot; $50K base &middot; 20 slots</div></div>'
+    +'<div class="val-stat"><div class="val-stat-label">Trades</div><div class="val-stat-value">'+n.toLocaleString()+'</div><div class="val-stat-sub">closed positions</div></div>'
+    +'<div class="val-stat"><div class="val-stat-label">Win rate</div><div class="val-stat-value '+(winRate>=55?'pos':'')+'">'+winRate.toFixed(1)+'%</div><div class="val-stat-sub">'+wins.toLocaleString()+' winners / '+losers.toLocaleString()+' losers</div></div>'
+    +'<div class="val-stat"><div class="val-stat-label">Avg return</div><div class="val-stat-value '+(avgPnl>0?'pos':avgPnl<0?'neg':'')+'">'+valFmtPct(avgPnl,2)+'</div><div class="val-stat-sub">per trade</div></div>'
+    +'<div class="val-stat"><div class="val-stat-label">Alpha vs SPY</div><div class="val-stat-value '+(avgAlpha!=null&&avgAlpha>0?'pos':avgAlpha<0?'neg':'')+'">'+(avgAlpha!=null?valFmtPct(avgAlpha,2):'\u2014')+'</div><div class="val-stat-sub">avg excess return</div></div>'
+    +'<div class="val-stat"><div class="val-stat-label">Track period</div><div class="val-stat-value" style="font-size:16px;">'+valFmtDate(first)+' \u2192 '+valFmtDate(last)+'</div><div class="val-stat-sub">'+months+' months &middot; every regime</div></div>';
+}
+
 function valRenderStats(trades){
+  // Prefer cached stats if available (populated daily by cron)
+  if(_VAL_CACHED_STATS){_valRenderStatsFromCache(_VAL_CACHED_STATS);return;}
   var closed=trades.filter(function(t){return t.status==='CLOSED';});
   var n=closed.length;
   var wins=closed.filter(function(t){return t.pnl_pct!=null&&Number(t.pnl_pct)>0;}).length;
@@ -8032,6 +8074,9 @@ async function loadValidation(force){
     }
     _VAL_TRADES=rows;
     _VAL_LOADED=true;
+    // Pull pre-computed overall stats (cron-refreshed daily). If available,
+    // valRenderStats will prefer these over client-side aggregation.
+    _VAL_CACHED_STATS=await _valFetchCachedStats();
     valRenderStats(rows);
     valRenderEquityChart(rows);
     var byS=valAggregateBySignal(rows);
