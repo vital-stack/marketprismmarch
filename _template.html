@@ -7773,7 +7773,11 @@ async function loadTradeLanes(){
     if(drTraps)drTraps.textContent=enriched.filter(function(r){return r.verdict==='Narrative Trap';}).length;
     if(drSurging)drSurging.textContent=enriched.filter(function(r){return r.verdict==='Narrative Risk';}).length;
     if(drBreaking)drBreaking.textContent=enriched.filter(function(r){return r.half_life<15;}).length;
-    if(drCoord)drCoord.textContent=buckets.EARNINGS_PLAY.filter(function(r){var d=liveDTE(r);return d!=null&&d>=0&&d<=5;}).length;
+    if(drCoord){
+      var _earnWk={};
+      enriched.forEach(function(r){var d=liveDTE(r);if(d!=null&&d>=0&&d<=7)_earnWk[r.ticker]=1;});
+      drCoord.textContent=Object.keys(_earnWk).length;
+    }
   }catch(e){console.warn('[TL] Load failed:',e);}
 }
 
