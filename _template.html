@@ -7567,12 +7567,13 @@ function _tlRefreshAll(){
 }
 // Per-lane hit counter format: "10 signals · 8/18 hit today"
 //   • "10 signals" (lane subtitle) = currently visible picks on the card.
-//   • "8/18 hit today" (this badge) = cumulative tally:
-//       DENOMINATOR = every ticker tracked in this lane today, including
-//         ones that rotated out of the top 10 as the backend refreshed picks.
-//       NUMERATOR   = union of backend-confirmed hits (tracked_daily_plays.hit)
-//         and frontend-live-locked tickers currently on the card, so the
-//         counter bumps intraday before the backend cron catches up.
+//   • "8/18 hit today" (this badge) = cumulative tally from tracked_daily_plays:
+//       DENOMINATOR = distinct tickers tracked in this lane today
+//         (including ones rotated out of the top 10).
+//       NUMERATOR   = distinct tickers the backend has confirmed as hit.
+//   Single source of truth — same table the Track Record page reads, so the
+//   number always agrees. Row-level ✓/✗ checkmarks remain live-driven for
+//   intraday visibility but don't feed this counter.
 var _TL_LANE_MAP={
   'tl-overflow-day-trade':'DAY_TRADE',
   'tl-overflow-swing-trade':'SWING_TRADE',
@@ -7593,26 +7594,21 @@ async function _refreshLaneHitCounters(){
     if(!rows)return;
     var laneData={};
     rows.forEach(function(r){
-      if(!laneData[r.lane])laneData[r.lane]={total:0,hits:{}};
-      laneData[r.lane].total++;
+      if(!laneData[r.lane])laneData[r.lane]={tickers:{},hits:{}};
+      laneData[r.lane].tickers[r.ticker]=1;
       if(r.hit)laneData[r.lane].hits[r.ticker]=1;
     });
     Object.keys(_TL_LANE_MAP).forEach(function(slug){
       var laneName=_TL_LANE_MAP[slug];
-      var laneEl=document.getElementById('lane-'+slug);
       var badge=document.getElementById('hits-'+slug);
       if(!badge)return;
       var d=laneData[laneName];
-      if(!d||!d.total){badge.innerHTML='';return;}
-      if(laneEl){
-        laneEl.querySelectorAll('[data-prism-hit][data-prism-locked="1"]').forEach(function(el){
-          var t=el.getAttribute('data-prism-hit');
-          if(t)d.hits[t]=1;
-        });
-      }
+      if(!d){badge.innerHTML='';return;}
+      var total=Object.keys(d.tickers).length;
+      if(!total){badge.innerHTML='';return;}
       var hits=Object.keys(d.hits).length;
-      var color=hits/d.total>=0.5?'#00DE94':'#FF4D4D';
-      badge.innerHTML='\u00B7 <span style="color:'+color+';">'+hits+'/'+d.total+' hit today</span>';
+      var color=hits/total>=0.5?'#00DE94':'#FF4D4D';
+      badge.innerHTML='\u00B7 <span style="color:'+color+';">'+hits+'/'+total+' hit today</span>';
     });
   }catch(e){/* silent */}
 }
@@ -14649,17 +14645,17 @@ async function liveQuotesRefreshDaily(){
       var entryStr=el.getAttribute('data-prism-entry');
       var basePrice=entryStr?Number(entryStr):(q.prevClose||null);
       if(!basePrice)return;
+      // Hit = intraday high/low reached the predicted target %. If the row
+      // has no predicted target, we leave the ✓/✗ blank rather than marking
+      // any favorable move as a hit — keeps the row checkmarks aligned with
+      // the backend hit criterion used in tracked_daily_plays.
+      if(predPct==null||predPct===0)return;
       var isHit=false;
-      if(predPct!=null&&predPct!==0){
-        var targetPct=Math.abs(predPct);
-        if(dir==='up'&&q.dayHigh!=null){
-          isHit=((q.dayHigh-basePrice)/basePrice)*100>=targetPct;
-        }else if(dir==='down'&&q.dayLow!=null){
-          isHit=((basePrice-q.dayLow)/basePrice)*100>=targetPct;
-        }
-      }else{
-        if(dir==='up') isHit=q.dayHigh!=null&&q.dayHigh>basePrice;
-        else if(dir==='down') isHit=q.dayLow!=null&&q.dayLow<basePrice;
+      var targetPct=Math.abs(predPct);
+      if(dir==='up'&&q.dayHigh!=null){
+        isHit=((q.dayHigh-basePrice)/basePrice)*100>=targetPct;
+      }else if(dir==='down'&&q.dayLow!=null){
+        isHit=((basePrice-q.dayLow)/basePrice)*100>=targetPct;
       }
       el.textContent=isHit?'\u2713':'\u2717';
       el.className='tl-row-hit visible '+(isHit?'hit':'miss');
