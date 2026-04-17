@@ -7565,42 +7565,24 @@ function _tlRefreshAll(){
     setTimeout(function(){document.querySelectorAll('.tl-lane-refresh').forEach(function(b){b.classList.remove('spinning');});},600);
   });
 }
-// Fetch cumulative hit counts from tracked_daily_plays (includes tickers
-// that were swapped out intraday). Lane ID → lane DB name mapping:
-var _TL_LANE_MAP={
-  'tl-overflow-day-trade':'DAY_TRADE',
-  'tl-overflow-swing-trade':'SWING_TRADE',
-  'tl-overflow-momentum':'MOMENTUM',
-  'tl-overflow-earnings':'EARNINGS_PLAY',
-  'tl-overflow-value-picks':'VALUE_PICK',
-  'tl-overflow-traps':'NARRATIVE_TRAP'
-};
-async function _refreshLaneHitCounters(){
-  if(!SUPABASE_URL||!SUPABASE_ANON)return;
-  try{
-    var today=new Date().toISOString().split('T')[0];
-    var rows=await restFetch('tracked_daily_plays',{
-      select:'lane,hit',
-      entry_date:'eq.'+today,
-      limit:'500'
-    });
-    if(!rows)return;
-    var counts={};
-    rows.forEach(function(r){
-      if(!counts[r.lane])counts[r.lane]={total:0,hits:0};
-      counts[r.lane].total++;
-      if(r.hit)counts[r.lane].hits++;
-    });
-    Object.keys(_TL_LANE_MAP).forEach(function(slug){
-      var laneName=_TL_LANE_MAP[slug];
-      var c=counts[laneName];
-      var badge=document.getElementById('hits-'+slug);
-      if(!badge)return;
-      if(!c||!c.total){badge.innerHTML='';return;}
-      var color=c.hits/c.total>=0.5?'#00DE94':'#FF4D4D';
-      badge.innerHTML='\u00B7 <span style="color:'+color+';">'+c.hits+'/'+c.total+' hit</span>';
-    });
-  }catch(e){/* silent */}
+// Compute per-lane hit counts from the live DOM. Each ticker row carries a
+// [data-prism-hit] element that the live-quotes loop marks with
+// data-prism-locked="1" once its intraday high/low reaches the predicted %.
+// Denominator = rendered rows in the lane (matches what the user sees on the
+// card). Numerator = locked hits. No Supabase round-trip — always in sync
+// with the intraday ✓/✗ checkmarks.
+function _refreshLaneHitCounters(){
+  document.querySelectorAll('.tl-lane[id^="lane-"]').forEach(function(lane){
+    var slug=lane.id.replace(/^lane-/,'');
+    var badge=document.getElementById('hits-'+slug);
+    if(!badge)return;
+    var hitEls=lane.querySelectorAll('[data-prism-hit]');
+    var total=hitEls.length;
+    if(!total){badge.innerHTML='';return;}
+    var hits=lane.querySelectorAll('[data-prism-hit][data-prism-locked="1"]').length;
+    var color=hits/total>=0.5?'#00DE94':'#FF4D4D';
+    badge.innerHTML='\u00B7 <span style="color:'+color+';">'+hits+'/'+total+' hit</span>';
+  });
 }
 function tlBuildLane(title,subtitle,cards,laneId){
   if(!cards.length)return'';
