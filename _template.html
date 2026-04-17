@@ -5260,6 +5260,15 @@ body{
         <span class="ph-italic">Every trade, every regime, nothing hidden.</span>
         <p>Live paper trades placed by the signal engine from January 2025 through today &mdash; spanning rallies, corrections, and volatility regimes.</p>
       </div>
+      <div style="display:flex;justify-content:flex-end;margin:-8px 0 16px;">
+        <button id="tr-download-btn" type="button" onclick="downloadTrackRecordImage()"
+          style="display:inline-flex;align-items:center;gap:8px;padding:9px 14px;background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:10px;color:var(--mp-text-primary);font-family:var(--font-body);font-size:13px;font-weight:500;cursor:pointer;transition:border-color .2s,background .2s;"
+          onmouseover="this.style.borderColor='var(--mp-border-hover)';this.style.background='var(--mp-surface2)';"
+          onmouseout="this.style.borderColor='var(--mp-border)';this.style.background='var(--mp-surface)';">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Download image</span>
+        </button>
+      </div>
       <!-- ── Live Tracked Plays (from tracked_daily_plays) ── -->
       <div class="val-chart-block" id="tp-section" style="margin-bottom:24px;">
         <div class="val-chart-head">
@@ -8153,6 +8162,57 @@ async function loadValidation(force){
     if(err){err.style.display='block';err.textContent='Failed to load validation data: '+(e.message||e);}
   }
 }
+// ── Track Record → download hero image ─────────────────────────────────────
+// Captures page header + Live Tracked Plays + val-stats (the Annualized return
+// hero block) as a PNG. Temporarily hides the sections below val-stats
+// (cumulative chart, bar charts, recent-trades table) before snapshotting.
+async function downloadTrackRecordImage(){
+  var btn=document.getElementById('tr-download-btn');
+  var label=btn&&btn.querySelector('span');
+  var prevLabel=label&&label.textContent;
+  if(btn){btn.disabled=true;if(label)label.textContent='Rendering\u2026';}
+  var hidden=[];
+  function hide(el){if(!el)return;hidden.push({el:el,prev:el.style.display});el.style.display='none';}
+  try{
+    if(typeof html2canvas==='undefined'){
+      await new Promise(function(ok,fail){
+        var s=document.createElement('script');
+        s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        s.onload=ok;s.onerror=function(){fail(new Error('Failed to load html2canvas'));};
+        document.head.appendChild(s);
+      });
+    }
+    var root=document.getElementById('tr-content');
+    if(!root)throw new Error('Track Record not mounted');
+    // Hide everything inside val-body below val-stats, plus the button itself.
+    var vb=document.getElementById('val-body');
+    if(vb){Array.prototype.slice.call(vb.children).forEach(function(c){if(c.id!=='val-stats')hide(c);});}
+    hide(document.getElementById('val-loading'));
+    hide(document.getElementById('val-error'));
+    hide(btn&&btn.parentElement);
+    var canvas=await html2canvas(root,{backgroundColor:'#080B11',scale:2,logging:false,useCORS:true,windowWidth:root.scrollWidth});
+    await new Promise(function(resolve){
+      canvas.toBlob(function(blob){
+        if(!blob){resolve();return;}
+        var url=URL.createObjectURL(blob);
+        var a=document.createElement('a');
+        var stamp=new Date().toISOString().split('T')[0];
+        a.href=url;a.download='market-prism-track-record-'+stamp+'.png';
+        document.body.appendChild(a);a.click();document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        resolve();
+      },'image/png');
+    });
+  }catch(err){
+    console.warn('[TR] Download failed:',err);
+    alert('Download failed: '+(err.message||err));
+  }finally{
+    hidden.forEach(function(h){h.el.style.display=h.prev||'';});
+    if(btn){btn.disabled=false;if(label&&prevLabel)label.textContent=prevLabel;}
+  }
+}
+window.downloadTrackRecordImage=downloadTrackRecordImage;
+
 // ── Track Record access gate ──────────────────────────────────────────────
 // Requires code "168" to unlock. Remembered in localStorage per browser.
 var TR_GATE_CODE='168';
@@ -8197,12 +8257,11 @@ onTabSwitch(function(id){
 });
 
 // ── Live Tracked Plays (from tracked_daily_plays) ─────────────────────────
-var _TP_LOADED=false;
 var _TP_DATA=[];
 var _TP_FILTER='all';
+var _TP_TIMER=null;
 
 async function loadTrackedPlays(){
-  if(_TP_LOADED)return;
   if(!SUPABASE_URL||!SUPABASE_ANON)return;
   try{
     var rows=await restFetch('tracked_daily_plays',{
@@ -8211,7 +8270,9 @@ async function loadTrackedPlays(){
       limit:'500'
     });
     _TP_DATA=rows||[];
-    _TP_LOADED=true;
+    if(!_TP_TIMER){
+      _TP_TIMER=setInterval(loadTrackedPlays, 60*1000);
+    }
     tpRenderStats();
     tpRenderTable();
     // Wire filter chips
