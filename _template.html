@@ -869,6 +869,14 @@ body{
   animation:mp-gradient-text 6s ease infinite;
 }
 .page-header p{font-size:14px;color:var(--mp-text-secondary);letter-spacing:0.01em;font-weight:400;line-height:1.65;max-width:520px;}
+/* ── Daily Plays minimal lifetime stat bar ── */
+.dp-statbar{margin:4px 0 22px;padding:12px 18px;border:1px solid rgba(255,255,255,0.05);border-radius:10px;background:rgba(255,255,255,0.015);max-width:720px;}
+.dp-statbar-row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;align-items:baseline;}
+.dp-stat{text-align:center;}
+.dp-stat-val{font-family:var(--font-body);font-size:17px;font-weight:500;color:#fff;letter-spacing:-0.01em;line-height:1.1;}
+.dp-stat-lbl{font-family:var(--font-body);font-size:10px;font-weight:400;color:rgba(255,255,255,0.38);letter-spacing:0.06em;text-transform:uppercase;margin-top:3px;}
+.dp-statbar-caption{font-family:var(--font-body);font-size:11px;color:rgba(255,255,255,0.32);letter-spacing:0.01em;margin-top:10px;text-align:center;font-style:italic;}
+@media (max-width:640px){.dp-statbar-row{grid-template-columns:repeat(3,1fr);row-gap:12px;}}
 /* ── STAT CARDS ── */
 .stats-row{display:flex;gap:12px;margin-bottom:24px;}
 /* ── UNIFIED STAT CARDS — matches Discover tile pattern ── */
@@ -4695,6 +4703,18 @@ body{
         <h1>Daily Plays.</h1>
         <span class="ph-italic">Your market briefing. Every morning.</span>
         <p>Conviction-ranked signals across day trades, swing setups, momentum, value picks, and narrative traps — refreshed daily from the narrative scorecard.</p>
+      </div>
+      <!-- Minimal lifetime tracking strip — mirrors Track Record numbers -->
+      <div class="dp-statbar" id="dp-statbar" style="display:none;">
+        <div class="dp-statbar-row">
+          <div class="dp-stat"><div class="dp-stat-val" id="dp-sb-tracked">—</div><div class="dp-stat-lbl">Tracked</div></div>
+          <div class="dp-stat"><div class="dp-stat-val" id="dp-sb-open">—</div><div class="dp-stat-lbl">Open</div></div>
+          <div class="dp-stat"><div class="dp-stat-val" id="dp-sb-closed">—</div><div class="dp-stat-lbl">Closed</div></div>
+          <div class="dp-stat"><div class="dp-stat-val" id="dp-sb-hits">—</div><div class="dp-stat-lbl">Hits</div></div>
+          <div class="dp-stat"><div class="dp-stat-val" id="dp-sb-rate">—</div><div class="dp-stat-lbl">Hit Rate</div></div>
+          <div class="dp-stat"><div class="dp-stat-val" id="dp-sb-avg">—</div><div class="dp-stat-lbl">Avg Return</div></div>
+        </div>
+        <div class="dp-statbar-caption">Tracking since April 15, 2026</div>
       </div>
       <div class="lb-toolbar">
         <span class="lb-toolbar-date" id="daily-date-tag"></span>
@@ -14544,12 +14564,48 @@ function bootNarrativeHistory(){
 bootNarrativeHistory();
 setInterval(bootNarrativeHistory, 60 * 1000);
 
+// Daily Plays minimal lifetime stat bar — same numbers as the Track Record
+// page's Live Tracked Plays widget, but in a compact all-white strip below
+// the hero. Refreshed every 5 min and on manual refresh.
+async function loadDailyPlaysStatBar(){
+  if(!SUPABASE_URL||!SUPABASE_ANON)return;
+  try{
+    var rows=await restFetch('tracked_daily_plays',{
+      select:'status,hit,exit_return_pct',
+      limit:'2000'
+    });
+    if(!rows||!rows.length)return;
+    var total=rows.length;
+    var open=rows.filter(function(r){return r.status==='OPEN';}).length;
+    var closed=total-open;
+    var hits=rows.filter(function(r){return r.hit;}).length;
+    var closedHits=rows.filter(function(r){return r.status!=='OPEN'&&r.hit;}).length;
+    var hitRate=closed>0?Math.round(closedHits/closed*100):0;
+    var avgRet=closed>0
+      ? rows.filter(function(r){return r.exit_return_pct!=null;})
+            .reduce(function(s,r){return s+Number(r.exit_return_pct);},0)/closed
+      : 0;
+    function set(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}
+    set('dp-sb-tracked',total.toLocaleString());
+    set('dp-sb-open',open);
+    set('dp-sb-closed',closed);
+    set('dp-sb-hits',hits);
+    set('dp-sb-rate',hitRate+'%');
+    set('dp-sb-avg',(avgRet>=0?'+':'')+avgRet.toFixed(2)+'%');
+    var bar=document.getElementById('dp-statbar');
+    if(bar)bar.style.display='block';
+  }catch(e){/* silent */}
+}
+loadDailyPlaysStatBar();
+setInterval(loadDailyPlaysStatBar, 5*60*1000);
+
 window.refreshDailyBrief=async function(){
   var btn=document.getElementById('daily-refresh-btn');
   if(btn){btn.disabled=true;btn.style.opacity='0.5';btn.querySelector('svg').style.animation='spin 1s linear infinite';}
   try{
     await loadData();
     liveQuotesRefreshDaily();
+    loadDailyPlaysStatBar();
   }catch(e){console.warn('[DB] Refresh failed:',e);}
   if(btn){btn.disabled=false;btn.style.opacity='1';btn.querySelector('svg').style.animation='';}
 };
