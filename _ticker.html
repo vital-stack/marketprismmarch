@@ -5229,26 +5229,14 @@ async function enrichLeaderboardBadges() {
 }
 
 // ── Sector Intelligence panel (fetched from Supabase) ─────────────────────────
-// Table is "Sector Intelligence" with quoted column names containing spaces/newlines.
-// We fetch all rows and filter client-side because the column names are not
-// PostgREST-friendly.
 async function loadSectorIntelligence(heroRow) {
   const el = document.getElementById('sector-body');
   if (!el || !TICKER) return;
   try {
-    // Table name has a space — encode for the URL path
-    const allRows = await sbFetch('Sector%20Intelligence', {
-      select: '*'
+    const matches = await sbFetch('sector_intelligence', {
+      select: '*',
+      ticker: 'eq.' + TICKER
     }).catch(() => []);
-
-    // Filter rows where ticker appears in "Associated Tickers" or "MarketPrism\nTickers"
-    const matches = allRows.filter(row => {
-      const assoc = row['Associated Tickers'] || '';
-      const mp    = row['MarketPrism\nTickers'] || '';
-      const combined = assoc + ',' + mp;
-      // Check for ticker as whole word (surrounded by commas, spaces, or string boundaries)
-      return new RegExp('(^|[,;\\s])' + TICKER + '($|[,;\\s])', 'i').test(combined);
-    });
 
     const r = heroRow || {};
 
@@ -5258,21 +5246,22 @@ async function loadSectorIntelligence(heroRow) {
     }
 
     const s = matches[0] || null;
-    const allSectors = matches.map(m => m['Sector']).filter(Boolean);
+    const allSectors = matches.map(m => m.sector).filter(Boolean);
 
-    // Map quoted column names to clean variables
-    const sectorName  = s?.['Sector']          || r.sector_name       || '—';
-    const subsector   = s?.['Subsector']        || null;
-    const cagr        = s?.['CAGR %\n2024-30']  || (r.sector_cagr_pct != null ? r.sector_cagr_pct.toFixed(1) + '%' : null);
-    const mkt2024     = s?.['Market Size\n2024 ($B)'] || null;
-    const mkt2030     = s?.['Market Size\n2030E ($B)'] || null;
-    const period      = s?.['Projection\nPeriod'] || null;
-    const strengths   = s?.['Key Strengths']    || r.sector_key_strengths   || null;
-    const weaknesses  = s?.['Key Weaknesses']   || r.sector_key_weaknesses  || null;
-    const threats     = s?.['Threats']           || r.sector_threats         || null;
-    const emerging    = s?.['Emerging Themes']   || r.sector_emerging_themes || null;
-    const opps        = s?.['Opportunities']     || null;
-    const framework   = s?.['SP Framework\nMatch'] || r.sp_framework_match   || null;
+    const fmtB = (n) => (n == null ? null : (+n).toFixed(1));
+    const sectorName  = s?.sector          || r.sector_name       || '—';
+    const subsector   = s?.subsector        || null;
+    const cagr        = (s?.cagr_pct != null) ? (+s.cagr_pct).toFixed(1) + '%'
+                       : (r.sector_cagr_pct != null ? r.sector_cagr_pct.toFixed(1) + '%' : null);
+    const mkt2024     = fmtB(s?.mkt_size_2024);
+    const mkt2030     = fmtB(s?.mkt_size_2030);
+    const period      = s?.period || null;
+    const strengths   = s?.key_strengths    || r.sector_key_strengths   || null;
+    const weaknesses  = s?.key_weaknesses   || r.sector_key_weaknesses  || null;
+    const threats     = s?.threats           || r.sector_threats         || null;
+    const emerging    = s?.emerging_themes   || r.sector_emerging_themes || null;
+    const opps        = s?.opportunities     || null;
+    const framework   = r.sp_framework_match   || null;
 
     const labelCls = (l) => l === 'Strengths' ? 'lbl-strengths' : l === 'Weaknesses' ? 'lbl-weaknesses' : l === 'Threats' ? 'lbl-threats' : 'lbl-emerging';
     const labelIcon = (l) => l === 'Strengths' ? '\u2B06' : l === 'Weaknesses' ? '\u2B07' : l === 'Threats' ? '\u26A0' : '\u2192';
