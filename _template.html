@@ -869,14 +869,18 @@ body{
   animation:mp-gradient-text 6s ease infinite;
 }
 .page-header p{font-size:14px;color:var(--mp-text-secondary);letter-spacing:0.01em;font-weight:400;line-height:1.65;max-width:520px;}
-/* ── Daily Plays minimal lifetime stat bar ── */
-.dp-statbar{margin:4px 0 22px;padding:12px 18px;border:1px solid rgba(255,255,255,0.05);border-radius:10px;background:rgba(255,255,255,0.015);max-width:720px;}
+/* ── Daily Plays minimal lifetime stat bar (lives inside .lb-toolbar) ── */
+.dp-statbar{flex:1;margin:0 18px;padding:10px 16px;border:1px solid rgba(255,255,255,0.05);border-radius:10px;background:rgba(255,255,255,0.015);}
 .dp-statbar-row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;align-items:baseline;}
 .dp-stat{text-align:center;}
-.dp-stat-val{font-family:var(--font-body);font-size:17px;font-weight:500;color:#fff;letter-spacing:-0.01em;line-height:1.1;}
-.dp-stat-lbl{font-family:var(--font-body);font-size:10px;font-weight:400;color:rgba(255,255,255,0.38);letter-spacing:0.06em;text-transform:uppercase;margin-top:3px;}
-.dp-statbar-caption{font-family:var(--font-body);font-size:11px;color:rgba(255,255,255,0.32);letter-spacing:0.01em;margin-top:10px;text-align:center;font-style:italic;}
-@media (max-width:640px){.dp-statbar-row{grid-template-columns:repeat(3,1fr);row-gap:12px;}}
+.dp-stat-val{font-family:var(--font-body);font-size:15px;font-weight:500;color:#fff;letter-spacing:-0.01em;line-height:1.1;}
+.dp-stat-lbl{font-family:var(--font-body);font-size:9px;font-weight:400;color:rgba(255,255,255,0.38);letter-spacing:0.06em;text-transform:uppercase;margin-top:3px;}
+.dp-statbar-caption{font-family:var(--font-body);font-size:10px;color:rgba(255,255,255,0.32);letter-spacing:0.01em;margin-top:6px;text-align:center;font-style:italic;}
+@media (max-width:860px){
+  .lb-toolbar{flex-wrap:wrap;gap:12px;}
+  .dp-statbar{flex:1 1 100%;margin:0;order:3;}
+}
+@media (max-width:640px){.dp-statbar-row{grid-template-columns:repeat(3,1fr);row-gap:10px;}}
 /* ── STAT CARDS ── */
 .stats-row{display:flex;gap:12px;margin-bottom:24px;}
 /* ── UNIFIED STAT CARDS — matches Discover tile pattern ── */
@@ -4704,20 +4708,20 @@ body{
         <span class="ph-italic">Your market briefing. Every morning.</span>
         <p>Conviction-ranked signals across day trades, swing setups, momentum, value picks, and narrative traps — refreshed daily from the narrative scorecard.</p>
       </div>
-      <!-- Minimal lifetime tracking strip — mirrors Track Record numbers -->
-      <div class="dp-statbar" id="dp-statbar" style="display:none;">
-        <div class="dp-statbar-row">
-          <div class="dp-stat"><div class="dp-stat-val" id="dp-sb-tracked">—</div><div class="dp-stat-lbl">Tracked</div></div>
-          <div class="dp-stat"><div class="dp-stat-val" id="dp-sb-open">—</div><div class="dp-stat-lbl">Open</div></div>
-          <div class="dp-stat"><div class="dp-stat-val" id="dp-sb-closed">—</div><div class="dp-stat-lbl">Closed</div></div>
-          <div class="dp-stat"><div class="dp-stat-val" id="dp-sb-hits">—</div><div class="dp-stat-lbl">Hits</div></div>
-          <div class="dp-stat"><div class="dp-stat-val" id="dp-sb-rate">—</div><div class="dp-stat-lbl">Hit Rate</div></div>
-          <div class="dp-stat"><div class="dp-stat-val" id="dp-sb-avg">—</div><div class="dp-stat-lbl">Avg Return</div></div>
-        </div>
-        <div class="dp-statbar-caption">Tracking since April 15, 2026</div>
-      </div>
       <div class="lb-toolbar">
         <span class="lb-toolbar-date" id="daily-date-tag"></span>
+        <!-- Minimal lifetime tracking strip — mirrors Track Record numbers -->
+        <div class="dp-statbar" id="dp-statbar" style="display:none;">
+          <div class="dp-statbar-row">
+            <div class="dp-stat"><div class="dp-stat-val" id="dp-sb-tracked">—</div><div class="dp-stat-lbl">Tracked</div></div>
+            <div class="dp-stat"><div class="dp-stat-val" id="dp-sb-open">—</div><div class="dp-stat-lbl">Open</div></div>
+            <div class="dp-stat"><div class="dp-stat-val" id="dp-sb-closed">—</div><div class="dp-stat-lbl">Closed</div></div>
+            <div class="dp-stat"><div class="dp-stat-val" id="dp-sb-hits">—</div><div class="dp-stat-lbl">Hits</div></div>
+            <div class="dp-stat"><div class="dp-stat-val" id="dp-sb-rate">—</div><div class="dp-stat-lbl">Hit Rate</div></div>
+            <div class="dp-stat"><div class="dp-stat-val" id="dp-sb-avg">—</div><div class="dp-stat-lbl">Avg Return</div></div>
+          </div>
+          <div class="dp-statbar-caption">Tracking since April 15, 2026</div>
+        </div>
         <button class="lb-refresh-btn" id="daily-refresh-btn" onclick="refreshDailyBrief()" title="Refresh daily plays">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
           <span>Refresh</span>
