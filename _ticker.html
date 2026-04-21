@@ -6519,9 +6519,12 @@ async function loadNarratives() {
            </div>` : '';
 
       // Date + price at time of article
+      // Anchor at noon so the plain "YYYY-MM-DD" from Postgres doesn't drift
+      // back a day in non-UTC browsers (new Date("2026-04-21") parses as UTC
+      // midnight = Apr 20 evening in ET).
       const dateKey = n.snapshot_date?.slice(0,10);
       const dateStr = dateKey
-        ? new Date(n.snapshot_date).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })
+        ? new Date(dateKey + 'T12:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })
         : '';
       const priceAtTime = dateKey ? priceByDate[dateKey] : null;
       const priceStr = priceAtTime != null ? fmtPrice(priceAtTime) : null;
@@ -6542,7 +6545,7 @@ async function loadNarratives() {
         ${uniqueCites.map(c => {
           const cDate = c.snapshot_date?.slice(0,10);
           const cDateStr = cDate
-            ? new Date(c.snapshot_date).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })
+            ? new Date(cDate + 'T12:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })
             : '';
           const cPrice = cDate ? priceByDate[cDate] : null;
           const cPriceStr = cPrice != null ? fmtPrice(cPrice) : null;
@@ -8601,9 +8604,13 @@ async function loadStoriesFeed() {
         : 'Monitoring';
       const vColor = v.includes('MISLEAD') || v.includes('TRAP') || v.includes('FALSE') ? 'color:#ef4444;border-color:rgba(239,68,68,.2)'
         : 'color:#6b7280;border-color:rgba(255,255,255,.07)';
-      const bestDate = r.created_at || r.snapshot_date;
-      const dateStr = bestDate
-        ? new Date(bestDate).toLocaleDateString('en-US', { month:'short', day:'numeric' })
+      // Display snapshot_date (plain DATE) anchored at noon to avoid timezone
+      // drift; keep created_at for ordering only. Rows ingested just after
+      // 00:00 UTC on snapshot day would otherwise render as the prior day in
+      // US timezones.
+      const dateKey = (r.snapshot_date || '').slice(0,10);
+      const dateStr = dateKey
+        ? new Date(dateKey + 'T12:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric' })
         : '';
       const linkHtml = r.article_url
         ? '<a class="tk-feed-link" href="' + esc(r.article_url) + '" target="_blank" rel="noopener">Read &rarr;</a>'
