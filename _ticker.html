@@ -9250,20 +9250,40 @@ scheduleLivePrice();
 
 // ── Ticker Scholar — inline AI chat ──────────────────────────────────────────
 (function(){
-  var scholarInput = document.getElementById('ticker-scholar-input');
-  var scholarBar = document.getElementById('ticker-scholar-bar');
-  var chatPanel = document.getElementById('ticker-scholar-chat');
-  var msgArea = document.getElementById('ticker-scholar-messages');
-  var followInput = document.getElementById('ticker-scholar-follow');
-  var sendBtn = document.getElementById('ticker-scholar-send');
+  var heroSection = document.getElementById('scholar-hero-section');
+  var heroInput = document.getElementById('scholar-hero-input');
+  var heroSend = document.getElementById('scholar-hero-send');
+  var heroSuggestions = document.getElementById('scholar-hero-suggestions');
+  var heroSub = document.getElementById('scholar-hero-sub');
+
+  if(!heroSection || !heroInput) return;
+
+  // Lazily build a chat panel inside the hero card (messages + follow-up input)
+  var heroInner = heroSection.querySelector('.scholar-hero-inner') || heroSection;
+  var chatPanel = document.createElement('div');
+  chatPanel.className = 'ticker-scholar-chat';
+  chatPanel.style.cssText = 'display:none;margin-top:12px;';
+  var msgArea = document.createElement('div');
+  msgArea.className = 'ticker-scholar-messages';
+  msgArea.style.cssText = 'max-height:340px;padding:12px;';
+  var inputWrap = document.createElement('div');
+  inputWrap.className = 'ticker-scholar-input-wrap';
+  var followInput = document.createElement('input');
+  followInput.type = 'text';
+  followInput.className = 'ticker-scholar-follow-input';
+  followInput.placeholder = 'Ask a follow-up...';
+  var sendBtn = document.createElement('button');
+  sendBtn.className = 'ticker-scholar-send';
+  sendBtn.disabled = true;
+  sendBtn.innerHTML = '<svg viewBox="0 0 20 20" fill="none"><path d="M3 10h14M12 5l5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  inputWrap.appendChild(followInput);
+  inputWrap.appendChild(sendBtn);
+  chatPanel.appendChild(msgArea);
+  chatPanel.appendChild(inputWrap);
+  heroInner.appendChild(chatPanel);
+
   var chatHistory = [];
   var isStreaming = false;
-
-  if(!scholarInput || !chatPanel) return;
-
-  if(typeof TICKER !== 'undefined' && TICKER){
-    scholarInput.placeholder = 'Ask Market Scholar about ' + TICKER + '...';
-  }
 
   function mdToHtml(text){
     text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
@@ -9429,8 +9449,32 @@ scheduleLivePrice();
     });
   }
 
-  // Enter on main bar
-  scholarInput.addEventListener('keydown', function(e){
+  // Hero primary input — placeholder/sub
+  if(typeof TICKER !== 'undefined' && TICKER){
+    heroInput.placeholder = 'Ask anything about ' + TICKER + '...';
+    if(heroSub) heroSub.textContent = 'Get instant forensic intelligence on ' + TICKER;
+  }
+
+  // Suggested question templates
+  var suggestMap = {
+    'narrative-trap': 'Is ' + (TICKER || 'this ticker') + ' currently a narrative trap? What does the verification score say?',
+    'verification': 'How strong is the verification score for ' + (TICKER || 'this ticker') + '? Are claims backed by SEC filings?',
+    'signals': 'What signals are currently active for ' + (TICKER || 'this ticker') + '? What direction and confidence?',
+    'risk': 'What are the biggest risks for ' + (TICKER || 'this ticker') + ' right now? Is there coordination risk or narrative decay?'
+  };
+
+  if(heroSuggestions){
+    heroSuggestions.addEventListener('click', function(e){
+      var chip = e.target.closest('.scholar-suggest-chip');
+      if(!chip) return;
+      var key = chip.getAttribute('data-q');
+      var question = suggestMap[key] || chip.textContent.trim();
+      heroInput.value = '';
+      sendMessage(question);
+    });
+  }
+
+  heroInput.addEventListener('keydown', function(e){
     if(e.key === 'Enter' && this.value.trim()){
       e.preventDefault();
       var q = this.value.trim();
@@ -9439,12 +9483,17 @@ scheduleLivePrice();
     }
   });
 
-  // Focus bar on click
-  if(scholarBar){
-    scholarBar.addEventListener('click', function(){ scholarInput.focus(); });
+  if(heroSend){
+    heroSend.addEventListener('click', function(){
+      if(!isStreaming && heroInput.value.trim()){
+        var q = heroInput.value.trim();
+        heroInput.value = '';
+        sendMessage(q);
+      }
+    });
   }
 
-  // Follow-up input
+  // Follow-up input inside the dynamically-created chat panel
   followInput.addEventListener('input', function(){
     sendBtn.disabled = !this.value.trim() || isStreaming;
   });
@@ -9465,58 +9514,6 @@ scheduleLivePrice();
       sendMessage(q);
     }
   });
-
-  // ── Scholar Hero Section (prominent in-page) ──
-  var heroInput = document.getElementById('scholar-hero-input');
-  var heroSend = document.getElementById('scholar-hero-send');
-  var heroSuggestions = document.getElementById('scholar-hero-suggestions');
-  var heroSub = document.getElementById('scholar-hero-sub');
-
-  if(heroInput && typeof TICKER !== 'undefined' && TICKER){
-    heroInput.placeholder = 'Ask anything about ' + TICKER + '...';
-    heroSub.textContent = 'Get instant forensic intelligence on ' + TICKER;
-
-    // Suggested question templates
-    var suggestMap = {
-      'narrative-trap': 'Is ' + TICKER + ' currently a narrative trap? What does the verification score say?',
-      'verification': 'How strong is the verification score for ' + TICKER + '? Are claims backed by SEC filings?',
-      'signals': 'What signals are currently active for ' + TICKER + '? What direction and confidence?',
-      'risk': 'What are the biggest risks for ' + TICKER + ' right now? Is there coordination risk or narrative decay?'
-    };
-
-    // Click suggested question chips
-    heroSuggestions.addEventListener('click', function(e){
-      var chip = e.target.closest('.scholar-suggest-chip');
-      if(!chip) return;
-      var key = chip.getAttribute('data-q');
-      var question = suggestMap[key] || chip.textContent.trim();
-      heroInput.value = '';
-      sendMessage(question);
-      // Scroll to chat panel
-      chatPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-
-    // Enter on hero input
-    heroInput.addEventListener('keydown', function(e){
-      if(e.key === 'Enter' && this.value.trim()){
-        e.preventDefault();
-        var q = this.value.trim();
-        this.value = '';
-        sendMessage(q);
-        chatPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    });
-
-    // Send button
-    heroSend.addEventListener('click', function(){
-      if(!isStreaming && heroInput.value.trim()){
-        var q = heroInput.value.trim();
-        heroInput.value = '';
-        sendMessage(q);
-        chatPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    });
-  }
 })();
 </script>
 <script>
