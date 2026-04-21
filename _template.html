@@ -7748,7 +7748,14 @@ async function loadTradeLanes(){
       var tgt=row.target_pct!=null?Number(row.target_pct):null;
       var dte=liveDTE(row);
       if(p.lane==='DAY_TRADE'){
-        var v=tgt!=null?tgt:ret5;
+        // Band-aid: mirrors track-daily-plays v5 resolver. The upstream
+        // scorer writes long-horizon (20d) values into target_pct, which
+        // leaks into DAY_TRADE chips as unrealistic "today" returns.
+        // Prefer the 5d forecast; if missing, cap target_pct at ±2.5%.
+        var v;
+        if(ret5!=null){ v=ret5; }
+        else if(tgt!=null){ var _s=tgt<0?-1:1; v=_s*Math.min(Math.abs(tgt),2.5); }
+        else { v=null; }
         row._chip=v!=null?tlFmtReturnPct(v)+' today':'today';
         row._predPct=v;
       } else if(p.lane==='SWING_TRADE'){
