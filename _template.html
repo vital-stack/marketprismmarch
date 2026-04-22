@@ -7598,15 +7598,16 @@ function _tlRefreshAll(){
     setTimeout(function(){document.querySelectorAll('.tl-lane-refresh').forEach(function(b){b.classList.remove('spinning');});},600);
   });
 }
-// Per-lane hit counter format: "10 signals · 8/18 hit today"
-//   • "10 signals" (lane subtitle) = currently visible picks on the card.
-//   • "8/18 hit today" (this badge) = cumulative tally from tracked_daily_plays:
-//       DENOMINATOR = distinct tickers tracked in this lane today
-//         (including ones rotated out of the top 10).
-//       NUMERATOR   = distinct tickers the backend has confirmed as hit.
-//   Single source of truth — same table the Track Record page reads, so the
-//   number always agrees. Row-level ✓/✗ checkmarks remain live-driven for
-//   intraday visibility but don't feed this counter.
+// Per-lane hit counter format: "10 signals · 3/10 hit today"
+//   • "10 signals" (lane subtitle) = total picks on the card.
+//   • "3/10 hit today" (this badge) = live count from the row-level ✓/✗ DOM
+//     state so the badge always matches what the user visually sees.
+//   Live hits are monotonic: once a row is confirmed hit it's locked
+//   (data-prism-locked="1"), so the count only grows intraday.
+//   Previously the badge read tracked_daily_plays.hit (backend-confirmed),
+//   but that column lags — often NULL mid-day — which made the badge show
+//   "0/N" while the row ✓'s were already green. DOM-sourced removes the
+//   disagreement.
 var _TL_LANE_MAP={
   'tl-overflow-day-trade':'DAY_TRADE',
   'tl-overflow-swing-trade':'SWING_TRADE',
@@ -7615,32 +7616,17 @@ var _TL_LANE_MAP={
   'tl-overflow-value-picks':'VALUE_PICK',
   'tl-overflow-traps':'NARRATIVE_TRAP'
 };
-async function _refreshLaneHitCounters(){
-  if(!SUPABASE_URL||!SUPABASE_ANON)return;
+function _refreshLaneHitCounters(){
   try{
-    var today=new Date().toISOString().split('T')[0];
-    var rows=await restFetch('tracked_daily_plays',{
-      select:'lane,ticker,hit',
-      entry_date:'eq.'+today,
-      limit:'500'
-    });
-    if(!rows)return;
-    var laneData={};
-    rows.forEach(function(r){
-      if(!laneData[r.lane])laneData[r.lane]={tickers:{},hits:{}};
-      laneData[r.lane].tickers[r.ticker]=1;
-      if(r.hit)laneData[r.lane].hits[r.ticker]=1;
-    });
     Object.keys(_TL_LANE_MAP).forEach(function(slug){
-      var laneName=_TL_LANE_MAP[slug];
+      var lane=document.getElementById('lane-'+slug);
       var badge=document.getElementById('hits-'+slug);
-      if(!badge)return;
-      var d=laneData[laneName];
-      if(!d){badge.innerHTML='';return;}
-      var total=Object.keys(d.tickers).length;
-      if(!total){badge.innerHTML='';return;}
-      var hits=Object.keys(d.hits).length;
-      var color=hits/total>=0.5?'#00DE94':'#FF4D4D';
+      if(!lane||!badge)return;
+      var hitEls=lane.querySelectorAll('[data-prism-hit]');
+      if(!hitEls.length){badge.innerHTML='';return;}
+      var total=hitEls.length;
+      var hits=lane.querySelectorAll('[data-prism-hit].hit').length;
+      var color=hits/total>=0.5?'#00DE94':hits>0?'#38C8B8':'#FF4D4D';
       badge.innerHTML='\u00B7 <span style="color:'+color+';">'+hits+'/'+total+' hit today</span>';
     });
   }catch(e){/* silent */}
