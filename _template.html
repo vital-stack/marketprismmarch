@@ -14755,9 +14755,18 @@ async function liveQuotesRefreshDaily(){
       var predPct=el.hasAttribute('data-prism-pct')?Number(el.getAttribute('data-prism-pct')):null;
       var q=quotes[t];
       if(!q)return;
-      // Use entry price if available (multi-day trades), otherwise prevClose
-      var entryStr=el.getAttribute('data-prism-entry');
-      var basePrice=entryStr?Number(entryStr):(q.prevClose||null);
+      // Base = previous close so the hit check matches the visible day-change %.
+      // Previously used data-prism-entry (today's snapshot price), but that's
+      // updated intraday — so basePrice ≈ current price and ((dayHigh-basePrice)
+      // /basePrice) collapsed to ~0, plus it disagreed with the "X% today" chip
+      // and the displayed −Y% day change. Dashboard only shows today's plays,
+      // so prevClose is the right denominator. Falls back to data-prism-entry
+      // only if prevClose is missing.
+      var basePrice=q.prevClose||null;
+      if(!basePrice){
+        var entryStr=el.getAttribute('data-prism-entry');
+        if(entryStr)basePrice=Number(entryStr);
+      }
       if(!basePrice)return;
       // Hit = intraday high/low reached the predicted target %. If the row
       // has no predicted target, we leave the ✓/✗ blank rather than marking
