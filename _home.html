@@ -3017,7 +3017,7 @@ footer {
   <div class="nav-links">
     <div class="nav-link" data-mega="product">Product <svg class="nav-link-arrow" viewBox="0 0 10 10" fill="none"><path d="M2 4l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
     <div class="nav-link" data-mega="resources">Resources <svg class="nav-link-arrow" viewBox="0 0 10 10" fill="none"><path d="M2 4l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-    <a href="/login#register" class="nav-link">Blog</a>
+    <a href="/blog" class="nav-link">Blog</a>
     <a href="/login#register" class="nav-link">Pricing</a>
   </div>
   <div class="nav-right">
@@ -3071,7 +3071,7 @@ footer {
   <!-- ── MEGA DROPDOWN: RESOURCES ── -->
   <div class="mega-dropdown" id="mega-resources">
     <div class="mega-inner-resources">
-      <a href="/login#register" class="mega-res-card" style="text-decoration:none;color:inherit;">
+      <a href="/blog" class="mega-res-card" style="text-decoration:none;color:inherit;">
         <div class="mega-res-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25H5.625a2.25 2.25 0 01-2.25-2.25V6.375c0-.621.504-1.125 1.125-1.125h3.375"/></svg></div>
         <div class="mega-res-title">Blog</div>
         <div class="mega-res-desc">Market intelligence essays, product updates, and research notes.</div>
@@ -3113,7 +3113,7 @@ footer {
   <a href="/login#register" onclick="this.parentElement.classList.remove('open')">Daily Brief</a>
   <a href="/login#register" onclick="this.parentElement.classList.remove('open')">Trading Cards</a>
   <a href="/login#register" onclick="this.parentElement.classList.remove('open')">Generate Content</a>
-  <a href="/login#register" onclick="this.parentElement.classList.remove('open')">Blog</a>
+  <a href="/blog" onclick="this.parentElement.classList.remove('open')">Blog</a>
   <a href="/login#register" onclick="this.parentElement.classList.remove('open')">Methodology</a>
   <a href="/login#register" onclick="this.parentElement.classList.remove('open')">Signal Studies</a>
   <a href="/login#register" onclick="this.parentElement.classList.remove('open')">Case Studies</a>
@@ -3538,7 +3538,7 @@ footer {
       <div>
         <div class="footer-col-lbl">Resources</div>
         <div class="footer-links">
-          <a href="/login#register">Blog</a>
+          <a href="/blog">Blog</a>
           <a href="/login#register">Methodology</a>
           <a href="/login#register">Signal Studies</a>
           <a href="mailto:founder@marketprism.co">Contact</a>
@@ -4489,6 +4489,17 @@ window.MP_DOMAINS   = MP_DOMAINS;
   function fmtRet(v){if(v==null)return'';var n=Number(v);var s=n>0?'+':n<0?'\u2212':'';return s+Math.abs(n).toFixed(1)+'%';}
   function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
+  // Resolve direction: expected_direction wins, fall back to trade_direction.
+  // Mirrors tlDir() in _template.html so hero direction matches dashboard row.
+  function resolveDir(r){
+    var ed=(r.expected_direction||'').toUpperCase();
+    if(!ed||ed==='FLAT'||ed==='NEUTRAL'){
+      var td=(r.trade_direction||'').toUpperCase();
+      ed=td==='SHORT'?'DOWN':td==='LONG'?'UP':'';
+    }
+    return ed==='UP'?'up':ed==='DOWN'?'down':'';
+  }
+
   async function loadHeroCard(){
     try{
       // Get latest snapshot date
@@ -4498,11 +4509,25 @@ window.MP_DOMAINS   = MP_DOMAINS;
       if(!dRows.length)return;
       var scDate=dRows[0].snapshot_date;
 
-      // Fetch from tracked_daily_plays (has pre-computed hit status)
-      var tRes=await fetch(SB_URL+'/rest/v1/tracked_daily_plays?select=ticker,entry_price,predicted_return_pct,direction,hit,lane_rank&lane=eq.MOMENTUM&snapshot_date=eq.'+encodeURIComponent(scDate)+'&order=lane_rank.asc&limit=10',{headers:hdrs});
+      // Pull MOMENTUM lane from t_daily_plays_top10_enhanced — same source the
+      // dashboard uses, so the hero's hit count matches the dashboard's badge.
+      var tRes=await fetch(SB_URL+'/rest/v1/t_daily_plays_top10_enhanced?select=ticker,price,lane_rank,trade_direction,expected_direction,forecast_5d_return_pct,forecast_10d_return_pct,suggested_hold_days&lane=eq.MOMENTUM&snapshot_date=eq.'+encodeURIComponent(scDate)+'&order=lane_rank.asc&limit=10',{headers:hdrs});
       if(!tRes.ok)return;
       var plays=await tRes.json();
       if(!plays.length)return;
+
+      // Compute predicted % + chip the same way the MOMENTUM lane does:
+      // value = forecast_10d_return_pct ?? forecast_5d_return_pct,
+      // chip  = "+X.X% · Day 1/H" where H = suggested_hold_days || 10.
+      plays.forEach(function(r){
+        var ret10=r.forecast_10d_return_pct!=null?Number(r.forecast_10d_return_pct):null;
+        var ret5=r.forecast_5d_return_pct!=null?Number(r.forecast_5d_return_pct):null;
+        var mv=ret10!=null?ret10:ret5;
+        var mh=r.suggested_hold_days!=null?Number(r.suggested_hold_days):10;
+        r._predPct=mv;
+        r._chip=mv!=null?fmtRet(mv)+' \u00B7 Day 1/'+mh:'Day 1/'+mh;
+        r._dir=resolveDir(r);
+      });
 
       // Set date in header
       var dateEl=document.getElementById('hlc-date');
@@ -4517,15 +4542,15 @@ window.MP_DOMAINS   = MP_DOMAINS;
       var qRes=await fetch('/api/live-quotes-batch?tickers='+encodeURIComponent(allTickers));
       var quotes=(qRes.ok?await qRes.json():{}).quotes||{};
 
-      // Compute hits from intraday high/low (matches dashboard logic)
+      // Hit eval mirrors dashboard: target = |predPct|, base = prevClose,
+      // long → dayHigh reaches +target, short → dayLow reaches -target.
       plays.forEach(function(r){
-        var predPct=r.predicted_return_pct!=null?Math.abs(Number(r.predicted_return_pct)):null;
+        var target=r._predPct!=null?Math.abs(Number(r._predPct)):null;
         var q=quotes[r.ticker];
-        var isLong=r.direction==='LONG';
         r._liveHit=false;
-        if(q&&q.prevClose&&predPct!=null&&predPct>0){
-          if(isLong&&q.dayHigh!=null) r._liveHit=((q.dayHigh-q.prevClose)/q.prevClose)*100>=predPct;
-          else if(!isLong&&q.dayLow!=null) r._liveHit=((q.prevClose-q.dayLow)/q.prevClose)*100>=predPct;
+        if(q&&q.prevClose&&target!=null&&target>0&&r._dir){
+          if(r._dir==='up'&&q.dayHigh!=null) r._liveHit=((q.dayHigh-q.prevClose)/q.prevClose)*100>=target;
+          else if(r._dir==='down'&&q.dayLow!=null) r._liveHit=((q.prevClose-q.dayLow)/q.prevClose)*100>=target;
         }
       });
 
@@ -4539,7 +4564,7 @@ window.MP_DOMAINS   = MP_DOMAINS;
       var totalHits=plays.filter(function(r){return r._liveHit;}).length;
       var badge=document.getElementById('hlc-hits');
       if(badge){
-        var color=totalHits/plays.length>=0.3?'#00DE94':'#FF4D4D';
+        var color=totalHits/plays.length>=0.5?'#00DE94':totalHits>0?'#38C8B8':'#FF4D4D';
         badge.innerHTML='\u00B7 <span style="color:'+color+';">'+totalHits+'/'+plays.length+' hit</span>';
       }
 
@@ -4547,13 +4572,12 @@ window.MP_DOMAINS   = MP_DOMAINS;
       if(!container)return;
       var visible=sorted.slice(0,5);
       container.innerHTML=visible.map(function(r){
-        var predPct=r.predicted_return_pct!=null?Number(r.predicted_return_pct):null;
-        var chip=predPct!=null?fmtRet(predPct)+' est.':'est.';
+        var chip=r._chip||'';
         var q=quotes[r.ticker];
-        var price=q&&q.price?'$'+fmtP(q.price):(r.entry_price?'$'+fmtP(Number(r.entry_price)):'');
-        var isLong=r.direction==='LONG';
-        var arrowColor=isLong?'#00DE94':'#FF4D4D';
-        var arrow=isLong?'\u25B2':'\u25BC';
+        var price=q&&q.price?'$'+fmtP(q.price):(r.price?'$'+fmtP(Number(r.price)):'');
+        var isUp=r._dir==='up';
+        var arrowColor=isUp?'#00DE94':'#FF4D4D';
+        var arrow=isUp?'\u25B2':'\u25BC';
         var changeTxt='',changeColor='';
         if(q&&q.changePct!=null){changeTxt=(q.changePct>0?'+':'')+q.changePct.toFixed(2)+'%';changeColor=q.changePct>=0?'#00DE94':'#FF4D4D';}
         var hitIcon=r._liveHit?'<span class="hlc-hit hlc-hit-yes">\u2713</span>':'<span class="hlc-hit hlc-hit-no">\u2717</span>';
