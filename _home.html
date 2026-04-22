@@ -3155,7 +3155,7 @@ footer {
       <div class="dash-preview">
         <div class="hero-live-card" id="hero-live-card">
           <div class="hlc-header">
-            <div><div class="hlc-title">Day Trade</div><div class="hlc-sub"><span id="hlc-date"></span> <span class="hlc-hits" id="hlc-hits"></span></div></div>
+            <div><div class="hlc-title">Momentum</div><div class="hlc-sub"><span id="hlc-date"></span> <span class="hlc-hits" id="hlc-hits"></span></div></div>
             <div class="hlc-live"><span class="hlc-dot"></span>LIVE</div>
           </div>
           <div class="hlc-rows" id="hlc-rows">
@@ -4478,7 +4478,7 @@ window.MP_DOMAINS   = MP_DOMAINS;
 })();
 </script>
 <script>
-// ── Hero Live Day Trade Card ──────────────────────────────────────────────
+// ── Hero Live Momentum Card ───────────────────────────────────────────────
 (function(){
   var SB_URL=(window.__env||{}).SUPABASE_URL||'';
   var SB_ANON=(window.__env||{}).SUPABASE_ANON||'';
@@ -4499,7 +4499,7 @@ window.MP_DOMAINS   = MP_DOMAINS;
       var scDate=dRows[0].snapshot_date;
 
       // Fetch from tracked_daily_plays (has pre-computed hit status)
-      var tRes=await fetch(SB_URL+'/rest/v1/tracked_daily_plays?select=ticker,entry_price,predicted_return_pct,direction,hit,lane_rank&lane=eq.DAY_TRADE&snapshot_date=eq.'+encodeURIComponent(scDate)+'&order=lane_rank.asc&limit=10',{headers:hdrs});
+      var tRes=await fetch(SB_URL+'/rest/v1/tracked_daily_plays?select=ticker,entry_price,predicted_return_pct,direction,hit,lane_rank&lane=eq.MOMENTUM&snapshot_date=eq.'+encodeURIComponent(scDate)+'&order=lane_rank.asc&limit=10',{headers:hdrs});
       if(!tRes.ok)return;
       var plays=await tRes.json();
       if(!plays.length)return;
@@ -4548,7 +4548,7 @@ window.MP_DOMAINS   = MP_DOMAINS;
       var visible=sorted.slice(0,5);
       container.innerHTML=visible.map(function(r){
         var predPct=r.predicted_return_pct!=null?Number(r.predicted_return_pct):null;
-        var chip=predPct!=null?fmtRet(predPct)+' today':'today';
+        var chip=predPct!=null?fmtRet(predPct)+' est.':'est.';
         var q=quotes[r.ticker];
         var price=q&&q.price?'$'+fmtP(q.price):(r.entry_price?'$'+fmtP(Number(r.entry_price)):'');
         var isLong=r.direction==='LONG';
