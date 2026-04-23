@@ -4595,11 +4595,6 @@ body{
       Leaderboard
       <span class="nav-item-badge teal" id="nav-badge-leaderboard">New</span>
     </button>
-    <button class="nav-item" data-tab="prism" onclick="switchTab('prism',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 3 3 20 21 20 12 3"/><line x1="12" y1="3" x2="7.5" y2="20"/><line x1="12" y1="3" x2="16.5" y2="20"/></svg>
-      Prism
-      <span class="nav-item-badge" style="background:rgba(0,222,148,0.15);color:#00DE94;border-color:rgba(0,222,148,0.30);font-size:10px;letter-spacing:.06em;">NEW</span>
-    </button>
 
     <div class="nav-section-lbl">Tools</div>
     <button class="nav-item" data-tab="signallab" onclick="switchTab('signallab',this)">
@@ -4638,6 +4633,11 @@ body{
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"/></svg>
       Score Any Stock
       <span class="nav-item-badge" style="background:rgba(255,184,0,0.15);color:#FFB800;border-color:rgba(255,184,0,0.3);font-size:10px;letter-spacing:.06em;">TESTING</span>
+    </button>
+    <button class="nav-item" data-tab="prism" onclick="switchTab('prism',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 3 3 20 21 20 12 3"/><line x1="12" y1="3" x2="7.5" y2="20"/><line x1="12" y1="3" x2="16.5" y2="20"/></svg>
+      Prism
+      <span class="nav-item-badge" style="background:rgba(0,222,148,0.15);color:#00DE94;border-color:rgba(0,222,148,0.30);font-size:10px;letter-spacing:.06em;">NEW</span>
     </button>
 
     <!-- Promo card -->
@@ -5673,38 +5673,46 @@ body{
         async function fetchData(){
           if(typeof restFetch !== 'function') throw new Error('restFetch helper unavailable');
           if(typeof SUPABASE_URL !== 'string' || !SUPABASE_URL) throw new Error('Supabase URL not configured');
-          var dateRows = await restFetch('narrative_scorecard', {select:'snapshot_date', order:'snapshot_date.desc', limit:'1'});
-          if(!dateRows || !dateRows.length) return [];
-          var scDate = dateRows[0].snapshot_date;
+          // Each table can have its own snapshot cadence — look them up independently.
+          var scDateP = restFetch('narrative_scorecard', {select:'snapshot_date', order:'snapshot_date.desc', limit:'1'}).catch(function(){ return []; });
+          var priceDateP = restFetch('ticker_snapshots', {select:'snapshot_date', order:'snapshot_date.desc', limit:'1'}).catch(function(){ return []; });
+          var earnDateP = restFetch('earnings_context', {select:'snapshot_date', order:'snapshot_date.desc', limit:'1'}).catch(function(){ return []; });
+          var scDateRows = await scDateP;
+          var priceDateRows = await priceDateP;
+          var earnDateRows = await earnDateP;
+          var scDate = (scDateRows && scDateRows[0] && scDateRows[0].snapshot_date) || null;
+          var priceDate = (priceDateRows && priceDateRows[0] && priceDateRows[0].snapshot_date) || scDate;
+          var earnDate = (earnDateRows && earnDateRows[0] && earnDateRows[0].snapshot_date) || scDate;
+          console.log('[Prism] snapshot dates — scorecard:', scDate, '· prices:', priceDate, '· earnings:', earnDate);
+          if(!scDate) return [];
           var scP = restFetch('narrative_scorecard', {
             select:'ticker,snapshot_date,narrative_mass_score,wks_score,srs,coordination_score,fair_value,fvd_pct,verdict,nrs,ccp,created_at',
             snapshot_date:'eq.'+scDate,
             order:'created_at.desc'
           });
-          var priceP = restFetch('ticker_snapshots', {
-            select:'ticker,snapshot_date,price_close',
-            snapshot_date:'eq.'+scDate
-          }).catch(function(){ return []; });
-          var earnP = restFetch('earnings_context', {
-            select:'ticker,days_to_earnings,next_earnings_date,snapshot_date,updated_at',
-            snapshot_date:'eq.'+scDate
-          }).catch(function(){ return []; });
+          var priceP = priceDate
+            ? restFetch('ticker_snapshots', {select:'ticker,snapshot_date,price_close', snapshot_date:'eq.'+priceDate}).catch(function(){ return []; })
+            : Promise.resolve([]);
+          var earnP = earnDate
+            ? restFetch('earnings_context', {select:'ticker,days_to_earnings,next_earnings_date,snapshot_date,updated_at', snapshot_date:'eq.'+earnDate, order:'updated_at.desc'}).catch(function(){ return []; })
+            : Promise.resolve([]);
           var sc = await scP;
           var prices = await priceP;
           var earn = await earnP;
+          console.log('[Prism] row counts — scorecard:', (sc||[]).length, '· prices:', (prices||[]).length, '· earnings:', (earn||[]).length);
           var scByTicker = {};
           (sc||[]).forEach(function(r){ if(!scByTicker[r.ticker]) scByTicker[r.ticker] = r; });
           var priceByT = {};
           (prices||[]).forEach(function(p){ priceByT[p.ticker] = Number(p.price_close); });
           var earnByT = {};
           (earn||[]).forEach(function(e){ if(!earnByT[e.ticker]) earnByT[e.ticker] = e; });
-          var out = [];
+          var out = [], dropped = 0;
           Object.keys(scByTicker).forEach(function(t){
             var s = scByTicker[t];
             var e = earnByT[t];
-            if(!e || e.days_to_earnings==null) return;
+            if(!e || e.days_to_earnings==null){ dropped++; return; }
             var dte = Number(e.days_to_earnings);
-            if(!(dte>=0 && dte<=90)) return;
+            if(!(dte>=0 && dte<=90)){ dropped++; return; }
             out.push({
               ticker:t,
               price: priceByT[t]!=null ? priceByT[t] : null,
@@ -5721,6 +5729,7 @@ body{
               next_earn: e.next_earnings_date || null
             });
           });
+          console.log('[Prism] merged rows:', out.length, '· dropped (no earnings / out of range):', dropped);
           return out;
         }
 
