@@ -5588,6 +5588,12 @@ body{
               <option value="ideal">Ideal entry only</option>
             </select>
           </div>
+          <div class="prism-ctrl-group">
+            <span class="prism-ctrl-label">Sector</span>
+            <select id="prism-sector" class="prism-select">
+              <option value="all">All sectors</option>
+            </select>
+          </div>
           <div class="prism-ctrl-group" style="margin-left:auto;">
             <button class="prism-reset" id="prism-reset">Reset view</button>
           </div>
@@ -5664,8 +5670,18 @@ body{
           var n = Math.max(0.10, Math.min(0.60, Number(m)||0));
           return 5 + (n-0.10)/0.50 * 10;
         }
-        function isSafeVerdict(v){ return v==='Structurally Supported' || v==='Plausible but Unverified'; }
-        function isRiskVerdict(v){ return v==='Narrative Trap' || v==='Narrative Risk'; }
+        // Safe = anything the scorecard doesn't flag as risky/fragile. Previously this was a
+        // hard whitelist of two strings ('Structurally Supported', 'Plausible but Unverified')
+        // that didn't match the actual verdicts written by the scorer ('Stable', 'Neutral',
+        // 'Monitoring', 'Surging', 'Ride the Trend', ...), so the "Ideal entry only" filter
+        // was rendering empty.
+        function isSafeVerdict(v){
+          if(!v) return false;
+          return v==='Structurally Supported' || v==='Plausible but Unverified'
+              || v==='Stable' || v==='Neutral' || v==='Monitoring'
+              || v==='Surging' || v==='Ride the Trend';
+        }
+        function isRiskVerdict(v){ return v==='Narrative Trap' || v==='Narrative Risk' || v==='Fragile' || v==='Breaking'; }
         function entryVerdict(r){
           var fv = r.fair_value, fvd = r.fvd_pct, v = r.verdict, cc = Number(r.coord)||0;
           if(fv==null) return {label:'Insufficient data', color:'#A0A8B0', ideal:false, reason:'No fair-value model yet.'};
@@ -5678,7 +5694,11 @@ body{
           return {label:'At fair value · weak signal', color:'#A0A8B0', ideal:false, reason:'Fair value met, no clear directional edge.'};
         }
 
-        var state = { rows:[], dteMax:30, filter:'all', zoom:1, panX:0, panY:0, selected:null, booted:false };
+        var state = { rows:[], dteMax:30, filter:'all', sector:'all', zoom:1, panX:0, panY:0, selected:null, booted:false };
+        function sectorFor(ticker){
+          var m = (typeof SECTOR_MAP!=='undefined' && SECTOR_MAP[ticker]) || null;
+          return (m && m.length) ? m[0] : 'Other';
+        }
         var PLOT_W = 1600, PLOT_H = 700;
         var PAD = {top:44, right:40, bottom:62, left:72};
         function innerW(){ return PLOT_W - PAD.left - PAD.right; }
@@ -5765,7 +5785,8 @@ body{
               nrs: s.nrs!=null ? Number(s.nrs) : null,
               ccp: s.ccp!=null ? Number(s.ccp) : null,
               dte: dte,
-              next_earn: e.next_earnings_date || null
+              next_earn: e.next_earnings_date || null,
+              sector: sectorFor(t)
             });
           });
           console.log('[Prism] merged rows:', out.length, '· dropped:', dropped);
@@ -5773,14 +5794,19 @@ body{
         }
 
         function applyFilter(rows){
+          var base;
           switch(state.filter){
-            case 'coord': return rows.filter(function(r){ return r.coord>=60; });
-            case 'wks':   return rows.filter(function(r){ return Math.abs(r.wks)>=20; });
-            case 'dte14': return rows.filter(function(r){ return r.dte<=14; });
-            case 'mass':  return rows.filter(function(r){ return r.mass>=0.40; });
-            case 'ideal': return rows.filter(function(r){ return entryVerdict(r).ideal; });
-            default: return rows.slice();
+            case 'coord': base = rows.filter(function(r){ return r.coord>=60; }); break;
+            case 'wks':   base = rows.filter(function(r){ return Math.abs(r.wks)>=20; }); break;
+            case 'dte14': base = rows.filter(function(r){ return r.dte<=14; }); break;
+            case 'mass':  base = rows.filter(function(r){ return r.mass>=0.40; }); break;
+            case 'ideal': base = rows.filter(function(r){ return entryVerdict(r).ideal; }); break;
+            default:      base = rows.slice();
           }
+          if(state.sector && state.sector!=='all'){
+            base = base.filter(function(r){ return r.sector===state.sector; });
+          }
+          return base;
         }
         function applyDteWindow(rows){ return rows.filter(function(r){ return r.dte<=state.dteMax; }); }
         function computeJitter(rows){
@@ -5940,6 +5966,8 @@ body{
           });
           var f = document.getElementById('prism-filter');
           if(f) f.addEventListener('change', function(){ state.filter = f.value; render(); });
+          var sf = document.getElementById('prism-sector');
+          if(sf) sf.addEventListener('change', function(){ state.sector = sf.value; render(); });
           var rb = document.getElementById('prism-reset');
           if(rb) rb.addEventListener('click', function(){ state.zoom=1; state.panX=0; state.panY=0; applyTransform(); });
           var svg = document.getElementById('prism-svg');
@@ -5988,6 +6016,17 @@ body{
             if(!state.rows.length){
               if(empty){ empty.textContent='No earnings-context rows in the current snapshot.'; }
               return;
+            }
+            // Populate sector dropdown from the tickers that actually made it into the plot
+            var sel = document.getElementById('prism-sector');
+            if(sel){
+              var seen = {};
+              state.rows.forEach(function(r){ if(r.sector) seen[r.sector]=true; });
+              var names = Object.keys(seen).sort();
+              // Reset to just the "All sectors" option, then append live ones
+              sel.innerHTML = '<option value="all">All sectors</option>' +
+                names.map(function(n){ return '<option value="'+n.replace(/"/g,'&quot;')+'">'+n+'</option>'; }).join('');
+              sel.value = state.sector || 'all';
             }
             if(empty) empty.style.display='none';
             render();
