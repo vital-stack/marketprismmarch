@@ -16593,7 +16593,16 @@ async function latestDate(table){
 // Fallback: derive leaderboard data from already-loaded scorecardMap / DATA
 function scorecardFallback(filterFn, mapFn, sortFn, limit){
   if(typeof scorecardMap==='undefined'||!scorecardMap) return [];
-  var rows=Object.values(scorecardMap).filter(filterFn);
+  // Drop wrong-scale scorer rows before any board sees them. Healthy
+  // narrative_mass_score sits in [0,1]; a value >1 means the scorer wrote
+  // the ticker on the wrong scale (0-100 instead of decimal). The same
+  // pipeline failure leaves nrs at 0/null, so those rows are broken
+  // end-to-end and would dominate any mass-sorted board with fake rankings.
+  var rows=Object.values(scorecardMap).filter(function(s){
+    var badScale=Number(s.narrative_mass_score)>1;
+    var noNrs=s.nrs==null||Number(s.nrs)===0;
+    return !(badScale&&noNrs);
+  }).filter(filterFn);
   rows.sort(sortFn);
   return rows.slice(0,limit||10).map(mapFn);
 }
