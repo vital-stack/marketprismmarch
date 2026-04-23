@@ -5670,20 +5670,30 @@ body{
           return PAD.top + (0.60 - m)/0.50 * innerH();
         }
 
+        function todayISO(){
+          var n = new Date();
+          var y = n.getFullYear(), m = String(n.getMonth()+1).padStart(2,'0'), d = String(n.getDate()).padStart(2,'0');
+          return y+'-'+m+'-'+d;
+        }
+        function dteFromNextEarn(s){
+          if(!s) return null;
+          var mm = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/);
+          if(!mm) return null;
+          var ne = Date.UTC(+mm[1], +mm[2]-1, +mm[3]);
+          var n = new Date();
+          var today = Date.UTC(n.getFullYear(), n.getMonth(), n.getDate());
+          return Math.round((ne - today)/(1000*60*60*24));
+        }
         async function fetchData(){
           if(typeof restFetch !== 'function') throw new Error('restFetch helper unavailable');
           if(typeof SUPABASE_URL !== 'string' || !SUPABASE_URL) throw new Error('Supabase URL not configured');
-          // Each table can have its own snapshot cadence — look them up independently.
           var scDateP = restFetch('narrative_scorecard', {select:'snapshot_date', order:'snapshot_date.desc', limit:'1'}).catch(function(){ return []; });
           var priceDateP = restFetch('ticker_snapshots', {select:'snapshot_date', order:'snapshot_date.desc', limit:'1'}).catch(function(){ return []; });
-          var earnDateP = restFetch('earnings_context', {select:'snapshot_date', order:'snapshot_date.desc', limit:'1'}).catch(function(){ return []; });
           var scDateRows = await scDateP;
           var priceDateRows = await priceDateP;
-          var earnDateRows = await earnDateP;
           var scDate = (scDateRows && scDateRows[0] && scDateRows[0].snapshot_date) || null;
           var priceDate = (priceDateRows && priceDateRows[0] && priceDateRows[0].snapshot_date) || scDate;
-          var earnDate = (earnDateRows && earnDateRows[0] && earnDateRows[0].snapshot_date) || scDate;
-          console.log('[Prism] snapshot dates — scorecard:', scDate, '· prices:', priceDate, '· earnings:', earnDate);
+          console.log('[Prism] snapshot dates — scorecard:', scDate, '· prices:', priceDate, '· today:', todayISO());
           if(!scDate) return [];
           var scP = restFetch('narrative_scorecard', {
             select:'ticker,snapshot_date,narrative_mass_score,wks_score,srs,coordination_score,fair_value,fvd_pct,verdict,nrs,ccp,created_at',
@@ -5693,26 +5703,33 @@ body{
           var priceP = priceDate
             ? restFetch('ticker_snapshots', {select:'ticker,snapshot_date,price_close', snapshot_date:'eq.'+priceDate}).catch(function(){ return []; })
             : Promise.resolve([]);
-          var earnP = earnDate
-            ? restFetch('earnings_context', {select:'ticker,days_to_earnings,next_earnings_date,snapshot_date,updated_at', snapshot_date:'eq.'+earnDate, order:'updated_at.desc'}).catch(function(){ return []; })
-            : Promise.resolve([]);
+          // earnings_context: each snapshot only tracks imminent-earnings tickers, so pull the
+          // latest row per ticker by ordering desc and deduping client-side. Filter to
+          // next_earnings_date >= today so rows from stale past earnings drop out.
+          var earnP = restFetch('earnings_context', {
+            select:'ticker,days_to_earnings,next_earnings_date,snapshot_date,created_at',
+            next_earnings_date:'gte.'+todayISO(),
+            order:'snapshot_date.desc,created_at.desc',
+            limit:'5000'
+          }).catch(function(err){ console.warn('[Prism] earnings_context fetch failed', err); return []; });
           var sc = await scP;
           var prices = await priceP;
           var earn = await earnP;
-          console.log('[Prism] row counts — scorecard:', (sc||[]).length, '· prices:', (prices||[]).length, '· earnings:', (earn||[]).length);
+          var earnByT = {};
+          (earn||[]).forEach(function(e){ if(!earnByT[e.ticker]) earnByT[e.ticker] = e; });
+          console.log('[Prism] row counts — scorecard:', (sc||[]).length, '· prices:', (prices||[]).length, '· earnings rows:', (earn||[]).length, '· unique earnings tickers:', Object.keys(earnByT).length);
           var scByTicker = {};
           (sc||[]).forEach(function(r){ if(!scByTicker[r.ticker]) scByTicker[r.ticker] = r; });
           var priceByT = {};
           (prices||[]).forEach(function(p){ priceByT[p.ticker] = Number(p.price_close); });
-          var earnByT = {};
-          (earn||[]).forEach(function(e){ if(!earnByT[e.ticker]) earnByT[e.ticker] = e; });
           var out = [], dropped = 0;
           Object.keys(scByTicker).forEach(function(t){
             var s = scByTicker[t];
             var e = earnByT[t];
-            if(!e || e.days_to_earnings==null){ dropped++; return; }
-            var dte = Number(e.days_to_earnings);
-            if(!(dte>=0 && dte<=90)){ dropped++; return; }
+            if(!e){ dropped++; return; }
+            var dte = dteFromNextEarn(e.next_earnings_date);
+            if(dte==null && e.days_to_earnings!=null) dte = Number(e.days_to_earnings);
+            if(dte==null || !(dte>=0 && dte<=90)){ dropped++; return; }
             out.push({
               ticker:t,
               price: priceByT[t]!=null ? priceByT[t] : null,
@@ -5729,7 +5746,7 @@ body{
               next_earn: e.next_earnings_date || null
             });
           });
-          console.log('[Prism] merged rows:', out.length, '· dropped (no earnings / out of range):', dropped);
+          console.log('[Prism] merged rows:', out.length, '· dropped:', dropped);
           return out;
         }
 
