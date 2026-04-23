@@ -8852,12 +8852,27 @@ async function loadTrackedPlays(){
   }
 }
 
+// Rows hidden from table + stats. Two patterns of bad data:
+//  1. Predicted return rounds to 0.0% — not a real signal, would render as
+//     "+0.0%" or "−0.0%" misleadingly.
+//  2. Closed trade where realized AND best return both round to 0.00% — means
+//     price tracking never captured movement for that ticker (data-capture
+//     failure), not a genuinely flat trade. A liquid stock doesn't sit exactly
+//     at entry across a multi-day hold; this is a zombie trade.
+function _tpIsZombie(r){
+  if(r.predicted_return_pct!=null&&Math.abs(Number(r.predicted_return_pct))<0.05)return true;
+  if(r.status!=='OPEN'
+    &&r.exit_return_pct!=null&&Math.abs(Number(r.exit_return_pct))<0.005
+    &&r.best_return_pct!=null&&Math.abs(Number(r.best_return_pct))<0.005)return true;
+  return false;
+}
+
 function tpRenderStats(){
   var el=document.getElementById('tp-stats');
   if(!el||!_TP_DATA.length)return;
-  // Mirror the 0%-return filter used in tpRenderTable so the stat strip
+  // Mirror the zombie filter used in tpRenderTable so the stat strip
   // matches the table (total count, open/closed, hit rate all stay in sync).
-  var pool=_TP_DATA.filter(function(r){return !(r.predicted_return_pct!=null&&Math.abs(Number(r.predicted_return_pct))<0.05);});
+  var pool=_TP_DATA.filter(function(r){return !_tpIsZombie(r);});
   var total=pool.length;
   var open=pool.filter(function(r){return r.status==='OPEN';}).length;
   var closed=pool.filter(function(r){return r.status!=='OPEN';}).length;
@@ -8880,10 +8895,7 @@ function tpRenderStats(){
 function tpRenderTable(){
   var el=document.getElementById('tp-table');
   if(!el)return;
-  var data=_TP_DATA;
-  // Global rule: hide tracked trades whose predicted return rounds to 0.0% — a 0% signal
-  // isn't a trade, and sub-0.05% values render misleadingly as "−0.0%" or "+0.0%".
-  data=data.filter(function(r){return !(r.predicted_return_pct!=null&&Math.abs(Number(r.predicted_return_pct))<0.05);});
+  var data=_TP_DATA.filter(function(r){return !_tpIsZombie(r);});
   if(_TP_FILTER==='open')data=data.filter(function(r){return r.status==='OPEN';});
   else if(_TP_FILTER==='hit')data=data.filter(function(r){return r.hit;});
   else if(_TP_FILTER==='closed')data=data.filter(function(r){return r.status!=='OPEN';});
