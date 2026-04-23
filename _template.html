@@ -4595,6 +4595,11 @@ body{
       Leaderboard
       <span class="nav-item-badge teal" id="nav-badge-leaderboard">New</span>
     </button>
+    <button class="nav-item" data-tab="prism" onclick="switchTab('prism',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 3 3 20 21 20 12 3"/><line x1="12" y1="3" x2="7.5" y2="20"/><line x1="12" y1="3" x2="16.5" y2="20"/></svg>
+      Prism
+      <span class="nav-item-badge" style="background:rgba(0,222,148,0.15);color:#00DE94;border-color:rgba(0,222,148,0.30);font-size:10px;letter-spacing:.06em;">NEW</span>
+    </button>
 
     <div class="nav-section-lbl">Tools</div>
     <button class="nav-item" data-tab="signallab" onclick="switchTab('signallab',this)">
@@ -5489,6 +5494,465 @@ body{
     </div>
 
     <!-- ══════════════════════════════════════
+         TAB: PRISM (earnings timescape)
+    ═══════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-prism">
+      <style>
+        #tab-prism .prism-wrap{max-width:1800px;margin:0 auto;}
+        #tab-prism .prism-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:24px 0 20px;}
+        #tab-prism .prism-kpi{background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:14px;padding:16px 20px;}
+        #tab-prism .pk-val{font-family:var(--font-display);font-size:28px;font-weight:400;color:var(--mp-text-primary);line-height:1;letter-spacing:-0.02em;}
+        #tab-prism .pk-lbl{font-family:var(--font-body);font-size:11px;color:var(--mp-text-tertiary);letter-spacing:0.06em;text-transform:uppercase;margin-top:8px;}
+        #tab-prism .prism-controls{display:flex;gap:24px;align-items:center;flex-wrap:wrap;margin-bottom:16px;padding:14px 18px;background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:14px;}
+        #tab-prism .prism-ctrl-group{display:flex;gap:8px;align-items:center;}
+        #tab-prism .prism-ctrl-label{font-family:var(--font-body);font-size:11px;color:var(--mp-text-tertiary);letter-spacing:0.08em;text-transform:uppercase;margin-right:4px;}
+        #tab-prism .prism-pill{font-family:var(--font-body);font-size:12px;font-weight:500;padding:6px 14px;border-radius:999px;border:1px solid var(--mp-border);background:transparent;color:var(--mp-text-secondary);cursor:pointer;transition:all .15s;}
+        #tab-prism .prism-pill:hover{border-color:var(--mp-border-mid);color:var(--mp-text-primary);}
+        #tab-prism .prism-pill.active{background:#00AEFF;border-color:#00AEFF;color:#fff;}
+        #tab-prism .prism-select{font-family:var(--font-body);font-size:12px;padding:6px 12px;border-radius:8px;border:1px solid var(--mp-border);background:var(--mp-obsidian);color:var(--mp-text-primary);cursor:pointer;min-height:30px;}
+        #tab-prism .prism-reset{font-family:var(--font-body);font-size:12px;font-weight:500;padding:6px 14px;border-radius:8px;border:1px solid var(--mp-border);background:transparent;color:var(--mp-text-secondary);cursor:pointer;}
+        #tab-prism .prism-reset:hover{border-color:var(--mp-border-mid);color:var(--mp-text-primary);}
+        #tab-prism .prism-plot-wrap{position:relative;background:#0C1018;border:1px solid rgba(255,255,255,0.06);border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.25);}
+        #tab-prism .prism-svg{display:block;width:100%;height:auto;user-select:none;touch-action:none;}
+        #tab-prism .prism-bg{fill:#0C1018;}
+        #tab-prism .prism-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-body);font-size:13px;color:rgba(255,255,255,0.55);z-index:3;}
+        #tab-prism .prism-legend{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:14px;padding:10px 16px;background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:12px;}
+        #tab-prism .prism-leg-label{font-family:var(--font-body);font-size:11px;color:var(--mp-text-tertiary);letter-spacing:0.08em;text-transform:uppercase;margin-right:8px;}
+        #tab-prism .prism-leg-swatch{display:inline-block;width:18px;height:14px;border-radius:3px;}
+        #tab-prism .prism-leg-val{font-family:var(--font-body);font-size:11px;color:var(--mp-text-secondary);margin:0 6px;}
+        #tab-prism .prism-leg-sep{color:var(--mp-text-muted);margin:0 8px;}
+        #tab-prism .prism-leg-note{font-family:var(--font-body);font-size:11px;color:var(--mp-text-tertiary);}
+        #tab-prism .pr-pulse{transform-origin:center;transform-box:fill-box;animation:prPulse 1.6s ease-in-out infinite;}
+        @keyframes prPulse{0%,100%{transform:scale(1);opacity:0.9;}50%{transform:scale(1.35);opacity:0.25;}}
+        #tab-prism .prism-popup{position:absolute;top:20px;right:20px;width:360px;max-width:calc(100% - 40px);background:#0F1628;border:1px solid rgba(255,255,255,0.12);border-radius:16px;padding:20px;box-shadow:0 12px 40px rgba(0,0,0,0.5);z-index:5;color:#F5F7FA;}
+        #tab-prism .pr-close{position:absolute;top:12px;right:14px;background:transparent;border:none;color:rgba(255,255,255,0.5);font-size:16px;cursor:pointer;padding:4px 8px;border-radius:6px;}
+        #tab-prism .pr-close:hover{color:#fff;background:rgba(255,255,255,0.08);}
+        #tab-prism .pr-pop-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+        #tab-prism .pr-pop-tkr{font-family:var(--font-display);font-size:26px;font-weight:400;letter-spacing:-0.02em;color:#fff;}
+        #tab-prism .pr-pop-pulse{font-family:var(--font-body);font-size:10px;font-weight:600;letter-spacing:0.1em;padding:3px 8px;border-radius:999px;background:rgba(0,174,255,0.18);color:#4DC8F0;border:1px solid rgba(0,174,255,0.4);}
+        #tab-prism .pr-pop-verdict{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);margin-bottom:14px;}
+        #tab-prism .pr-pop-dot{flex:0 0 10px;width:10px;height:10px;border-radius:50%;margin-top:4px;}
+        #tab-prism .pr-pop-vlbl{font-family:var(--font-body);font-size:13px;font-weight:600;color:#fff;margin-bottom:2px;}
+        #tab-prism .pr-pop-vreason{font-family:var(--font-body);font-size:12px;color:rgba(255,255,255,0.65);line-height:1.5;}
+        #tab-prism .pr-pop-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin-bottom:14px;}
+        #tab-prism .pr-pop-kv{display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
+        #tab-prism .pr-pop-k{font-family:var(--font-body);font-size:11px;color:rgba(255,255,255,0.55);letter-spacing:0.04em;}
+        #tab-prism .pr-pop-v{font-family:var(--font-body);font-size:13px;font-weight:500;color:#fff;}
+        #tab-prism .pr-pop-footer{font-family:var(--font-body);font-size:11px;color:rgba(255,255,255,0.5);letter-spacing:0.06em;text-transform:uppercase;margin-top:6px;}
+        #tab-prism .pr-pop-footer b{color:#fff;font-weight:600;text-transform:none;letter-spacing:0;}
+        @media (max-width:720px){
+          #tab-prism .prism-kpis{grid-template-columns:repeat(2,1fr);}
+          #tab-prism .prism-popup{width:auto;left:12px;right:12px;top:12px;}
+        }
+      </style>
+      <div class="prism-wrap">
+        <div class="page-header">
+          <div class="ph-eyebrow">Earnings Timescape</div>
+          <h1>Every ticker, every catalyst.</h1>
+          <span class="ph-italic">One field.</span>
+          <p>Distance to earnings on the horizon, narrative mass on the vertical, WKS sentiment in color. Click any dot for the full read.</p>
+        </div>
+
+        <div class="prism-kpis">
+          <div class="prism-kpi"><div class="pk-val" id="pk-total">—</div><div class="pk-lbl">Tickers shown</div></div>
+          <div class="prism-kpi"><div class="pk-val" id="pk-imminent">—</div><div class="pk-lbl">DTE ≤ 7</div></div>
+          <div class="prism-kpi"><div class="pk-val" id="pk-coord">—</div><div class="pk-lbl">Coordinated ≥ 60</div></div>
+          <div class="prism-kpi"><div class="pk-val" id="pk-ideal">—</div><div class="pk-lbl">Ideal entry</div></div>
+        </div>
+
+        <div class="prism-controls">
+          <div class="prism-ctrl-group">
+            <span class="prism-ctrl-label">DTE range</span>
+            <button class="prism-pill" data-dte="5">5d</button>
+            <button class="prism-pill" data-dte="15">15d</button>
+            <button class="prism-pill active" data-dte="30">30d</button>
+            <button class="prism-pill" data-dte="90">90d</button>
+          </div>
+          <div class="prism-ctrl-group">
+            <span class="prism-ctrl-label">Filter</span>
+            <select id="prism-filter" class="prism-select">
+              <option value="all">All tickers</option>
+              <option value="coord">Coordinated ≥ 60</option>
+              <option value="wks">|WKS| ≥ 20</option>
+              <option value="dte14">DTE ≤ 14</option>
+              <option value="mass">Mass ≥ 0.40</option>
+              <option value="ideal">Ideal entry only</option>
+            </select>
+          </div>
+          <div class="prism-ctrl-group" style="margin-left:auto;">
+            <button class="prism-reset" id="prism-reset">Reset view</button>
+          </div>
+        </div>
+
+        <div class="prism-plot-wrap" id="prism-plot-wrap">
+          <div class="prism-empty" id="prism-empty">Loading Prism…</div>
+          <svg id="prism-svg" class="prism-svg" viewBox="0 0 1600 700" preserveAspectRatio="xMidYMid meet">
+            <rect class="prism-bg" x="0" y="0" width="1600" height="700"/>
+            <g id="prism-grid"></g>
+            <g id="prism-firezone"></g>
+            <g id="prism-axes"></g>
+            <g id="prism-view">
+              <g id="prism-dots"></g>
+            </g>
+          </svg>
+          <div class="prism-popup" id="prism-popup" style="display:none;"></div>
+        </div>
+
+        <div class="prism-legend">
+          <span class="prism-leg-label">WKS</span>
+          <span class="prism-leg-swatch" style="background:#791F1F"></span>
+          <span class="prism-leg-val">−30</span>
+          <span class="prism-leg-swatch" style="background:#B03A2A"></span>
+          <span class="prism-leg-swatch" style="background:#C86540"></span>
+          <span class="prism-leg-swatch" style="background:#B4B2A9"></span>
+          <span class="prism-leg-val">0</span>
+          <span class="prism-leg-swatch" style="background:#6B8A3B"></span>
+          <span class="prism-leg-swatch" style="background:#558223"></span>
+          <span class="prism-leg-swatch" style="background:#3B6D11"></span>
+          <span class="prism-leg-val">+30</span>
+          <span class="prism-leg-sep">·</span>
+          <span class="prism-leg-note">Size = narrative mass · Cyan pulse = coordination ≥ 60 · Dashed green ring = ideal entry</span>
+        </div>
+      </div>
+
+      <script>
+      (function(){
+        var BIG_CAPS = {AAPL:1,MSFT:1,GOOGL:1,AMZN:1,META:1,NVDA:1,TSLA:1,'BRK.B':1,LLY:1,UNH:1,V:1,JPM:1,WMT:1,XOM:1,JNJ:1,MA:1,PG:1,AVGO:1,HD:1,ORCL:1,COST:1,ABBV:1,CVX:1,MRK:1,KO:1,PEP:1,NFLX:1,BAC:1,TMO:1,CRM:1,AMD:1,ADBE:1,CSCO:1,MCD:1,ACN:1,LIN:1,DIS:1,ABT:1,WFC:1,DHR:1,INTC:1,GE:1,CAT:1,IBM:1,QCOM:1,TXN:1,VZ:1,NOW:1,UBER:1,NKE:1,PFE:1,COIN:1,PLTR:1,PANW:1,MU:1,GS:1,MS:1,BA:1,MRVL:1,BKNG:1,TMUS:1};
+        var WKS_BANDS = [
+          {max:-30, color:'#791F1F'},
+          {max:-15, color:'#B03A2A'},
+          {max:-5,  color:'#C86540'},
+          {max:5,   color:'#B4B2A9'},
+          {max:15,  color:'#6B8A3B'},
+          {max:30,  color:'#558223'},
+          {max:Infinity, color:'#3B6D11'}
+        ];
+        function wksColor(w){
+          var n = Number(w); if(!isFinite(n)) n = 0;
+          for(var i=0;i<WKS_BANDS.length;i++){ if(n<=WKS_BANDS[i].max) return WKS_BANDS[i].color; }
+          return '#B4B2A9';
+        }
+        function srsOpacity(s){
+          var n = Number(s);
+          if(!isFinite(n)) return 0.75;
+          var c = Math.max(35, Math.min(72, n));
+          return 0.50 + (c-35)/37 * 0.50;
+        }
+        function massRadius(m){
+          var n = Math.max(0.10, Math.min(0.60, Number(m)||0));
+          return 5 + (n-0.10)/0.50 * 10;
+        }
+        function isSafeVerdict(v){ return v==='Structurally Supported' || v==='Plausible but Unverified'; }
+        function isRiskVerdict(v){ return v==='Narrative Trap' || v==='Narrative Risk'; }
+        function entryVerdict(r){
+          var fv = r.fair_value, fvd = r.fvd_pct, v = r.verdict, cc = Number(r.coord)||0;
+          if(fv==null) return {label:'Insufficient data', color:'#A0A8B0', ideal:false, reason:'No fair-value model yet.'};
+          if(isRiskVerdict(v)) return {label:'Narrative risk zone', color:'#FF4D4D', ideal:false, reason:'Scorecard flagged '+v.toLowerCase()+'.'};
+          var abs = Math.abs(Number(fvd)||0);
+          if(abs<=5 && isSafeVerdict(v) && cc<60) return {label:'Ideal entry zone', color:'#00DE94', ideal:true, reason:'Near fair value, safe verdict, low coordination.'};
+          if(abs<=10 && isSafeVerdict(v)) return {label:'Near ideal · monitor', color:'#38C8B8', ideal:false, reason:'Within 10% of fair value — watch for a pullback.'};
+          if(Number(fvd)>10) return {label:'Above fair value · wait', color:'#FFB800', ideal:false, reason:'Priced above model fair value.'};
+          if(Number(fvd)<-10) return {label:'Below fair value · deep pullback', color:'#00AEFF', ideal:false, reason:'Price well below fair value — confirm catalyst.'};
+          return {label:'At fair value · weak signal', color:'#A0A8B0', ideal:false, reason:'Fair value met, no clear directional edge.'};
+        }
+
+        var state = { rows:[], dteMax:30, filter:'all', zoom:1, panX:0, panY:0, selected:null, booted:false };
+        var PLOT_W = 1600, PLOT_H = 700;
+        var PAD = {top:44, right:40, bottom:62, left:72};
+        function innerW(){ return PLOT_W - PAD.left - PAD.right; }
+        function innerH(){ return PLOT_H - PAD.top - PAD.bottom; }
+        function xFor(dte){
+          var d = Math.max(0, Math.min(state.dteMax, dte));
+          return PAD.left + (state.dteMax - d)/state.dteMax * innerW();
+        }
+        function yFor(mass){
+          var m = Math.max(0.10, Math.min(0.60, mass));
+          return PAD.top + (0.60 - m)/0.50 * innerH();
+        }
+
+        async function fetchData(){
+          if(typeof restFetch !== 'function') throw new Error('restFetch helper unavailable');
+          if(typeof SUPABASE_URL !== 'string' || !SUPABASE_URL) throw new Error('Supabase URL not configured');
+          var dateRows = await restFetch('narrative_scorecard', {select:'snapshot_date', order:'snapshot_date.desc', limit:'1'});
+          if(!dateRows || !dateRows.length) return [];
+          var scDate = dateRows[0].snapshot_date;
+          var scP = restFetch('narrative_scorecard', {
+            select:'ticker,snapshot_date,narrative_mass_score,wks_score,srs,coordination_score,fair_value,fvd_pct,verdict,nrs,ccp,created_at',
+            snapshot_date:'eq.'+scDate,
+            order:'created_at.desc'
+          });
+          var priceP = restFetch('ticker_snapshots', {
+            select:'ticker,snapshot_date,price_close',
+            snapshot_date:'eq.'+scDate
+          }).catch(function(){ return []; });
+          var earnP = restFetch('earnings_context', {
+            select:'ticker,days_to_earnings,next_earnings_date,snapshot_date,updated_at',
+            snapshot_date:'eq.'+scDate
+          }).catch(function(){ return []; });
+          var sc = await scP;
+          var prices = await priceP;
+          var earn = await earnP;
+          var scByTicker = {};
+          (sc||[]).forEach(function(r){ if(!scByTicker[r.ticker]) scByTicker[r.ticker] = r; });
+          var priceByT = {};
+          (prices||[]).forEach(function(p){ priceByT[p.ticker] = Number(p.price_close); });
+          var earnByT = {};
+          (earn||[]).forEach(function(e){ if(!earnByT[e.ticker]) earnByT[e.ticker] = e; });
+          var out = [];
+          Object.keys(scByTicker).forEach(function(t){
+            var s = scByTicker[t];
+            var e = earnByT[t];
+            if(!e || e.days_to_earnings==null) return;
+            var dte = Number(e.days_to_earnings);
+            if(!(dte>=0 && dte<=90)) return;
+            out.push({
+              ticker:t,
+              price: priceByT[t]!=null ? priceByT[t] : null,
+              mass: Number(s.narrative_mass_score)||0,
+              wks:  Number(s.wks_score)||0,
+              srs:  s.srs!=null ? Number(s.srs) : null,
+              coord: Number(s.coordination_score)||0,
+              fair_value: s.fair_value!=null ? Number(s.fair_value) : null,
+              fvd_pct: s.fvd_pct!=null ? Number(s.fvd_pct) : null,
+              verdict: s.verdict || '',
+              nrs: s.nrs!=null ? Number(s.nrs) : null,
+              ccp: s.ccp!=null ? Number(s.ccp) : null,
+              dte: dte,
+              next_earn: e.next_earnings_date || null
+            });
+          });
+          return out;
+        }
+
+        function applyFilter(rows){
+          switch(state.filter){
+            case 'coord': return rows.filter(function(r){ return r.coord>=60; });
+            case 'wks':   return rows.filter(function(r){ return Math.abs(r.wks)>=20; });
+            case 'dte14': return rows.filter(function(r){ return r.dte<=14; });
+            case 'mass':  return rows.filter(function(r){ return r.mass>=0.40; });
+            case 'ideal': return rows.filter(function(r){ return entryVerdict(r).ideal; });
+            default: return rows.slice();
+          }
+        }
+        function applyDteWindow(rows){ return rows.filter(function(r){ return r.dte<=state.dteMax; }); }
+        function computeJitter(rows){
+          var buckets = {};
+          rows.forEach(function(r){
+            var key = r.dte + '|' + Math.round(r.mass*20);
+            (buckets[key] = buckets[key] || []).push(r);
+          });
+          Object.keys(buckets).forEach(function(k){
+            var arr = buckets[k];
+            arr.sort(function(a,b){ return (a.ticker||'').localeCompare(b.ticker||''); });
+            arr.forEach(function(r, i){
+              r._jitter = (i % 2 === 0 ? 1 : -1) * Math.ceil(i/2) * 14;
+            });
+          });
+        }
+
+        function renderAxes(){
+          var g = document.getElementById('prism-axes'); if(!g) return;
+          var parts = [];
+          var rx = PAD.left + innerW();
+          parts.push('<line x1="'+rx+'" y1="'+PAD.top+'" x2="'+rx+'" y2="'+(PAD.top+innerH())+'" stroke="#FF4D4D" stroke-width="2" stroke-dasharray="4 4" opacity="0.7"/>');
+          parts.push('<text x="'+(rx-8)+'" y="'+(PAD.top-6)+'" text-anchor="end" fill="#FF4D4D" font-family="Inter,sans-serif" font-size="11" font-weight="700" letter-spacing="0.12em">EARNINGS →</text>');
+          var ticks = state.dteMax<=5 ? [0,1,2,3,4,5] : state.dteMax<=15 ? [0,5,10,15] : state.dteMax<=30 ? [0,7,14,21,30] : [0,14,30,60,90];
+          ticks.forEach(function(t){
+            var x = xFor(t);
+            parts.push('<line x1="'+x+'" y1="'+(PAD.top+innerH())+'" x2="'+x+'" y2="'+(PAD.top+innerH()+6)+'" stroke="rgba(255,255,255,0.22)"/>');
+            parts.push('<text x="'+x+'" y="'+(PAD.top+innerH()+22)+'" text-anchor="middle" fill="rgba(255,255,255,0.55)" font-family="Inter,sans-serif" font-size="11">'+t+'d</text>');
+          });
+          parts.push('<text x="'+(PAD.left+innerW()/2)+'" y="'+(PAD.top+innerH()+46)+'" text-anchor="middle" fill="rgba(255,255,255,0.55)" font-family="Inter,sans-serif" font-size="11" letter-spacing="0.1em">DAYS TO EARNINGS</text>');
+          [0.10,0.20,0.30,0.40,0.50,0.60].forEach(function(m){
+            var y = yFor(m);
+            parts.push('<line x1="'+PAD.left+'" y1="'+y+'" x2="'+(PAD.left-6)+'" y2="'+y+'" stroke="rgba(255,255,255,0.22)"/>');
+            parts.push('<line x1="'+PAD.left+'" y1="'+y+'" x2="'+(PAD.left+innerW())+'" y2="'+y+'" stroke="rgba(255,255,255,0.04)"/>');
+            parts.push('<text x="'+(PAD.left-10)+'" y="'+(y+4)+'" text-anchor="end" fill="rgba(255,255,255,0.55)" font-family="Inter,sans-serif" font-size="11">'+m.toFixed(2)+'</text>');
+          });
+          parts.push('<text transform="translate('+(PAD.left-54)+','+(PAD.top+innerH()/2)+') rotate(-90)" text-anchor="middle" fill="rgba(255,255,255,0.55)" font-family="Inter,sans-serif" font-size="11" letter-spacing="0.1em">NARRATIVE MASS</text>');
+          g.innerHTML = parts.join('');
+        }
+
+        function renderFireZone(){
+          var g = document.getElementById('prism-firezone'); if(!g) return;
+          if(state.dteMax >= 30){
+            var x0 = xFor(14);
+            var x1 = PAD.left + innerW();
+            g.innerHTML = '<rect x="'+x0+'" y="'+PAD.top+'" width="'+(x1-x0)+'" height="'+innerH()+'" fill="rgba(255,77,77,0.06)" stroke="rgba(255,77,77,0.25)" stroke-width="1" stroke-dasharray="6 4"/>' +
+              '<text x="'+(x0+10)+'" y="'+(PAD.top+18)+'" fill="rgba(255,77,77,0.85)" font-family="Inter,sans-serif" font-size="10" letter-spacing="0.12em" font-weight="700">FIRE ZONE · DTE ≤ 14</text>';
+          } else {
+            g.innerHTML = '';
+          }
+        }
+
+        function renderDots(rows){
+          var g = document.getElementById('prism-dots'); if(!g) return;
+          var parts = [];
+          rows.forEach(function(r, idx){
+            var cx = xFor(r.dte) + (r._jitter||0);
+            var cy = yFor(r.mass);
+            var rr = massRadius(r.mass);
+            var color = wksColor(r.wks);
+            var op = srsOpacity(r.srs);
+            var ev = entryVerdict(r);
+            if(ev.ideal){
+              parts.push('<circle cx="'+cx+'" cy="'+cy+'" r="'+(rr+6)+'" fill="none" stroke="#00DE94" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.9" pointer-events="none"/>');
+            }
+            if(r.coord >= 60){
+              parts.push('<circle class="pr-pulse" cx="'+cx+'" cy="'+cy+'" r="'+(rr+3)+'" fill="none" stroke="#00AEFF" stroke-width="1.5" pointer-events="none"/>');
+            }
+            parts.push('<circle class="pr-dot" data-idx="'+idx+'" cx="'+cx+'" cy="'+cy+'" r="'+rr+'" fill="'+color+'" opacity="'+op.toFixed(2)+'" stroke="rgba(0,0,0,0.55)" stroke-width="1" style="cursor:pointer;"><title>'+r.ticker+' · DTE '+r.dte+'d · WKS '+r.wks.toFixed(1)+'</title></circle>');
+            if(BIG_CAPS[r.ticker] && rr>=6){
+              parts.push('<text x="'+cx+'" y="'+(cy+3)+'" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="10" font-weight="700" pointer-events="none" style="paint-order:stroke;stroke:rgba(0,0,0,0.55);stroke-width:2;">'+r.ticker+'</text>');
+            }
+          });
+          g.innerHTML = parts.join('');
+          g.querySelectorAll('.pr-dot').forEach(function(el){
+            el.addEventListener('click', function(ev){
+              ev.stopPropagation();
+              var idx = Number(el.getAttribute('data-idx'));
+              showPopup(rows[idx]);
+            });
+          });
+        }
+
+        function updateKPIs(rows){
+          function set(id,v){ var el=document.getElementById(id); if(el) el.textContent=String(v); }
+          set('pk-total', rows.length);
+          set('pk-imminent', rows.filter(function(r){ return r.dte<=7; }).length);
+          set('pk-coord', rows.filter(function(r){ return r.coord>=60; }).length);
+          set('pk-ideal', rows.filter(function(r){ return entryVerdict(r).ideal; }).length);
+        }
+
+        function applyTransform(){
+          var g = document.getElementById('prism-view');
+          if(g) g.setAttribute('transform', 'translate('+state.panX+' '+state.panY+') scale('+state.zoom+')');
+        }
+
+        function fmt(n,d){ return n==null||!isFinite(n) ? '—' : Number(n).toFixed(d==null?2:d); }
+        function showPopup(r){
+          if(!r) return;
+          state.selected = r;
+          var p = document.getElementById('prism-popup'); if(!p) return;
+          var vd = entryVerdict(r);
+          var fvdCol = r.fvd_pct==null ? '#A0A8B0' : (r.fvd_pct<0 ? '#00DE94' : (r.fvd_pct>0 ? '#FF4D4D' : '#A0A8B0'));
+          var fvdTxt = r.fvd_pct==null ? '—' : (r.fvd_pct>0?'+':'')+fmt(r.fvd_pct,1)+'%';
+          var h = '<button class="pr-close" type="button" aria-label="Close" onclick="window.prismClosePopup()">✕</button>'
+            + '<div class="pr-pop-head">'
+            + '<div class="pr-pop-tkr">'+r.ticker+'</div>'
+            + (r.coord>=60 ? '<span class="pr-pop-pulse">PULSE</span>' : '')
+            + '</div>'
+            + '<div class="pr-pop-verdict" style="border-color:'+vd.color+'55;background:'+vd.color+'14;">'
+            + '<span class="pr-pop-dot" style="background:'+vd.color+'"></span>'
+            + '<div><div class="pr-pop-vlbl">'+vd.label+'</div><div class="pr-pop-vreason">'+vd.reason+'</div></div>'
+            + '</div>'
+            + '<div class="pr-pop-grid">'
+            + '<div class="pr-pop-kv"><span class="pr-pop-k">Price</span><span class="pr-pop-v">'+(r.price==null?'—':'$'+fmt(r.price,2))+'</span></div>'
+            + '<div class="pr-pop-kv"><span class="pr-pop-k">Fair value</span><span class="pr-pop-v">'+(r.fair_value==null?'—':'$'+fmt(r.fair_value,2))+'</span></div>'
+            + '<div class="pr-pop-kv"><span class="pr-pop-k">FVD</span><span class="pr-pop-v" style="color:'+fvdCol+'">'+fvdTxt+'</span></div>'
+            + '<div class="pr-pop-kv"><span class="pr-pop-k">Days to earnings</span><span class="pr-pop-v">'+r.dte+'d</span></div>'
+            + '<div class="pr-pop-kv"><span class="pr-pop-k">Next earnings</span><span class="pr-pop-v">'+(r.next_earn||'—')+'</span></div>'
+            + '<div class="pr-pop-kv"><span class="pr-pop-k">Coordination</span><span class="pr-pop-v">'+fmt(r.coord,0)+'</span></div>'
+            + '<div class="pr-pop-kv"><span class="pr-pop-k">CCP</span><span class="pr-pop-v">'+fmt(r.ccp,2)+'</span></div>'
+            + '<div class="pr-pop-kv"><span class="pr-pop-k">NRS</span><span class="pr-pop-v">'+fmt(r.nrs,2)+'</span></div>'
+            + '<div class="pr-pop-kv"><span class="pr-pop-k">WKS</span><span class="pr-pop-v">'+fmt(r.wks,1)+'</span></div>'
+            + '<div class="pr-pop-kv"><span class="pr-pop-k">Narrative mass</span><span class="pr-pop-v">'+fmt(r.mass,2)+'</span></div>'
+            + '</div>'
+            + '<div class="pr-pop-footer">Scorecard verdict · <b>'+(r.verdict||'—')+'</b></div>';
+          p.innerHTML = h;
+          p.style.display = 'block';
+        }
+        window.prismClosePopup = function(){
+          var p = document.getElementById('prism-popup');
+          if(p) p.style.display = 'none';
+          state.selected = null;
+        };
+
+        function render(){
+          var rows = applyDteWindow(state.rows);
+          rows = applyFilter(rows);
+          computeJitter(rows);
+          renderAxes();
+          renderFireZone();
+          renderDots(rows);
+          updateKPIs(rows);
+        }
+
+        var controlsBound = false;
+        function bindControls(){
+          if(controlsBound) return;
+          controlsBound = true;
+          document.querySelectorAll('#tab-prism .prism-pill').forEach(function(b){
+            b.addEventListener('click', function(){
+              document.querySelectorAll('#tab-prism .prism-pill').forEach(function(x){ x.classList.remove('active'); });
+              b.classList.add('active');
+              state.dteMax = Number(b.getAttribute('data-dte'))||30;
+              render();
+            });
+          });
+          var f = document.getElementById('prism-filter');
+          if(f) f.addEventListener('change', function(){ state.filter = f.value; render(); });
+          var rb = document.getElementById('prism-reset');
+          if(rb) rb.addEventListener('click', function(){ state.zoom=1; state.panX=0; state.panY=0; applyTransform(); });
+          var svg = document.getElementById('prism-svg');
+          if(svg){
+            svg.addEventListener('wheel', function(e){
+              e.preventDefault();
+              var dz = e.deltaY<0 ? 1.12 : 1/1.12;
+              state.zoom = Math.max(0.5, Math.min(6, state.zoom*dz));
+              applyTransform();
+            }, {passive:false});
+            svg.addEventListener('dblclick', function(){
+              state.zoom=1; state.panX=0; state.panY=0; applyTransform();
+            });
+            var drag = null;
+            svg.addEventListener('mousedown', function(e){
+              if(state.zoom<=1.01) return;
+              if(e.target && e.target.classList && e.target.classList.contains('pr-dot')) return;
+              drag = {x:e.clientX, y:e.clientY, ox:state.panX, oy:state.panY};
+              svg.style.cursor = 'grabbing';
+              e.preventDefault();
+            });
+            window.addEventListener('mousemove', function(e){
+              if(!drag) return;
+              state.panX = drag.ox + (e.clientX-drag.x);
+              state.panY = drag.oy + (e.clientY-drag.y);
+              applyTransform();
+            });
+            window.addEventListener('mouseup', function(){
+              drag = null;
+              if(svg) svg.style.cursor = '';
+            });
+            svg.addEventListener('click', function(e){
+              if(e.target===svg || (e.target.classList && e.target.classList.contains('prism-bg'))) window.prismClosePopup();
+            });
+          }
+        }
+
+        window.prismInit = async function(){
+          bindControls();
+          if(state.booted) return;
+          var empty = document.getElementById('prism-empty');
+          if(empty){ empty.textContent='Loading Prism…'; empty.style.display='flex'; }
+          try {
+            state.rows = await fetchData();
+            state.booted = true;
+            if(!state.rows.length){
+              if(empty){ empty.textContent='No earnings-context rows in the current snapshot.'; }
+              return;
+            }
+            if(empty) empty.style.display='none';
+            render();
+          } catch(err) {
+            console.error('[Prism] load error', err);
+            if(empty){ empty.textContent='Failed to load Prism: '+(err && err.message || err); }
+          }
+        };
+      })();
+      </script>
+    </div>
+
+    <!-- ══════════════════════════════════════
          TAB: HELP & ACCOUNT
     ═══════════════════════════════════════ -->
     <div class="tab-panel" id="tab-help">
@@ -5656,8 +6120,8 @@ document.querySelectorAll('.page-header p').forEach(function(p,i){
   if(i===0) return;
 });
 // ── Tab switching (hook-based — sections register via onTabSwitch) ────────────
-var TABS = ['daily','leaderboard','cards','calendar','memes','signallab','ticker','sector','scorer','validation','help'];
-var TAB_TITLES = {daily:'Daily Plays',leaderboard:'Leaderboard',cards:'Trading Cards',calendar:'Trading Calendar',memes:'Market Sharing',signallab:'Signal Lab',ticker:'Stock Research',sector:'Sector Pulse',scorer:'Score Any Stock',validation:'Track Record',help:'Help & Account'};
+var TABS = ['daily','leaderboard','prism','cards','calendar','memes','signallab','ticker','sector','scorer','validation','help'];
+var TAB_TITLES = {daily:'Daily Plays',leaderboard:'Leaderboard',prism:'Prism',cards:'Trading Cards',calendar:'Trading Calendar',memes:'Market Sharing',signallab:'Signal Lab',ticker:'Stock Research',sector:'Sector Pulse',scorer:'Score Any Stock',validation:'Track Record',help:'Help & Account'};
 var _tabHooks = [];
 /** Register a callback to run after any tab switch. fn(id) */
 function onTabSwitch(fn){ if(typeof fn==='function') _tabHooks.push(fn); }
@@ -5738,6 +6202,7 @@ function switchTab(id, btn){
       });
     }
   }
+  if(id==='prism'&&typeof prismInit==='function')setTimeout(prismInit,50);
   if(id==='signallab'&&typeof slInit==='function')setTimeout(slInit,50);
   if(id==='ticker'&&typeof trInit==='function')setTimeout(trInit,50);
   if(id==='cards'&&typeof renderCardsGallery==='function'){TCG_RENDERED=false;setTimeout(renderCardsGallery,50);}
