@@ -4657,6 +4657,43 @@ function stateClass(s) {
   return ({ Breaking:'badge-breaking', Surging:'badge-surging', Fragile:'badge-fragile', Stable:'badge-stable' })[s] || 'badge-stable';
 }
 
+// Bandage for an upstream pipeline bug: narrative_analyses rows sometimes
+// carry the wrong ticker (e.g. a Tesla story saved under ticker='DJT'). The
+// real fix belongs in the ingestion layer — this is client-side defense.
+const _KNOWN_COMPANIES = [
+  ['tesla','TSLA'],['apple','AAPL'],['microsoft','MSFT'],['alphabet','GOOGL'],
+  ['google','GOOGL'],['amazon','AMZN'],['meta','META'],['facebook','META'],
+  ['nvidia','NVDA'],['netflix','NFLX'],['berkshire','BRK.B'],['walmart','WMT'],
+  ['jpmorgan','JPM'],['boeing','BA'],['oracle','ORCL'],['salesforce','CRM'],
+  ['adobe','ADBE'],['intel','INTC'],['rivian','RIVN'],['lucid','LCID'],
+  ['disney','DIS'],['trump media','DJT'],['tmtg','DJT'],['reddit','RDDT'],
+  ['palantir','PLTR'],['robinhood','HOOD'],['coinbase','COIN'],['spotify','SPOT'],
+  ['uber','UBER'],['lyft','LYFT'],['airbnb','ABNB'],['shopify','SHOP'],
+  ['amd','AMD'],['broadcom','AVGO'],['qualcomm','QCOM'],['snowflake','SNOW'],
+  ['gamestop','GME'],['ford motor','F'],['general motors','GM']
+];
+function narrativeMatchesTicker(text, ticker) {
+  if (!text || !ticker) return true;
+  // Check 1: parenthesized ticker symbols like "(TSLA)". If the narrative
+  // names tickers in parens and none of them match the current one, it's a
+  // mis-tag.
+  const parens = [];
+  const parenRe = /\(([A-Z][A-Z0-9.\-]{0,5})\)/g;
+  let m;
+  while ((m = parenRe.exec(text)) !== null) parens.push(m[1]);
+  if (parens.length) return parens.includes(ticker);
+  // Check 2: leading company name (first 40 chars) maps to a different ticker
+  const head = text.slice(0, 40).toLowerCase();
+  for (const [name, t] of _KNOWN_COMPANIES) {
+    if (new RegExp('\\b' + name + '\\b').test(head)) return t === ticker;
+  }
+  return true;
+}
+function filterMistaggedNarratives(rows, ticker) {
+  if (!Array.isArray(rows) || !ticker) return rows || [];
+  return rows.filter(r => narrativeMatchesTicker(r && r.narrative_text, ticker));
+}
+
 // ── Lane classifier ──────────────────────────────────────────────────────────
 // Mirrors the Daily Plays lane logic in _template.html so the ticker-page
 // banner reads from the same rule book. A ticker can match multiple lanes;
@@ -5384,7 +5421,7 @@ async function loadChart() {
 
     // Build narrative dots from narrative_analyses + health trend
     // Bear = skeptical/negative verdict OR weakening/collapsing trend
-    ALL_NARRS = storyRows.map((row) => {
+    ALL_NARRS = filterMistaggedNarratives(storyRows, TICKER).map((row) => {
       const v = (row.verdict || '').toUpperCase();
       const d = row.snapshot_date?.slice(0, 10);
       const trend = d ? (trendByDate[d] || '') : '';
@@ -6205,7 +6242,7 @@ async function loadNarratives() {
   try {
     // Fetch narratives, price snapshots, scorecard (for fuel bar),
     // and article keywords in parallel
-    const [rows, snaps, scorecardRows, articleKwRows] = await Promise.all([
+    let [rows, snaps, scorecardRows, articleKwRows] = await Promise.all([
       sbFetch('narrative_analyses', {
         select: [
           'narrative_hash','narrative_text','verdict','source_outlet','analyst_firm',
@@ -6238,6 +6275,9 @@ async function loadNarratives() {
         limit:  '400'
       }).catch(() => [])
     ]);
+
+    // Drop rows mis-tagged to this ticker (upstream pipeline bug).
+    rows = filterMistaggedNarratives(rows, TICKER);
 
     // Build date → price lookup
     const priceByDate = {};
@@ -8581,12 +8621,13 @@ async function loadStoriesFeed() {
   if (!TICKER) return;
   const feedList = document.getElementById('tk-feed-list');
   try {
-    const rows = await sbFetch('narrative_analyses', {
+    const rawRows = await sbFetch('narrative_analyses', {
       select: 'narrative_text,verdict,sentiment_score,snapshot_date,created_at,source_outlet,narrative_type,article_url',
       ticker: `eq.${TICKER}`,
       order: 'created_at.desc',
       limit: '100'
     }).catch(() => []);
+    const rows = filterMistaggedNarratives(rawRows, TICKER);
 
     if (!rows.length) {
       if(feedList) feedList.innerHTML = '<div class="tk-feed-empty">No stories available for this ticker.</div>';
