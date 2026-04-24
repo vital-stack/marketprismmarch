@@ -5738,7 +5738,7 @@ body{
           console.log('[Prism] snapshot dates — scorecard:', scDate, '· prices:', priceDate, '· today:', todayISO());
           if(!scDate) return [];
           var scP = restFetch('narrative_scorecard', {
-            select:'ticker,snapshot_date,narrative_mass_score,wks_score,srs,coordination_score,fair_value,fvd_pct,verdict,nrs,ccp,created_at',
+            select:'ticker,snapshot_date,narrative_mass_score,wks_score,srs,coordination_score,fair_value,fvd_pct,verdict,nrs,ccp,days_to_earnings,created_at',
             snapshot_date:'eq.'+scDate,
             ticker:MP_EXCLUDED_TICKERS,
             order:'created_at.desc'
@@ -5769,10 +5769,14 @@ body{
           var out = [], dropped = 0;
           Object.keys(scByTicker).forEach(function(t){
             var s = scByTicker[t];
-            var e = earnByT[t];
-            if(!e){ dropped++; return; }
-            var dte = dteFromNextEarn(e.next_earnings_date);
-            if(dte==null && e.days_to_earnings!=null) dte = Number(e.days_to_earnings);
+            var e = earnByT[t] || null;
+            // Resolve DTE: prefer earnings_context.next_earnings_date (freshest), then
+            // earnings_context.days_to_earnings, then narrative_scorecard.days_to_earnings.
+            // Falling back to the scorecard keeps Prism populated when earnings_context is
+            // stale or partially indexed (next_earnings_date < today filters everything out).
+            var dte = e ? dteFromNextEarn(e.next_earnings_date) : null;
+            if(dte==null && e && e.days_to_earnings!=null) dte = Number(e.days_to_earnings);
+            if(dte==null && s.days_to_earnings!=null) dte = Number(s.days_to_earnings);
             if(dte==null || !(dte>=0 && dte<=90)){ dropped++; return; }
             out.push({
               ticker:t,
@@ -5787,7 +5791,7 @@ body{
               nrs: s.nrs!=null ? Number(s.nrs) : null,
               ccp: s.ccp!=null ? Number(s.ccp) : null,
               dte: dte,
-              next_earn: e.next_earnings_date || null,
+              next_earn: (e && e.next_earnings_date) || null,
               sector: sectorFor(t)
             });
           });
@@ -6016,7 +6020,7 @@ body{
             state.rows = await fetchData();
             state.booted = true;
             if(!state.rows.length){
-              if(empty){ empty.textContent='No earnings-context rows in the current snapshot.'; }
+              if(empty){ empty.textContent='No tickers within 90 days of earnings in the latest snapshot.'; }
               return;
             }
             // Populate sector dropdown from the tickers that actually made it into the plot
