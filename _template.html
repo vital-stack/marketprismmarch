@@ -5498,7 +5498,7 @@ body{
     ═══════════════════════════════════════ -->
     <div class="tab-panel" id="tab-prism">
       <style>
-        #tab-prism .prism-wrap{max-width:1800px;margin:0 auto;}
+        #tab-prism .prism-wrap{width:100%;margin:0 auto;}
         #tab-prism .prism-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:24px 0 20px;}
         #tab-prism .prism-kpi{background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:14px;padding:16px 20px;}
         #tab-prism .pk-val{font-family:var(--font-display);font-size:28px;font-weight:400;color:var(--mp-text-primary);line-height:1;letter-spacing:-0.02em;}
@@ -5513,7 +5513,7 @@ body{
         #tab-prism .prism-reset{font-family:var(--font-body);font-size:12px;font-weight:500;padding:6px 14px;border-radius:8px;border:1px solid var(--mp-border);background:transparent;color:var(--mp-text-secondary);cursor:pointer;}
         #tab-prism .prism-reset:hover{border-color:var(--mp-border-mid);color:var(--mp-text-primary);}
         #tab-prism .prism-plot-wrap{position:relative;background:#0C1018;border:1px solid rgba(255,255,255,0.06);border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.25);}
-        #tab-prism .prism-svg{display:block;width:100%;height:auto;user-select:none;touch-action:none;}
+        #tab-prism .prism-svg{display:block;width:100%;height:clamp(540px, 72vh, 960px);user-select:none;touch-action:none;}
         #tab-prism .prism-bg{fill:#0C1018;}
         #tab-prism .prism-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-body);font-size:13px;color:rgba(255,255,255,0.55);z-index:3;}
         #tab-prism .prism-legend{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:14px;padding:10px 16px;background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:12px;}
@@ -5601,8 +5601,8 @@ body{
 
         <div class="prism-plot-wrap" id="prism-plot-wrap">
           <div class="prism-empty" id="prism-empty">Loading Prism…</div>
-          <svg id="prism-svg" class="prism-svg" viewBox="0 0 1600 700" preserveAspectRatio="xMidYMid meet">
-            <rect class="prism-bg" x="0" y="0" width="1600" height="700"/>
+          <svg id="prism-svg" class="prism-svg" viewBox="0 0 1600 700" preserveAspectRatio="none">
+            <rect class="prism-bg" x="0" y="0" width="100%" height="100%"/>
             <g id="prism-grid"></g>
             <g id="prism-firezone"></g>
             <g id="prism-axes"></g>
@@ -5701,6 +5701,18 @@ body{
         }
         var PLOT_W = 1600, PLOT_H = 700;
         var PAD = {top:44, right:40, bottom:62, left:72};
+        function syncPlotSize(){
+          var svg = document.getElementById('prism-svg');
+          if(!svg) return false;
+          var w = Math.round(svg.clientWidth || svg.getBoundingClientRect().width || 0);
+          var h = Math.round(svg.clientHeight || svg.getBoundingClientRect().height || 0);
+          if(w < 320 || h < 240) return false;
+          if(w === PLOT_W && h === PLOT_H) return false;
+          PLOT_W = w;
+          PLOT_H = h;
+          svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+          return true;
+        }
         function innerW(){ return PLOT_W - PAD.left - PAD.right; }
         function innerH(){ return PLOT_H - PAD.top - PAD.bottom; }
         function xFor(dte){
@@ -5945,6 +5957,7 @@ body{
         };
 
         function render(){
+          syncPlotSize();
           var rows = applyDteWindow(state.rows);
           rows = applyFilter(rows);
           computeJitter(rows);
@@ -5952,6 +5965,24 @@ body{
           renderFireZone();
           renderDots(rows);
           updateKPIs(rows);
+        }
+
+        var resizeObserverBound = false;
+        var resizeRaf = 0;
+        function bindResizeObserver(){
+          if(resizeObserverBound) return;
+          var svg = document.getElementById('prism-svg');
+          if(!svg || typeof ResizeObserver === 'undefined') return;
+          resizeObserverBound = true;
+          var ro = new ResizeObserver(function(){
+            if(!state.booted) return;
+            if(resizeRaf) cancelAnimationFrame(resizeRaf);
+            resizeRaf = requestAnimationFrame(function(){
+              resizeRaf = 0;
+              if(syncPlotSize()) render();
+            });
+          });
+          ro.observe(svg);
         }
 
         var controlsBound = false;
@@ -6009,7 +6040,9 @@ body{
 
         window.prismInit = async function(){
           bindControls();
-          if(state.booted) return;
+          bindResizeObserver();
+          syncPlotSize();
+          if(state.booted){ render(); return; }
           var empty = document.getElementById('prism-empty');
           if(empty){ empty.textContent='Loading Prism…'; empty.style.display='flex'; }
           try {
