@@ -6331,8 +6331,10 @@ function switchTab(id, btn){
 var SUPABASE_URL  = (window.__env||{}).SUPABASE_URL  || '';
 var SUPABASE_ANON = (window.__env||{}).SUPABASE_ANON || '';
 // Tickers whose backend pipeline is broken — keep out of all dashboard views.
-// Individual ticker pages still work (queries scoped to a single ticker aren't filtered).
-var MP_EXCLUDED_TICKERS = 'not.in.(SONY,HMC,TM,TSM)';
+// SONY/HMC/TM/TSM: scorecard/paper-trade values are wildly wrong.
+// DJT: ticker page is rendering Tesla narratives, so don't surface DJT anywhere
+// the dashboard could deep-link into it. Per-ticker page is still reachable directly.
+var MP_EXCLUDED_TICKERS = 'not.in.(SONY,HMC,TM,TSM,DJT)';
 var SUPA = (window.supabase && SUPABASE_URL && SUPABASE_ANON)
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON)
   : null;
