@@ -8167,9 +8167,23 @@ function tlBuildRow(r){
   +'</div>';
 }
 
-function _tlFormatDate(){
-  var d=new Date();
+function _tlFormatDate(yyyymmdd){
+  var d;
+  if(yyyymmdd&&/^\d{4}-\d{2}-\d{2}$/.test(yyyymmdd)){
+    var p=yyyymmdd.split('-');
+    d=new Date(Number(p[0]),Number(p[1])-1,Number(p[2]));
+  }else{
+    d=new Date();
+  }
   return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+}
+// YYYY-MM-DD for "today" in the user's local timezone (matches what they
+// expect to see vs the snapshot date stored in the DB).
+function _tlTodayStr(){
+  var d=new Date();
+  var m=String(d.getMonth()+1).padStart(2,'0');
+  var day=String(d.getDate()).padStart(2,'0');
+  return d.getFullYear()+'-'+m+'-'+day;
 }
 function _tlRefreshAll(){
   document.querySelectorAll('.tl-lane-refresh').forEach(function(b){b.classList.add('spinning');});
@@ -8216,8 +8230,16 @@ function tlBuildLane(title,subtitle,cards,laneId){
   var overflow=cards.slice(TL_LIMIT);
   var id=laneId||'tl-overflow-'+title.replace(/\s/g,'-').toLowerCase();
   var laneSlug=id||'tl-overflow-'+title.replace(/\s/g,'-').toLowerCase();
+  // Lane date pill = the snapshot date these rows actually came from. If
+  // today's pipeline run skipped this lane, the rows carry over from the
+  // most recent prior run with data; we mark the date in amber so it's
+  // clear to the user that the picks aren't fresh.
+  var laneDate=cards[0]&&cards[0]._snapshotDate?cards[0]._snapshotDate:null;
+  var isFallback=!!(laneDate&&laneDate!==_tlTodayStr());
+  var dateAttrs=isFallback?' style="color:#FFB800;" title="Carried over — today\'s pipeline produced no rows for this lane"':'';
+  var datePrefix=isFallback?'↺ ':'';
   var html='<div class="tl-lane" id="lane-'+laneSlug+'"><div class="tl-lane-header"><div><div class="tl-lane-title">'+esc(title)+'</div><div class="tl-lane-sub">'+esc(subtitle)+' \u00B7 '+cards.length+' signals <span class="tl-lane-hits" id="hits-'+laneSlug+'"></span></div></div>'
-    +'<div class="tl-lane-meta"><span class="tl-lane-date">'+_tlFormatDate()+'</span>'
+    +'<div class="tl-lane-meta"><span class="tl-lane-date"'+dateAttrs+'>'+datePrefix+_tlFormatDate(laneDate)+'</span>'
     +'<button class="tl-lane-refresh" onclick="event.stopPropagation();_tlRefreshAll();" title="Refresh prices"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg></button></div>'
     +'</div><div class="tl-lane-rows">';
   visible.forEach(function(c){html+=c._isValue?tlBuildValueRow(c):tlBuildRow(c);});
@@ -8257,12 +8279,17 @@ async function loadTradeLanes(){
     if(!dateRows||!dateRows.length){container.style.display='none';return;}
     var scDate=dateRows[0].snapshot_date;
 
-    // Pull all lane rows (pre-ranked, 10 per lane)
+    // Pull last TL_FALLBACK_DAYS days of plays in one shot so we can fall back
+    // per-lane when a given day's pipeline run under-produces (weekend cron,
+    // partial scoring run, etc.). For each lane we'll keep rows from the most
+    // recent snapshot_date that actually has data — empty lanes never render.
+    var TL_FALLBACK_DAYS=5;
+    var fallbackFloor=new Date(Date.now()-TL_FALLBACK_DAYS*86400000).toISOString().slice(0,10);
     var playsP=restFetch('t_daily_plays_top10_enhanced',{
-      select:'ticker,lane,lane_rank,price,verdict,trade_direction,expected_direction,target_pct,suggested_hold_days,forecast_5d_return_pct,forecast_10d_return_pct,forecast_20d_return_pct,forecast_5d_prob_up,days_to_earnings,next_earnings_date,fvd_pct,fair_value,ideal_entry_price,ideal_exit_price,ideal_stop_price',
-      snapshot_date:'eq.'+scDate,
+      select:'snapshot_date,ticker,lane,lane_rank,price,verdict,trade_direction,expected_direction,target_pct,suggested_hold_days,forecast_5d_return_pct,forecast_10d_return_pct,forecast_20d_return_pct,forecast_5d_prob_up,days_to_earnings,next_earnings_date,fvd_pct,fair_value,ideal_entry_price,ideal_exit_price,ideal_stop_price',
+      snapshot_date:'gte.'+fallbackFloor,
       ticker:MP_EXCLUDED_TICKERS,
-      order:'lane_rank.asc'
+      order:'snapshot_date.desc,lane_rank.asc'
     });
 
     // Scorecard + earnings — still fed to AI picks and signal summary boxes
@@ -8303,11 +8330,25 @@ async function loadTradeLanes(){
     }).filter(function(r){return r.price;});
     TL_SCORECARD=enriched;
 
+    // Per-lane fallback: for each lane, keep only rows from the most recent
+    // snapshot_date that has any rows for that lane. Plays are already ordered
+    // snapshot_date.desc, lane_rank.asc — so the first time we see a lane is
+    // the newest date with data for it.
+    var laneNewestDate={};
+    (plays||[]).forEach(function(p){
+      if(!p||!p.lane)return;
+      if(!(p.lane in laneNewestDate))laneNewestDate[p.lane]=p.snapshot_date;
+    });
+    plays=(plays||[]).filter(function(p){
+      return p.lane && laneNewestDate[p.lane]===p.snapshot_date;
+    });
+
     // Bucket plays by lane, building the per-lane right-side chip
     var buckets={DAY_TRADE:[],SWING_TRADE:[],MOMENTUM:[],EARNINGS_PLAY:[],VALUE_PICK:[],NARRATIVE_TRAP:[]};
     (plays||[]).forEach(function(p){
       if(!buckets[p.lane])return;
       var row=Object.assign({},p);
+      row._snapshotDate=p.snapshot_date;
       var hold=row.suggested_hold_days!=null?Number(row.suggested_hold_days):null;
       var ret5=row.forecast_5d_return_pct!=null?Number(row.forecast_5d_return_pct):null;
       var ret10=row.forecast_10d_return_pct!=null?Number(row.forecast_10d_return_pct):null;
@@ -8368,6 +8409,7 @@ async function loadTradeLanes(){
             next_earnings_date:e.next_earnings_date,
             expected_direction:'UP',
             lane_rank:90+dte,
+            _snapshotDate:scDate,
             _chip:dte===0?'Earnings today':dte>0?'Earnings in '+dte+'d':Math.abs(dte)+'d post-earnings'
           });
         });
