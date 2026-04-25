@@ -5796,6 +5796,14 @@ body{
             });
           });
           console.log('[Prism] merged rows:', out.length, '· dropped:', dropped);
+          window.__prismDiag = {
+            scDate: scDate, today: todayISO(),
+            scRows: (sc||[]).length,
+            priceRows: (prices||[]).length,
+            earnRows: (earn||[]).length,
+            earnTickers: Object.keys(earnByT).length,
+            merged: out.length, dropped: dropped
+          };
           return out;
         }
 
@@ -6020,7 +6028,16 @@ body{
             state.rows = await fetchData();
             state.booted = true;
             if(!state.rows.length){
-              if(empty){ empty.textContent='No tickers within 90 days of earnings in the latest snapshot.'; }
+              if(empty){
+                var d = window.__prismDiag || {};
+                empty.innerHTML = 'No tickers within 90 days of earnings in the latest snapshot.'
+                  + '<br><span style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:8px;display:inline-block;">'
+                  + 'snapshot ' + (d.scDate||'?') + ' · today ' + (d.today||'?')
+                  + ' · scorecard ' + (d.scRows||0) + ' rows'
+                  + ' · earnings ' + (d.earnRows||0) + ' rows / ' + (d.earnTickers||0) + ' tickers'
+                  + ' · dropped ' + (d.dropped||0)
+                  + '</span>';
+              }
               return;
             }
             // Populate sector dropdown from the tickers that actually made it into the plot
