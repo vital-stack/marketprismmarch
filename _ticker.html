@@ -4994,7 +4994,7 @@ async function loadHero() {
           ${earningsPill}
           ${insightHtml || `<span class="hero-state-badge ${stateClass(r.narrative_state)}">${esc(r.narrative_state || '—')}</span>`}
         </div>
-        <div class="hero-claim">${esc(r.primary_driver || r.story_claim || '')}</div>
+        <div class="hero-claim" id="hero-claim" data-pending="1">&nbsp;</div>
         ${r.sector_name ? `<div class="hero-sector">${esc(r.sector_name)}</div>` : ''}
       </div>
       <div class="hero-right" id="hero-right">
@@ -5013,6 +5013,28 @@ async function loadHero() {
     // prefetch failed). Without this, the first price update has to wait for
     // the poll interval in scheduleLivePrice (30s during market hours, 2m otherwise).
     try { fetchLivePrice(); } catch(e){}
+
+    // Hero summary — Haiku-synthesized one-liner that reflects the page state
+    // (verdict + valuation gap + narrative health), replacing the stale
+    // single-narrative `story_claim`. Falls back to `story_claim` only if the
+    // endpoint is unreachable.
+    (function(){
+      var el = document.getElementById('hero-claim');
+      if (!el) return;
+      var fallback = r.primary_driver || r.story_claim || '';
+      fetch('/api/hero-summary?ticker=' + encodeURIComponent(r.ticker))
+        .then(function(res){ return res.ok ? res.json() : null; })
+        .then(function(j){
+          var text = (j && j.summary) || fallback;
+          if (!text) { el.style.display = 'none'; return; }
+          el.textContent = text;
+          el.removeAttribute('data-pending');
+        })
+        .catch(function(){
+          if (fallback) { el.textContent = fallback; el.removeAttribute('data-pending'); }
+          else { el.style.display = 'none'; }
+        });
+    })();
 
     // Update feed ticker
     const feedTicker = document.getElementById('tk-feed-ticker');
