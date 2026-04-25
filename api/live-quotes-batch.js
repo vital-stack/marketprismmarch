@@ -4,6 +4,41 @@
 // Uses Polygon's filtered snapshot call so one HTTP request covers
 // every ticker on the Daily Brief page.
 
+// YYYY-MM-DD for "now" in America/New_York (markets run on ET).
+function etDateStr(d) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/New_York',
+    year: 'numeric', month: '2-digit', day: '2-digit'
+  }).formatToParts(d);
+  const y = parts.find(p => p.type === 'year').value;
+  const m = parts.find(p => p.type === 'month').value;
+  const day = parts.find(p => p.type === 'day').value;
+  return y + '-' + m + '-' + day;
+}
+
+// True when ET "today" is Sat or Sun. Holidays on weekdays are not detected
+// here — they're rare enough that the (zero-change) fallback is acceptable
+// until we wire up a calendar.
+function isMarketClosedNow() {
+  const wd = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York', weekday: 'short'
+  }).format(new Date());
+  return wd === 'Sat' || wd === 'Sun';
+}
+
+// Step backward one calendar day at a time, skipping Sat/Sun. Treats input as
+// a UTC date string to avoid TZ drift in the arithmetic.
+function previousTradingDay(yyyymmdd) {
+  const [y, m, d] = yyyymmdd.split('-').map(Number);
+  let date = new Date(Date.UTC(y, m - 1, d));
+  for (let i = 0; i < 7; i++) {
+    date = new Date(date.getTime() - 86400000);
+    const dow = date.getUTCDay();
+    if (dow !== 0 && dow !== 6) break;
+  }
+  return date.toISOString().slice(0, 10);
+}
+
 module.exports = async (req, res) => {
   try {
     const url = new URL(req.url, 'http://localhost');
@@ -78,6 +113,41 @@ module.exports = async (req, res) => {
         }
       } catch (_) {
         // Swallow per-chunk errors so a single bad chunk doesn't block the rest.
+      }
+    }
+
+    // Weekend / closed-market baseline shift.
+    // On Sat/Sun (and likely holidays where day data is empty), Polygon's
+    // snapshot returns Friday's close as BOTH lastTrade.p and prevDay.c — so
+    // the % change above collapses to 0.00% and every ticker renders flat
+    // green. Detect that state and fetch the previous trading day's grouped
+    // daily aggregates (one HTTP call covers every US stock), then rewrite
+    // change / changePct so the displayed delta reflects the most recent
+    // real session move (Fri vs Thu). Price stays Friday's close.
+    if (isMarketClosedNow() && Object.keys(quotes).length) {
+      try {
+        const todayET = etDateStr(new Date());
+        const lastTrading = previousTradingDay(todayET);     // typically Friday
+        const baselineDate = previousTradingDay(lastTrading); // typically Thursday
+        const grpUrl = 'https://api.polygon.io/v2/aggs/grouped/locale/us/market/stocks/' + baselineDate
+          + '?adjusted=true&apiKey=' + encodeURIComponent(apiKey);
+        const grpRes = await fetch(grpUrl);
+        if (grpRes.ok) {
+          const grpJson = JSON.parse(await grpRes.text());
+          const baseline = {};
+          (grpJson.results || []).forEach(r => { if (r.T && r.c != null) baseline[r.T] = r.c; });
+          for (const tk of Object.keys(quotes)) {
+            const earlierClose = baseline[tk];
+            if (!earlierClose) continue;
+            const lastClose = quotes[tk].price;
+            quotes[tk].prevClose = Number(earlierClose);
+            quotes[tk].change = Number((lastClose - earlierClose).toFixed(2));
+            quotes[tk].changePct = Number(((lastClose - earlierClose) / earlierClose * 100).toFixed(2));
+            quotes[tk].source = 'snapshot_closed_baseline_shifted';
+          }
+        }
+      } catch (_) {
+        // Swallow — leave the (zeroed) snapshot values rather than failing the call.
       }
     }
 
