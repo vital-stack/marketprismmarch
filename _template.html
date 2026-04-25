@@ -16737,8 +16737,35 @@ function renderEmpty(b){
   +'</div>';
 }
 
+// Re-fetch the dashboard-data bundle so scorecardMap (which most leaderboard
+// boards read from) actually reflects the latest snapshot. Without this the
+// 5-min auto-refresh and the manual refresh button would just re-render the
+// same in-memory data captured at initial page load.
+async function refreshLeaderboardData(){
+  if(!SUPABASE_URL||!SUPABASE_ANON) return;
+  try{
+    var r=await fetch(SUPABASE_URL+'/functions/v1/dashboard-data',{headers:{'Authorization':'Bearer '+SUPABASE_ANON}});
+    if(!r.ok) return;
+    var bundle=await r.json();
+    var scRows=bundle.scorecard||[];
+    if(scRows.length){
+      var next={};
+      scRows.forEach(function(s){if(s.ticker&&!next[s.ticker])next[s.ticker]=s;});
+      scorecardMap=next;
+    }
+    if(Array.isArray(bundle.snapshots)){
+      var snap={};
+      bundle.snapshots.forEach(function(s){if(s.ticker&&!snap[s.ticker])snap[s.ticker]=s;});
+      if(typeof snapshotMap!=='undefined') snapshotMap=snap;
+    }
+  }catch(e){
+    console.warn('[LB] bundle refresh failed:',e);
+  }
+}
+
 async function loadLeaderboard(){
   _dateCache={}; // Clear date cache so we always get fresh snapshot dates
+  await refreshLeaderboardData();
   var loading=document.getElementById('lb-loading');
   var error=document.getElementById('lb-error');
   var body=document.getElementById('lb-body');
