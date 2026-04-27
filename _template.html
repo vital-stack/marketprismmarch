@@ -16835,7 +16835,9 @@ var BOARDS=[
       var dateRows=await sq('narrative_scorecard?select=snapshot_date&order=snapshot_date.desc&limit=1');
       var snapshotDate=dateRows&&dateRows[0]&&dateRows[0].snapshot_date;
       if(!snapshotDate) return [];
-      var rows=await sq('narrative_scorecard?select=ticker,price,nrs,wks_score,walsh_regime,narrative_energy_absolute,narrative_energy_regime,narrative_mass_score,coordination_score,drift_score,half_life,fvd_pct,vms,verdict,verdict_confidence&snapshot_date=eq.'+encodeURIComponent(snapshotDate)+'&limit=200');
+      // narrative_scorecard has no `price` column; the AI endpoint accepts null
+      // price, so we just omit it (the row's signals are what Claude scores on).
+      var rows=await sq('narrative_scorecard?select=ticker,nrs,wks_score,walsh_regime,narrative_energy_absolute,narrative_energy_regime,narrative_mass_score,coordination_score,drift_score,half_life,fvd_pct,vms,verdict,verdict_confidence&snapshot_date=eq.'+encodeURIComponent(snapshotDate)+'&limit=200');
       if(!rows||!rows.length) return [];
       var res=await fetch('/api/top-ai-picks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({snapshot_date:snapshotDate,rows:rows})});
       if(!res.ok){console.warn('[Leaderboard AI Picks] API '+res.status);return [];}
