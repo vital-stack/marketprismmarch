@@ -3869,26 +3869,6 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
           </div>
         </div>
 
-        <!-- 5b. WHAT HAPPENED LAST TIME (moved from History tab) -->
-        <div class="section">
-          <div class="section-label">
-            What Happened Last Time
-            <span class="section-label-sub">Historical analogs</span>
-          </div>
-          <div class="section-body">
-            <div id="par-body">
-              <div class="par-item">
-                <div class="skel" style="height:12px;width:40%;margin-bottom:8px;"></div>
-                <div class="skel" style="height:13px;width:85%;"></div>
-              </div>
-              <div class="par-item">
-                <div class="skel" style="height:12px;width:40%;margin-bottom:8px;"></div>
-                <div class="skel" style="height:13px;width:75%;"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <!-- 6. SECTOR INTELLIGENCE -->
         <div class="section">
           <div class="section-label">
@@ -6065,52 +6045,6 @@ async function loadPrerequisites() {
       <div class="pr-boxes">${boxesHtml}</div>`;
   } catch (err) {
     document.getElementById('pr-body').innerHTML = `<div class="inline-err">Prerequisites: ${esc(err.message)}</div>`;
-  }
-}
-
-// ── 6. What Happened Last Time — v_dash_historical_analogs ───────────────────
-async function loadParallels() {
-  if (!TICKER) return;
-  try {
-    const items = await sbFetch('v_dash_historical_analogs', {
-      select: 'analog_ticker,analog_date,analog_move,recovery_days,similarity_score,match_basis',
-      ticker: `eq.${TICKER}`,
-      order:  'similarity_score.desc',
-      limit:  '3'
-    }).catch(() => []);
-
-    if (!items.length) {
-      document.getElementById('par-body').innerHTML = '<div class="par-item"><div class="no-data">No historical analogs found yet.</div></div>';
-      return;
-    }
-
-    document.getElementById('par-body').innerHTML = items.map(p => {
-      const move     = p.analog_move;
-      const moveTxt  = move != null ? (move > 0 ? '+' : '') + move.toFixed(1) + '%' : '—';
-      const moveCls  = move > 0 ? 'par-pct-pos' : move < 0 ? 'par-pct-neg' : '';
-      const simPct   = p.similarity_score != null ? Math.round(p.similarity_score * 100) : null;
-
-      return `<div class="par-item">
-        <div class="par-top">
-          <div class="par-left">
-            <span class="par-ticker">${esc(p.analog_ticker || '—')}</span>
-            <span class="par-date">${esc(p.analog_date || '—')}</span>
-          </div>
-          <div class="par-right">
-            <span class="par-days">${p.recovery_days != null ? p.recovery_days + 'd recovery' : ''}</span>
-            <span class="par-pct ${moveCls}">${moveTxt}</span>
-          </div>
-        </div>
-        <div class="par-name">${esc(p.match_basis || '—')}</div>
-        ${simPct != null ? `<div class="par-sim">
-          <span class="par-sim-label">Similarity</span>
-          <div class="par-sim-track"><div class="par-sim-fill" style="width:${simPct}%;"></div></div>
-          <span class="par-sim-pct">${simPct}%</span>
-        </div>` : ''}
-      </div>`;
-    }).join('');
-  } catch (err) {
-    document.getElementById('par-body').innerHTML = `<div class="par-item inline-err">Analogs: ${esc(err.message)}</div>`;
   }
 }
 
@@ -8716,7 +8650,6 @@ async function refreshAll() {
     loadLifecycle(),
     loadContagion(),
     loadPrerequisites(),
-    loadParallels(),
     loadMoveDrivers(),
     loadSectorIntelligence(heroData),
     loadStoriesFeed(),
