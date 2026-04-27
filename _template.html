@@ -7183,6 +7183,7 @@ function ensureDashboardAuth(){
 // ── Shared data store ─────────────────────────────────────────────────────────
 var DATA = [];
 var CARD_DATA  = []; // High-conviction trade signals from v_trade_cards (filtered, max 10)
+var TC_PAPER_DATA = []; // Paper trades from t_paper_trades_active — feeds the Trading Calendar carousel so it matches the /cards page
 var TRADE_CLASS_MAP = {};
 var PREDICTION_MAP  = {};
 var snapshotMap     = {};
@@ -7388,14 +7389,45 @@ async function loadDailyWeekCalendar(){
   var today = new Date();
   var weekStart = startOfWeekMonday(today);
   var weekEnd = addDays(weekStart, 4);
+  var weekStartIso = isoDateLocal(weekStart);
+  var weekEndIso = isoDateLocal(weekEnd);
   try{
-    var rows = await restFetch('market_calendar', {
+    // market_calendar carries macro events (FOMC, CPI, OPEX, holidays).
+    // earnings_window_active is the live earnings source — market_calendar
+    // does not store earnings, so we merge them in here for the week strip.
+    var marketP = restFetch('market_calendar', {
       select:'id,event_date,event_type,ticker,event_name,event_time,notes',
-      event_date:'gte.' + isoDateLocal(weekStart),
+      event_date:'gte.' + weekStartIso,
       order:'event_date.asc,event_time.asc,event_type.asc'
     }).catch(function(){ return []; });
-    rows = (rows || []).filter(function(row){
-      return row.event_date && row.event_date <= isoDateLocal(weekEnd);
+    var earningsP = restFetch('earnings_window_active', {
+      select:'ticker,next_earnings_date',
+      next_earnings_date:'gte.' + weekStartIso,
+      order:'next_earnings_date.asc,ticker.asc'
+    }).catch(function(){ return []; });
+    var results = await Promise.all([marketP, earningsP]);
+    var marketRows = (results[0] || []).filter(function(row){
+      return row.event_date && row.event_date <= weekEndIso;
+    });
+    var earningsRows = (results[1] || [])
+      .filter(function(row){
+        return row.next_earnings_date && row.next_earnings_date >= weekStartIso && row.next_earnings_date <= weekEndIso;
+      })
+      .map(function(row){
+        return {
+          id: 'earn_' + row.ticker + '_' + row.next_earnings_date,
+          event_date: row.next_earnings_date,
+          event_type: 'EARNINGS',
+          ticker: row.ticker,
+          event_name: null,
+          event_time: null,
+          notes: null
+        };
+      });
+    var rows = marketRows.concat(earningsRows);
+    rows.sort(function(a,b){
+      if(a.event_date !== b.event_date) return a.event_date < b.event_date ? -1 : 1;
+      return String(a.event_type || '').localeCompare(String(b.event_type || ''));
     });
     DAILY_WEEK_BASE_ROWS = rows;
     renderDailyWeekCalendar(DAILY_WEEK_BASE_ROWS);
@@ -14067,8 +14099,71 @@ function tcQueueToday(idx){
 }
 
 // ── Boot ──
+// Map a t_paper_trades_active row → TC_SIGNALS shape. Mirrors the logic in
+// lib/mod-trading-cards.js paperToCardRow so the carousel reflects the same
+// committed paper trades shown on the /cards page.
+function paperToSignal(r){
+  var dir = (r.direction||'').toUpperCase();
+  var isShort = dir==='SHORT';
+  var entry = Number(r.entry_price)||0;
+  // entry_confidence is stored as 0-100 (percent), not 0-1
+  var confPct = r.entry_confidence!=null ? Math.round(Number(r.entry_confidence)) : 50;
+  var tier = confPct>=85 ? 'PLATINUM' : confPct>=70 ? 'GOLD' : confPct>=55 ? 'SURPRISE' : 'STANDARD';
+  var direction = isShort ? 'BEARISH' : dir==='LONG' ? 'BULLISH' : 'NEUTRAL';
+  var holdDays = null;
+  if(r.entry_date && r.planned_exit_date){
+    try{
+      var d1=new Date(r.entry_date), d2=new Date(r.planned_exit_date);
+      holdDays=Math.max(1,Math.round((d2-d1)/(1000*60*60*24)));
+    }catch(_){}
+  }
+  var win = holdDays!=null ? (holdDays + (holdDays>1?' days':' day')) : '5 days';
+  var basis = r.signal_basis || '';
+  var moveName = basis ? basis.replace(/_/g,' ').toUpperCase() : (direction==='BEARISH'?'SHORT':direction==='BULLISH'?'LONG':'PAPER TRADE');
+  // For closed trades, use realized PnL as the price-change chip; for open, leave 0%
+  var pct = (r.status==='CLOSED' && r.pnl_pct!=null) ? Number(r.pnl_pct) : 0;
+  var isUp = pct>0;
+  var tp = r.take_profit_price!=null ? Number(r.take_profit_price) : null;
+  var sl = r.stop_loss_price!=null ? Number(r.stop_loss_price) : null;
+  var desc;
+  if(r.status==='CLOSED' && r.pnl_pct!=null){
+    desc = 'Closed ' + (pct>=0?'+':'') + pct.toFixed(1) + '% in ' + (r.days_held!=null?r.days_held:'—') + ' days. Entry $' + entry.toFixed(2) + (r.exit_price?' → exit $'+Number(r.exit_price).toFixed(2):'') + '.';
+  } else {
+    var parts = ['Entry $' + entry.toFixed(2)];
+    if(tp!=null) parts.push('target $' + tp.toFixed(2));
+    if(sl!=null) parts.push('stop $' + sl.toFixed(2));
+    desc = parts.join(' · ') + '.';
+  }
+  var expiresStr = '';
+  if(r.planned_exit_date){
+    try{ expiresStr = new Date(r.planned_exit_date+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}); }catch(_){}
+  }
+  return {
+    id: r.ticker.toLowerCase(), ticker: r.ticker,
+    name: (industryMap[r.ticker]||{}).sector || '—',
+    price: '$' + fmtPrice(entry),
+    change: (isUp?'▲':'▼') + ' ' + Math.abs(pct).toFixed(2) + '%',
+    changeDir: isUp?'up':'down',
+    tier: tier, tierLabel: basis, direction: direction,
+    moveName: moveName, bias: moveName,
+    winRate: '',
+    conf: confPct + '%', confPct: confPct,
+    window: win, logo: '',
+    expires: expiresStr,
+    description: desc,
+    tradeScore: confPct,
+    rarity: tier==='PLATINUM' ? 'Rare' : tier==='GOLD' ? 'Uncommon' : 'Common',
+    ac: direction==='BEARISH' ? 'var(--mp-red)' : direction==='BULLISH' ? 'var(--mp-green)' : 'var(--mp-cyan)',
+    holdingDays: holdDays || 5,
+    _paperStatus: r.status
+  };
+}
 function tcBuildFromData(){
-  // Prefer CARD_DATA (high-conviction signals from v_trade_cards) over legacy DATA
+  // Prefer paper trades (matches /cards page); fall back to v_trade_cards signals, then legacy DATA
+  if(TC_PAPER_DATA.length > 0){
+    TC_SIGNALS = TC_PAPER_DATA.map(paperToSignal);
+    return;
+  }
   var src = CARD_DATA.length > 0 ? CARD_DATA : DATA;
   if(!src.length) return;
   TC_SIGNALS = src.map(function(r){
@@ -15023,12 +15118,21 @@ function getLiveSignalBias(row, story){
 async function loadTradingCalendarLive(){
   if(!canAccessFeature('pro')) return;
   if(!SUPABASE_URL || !SUPABASE_ANON) return;
-  var rows = await restFetch('earnings_window_active', {
+  // Fetch earnings + paper trades in parallel. Paper trades populate the
+  // carousel so the dashboard cards match the /cards page.
+  var earningsP = restFetch('earnings_window_active', {
     select:'ticker,days_to_earnings,next_earnings_date,earnings_position,earnings_window_flag,narrative_earnings_alignment,eps_actual,revenue_actual,earnings_surprise_pct,data_source,snapshot_date',
     order:'days_to_earnings.asc,ticker.asc',
-    limit:'120'
+    limit:'500'
   }).catch(function(){ return []; });
-  LIVE_EARNINGS_ROWS = (rows || []).filter(function(row){
+  var paperP = restFetch('t_paper_trades_active', {
+    select:'ticker,direction,signal_basis,entry_date,entry_price,entry_confidence,stop_loss_price,take_profit_price,planned_exit_date,status,pnl_pct,days_held,exit_price',
+    order:'status.asc,entry_confidence.desc'
+  }).catch(function(){ return []; });
+  var results = await Promise.all([earningsP, paperP]);
+  var rows = results[0] || [];
+  TC_PAPER_DATA = (results[1] || []).filter(function(r){return r && r.ticker;});
+  LIVE_EARNINGS_ROWS = rows.filter(function(row){
     if(!row||!row.ticker)return false;
     var d=liveDTE(row);
     return d!=null&&d>=-7;
@@ -15040,8 +15144,8 @@ async function loadTradingCalendarLive(){
     LIVE_EARNINGS_BY_DATE[eventDate].push(row);
   });
 
-  // ── Rebuild TC_SIGNALS from CARD_DATA (v_trade_cards) — earnings data only feeds calendar chips ──
-  if(CARD_DATA.length > 0){
+  // Rebuild TC_SIGNALS — paper trades take precedence inside tcBuildFromData
+  if(TC_PAPER_DATA.length > 0 || CARD_DATA.length > 0){
     tcBuildFromData();
   }
   if(tcCalBooted){
