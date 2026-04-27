@@ -27,7 +27,7 @@
 body{opacity:0;transition:opacity 0.2s;}
 /* ── AMBIENT GLOW LAYER ── */
 .ambient-glow{
-  position:fixed;top:0;left:248px;right:0;bottom:0;pointer-events:none;z-index:0;overflow:hidden;opacity:0;
+  position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;overflow:hidden;opacity:0;
 }
 [data-theme="dark"] .ambient-glow{opacity:1;}
 .ambient-glow::before{
@@ -44,7 +44,7 @@ body{opacity:0;transition:opacity 0.2s;}
 @keyframes ambientDrift2{0%{transform:translate(0,0) scale(1);}100%{transform:translate(10%,-8%) scale(1.1);}}
 /* ── GRID BACKGROUND ── */
 .grid-bg{
-  position:fixed;top:0;left:248px;right:0;bottom:0;pointer-events:none;z-index:0;
+  position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;
   background-image:
     linear-gradient(rgba(255,255,255,0.012) 1px,transparent 1px),
     linear-gradient(90deg,rgba(255,255,255,0.012) 1px,transparent 1px);
@@ -135,7 +135,12 @@ body{
   background:#FFFFFF;
   border-right:1px solid rgba(0,0,0,0.08);
   display:flex;flex-direction:column;z-index:100;overflow-y:auto;
+  /* Hidden by default on every screen size — slide in when .open is set
+     by the hamburger button. Keeps every dashboard view full-width. */
+  transform:translateX(-100%);
+  transition:transform .25s ease;
 }
+.side-nav.open{transform:translateX(0);}
 [data-theme="dark"] .side-nav{background:var(--mp-deep);border-right-color:var(--mp-border);}
 .nav-logo{
   padding:22px 18px 18px;
@@ -264,7 +269,7 @@ body{
 .nav-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99;}
 .nav-overlay.open{display:block;}
 /* ── MAIN ── */
-.main{margin-left:248px;flex:1;display:flex;flex-direction:column;min-height:100vh;overflow-x:hidden;}
+.main{margin-left:0;flex:1;display:flex;flex-direction:column;min-height:100vh;overflow-x:hidden;}
 /* topbar */
 .topbar{
   position:sticky;top:0;z-index:50;
@@ -1852,10 +1857,8 @@ body{
 }
 /* ── MOBILE ── */
 @media(max-width:767px){
-  .side-nav{transform:translateX(-100%);transition:transform .25s ease;}
-  .side-nav.open{transform:translateX(0);}
+  /* Sidebar collapse rules now apply at every screen size — see .side-nav above. */
   .mobile-topbar{display:flex;}
-  .main{margin-left:0;}
   .page-content{padding:64px 12px 48px;}
   .page-header{margin-bottom:20px;}
   .page-header h1{font-size:22px;}
@@ -4428,7 +4431,7 @@ body{
 .lb-card::after{animation-delay:2.5s !important;}
 
 /* Constellation canvas styling */
-#dash-constellation{position:fixed;top:0;left:248px;right:0;bottom:0;pointer-events:none;z-index:0;display:none;}
+#dash-constellation{position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;display:none;}
 @media(max-width:1100px){#dash-constellation{left:0;}}
 
 /* ── Full-page loader ── */
@@ -4681,6 +4684,9 @@ body{
   <div class="scan-line"></div>
   <!-- Top bar -->
   <div class="topbar">
+    <button class="hamburger-btn" id="hamburger-btn-desktop" aria-label="Toggle menu" style="margin-right:8px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
     <div class="topbar-title" id="topbar-title">Daily Plays</div>
     <div class="topbar-center">
       <div class="scholar-bar" id="scholar-bar">
@@ -6181,16 +6187,28 @@ function ensureJsPDF(){
 <!-- Env vars injected by Vercel API handler — do not edit this line -->
 <script id="__env_script">window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '', SCHOLAR_ENABLED: '', ANTHROPIC_KEY: '', MASSIVE_API: '' };</script>
 <script>
-// ── Mobile nav ────────────────────────────────────────────────────────────────
+// ── Sidebar toggle (desktop + mobile) ────────────────────────────────────────
+// Sidebar is hidden by default at every screen size; the hamburger buttons
+// (one in the desktop topbar, one in the mobile topbar) slide it in. The
+// nav-overlay covers the rest of the page so a click outside closes it.
 (function(){
-  var btn=document.getElementById('hamburger-btn');
   var nav=document.getElementById('side-nav');
   var ov=document.getElementById('nav-overlay');
-  btn.addEventListener('click',function(){
-    var open=nav.classList.toggle('open');
-    ov.classList.toggle('open',open);
+  if(!nav||!ov) return;
+  document.querySelectorAll('.hamburger-btn').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var open=nav.classList.toggle('open');
+      ov.classList.toggle('open',open);
+    });
   });
   ov.addEventListener('click',function(){
+    nav.classList.remove('open');
+    ov.classList.remove('open');
+  });
+  // Auto-close after picking a tab so the user lands on a full-width view.
+  nav.addEventListener('click',function(e){
+    var item=e.target.closest('.nav-item, .nav-promo');
+    if(!item) return;
     nav.classList.remove('open');
     ov.classList.remove('open');
   });
