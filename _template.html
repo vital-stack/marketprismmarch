@@ -5603,10 +5603,14 @@ body{
           <div class="prism-empty" id="prism-empty">Loading Prism…</div>
           <svg id="prism-svg" class="prism-svg" viewBox="0 0 1600 700" preserveAspectRatio="xMidYMid meet">
             <rect class="prism-bg" x="0" y="0" width="1600" height="700"/>
-            <g id="prism-grid"></g>
-            <g id="prism-firezone"></g>
-            <g id="prism-axes"></g>
+            <!-- All zoomable layers live inside prism-view so axes, fire zone,
+                 and dots stay aligned when the wheel/dblclick zoom transform
+                 fires. Previously axes were siblings of prism-view, which made
+                 dots drift away from their gridlines on zoom. -->
             <g id="prism-view">
+              <g id="prism-grid"></g>
+              <g id="prism-firezone"></g>
+              <g id="prism-axes"></g>
               <g id="prism-dots"></g>
             </g>
           </svg>
