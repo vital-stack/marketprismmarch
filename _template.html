@@ -5515,9 +5515,13 @@ body{
         #tab-prism{padding-left:0;padding-right:0;}
         #tab-prism .prism-wrap{padding:0 16px;}
         @media (min-width:1280px){#tab-prism .prism-wrap{padding:0 24px;}}
-        /* Chart height scales with viewport so wider screens get a roomier
-           plot rather than capping out in proportion to the SVG ratio. */
-        #tab-prism .prism-plot-wrap > svg.prism-svg{min-height:520px;}
+        /* No min-height on the SVG — it threw the wheel-zoom transform out of
+           sync because preserveAspectRatio "meet" would pad the SVG element
+           with empty space top/bottom whenever the calculated height from the
+           1600:700 viewBox was shorter than the floor. The content scaled
+           inside prism-view but the centered offset shifted, making zoomed
+           dots appear to drift. Letting height:auto track the aspect ratio
+           keeps zoom + pan aligned. */
         #tab-prism .prism-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:24px 0 20px;}
         #tab-prism .prism-kpi{background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:14px;padding:16px 20px;}
         #tab-prism .pk-val{font-family:var(--font-display);font-size:28px;font-weight:400;color:var(--mp-text-primary);line-height:1;letter-spacing:-0.02em;}
