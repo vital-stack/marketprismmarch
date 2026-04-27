@@ -16872,19 +16872,20 @@ var BOARDS=[
   {id:'publications',title:'Most Reliable Publications',sub:'Highest source reliability score (SRS) \u2014 weighted by claim accuracy',color:'#A78BFA',bg:'rgba(167,123,250,0.10)',scoreLabel:'SRS',
   fetch:async function(){
     try{
-      var rows=await sq('source_scores?select=source_name,source_type,total_claims,correct_claims,srs,srs_band&total_claims=gte.20&srs=not.is.null&order=srs.desc&limit=10');
+      var rows=await sq('source_scores?select=source_name,source_type,total_claims,correct_claims,srs,srs_band&srs=not.is.null&order=srs.desc&limit=10');
       if(!rows||!rows.length) return [];
       return rows.map(function(r){
         var srs=Number(r.srs)||0;
         var band=r.srs_band||'';
-        var color=band==='Reliable'?'#00DE94':band==='Mixed'?'#FFB800':band==='Unreliable'?'#FF4D4D':'#A0A8B0';
+        var color=band==='Highly Reliable'?'#00DE94':band==='Reliable'?'#00DE94':band==='Mixed'?'#FFB800':band==='Unreliable'?'#FF4D4D':'#A0A8B0';
         var typeLabel=(r.source_type||'').replace(/_/g,' ');
         var claims=Number(r.total_claims)||0;
         var correct=Number(r.correct_claims)||0;
+        var claimsBit=claims>0?correct+'/'+claims+' correct':'baseline score';
         return {
           name:r.source_name,
           link:'',
-          meta:typeLabel+' \u00b7 '+correct+'/'+claims+' correct'+(band?' \u00b7 '+band:''),
+          meta:typeLabel+' \u00b7 '+claimsBit+(band?' \u00b7 '+band:''),
           score:srs,
           scoreDisplay:srs.toFixed(1),
           _scoreColor:color
