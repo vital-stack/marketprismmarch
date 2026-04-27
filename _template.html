@@ -267,9 +267,12 @@ body{
 .hamburger-btn{background:none;border:none;color:var(--mp-text-primary);cursor:pointer;padding:4px;display:flex;align-items:center;}
 .hamburger-btn svg{width:20px;height:20px;}
 .nav-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99;}
-.nav-overlay.open{display:block;}
+/* Overlay only shows on mobile — desktop sidebar pushes content aside, no dim needed. */
+@media(max-width:767px){.nav-overlay.open{display:block;}}
 /* ── MAIN ── */
-.main{margin-left:0;flex:1;display:flex;flex-direction:column;min-height:100vh;overflow-x:hidden;}
+.main{margin-left:0;flex:1;display:flex;flex-direction:column;min-height:100vh;overflow-x:hidden;transition:margin-left .25s ease;}
+/* Desktop: when sidebar is open, push main content over so they don't overlap. */
+@media(min-width:768px){.side-nav.open ~ .main{margin-left:248px;}}
 /* topbar */
 .topbar{
   position:sticky;top:0;z-index:50;
@@ -4582,7 +4585,7 @@ body{
 <div class="nav-overlay" id="nav-overlay"></div>
 <div class="app">
 <!-- ── SIDE NAV ── -->
-<nav class="side-nav" id="side-nav">
+<nav class="side-nav open" id="side-nav">
   <a href="/" class="nav-logo">
     <img class="nav-logo-img logo-light" src="/assets/Market-Prism-Logo-Light.png" alt="Market Prism">
     <img class="nav-logo-img logo-dark" src="/assets/Market-Prism-Logo-Dark.png" alt="Market Prism">
@@ -6205,10 +6208,13 @@ function ensureJsPDF(){
     nav.classList.remove('open');
     ov.classList.remove('open');
   });
-  // Auto-close after picking a tab so the user lands on a full-width view.
+  // Auto-close after picking a tab — only on mobile (where sidebar covers
+  // content). On desktop the sidebar pushes content aside, so leave it open
+  // so the user can keep navigating without re-toggling.
   nav.addEventListener('click',function(e){
     var item=e.target.closest('.nav-item, .nav-promo');
     if(!item) return;
+    if(window.innerWidth >= 768) return;
     nav.classList.remove('open');
     ov.classList.remove('open');
   });
