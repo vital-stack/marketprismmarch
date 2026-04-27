@@ -8286,7 +8286,7 @@ async function loadTradeLanes(){
     var TL_FALLBACK_DAYS=5;
     var fallbackFloor=new Date(Date.now()-TL_FALLBACK_DAYS*86400000).toISOString().slice(0,10);
     var playsP=restFetch('t_daily_plays_top10_enhanced',{
-      select:'snapshot_date,ticker,lane,lane_rank,price,verdict,trade_direction,expected_direction,target_pct,suggested_hold_days,forecast_5d_return_pct,forecast_10d_return_pct,forecast_20d_return_pct,forecast_5d_prob_up,days_to_earnings,next_earnings_date,fvd_pct,fair_value,ideal_entry_price,ideal_exit_price,ideal_stop_price',
+      select:'snapshot_date,ticker,lane,lane_rank,price,verdict,trade_direction,expected_direction,target_pct,suggested_hold_days,forecast_1d_return_pct,forecast_5d_return_pct,forecast_10d_return_pct,forecast_20d_return_pct,forecast_5d_prob_up,days_to_earnings,next_earnings_date,fvd_pct,fair_value,ideal_entry_price,ideal_exit_price,ideal_stop_price',
       snapshot_date:'gte.'+fallbackFloor,
       ticker:MP_EXCLUDED_TICKERS,
       order:'snapshot_date.desc,lane_rank.asc'
@@ -8350,24 +8350,22 @@ async function loadTradeLanes(){
       var row=Object.assign({},p);
       row._snapshotDate=p.snapshot_date;
       var hold=row.suggested_hold_days!=null?Number(row.suggested_hold_days):null;
+      var ret1=row.forecast_1d_return_pct!=null?Number(row.forecast_1d_return_pct):null;
       var ret5=row.forecast_5d_return_pct!=null?Number(row.forecast_5d_return_pct):null;
       var ret10=row.forecast_10d_return_pct!=null?Number(row.forecast_10d_return_pct):null;
       var ret20=row.forecast_20d_return_pct!=null?Number(row.forecast_20d_return_pct):null;
       var tgt=row.target_pct!=null?Number(row.target_pct):null;
       var dte=liveDTE(row);
       if(p.lane==='DAY_TRADE'){
-        // Band-aid: mirrors track-daily-plays v5 resolver. The upstream
-        // scorer writes long-horizon (20d) values into target_pct, which
-        // leaks into DAY_TRADE chips as unrealistic "today" returns.
-        // Prefer the 5d forecast; if missing, cap target_pct at ±2.5%.
+        // Use the 1d forecast for single-session moves. Fall back to 5d
+        // scaled down by sqrt(5), then capped target_pct, so chips never
+        // present long-horizon expectations as a one-day return.
         var v;
-        if(ret5!=null){ v=ret5; }
-        else if(tgt!=null){ var _s=tgt<0?-1:1; v=_s*Math.min(Math.abs(tgt),2.5); }
+        if(ret1!=null){ v=ret1; }
+        else if(ret5!=null){ var _s5=ret5<0?-1:1; v=_s5*Math.min(Math.abs(ret5)/Math.sqrt(5),2.5); }
+        else if(tgt!=null){ var _st=tgt<0?-1:1; v=_st*Math.min(Math.abs(tgt),2.5); }
         else { v=null; }
-        // Value is the 5d expected return; label as "Day 1/2" instead of "today"
-        // to stop presenting a 5d forecast as a single-session move.
-        var dh=hold||2;
-        row._chip=v!=null?tlFmtReturnPct(v)+' · Day 1/'+dh:'Day 1/'+dh;
+        row._chip=v!=null?tlFmtReturnPct(v)+' today':'today';
         row._predPct=v;
       } else if(p.lane==='SWING_TRADE'){
         var h=hold||5;
