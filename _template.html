@@ -8463,7 +8463,7 @@ async function loadTradeLanes(){
     // AI Picks lane — populated by loadAiPicks() below
     html+='<div class="tl-lane tl-ai" id="tl-ai-lane">'
       +'<div class="tl-lane-header">'
-        +'<div><div class="tl-lane-title">Top AI Picks</div><div class="tl-lane-sub">Cross-signal synthesis \u00B7 Claude</div></div>'
+        +'<div><div class="tl-lane-title">Top AI Picks</div><div class="tl-lane-sub">Top 10 leaderboard \u00B7 Claude</div></div>'
         +'<span class="tl-ai-badge">AI</span>'
       +'</div>'
       +'<div class="tl-lane-rows" id="tl-ai-body"><div class="tl-ai-loading"><span class="tl-ai-spinner"></span><span>Synthesizing picks\u2026</span></div></div>'
@@ -9095,7 +9095,9 @@ function renderAiPicks(picks){
   }
   var priceMap={};
   (TL_SCORECARD||[]).forEach(function(r){priceMap[r.ticker]=r.price;});
-  var rows=picks.slice(0,6).map(function(p){
+  var rows=picks.slice(0,10).map(function(p,i){
+    var rank=i+1;
+    var rankColor=rank===1?'#FFB800':rank===2?'#A0A8B0':rank===3?'#CD7F32':'var(--mp-text-tertiary)';
     var dirArrow=p.direction==='BULLISH'?'\u25B2':p.direction==='BEARISH'?'\u25BC':'\u25CF';
     var dirColor=p.direction==='BULLISH'?'#00DE94':p.direction==='BEARISH'?'#FF4D4D':'#00AEFF';
     var actionColor=p.action==='Long'?'#00DE94':p.action==='Short'?'#FF4D4D':'#FFB800';
@@ -9104,6 +9106,7 @@ function renderAiPicks(picks){
     var thesis=p.thesis||'';
     return '<div class="tl-row" data-ticker="'+esc(p.ticker)+'" title="'+esc(thesis)+'" onclick="window.location.href=\'/ticker/'+encodeURIComponent(p.ticker)+'\'">'
       +'<div class="tl-row-left">'
+        +'<span class="tl-row-rank" style="display:inline-block;min-width:18px;font-size:11px;font-weight:700;color:'+rankColor+';font-family:var(--font-body);margin-right:6px;text-align:right;">'+rank+'</span>'
         +'<span class="tl-row-ticker">'+esc(p.ticker)+'</span>'
         +'<span class="tl-row-price" data-live-price="'+esc(p.ticker)+'">'+priceStr+'</span>'
         +'<span class="tl-row-change" data-live-change="'+esc(p.ticker)+'" style="font-size:11px;color:var(--mp-text-tertiary);font-family:var(--font-body);margin-left:4px;"></span>'

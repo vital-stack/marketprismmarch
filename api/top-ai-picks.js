@@ -23,7 +23,7 @@ function rateCheck(ip) {
   return true;
 }
 
-const SYSTEM_PROMPT = `You are the Market Prism senior signal analyst. You receive a compact JSON list of tickers with forensic signals derived from the narrative scorecard pipeline. Your job is to surface the 6 highest-conviction trades for the day across ALL setup types — day trade, swing, momentum, earnings, value, or trap shorts.
+const SYSTEM_PROMPT = `You are the Market Prism senior signal analyst. You receive a compact JSON list of tickers with forensic signals derived from the narrative scorecard pipeline. Your job is to surface the 10 highest-conviction trades for the day across ALL setup types — day trade, swing, momentum, earnings, value, or trap shorts.
 
 You are NOT re-sorting by a single metric. You synthesize across signals. Prefer tickers that light up on multiple independent dimensions (e.g. Clear Path + low NRS + positive WKS + narrative energy), over tickers strong on only one axis.
 
@@ -38,7 +38,7 @@ SIGNAL GLOSSARY (use these terms in your thesis lines, never invent new ones):
 - coordination_score: coordinated-coverage signal (0-100, >30 = suspicious)
 - drift_score: off-narrative price drift (0-100, >60 = divergence)
 
-OUTPUT FORMAT — respond ONLY with a JSON array, no prose, no markdown fences. Exactly 6 entries:
+OUTPUT FORMAT — respond ONLY with a JSON array, no prose, no markdown fences. Exactly 10 entries:
 [
   {
     "ticker": "NVDA",
@@ -56,7 +56,7 @@ RULES:
 - Never use the words: crash, violent, guaranteed, certain, moonshot, explosion.
 - Thesis must reference at least two distinct signals (e.g. "Clear Path regime with NRS 18 and +42 WKS"). Numbers belong in the thesis.
 - Do NOT recommend position sizing or stops. This is signal synthesis, not financial advice.
-- If fewer than 6 tickers meet a reasonable conviction bar, return what you have — do not pad.`;
+- If fewer than 10 tickers meet a reasonable conviction bar, return what you have — do not pad.`;
 
 function pickCompact(r) {
   // Trim to the fields Claude actually needs. Keeps input tokens low.
@@ -161,7 +161,7 @@ module.exports = async (req, res) => {
       },
       body: JSON.stringify({
         model: model,
-        max_tokens: 1200,
+        max_tokens: 2000,
         system: SYSTEM_PROMPT,
         messages: [{ role: 'user', content: userMessage }]
       })
@@ -213,7 +213,7 @@ module.exports = async (req, res) => {
     }
 
     // Sanitize: keep only known fields, clamp lengths
-    var clean = picks.filter(function(p){ return p && p.ticker; }).slice(0, 6).map(function(p){
+    var clean = picks.filter(function(p){ return p && p.ticker; }).slice(0, 10).map(function(p){
       return {
         ticker: String(p.ticker).toUpperCase().slice(0, 8),
         action: ['Long','Short','Watch'].indexOf(p.action) >= 0 ? p.action : 'Watch',
