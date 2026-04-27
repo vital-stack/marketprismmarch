@@ -4821,7 +4821,7 @@ async function loadHero() {
       }),
       // Fetch this ticker's scorecard for leaderboard-style badges + banner lane classifier
       sbFetch('narrative_scorecard', {
-        select: 'ticker,fvd_pct,vms,coordination_score,decay_rate,suspicion_score,energy_remaining,verdict,narrative,half_life,nrs,wks_score,current_sentiment,walsh_regime,drift_score,narrative_energy_absolute,narrative_energy_regime,snapshot_date',
+        select: 'ticker,fvd_pct,vms,coordination_score,decay_rate,suspicion_score,energy_remaining,verdict,narrative,half_life,nrs,wks_score,current_sentiment,walsh_regime,drift_score,narrative_energy_absolute,narrative_energy_regime,narrative_state,snapshot_date',
         ticker: `eq.${TICKER}`,
         order:  'snapshot_date.desc',
         limit:  '1'
@@ -4935,6 +4935,20 @@ async function loadHero() {
     const scVerdict = (sc.verdict || '').toLowerCase();
     if (scVerdict.includes('trap')) insightBadges.push({ label: 'Narrative Trap', color: '#FF4D4D', bg: 'rgba(255,77,77,0.08)', border: 'rgba(255,77,77,0.20)' });
     else if (scVerdict.includes('verified') || scVerdict.includes('supported')) insightBadges.push({ label: 'Fundamentally Supported', color: '#00DE94', bg: 'rgba(0,222,148,0.08)', border: 'rgba(0,222,148,0.20)' });
+
+    // Narrative state — institutional flow / retail behavior signal from narrative_scorecard.
+    // Prepended (unshift) so it stays visible inside the slice(0, 4) cap.
+    if (sc.narrative_state) {
+      const ns = sc.narrative_state;
+      const nsLabel = String(ns).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      let nsBadge;
+      if (ns === 'WHALE_ACCUMULATION')   nsBadge = { label: nsLabel, color: '#00DE94', bg: 'rgba(0,222,148,0.10)', border: 'rgba(0,222,148,0.25)' };
+      else if (ns === 'RETAIL_PUMP')     nsBadge = { label: nsLabel, color: '#FFB800', bg: 'rgba(255,184,0,0.10)', border: 'rgba(255,184,0,0.25)' };
+      else if (ns === 'DISTRIBUTION')    nsBadge = { label: nsLabel, color: '#FF4D4D', bg: 'rgba(255,77,77,0.10)', border: 'rgba(255,77,77,0.25)' };
+      else if (ns === 'DORMANT')         nsBadge = { label: nsLabel, color: '#A0A8B0', bg: 'rgba(160,168,176,0.08)', border: 'rgba(160,168,176,0.20)' };
+      else                                nsBadge = { label: nsLabel, color: '#00AEFF', bg: 'rgba(0,174,255,0.08)', border: 'rgba(0,174,255,0.20)' };
+      insightBadges.unshift(nsBadge);
+    }
 
     const insightHtml = insightBadges.slice(0, 4).map(b =>
       `<span class="hero-insight-badge" style="background:${b.bg};color:${b.color};border:1px solid ${b.border};">${esc(b.label)}</span>`
