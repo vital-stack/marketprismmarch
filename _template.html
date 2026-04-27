@@ -8364,7 +8364,10 @@ async function loadTradeLanes(){
         if(ret5!=null){ v=ret5; }
         else if(tgt!=null){ var _s=tgt<0?-1:1; v=_s*Math.min(Math.abs(tgt),2.5); }
         else { v=null; }
-        row._chip=v!=null?tlFmtReturnPct(v)+' today':'today';
+        // Value is the 5d expected return; label as "Day 1/2" instead of "today"
+        // to stop presenting a 5d forecast as a single-session move.
+        var dh=hold||2;
+        row._chip=v!=null?tlFmtReturnPct(v)+' · Day 1/'+dh:'Day 1/'+dh;
         row._predPct=v;
       } else if(p.lane==='SWING_TRADE'){
         var h=hold||5;
