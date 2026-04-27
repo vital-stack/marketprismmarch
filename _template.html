@@ -8463,7 +8463,7 @@ async function loadTradeLanes(){
     // AI Picks lane — populated by loadAiPicks() below
     html+='<div class="tl-lane tl-ai" id="tl-ai-lane">'
       +'<div class="tl-lane-header">'
-        +'<div><div class="tl-lane-title">Top AI Picks</div><div class="tl-lane-sub">Top 10 leaderboard \u00B7 Claude</div></div>'
+        +'<div><div class="tl-lane-title">Top AI Picks</div><div class="tl-lane-sub">Cross-signal synthesis \u00B7 Claude</div></div>'
         +'<span class="tl-ai-badge">AI</span>'
       +'</div>'
       +'<div class="tl-lane-rows" id="tl-ai-body"><div class="tl-ai-loading"><span class="tl-ai-spinner"></span><span>Synthesizing picks\u2026</span></div></div>'
@@ -9095,9 +9095,7 @@ function renderAiPicks(picks){
   }
   var priceMap={};
   (TL_SCORECARD||[]).forEach(function(r){priceMap[r.ticker]=r.price;});
-  var rows=picks.slice(0,10).map(function(p,i){
-    var rank=i+1;
-    var rankColor=rank===1?'#FFB800':rank===2?'#A0A8B0':rank===3?'#CD7F32':'var(--mp-text-tertiary)';
+  var rows=picks.slice(0,6).map(function(p){
     var dirArrow=p.direction==='BULLISH'?'\u25B2':p.direction==='BEARISH'?'\u25BC':'\u25CF';
     var dirColor=p.direction==='BULLISH'?'#00DE94':p.direction==='BEARISH'?'#FF4D4D':'#00AEFF';
     var actionColor=p.action==='Long'?'#00DE94':p.action==='Short'?'#FF4D4D':'#FFB800';
@@ -9106,7 +9104,6 @@ function renderAiPicks(picks){
     var thesis=p.thesis||'';
     return '<div class="tl-row" data-ticker="'+esc(p.ticker)+'" title="'+esc(thesis)+'" onclick="window.location.href=\'/ticker/'+encodeURIComponent(p.ticker)+'\'">'
       +'<div class="tl-row-left">'
-        +'<span class="tl-row-rank" style="display:inline-block;min-width:18px;font-size:11px;font-weight:700;color:'+rankColor+';font-family:var(--font-body);margin-right:6px;text-align:right;">'+rank+'</span>'
         +'<span class="tl-row-ticker">'+esc(p.ticker)+'</span>'
         +'<span class="tl-row-price" data-live-price="'+esc(p.ticker)+'">'+priceStr+'</span>'
         +'<span class="tl-row-change" data-live-change="'+esc(p.ticker)+'" style="font-size:11px;color:var(--mp-text-tertiary);font-family:var(--font-body);margin-left:4px;"></span>'
@@ -16790,6 +16787,34 @@ function ini(s){return(s||'').split(/\s+/).slice(0,2).map(function(w){return(w[0
 function lbEsc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 
 var BOARDS=[
+  {id:'ai-picks',title:'Top AI Picks',sub:'10 highest-conviction trades synthesized across signals · Claude',color:'#A78BFA',bg:'rgba(167,139,250,0.12)',scoreLabel:'Conviction',
+  fetch:async function(){
+    try{
+      var dateRows=await sq('narrative_scorecard?select=snapshot_date&order=snapshot_date.desc&limit=1');
+      var snapshotDate=dateRows&&dateRows[0]&&dateRows[0].snapshot_date;
+      if(!snapshotDate) return [];
+      var rows=await sq('narrative_scorecard?select=ticker,price,nrs,wks_score,walsh_regime,narrative_energy_absolute,narrative_energy_regime,narrative_mass_score,coordination_score,drift_score,half_life,fvd_pct,vms,verdict,verdict_confidence&snapshot_date=eq.'+encodeURIComponent(snapshotDate)+'&limit=200');
+      if(!rows||!rows.length) return [];
+      var res=await fetch('/api/top-ai-picks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({snapshot_date:snapshotDate,rows:rows})});
+      if(!res.ok) return [];
+      var data=await res.json();
+      var picks=data.picks||[];
+      return picks.slice(0,10).map(function(p){
+        var dirArrow=p.direction==='BULLISH'?'▲':p.direction==='BEARISH'?'▼':'●';
+        var dirColor=p.direction==='BULLISH'?'#00DE94':p.direction==='BEARISH'?'#FF4D4D':'#00AEFF';
+        var thesis=String(p.thesis||'');
+        var truncated=thesis.length>90?thesis.slice(0,87)+'…':thesis;
+        return {
+          name:p.ticker,
+          link:'/ticker/'+p.ticker,
+          meta:(p.action||'')+' '+dirArrow+' · '+truncated,
+          score:Number(p.conviction)||0,
+          scoreDisplay:Math.round(Number(p.conviction)||0)+'%',
+          _scoreColor:dirColor
+        };
+      });
+    }catch(e){console.warn('[Leaderboard AI Picks] fetch failed:',e);return [];}
+  }},
   {id:'highest-mass',title:'Highest Narrative Mass',sub:'Most institutional coverage today',color:'#00AEFF',bg:'rgba(0,174,255,0.12)',scoreLabel:'Mass',
   fetch:function(){return scorecardFallback(function(s){return Number(s.narrative_mass_score)>0.2;},function(s){var m=Number(s.narrative_mass_score)||0;var wks=Number(s.wks_score)||0;var wL=wks>10?'bullish':wks<-10?'bearish':'neutral';return{name:s.ticker,link:'/ticker/'+s.ticker,meta:'WKS '+(wks>0?'+':'')+Math.round(wks)+' ('+wL+') \u00b7 NRS '+Math.round(Number(s.nrs)||0),score:m*100,scoreDisplay:m.toFixed(2),_scoreColor:wks>10?'#00DE94':wks<-10?'#FF4D4D':'#00AEFF'};},function(a,b){return(Number(b.narrative_mass_score)||0)-(Number(a.narrative_mass_score)||0);},10);}},
   {id:'coordination',title:'Coordination Alerts',sub:'Synchronized narrative patterns detected',color:'#FF4D4D',bg:'rgba(255,77,77,0.12)',scoreLabel:'Coord Score',
