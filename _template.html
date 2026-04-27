@@ -5506,7 +5506,18 @@ body{
     ═══════════════════════════════════════ -->
     <div class="tab-panel" id="tab-prism">
       <style>
-        #tab-prism .prism-wrap{max-width:1800px;margin:0 auto;}
+        /* Full-width on every screen size — the chart aspect ratio (1600:700)
+           already scales fluidly, removing the 1800px cap lets it use the
+           entire main area on ultrawide displays. */
+        #tab-prism .prism-wrap{width:100%;max-width:none;margin:0 auto;}
+        /* Trim the page-content padding inside the Prism tab so the SVG hugs
+           the viewport edges. The page-header keeps its own breathing room. */
+        #tab-prism{padding-left:0;padding-right:0;}
+        #tab-prism .prism-wrap{padding:0 16px;}
+        @media (min-width:1280px){#tab-prism .prism-wrap{padding:0 24px;}}
+        /* Chart height scales with viewport so wider screens get a roomier
+           plot rather than capping out in proportion to the SVG ratio. */
+        #tab-prism .prism-plot-wrap > svg.prism-svg{min-height:520px;}
         #tab-prism .prism-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:24px 0 20px;}
         #tab-prism .prism-kpi{background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:14px;padding:16px 20px;}
         #tab-prism .pk-val{font-family:var(--font-display);font-size:28px;font-weight:400;color:var(--mp-text-primary);line-height:1;letter-spacing:-0.02em;}
