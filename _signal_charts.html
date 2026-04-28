@@ -73,6 +73,14 @@
   .tc-change.dn { color: var(--mp-red); background: rgba(255,77,77,0.1); }
   .tc-change.flat { color: var(--mp-text-3); background: rgba(255,255,255,0.05); }
   .tc-regime { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; padding: 5px 10px; border-radius: 6px; border: 1px solid currentColor; }
+  .tc-head-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .tc-refresh { display: inline-flex; align-items: center; gap: 5px; padding: 5px 9px; border-radius: 6px; background: rgba(255,255,255,0.04); border: 1px solid var(--mp-border); color: var(--mp-text-2); font-family: inherit; font-size: 11px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
+  .tc-refresh:hover:not(:disabled) { color: var(--mp-text); border-color: var(--mp-border-hv); background: rgba(255,255,255,0.08); }
+  .tc-refresh:disabled { opacity: 0.5; cursor: wait; }
+  .tc-refresh svg { width: 11px; height: 11px; }
+  .tc-refresh.spinning svg { animation: tc-spin 0.6s linear; }
+  .tc-updated { font-size: 10px; color: var(--mp-text-m); letter-spacing: 0.04em; }
+  @keyframes tc-spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
   .tc-chart-wrap { position: relative; height: 340px; margin: 0 -4px; }
   .tc-chart-wrap canvas { display: block; width: 100%; height: 100%; }
   .tc-desc { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--mp-border); font-size: 13px; color: var(--mp-text-2); line-height: 1.55; }
@@ -442,7 +450,14 @@
           + '<div class="tc-price">' + esc(priceStr) + '</div>'
           + (pctStr ? '<div class="tc-change ' + pctCls + '">' + esc(pctStr) + '</div>' : '')
         + '</div>'
-        + '<div class="tc-regime" id="reg-' + ticker + '" style="color:#A0A8B8;">Loading…</div>'
+        + '<div class="tc-head-right">'
+          + '<div class="tc-regime" id="reg-' + ticker + '" style="color:#A0A8B8;">Loading…</div>'
+          + '<button class="tc-refresh" data-ticker="' + esc(ticker) + '" title="Pull live price">'
+            + '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 8a6 6 0 1 1-1.76-4.24"/><path d="M14 3v3.5h-3.5"/></svg>'
+            + 'Refresh'
+          + '</button>'
+          + '<div class="tc-updated" id="upd-' + ticker + '"></div>'
+        + '</div>'
       + '</div>'
       + '<div class="tc-chart-wrap"><canvas id="cv-' + ticker + '"></canvas></div>'
       + '<div class="tc-desc" id="desc-' + ticker + '">Reading the signal…</div>';
@@ -496,16 +511,44 @@
       changeEl.textContent = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
       changeEl.className = 'tc-change ' + (pct > 0 ? 'up' : pct < 0 ? 'dn' : 'flat');
     }
+    // Updated stamp + source hint (Polygon source: snapshot_live = real-time tick)
+    var upd = document.getElementById('upd-' + ticker);
+    if(upd){
+      var n = new Date();
+      var hh = String(n.getHours()).padStart(2,'0');
+      var mm = String(n.getMinutes()).padStart(2,'0');
+      var ss = String(n.getSeconds()).padStart(2,'0');
+      var live = q.source === 'snapshot_live';
+      upd.textContent = (live ? '● ' : '○ ') + hh + ':' + mm + ':' + ss;
+      upd.style.color = live ? 'var(--mp-green)' : 'var(--mp-text-m)';
+      upd.title = live ? 'Live tick from Polygon' : 'Last close (' + (q.source||'unknown') + ')';
+    }
   }
   function refreshLivePrices(){
-    fetch('/api/live-quotes-batch?tickers=' + encodeURIComponent(TICKERS.join(',')))
+    return fetch('/api/live-quotes-batch?tickers=' + encodeURIComponent(TICKERS.join(',')))
       .then(function(r){ return r.ok ? r.json() : null; })
       .then(function(j){
         var quotes = (j && j.quotes) || {};
-        TICKERS.forEach(function(t){ if(quotes[t]) applyLiveQuote(t, quotes[t]); });
+        var hits = 0;
+        TICKERS.forEach(function(t){ if(quotes[t]){ applyLiveQuote(t, quotes[t]); hits++; } });
+        if(!hits) console.warn('[signal-charts] live-quotes-batch returned no quotes', j);
+        return hits;
       })
-      .catch(function(){ /* keep static chart on failure */ });
+      .catch(function(err){
+        console.warn('[signal-charts] live-quotes-batch failed', err);
+        return 0;
+      });
   }
+  // Click delegation for the per-card Refresh button.
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest && e.target.closest('.tc-refresh');
+    if(!btn) return;
+    btn.disabled = true;
+    btn.classList.add('spinning');
+    refreshLivePrices().finally(function(){
+      setTimeout(function(){ btn.disabled = false; btn.classList.remove('spinning'); }, 500);
+    });
+  });
 
   // Kick off all three loads
   TICKERS.forEach(function(ticker){
