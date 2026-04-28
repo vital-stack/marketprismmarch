@@ -143,7 +143,64 @@
     text-transform: uppercase; color: var(--mp-text-muted);
     padding: 18px 18px 6px;
   }
-  .sidebar-nav { display: flex; flex-direction: column; gap: 2px; padding: 4px 10px; flex: 1; }
+  .sidebar-nav { display: flex; flex-direction: column; gap: 2px; padding: 4px 10px; flex: 1; overflow-y: auto; }
+  .sidebar-nav .sidebar-section-lbl { padding: 14px 8px 4px; }
+  .sidebar-nav .sidebar-section-lbl:first-child { padding-top: 6px; }
+
+  /* ── Ticker search bar (inline in breadcrumb row) ── */
+  .tk-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    width: 320px;
+    max-width: 100%;
+    padding: 7px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--mp-border);
+    background: var(--mp-surface);
+    transition: border-color .2s, box-shadow .2s;
+    cursor: text;
+  }
+  .tk-search:hover { border-color: var(--mp-border-hover); }
+  .tk-search:focus-within { border-color: rgba(0,174,255,0.35); box-shadow: 0 0 0 3px rgba(0,174,255,0.08); }
+  .tk-search-icon { width: 14px; height: 14px; flex-shrink: 0; color: var(--mp-text-tertiary); }
+  .tk-search-input {
+    flex: 1; min-width: 0;
+    background: transparent; border: none; outline: none;
+    font-family: var(--font-body); font-size: 13px; color: var(--mp-text-primary);
+  }
+  .tk-search-input::placeholder { color: var(--mp-text-tertiary); }
+  .tk-search-kbd {
+    font-family: var(--font-body); font-size: 10px; font-weight: 600;
+    color: var(--mp-text-tertiary);
+    padding: 2px 6px; border-radius: 4px;
+    border: 1px solid var(--mp-border);
+    background: var(--mp-surface2);
+    line-height: 1; flex-shrink: 0;
+  }
+  .tk-search-dd {
+    display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 80;
+    background: var(--mp-surface); border: 1px solid var(--mp-border-hover);
+    border-radius: 10px; max-height: 320px; overflow-y: auto;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+  }
+  .tk-search-dd.open { display: block; }
+  .tk-search-dd-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer;
+    border-bottom: 1px solid var(--mp-border); transition: background .12s;
+  }
+  .tk-search-dd-item:last-child { border-bottom: none; }
+  .tk-search-dd-item:hover, .tk-search-dd-item.active { background: rgba(0,174,255,0.06); }
+  .tk-search-dd-tk { font-size: 13px; font-weight: 700; color: var(--mp-text-primary); min-width: 50px; }
+  .tk-search-dd-nm { font-size: 12px; color: var(--mp-text-tertiary); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tk-search-dd-sec { font-size: 10px; color: var(--mp-text-muted); flex-shrink: 0; }
+  .tk-search-dd-empty { padding: 14px; text-align: center; font-size: 12px; color: var(--mp-text-muted); }
+  @media (max-width: 600px) {
+    .tk-search { width: 100%; margin-left: 0; }
+    .tk-search-kbd { display: none; }
+  }
   .nav-item {
     display: flex; align-items: center; gap: 10px;
     padding: 10px 14px; border-radius: 8px;
@@ -3623,11 +3680,51 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
       <img class="sidebar-logo-img logo-light" src="/assets/Market-Prism-Logo-Light.png" alt="Market Prism">
       <img class="sidebar-logo-img logo-dark" src="/assets/Market-Prism-Logo-Dark.png" alt="Market Prism">
     </a>
-    <div class="sidebar-section-lbl">Intelligence</div>
     <nav class="sidebar-nav">
-      <a href="/dashboard" class="nav-item">
+      <div class="sidebar-section-lbl">Daily Overview</div>
+      <a href="/dashboard?tab=daily" class="nav-item">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6v-3z"/></svg>
-        Dashboard
+        Daily Plays
+      </a>
+      <a href="/dashboard?tab=leaderboard" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+        Leaderboard
+      </a>
+      <a href="/dashboard?tab=prism" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 3 3 20 21 20 12 3"/><line x1="12" y1="3" x2="7.5" y2="20"/><line x1="12" y1="3" x2="16.5" y2="20"/></svg>
+        Prism
+      </a>
+
+      <div class="sidebar-section-lbl">Tools</div>
+      <a href="/dashboard?tab=signallab" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"/></svg>
+        Signal Lab
+      </a>
+      <a href="/dashboard?tab=cards" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="8" height="13" rx="2"/><rect x="14" y="3" width="8" height="13" rx="2"/><path d="M6 19h12"/><path d="M10 21h4"/></svg>
+        Trading Cards
+      </a>
+      <a href="/dashboard?tab=ticker" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg>
+        Stock Research
+      </a>
+      <a href="/dashboard?tab=validation" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-5"/><circle cx="18" cy="9" r="1.25"/></svg>
+        Track Record
+      </a>
+
+      <div class="sidebar-section-lbl">Research</div>
+      <a href="/dashboard?tab=calendar" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>
+        Trading Calendar
+      </a>
+      <a href="/dashboard?tab=memes" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z"/></svg>
+        Market Sharing
+      </a>
+      <a href="/dashboard?tab=scorer" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"/></svg>
+        Score Any Stock
       </a>
     </nav>
     <div class="sidebar-footer">
@@ -3657,10 +3754,16 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
   <main class="main-content">
     <div class="page-wrap">
 
-  <nav class="site-nav">
+  <nav class="site-nav" style="flex-wrap:wrap;row-gap:12px;">
     <a class="nav-back" href="/dashboard">&larr; Market Prism</a>
     <span class="nav-sep">/</span>
     <span class="nav-ticker" id="nav-ticker">&mdash;</span>
+    <div class="tk-search" id="tk-search">
+      <svg class="tk-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input class="tk-search-input" id="tk-search-input" placeholder="Search tickers… e.g. AAPL, NVDA, TSLA" autocomplete="off" aria-label="Search tickers">
+      <kbd class="tk-search-kbd">⌘K</kbd>
+      <div class="tk-search-dd" id="tk-search-dd"></div>
+    </div>
   </nav>
 
   <!-- Hero -->
@@ -9732,6 +9835,101 @@ window.MP_DOMAINS   = MP_DOMAINS;
     var tip = e.target.closest('.info-tip');
     if(!tip) return;
     popup.classList.remove('visible');
+  });
+})();
+
+/* ── Ticker search bar (autocomplete + Enter to navigate) ──────────────── */
+(function(){
+  var input = document.getElementById('tk-search-input');
+  var wrap  = document.getElementById('tk-search');
+  var dd    = document.getElementById('tk-search-dd');
+  if(!input || !wrap || !dd) return;
+
+  var SUPABASE_URL  = (window.__env && window.__env.SUPABASE_URL)  || '';
+  var SUPABASE_ANON = (window.__env && window.__env.SUPABASE_ANON) || '';
+  var EXCLUDED = 'not.in.(SONY,HMC,TM,TSM,DJT)';
+
+  var tickers = [];
+  var idx = -1;
+
+  if(SUPABASE_URL && SUPABASE_ANON){
+    fetch(SUPABASE_URL + '/rest/v1/ticker_industry_lookup?select=ticker,name,sector&ticker=' + encodeURIComponent(EXCLUDED) + '&order=ticker.asc&limit=300', {
+      headers: {'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON, 'Accept': 'application/json'}
+    }).then(function(r){ return r.ok ? r.json() : []; }).then(function(rows){
+      tickers = (rows || []).filter(function(r){ return r.ticker; });
+      if(tickers.length) input.placeholder = 'Search ' + tickers.length + ' tickers… e.g. AAPL, NVDA, TSLA';
+    }).catch(function(){});
+  }
+
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+  function render(matches){
+    if(!matches.length){
+      dd.innerHTML = '<div class="tk-search-dd-empty">No matching tickers</div>';
+      dd.classList.add('open');
+      return;
+    }
+    idx = -1;
+    dd.innerHTML = matches.slice(0, 12).map(function(r, i){
+      return '<div class="tk-search-dd-item" data-ticker="' + esc(r.ticker) + '" data-idx="' + i + '">'
+        + '<span class="tk-search-dd-tk">' + esc(r.ticker) + '</span>'
+        + '<span class="tk-search-dd-nm">' + esc(r.name || '') + '</span>'
+        + '<span class="tk-search-dd-sec">' + esc(r.sector || '') + '</span>'
+        + '</div>';
+    }).join('');
+    dd.classList.add('open');
+    dd.querySelectorAll('.tk-search-dd-item').forEach(function(item){
+      item.addEventListener('mousedown', function(e){
+        e.preventDefault();
+        window.location.href = '/ticker/' + encodeURIComponent(this.dataset.ticker);
+      });
+    });
+  }
+
+  function close(){ dd.classList.remove('open'); idx = -1; }
+
+  function highlight(i){
+    var items = dd.querySelectorAll('.tk-search-dd-item');
+    items.forEach(function(it){ it.classList.remove('active'); });
+    if(i >= 0 && i < items.length){ items[i].classList.add('active'); items[i].scrollIntoView({block:'nearest'}); }
+  }
+
+  function match(q){
+    return tickers.filter(function(r){
+      return r.ticker.indexOf(q) === 0 || (r.name && r.name.toUpperCase().indexOf(q) !== -1);
+    });
+  }
+
+  input.addEventListener('input', function(){
+    var q = this.value.trim().toUpperCase();
+    if(!q){ close(); return; }
+    render(match(q));
+  });
+  input.addEventListener('focus', function(){
+    var q = this.value.trim().toUpperCase();
+    if(!q && tickers.length){ render(tickers.slice(0, 12)); return; }
+    if(q) render(match(q));
+  });
+  input.addEventListener('blur', function(){ setTimeout(close, 150); });
+  input.addEventListener('keydown', function(e){
+    var items = dd.querySelectorAll('.tk-search-dd-item');
+    if(e.key === 'ArrowDown'){ e.preventDefault(); idx = Math.min(idx + 1, items.length - 1); highlight(idx); return; }
+    if(e.key === 'ArrowUp'){ e.preventDefault(); idx = Math.max(idx - 1, 0); highlight(idx); return; }
+    if(e.key === 'Escape'){ close(); return; }
+    if(e.key === 'Enter'){
+      e.preventDefault();
+      if(idx >= 0 && items[idx]){ window.location.href = '/ticker/' + encodeURIComponent(items[idx].dataset.ticker); return; }
+      var v = this.value.trim().toUpperCase();
+      if(v){ window.location.href = '/ticker/' + encodeURIComponent(v); }
+    }
+  });
+  wrap.addEventListener('click', function(){ input.focus(); });
+
+  document.addEventListener('keydown', function(e){
+    if((e.metaKey || e.ctrlKey) && e.key === 'k'){
+      e.preventDefault();
+      input.focus();
+    }
   });
 })();
 </script>
