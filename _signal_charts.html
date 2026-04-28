@@ -450,6 +450,7 @@
     // Wait for layout before measuring.
     requestAnimationFrame(function(){
       var result = drawChart(canvas, data);
+      canvas.__mpData = data; // stashed so live updates and resize can re-render
       if(result){
         var regEl = document.getElementById('reg-' + ticker);
         if(regEl){ regEl.textContent = result.regLbl; regEl.style.color = result.regClr; }
@@ -459,6 +460,53 @@
     });
   }
 
+  // ── Live price refresh ────────────────────────────────────────────────────
+  // ticker_snapshots' "today" row carries yesterday's close until EOD, so the
+  // chart's rightmost point is stale during market hours. Patch it with the
+  // intraday price from /api/live-quotes-batch (Polygon-backed, 15s edge
+  // cached). Outside market hours the endpoint returns the prior close, so
+  // patching is a no-op visually.
+  function etDateStr(d){
+    var p = new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d);
+    return p.find(x=>x.type==='year').value + '-' + p.find(x=>x.type==='month').value + '-' + p.find(x=>x.type==='day').value;
+  }
+  function applyLiveQuote(ticker, q){
+    if(!q || q.price == null) return;
+    var canvas = document.getElementById('cv-' + ticker);
+    if(!canvas || !canvas.__mpData) return;
+    var data = canvas.__mpData;
+    if(!data.snaps || !data.snaps.length) return;
+    var today = etDateStr(new Date());
+    var last = data.snaps[data.snaps.length - 1];
+    var livePrice = Number(q.price);
+    if((last.snapshot_date||'').slice(0,10) === today){
+      last.price_close = livePrice;
+    } else {
+      data.snaps.push({snapshot_date: today, price_close: livePrice});
+    }
+    drawChart(canvas, data);
+    // Header price + change % (use Polygon's prevClose/changePct — authoritative)
+    var card = document.getElementById('tc-' + ticker);
+    if(!card) return;
+    var priceEl = card.querySelector('.tc-price');
+    if(priceEl) priceEl.textContent = '$' + livePrice.toFixed(2);
+    var changeEl = card.querySelector('.tc-change');
+    if(changeEl && q.changePct != null){
+      var pct = Number(q.changePct);
+      changeEl.textContent = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
+      changeEl.className = 'tc-change ' + (pct > 0 ? 'up' : pct < 0 ? 'dn' : 'flat');
+    }
+  }
+  function refreshLivePrices(){
+    fetch('/api/live-quotes-batch?tickers=' + encodeURIComponent(TICKERS.join(',')))
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(j){
+        var quotes = (j && j.quotes) || {};
+        TICKERS.forEach(function(t){ if(quotes[t]) applyLiveQuote(t, quotes[t]); });
+      })
+      .catch(function(){ /* keep static chart on failure */ });
+  }
+
   // Kick off all three loads
   TICKERS.forEach(function(ticker){
     loadTicker(ticker).then(function(data){ renderCard(ticker, data); }).catch(function(){
@@ -466,6 +514,11 @@
       if(card) card.innerHTML = '<div class="tc-skeleton" style="color:var(--mp-red);">Couldn\'t load ' + esc(ticker) + ' — please refresh.</div>';
     });
   });
+
+  // First live-price patch ~1.5s after kickoff so initial render lands first,
+  // then poll every 30s. Endpoint is edge-cached at 15s so this is cheap.
+  setTimeout(refreshLivePrices, 1500);
+  setInterval(refreshLivePrices, 30000);
 
   // Redraw on resize (throttled)
   var resizeTimer = null;
