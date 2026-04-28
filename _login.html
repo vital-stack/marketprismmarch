@@ -360,6 +360,35 @@ body::before{
     } catch(e){ showBanner(); }
   })();
 
+  // Resolve where to send the user after login (?next= from server gate, else /dashboard)
+  function nextDestination(){
+    try {
+      var p = new URLSearchParams(window.location.search).get('next');
+      if(p && /^\/[^\/]/.test(p)) return p;
+    } catch(_e){}
+    return '/dashboard';
+  }
+
+  // Mint the HttpOnly mp_session cookie so server-gated pages can verify the user.
+  function mintSessionCookie(accessToken){
+    if(!accessToken) return Promise.resolve();
+    return fetch('/api/session', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      credentials:'same-origin',
+      body: JSON.stringify({ access_token: accessToken })
+    }).catch(function(){});
+  }
+
+  function mintBetaCookie(expiresIso){
+    return fetch('/api/session', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      credentials:'same-origin',
+      body: JSON.stringify({ beta:true, expires: expiresIso })
+    }).catch(function(){});
+  }
+
   // Check if already logged in (don't hang the page if provider is down)
   try {
     var sessionTimeout = setTimeout(function(){}, 0);
@@ -368,7 +397,10 @@ body::before{
       new Promise(function(_, rej){ setTimeout(function(){ rej(new Error('timeout')); }, 5000); })
     ]).then(function(result){
       if(result && result.data && result.data.session){
-        window.location.href = '/dashboard';
+        // Self-heal: mint the cookie for legacy localStorage-only sessions, then continue.
+        mintSessionCookie(result.data.session.access_token).then(function(){
+          window.location.href = nextDestination();
+        });
       }
     }).catch(function(){ showBanner(); });
   } catch(e){ showBanner(); }
@@ -437,7 +469,9 @@ body::before{
       if(result.error) throw result.error;
       showMsg('success','Signed in successfully. Redirecting…');
       document.getElementById('btn-signin').classList.add('success');
-      setTimeout(function(){ window.location.href = '/dashboard'; }, 800);
+      var token = result.data && result.data.session ? result.data.session.access_token : null;
+      await mintSessionCookie(token);
+      setTimeout(function(){ window.location.href = nextDestination(); }, 800);
     } catch(err){
       if(isOutageError(err)){
         showBanner();
@@ -470,7 +504,10 @@ body::before{
       if(!result.data.session){
         var signIn = await supabase.auth.signInWithPassword({ email: email, password: password });
         if(signIn.error){ showMsg('info','Account created! Please sign in.'); setLoading('btn-register', false); return; }
+        result = signIn;
       }
+      var regToken = result.data && result.data.session ? result.data.session.access_token : null;
+      await mintSessionCookie(regToken);
       // Apply pending beta token if user came from a landing page (e.g. /stockpsycho)
       var pendingBeta = sessionStorage.getItem('mp-pending-beta');
       if(pendingBeta === 'stockpsycho'){
@@ -479,9 +516,10 @@ body::before{
         localStorage.setItem('mp-beta-tier', 'pro');
         localStorage.setItem('mp-beta-expires', expires.toISOString());
         localStorage.setItem('mp_auth', JSON.stringify({t: Date.now()}));
+        await mintBetaCookie(expires.toISOString());
         sessionStorage.removeItem('mp-pending-beta');
       }
-      setTimeout(function(){ window.location.href = '/dashboard'; }, 800);
+      setTimeout(function(){ window.location.href = nextDestination(); }, 800);
     } catch(err){
       if(isOutageError(err)){
         showBanner();

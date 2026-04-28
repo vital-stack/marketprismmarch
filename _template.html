@@ -5130,7 +5130,7 @@ body{
         <p>Build shareable market intelligence — export cards, create custom briefings, and distribute your narrative analysis.</p>
       </div>
       <!-- Reports builder (standalone iframe — isolated from dashboard JS) -->
-      <iframe id="mp-reports-frame" src="/api/market-sharing-reports" style="width:100%;height:calc(100vh - 220px);border:none;border-radius:12px;display:block;background:var(--mp-surface);"></iframe>
+      <iframe id="mp-reports-frame" data-src="/api/market-sharing-reports" style="width:100%;height:calc(100vh - 220px);border:none;border-radius:12px;display:block;background:var(--mp-surface);"></iframe>
       <!-- Hidden: legacy trading cards (kept so renderMemes doesn't error on missing #meme-grid) -->
       <div style="display:none;">
         <div class="sharing-panel active" id="sharing-cards">
@@ -6772,6 +6772,31 @@ function getCurrentSessionUser(){
   });
 }
 
+// Mint the HttpOnly cookies that server-gated pages (e.g. /api/market-sharing-reports) require.
+function mintMpSessionCookie(accessToken){
+  if(!accessToken) return Promise.resolve();
+  return fetch('/api/session', {
+    method:'POST', headers:{'Content-Type':'application/json'}, credentials:'same-origin',
+    body: JSON.stringify({ access_token: accessToken })
+  }).catch(function(){});
+}
+function mintMpBetaCookie(expiresIso){
+  return fetch('/api/session', {
+    method:'POST', headers:{'Content-Type':'application/json'}, credentials:'same-origin',
+    body: JSON.stringify({ beta:true, expires: expiresIso })
+  }).catch(function(){});
+}
+function clearMpSessionCookies(){
+  return fetch('/api/session', { method:'DELETE', credentials:'same-origin' }).catch(function(){});
+}
+// Activate any iframes that point to server-gated routes — only after the auth
+// cookie has been minted, so the gate doesn't bounce them on first load.
+function activateGatedFrames(){
+  document.querySelectorAll('iframe[data-src]').forEach(function(f){
+    if(!f.getAttribute('src')) f.src = f.getAttribute('data-src');
+  });
+}
+
 function applyAuthenticatedUser(user){
   CURRENT_USER = user || null;
   window._mpCurrentUserEmail = (user && user.email) || '';
@@ -7178,12 +7203,14 @@ function ensureDashboardAuth(){
       var betaTier = localStorage.getItem('mp-beta-tier') || 'standard';
       var betaUser = {email:'beta@marketprism.app',id:'beta',betaTier:betaTier};
       applyAuthenticatedUser(betaUser);
+      await mintMpBetaCookie(betaExpires);
+      activateGatedFrames();
       var logoutBtn = document.getElementById('logout-btn');
       if(logoutBtn && !logoutBtn.dataset.bound){
         logoutBtn.dataset.bound = 'true';
         logoutBtn.addEventListener('click', function(){
           localStorage.removeItem('mp-beta-access');
-          redirectToLogin();
+          clearMpSessionCookies().finally(redirectToLogin);
         });
       }
       return betaUser;
@@ -7192,30 +7219,36 @@ function ensureDashboardAuth(){
       redirectToLogin();
       return null;
     }
-    var user = await getCurrentSessionUser();
+    var sessionResult = await SUPA.auth.getSession().catch(function(){ return null; });
+    var session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+    var user = session ? session.user : null;
     if(!user){
       redirectToLogin();
       return null;
     }
     applyAuthenticatedUser(user);
+    if(session && session.access_token) await mintMpSessionCookie(session.access_token);
+    activateGatedFrames();
     var logoutBtn = document.getElementById('logout-btn');
     if(logoutBtn && !logoutBtn.dataset.bound){
       logoutBtn.dataset.bound = 'true';
       logoutBtn.addEventListener('click', async function(){
         try { await SUPA.auth.signOut(); } catch(_) {}
+        try { await clearMpSessionCookies(); } catch(_) {}
         redirectToLogin();
       });
     }
     if(SUPA.auth && SUPA.auth.onAuthStateChange && !window.__mpAuthBound){
       window.__mpAuthBound = true;
-      SUPA.auth.onAuthStateChange(function(event, session){
-        var nextUser = session ? session.user : null;
+      SUPA.auth.onAuthStateChange(function(event, nextSession){
+        var nextUser = nextSession ? nextSession.user : null;
         applyAuthenticatedUser(nextUser);
         if(!nextUser){
-          redirectToLogin();
+          clearMpSessionCookies().finally(redirectToLogin);
           return;
         }
         if(event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED'){
+          if(nextSession && nextSession.access_token) mintMpSessionCookie(nextSession.access_token);
           loadSubscriptionStatus();
           tcLoadQueued();
         }
@@ -8604,8 +8637,22 @@ function _valRenderStatsFromCache(c){
 }
 
 function valRenderStats(trades){
-  // Prefer cached stats if available (populated daily by cron)
-  if(_VAL_CACHED_STATS){_valRenderStatsFromCache(_VAL_CACHED_STATS);return;}
+  // Prefer cached stats from the daily cron, but only if they cover every
+  // closed trade we can see. If paper_trades has an exit_date newer than the
+  // cache's period_end, the cron is behind — fall through to client compute
+  // so today's trades land in the win rate instead of being silently dropped.
+  if(_VAL_CACHED_STATS){
+    var cachedEnd=_VAL_CACHED_STATS.period_end||'';
+    var latestExit='';
+    for(var i=0;i<trades.length;i++){
+      var t=trades[i];
+      if(t.status==='CLOSED'&&t.exit_date&&t.exit_date>latestExit)latestExit=t.exit_date;
+    }
+    if(!latestExit||(cachedEnd&&latestExit<=cachedEnd)){
+      _valRenderStatsFromCache(_VAL_CACHED_STATS);return;
+    }
+    console.warn('[VAL] track_record_stats stale (period_end='+cachedEnd+', latest exit='+latestExit+') — recomputing client-side');
+  }
   var closed=trades.filter(function(t){return t.status==='CLOSED';});
   var n=closed.length;
   var wins=closed.filter(function(t){return t.pnl_pct!=null&&Number(t.pnl_pct)>0;}).length;
