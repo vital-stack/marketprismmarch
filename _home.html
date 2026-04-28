@@ -3290,6 +3290,24 @@ footer {
       <h2 class="mp-h2">Narrative Force predicted these.<br><em>Price confirmed.</em></h2>
       <p class="mp-lead" style="margin-top:12px;">When Narrative Force drains and Risk Pressure spikes, price follows. 3,800+ signals logged across 172 tickers. Backtested and reproduced from Supabase with auditable methodology.</p>
     </div>
+    <style>
+      .hp-sig-row{display:grid;grid-template-columns:160px 1fr auto;align-items:center;gap:12px;}
+      .hp-sig-name{font-family:Inter,sans-serif;font-size:13px;font-weight:500;color:#0F172A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+      .hp-sig-bar-track{height:10px;background:rgba(15,23,42,0.04);border-radius:5px;overflow:hidden;}
+      .hp-sig-bar-fill{height:100%;border-radius:5px;}
+      .hp-sig-stats{display:flex;align-items:baseline;gap:6px;white-space:nowrap;min-width:160px;justify-content:flex-end;flex-wrap:wrap;}
+      .hp-sig-ret{font-family:Inter,sans-serif;font-size:14px;font-weight:700;}
+      .hp-sig-meta{font-family:Inter,sans-serif;font-size:11px;color:rgba(15,23,42,0.45);}
+      .hp-sig-smalln{color:#FFB800;font-size:10px;margin-left:6px;}
+      /* Phones / narrow tablets: stack the bar under the name+return so the
+         numbers don't get clipped by the fixed 160px-wide right column. */
+      @media(max-width:640px){
+        .hp-sig-row{grid-template-columns:1fr auto;grid-template-areas:"name stats" "bar bar";row-gap:6px;}
+        .hp-sig-name{grid-area:name;}
+        .hp-sig-stats{grid-area:stats;min-width:0;}
+        .hp-sig-bar-track{grid-area:bar;}
+      }
+    </style>
     <div class="mp-reveal" style="background:#fff;border:1px solid rgba(15,23,42,0.08);border-radius:14px;padding:24px 28px;box-shadow:0 6px 20px rgba(15,23,42,0.04);">
       <div style="font-family:Inter,sans-serif;font-size:16px;font-weight:700;color:#0F172A;margin-bottom:4px;">Average return per trade</div>
       <div style="font-family:Inter,sans-serif;font-size:12px;color:rgba(15,23,42,0.45);margin-bottom:20px;">By signal type &middot; deeper green = higher win rate</div>
@@ -3321,13 +3339,13 @@ footer {
         // Deeper green for higher win rate, red for negative
         var barColor=isNeg?'#FF6B6B':'rgba(0,'+Math.round(180+s.win*0.75)+','+Math.round(100+s.win)+',0.7)';
         var retColor=isNeg?'#FF4D4D':'#00DE94';
-        var smallTag=s.smallN?'<span style="color:#FFB800;font-size:10px;margin-left:6px;">(small N)</span>':'';
-        return '<div style="display:grid;grid-template-columns:160px 1fr auto;align-items:center;gap:12px;">'
-          +'<div style="font-family:Inter,sans-serif;font-size:13px;font-weight:500;color:#0F172A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+s.name+'</div>'
-          +'<div style="height:10px;background:rgba(15,23,42,0.04);border-radius:5px;overflow:hidden;"><div style="width:'+pct+'%;height:100%;background:'+barColor+';border-radius:5px;"></div></div>'
-          +'<div style="display:flex;align-items:baseline;gap:6px;white-space:nowrap;min-width:160px;justify-content:flex-end;">'
-            +'<span style="font-family:Inter,sans-serif;font-size:14px;font-weight:700;color:'+retColor+';">'+(isNeg?'\u2212':'+')+ Math.abs(s.ret).toFixed(2)+'%</span>'
-            +'<span style="font-family:Inter,sans-serif;font-size:11px;color:rgba(15,23,42,0.45);">'+s.obs+' \u00b7 '+s.win+'% win</span>'
+        var smallTag=s.smallN?'<span class="hp-sig-smalln">(small N)</span>':'';
+        return '<div class="hp-sig-row">'
+          +'<div class="hp-sig-name">'+s.name+'</div>'
+          +'<div class="hp-sig-bar-track"><div class="hp-sig-bar-fill" style="width:'+pct+'%;background:'+barColor+';"></div></div>'
+          +'<div class="hp-sig-stats">'
+            +'<span class="hp-sig-ret" style="color:'+retColor+';">'+(isNeg?'\u2212':'+')+ Math.abs(s.ret).toFixed(2)+'%</span>'
+            +'<span class="hp-sig-meta">'+s.obs+' \u00b7 '+s.win+'% win</span>'
             +smallTag
           +'</div>'
         +'</div>';
