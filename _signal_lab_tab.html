@@ -105,6 +105,8 @@
   .sl-export-btn:disabled { opacity: 0.4; cursor: default; transform: none; }
   .sl-export-btn svg { width: 13px; height: 13px; }
   .sl-export-btn .sl-share-chev { width: 10px; height: 10px; opacity: 0.55; margin-left: -2px; }
+  .sl-refresh-icon.spinning { animation: sl-spin 0.6s linear; }
+  @keyframes sl-spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
   .sl-share-wrap { position: relative; display: inline-flex; }
   .sl-share-menu {
     position: absolute; top: calc(100% + 6px); right: 0; min-width: 220px;
@@ -274,6 +276,10 @@
           View full page
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M8 7h9v9"/></svg>
         </a>
+        <button class="sl-export-btn" id="sl-refresh-btn" title="Pull live price now and redraw chart">
+          <svg class="sl-refresh-icon" id="sl-refresh-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 8a6 6 0 1 1-1.76-4.24"/><path d="M14 3v3.5h-3.5"/></svg>
+          Refresh
+        </button>
         <div class="sl-share-wrap">
           <button class="sl-export-btn" id="sl-export-btn" title="Export chart as image for social media" aria-haspopup="menu" aria-expanded="false">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
@@ -1014,6 +1020,34 @@
       if(ticker!==SL_TICKER)return; // ticker changed mid-flight
       if(q.error||q.price==null)throw new Error(q.error||'No price');
       SL_LIVE_QUOTE=q;
+      // Patch SL_SNAPS so the price line on the chart reflects the live price.
+      // ticker_snapshots' "today" row is pre-populated with yesterday's close
+      // until EOD, so without this the chart line stays flat at yesterday's
+      // close even after the header above shows a real intraday move. Mutate
+      // today's snap (or append one if it's missing) and redraw.
+      try {
+        if (SL_SNAPS && SL_SNAPS.length) {
+          var todayET = new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+          var lastSnap = SL_SNAPS[SL_SNAPS.length - 1];
+          var lastDate = (lastSnap.snapshot_date||'').slice(0,10);
+          var liveP = Number(q.price);
+          if (lastDate === todayET) {
+            lastSnap.price_close = liveP;
+            if (q.high != null) lastSnap.price_high = Math.max(Number(q.high), Number(lastSnap.price_high)||0, liveP);
+            if (q.low != null)  lastSnap.price_low  = lastSnap.price_low ? Math.min(Number(q.low), Number(lastSnap.price_low)) : Number(q.low);
+            if (q.open != null && lastSnap.price_open == null) lastSnap.price_open = Number(q.open);
+          } else {
+            SL_SNAPS.push({
+              snapshot_date: todayET,
+              price_close: liveP,
+              price_open:  q.open != null ? Number(q.open) : liveP,
+              price_high:  q.high != null ? Number(q.high) : liveP,
+              price_low:   q.low  != null ? Number(q.low)  : liveP
+            });
+          }
+          if (typeof slRenderChart === 'function' && document.getElementById('sl-price-canvas')) slRenderChart();
+        }
+      } catch(_){}
       var priceEl=document.getElementById('sl-live-price');
       var changeEl=document.getElementById('sl-live-change');
       var dotEl=document.getElementById('sl-live-dot');
@@ -1471,6 +1505,24 @@
         slExport(mode === 'full');
       });
     });
+
+    // Refresh button — pulls a live quote and redraws the chart on demand.
+    var refreshBtn = document.getElementById('sl-refresh-btn');
+    var refreshIcon = document.getElementById('sl-refresh-icon');
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', function() {
+        if (refreshBtn.disabled) return;
+        if (typeof slFetchLivePrice !== 'function') return;
+        refreshBtn.disabled = true;
+        if (refreshIcon) refreshIcon.classList.add('spinning');
+        Promise.resolve(slFetchLivePrice()).finally(function(){
+          setTimeout(function(){
+            refreshBtn.disabled = false;
+            if (refreshIcon) refreshIcon.classList.remove('spinning');
+          }, 500);
+        });
+      });
+    }
   };
 })();
 </script>
