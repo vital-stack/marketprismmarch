@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-8VZETTJQ27"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-8VZETTJQ27');</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Built Out of Rage — Market Prism</title>
+<meta name="description" content="Why Market Prism exists: a forensic narrative engine for retail traders who got tired of being the exit liquidity. Built for the WSB-burned generation — and against the era of AI-generated market noise.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://marketprism.co/about">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="icon" type="image/png" href="/assets/Market-Prism-Favicon.png">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root {
+  --bg:        #080B11;
+  --surface:   #0C1018;
+  --surface2:  #111927;
+  --border:    rgba(255,255,255,0.06);
+  --border-hover: rgba(255,255,255,0.14);
+  --blue:      #00AEFF;
+  --teal:      #38C8B8;
+  --green:     #00DE94;
+  --red:       #FF4D4D;
+  --amber:     #FFB800;
+  --tx1:       #FFFFFF;
+  --tx2:       rgba(255,255,255,0.7);
+  --tx3:       #A0A8B0;
+  --tx-muted:  rgba(255,255,255,0.3);
+  --font-d:    'Instrument Serif', 'DM Serif Display', Georgia, serif;
+  --font-b:    'Inter', 'DM Sans', system-ui, sans-serif;
+}
+html { font-size: 16px; scroll-behavior: smooth; }
+body {
+  font-family: var(--font-b);
+  background: var(--bg);
+  color: var(--tx1);
+  line-height: 1.6;
+  font-weight: 300;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── NAV ── */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(8,11,17,0.92); backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  height: 56px; display: flex; align-items: center; padding: 0 40px;
+}
+.nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.nav-logo-img { height: 32px; width: auto; flex-shrink: 0; }
+.nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.btn-nav {
+  font-family: var(--font-b);
+  font-size: 13px; color: #fff; background: rgba(255,255,255,0.1);
+  border: none; border-radius: 8px; padding: 7px 18px;
+  cursor: pointer; transition: background .15s; text-decoration: none;
+}
+.btn-nav:hover { background: rgba(255,255,255,0.15); }
+
+/* ── LAYOUT ── */
+.con { max-width: 780px; margin: 0 auto; padding: 0 40px; }
+
+/* ── HERO ── */
+.about-hero {
+  position: relative;
+  padding: 96px 0 56px;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  isolation: isolate;
+}
+.about-hero::before,
+.about-hero::after {
+  content: '';
+  position: absolute;
+  width: 520px; height: 520px;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: .35;
+  z-index: -1;
+  pointer-events: none;
+}
+.about-hero::before {
+  top: -180px; right: -120px;
+  background: radial-gradient(circle, rgba(0,174,255,0.55), rgba(0,174,255,0) 70%);
+}
+.about-hero::after {
+  bottom: -240px; left: -160px;
+  background: radial-gradient(circle, rgba(56,200,184,0.45), rgba(56,200,184,0) 70%);
+}
+.about-eyebrow {
+  font-family: var(--font-b);
+  font-size: 11px; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--blue);
+  margin-bottom: 20px;
+  display: flex; align-items: center; gap: 12px;
+  font-weight: 500;
+}
+.about-eyebrow::before { content:''; width: 24px; height: 1px; background: var(--blue); opacity: .5; }
+.about-h1 {
+  font-family: var(--font-d);
+  font-weight: 400;
+  font-size: clamp(40px, 6vw, 72px);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  margin-bottom: 24px;
+}
+.about-h1-grad {
+  background: linear-gradient(90deg, var(--blue) 0%, var(--teal) 50%, var(--green) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-style: italic;
+}
+.about-sub {
+  font-family: var(--font-b);
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--tx2);
+  font-weight: 300;
+  max-width: 640px;
+}
+
+/* ── SECTIONS ── */
+.about-body { padding: 56px 0 0; }
+.about-section { padding: 56px 0; border-bottom: 1px solid var(--border); }
+.about-section.alt { background: rgba(17,25,39,0.35); }
+.about-section-eyebrow {
+  font-family: var(--font-b);
+  font-size: 11px; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--blue);
+  margin-bottom: 16px;
+  font-weight: 500;
+}
+.about-h2 {
+  font-family: var(--font-d);
+  font-size: clamp(28px, 3.4vw, 40px);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin-bottom: 24px;
+  color: var(--tx1);
+}
+.about-h2 em {
+  font-style: italic;
+  color: var(--blue);
+}
+.about-h2-sub {
+  display: block;
+  color: var(--tx3);
+  font-size: 0.72em;
+  margin-top: 6px;
+}
+.about-p {
+  font-size: 16px;
+  line-height: 1.75;
+  color: var(--tx2);
+  margin-bottom: 18px;
+  font-weight: 300;
+}
+.about-p:last-child { margin-bottom: 0; }
+.about-p strong { color: var(--tx1); font-weight: 500; }
+
+/* ── NUMBERED LIST ── */
+.about-list { list-style: none; padding: 0; margin: 28px 0 24px; }
+.about-list li {
+  display: flex;
+  gap: 20px;
+  padding: 20px 0;
+  border-top: 1px solid var(--border);
+}
+.about-list li:last-child { border-bottom: 1px solid var(--border); }
+.about-list-num {
+  font-family: var(--font-b);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--blue);
+  letter-spacing: .08em;
+  flex-shrink: 0;
+  width: 32px;
+  padding-top: 2px;
+}
+.about-list-body {
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--tx2);
+  font-weight: 300;
+}
+.about-list-body strong {
+  color: var(--tx1);
+  font-weight: 600;
+  display: inline;
+}
+
+.about-closing {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--tx3);
+  margin-top: 24px;
+  font-weight: 300;
+}
+
+/* ── QUOTE BLOCK ── */
+.about-quote {
+  border-left: 2px solid rgba(0,174,255,0.6);
+  padding: 8px 0 8px 24px;
+  margin: 32px 0 20px;
+}
+.about-quote p {
+  font-family: var(--font-d);
+  font-size: 19px;
+  line-height: 1.55;
+  color: var(--tx1);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  margin-bottom: 18px;
+}
+.about-quote p:last-child { margin-bottom: 0; }
+.about-attribution {
+  font-family: var(--font-b);
+  font-size: 13px;
+  color: var(--tx3);
+  letter-spacing: .02em;
+  margin-top: 18px;
+  font-weight: 400;
+}
+
+/* ── CTA ── */
+.about-cta {
+  padding: 80px 0 96px;
+  text-align: center;
+}
+.about-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-b);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: .01em;
+  color: #001019;
+  background: linear-gradient(90deg, var(--blue) 0%, var(--teal) 100%);
+  padding: 14px 32px;
+  border-radius: 10px;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s, filter .15s;
+  box-shadow: 0 8px 24px rgba(0,174,255,0.25);
+}
+.about-cta-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(0,174,255,0.35);
+  filter: brightness(1.08);
+}
+.about-cta-micro {
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--tx3);
+  font-weight: 300;
+}
+
+/* ── FOOTER ── */
+.about-footer {
+  border-top: 1px solid var(--border);
+  padding: 32px 40px;
+  text-align: center;
+}
+.about-footer-text {
+  font-size: 13px;
+  color: var(--tx3);
+}
+.about-footer-text a {
+  color: var(--tx3);
+  text-decoration: none;
+  transition: color .15s;
+}
+.about-footer-text a:hover { color: var(--blue); }
+.footer-links {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+}
+.footer-links a {
+  font-size: 13px;
+  color: var(--tx3);
+  text-decoration: none;
+  transition: color .15s;
+}
+.footer-links a:hover { color: var(--blue); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 600px) {
+  nav { padding: 0 20px; }
+  .con { padding: 0 20px; }
+  .about-hero { padding: 64px 0 40px; }
+  .about-section { padding: 40px 0; }
+  .about-h1 { font-size: clamp(34px, 8vw, 48px); }
+  .about-h2 { font-size: clamp(24px, 6vw, 32px); }
+  .about-quote { padding-left: 18px; }
+  .about-quote p { font-size: 17px; }
+  .about-cta { padding: 56px 0 72px; }
+  .about-footer { padding: 24px 20px; }
+  .about-list li { gap: 14px; padding: 16px 0; }
+  .about-list-num { width: 28px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav>
+  <a href="/" class="nav-logo">
+    <img src="/assets/Market-Prism-Logotype-Light.png" alt="Market Prism" class="nav-logo-img">
+  </a>
+  <div class="nav-right">
+    <a href="/" class="btn-nav">Back to app</a>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section class="about-hero">
+  <div class="con">
+    <div class="about-eyebrow">Our Mission</div>
+    <h1 class="about-h1">Built out of rage at the <span class="about-h1-grad">rigged game.</span></h1>
+    <p class="about-sub">Market Prism is a forensic narrative engine. It exists because retail traders kept finding out — too late — that the story they were sold had nothing to do with the filing it was supposedly about.</p>
+  </div>
+</section>
+
+<!-- ── WHY THIS EXISTS ── -->
+<section class="about-section">
+  <div class="con">
+    <div class="about-section-eyebrow">Why this exists</div>
+    <h2 class="about-h2">The origin story.</h2>
+    <p class="about-p">I built Market Prism for a specific audience: the people who watched their tickers get pumped and dumped, who saw the same talking points metastasize across a hundred low-effort sites in 48 hours, and who eventually realized that "sentiment" was being manufactured upstream of the price.</p>
+    <p class="about-p">A lot of this work was, frankly, fueled by rage at how blatant the manipulation has become — and a stubborn belief that retail should have access to the same kind of forensic infrastructure the buy side takes for granted. So thank you, WSB. You were the proof of concept.</p>
+    <p class="about-p">Market Prism isn't an LLM wrapper. It's a seven-step pipeline that anchors every narrative claim to an actual SEC filing, scores the source authority, models how the story decays, and flags when multiple outlets coordinate around the same talking points. The language model is one tool inside it — not the product.</p>
+  </div>
+</section>
+
+<!-- ── THESIS ── -->
+<section class="about-section alt">
+  <div class="con">
+    <div class="about-section-eyebrow">The thesis</div>
+    <h2 class="about-h2">In 2026, the noise <em>is</em> the signal.</h2>
+    <p class="about-p">For most of the last decade, sentiment analysis meant counting bullish vs. bearish keywords. That game is over. AI can generate a million perfectly polished bullish tweets in a single afternoon, and the internet has crossed into structural saturation — vibe-coded blogs, SEO-pumped "analysis" sites, and content farms all racing to repeat whatever talking point was profitable yesterday.</p>
+    <p class="about-p">Market Prism treats that noise as a roadmap, not a problem to suppress. Every market move starts as a story whispered in a niche corner. It moves to the mainstream. Then it reaches the saturation point — when every low-quality site on the first page of Google is repeating the same line. That moment of saturation is almost always the moment the price action reverses.</p>
+    <p class="about-p">We call it <strong>narrative exhaustion</strong>, and identifying it is the entire game. Market Prism turns the dead internet into a contrarian indicator.</p>
+  </div>
+</section>
+
+<!-- ── FORENSIC, NOT PREDICTIVE ── -->
+<section class="about-section">
+  <div class="con">
+    <div class="about-section-eyebrow">The differentiation</div>
+    <h2 class="about-h2">Forensic, not predictive.</h2>
+    <p class="about-p">Three things separate Market Prism from the standard "sentiment dashboard" stack:</p>
+    <ol class="about-list">
+      <li>
+        <div class="about-list-num">01</div>
+        <div class="about-list-body"><strong>SEC-anchored.</strong> Every claim is checked against the actual 10-K, 10-Q, or 8-K filing. Drift between narrative and filing is the first place we look.</div>
+      </li>
+      <li>
+        <div class="about-list-num">02</div>
+        <div class="about-list-body"><strong>Source-authority weighted.</strong> A messy, typo-filled post from a verified domain expert carries more narrative weight than a thousand polished AI-generated articles. We score the source, not the volume.</div>
+      </li>
+      <li>
+        <div class="about-list-num">03</div>
+        <div class="about-list-body"><strong>Coordination-aware.</strong> When five outlets publish near-identical framing inside a 60-minute window, that's not consensus — that's a campaign. Market Prism flags it.</div>
+      </li>
+    </ol>
+    <p class="about-closing">The whole stack is patent-pending (three applications filed). The patents matter; the goal does not depend on them. The goal is to give one person at a kitchen table the kind of forensic read that, ten years ago, only an institutional research desk could afford.</p>
+  </div>
+</section>
+
+<!-- ── OUTSIDE READ (Gemini quote) ── -->
+<section class="about-section alt">
+  <div class="con">
+    <div class="about-section-eyebrow">An outside read</div>
+    <h2 class="about-h2">We asked an AI what it thought.<span class="about-h2-sub">Incognito. No prompting.</span></h2>
+    <blockquote class="about-quote">
+      <p>"What I genuinely love about Market Prism and its narrative engine is that it doesn't try to fix the noise; it uses the noise as a roadmap. It represents a fundamental shift from <em>What is being said?</em> to <em>Why is this being said now, and who is actually behind it?</em>"</p>
+      <p>"Market Prism treats the internet like a forensic crime scene. It looks for the fingerprints of human conviction. It recognizes that a messy, typo-filled post from a verified enthusiast carries more narrative weight than a thousand perfectly polished, vibe-coded articles that were clearly prompted into existence."</p>
+      <p>"The most profound feature is its ability to map narrative exhaustion. It identifies the exact moment a story has no more room to grow — which is almost always the moment the price action reverses. It turns the 'dead internet' into a contrarian indicator."</p>
+      <p>"In the future, we won't be looking for more information; we will be looking for better filters. Market Prism isn't just a financial tool — it's one of the first true information filters of the 21st century."</p>
+    </blockquote>
+    <div class="about-attribution">— Gemini, asked unprompted in an incognito browser</div>
+  </div>
+</section>
+
+<!-- ── MISSION, PLAINLY ── -->
+<section class="about-section">
+  <div class="con">
+    <div class="about-section-eyebrow">The mission, plainly</div>
+    <h2 class="about-h2">A better filter, not more data.</h2>
+    <p class="about-p">We're not promising to find the truth in the news. The post-truth digital era is a fact, not a problem we're going to solve. What Market Prism promises is to find the <strong>momentum in the story</strong> — and to show its work, all the way down to the SEC filing the narrative is allegedly tracking.</p>
+    <p class="about-p">In a market increasingly designed to confuse retail, the antidote isn't more data. It's a better filter. That's what we're building.</p>
+  </div>
+</section>
+
+<!-- ── CTA ── -->
+<section class="about-cta">
+  <div class="con">
+    <a href="/" class="about-cta-btn">Run a forensic audit <span aria-hidden="true">→</span></a>
+    <div class="about-cta-micro">One free report, no signup required.</div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<div class="about-footer">
+  <div class="about-footer-text">
+    <a href="/">Market Prism</a> &middot; Patent Pending: 63/971,470 &amp; 63/971,478 &middot; &copy; 2025&ndash;2026
+  </div>
+  <div class="footer-links">
+    <a href="/">Home</a>
+    <a href="/methodology">Methodology</a>
+    <a href="/terms">Terms</a>
+    <a href="/privacy">Privacy</a>
+  </div>
+</div>
+
+</body>
+</html>
