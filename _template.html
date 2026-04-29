@@ -758,6 +758,19 @@ body{
 .tl-lane-refresh:hover{border-color:var(--mp-border-hover);color:var(--mp-text-primary);background:rgba(255,255,255,0.04);}
 .tl-lane-refresh svg{width:10px;height:10px;}
 .tl-lane-refresh.spinning svg{animation:lb-spin .8s linear infinite;}
+/* Per-card image download button (sector cards, trade lanes) */
+.mp-dl-btn{
+  background:none;border:1px solid var(--mp-border);border-radius:6px;
+  width:26px;height:26px;padding:0;flex-shrink:0;
+  display:inline-flex;align-items:center;justify-content:center;
+  color:var(--mp-text-tertiary);cursor:pointer;transition:all .2s;
+}
+.mp-dl-btn:hover{border-color:var(--mp-border-hover);color:var(--mp-text-primary);background:rgba(255,255,255,0.04);}
+.mp-dl-btn svg{width:13px;height:13px;}
+.mp-dl-btn.mp-dl-busy{opacity:.5;cursor:wait;}
+/* Smaller variant for the trade-lane meta row (matches tl-lane-refresh footprint) */
+.tl-lane-meta .mp-dl-btn{width:auto;height:auto;padding:3px 8px;}
+.tl-lane-meta .mp-dl-btn svg{width:10px;height:10px;}
 .tl-lane-hits{font-size:10px;font-weight:600;margin-left:4px;}
 .tl-lane-rows{display:flex;flex-direction:column;}
 .tl-row{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--mp-border);cursor:pointer;transition:background .12s;}
@@ -8348,9 +8361,11 @@ function tlBuildLane(title,subtitle,cards,laneId){
   var isFallback=!!(laneDate&&laneDate!==_tlTodayStr());
   var dateAttrs=isFallback?' style="color:#FFB800;" title="Carried over — today\'s pipeline produced no rows for this lane"':'';
   var datePrefix=isFallback?'↺ ':'';
+  var dlSlug='lane-'+String(title||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
   var html='<div class="tl-lane" id="lane-'+laneSlug+'"><div class="tl-lane-header"><div><div class="tl-lane-title">'+esc(title)+'</div><div class="tl-lane-sub">'+esc(subtitle)+' \u00B7 '+cards.length+' signals <span class="tl-lane-hits" id="hits-'+laneSlug+'"></span></div></div>'
     +'<div class="tl-lane-meta"><span class="tl-lane-date"'+dateAttrs+'>'+datePrefix+_tlFormatDate(laneDate)+'</span>'
-    +'<button class="tl-lane-refresh" onclick="event.stopPropagation();_tlRefreshAll();" title="Refresh prices"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg></button></div>'
+    +'<button class="mp-dl-btn mp-export-hide" type="button" onclick="event.stopPropagation();mpDownloadCardImage(this,{selector:\'.tl-lane\',slug:\''+dlSlug+'\'});" title="Download as image"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12"/><path d="m6 12 6 6 6-6"/><path d="M5 20h14"/></svg></button>'
+    +'<button class="tl-lane-refresh mp-export-hide" onclick="event.stopPropagation();_tlRefreshAll();" title="Refresh prices"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg></button></div>'
     +'</div><div class="tl-lane-rows">';
   visible.forEach(function(c){html+=c._isValue?tlBuildValueRow(c):tlBuildRow(c);});
   if(overflow.length){
@@ -8959,6 +8974,52 @@ async function downloadTrackRecordImage(){
   }
 }
 window.downloadTrackRecordImage=downloadTrackRecordImage;
+
+// ── Generic per-card image download (sector cards, trade lanes, etc.) ─────
+// Walks up from the trigger button to the closest ancestor matching
+// opts.selector, hides any descendants flagged with `.mp-export-hide`
+// (the button itself, etc.), then snapshots the ancestor with html2canvas.
+async function mpDownloadCardImage(triggerEl,opts){
+  opts=opts||{};
+  var btn=triggerEl;
+  if(btn){btn.disabled=true;btn.classList.add('mp-dl-busy');}
+  var hidden=[];
+  function hide(el){if(!el)return;hidden.push({el:el,prev:el.style.display});el.style.display='none';}
+  try{
+    if(typeof html2canvas==='undefined'){
+      await new Promise(function(ok,fail){
+        var s=document.createElement('script');
+        s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        s.onload=ok;s.onerror=function(){fail(new Error('Failed to load html2canvas'));};
+        document.head.appendChild(s);
+      });
+    }
+    var root=opts.root||(opts.selector&&btn?btn.closest(opts.selector):null);
+    if(!root)throw new Error('Card root not found');
+    Array.prototype.forEach.call(root.querySelectorAll('.mp-export-hide'),hide);
+    var canvas=await html2canvas(root,{backgroundColor:opts.background||'#080B11',scale:2,logging:false,useCORS:true,windowWidth:root.scrollWidth});
+    await new Promise(function(resolve){
+      canvas.toBlob(function(blob){
+        if(!blob){resolve();return;}
+        var url=URL.createObjectURL(blob);
+        var a=document.createElement('a');
+        var stamp=new Date().toISOString().split('T')[0];
+        var slug=String(opts.slug||'card').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'card';
+        a.href=url;a.download='market-prism-'+slug+'-'+stamp+'.png';
+        document.body.appendChild(a);a.click();document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        resolve();
+      },'image/png');
+    });
+  }catch(err){
+    console.warn('[MP] Card download failed:',err);
+    alert('Download failed: '+(err.message||err));
+  }finally{
+    hidden.forEach(function(h){h.el.style.display=h.prev||'';});
+    if(btn){btn.disabled=false;btn.classList.remove('mp-dl-busy');}
+  }
+}
+window.mpDownloadCardImage=mpDownloadCardImage;
 
 // ── Track Record access gate ──────────────────────────────────────────────
 // Requires code "168" to unlock. Remembered in localStorage per browser.
@@ -10591,9 +10652,14 @@ function renderSectors(){
       var sentBg=dir==='bull'?'rgba(0,222,148,0.08)':dir==='bear'?'rgba(255,77,77,0.08)':'rgba(0,174,255,0.08)';
       var sentLabel=dir==='bull'?'\u25B2 BULLISH':dir==='bear'?'\u25BC BEARISH':'\u25C6 NEUTRAL';
       var bar_color='linear-gradient(90deg,#00AEFF,#38C8B8)';
+      var dlSlug='sector-'+String(s.name||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+      var dlBtn='<button class="mp-dl-btn mp-export-hide" type="button" title="Download as image" onclick="event.stopPropagation();mpDownloadCardImage(this,{selector:\'.sector-card\',slug:\''+dlSlug+'\'});"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12"/><path d="m6 12 6 6 6-6"/><path d="M5 20h14"/></svg></button>';
       return '<div class="sector-card" style="border-top:2px solid rgba(0,174,255,0.3);">'
         +'<div class="sector-card-header"><div><div class="sector-name">'+esc(s.name)+'</div><div class="sector-sub">'+esc(s.sub)+'</div></div>'
-        +'<span class="sector-state" style="font-size:11px;padding:4px 10px;border-radius:6px;font-weight:500;letter-spacing:0.04em;text-transform:uppercase;border:1px solid '+sentBorderColor+';color:'+sentTextColor+';background:'+sentBg+';">'+sentLabel+'</span></div>'
+        +'<div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">'
+        +'<span class="sector-state" style="font-size:11px;padding:4px 10px;border-radius:6px;font-weight:500;letter-spacing:0.04em;text-transform:uppercase;border:1px solid '+sentBorderColor+';color:'+sentTextColor+';background:'+sentBg+';">'+sentLabel+'</span>'
+        +dlBtn
+        +'</div></div>'
         +'<div class="sector-tickers-row" style="padding:0 16px 10px;border-bottom:1px solid var(--mp-border);"><div class="sector-tickers">'+s.tickers.map(sectorChipHTML).join('')+'</div></div>'
         +'<div class="sector-body"><div class="sector-desc">'+esc(s.desc)+'</div>'
         +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;"><span class="sector-state badge-stable" style="font-size:10px;padding:2px 8px;">'+s.state.toUpperCase()+'</span>'+liveNote+'</div></div>'
