@@ -4221,7 +4221,10 @@ async function loadHero() {
     //   <=3d  → red (imminent),  4-14d → amber (pre-earnings), 15+d → cyan,
     //   past  → muted "Xd ago". Date is computed client-side from today + dte.
     let earningsPill = '';
-    if (r.days_to_earnings != null) {
+    // Earnings are quarterly (~90 days). A dte outside [-14, 95] indicates a
+    // stale next_earnings_date that was never advanced after the last report —
+    // suppress the pill rather than show e.g. "Earnings in 363d".
+    if (r.days_to_earnings != null && Number(r.days_to_earnings) >= -14 && Number(r.days_to_earnings) <= 95) {
       const dte = Number(r.days_to_earnings);
       let eColor, eBg, eBorder, eLabel;
       if (dte < 0) {

@@ -5062,7 +5062,10 @@ async function loadHero() {
       } else if (r.days_to_earnings != null) {
         dte = Number(r.days_to_earnings);
       }
-      if (dte != null) {
+      // Earnings are quarterly (~90 days). A dte outside [-14, 95] indicates a
+      // stale next_earnings_date that was never advanced after the last report —
+      // suppress the pill rather than show e.g. "Earnings in 363d".
+      if (dte != null && dte >= -14 && dte <= 95) {
         let eColor, eBg, eBorder, eLabel;
         if (dte < 0) {
           eColor = '#A0A8B0'; eBg = 'rgba(160,168,176,0.08)'; eBorder = 'rgba(160,168,176,0.20)';
