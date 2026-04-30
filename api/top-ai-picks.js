@@ -124,9 +124,9 @@ module.exports = async (req, res) => {
     });
   }
 
-  var apiKey = process.env.ANTHROPIC_API_KEY || '';
+  var apiKey = process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_KEY || '';
   if (!apiKey) {
-    return res.status(500).json({ error: 'AI picks not configured.' });
+    return res.status(500).json({ error: 'AI picks not configured (no ANTHROPIC_API_KEY / ANTHROPIC_KEY in env).' });
   }
 
   // Pre-filter: only send tickers that have at least one meaningful signal.

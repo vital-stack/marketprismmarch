@@ -9350,12 +9350,15 @@ async function loadAiPicks(snapshotDate,enriched){
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({snapshot_date:snapshotDate,rows:rows})
     });
-    if(!res.ok){throw new Error('AI picks '+res.status);}
-    var data=await res.json();
-    renderAiPicks(data.picks||[]);
+    var data=null;try{data=await res.json();}catch(_){}
+    if(!res.ok){
+      var errMsg=(data&&data.error)?data.error:('HTTP '+res.status);
+      throw new Error(errMsg);
+    }
+    renderAiPicks((data&&data.picks)||[]);
   }catch(e){
     console.warn('[AI Picks] Load failed:',e);
-    if(body)body.innerHTML='<div class="tl-ai-empty">AI picks unavailable right now.</div>';
+    if(body)body.innerHTML='<div class="tl-ai-empty">AI picks unavailable: '+esc(String(e.message||e))+'</div>';
   }finally{
     _AI_PICKS_INFLIGHT=null;
   }
@@ -17164,6 +17167,7 @@ var BOARDS=[
   timeout:30000,
   fetch:async function(){
     try{
+      window.__lbAiPicksError=null;
       var dateRows=await sq('narrative_scorecard?select=snapshot_date&order=snapshot_date.desc&limit=1');
       var snapshotDate=dateRows&&dateRows[0]&&dateRows[0].snapshot_date;
       if(!snapshotDate) return [];
@@ -17172,9 +17176,14 @@ var BOARDS=[
       var rows=await sq('narrative_scorecard?select=ticker,nrs,wks_score,walsh_regime,narrative_energy_absolute,narrative_energy_regime,narrative_mass_score,coordination_score,drift_score,half_life,fvd_pct,vms,verdict,verdict_confidence&snapshot_date=eq.'+encodeURIComponent(snapshotDate)+'&limit=200');
       if(!rows||!rows.length) return [];
       var res=await fetch('/api/top-ai-picks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({snapshot_date:snapshotDate,rows:rows})});
-      if(!res.ok){console.warn('[Leaderboard AI Picks] API '+res.status);return [];}
-      var data=await res.json();
-      var picks=data.picks||[];
+      var data=null;try{data=await res.json();}catch(_){}
+      if(!res.ok){
+        var msg=(data&&data.error)?data.error:('HTTP '+res.status);
+        window.__lbAiPicksError=msg;
+        console.warn('[Leaderboard AI Picks] API '+res.status+': '+msg);
+        return [];
+      }
+      var picks=(data&&data.picks)||[];
       return picks.slice(0,10).map(function(p){
         var dirArrow=p.direction==='BULLISH'?'\u25b2':p.direction==='BEARISH'?'\u25bc':'\u25cf';
         var dirColor=p.direction==='BULLISH'?'#00DE94':p.direction==='BEARISH'?'#FF4D4D':'#00AEFF';
@@ -17189,7 +17198,7 @@ var BOARDS=[
           _scoreColor:dirColor
         };
       });
-    }catch(e){console.warn('[Leaderboard AI Picks] fetch failed:',e);return [];}
+    }catch(e){window.__lbAiPicksError=String(e&&e.message||e);console.warn('[Leaderboard AI Picks] fetch failed:',e);return [];}
   }},
   {id:'consistent-keywords',title:'Consistent Keyword Signals',sub:'Highest signal-to-noise patterns',color:'#38C8B8',bg:'rgba(56,200,184,0.12)',scoreLabel:'Signal Ratio',
   fetch:async function(){try{var rows=await sq('keyword_price_impact?select=ticker,keyword,keyword_type,article_count,avg_return_5d,stddev_10d&article_count=gte.20&order=avg_return_5d.desc&limit=50');if(!rows||!rows.length)return[];return rows.map(function(r){var ret=Number(r.avg_return_5d)||0;var std=Number(r.stddev_10d)||0;var ratio=std>0?Math.abs(ret)/std:0;return{name:r.ticker,link:'/ticker/'+r.ticker,meta:r.keyword.replace(/_/g,' ')+' \u00b7 '+Number(r.article_count)+' articles',score:ratio,scoreDisplay:ratio.toFixed(2),_scoreColor:ret>0?'#00DE94':'#FF4D4D'};}).sort(function(a,b){return b.score-a.score;}).slice(0,10);}catch(e){return[];}}},
@@ -17266,11 +17275,17 @@ function renderBoard(b,rows){
   +'</div>';
 }
 function renderEmpty(b){
+  var subtitle='No data available';
+  var emptyMsg='No rankings data in this table yet.';
+  if(b.id==='ai-picks'&&window.__lbAiPicksError){
+    subtitle='Error';
+    emptyMsg='AI picks unavailable: '+lbEsc(window.__lbAiPicksError);
+  }
   return '<div class="lb-section">'
     +'<div class="lb-head"><div class="lb-icon" style="background:'+b.bg+';">'
       +'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="'+b.color+'" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/></svg>'
-    +'</div><div><div class="lb-htitle">'+lbEsc(b.title)+'</div><div class="lb-hsub">No data available</div></div></div>'
-    +'<div class="lb-empty">No rankings data in this table yet.</div>'
+    +'</div><div><div class="lb-htitle">'+lbEsc(b.title)+'</div><div class="lb-hsub">'+subtitle+'</div></div></div>'
+    +'<div class="lb-empty">'+emptyMsg+'</div>'
   +'</div>';
 }
 
