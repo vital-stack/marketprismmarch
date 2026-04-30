@@ -8424,6 +8424,10 @@ function _refreshLaneHitCounters(){
       var lane=document.getElementById('lane-'+slug);
       var badge=document.getElementById('hits-'+slug);
       if(!lane||!badge)return;
+      // Earnings Play lane is supplemented by earnings_context tickers that
+      // aren't actual tracked trades \u2014 the hit counter would always read
+      // misleadingly low. Suppress the badge entirely for this lane.
+      if(slug==='tl-overflow-earnings'){badge.innerHTML='';return;}
       var hitEls=lane.querySelectorAll('[data-prism-hit]');
       if(!hitEls.length){badge.innerHTML='';return;}
       var total=hitEls.length;
