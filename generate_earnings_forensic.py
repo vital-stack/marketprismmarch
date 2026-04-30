@@ -36,6 +36,14 @@ from generate_mp_blog import (
     MODEL,
 )
 
+# Tickers handled by the deluxe generator — exclude from this lighter version
+# to avoid double-publishing. Keep in sync with DELUXE_ALLOWLIST in
+# generate_earnings_forensic_deluxe.py.
+try:
+    from generate_earnings_forensic_deluxe import DELUXE_ALLOWLIST
+except Exception:
+    DELUXE_ALLOWLIST = set()
+
 SUPABASE_URL = os.environ["SUPABASE_URL"]
 SUPABASE_KEY = os.environ["SUPABASE_KEY"]
 ANTHROPIC_KEY = os.environ["ANTHROPIC_API_KEY"]
@@ -135,10 +143,10 @@ def fetch_pre_earnings_tickers(target_date: str, ticker_filter: str = None) -> l
         q = q.eq("ticker", ticker_filter.upper())
     rows = q.limit(500).execute().data or []
 
-    # Dedupe by ticker (latest snapshot only)
+    # Dedupe by ticker (latest snapshot only) AND exclude deluxe-allowlist tickers
     seen, out = set(), []
     for r in rows:
-        if r["ticker"] in seen:
+        if r["ticker"] in seen or r["ticker"] in DELUXE_ALLOWLIST:
             continue
         seen.add(r["ticker"])
         out.append(r)
@@ -172,7 +180,7 @@ def fetch_post_earnings_tickers(filing_date: str, ticker_filter: str = None) -> 
 
     seen, out = set(), []
     for r in rows:
-        if r["ticker"] in seen:
+        if r["ticker"] in seen or r["ticker"] in DELUXE_ALLOWLIST:
             continue
         seen.add(r["ticker"])
         out.append(r)
