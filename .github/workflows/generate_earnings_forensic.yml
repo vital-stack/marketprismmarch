@@ -1,0 +1,82 @@
+name: Generate Earnings Forensic Reports
+
+on:
+  schedule:
+    # 6:00 ET (10:00 UTC) every weekday — runs after overnight pipeline finishes
+    # Generates T-1 pre-earnings (tomorrow's reporters) AND T+1 post-earnings (yesterday's reporters)
+    - cron: '0 10 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Which reports to generate'
+        type: choice
+        required: false
+        default: 'both'
+        options:
+          - both
+          - pre
+          - post
+      ticker:
+        description: 'Single ticker (leave blank for full sweep)'
+        required: false
+        default: ''
+      target_date:
+        description: 'Override earnings/filing date (YYYY-MM-DD). Leave blank for default (tomorrow for pre, yesterday for post).'
+        required: false
+        default: ''
+      limit:
+        description: 'Cap tickers per mode (blank = no cap)'
+        required: false
+        default: ''
+      dry_run:
+        description: 'Generate but do not publish'
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  generate-earnings-forensic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install anthropic supabase yfinance python-dotenv
+
+      - name: Generate earnings forensic reports
+        id: generate
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_ANON }}
+        run: |
+          ARGS="--mode ${{ github.event.inputs.mode || 'both' }}"
+          if [ -n "${{ github.event.inputs.ticker }}" ]; then
+            ARGS="$ARGS --ticker ${{ github.event.inputs.ticker }}"
+          fi
+          if [ -n "${{ github.event.inputs.target_date }}" ]; then
+            ARGS="$ARGS --target-date ${{ github.event.inputs.target_date }}"
+          fi
+          if [ -n "${{ github.event.inputs.limit }}" ]; then
+            ARGS="$ARGS --limit ${{ github.event.inputs.limit }}"
+          fi
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            ARGS="$ARGS --dry-run"
+          fi
+          eval python generate_earnings_forensic.py $ARGS
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "Pre:  ${{ steps.generate.outputs.pre_count }}"
+          echo "Post: ${{ steps.generate.outputs.post_count }}"
+          echo "Total: ${{ steps.generate.outputs.total_count }}"

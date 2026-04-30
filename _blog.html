@@ -137,91 +137,30 @@ nav {
   max-width: 560px;
 }
 
-/* ── FEATURED POST ── */
-.featured-post {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 40px;
-  padding: 48px 0;
-  border-bottom: 1px solid var(--border);
-  align-items: center;
-}
-.featured-img {
-  width: 100%;
-  aspect-ratio: 16/10;
-  background: linear-gradient(135deg, var(--surface), var(--surface2));
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  overflow: hidden;
-  display: flex; align-items: center; justify-content: center;
-}
-.featured-img-placeholder {
-  font-family: var(--font-m);
-  font-size: 48px;
-  color: rgba(232,232,227,0.3);
-  opacity: 1;
-  letter-spacing: -0.03em;
-}
-.featured-tag {
-  font-family: var(--font-m);
-  font-size: 10px;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: rgba(232,232,227,0.5);
-  padding: 3px 10px;
-  border-radius: 4px;
-  border: 1px solid rgba(232,232,227,0.2);
-  background: rgba(255,255,255,0.04);
-  display: block;
-  margin-bottom: 14px;
-  width: fit-content;
-}
-.featured-title {
-  font-family: var(--font-d);
-  font-size: clamp(22px, 3vw, 32px);
-  font-weight: 400;
-  letter-spacing: -0.015em;
-  line-height: 1.2;
-  margin-bottom: 12px;
-  color: var(--tx1);
-}
-.featured-excerpt {
-  font-size: 14px;
-  color: var(--tx2);
-  line-height: 1.7;
-  margin-bottom: 16px;
-}
-.featured-meta {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-family: var(--font-m);
-  font-size: 11px;
-  color: var(--tx3);
-}
-.featured-meta-sep { width: 3px; height: 3px; border-radius: 50%; background: var(--tx3); }
-
-/* ── POST GRID ── */
+/* ── FEED ── */
 .posts-section {
-  padding: 48px 0 80px;
+  padding: 32px 0 80px;
 }
 .posts-section-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 28px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
 }
 .posts-section-title {
   font-family: var(--font-d);
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 400;
   color: var(--tx1);
+  letter-spacing: -0.01em;
 }
 .posts-filter {
   display: flex; gap: 4px;
 }
 .posts-filter-btn {
-  font-family: var(--font-m); font-size: 10px;
+  font-family: var(--font-m); font-size: 11px;
   letter-spacing: .06em; text-transform: uppercase;
   padding: 6px 14px; border-radius: 6px;
   border: 1px solid var(--border); background: transparent;
@@ -230,85 +169,86 @@ nav {
 .posts-filter-btn:hover { color: var(--tx2); border-color: var(--border-mid); }
 .posts-filter-btn.active { color: var(--tx1); background: var(--surface); border-color: var(--border-mid); }
 
-.posts-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+.posts-feed {
+  display: flex;
+  flex-direction: column;
 }
-.post-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  overflow: hidden;
-  transition: all .3s cubic-bezier(0.16,1,0.3,1);
+.feed-item {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 24px;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--border);
   text-decoration: none;
   color: inherit;
-  display: block;
+  transition: background .15s;
+  align-items: start;
 }
-.post-card:hover {
-  border-color: rgba(255,255,255,0.12);
-  transform: translateY(-3px);
-  box-shadow: 0 16px 48px rgba(0,0,0,0.4);
+.feed-item:hover {
+  background: rgba(255,255,255,0.015);
 }
-.post-card-img {
-  width: 100%;
-  aspect-ratio: 16/9;
-  background: linear-gradient(135deg, var(--deep), var(--surface2));
-  display: flex; align-items: center; justify-content: center;
-  border-bottom: 1px solid var(--border);
-  position: relative;
-  overflow: hidden;
-}
-.post-card-img::after {
-  content: '';
-  position: absolute; inset: 0;
-  background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.3));
-}
-.post-card-glyph {
-  font-family: var(--font-d);
-  font-size: 36px;
+.feed-item:hover .feed-title {
   color: var(--blue);
-  opacity: 0.1;
 }
-.post-card-body {
-  padding: 20px;
-}
-.post-card-tag {
+.feed-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   font-family: var(--font-m);
-  font-size: 9px;
+  font-size: 11px;
+  color: var(--tx3);
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+  padding-top: 4px;
+}
+.feed-rail-ticker {
+  font-weight: 600;
+  color: var(--tx1);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+.feed-rail-tag {
+  font-size: 10px;
   letter-spacing: .08em;
   text-transform: uppercase;
   color: var(--blue);
-  margin-bottom: 10px;
 }
-.post-card-title {
+.feed-rail-tag.tag-earnings {
+  color: #FFB800;
+}
+.feed-rail-tag.tag-postearnings {
+  color: var(--teal);
+}
+.feed-body { min-width: 0; }
+.feed-title {
   font-family: var(--font-d);
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 400;
   color: var(--tx1);
   line-height: 1.25;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   letter-spacing: -0.01em;
+  transition: color .15s;
 }
-.post-card-excerpt {
-  font-size: 13px;
+.feed-excerpt {
+  font-size: 14px;
   color: var(--tx2);
-  line-height: 1.6;
-  margin-bottom: 14px;
+  line-height: 1.65;
+  margin-bottom: 12px;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.post-card-meta {
+.feed-meta {
   display: flex;
   align-items: center;
   gap: 10px;
   font-family: var(--font-m);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--tx3);
 }
-.post-card-meta-sep { width: 3px; height: 3px; border-radius: 50%; background: var(--tx3); }
+.feed-meta-sep { width: 3px; height: 3px; border-radius: 50%; background: var(--tx3); }
 
 /* ── NEWSLETTER CTA ── */
 .blog-cta {
@@ -399,15 +339,15 @@ nav {
   .con, .con-wide { padding: 0 20px; }
   nav { padding: 0 16px; }
   .nav-links { display: none; }
-  .featured-post { grid-template-columns: 1fr; gap: 24px; }
-  .posts-grid { grid-template-columns: 1fr 1fr; }
   .blog-cta { padding: 36px 24px; }
 }
 @media (max-width: 560px) {
-  .posts-grid { grid-template-columns: 1fr; }
   .blog-hero { padding: 48px 0 32px; }
   .blog-cta-form { flex-direction: column; }
   .posts-filter { flex-wrap: wrap; }
+  .feed-item { grid-template-columns: 1fr; gap: 8px; }
+  .feed-rail { flex-direction: row; gap: 10px; align-items: center; padding-top: 0; }
+  .feed-title { font-size: 20px; }
 }
 </style>
 </head>
@@ -439,58 +379,86 @@ nav {
   </div>
 </div>
 
-<!-- ── FEATURED POST ── -->
-<div class="con-wide" id="featured-wrap">
-  <div class="featured-post" id="featured-post" style="display:none">
-    <div class="featured-img">
-      <img id="featured-img-el" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:14px;" alt="">
-      <span class="featured-img-placeholder" id="featured-ticker">MP</span>
-    </div>
-    <div>
-      <span class="featured-tag" id="featured-tag">Research</span>
-      <a class="featured-title" id="featured-title" href="#" style="text-decoration:none;color:inherit;"></a>
-      <div class="featured-excerpt" id="featured-excerpt"></div>
-      <div class="featured-meta">
-        <span id="featured-author">Market Prism Research</span>
-        <span class="featured-meta-sep"></span>
-        <span id="featured-date"></span>
-        <span class="featured-meta-sep"></span>
-        <span id="featured-read">5 min read</span>
-      </div>
-    </div>
-  </div>
-  <div id="featured-loading" style="padding:48px 0;text-align:center;color:var(--tx3);font-size:14px;">Loading latest intelligence...</div>
-</div>
-
-<!-- ── POST GRID ── -->
+<!-- ── FEED ── -->
 <div class="posts-section">
-  <div class="con-wide">
+  <div class="con">
     <div class="posts-section-head">
       <div class="posts-section-title">Latest</div>
       <div class="posts-filter">
         <button class="posts-filter-btn active" onclick="filterPosts('all',this)">All</button>
+        <button class="posts-filter-btn" onclick="filterPosts('Earnings',this)">Earnings</button>
         <button class="posts-filter-btn" onclick="filterPosts('Research',this)">Research</button>
         <button class="posts-filter-btn" onclick="filterPosts('Market Intel',this)">Market Intel</button>
       </div>
     </div>
-    <div class="posts-grid" id="posts-grid">
+    <div class="posts-feed" id="posts-feed">
       <!-- populated by JS -->
     </div>
-    <div id="posts-empty" style="display:none;grid-column:1/-1;text-align:center;padding:40px;color:var(--tx3);font-size:14px;">No articles match this filter.</div>
+    <div id="posts-loading" style="padding:48px 0;text-align:center;color:var(--tx3);font-size:14px;">Loading latest intelligence...</div>
+    <div id="posts-empty" style="display:none;text-align:center;padding:40px;color:var(--tx3);font-size:14px;">No articles match this filter.</div>
   </div>
 </div>
 
-<!-- ── NEWSLETTER CTA ── -->
+<!-- ── BETA CTA ── -->
 <div class="con">
   <div class="blog-cta">
-    <div class="blog-cta-title">Get the weekly intelligence digest</div>
-    <div class="blog-cta-desc">The most important narrative shifts, new research, and product updates — delivered every Monday before the bell.</div>
-    <div class="blog-cta-form">
-      <input class="blog-cta-input" type="email" placeholder="Work email">
-      <button class="blog-cta-btn">Subscribe</button>
-    </div>
+    <div class="blog-cta-title">Join the Market Prism beta</div>
+    <div class="blog-cta-desc">Early access to the full intelligence platform — narrative scoring, forensic earnings analysis, and the daily picks engine. Beta seats are limited.</div>
+    <form class="blog-cta-form" id="beta-cta-form" onsubmit="return false;">
+      <input class="blog-cta-input" id="beta-cta-input" type="email" placeholder="Work email" required>
+      <button class="blog-cta-btn" id="beta-cta-btn" type="submit">Request Access</button>
+    </form>
+    <div id="beta-cta-msg" style="margin-top:12px;font-size:12px;color:var(--tx3);min-height:16px;"></div>
   </div>
 </div>
+
+<script>
+(function(){
+  var form = document.getElementById('beta-cta-form');
+  if (!form) return;
+  var input = document.getElementById('beta-cta-input');
+  var btn = document.getElementById('beta-cta-btn');
+  var msg = document.getElementById('beta-cta-msg');
+  form.addEventListener('submit', function(){
+    var email = (input.value || '').trim().toLowerCase();
+    if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+      msg.textContent = 'Please enter a valid email address.';
+      msg.style.color = '#FF4D4D';
+      return;
+    }
+    if (!SUPABASE_URL || !SUPABASE_ANON) {
+      window.location.href = '/login#register';
+      return;
+    }
+    btn.disabled = true; btn.textContent = 'Sending...';
+    fetch(SUPABASE_URL + '/rest/v1/email_signups', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON,
+        'Authorization': 'Bearer ' + SUPABASE_ANON,
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ email: email, source: 'blog_index_beta' })
+    }).then(function(r){
+      if (r.ok || r.status === 201 || r.status === 409) {
+        msg.style.color = '#00DE94';
+        msg.textContent = "You're on the list. We'll be in touch.";
+        input.value = '';
+        btn.textContent = 'Requested ✓';
+      } else {
+        msg.style.color = '#FF4D4D';
+        msg.textContent = 'Something went wrong. Try again.';
+        btn.disabled = false; btn.textContent = 'Request Access';
+      }
+    }).catch(function(){
+      msg.style.color = '#FF4D4D';
+      msg.textContent = 'Network error. Try again.';
+      btn.disabled = false; btn.textContent = 'Request Access';
+    });
+  });
+})();
+</script>
 
 <!-- ── FOOTER ── -->
 <div class="blog-footer">
@@ -520,68 +488,59 @@ function readTime(body) {
   return Math.max(3, Math.round(words / 200)) + ' min read';
 }
 
-function renderFeatured(post) {
-  document.getElementById('featured-loading').style.display = 'none';
-  var el = document.getElementById('featured-post');
-  el.style.display = 'grid';
-  document.getElementById('featured-ticker').textContent = post.ticker || 'MP';
-  document.getElementById('featured-tag').textContent = post.tag || 'Research';
-  var titleEl = document.getElementById('featured-title');
-  titleEl.textContent = post.title || '';
-  titleEl.href = '/blog/' + post.slug;
-  document.getElementById('featured-excerpt').textContent = post.excerpt || '';
-  document.getElementById('featured-author').textContent = post.author || 'Market Prism Research';
-  document.getElementById('featured-date').textContent = fmtDate(post.published_at);
-  document.getElementById('featured-read').textContent = readTime(post.body);
-  // Update page meta for SEO
-  if (post.title) document.title = post.title + ' — Market Prism Intelligence Journal';
-  var desc = post.excerpt || '';
-  var ogDesc = document.querySelector('meta[property="og:description"]');
-  var twDesc = document.querySelector('meta[name="twitter:description"]');
-  var metaDesc = document.querySelector('meta[name="description"]');
-  if (ogDesc && desc) ogDesc.setAttribute('content', desc);
-  if (twDesc && desc) twDesc.setAttribute('content', desc);
-  if (metaDesc && desc) metaDesc.setAttribute('content', desc);
-  // Set featured image if available
-  var imgEl = document.getElementById('featured-img-el');
-  if (imgEl && post.image_url) {
-    imgEl.src = post.image_url;
-    imgEl.style.display = 'block';
-    document.getElementById('featured-ticker').style.display = 'none';
-  }
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/[&<>"']/g, function(c) {
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+  });
 }
 
-function renderCards(posts) {
-  var grid = document.getElementById('posts-grid');
+function tagClass(tag) {
+  if (tag === 'Earnings') return 'tag-earnings';
+  if (tag === 'Post-Earnings') return 'tag-postearnings';
+  return '';
+}
+
+function renderFeed(posts) {
+  var feed = document.getElementById('posts-feed');
   var empty = document.getElementById('posts-empty');
-  var filtered = ACTIVE_FILTER === 'all' 
-    ? posts 
-    : posts.filter(function(p){ return p.tag === ACTIVE_FILTER; });
+  document.getElementById('posts-loading').style.display = 'none';
+
+  var filtered = ACTIVE_FILTER === 'all'
+    ? posts
+    : posts.filter(function(p){
+        if (ACTIVE_FILTER === 'Earnings') return p.tag === 'Earnings' || p.tag === 'Post-Earnings';
+        return p.tag === ACTIVE_FILTER;
+      });
+
   if (!filtered.length) {
-    grid.innerHTML = '';
+    feed.innerHTML = '';
     empty.style.display = 'block';
     return;
   }
   empty.style.display = 'none';
-  grid.innerHTML = filtered.map(function(post, i) {
-    var num = String(i + 1).padStart(2, '0');
+
+  feed.innerHTML = filtered.map(function(post) {
     var date = fmtDate(post.published_at);
     var read = readTime(post.body);
     var tag = post.tag || 'Research';
-    var excerpt = post.excerpt || '';
-    var imgHtml = post.image_url
-      ? '<img src="' + post.image_url + '" style="width:100%;height:100%;object-fit:cover;" alt="">'
-      : '<span class="post-card-glyph">' + num + '</span>';
-    return '<a class="post-card" href="/blog/' + post.slug + '">'
-      + '<div class="post-card-img">' + imgHtml + '</div>'
-      + '<div class="post-card-body">'
-      + '<div class="post-card-tag">' + tag + '</div>'
-      + '<div class="post-card-title">' + (post.title || '') + '</div>'
-      + '<div class="post-card-excerpt">' + excerpt + '</div>'
-      + '<div class="post-card-meta">'
-      + '<span>' + date + '</span>'
-      + '<span class="post-card-meta-sep"></span>'
-      + '<span>' + read + '</span>'
+    var excerpt = escapeHtml(post.excerpt || '');
+    var ticker = post.ticker && post.ticker !== 'MP' ? escapeHtml(post.ticker) : '';
+    var tagCls = tagClass(tag);
+
+    var rail = ticker
+      ? '<div class="feed-rail-ticker">' + ticker + '</div><div class="feed-rail-tag ' + tagCls + '">' + escapeHtml(tag) + '</div>'
+      : '<div class="feed-rail-tag ' + tagCls + '">' + escapeHtml(tag) + '</div>';
+
+    return '<a class="feed-item" href="/blog/' + escapeHtml(post.slug) + '">'
+      + '<div class="feed-rail">' + rail + '</div>'
+      + '<div class="feed-body">'
+      + '<div class="feed-title">' + escapeHtml(post.title || '') + '</div>'
+      + '<div class="feed-excerpt">' + excerpt + '</div>'
+      + '<div class="feed-meta">'
+      + '<span>' + escapeHtml(date) + '</span>'
+      + '<span class="feed-meta-sep"></span>'
+      + '<span>' + escapeHtml(read) + '</span>'
       + '</div></div></a>';
   }).join('');
 }
@@ -590,20 +549,20 @@ function filterPosts(tag, btn) {
   ACTIVE_FILTER = tag;
   document.querySelectorAll('.posts-filter-btn').forEach(function(b){ b.classList.remove('active'); });
   if (btn) btn.classList.add('active');
-  renderCards(ALL_POSTS.slice(1)); // skip featured
+  renderFeed(ALL_POSTS);
 }
 
 async function loadBlog() {
   if (!SUPABASE_URL || !SUPABASE_ANON) {
-    document.getElementById('featured-loading').textContent = 'Blog configuration not set.';
+    document.getElementById('posts-loading').textContent = 'Blog configuration not set.';
     return;
   }
   try {
     var url = SUPABASE_URL + '/rest/v1/blog_posts'
-      + '?select=id,ticker,slug,title,excerpt,tag,author,published_at,body,image_url'
+      + '?select=id,ticker,slug,title,excerpt,tag,author,published_at,body'
       + '&status=eq.published'
       + '&order=published_at.desc'
-      + '&limit=20';
+      + '&limit=40';
     var res = await fetch(url, {
       headers: {
         'apikey': SUPABASE_ANON,
@@ -614,13 +573,23 @@ async function loadBlog() {
     var posts = await res.json();
     ALL_POSTS = posts;
     if (!posts.length) {
-      document.getElementById('featured-loading').textContent = 'No articles published yet.';
+      document.getElementById('posts-loading').textContent = 'No articles published yet.';
       return;
     }
-    renderFeatured(posts[0]);
-    renderCards(posts.slice(1));
+    // Update SEO meta from first post
+    var top = posts[0];
+    if (top.title) {
+      var desc = top.excerpt || '';
+      var ogDesc = document.querySelector('meta[property="og:description"]');
+      var twDesc = document.querySelector('meta[name="twitter:description"]');
+      var metaDesc = document.querySelector('meta[name="description"]');
+      if (ogDesc && desc) ogDesc.setAttribute('content', desc);
+      if (twDesc && desc) twDesc.setAttribute('content', desc);
+      if (metaDesc && desc) metaDesc.setAttribute('content', desc);
+    }
+    renderFeed(posts);
   } catch(e) {
-    document.getElementById('featured-loading').textContent = 'Failed to load articles.';
+    document.getElementById('posts-loading').textContent = 'Failed to load articles.';
     console.error('[MP Blog]', e);
   }
 }

@@ -194,132 +194,6 @@ def get_live_data(ticker: str) -> dict:
         return {}
 
 
-# ── IMAGE GENERATOR ──────────────────────────────────────────────────────────
-
-def generate_article_image(ticker: str, title: str, excerpt: str, slug: str) -> str | None:
-    """
-    Generate a header image via DALL-E 3, download it, upload to Supabase Storage,
-    and return the permanent public URL. DALL-E URLs expire in ~1hr so we never
-    store them directly.
-    Requires OPENAI_API_KEY in environment.
-    """
-    openai_key = os.environ.get("OPENAI_API_KEY")
-    if not openai_key:
-        print("  ⚠ OPENAI_API_KEY not set — skipping image generation")
-        return None
-
-    try:
-        import requests as req_lib
-
-        # Step 1: Claude writes the image prompt
-        prompt_response = claude.messages.create(
-            model=MODEL,
-            max_tokens=200,
-            system=(
-                "You write image generation prompts for a bold financial intelligence publication. "
-                "Style references: editorial mixed-media collage, conceptual photography, striking visual metaphors. "
-                "Think: textured surfaces, bold single-color accent pops (vivid yellow, deep red, electric blue, etc.), "
-                "gritty realism, halftone/risograph overlays, ink splatter, geometric shapes, photojournalistic drama. "
-                "People ARE allowed — use symbolic figures (suited executives, traders, silhouettes) when thematically relevant. "
-                "Vary compositions: sometimes close-up hands/objects, sometimes wide cinematic scenes, sometimes collage mashups. "
-                "Each image MUST feel unique — never repeat the same dark-abstract-data look. "
-                "Match the visual metaphor to the article's specific narrative (e.g. trade war = flags + handshakes, "
-                "manipulation = blindfolds + hidden eyes, momentum = speed/motion blur). "
-                "NO generic stock chart imagery, NO line graphs, NO candlestick patterns. "
-                "CRITICAL SAFETY RULES for DALL-E compliance: "
-                "NO real people (no CEOs, politicians, public figures by name or likeness). "
-                "NO real company logos or trademarked brand imagery. "
-                "NO real country flags used in violent or negative contexts. "
-                "NO weapons, violence, or gore. "
-                "Use anonymous/generic figures, symbolic representations, and abstract metaphors instead. "
-                "Output ONLY the DALL-E prompt, max 120 words."
-            ),
-            messages=[{"role": "user", "content": (
-                "Write a DALL-E 3 prompt for an article header image.\n"
-                f"Full article title: \"{title}\"\n"
-                f"Ticker: {ticker}\n"
-                f"Excerpt: {excerpt[:300]}\n"
-                "Create a vivid, conceptual visual metaphor that captures the specific story — not generic finance imagery."
-            )}],
-        )
-        image_prompt = prompt_response.content[0].text.strip()
-        print(f"  → Image prompt: {image_prompt[:80]}...")
-
-        # Step 2: DALL-E 3 renders it (with fallback on content policy rejection)
-        dalle_payload = {"model": "dall-e-3", "prompt": image_prompt, "n": 1, "size": "1792x1024", "quality": "hd", "style": "vivid"}
-        response = req_lib.post(
-            "https://api.openai.com/v1/images/generations",
-            headers={"Authorization": f"Bearer {openai_key}", "Content-Type": "application/json"},
-            json=dalle_payload,
-            timeout=60,
-        )
-
-        if response.status_code == 400:
-            error_detail = response.json().get("error", {}).get("message", response.text[:300])
-            print(f"  ⚠ DALL-E rejected prompt: {error_detail}")
-            print(f"  → Retrying with simplified fallback prompt...")
-            # Fallback: strip the prompt down to safe abstract imagery
-            fallback_prompt = (
-                f"Abstract editorial illustration for a financial analysis article titled \"{title}\". "
-                "Bold mixed-media collage style with vivid color accents, halftone textures, geometric shapes, "
-                "and ink splatter effects. Dramatic lighting, cinematic composition. "
-                "No real people, no logos, no text, no charts."
-            )
-            dalle_payload["prompt"] = fallback_prompt
-            response = req_lib.post(
-                "https://api.openai.com/v1/images/generations",
-                headers={"Authorization": f"Bearer {openai_key}", "Content-Type": "application/json"},
-                json=dalle_payload,
-                timeout=60,
-            )
-            response.raise_for_status()
-
-        elif response.status_code != 200:
-            print(f"  ⚠ DALL-E error {response.status_code}: {response.text[:300]}")
-            response.raise_for_status()
-
-        dalle_url = response.json()["data"][0]["url"]
-        print(f"  ✓ Image generated from DALL-E")
-
-        # Step 3: Download the image bytes (DALL-E URLs expire in ~1hr)
-        img_bytes = req_lib.get(dalle_url, timeout=30).content
-        print(f"  ✓ Image downloaded ({len(img_bytes):,} bytes)")
-
-        # Step 4: Upload to Supabase Storage bucket 'blog-images'
-        # Must use service role key — anon key lacks storage write permissions
-        service_key = os.environ.get("SUPABASE_SERVICE_KEY") or SUPABASE_KEY
-        filename = slug + ".png"
-        storage_path = filename
-
-        upload_url = SUPABASE_URL + "/storage/v1/object/blog-images/" + storage_path
-        upload_res = req_lib.post(
-            upload_url,
-            headers={
-                "Authorization": "Bearer " + service_key,
-                "apikey": service_key,
-                "Content-Type": "image/png",
-                "x-upsert": "true",
-            },
-            data=img_bytes,
-            timeout=30,
-        )
-
-        if upload_res.status_code not in (200, 201):
-            print(f"  ⚠ Storage upload failed: {upload_res.status_code} {upload_res.text[:200]}")
-            # Fall back to storing dalle URL directly (short-lived but better than nothing)
-            print(f"  → Falling back to DALL-E URL (will expire)")
-            return dalle_url
-
-        # Step 5: Build permanent public URL
-        public_url = SUPABASE_URL + "/storage/v1/object/public/blog-images/" + storage_path
-        print(f"  ✓ Image uploaded to Supabase Storage: {public_url}")
-        return public_url
-
-    except Exception as e:
-        print(f"  ⚠ Image generation failed: {e}")
-        return None
-
-
 # ── ARTICLE GENERATOR ─────────────────────────────────────────────────────────
 
 def generate_topic_article(topic: str) -> tuple[str, str]:
@@ -518,19 +392,23 @@ def slugify(title: str) -> str:
 # ── SUPABASE PUBLISHER ────────────────────────────────────────────────────────
 
 def publish_to_supabase(ticker: str, title: str, body: str, ctx: dict, dry_run: bool = False, **kwargs) -> dict:
-    slug = slugify(title)
-    # Ensure slug uniqueness with date prefix
-    date_prefix = datetime.now().strftime("%Y-%m-%d")
-    slug = f"{date_prefix}-{slug}"
+    slug = kwargs.get("slug_override") or slugify(title)
+    # Ensure slug uniqueness with date prefix (skip if slug_override already prefixed)
+    if not kwargs.get("slug_override"):
+        date_prefix = datetime.now().strftime("%Y-%m-%d")
+        slug = f"{date_prefix}-{slug}"
 
-    # Map verdict to tag
-    verdict = ctx.get("verdict", "")
-    tag_map = {
-        "Narrative Trap": "Market Intel",
-        "Structurally Supported": "Research",
-        "Monitoring": "Research",
-    }
-    tag = tag_map.get(verdict, "Market Intel")
+    # Map verdict to tag (caller can override via tag_override)
+    if kwargs.get("tag_override"):
+        tag = kwargs["tag_override"]
+    else:
+        verdict = ctx.get("verdict", "")
+        tag_map = {
+            "Narrative Trap": "Market Intel",
+            "Structurally Supported": "Research",
+            "Monitoring": "Research",
+        }
+        tag = tag_map.get(verdict, "Market Intel")
 
     # Excerpt: first non-empty non-header line
     excerpt = ""
@@ -548,10 +426,12 @@ def publish_to_supabase(ticker: str, title: str, body: str, ctx: dict, dry_run: 
         "excerpt": excerpt,
         "tag": tag,
         "published_at": datetime.now(timezone.utc).isoformat(),
-        "author": "Market Prism Research",
+        "author": kwargs.get("author") or "Market Prism Research",
         "status": "published",
-        "image_url": kwargs.get("image_url") or "",
     }
+    # Preserve image_url column compatibility — explicit empty string
+    if "image_url" in kwargs:
+        row["image_url"] = kwargs["image_url"] or ""
 
     if dry_run:
         print(f"\n  [DRY RUN] Would insert:")
@@ -612,17 +492,9 @@ def main():
         print(f"[3/4] Generating article (sentiment: {args.sentiment})...")
         title, body = generate_article(ctx, live, sentiment=sentiment)
 
-    # 4. Generate image
-    image_url = None
-    if os.environ.get("OPENAI_API_KEY"):
-        print(f"[4/5] Generating header image...")
-        image_url = generate_article_image(ticker, title, body[:300], slug=slugify(title))
-    else:
-        print(f"[4/5] Skipping image (OPENAI_API_KEY not set)")
-
-    # 5. Publish
-    print(f"[5/5] Publishing to Supabase {'(dry run)' if args.dry_run else ''}...")
-    result = publish_to_supabase(ticker, title, body, ctx, dry_run=args.dry_run, image_url=image_url)
+    # 4. Publish (feed-style blog — no header image)
+    print(f"[4/4] Publishing to Supabase {'(dry run)' if args.dry_run else ''}...")
+    result = publish_to_supabase(ticker, title, body, ctx, dry_run=args.dry_run)
 
     if result.get("success"):
         print(f"\n✓ Done. Slug: {result['slug']}\n")

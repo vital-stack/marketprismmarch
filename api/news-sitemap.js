@@ -65,9 +65,10 @@ module.exports = async (req, res) => {
       if (keywords.length > 0) {
         xml += `      <news:keywords>${esc(keywords.join(', '))}</news:keywords>\n`;
       }
-      if (post.ticker && post.ticker !== 'MP') {
-        xml += `      <news:stock_tickers>NASDAQ:${esc(post.ticker)}</news:stock_tickers>\n`;
-      }
+      // Note: <news:stock_tickers> requires EXCHANGE:TICKER format. Since exchange
+      // isn't reliably known per ticker, we omit this field rather than guess wrong
+      // (a wrong exchange is worse than none — Google may reject the entry).
+      // The ticker still appears in <news:keywords> above for discoverability.
       xml += '    </news:news>\n';
       xml += '  </url>\n';
     }

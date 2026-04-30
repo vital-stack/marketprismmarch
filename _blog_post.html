@@ -263,6 +263,93 @@ nav {
 .share-btn.reddit-btn:hover { border-color: rgba(255,69,0,0.4); color: #FF4500; }
 .share-btn.copy-btn:hover { border-color: rgba(0,174,255,0.4); color: var(--blue); }
 
+/* ── BETA CTA ── */
+.beta-cta {
+  background: var(--deep);
+  border: 1px solid var(--border-mid);
+  border-radius: 16px;
+  padding: 32px;
+  margin: 48px 0 32px;
+  position: relative;
+  overflow: hidden;
+}
+.beta-cta::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--blue), var(--teal), transparent);
+}
+.beta-cta-eyebrow {
+  font-family: var(--font-m);
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--teal);
+  margin-bottom: 10px;
+}
+.beta-cta-title {
+  font-family: var(--font-d);
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--tx1);
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
+  line-height: 1.25;
+}
+.beta-cta-desc {
+  font-size: 14px;
+  color: var(--tx2);
+  line-height: 1.6;
+  margin-bottom: 18px;
+  max-width: 540px;
+}
+.beta-cta-form {
+  display: flex;
+  gap: 8px;
+  max-width: 460px;
+}
+.beta-cta-input {
+  flex: 1;
+  padding: 11px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border-mid);
+  background: var(--surface);
+  color: var(--tx1);
+  font-size: 13px;
+  font-family: var(--font-b);
+  outline: none;
+  transition: border-color .15s;
+}
+.beta-cta-input:focus { border-color: var(--blue); }
+.beta-cta-input::placeholder { color: var(--tx3); }
+.beta-cta-btn {
+  padding: 11px 22px;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(135deg, var(--teal), var(--blue));
+  color: #0B0F14;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity .15s;
+  white-space: nowrap;
+  font-family: var(--font-b);
+}
+.beta-cta-btn:hover { opacity: 0.9; }
+.beta-cta-btn:disabled { opacity: 0.5; cursor: default; }
+.beta-cta-msg {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--tx3);
+  min-height: 16px;
+  font-family: var(--font-m);
+}
+@media (max-width: 540px) {
+  .beta-cta { padding: 24px; }
+  .beta-cta-form { flex-direction: column; }
+}
+
 /* ── LOADING / ERROR ── */
 .state-msg {
   text-align: center;
@@ -340,6 +427,18 @@ nav {
   </div>
   <div class="con">
     <div class="article-body" id="article-body"></div>
+
+    <!-- ── BETA CTA ── -->
+    <div class="beta-cta" id="beta-cta">
+      <div class="beta-cta-eyebrow">Limited Beta Access</div>
+      <div class="beta-cta-title" id="beta-cta-title">See the full forensic intelligence behind every ticker.</div>
+      <div class="beta-cta-desc">Market Prism's beta gives you live narrative scoring, pre &amp; post-earnings forensic reports for every ticker we cover, and the daily picks engine. Drop your email to claim a seat.</div>
+      <form class="beta-cta-form" id="beta-cta-form" onsubmit="return false;">
+        <input class="beta-cta-input" id="beta-cta-input" type="email" placeholder="you@company.com" required>
+        <button class="beta-cta-btn" id="beta-cta-btn" type="submit">Request Beta Access</button>
+      </form>
+      <div class="beta-cta-msg" id="beta-cta-msg"></div>
+    </div>
   </div>
 </div>
 
@@ -491,8 +590,11 @@ async function loadArticle() {
     document.getElementById('article-date').textContent = fmtDate(post.published_at);
     document.getElementById('article-read').textContent = readTime(post.body);
 
-    // Render body
-    document.getElementById('article-body').innerHTML = markdownToHtml(post.body || '');
+    // Render body — skip if server already pre-rendered (data-prerendered="1")
+    var bodyEl = document.getElementById('article-body');
+    if (bodyEl && bodyEl.getAttribute('data-prerendered') !== '1') {
+      bodyEl.innerHTML = markdownToHtml(post.body || '');
+    }
 
     // Inject SEO meta
     var pageUrl = 'https://marketprism.co/blog/' + post.slug;
@@ -550,6 +652,17 @@ async function loadArticle() {
       tickerLink.style.cssText = 'font-size:13px;color:var(--blue);text-decoration:none;padding:8px 16px;border:1px solid var(--border);border-radius:8px;transition:all .15s;';
       var linksWrap = document.querySelector('#internal-links div div div:last-child');
       if (linksWrap) linksWrap.prepend(tickerLink);
+
+      // Personalize beta CTA title with ticker context
+      var betaTitle = document.getElementById('beta-cta-title');
+      var tag = (post.tag || '').toLowerCase();
+      if (betaTitle) {
+        if (tag.indexOf('earnings') !== -1) {
+          betaTitle.textContent = 'Get every ' + ticker + ' earnings signal — before the print, every quarter.';
+        } else {
+          betaTitle.textContent = 'Track ' + ticker + ' the way our analysts do.';
+        }
+      }
     }
 
   } catch(e) {
@@ -573,7 +686,66 @@ function copyLink() {
     if (label) { label.textContent = 'Copied!'; setTimeout(function(){ label.textContent = 'Copy link'; }, 2000); }
   });
 }
-document.addEventListener('DOMContentLoaded', loadArticle);
+// ── Beta CTA submission ─────────────────────────────────────────────────────
+function setupBetaCta() {
+  var form = document.getElementById('beta-cta-form');
+  if (!form) return;
+  var input = document.getElementById('beta-cta-input');
+  var btn = document.getElementById('beta-cta-btn');
+  var msg = document.getElementById('beta-cta-msg');
+
+  form.addEventListener('submit', function() {
+    var email = (input.value || '').trim().toLowerCase();
+    if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+      msg.style.color = '#FF4D4D';
+      msg.textContent = 'Please enter a valid email address.';
+      return;
+    }
+    if (!SUPABASE_URL || !SUPABASE_ANON) {
+      window.location.href = '/login#register';
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+    msg.textContent = '';
+
+    var slug = (window.location.pathname.split('/').filter(Boolean).pop() || '');
+    var source = 'blog_post_beta:' + slug;
+
+    fetch(SUPABASE_URL + '/rest/v1/email_signups', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON,
+        'Authorization': 'Bearer ' + SUPABASE_ANON,
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ email: email, source: source })
+    }).then(function(r) {
+      if (r.ok || r.status === 201 || r.status === 409) {
+        msg.style.color = '#00DE94';
+        msg.textContent = "You're on the list. We'll be in touch shortly.";
+        input.value = '';
+        btn.textContent = 'Requested ✓';
+      } else {
+        msg.style.color = '#FF4D4D';
+        msg.textContent = 'Something went wrong. Try again.';
+        btn.disabled = false;
+        btn.textContent = 'Request Beta Access';
+      }
+    }).catch(function() {
+      msg.style.color = '#FF4D4D';
+      msg.textContent = 'Network error. Try again.';
+      btn.disabled = false;
+      btn.textContent = 'Request Beta Access';
+    });
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  loadArticle();
+  setupBetaCta();
+});
 </script>
 
 </body>
