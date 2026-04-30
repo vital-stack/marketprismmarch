@@ -6068,22 +6068,47 @@ body{
           if(rb) rb.addEventListener('click', function(){ state.zoom=1; state.panX=0; state.panY=0; applyTransform(); });
           var svg = document.getElementById('prism-svg');
           if(svg){
-            // Convert a clientX/clientY to SVG viewBox (user) coordinates.
-            // Needed because the wheel/drag transform is applied in viewBox
-            // units while the mouse arrives in CSS pixels — without this,
-            // zooming scales from origin (0,0) and the whole field appears
-            // to slide away from the cursor.
+            // Convert a clientX/clientY to SVG viewBox (user) coordinates via
+            // the element's actual screen CTM. Doing the math by hand against
+            // getBoundingClientRect doesn't account for preserveAspectRatio
+            // "meet" padding, so the cursor anchor would drift near the edges
+            // of a wide container.
             function clientToView(cx, cy){
-              var rect = svg.getBoundingClientRect();
+              var ctm = svg.getScreenCTM && svg.getScreenCTM();
+              if(!ctm){
+                var rect = svg.getBoundingClientRect();
+                return { x:cx-rect.left, y:cy-rect.top, sx:1, sy:1 };
+              }
+              var pt = svg.createSVGPoint();
+              pt.x = cx; pt.y = cy;
+              var u = pt.matrixTransform(ctm.inverse());
+              // ctm.a / ctm.d are the user→screen scale factors (uniform under
+              // "meet"). Their reciprocals convert client-pixel deltas back to
+              // viewBox units for the drag handler.
+              return { x:u.x, y:u.y, sx:1/(ctm.a||1), sy:1/(ctm.d||1) };
+            }
+            // Keep the scaled content covering the viewBox so the bg never
+            // shows through. At zoom=1 this forces pan back to origin, which
+            // is what you want when wheel-zooming all the way out.
+            function clampPan(){
               var vb = svg.viewBox && svg.viewBox.baseVal;
-              var sx = (vb && rect.width)  ? vb.width  / rect.width  : 1;
-              var sy = (vb && rect.height) ? vb.height / rect.height : 1;
-              return { x:(cx-rect.left)*sx, y:(cy-rect.top)*sy, sx:sx, sy:sy };
+              var W = (vb && vb.width)  || 1600;
+              var H = (vb && vb.height) || 700;
+              var z = state.zoom;
+              if(z <= 1){ state.panX = 0; state.panY = 0; return; }
+              var minX = W*(1-z), minY = H*(1-z);
+              if(state.panX > 0) state.panX = 0;
+              if(state.panX < minX) state.panX = minX;
+              if(state.panY > 0) state.panY = 0;
+              if(state.panY < minY) state.panY = minY;
             }
             svg.addEventListener('wheel', function(e){
               e.preventDefault();
               var dz = e.deltaY<0 ? 1.12 : 1/1.12;
-              var newZoom = Math.max(0.5, Math.min(6, state.zoom*dz));
+              // Floor at 1.0 — zooming below the natural fit just leaves the
+              // chart drifting in empty space wherever the cursor happened to
+              // be when the user scrolled out.
+              var newZoom = Math.max(1, Math.min(6, state.zoom*dz));
               if(newZoom === state.zoom) return;
               var actualDz = newZoom / state.zoom;
               var pt = clientToView(e.clientX, e.clientY);
@@ -6091,6 +6116,7 @@ body{
               state.panX = pt.x - actualDz * (pt.x - state.panX);
               state.panY = pt.y - actualDz * (pt.y - state.panY);
               state.zoom = newZoom;
+              clampPan();
               applyTransform();
             }, {passive:false});
             svg.addEventListener('dblclick', function(){
@@ -6109,6 +6135,7 @@ body{
               if(!drag) return;
               state.panX = drag.ox + (e.clientX-drag.x) * drag.sx;
               state.panY = drag.oy + (e.clientY-drag.y) * drag.sy;
+              clampPan();
               applyTransform();
             });
             window.addEventListener('mouseup', function(){
