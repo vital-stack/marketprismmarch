@@ -189,7 +189,15 @@ module.exports = async (req, res) => {
     }
 
     if (!response || !response.ok) {
-      return res.status(502).json({ error: 'AI service error (' + lastStatus + ')' });
+      // Surface the upstream error so the front-end can show what Anthropic
+      // actually said (e.g. "model not found", "credit balance too low").
+      var detail = '';
+      try {
+        var parsed = JSON.parse(lastErrText);
+        detail = (parsed && parsed.error && parsed.error.message) ? parsed.error.message : lastErrText;
+      } catch (_) { detail = lastErrText || ''; }
+      detail = String(detail).slice(0, 240);
+      return res.status(502).json({ error: 'AI service error (' + lastStatus + ')' + (detail ? ': ' + detail : '') });
     }
 
     var data = await response.json();
