@@ -8648,6 +8648,7 @@ async function loadTradeLanes(){
 
 // ── Track Record (paper_trades validation) ───────────────────────────────────
 var _VAL_LOADED=false;
+var _VAL_TIMER=null;
 var _VAL_TRADES=[];
 var _VAL_CURRENT_FILTER='all';
 var VAL_SIGNAL_LABELS={
@@ -8953,6 +8954,12 @@ async function loadValidation(force){
     }
     _VAL_TRADES=rows;
     _VAL_LOADED=true;
+    // Keep stats fresh while the user is on the page. Without this, the panel
+    // is gated by _VAL_LOADED and never refetches as new trades close — the
+    // displayed numbers can sit hours behind reality on the same session.
+    if(!_VAL_TIMER){
+      _VAL_TIMER=setInterval(function(){loadValidation(true);}, 5*60*1000);
+    }
     // Pull pre-computed overall stats (cron-refreshed daily). If available,
     // valRenderStats will prefer these over client-side aggregation.
     _VAL_CACHED_STATS=await _valFetchCachedStats();
@@ -9100,7 +9107,7 @@ function trGateSubmit(){
   if(input.value.trim()===TR_GATE_CODE){
     try{localStorage.setItem(TR_GATE_STORAGE,'1');}catch(_){}
     trGateShow(true);
-    loadValidation();
+    loadValidation(true);
     loadTrackedPlays();
   }else{
     if(err)err.style.display='block';
@@ -9114,7 +9121,7 @@ onTabSwitch(function(id){
   if(id==='validation'){
     if(trGateIsUnlocked()){
       trGateShow(true);
-      loadValidation();
+      loadValidation(true);
       loadTrackedPlays();
     }else{
       trGateShow(false);
@@ -9131,12 +9138,24 @@ var _TP_TIMER=null;
 async function loadTrackedPlays(){
   if(!SUPABASE_URL||!SUPABASE_ANON)return;
   try{
-    var rows=await restFetch('tracked_daily_plays',{
-      select:'ticker,lane,direction,entry_date,entry_price,predicted_return_pct,predicted_hold_days,planned_exit_date,current_price,current_return_pct,best_return_pct,worst_return_pct,days_elapsed,hit,hit_date,status,exit_price,exit_return_pct,excess_return_pct',
-      order:'entry_date.desc,lane.asc,lane_rank.asc',
-      limit:'2000'
-    });
-    _TP_DATA=rows||[];
+    // Page through tracked_daily_plays — PostgREST caps each response at 1,000
+    // rows regardless of the limit param, and once the table crosses 1k the
+    // oldest closed plays silently disappear from the lifetime totals.
+    var PAGE=1000;
+    var rows=[];
+    var sel='ticker,lane,direction,entry_date,entry_price,predicted_return_pct,predicted_hold_days,planned_exit_date,current_price,current_return_pct,best_return_pct,worst_return_pct,days_elapsed,hit,hit_date,status,exit_price,exit_return_pct,excess_return_pct';
+    for(var off=0;off<20000;off+=PAGE){
+      var page=await restFetch('tracked_daily_plays',{
+        select:sel,
+        order:'entry_date.desc,lane.asc,lane_rank.asc',
+        limit:String(PAGE),
+        offset:String(off)
+      });
+      if(!page||!page.length)break;
+      rows=rows.concat(page);
+      if(page.length<PAGE)break;
+    }
+    _TP_DATA=rows;
     if(!_TP_TIMER){
       _TP_TIMER=setInterval(loadTrackedPlays, 60*1000);
     }
@@ -15594,11 +15613,25 @@ setInterval(bootNarrativeHistory, 60 * 1000);
 async function loadDailyPlaysStatBar(){
   if(!SUPABASE_URL||!SUPABASE_ANON)return;
   try{
-    var rows=await restFetch('tracked_daily_plays',{
-      select:'status,hit,exit_return_pct,predicted_return_pct,best_return_pct',
-      limit:'2000'
-    });
-    if(!rows||!rows.length)return;
+    // Paginate — without an explicit order PostgREST still caps the response
+    // at 1,000 rows, and the previous limit:'2000' silently dropped any rows
+    // beyond the cap. Once the table crosses 1k, lifetime totals would stop
+    // moving as new plays closed.
+    var PAGE=1000;
+    var rows=[];
+    var sel='status,hit,exit_return_pct,predicted_return_pct,best_return_pct';
+    for(var off=0;off<20000;off+=PAGE){
+      var page=await restFetch('tracked_daily_plays',{
+        select:sel,
+        order:'entry_date.desc,lane.asc',
+        limit:String(PAGE),
+        offset:String(off)
+      });
+      if(!page||!page.length)break;
+      rows=rows.concat(page);
+      if(page.length<PAGE)break;
+    }
+    if(!rows.length)return;
     // Use the same zombie filter as Track Record's Live Tracked Plays widget
     // (_tpIsZombie, defined earlier in this script) so both stat strips report
     // identical Tracked / Open / Closed / Hits / Hit Rate / Avg Return.
@@ -15634,6 +15667,12 @@ window.refreshDailyBrief=async function(){
     await loadData();
     liveQuotesRefreshDaily();
     loadDailyPlaysStatBar();
+    // Track Record reads from a separate cached stats table + paper_trades.
+    // Refresh those too so closed plays show up everywhere a user can see them.
+    if(typeof loadTrackedPlays==='function'&&trGateIsUnlocked&&trGateIsUnlocked()){
+      loadTrackedPlays();
+      loadValidation(true);
+    }
   }catch(e){console.warn('[DB] Refresh failed:',e);}
   if(btn){btn.disabled=false;btn.style.opacity='1';btn.querySelector('svg').style.animation='';}
 };
