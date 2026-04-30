@@ -5555,7 +5555,10 @@ body{
         #tab-prism .prism-reset{font-family:var(--font-body);font-size:12px;font-weight:500;padding:6px 14px;border-radius:8px;border:1px solid var(--mp-border);background:transparent;color:var(--mp-text-secondary);cursor:pointer;}
         #tab-prism .prism-reset:hover{border-color:var(--mp-border-mid);color:var(--mp-text-primary);}
         #tab-prism .prism-plot-wrap{position:relative;background:#0C1018;border:1px solid rgba(255,255,255,0.06);border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.25);}
-        #tab-prism .prism-svg{display:block;width:100%;height:auto;user-select:none;touch-action:none;}
+        /* touch-action:manipulation lets tap → click fire on iOS Safari (none
+           was suppressing it), and removes the 300ms double-tap-to-zoom delay
+           on the dots. Page can still be pinch-zoomed. */
+        #tab-prism .prism-svg{display:block;width:100%;height:auto;user-select:none;touch-action:manipulation;}
         #tab-prism .prism-bg{fill:#0C1018;}
         #tab-prism .prism-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-body);font-size:13px;color:rgba(255,255,255,0.55);z-index:3;}
         #tab-prism .prism-legend{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:14px;padding:10px 16px;background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:12px;}
@@ -5937,17 +5940,27 @@ body{
             if(r.coord >= 60){
               parts.push('<circle class="pr-pulse" cx="'+cx+'" cy="'+cy+'" r="'+(rr+3)+'" fill="none" stroke="#00AEFF" stroke-width="1.5" pointer-events="none"/>');
             }
+            // Transparent hit circle so finger taps land — visible dot is
+            // 5–15 viewBox units (~1–3 CSS px on a phone), well below the
+            // ~44px tap-target minimum. The larger circle stays underneath
+            // so the painted dot is what the user visually targets.
+            parts.push('<circle class="pr-hit" data-idx="'+idx+'" cx="'+cx+'" cy="'+cy+'" r="'+Math.max(rr+10, 18)+'" fill="transparent" pointer-events="all" style="cursor:pointer;"/>');
             parts.push('<circle class="pr-dot" data-idx="'+idx+'" cx="'+cx+'" cy="'+cy+'" r="'+rr+'" fill="'+color+'" opacity="'+op.toFixed(2)+'" stroke="rgba(0,0,0,0.55)" stroke-width="1" style="cursor:pointer;"><title>'+r.ticker+' · DTE '+r.dte+'d · WKS '+r.wks.toFixed(1)+'</title></circle>');
             if(BIG_CAPS[r.ticker] && rr>=6){
               parts.push('<text x="'+cx+'" y="'+(cy+3)+'" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="10" font-weight="700" pointer-events="none" style="paint-order:stroke;stroke:rgba(0,0,0,0.55);stroke-width:2;">'+r.ticker+'</text>');
             }
           });
           g.innerHTML = parts.join('');
-          g.querySelectorAll('.pr-dot').forEach(function(el){
+          g.querySelectorAll('.pr-dot, .pr-hit').forEach(function(el){
             el.addEventListener('click', function(ev){
               ev.stopPropagation();
               var idx = Number(el.getAttribute('data-idx'));
-              showPopup(rows[idx], el);
+              // Anchor the popup against the visible dot (not the larger hit
+              // ring) so positioning matches what the user sees.
+              var visEl = el.classList.contains('pr-dot')
+                ? el
+                : g.querySelector('.pr-dot[data-idx="'+idx+'"]') || el;
+              showPopup(rows[idx], visEl);
             });
           });
         }
@@ -6125,7 +6138,7 @@ body{
             var drag = null;
             svg.addEventListener('mousedown', function(e){
               if(state.zoom<=1.01) return;
-              if(e.target && e.target.classList && e.target.classList.contains('pr-dot')) return;
+              if(e.target && e.target.classList && (e.target.classList.contains('pr-dot') || e.target.classList.contains('pr-hit'))) return;
               var pt = clientToView(e.clientX, e.clientY);
               drag = {x:e.clientX, y:e.clientY, ox:state.panX, oy:state.panY, sx:pt.sx, sy:pt.sy};
               svg.style.cursor = 'grabbing';
