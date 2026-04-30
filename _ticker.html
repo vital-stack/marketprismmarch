@@ -979,6 +979,61 @@
     margin-top: 6px;
     font-style: italic;
   }
+  .hero-sector-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 6px;
+  }
+  .hero-sector-row .hero-sector { margin-top: 0; }
+  .pe-bubble {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 12px;
+    border-radius: 99px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    font-family: var(--font-body);
+    font-style: normal;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+  .pe-bubble.bull { background: rgba(0,222,148,0.06); border-color: rgba(0,222,148,0.22); }
+  .pe-bubble.bear { background: rgba(255,77,77,0.06); border-color: rgba(255,77,77,0.22); }
+  .pe-bubble.neutral { background: rgba(0,174,255,0.05); border-color: rgba(0,174,255,0.18); }
+  .pe-bubble-lbl {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--mp-text-tertiary);
+  }
+  .pe-bubble-val {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--mp-text-primary);
+  }
+  .pe-bubble-vs {
+    font-size: 11px;
+    color: var(--mp-text-tertiary);
+  }
+  .pe-bubble-sec {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--mp-text-secondary);
+  }
+  .pe-bubble-delta {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 99px;
+    margin-left: 2px;
+  }
+  .pe-bubble-delta.bull { background: rgba(0,222,148,0.14); color: #5fe7b4; }
+  .pe-bubble-delta.bear { background: rgba(255,77,77,0.14); color: #ff7f7f; }
+  .pe-bubble-delta.neutral { background: rgba(0,174,255,0.14); color: #5fc8ff; }
 
   /* ── Sector Intelligence ── */
   .si-header {
@@ -5108,7 +5163,10 @@ async function loadHero() {
           ${insightHtml || `<span class="hero-state-badge ${stateClass(r.narrative_state)}">${esc(r.narrative_state || '—')}</span>`}
         </div>
         <div class="hero-claim" id="hero-claim" data-pending="1">&nbsp;</div>
-        ${r.sector_name ? `<div class="hero-sector">${esc(r.sector_name)}</div>` : ''}
+        ${r.sector_name ? `<div class="hero-sector-row">
+          <div class="hero-sector">${esc(r.sector_name)}</div>
+          <span id="hero-pe-bubble"></span>
+        </div>` : ''}
       </div>
       <div class="hero-right" id="hero-right">
         <div class="live-price-row">
@@ -5437,6 +5495,48 @@ async function loadSectorIntelligence(heroRow) {
       </div>` : '')}`;
   } catch (err) {
     document.getElementById('sector-body').innerHTML = `<div class="inline-err">Sector: ${esc(err.message)}</div>`;
+  }
+}
+
+// ── Hero P/E vs Sector bubble ────────────────────────────────────────────────
+// Renders a small pill next to the sector name showing the ticker's latest P/E
+// against the sector median (weighted across growth tiers in sector_pe_benchmarks).
+async function loadSectorPeBubble(heroRow) {
+  const el = document.getElementById('hero-pe-bubble');
+  if (!el || !heroRow) return;
+  const tickerPe = heroRow.pe_ratio;
+  const sector   = heroRow.sector_name;
+  if (tickerPe == null || !sector) return;
+  try {
+    const rows = await sbFetch('sector_pe_benchmarks', {
+      select: 'median_pe,avg_pe,ticker_count_pe',
+      sector: 'eq.' + sector,
+      keyword: 'is.null'
+    }).catch(() => []);
+    let num = 0, den = 0;
+    for (const row of (rows || [])) {
+      const m = row.median_pe != null ? Number(row.median_pe) : null;
+      const w = row.ticker_count_pe != null ? Number(row.ticker_count_pe) : 0;
+      if (m != null && isFinite(m) && w > 0) { num += m * w; den += w; }
+    }
+    if (den === 0) return;
+    const sectorPe = num / den;
+    const tPe = Number(tickerPe);
+    if (!isFinite(tPe) || !isFinite(sectorPe) || sectorPe <= 0) return;
+    const deltaPct = ((tPe - sectorPe) / sectorPe) * 100;
+    const tone = deltaPct > 5 ? 'bear' : deltaPct < -5 ? 'bull' : 'neutral';
+    const arrow = deltaPct > 0 ? '↑' : deltaPct < 0 ? '↓' : '→';
+    const sign  = deltaPct > 0 ? '+' : '';
+    el.innerHTML = `
+      <span class="pe-bubble ${tone}" title="P/E vs sector median (weighted across growth tiers)">
+        <span class="pe-bubble-lbl">P/E</span>
+        <span class="pe-bubble-val">${tPe.toFixed(1)}x</span>
+        <span class="pe-bubble-vs">vs Sector</span>
+        <span class="pe-bubble-sec">${sectorPe.toFixed(1)}x</span>
+        <span class="pe-bubble-delta ${tone}">${arrow} ${sign}${deltaPct.toFixed(0)}%</span>
+      </span>`;
+  } catch (e) {
+    /* silently skip — bubble is non-critical */
   }
 }
 
@@ -8773,6 +8873,7 @@ async function refreshAll() {
     loadPrerequisites(),
     loadMoveDrivers(),
     loadSectorIntelligence(heroData),
+    loadSectorPeBubble(heroData),
     loadStoriesFeed(),
     loadEarnings()
   ]);
