@@ -713,9 +713,8 @@ function setupBetaCta() {
     msg.textContent = '';
 
     var slug = (window.location.pathname.split('/').filter(Boolean).pop() || '');
-    var source = 'blog_post_beta:' + slug;
 
-    fetch(SUPABASE_URL + '/rest/v1/email_signups', {
+    fetch(SUPABASE_URL + '/rest/v1/beta_signups', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -723,7 +722,13 @@ function setupBetaCta() {
         'Authorization': 'Bearer ' + SUPABASE_ANON,
         'Prefer': 'return=minimal'
       },
-      body: JSON.stringify({ email: email, source: source })
+      body: JSON.stringify({
+        email: email,
+        source: 'blog_post',
+        slug: slug || null,
+        referrer: document.referrer || null,
+        user_agent: navigator.userAgent || null
+      })
     }).then(function(r) {
       if (r.ok || r.status === 201 || r.status === 409) {
         msg.style.color = '#00DE94';

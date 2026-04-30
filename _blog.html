@@ -431,7 +431,7 @@ nav {
       return;
     }
     btn.disabled = true; btn.textContent = 'Sending...';
-    fetch(SUPABASE_URL + '/rest/v1/email_signups', {
+    fetch(SUPABASE_URL + '/rest/v1/beta_signups', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -439,7 +439,12 @@ nav {
         'Authorization': 'Bearer ' + SUPABASE_ANON,
         'Prefer': 'return=minimal'
       },
-      body: JSON.stringify({ email: email, source: 'blog_index_beta' })
+      body: JSON.stringify({
+        email: email,
+        source: 'blog_index',
+        referrer: document.referrer || null,
+        user_agent: navigator.userAgent || null
+      })
     }).then(function(r){
       if (r.ok || r.status === 201 || r.status === 409) {
         msg.style.color = '#00DE94';
