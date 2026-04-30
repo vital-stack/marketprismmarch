@@ -583,16 +583,19 @@ async function loadArticle() {
       ? ticker + ' Narrative Analysis \u2014 ' + dateShort + ' | Market Prism'
       : post.title + ' | Market Prism';
 
-    // Populate header
-    document.getElementById('article-eyebrow').textContent = post.tag || 'Research';
-    document.getElementById('article-title').textContent = post.title || '';
-    document.getElementById('article-author').textContent = post.author || 'Market Prism Research';
-    document.getElementById('article-date').textContent = fmtDate(post.published_at);
-    document.getElementById('article-read').textContent = readTime(post.body);
-
-    // Render body — skip if server already pre-rendered (data-prerendered="1")
+    // Populate header — but only when SSR didn't already do it. The body div
+    // carries data-prerendered="1" when the API server-rendered the page; in
+    // that case we leave the byline link, "Updated" line, and other SSR'd
+    // markup intact.
     var bodyEl = document.getElementById('article-body');
-    if (bodyEl && bodyEl.getAttribute('data-prerendered') !== '1') {
+    var isPrerendered = bodyEl && bodyEl.getAttribute('data-prerendered') === '1';
+
+    if (!isPrerendered) {
+      document.getElementById('article-eyebrow').textContent = post.tag || 'Research';
+      document.getElementById('article-title').textContent = post.title || '';
+      document.getElementById('article-author').textContent = post.author || 'Ellis Marrow';
+      document.getElementById('article-date').textContent = fmtDate(post.published_at);
+      document.getElementById('article-read').textContent = readTime(post.body);
       bodyEl.innerHTML = markdownToHtml(post.body || '');
     }
 

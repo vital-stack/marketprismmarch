@@ -33,6 +33,11 @@ MODEL = "claude-sonnet-4-6"
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 claude = anthropic.Anthropic(api_key=ANTHROPIC_KEY)
 
+# Bylines — fictional editorial personas, kept stable across articles so Google
+# News and topical-authority signals can attribute work to consistent authors.
+AUTHOR_RESEARCH = "Ellis Marrow"
+AUTHOR_EARNINGS = "Reed Calloway"
+
 # ── SYSTEM PROMPT ────────────────────────────────────────────────────────────
 
 MP_SYSTEM_PROMPT = """
@@ -426,7 +431,7 @@ def publish_to_supabase(ticker: str, title: str, body: str, ctx: dict, dry_run: 
         "excerpt": excerpt,
         "tag": tag,
         "published_at": datetime.now(timezone.utc).isoformat(),
-        "author": kwargs.get("author") or "Market Prism Research",
+        "author": kwargs.get("author") or AUTHOR_RESEARCH,
         "status": "published",
     }
     # Preserve image_url column compatibility — explicit empty string

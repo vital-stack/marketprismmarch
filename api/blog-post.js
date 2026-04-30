@@ -1,4 +1,5 @@
 const resolveTemplate = require('./_resolve-template');
+const { slugForAuthor } = require('./author');
 
 module.exports = async (req, res) => {
   try {
@@ -23,7 +24,7 @@ module.exports = async (req, res) => {
         const apiUrl = `${supabaseUrl}/rest/v1/blog_posts`
           + `?slug=eq.${encodeURIComponent(slug)}`
           + `&status=eq.published`
-          + `&select=ticker,title,slug,excerpt,body,tag,author,published_at,image_url`
+          + `&select=ticker,title,slug,excerpt,body,tag,author,published_at,updated_at,image_url`
           + `&limit=1`;
 
         const response = await fetch(apiUrl, {
@@ -42,12 +43,16 @@ module.exports = async (req, res) => {
             const excerpt = post.excerpt || '';
             const desc160 = (post.body || excerpt || '').replace(/[#*|\n]+/g, ' ').trim().substring(0, 160);
             const pageUrl = `https://marketprism.co/blog/${post.slug}`;
-            // Logo asset that actually exists in /assets — used as fallback when
-            // a post has no dedicated image (which is now the default since we
-            // dropped DALL-E generation in favour of feed-style layout).
-            const imageUrl = post.image_url || 'https://marketprism.co/assets/Market-Prism-Logo-Light.png';
-            const author = post.author || 'Market Prism Research';
+            // Per-article OG card generated dynamically by /api/og-image at the
+            // edge — gives every post a real branded 1200×630 PNG without
+            // requiring DALL-E or storing assets. post.image_url overrides if
+            // an explicit image was set on the row.
+            const imageUrl = post.image_url || `https://marketprism.co/og-image/${encodeURIComponent(post.slug)}`;
+            const author = post.author || 'Ellis Marrow';
+            const authorSlug = slugForAuthor(author);
+            const authorUrl = authorSlug ? `https://marketprism.co/author/${authorSlug}` : 'https://marketprism.co';
             const publishedAt = post.published_at || '';
+            const updatedAt = post.updated_at || publishedAt;
             const tag = post.tag || 'Research';
 
             // Format date for title: "Mar 28, 2026"
@@ -94,8 +99,8 @@ module.exports = async (req, res) => {
             const ogArticleTags = [
               `<meta property="og:type" content="article">`,
               `<meta property="article:published_time" content="${escAttr(publishedAt)}">`,
-              `<meta property="article:modified_time" content="${escAttr(publishedAt)}">`,
-              `<meta property="article:author" content="${escAttr(author)}">`,
+              `<meta property="article:modified_time" content="${escAttr(updatedAt)}">`,
+              `<meta property="article:author" content="${escAttr(authorUrl)}">`,
               `<meta property="article:section" content="${escAttr(tag)}">`,
             ];
             if (ticker && ticker !== 'MP') {
@@ -103,6 +108,22 @@ module.exports = async (req, res) => {
             }
             ogArticleTags.push(`<meta property="article:tag" content="market analysis">`);
             ogArticleTags.push(`<meta property="article:tag" content="narrative intelligence">`);
+
+            // news_keywords: legacy but still respected by Google News for topical hints
+            const newsKeywords = [];
+            if (ticker && ticker !== 'MP') newsKeywords.push(ticker);
+            if (tag) newsKeywords.push(tag);
+            const lcTag = (tag || '').toLowerCase();
+            if (lcTag.indexOf('earnings') !== -1) {
+              newsKeywords.push('earnings', 'earnings preview', 'earnings analysis');
+            }
+            newsKeywords.push('stock analysis', 'market intelligence', 'narrative intelligence');
+            ogArticleTags.push(`<meta name="news_keywords" content="${escAttr(newsKeywords.join(', '))}">`);
+
+            // og:image dimensions — explicit so social previewers don't need to fetch+probe
+            ogArticleTags.push(`<meta property="og:image:width" content="1200">`);
+            ogArticleTags.push(`<meta property="og:image:height" content="630">`);
+            ogArticleTags.push(`<meta property="og:image:type" content="image/png">`);
 
             // ── RSS/Atom autodiscovery ──
             const feedLinks = [
@@ -117,8 +138,12 @@ module.exports = async (req, res) => {
               "headline": title,
               "description": desc160,
               "datePublished": publishedAt,
-              "dateModified": publishedAt,
-              "author": { "@type": "Organization", "name": author, "url": "https://marketprism.co" },
+              "dateModified": updatedAt,
+              "author": {
+                "@type": "Person",
+                "name": author,
+                "url": authorUrl,
+              },
               "publisher": {
                 "@type": "Organization",
                 "name": "Market Prism",
@@ -130,7 +155,12 @@ module.exports = async (req, res) => {
               },
               "url": pageUrl,
               "mainEntityOfPage": { "@type": "WebPage", "@id": pageUrl },
-              "image": imageUrl,
+              "image": {
+                "@type": "ImageObject",
+                "url": imageUrl,
+                "width": 1200,
+                "height": 630,
+              },
               "articleSection": tag,
               "inLanguage": "en-US",
               "isAccessibleForFree": true,
@@ -213,9 +243,21 @@ module.exports = async (req, res) => {
             const renderedBody = markdownToHtml(post.body || '');
             const eyebrowHtml = escHtml(tag);
             const titleHtml = escHtml(title);
-            const metaAuthorHtml = escHtml(author);
+            // Byline as a link to /author/{slug} so Person schema and the visible
+            // DOM agree — Google News quality models check both.
+            const metaAuthorHtml = authorSlug
+              ? `<a href="${escAttr(authorUrl)}" rel="author" style="color:inherit;text-decoration:none;border-bottom:1px solid var(--border-mid);">${escHtml(author)}</a>`
+              : escHtml(author);
             const metaDateHtml = escHtml(formatLongDate(publishedAt));
             const metaReadHtml = escHtml(estimateReadTime(post.body || ''));
+            // "Updated" line — only show when dateModified actually differs from
+            // datePublished (avoid noise on first publish)
+            const dayDiff = updatedAt && publishedAt
+              ? Math.abs(new Date(updatedAt) - new Date(publishedAt)) > 86400000
+              : false;
+            const updatedLineHtml = dayDiff
+              ? `<span class="article-meta-sep"></span><span style="color:var(--blue);">Updated ${escHtml(formatLongDate(updatedAt))}</span>`
+              : '';
 
             html = html.replace(
               '<div id="article-loading" class="con">\n  <div class="state-msg">Loading article...</div>\n</div>',
@@ -243,12 +285,84 @@ module.exports = async (req, res) => {
             );
             html = html.replace(
               '<span id="article-read"></span>',
-              `<span id="article-read">${metaReadHtml}</span>`
+              `<span id="article-read">${metaReadHtml}</span>${updatedLineHtml}`
             );
             html = html.replace(
               '<div class="article-body" id="article-body"></div>',
               `<div class="article-body" id="article-body" data-prerendered="1">${renderedBody}</div>`
             );
+
+            // ── Related articles SSR — topical clustering signal for Google News.
+            // Prefer same-ticker; fall back to same-tag. Render in the page so
+            // crawlers see the internal link graph in the initial response.
+            try {
+              let relatedUrl = null;
+              if (ticker && ticker !== 'MP') {
+                relatedUrl = `${supabaseUrl}/rest/v1/blog_posts`
+                  + `?ticker=eq.${encodeURIComponent(ticker)}`
+                  + `&slug=neq.${encodeURIComponent(post.slug)}`
+                  + `&status=eq.published`
+                  + `&select=slug,title,tag,published_at,ticker`
+                  + `&order=published_at.desc&limit=3`;
+              } else {
+                relatedUrl = `${supabaseUrl}/rest/v1/blog_posts`
+                  + `?tag=eq.${encodeURIComponent(tag)}`
+                  + `&slug=neq.${encodeURIComponent(post.slug)}`
+                  + `&status=eq.published`
+                  + `&select=slug,title,tag,published_at,ticker`
+                  + `&order=published_at.desc&limit=3`;
+              }
+              const relRes = await fetch(relatedUrl, {
+                headers: { 'apikey': supabaseAnon, 'Authorization': `Bearer ${supabaseAnon}` },
+              });
+              if (relRes.ok) {
+                let related = await relRes.json();
+                // If same-ticker returned <3, top up with same-tag
+                if (related.length < 3 && ticker && ticker !== 'MP') {
+                  const haveSlugs = new Set(related.map(r => r.slug));
+                  haveSlugs.add(post.slug);
+                  const fillRes = await fetch(
+                    `${supabaseUrl}/rest/v1/blog_posts`
+                    + `?tag=eq.${encodeURIComponent(tag)}`
+                    + `&status=eq.published`
+                    + `&select=slug,title,tag,published_at,ticker`
+                    + `&order=published_at.desc&limit=6`,
+                    { headers: { 'apikey': supabaseAnon, 'Authorization': `Bearer ${supabaseAnon}` } }
+                  );
+                  if (fillRes.ok) {
+                    const fill = await fillRes.json();
+                    for (const r of fill) {
+                      if (related.length >= 3) break;
+                      if (!haveSlugs.has(r.slug)) { related.push(r); haveSlugs.add(r.slug); }
+                    }
+                  }
+                }
+                if (related.length) {
+                  const items = related.map(r => {
+                    const d = formatLongDate(r.published_at);
+                    const tickerBadge = r.ticker && r.ticker !== 'MP'
+                      ? `<span style="color:var(--blue);font-weight:500;">${escHtml(r.ticker)}</span> &middot; `
+                      : '';
+                    return `<a href="/blog/${escAttr(r.slug)}" style="display:block;padding:14px 0;border-bottom:1px solid var(--border);text-decoration:none;color:inherit;">`
+                      + `<div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--tx3);margin-bottom:6px;">`
+                      + `${tickerBadge}${escHtml(r.tag || 'Research')}</div>`
+                      + `<div style="font-family:var(--font-d);font-size:17px;line-height:1.3;color:var(--tx1);margin-bottom:4px;">${escHtml(r.title || '')}</div>`
+                      + `<div style="font-size:11px;color:var(--tx3);">${escHtml(d)}</div>`
+                      + `</a>`;
+                  }).join('');
+                  const relatedHtml = `<div id="related-articles" style="margin:48px 0 0;padding-top:24px;border-top:1px solid var(--border-mid);">`
+                    + `<div style="font-family:var(--font-d);font-size:18px;color:var(--tx1);margin-bottom:8px;letter-spacing:-0.01em;">Related analysis</div>`
+                    + items
+                    + `</div>`;
+                  html = html.replace(
+                    '<!-- ── BETA CTA ── -->',
+                    `${relatedHtml}\n    <!-- ── BETA CTA ── -->`
+                  );
+                }
+              }
+            } catch (relErr) {
+              console.error('[blog-post] related fetch failed:', relErr.message);
+            }
 
             // Personalize beta CTA title server-side too (so crawlers see the right copy)
             if (ticker && ticker !== 'MP') {

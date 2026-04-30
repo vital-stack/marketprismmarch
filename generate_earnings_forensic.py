@@ -482,7 +482,7 @@ def run_pre(target_date: str, ticker_filter: str = None, dry_run: bool = False, 
                 dry_run=dry_run,
                 slug_override=slug,
                 tag_override="Earnings",
-                author="Market Prism Research",
+                author="Reed Calloway",
             )
             if result.get("success"):
                 written += 1
@@ -526,7 +526,7 @@ def run_post(filing_date: str, ticker_filter: str = None, dry_run: bool = False,
                 dry_run=dry_run,
                 slug_override=slug,
                 tag_override="Post-Earnings",
-                author="Market Prism Research",
+                author="Reed Calloway",
             )
             if result.get("success"):
                 written += 1

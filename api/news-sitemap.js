@@ -40,7 +40,8 @@ module.exports = async (req, res) => {
 
     let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
     xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"\n';
-    xml += '        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">\n';
+    xml += '        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"\n';
+    xml += '        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n';
 
     for (const post of entries) {
       const pubDate = post.published_at
@@ -52,6 +53,9 @@ module.exports = async (req, res) => {
       if (post.ticker && post.ticker !== 'MP') keywords.push(post.ticker);
       if (post.tag) keywords.push(post.tag);
       keywords.push('market analysis', 'narrative intelligence');
+
+      // Per-article OG card (matches what blog-post.js sets as og:image)
+      const imageUrl = `${siteUrl}/og-image/${esc(post.slug)}`;
 
       xml += '  <url>\n';
       xml += `    <loc>${siteUrl}/blog/${esc(post.slug)}</loc>\n`;
@@ -70,6 +74,10 @@ module.exports = async (req, res) => {
       // (a wrong exchange is worse than none — Google may reject the entry).
       // The ticker still appears in <news:keywords> above for discoverability.
       xml += '    </news:news>\n';
+      xml += '    <image:image>\n';
+      xml += `      <image:loc>${imageUrl}</image:loc>\n`;
+      xml += `      <image:title>${esc(post.title)}</image:title>\n`;
+      xml += '    </image:image>\n';
       xml += '  </url>\n';
     }
 
