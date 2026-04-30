@@ -5947,7 +5947,7 @@ body{
             el.addEventListener('click', function(ev){
               ev.stopPropagation();
               var idx = Number(el.getAttribute('data-idx'));
-              showPopup(rows[idx]);
+              showPopup(rows[idx], el);
             });
           });
         }
@@ -5966,7 +5966,39 @@ body{
         }
 
         function fmt(n,d){ return n==null||!isFinite(n) ? '—' : Number(n).toFixed(d==null?2:d); }
-        function showPopup(r){
+        function positionPopupAt(p, dotEl){
+          // On narrow screens, the @media rule pins the popup to top:12px;left:12px;right:12px.
+          // Clear any inline overrides so the CSS wins and the popup spans the wrap.
+          if(window.innerWidth <= 720){
+            p.style.left = ''; p.style.right = ''; p.style.top = '';
+            return;
+          }
+          if(!dotEl) return;
+          var wrap = document.getElementById('prism-plot-wrap'); if(!wrap) return;
+          var dr = dotEl.getBoundingClientRect();
+          var wr = wrap.getBoundingClientRect();
+          var pw = p.offsetWidth || 360;
+          var ph = p.offsetHeight || 400;
+          var gap = 14;
+          var cx = dr.left + dr.width/2 - wr.left;
+          var cy = dr.top  + dr.height/2 - wr.top;
+          var radius = dr.width/2;
+          // Default: to the right of the dot, vertically centered on it.
+          var left = cx + radius + gap;
+          var top  = cy - ph/2;
+          // If it overflows the right edge, flip to the left of the dot.
+          if(left + pw > wr.width - 8){
+            left = cx - radius - gap - pw;
+          }
+          if(left < 8) left = 8;
+          if(left + pw > wr.width - 8) left = wr.width - pw - 8;
+          if(top < 8) top = 8;
+          if(top + ph > wr.height - 8) top = wr.height - ph - 8;
+          p.style.left  = left + 'px';
+          p.style.top   = top  + 'px';
+          p.style.right = 'auto';
+        }
+        function showPopup(r, dotEl){
           if(!r) return;
           state.selected = r;
           var p = document.getElementById('prism-popup'); if(!p) return;
@@ -5998,6 +6030,7 @@ body{
             + '<div class="pr-pop-footer">Scorecard verdict · <b>'+(r.verdict||'—')+'</b></div>';
           p.innerHTML = h;
           p.style.display = 'block';
+          positionPopupAt(p, dotEl);
         }
         window.prismClosePopup = function(){
           var p = document.getElementById('prism-popup');
@@ -6035,10 +6068,29 @@ body{
           if(rb) rb.addEventListener('click', function(){ state.zoom=1; state.panX=0; state.panY=0; applyTransform(); });
           var svg = document.getElementById('prism-svg');
           if(svg){
+            // Convert a clientX/clientY to SVG viewBox (user) coordinates.
+            // Needed because the wheel/drag transform is applied in viewBox
+            // units while the mouse arrives in CSS pixels — without this,
+            // zooming scales from origin (0,0) and the whole field appears
+            // to slide away from the cursor.
+            function clientToView(cx, cy){
+              var rect = svg.getBoundingClientRect();
+              var vb = svg.viewBox && svg.viewBox.baseVal;
+              var sx = (vb && rect.width)  ? vb.width  / rect.width  : 1;
+              var sy = (vb && rect.height) ? vb.height / rect.height : 1;
+              return { x:(cx-rect.left)*sx, y:(cy-rect.top)*sy, sx:sx, sy:sy };
+            }
             svg.addEventListener('wheel', function(e){
               e.preventDefault();
               var dz = e.deltaY<0 ? 1.12 : 1/1.12;
-              state.zoom = Math.max(0.5, Math.min(6, state.zoom*dz));
+              var newZoom = Math.max(0.5, Math.min(6, state.zoom*dz));
+              if(newZoom === state.zoom) return;
+              var actualDz = newZoom / state.zoom;
+              var pt = clientToView(e.clientX, e.clientY);
+              // Keep the point under the cursor stationary while scaling.
+              state.panX = pt.x - actualDz * (pt.x - state.panX);
+              state.panY = pt.y - actualDz * (pt.y - state.panY);
+              state.zoom = newZoom;
               applyTransform();
             }, {passive:false});
             svg.addEventListener('dblclick', function(){
@@ -6048,14 +6100,15 @@ body{
             svg.addEventListener('mousedown', function(e){
               if(state.zoom<=1.01) return;
               if(e.target && e.target.classList && e.target.classList.contains('pr-dot')) return;
-              drag = {x:e.clientX, y:e.clientY, ox:state.panX, oy:state.panY};
+              var pt = clientToView(e.clientX, e.clientY);
+              drag = {x:e.clientX, y:e.clientY, ox:state.panX, oy:state.panY, sx:pt.sx, sy:pt.sy};
               svg.style.cursor = 'grabbing';
               e.preventDefault();
             });
             window.addEventListener('mousemove', function(e){
               if(!drag) return;
-              state.panX = drag.ox + (e.clientX-drag.x);
-              state.panY = drag.oy + (e.clientY-drag.y);
+              state.panX = drag.ox + (e.clientX-drag.x) * drag.sx;
+              state.panY = drag.oy + (e.clientY-drag.y) * drag.sy;
               applyTransform();
             });
             window.addEventListener('mouseup', function(){
