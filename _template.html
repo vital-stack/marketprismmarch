@@ -17257,6 +17257,19 @@ function renderEmpty(b){
   +'</div>';
 }
 
+// Wait up to ~10s for the in-memory scorecardMap to be populated by the main
+// dashboard data load. If a user clicks the Leaderboard tab before the initial
+// data fetch finishes, every scorecardFallback-backed board returns empty and
+// renders blank with no retry — this poll closes that race condition.
+async function waitForScorecardMap(maxMs){
+  var deadline=Date.now()+(maxMs||10000);
+  while(Date.now()<deadline){
+    if(typeof scorecardMap!=='undefined' && scorecardMap && Object.keys(scorecardMap).length>0) return true;
+    await new Promise(function(r){setTimeout(r,150);});
+  }
+  return typeof scorecardMap!=='undefined' && scorecardMap && Object.keys(scorecardMap).length>0;
+}
+
 async function loadLeaderboard(){
   _dateCache={}; // Clear date cache so we always get fresh snapshot dates
   var loading=document.getElementById('lb-loading');
@@ -17278,6 +17291,10 @@ async function loadLeaderboard(){
     var user=await ensureDashboardAuth();
     if(!user) return;
     if(!SUPABASE_URL||!SUPABASE_ANON) throw new Error('Supabase not configured');
+    // Block on scorecardMap before firing the fallback-backed boards. The
+    // direct-Supabase boards (best entry zone, dark pool) don't need this
+    // but the wait is short and only kicks in on early tab clicks.
+    await waitForScorecardMap(10000);
     // Most boards use scorecardFallback (in-memory, instant). Only consistent-keywords hits network.
     function withTimeout(p,ms){if(p&&typeof p.then==='function')return Promise.race([p,new Promise(function(_,rej){setTimeout(function(){rej(new Error('timeout'));},ms);})]).catch(function(){return[];});return Promise.resolve(p||[]);}
     var results=await Promise.all(BOARDS.map(function(b){return withTimeout(b.fetch(),b.timeout||10000);}));
