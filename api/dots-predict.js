@@ -14,9 +14,11 @@
 //   - read access for the role used by the env key
 
 const HF_MODEL = 'sentence-transformers/all-MiniLM-L6-v2';
-// HF retired api-inference.huggingface.co. New path: router.huggingface.co
-// with the OpenAI-compatible embeddings endpoint.
-const HF_URL = 'https://router.huggingface.co/hf-inference/v1/embeddings';
+// HF retired api-inference.huggingface.co. Canonical Inference-Providers
+// pattern (matches what the official @huggingface/inference SDK calls):
+//   {router}/{provider}/pipeline/{task}/{model}
+const HF_URL =
+  'https://router.huggingface.co/hf-inference/pipeline/feature-extraction/' + HF_MODEL;
 const DEFAULT_K = 200;
 const MAX_AGE_DAYS = 540;
 
@@ -49,16 +51,17 @@ async function embedQuery(text, hfKey) {
       'Authorization': 'Bearer ' + hfKey,
       'Content-Type': 'application/json'
     },
-    // OpenAI-compatible body: { model, input }. all-MiniLM-L6-v2 returns 384-dim.
-    body: JSON.stringify({ model: HF_MODEL, input: text })
+    // Pipeline endpoint speaks HF-native shape: {inputs, options}.
+    body: JSON.stringify({ inputs: text, options: { wait_for_model: true } })
   });
   if (!r.ok) {
     const body = await r.text().catch(function () { return ''; });
-    throw new Error('HuggingFace embed failed (' + r.status + '): ' + body.slice(0, 200));
+    throw new Error('HuggingFace embed failed (' + r.status + '): ' + body.slice(0, 300));
   }
   const j = await r.json();
-  // OpenAI-compatible response: { data: [{ embedding: [...] }], model, usage }
-  const vec = j && j.data && j.data[0] && j.data[0].embedding;
+  // Single string input on a sentence-transformers model returns a flat
+  // 384-dim array. Batched input returns [[...], [...]]. Accept both.
+  const vec = Array.isArray(j) && Array.isArray(j[0]) ? j[0] : j;
   if (!Array.isArray(vec) || vec.length !== 384) {
     throw new Error('Unexpected embedding shape (len=' + (Array.isArray(vec) ? vec.length : 'n/a') + ')');
   }
