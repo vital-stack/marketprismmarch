@@ -2928,17 +2928,151 @@
   }
   .tk-feed-link:hover { opacity: 0.8; text-decoration: underline; }
 
-  /* ── Verdict Banner ── */
+  /* ── Verdict Banner / Trade Ticket ── */
   .verdict-banner{
-    background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:12px;
-    padding:16px 20px;margin-bottom:16px;border-left:4px solid var(--mp-text-muted);
+    background:var(--mp-surface);
+    border:1px solid var(--mp-border);
+    border-radius:16px;
+    padding:24px 28px;
+    margin-bottom:20px;
+    border-left:4px solid var(--mp-text-muted);
     position:relative;
+    overflow:hidden;
   }
+  .verdict-banner::before{
+    content:'';position:absolute;inset:0;pointer-events:none;
+    background-image:
+      linear-gradient(to right, rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size:48px 48px;
+    opacity:.6;
+  }
+  .verdict-banner > *{position:relative;z-index:1;}
+
+  /* legacy classes retained for any other consumers */
   .vb-top{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
   .vb-verdict{font-size:16px;font-weight:700;font-family:'Inter',system-ui,sans-serif;}
   .vb-action{font-size:11px;font-weight:600;padding:4px 10px;border-radius:5px;text-transform:uppercase;letter-spacing:.04em;font-family:'Inter',system-ui,sans-serif;}
   .vb-desc{font-size:14px;color:var(--mp-text-secondary);line-height:1.65;font-family:'Inter',system-ui,sans-serif;}
   .vb-rebuttal{font-size:13px;color:var(--mp-text-tertiary);line-height:1.6;margin-top:10px;padding-top:10px;border-top:1px solid var(--mp-border);font-family:'Inter',system-ui,sans-serif;}
+
+  /* ── Trade Ticket (new) ── */
+  .tt-head{
+    display:flex;align-items:flex-start;justify-content:space-between;gap:24px;
+    margin-bottom:12px;flex-wrap:wrap;
+  }
+  .tt-title-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .tt-verdict{
+    font-family:'Instrument Serif','DM Serif Display',Georgia,serif;
+    font-weight:400;font-size:28px;letter-spacing:-0.02em;line-height:1.1;
+  }
+  .tt-sev{
+    font-family:'Inter',system-ui,sans-serif;
+    font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    padding:5px 10px;border-radius:5px;color:#0B0F17;
+  }
+  .tt-class{
+    font-family:'Inter',system-ui,sans-serif;
+    font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+    padding:4px 9px;border-radius:5px;
+    color:var(--mp-text-tertiary);
+    background:rgba(255,255,255,0.025);
+    border:1px solid var(--mp-border);
+  }
+  .tt-fresh{
+    font-family:'Inter',system-ui,sans-serif;
+    font-size:11px;color:var(--mp-text-muted);white-space:nowrap;
+    align-self:center;
+  }
+  .tt-headline{
+    font-family:'Inter',system-ui,sans-serif;
+    font-size:14px;color:var(--mp-text-secondary);line-height:1.55;
+    margin-bottom:18px;max-width:78ch;
+  }
+  .tt-grid{
+    display:grid;grid-template-columns:repeat(4,1fr);
+    gap:0;border:1px solid var(--mp-border);border-radius:10px;overflow:hidden;
+    margin-bottom:18px;background:rgba(255,255,255,0.015);
+  }
+  .tt-cell{
+    padding:12px 14px;border-right:1px solid var(--mp-border);
+    display:flex;flex-direction:column;gap:4px;min-width:0;
+  }
+  .tt-cell:last-child{border-right:none;}
+  .tt-cell-label{
+    font-family:'Inter',system-ui,sans-serif;
+    font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--mp-text-muted);
+  }
+  .tt-cell-val{
+    font-family:'Inter',system-ui,sans-serif;
+    font-size:16px;font-weight:600;color:var(--mp-text-primary);
+    line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .tt-cell-sub{
+    font-family:'Inter',system-ui,sans-serif;
+    font-size:11px;color:var(--mp-text-tertiary);line-height:1.2;
+  }
+  .tt-strip{
+    display:grid;grid-template-columns:auto 1fr 1fr 1fr auto;
+    gap:8px 16px;align-items:center;
+    border-top:1px solid var(--mp-border);
+    padding:14px 0 4px;margin-bottom:12px;
+  }
+  .tt-strip-row{display:contents;}
+  .tt-strip-row.is-primary .tt-h-label{color:var(--mp-text-primary);font-weight:700;}
+  .tt-h-label{
+    font-family:'Inter',system-ui,sans-serif;font-size:13px;font-weight:600;
+    color:var(--mp-text-tertiary);letter-spacing:.04em;
+  }
+  .tt-h-pct{
+    font-family:'Inter',system-ui,sans-serif;font-size:14px;font-weight:600;
+    text-align:right;
+  }
+  .tt-h-band{
+    font-family:'Inter',system-ui,sans-serif;font-size:13px;color:var(--mp-text-tertiary);
+    text-align:right;
+  }
+  .tt-h-conv{
+    font-family:'Inter',system-ui,sans-serif;font-size:13px;color:var(--mp-text-secondary);
+    text-align:right;
+  }
+  .tt-h-mark{
+    font-family:'Inter',system-ui,sans-serif;font-size:11px;color:var(--mp-text-muted);
+    letter-spacing:.04em;text-transform:uppercase;text-align:left;min-width:80px;
+  }
+  .tt-h-mark.primary{font-weight:700;}
+  .tt-pred-line{
+    font-family:'Inter',system-ui,sans-serif;font-size:13px;color:var(--mp-text-secondary);
+    line-height:1.6;margin-bottom:8px;
+  }
+  .tt-pred-line .pos{color:#00DE94;}
+  .tt-pred-line .neg{color:#FF4D4D;}
+  .tt-conv-row{
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    font-family:'Inter',system-ui,sans-serif;font-size:13px;color:var(--mp-text-secondary);
+    margin-bottom:12px;
+  }
+  .tt-conv-dots{letter-spacing:1px;font-size:14px;}
+  .tt-track{
+    border-top:1px solid var(--mp-border);
+    padding-top:10px;
+    font-family:'Inter',system-ui,sans-serif;font-size:12px;color:var(--mp-text-tertiary);
+    line-height:1.5;
+  }
+  .tt-pos{color:#00DE94;}
+  .tt-neg{color:#FF4D4D;}
+  .tt-neu{color:var(--mp-text-secondary);}
+
+  @media (max-width: 720px){
+    .tt-grid{grid-template-columns:repeat(2,1fr);}
+    .tt-cell{border-right:none;border-bottom:1px solid var(--mp-border);}
+    .tt-cell:nth-child(odd){border-right:1px solid var(--mp-border);}
+    .tt-cell:nth-last-child(-n+2){border-bottom:none;}
+    .tt-strip{grid-template-columns:auto 1fr 1fr;gap:6px 10px;}
+    .tt-h-conv,.tt-h-mark{display:none;}
+    .tt-verdict{font-size:24px;}
+  }
 
   /* ── Redesigned Hero ── */
   .ticker-hero {
@@ -3746,7 +3880,7 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
 <div class="info-tip-popup" id="info-tip-popup"></div>
 <div class="app-layout">
   <!-- ── SIDE NAV ── (rendered by lib/mp-sidebar.js — single source of truth across pages) -->
-  <nav class="side-nav open" id="side-nav"></nav>
+  <nav class="side-nav" id="side-nav"></nav>
   <script src="/lib/mp-sidebar.js"></script>
   <script>MP.renderSidebar({ container: '#side-nav', mode: 'links', activeTab: 'ticker' });</script>
 
@@ -4264,7 +4398,7 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
 
       <!-- Theme + Publication Breakdown -->
       <div class="breakdown-grid">
-        <div class="breakdown-card">
+        <div class="breakdown-card" id="strat-theme-card">
           <div class="bk-header">
             <div class="bk-title">Narrative Themes</div>
             <div class="bk-count">5d return after articles by theme</div>
@@ -4280,18 +4414,6 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
           <div id="strat-pub-rows"></div>
           <div class="insight-footer" id="strat-pub-insight"></div>
         </div>
-      </div>
-
-      <!-- Strategy Summary -->
-      <div class="strategy-summary">
-        <div class="ss-label">Strategy Summary</div>
-        <div class="ss-text" id="strat-summary">—</div>
-      </div>
-
-      <!-- Data note -->
-      <div class="strat-data-note">
-        <div>&#x1F4BE;</div>
-        <div id="strat-data-note-text"><strong>All data real, zero fabricated.</strong></div>
       </div>
 
     </div><!-- /strategy-content -->
@@ -4721,6 +4843,210 @@ function stateClass(s) {
   return ({ Breaking:'badge-breaking', Surging:'badge-surging', Fragile:'badge-fragile', Stable:'badge-stable' })[s] || 'badge-stable';
 }
 
+// ── Trade Ticket renderer ────────────────────────────────────────────────────
+// Renders directly from a `ticker_forecast` row. No derivations.
+function ttColor(name) {
+  switch ((name || '').toLowerCase()) {
+    case 'red':    return '#FF4D4D';
+    case 'green':  return '#00DE94';
+    case 'amber':  return '#FFB800';
+    case 'blue':   return '#00AEFF';
+    case 'gray':
+    case 'grey':   return '#A0A8B0';
+    default:       return '#A0A8B0';
+  }
+}
+function ttRelativeTime(iso) {
+  if (!iso) return '';
+  var t = new Date(iso).getTime();
+  if (!isFinite(t)) return '';
+  var s = Math.max(0, Math.floor((Date.now() - t) / 1000));
+  if (s < 60)        return 'Updated just now';
+  if (s < 3600)      return 'Updated ' + Math.floor(s/60) + 'm ago';
+  if (s < 86400)     return 'Updated ' + Math.floor(s/3600) + 'h ago';
+  if (s < 86400*7)   return 'Updated ' + Math.floor(s/86400) + 'd ago';
+  if (s < 86400*30)  return 'Updated ' + Math.floor(s/(86400*7)) + 'w ago';
+  return 'Updated ' + Math.floor(s/(86400*30)) + 'mo ago';
+}
+function ttBiasLabel(b) {
+  switch ((b || '').toLowerCase()) {
+    case 'short':       return 'Short / Avoid Long';
+    case 'long':        return 'Long / Buy Setup';
+    case 'watch_short': return 'Watch — Short Bias';
+    case 'watch_long':  return 'Watch — Long Bias';
+    case 'neutral':     return 'Neutral';
+    default:            return b || '—';
+  }
+}
+function ttFmtPct(p, opts) {
+  if (p == null || isNaN(p)) return '—';
+  var sign = p > 0 ? '+' : '';
+  var dp = (opts && opts.dp != null) ? opts.dp : 1;
+  return sign + Number(p).toFixed(dp) + '%';
+}
+function ttFmtUsd(p) {
+  if (p == null || isNaN(p)) return '—';
+  var n = Number(p);
+  if (Math.abs(n) >= 100) return '$' + n.toFixed(0);
+  return '$' + n.toFixed(2);
+}
+function ttPctClass(p) {
+  if (p == null || isNaN(p)) return 'tt-neu';
+  if (p > 0) return 'tt-pos';
+  if (p < 0) return 'tt-neg';
+  return 'tt-neu';
+}
+
+function renderTradeTicket(f, story, sc) {
+  var color = ttColor(f.color);
+  var sevColor = color;
+  var verdict = f.directional_verdict || '—';
+  var sev = f.severity_label || '';
+  var cls = f.classification_label || '';
+
+  // Headline: prefer the forecast row's one_liner, fall back to story_claim/forensic_rebuttal.
+  var headline = (f.one_line_headline && f.one_line_headline.trim())
+    ? f.one_line_headline.trim()
+    : (story && (story.story_claim || story.forensic_rebuttal)) || '';
+
+  var fresh = ttRelativeTime(f.heavy_refreshed_at);
+
+  // ── Top summary grid: BIAS · HORIZON · INVALIDATION · TARGET ──
+  var biasCell = '<div class="tt-cell">'
+    + '<div class="tt-cell-label">Bias</div>'
+    + '<div class="tt-cell-val" style="color:'+color+';">'+esc(ttBiasLabel(f.bias))+'</div>'
+    + '</div>';
+
+  var primary = (f.primary_horizon || '5d').toLowerCase();
+  var primPct = f['predicted_' + primary + '_pct'];
+  var primPrice = f['predicted_' + primary + '_price'];
+  var horizonCell = '<div class="tt-cell">'
+    + '<div class="tt-cell-label">Horizon</div>'
+    + '<div class="tt-cell-val">'+ esc(primary.toUpperCase()) +' move</div>'
+    + '<div class="tt-cell-sub"><span class="'+ttPctClass(primPct)+'">'+ ttFmtPct(primPct) +'</span>'
+      + (primPrice != null ? ' &middot; ' + ttFmtUsd(primPrice) : '') + '</div>'
+    + '</div>';
+
+  var invCell;
+  if (f.invalidation_price != null) {
+    var biasIsShort = (f.bias === 'short' || f.bias === 'watch_short');
+    invCell = '<div class="tt-cell">'
+      + '<div class="tt-cell-label">Invalidation</div>'
+      + '<div class="tt-cell-val">'+ (biasIsShort ? 'Above ' : 'Below ') + ttFmtUsd(f.invalidation_price) +'</div>'
+      + '<div class="tt-cell-sub">Stop level</div>'
+      + '</div>';
+  } else {
+    invCell = '<div class="tt-cell">'
+      + '<div class="tt-cell-label">Invalidation</div>'
+      + '<div class="tt-cell-val" style="color:var(--mp-text-tertiary);">—</div>'
+      + '<div class="tt-cell-sub">Neutral bias</div>'
+      + '</div>';
+  }
+
+  var tgtCell;
+  if (f.target_price != null && f.current_price) {
+    var tgtPct = (f.target_price - f.current_price) / f.current_price * 100;
+    tgtCell = '<div class="tt-cell">'
+      + '<div class="tt-cell-label">Target</div>'
+      + '<div class="tt-cell-val">'+ ttFmtUsd(f.target_price) +'</div>'
+      + '<div class="tt-cell-sub"><span class="'+ttPctClass(tgtPct)+'">'+ ttFmtPct(tgtPct) +'</span></div>'
+      + '</div>';
+  } else if (f.target_price != null) {
+    tgtCell = '<div class="tt-cell">'
+      + '<div class="tt-cell-label">Target</div>'
+      + '<div class="tt-cell-val">'+ ttFmtUsd(f.target_price) +'</div>'
+      + '<div class="tt-cell-sub">Profit target</div>'
+      + '</div>';
+  } else {
+    tgtCell = '<div class="tt-cell">'
+      + '<div class="tt-cell-label">Target</div>'
+      + '<div class="tt-cell-val" style="color:var(--mp-text-tertiary);">—</div>'
+      + '<div class="tt-cell-sub">No active target</div>'
+      + '</div>';
+  }
+
+  // ── Horizon strip ──
+  var horizons = ['1d','3d','5d','10d'];
+  var stripRows = horizons.map(function(h) {
+    var pct = f['predicted_' + h + '_pct'];
+    var lo = f['predicted_' + h + '_low'];
+    var hi = f['predicted_' + h + '_high'];
+    var conv = f['conviction_' + h];
+    var bandTxt = '';
+    if (lo != null && hi != null && f.current_price) {
+      var halfPct = ((hi - lo) / 2) / f.current_price * 100;
+      bandTxt = '± ' + halfPct.toFixed(1) + '%';
+    }
+    var isPrimary = h === primary;
+    return '<div class="tt-strip-row'+(isPrimary?' is-primary':'')+'">'
+      + '<div class="tt-h-label">'+ h.toUpperCase() +'</div>'
+      + '<div class="tt-h-pct '+ttPctClass(pct)+'">'+ ttFmtPct(pct) +'</div>'
+      + '<div class="tt-h-band">'+ esc(bandTxt) +'</div>'
+      + '<div class="tt-h-conv">'+ (conv != null ? 'conv ' + Math.round(conv) + '%' : '') +'</div>'
+      + '<div class="tt-h-mark'+(isPrimary?' primary':'')+'" style="'+(isPrimary?'color:'+color+';':'')+'">'
+        + (isPrimary ? '← primary' : '')
+      + '</div>'
+      + '</div>';
+  }).join('');
+
+  // ── Predicted move + alpha line ──
+  var alpha = f['predicted_alpha_' + primary + '_vs_spy'];
+  var lo = f['predicted_' + primary + '_low'];
+  var hi = f['predicted_' + primary + '_high'];
+  var halfPct = (lo != null && hi != null && f.current_price)
+    ? (((hi - lo) / 2) / f.current_price * 100) : null;
+  var predLine = 'Predicted ' + primary.toUpperCase() + ' move: '
+    + '<span class="'+ ttPctClass(primPct) +'">'+ ttFmtPct(primPct) +'</span>'
+    + (primPrice != null ? ' (' + ttFmtUsd(primPrice) + ')' : '')
+    + (halfPct != null ? ' ± ' + halfPct.toFixed(1) + '%' : '')
+    + (alpha != null ? ' &middot; vs SPY <span class="'+ ttPctClass(alpha) +'">'+ ttFmtPct(alpha) +'</span>' : '');
+
+  // ── Conviction dots ──
+  var primConv = f['conviction_' + primary];
+  var convRow = '';
+  if (primConv != null) {
+    var filled = Math.max(0, Math.min(10, Math.round(primConv / 10)));
+    var dotsFilled = '●'.repeat(filled);
+    var dotsEmpty = '○'.repeat(10 - filled);
+    convRow = '<div class="tt-conv-row">'
+      + '<span>Conviction ' + Math.round(primConv) + '%</span>'
+      + '<span class="tt-conv-dots" style="color:'+color+';">'+ dotsFilled +'</span>'
+      + '<span class="tt-conv-dots" style="color:var(--mp-text-muted);">'+ dotsEmpty +'</span>'
+      + '</div>';
+  }
+
+  // ── Track record ribbon — hide if sample < 5 ──
+  var trackRow = '';
+  if (f.rolling_30_total != null && f.rolling_30_total >= 5) {
+    var edge = f.rolling_30_avg_edge_pct;
+    trackRow = '<div class="tt-track">'
+      + 'Last 30 days: <strong style="color:var(--mp-text-secondary);">'
+      + f.rolling_30_directional + '/' + f.rolling_30_total + '</strong> directional'
+      + (edge != null ? ' &middot; <span class="'+ ttPctClass(edge) +'">'+ ttFmtPct(edge) +'</span> avg edge' : '')
+      + '</div>';
+  }
+
+  // Apply the colored left bar (set on the wrapper element by caller).
+  // We can't set inline style on the wrapper here, so the caller does it.
+  var sevHtml = sev ? '<span class="tt-sev" style="background:'+sevColor+';">'+ esc(sev) +'</span>' : '';
+  var clsHtml = (cls && cls !== 'STANDARD') ? '<span class="tt-class">'+ esc(cls) +'</span>' : '';
+
+  return '<div class="tt-head">'
+      + '<div class="tt-title-row">'
+        + '<span class="tt-verdict" style="color:'+color+';">'+ esc(verdict) +'</span>'
+        + sevHtml
+        + clsHtml
+      + '</div>'
+      + (fresh ? '<span class="tt-fresh">'+ esc(fresh) +'</span>' : '')
+    + '</div>'
+    + (headline ? '<div class="tt-headline">'+ esc(headline) +'</div>' : '')
+    + '<div class="tt-grid">'+ biasCell + horizonCell + invCell + tgtCell +'</div>'
+    + '<div class="tt-pred-line">'+ predLine +'</div>'
+    + convRow
+    + '<div class="tt-strip">'+ stripRows +'</div>'
+    + trackRow;
+}
+
 // ── Lane classifier ──────────────────────────────────────────────────────────
 // Mirrors the Daily Plays lane logic in _template.html so the ticker-page
 // banner reads from the same rule book. A ticker can match multiple lanes;
@@ -4863,7 +5189,7 @@ async function loadHero() {
       'sector_trap_flag','sector_trap_name','days_to_options_expiry','next_options_expiry'
     ].join(',');
 
-    const [rows, healthRows, snapRows, tradeRows, scorecardRows, cvRows, earnContextRows] = await Promise.all([
+    const [rows, healthRows, snapRows, tradeRows, scorecardRows, cvRows, earnContextRows, forecastRows] = await Promise.all([
       sbFetch('v_dash_daily_story', { select: cols, ticker: `eq.${TICKER}`, order: 'snapshot_date.desc', limit: '1' }),
       sbFetch('v_dash_narrative_health', {
         select: 'narrative_health,narrative_trend,attention_trend',
@@ -4902,6 +5228,12 @@ async function loadHero() {
         select: 'ticker,days_to_earnings,earnings_surprise_pct,next_earnings_date',
         ticker: `eq.${TICKER}`,
         order:  'snapshot_date.desc',
+        limit:  '1'
+      }).catch(function(){ return []; }),
+      // Pre-computed trade-ticket forecast (powers the verdict + horizon strip).
+      sbFetch('ticker_forecast', {
+        select: '*',
+        ticker: `eq.${TICKER}`,
         limit:  '1'
       }).catch(function(){ return []; })
     ]);
@@ -5187,73 +5519,18 @@ async function loadHero() {
         <div class="metric-sub">${esc(r.institutional_positioning || 'Institutional')}</div>
       </div>`;
 
-    // ── Verdict Banner ──
-    // Redesigned to align with Daily Plays: the HEADLINE is now the ticker's
-    // lane + action from the shared classifier (same logic as _template.html's
-    // Daily Plays lanes), so a user clicking through from "Day Trade · Fade"
-    // on Daily Plays sees "Day Trade · FADE" on the banner. The structural
-    // label (e.g. FUNDAMENTAL_DISCONNECT) is demoted to a small tag. Forensic
-    // rebuttal paragraph is unchanged — it remains the trust/evidence layer.
+    // ── Trade Ticket (replaces legacy Verdict Banner) ──
+    // Renders entirely from the pre-computed `ticker_forecast` row. No client-side
+    // verdict derivation — the edge function is authoritative.
     var verdictBanner = document.getElementById('verdict-banner');
-    if(verdictBanner){
-      var earn = (earnContextRows || [])[0] || null;
-      var lane = classifyLane(sc, earn);
-
-      // Fallback — if no lane matches, fall back to the structural label so
-      // the banner still says something useful (matches the old behavior for
-      // names that don't hit any active lane today).
-      var vLabel = tc.primary_label || '';
-      var structuralInfo = vLabelToStructural(vLabel, sc);
-
-      // Pick the headline source: lane classifier wins when present.
-      var headline, action, color, reason;
-      if (lane) {
-        headline = lane.lane;
-        action = lane.action;
-        color = lane.color;
-        reason = lane.reason;
-      } else if (structuralInfo) {
-        headline = structuralInfo.label;
-        action = structuralInfo.action;
-        color = structuralInfo.color;
-        reason = structuralInfo.desc;
-      } else {
-        headline = verdict || 'Monitoring';
-        action = 'Monitor';
-        color = 'var(--mp-text-muted)';
-        reason = r.forensic_rebuttal || r.story_claim || '';
-      }
-
-      // Freshness — "Updated X ago" using the scorecard snapshot_date
-      var freshness = '';
-      if (sc.snapshot_date) {
-        var ageMs = Date.now() - new Date(sc.snapshot_date + 'T00:00:00Z').getTime();
-        var ageDays = Math.floor(ageMs / (1000*60*60*24));
-        freshness = ageDays <= 0 ? 'Updated today'
-                  : ageDays === 1 ? 'Updated 1d ago'
-                  : 'Updated ' + ageDays + 'd ago';
-      }
-
-      // Demote the structural label to a tag if the lane classifier produced
-      // the headline AND the structural label adds different information.
-      var structuralTag = '';
-      if (lane && structuralInfo && structuralInfo.label.toLowerCase() !== headline.toLowerCase()) {
-        structuralTag = '<span class="vb-tag" style="background:rgba(255,255,255,0.04);color:var(--mp-text-tertiary);border:1px solid var(--mp-border);font-size:10px;font-weight:600;padding:3px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.05em;">'+esc(structuralInfo.label)+'</span>';
-      }
-
+    var f = (forecastRows || [])[0] || null;
+    if (verdictBanner && f) {
       verdictBanner.style.display = 'block';
-      verdictBanner.style.borderLeftColor = color;
-      verdictBanner.innerHTML =
-        '<div class="vb-top" style="justify-content:space-between;">'
-          + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'
-            + '<span class="vb-verdict" style="color:'+color+';">'+esc(headline)+'</span>'
-            + '<span class="vb-action" style="background:'+color+'14;color:'+color+';border:1px solid '+color+'33;">'+esc(action)+'</span>'
-            + structuralTag
-          + '</div>'
-          + (freshness ? '<span style="font-size:11px;color:var(--mp-text-muted);font-family:var(--font-body);white-space:nowrap;">'+esc(freshness)+'</span>' : '')
-        + '</div>'
-        + (reason ? '<div class="vb-desc">'+esc(reason)+'</div>' : '')
-        + (r.forensic_rebuttal ? '<div class="vb-rebuttal">'+esc(r.forensic_rebuttal)+'</div>' : '');
+      verdictBanner.style.borderLeftColor = ttColor(f.color);
+      verdictBanner.innerHTML = renderTradeTicket(f, r, sc);
+    } else if (verdictBanner) {
+      // No forecast row yet for this ticker — keep the banner hidden.
+      verdictBanner.style.display = 'none';
     }
 
     // ── Sector Intelligence panel (loaded separately from Supabase) ──
@@ -8372,12 +8649,22 @@ async function loadStrategyData() {
 
     // ── Theme Breakdown (from article_outcomes RPC or fallback to summary) ──
     const themeContainer = document.getElementById('strat-theme-rows');
-    if (themeContainer) {
-      const themes = Array.isArray(themeRows) && themeRows.length > 0 ? themeRows : [];
+    const themeCard = document.getElementById('strat-theme-card');
+    const themeInsight = document.getElementById('strat-theme-insight');
+    const themes = Array.isArray(themeRows) && themeRows.length > 0 ? themeRows : [];
+    const fallbackThemes = [
+      { name: d.most_influential_theme, label: 'Most Influential' },
+      { name: d.top_positive_theme, label: 'Top Positive' },
+      { name: d.top_negative_theme, label: 'Top Negative' }
+    ].filter(t => t.name);
+    const hasThemeData = themes.length > 0 || fallbackThemes.length > 0;
+
+    if (themeCard) themeCard.style.display = hasThemeData ? '' : 'none';
+
+    if (hasThemeData && themeContainer) {
       if (themes.length > 0) {
         const maxAbs = Math.max(...themes.map(t => Math.abs(t.avg_return_5d || 0)), 0.01);
         themeContainer.innerHTML = themes.slice(0, 8).map(t => {
-          // strategy_theme_breakdown RPC returns avg_return_5d already as a percentage (e.g. 4.15 = 4.15%)
           const ret = t.avg_return_5d || 0;
           const barW = Math.min(Math.abs(ret) / maxAbs * 100, 100);
           const barColor = ret >= 0 ? '#00DE94' : '#FF4D4D';
@@ -8390,20 +8677,12 @@ async function loadStrategyData() {
             '</div>';
         }).join('');
       } else {
-        // Fallback: show summary fields
-        const fallbackThemes = [
-          { name: d.most_influential_theme, label: 'Most Influential' },
-          { name: d.top_positive_theme, label: 'Top Positive' },
-          { name: d.top_negative_theme, label: 'Top Negative' }
-        ].filter(t => t.name);
         themeContainer.innerHTML = fallbackThemes.map(t =>
           '<div class="theme-row"><div class="tr-name">' + esc(t.name) + '</div><div class="tr-articles" style="color:var(--mp-text-muted);">' + esc(t.label) + '</div></div>'
-        ).join('') || '<div class="theme-row"><div class="tr-name" style="color:var(--mp-text-muted);">No theme data available</div></div>';
+        ).join('');
       }
     }
-    // Theme insight
-    const themeInsight = document.getElementById('strat-theme-insight');
-    if (themeInsight) {
+    if (hasThemeData && themeInsight) {
       if (d.top_negative_theme) {
         themeInsight.innerHTML = '⚠️ <strong style="color:#FFB800;">' + esc(d.top_negative_theme) + '</strong> is the most reliably bearish theme for ' + TICKER + '. When this dominates the feed, expect downside.';
       } else {
@@ -8456,22 +8735,6 @@ async function loadStrategyData() {
       } else {
         pubInsight.innerHTML = 'Publication accuracy based on 10-day directional hit rate with minimum 3 articles.';
       }
-    }
-
-    // ── Strategy Summary ──
-    const summaryEl = document.getElementById('strat-summary');
-    if (summaryEl && d.strategy_summary) {
-      // Highlight key values in the summary
-      let summaryHtml = esc(d.strategy_summary)
-        .replace(/(near_high|dip|pullback|deep_pullback)/g, '<strong>$1</strong>')
-        .replace(/([+-]\d+\.\d+%)/g, function(m) { return '<strong style="color:' + (m.startsWith('+') ? '#00DE94' : '#FF4D4D') + ';">' + m + '</strong>'; });
-      summaryEl.innerHTML = summaryHtml;
-    }
-
-    // ── Data Note ──
-    const noteEl = document.getElementById('strat-data-note-text');
-    if (noteEl) {
-      noteEl.innerHTML = '<strong>All data real, zero fabricated:</strong> ticker_strategy_summary (1 row/ticker aggregate) · article_outcomes (' + totalN + ' articles resolved) · All returns 5-day realized.';
     }
 
     loadingEl.style.display = 'none';
