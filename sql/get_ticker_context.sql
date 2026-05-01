@@ -24,6 +24,16 @@ AS $$
     WHERE ticker = (SELECT sym FROM t)
     LIMIT 1
   ),
+  -- lookup_sector is the value that matches narrative_dots.sector for
+  -- retrieval filtering. The canonical view's sic_sector returns raw SIC
+  -- titles ("SEMICONDUCTORS & RELATED DEVICES") that don't match the corpus,
+  -- which uses cleaner labels like "Semiconductors" / "Technology".
+  lookup_row AS (
+    SELECT sector AS lookup_sector
+    FROM public.ticker_industry_lookup
+    WHERE ticker = (SELECT sym FROM t)
+    LIMIT 1
+  ),
   snap AS (
     SELECT * FROM public.ticker_snapshots
     WHERE ticker = (SELECT sym FROM t)
@@ -92,7 +102,8 @@ AS $$
     'classification', jsonb_build_object(
       'gics_sector',      (SELECT gics_sector FROM classification),
       'dashboard_sector', (SELECT dashboard_sector FROM classification),
-      'sic_sector',       (SELECT sic_sector FROM classification)
+      'sic_sector',       (SELECT sic_sector FROM classification),
+      'lookup_sector',    (SELECT lookup_sector FROM lookup_row)
     ),
     'earnings', jsonb_build_object(
       'last_date',            (SELECT last_earnings_date FROM earn),

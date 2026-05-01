@@ -192,9 +192,11 @@ module.exports = async function (req, res) {
       return send(res, 502, { error: 'Embedding failed: ' + (e.message || 'unknown') });
     }
 
-    // 2. Sector hint for the embedding-search filter — pull from the context
-    //    we already fetched (sic_sector matches narrative_dots.sector format).
-    const sector = context && context.classification && context.classification.sic_sector || null;
+    // 2. Sector hint for the embedding-search filter — use lookup_sector
+    //    (from ticker_industry_lookup), which matches narrative_dots.sector
+    //    format. The canonical view's sic_sector returns raw SIC titles
+    //    ("SEMICONDUCTORS & RELATED DEVICES") that don't match the corpus.
+    const sector = context && context.classification && context.classification.lookup_sector || null;
 
     // 3. RPC similarity search
     let neighbors;
