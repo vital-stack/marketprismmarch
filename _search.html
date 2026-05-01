@@ -8,8 +8,8 @@
 <script defer src="/_vercel/insights/script.js"></script>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Search Tickers — Market Prism</title>
-<meta name="description" content="Search every ticker tracked by Market Prism. Type-ahead lookup by symbol or company name with live NRS scores.">
+<title>Validate any narrative — Market Prism</title>
+<meta name="description" content="Search any stock narrative against 3.5M historical observations. Get a bullshit probability and predicted returns from similar past cases.">
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" type="image/png" href="/assets/Market-Prism-Favicon.png">
 <script>try{if(localStorage.getItem('mp-theme')==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}</script>
@@ -60,6 +60,7 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
 .nav-item:hover{background:var(--mp-surface2);color:var(--mp-text-primary);}
 .nav-item.active{background:var(--mp-cyan);color:#fff;}
 .nav-item svg{width:18px;height:18px;flex-shrink:0;}
+.nav-item-badge{font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px;margin-left:auto;background:rgba(0,174,255,0.15);color:#00AEFF;border:1px solid rgba(0,174,255,0.2);}
 .nav-bottom{padding:12px;border-top:1px solid var(--mp-border);margin-top:auto;}
 .nav-bottom a,.nav-bottom button{
   display:block;width:100%;text-align:left;font-size:12px;color:var(--mp-text-tertiary);
@@ -76,211 +77,168 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
 }
 .topbar-title{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--mp-text-muted);}
 .topbar-right{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--mp-text-tertiary);}
-.topbar-kbd{
-  display:inline-flex;align-items:center;justify-content:center;
-  min-width:22px;height:22px;padding:0 6px;border-radius:5px;
-  background:var(--mp-surface2);border:1px solid var(--mp-border);
-  font-size:11px;font-weight:600;color:var(--mp-text-secondary);
-  font-family:var(--font-body);
-}
 .page-content{padding:48px 28px 64px;max-width:880px;margin:0 auto;}
 
 /* ── HERO ───────────────────────────────────────────────────────────────── */
-.search-hero{margin-bottom:32px;text-align:left;}
+.search-hero{margin-bottom:32px;}
 .search-eyebrow{
   font-size:11px;font-weight:500;letter-spacing:.10em;text-transform:uppercase;
   color:var(--mp-text-secondary);margin-bottom:14px;
   display:flex;align-items:center;gap:10px;
 }
-.search-eyebrow::before{
-  content:'';width:24px;height:1px;background:var(--mp-cyan);
-}
+.search-eyebrow::before{content:'';width:24px;height:1px;background:var(--mp-cyan);}
 .search-h{
   font-family:'Instrument Serif',var(--font-display);
   font-size:clamp(28px,3.2vw,42px);font-weight:400;
-  letter-spacing:-0.025em;line-height:1.05;
-  color:var(--mp-text-primary);
+  letter-spacing:-0.025em;line-height:1.05;color:var(--mp-text-primary);
 }
 .search-h em{
   font-style:italic;display:block;
-  font-size:clamp(32px,3.8vw,50px);
-  color:var(--mp-cyan-soft);
-  font-family:'Instrument Serif',var(--font-display);
-  font-weight:400;
+  font-size:clamp(32px,3.8vw,50px);color:var(--mp-cyan-soft);
+  font-family:'Instrument Serif',var(--font-display);font-weight:400;
 }
 .search-sub{
   margin-top:14px;font-size:14px;color:var(--mp-text-tertiary);
-  max-width:560px;line-height:1.5;
+  max-width:620px;line-height:1.5;
 }
 
-/* ── SEARCH FIELD + DROPDOWN ────────────────────────────────────────────── */
-.search-shell{position:relative;margin-top:28px;}
-.search-input-wrap{
-  position:relative;display:flex;align-items:center;
-  background:var(--mp-surface);border:1px solid var(--mp-border);
-  border-radius:14px;padding:0 18px;height:60px;
-  box-shadow:var(--mp-card-shadow);
-  transition:border-color .15s,box-shadow .15s;
-}
-.search-input-wrap:focus-within{
-  border-color:var(--mp-cyan);
-  box-shadow:0 0 0 3px rgba(0,174,255,0.12),0 4px 16px rgba(0,0,0,0.4);
-}
-.search-icon{
-  flex-shrink:0;width:18px;height:18px;color:var(--mp-text-tertiary);margin-right:12px;
-}
-.search-input{
-  flex:1;border:none;background:none;outline:none;
-  font-family:var(--font-body);font-size:16px;font-weight:400;
-  color:var(--mp-text-primary);min-width:0;
-}
-.search-input::placeholder{color:var(--mp-text-muted);}
-.search-spinner{
-  width:14px;height:14px;border:2px solid var(--mp-border-hover);
-  border-top-color:var(--mp-cyan);border-radius:50%;
-  animation:spin .7s linear infinite;display:none;flex-shrink:0;
-}
-.search-shell.is-loading .search-spinner{display:block;}
-@keyframes spin{to{transform:rotate(360deg);}}
-.search-slash{
-  display:inline-flex;align-items:center;justify-content:center;
-  min-width:22px;height:22px;padding:0 6px;border-radius:5px;
-  background:var(--mp-surface2);border:1px solid var(--mp-border);
-  font-size:11px;font-weight:600;color:var(--mp-text-secondary);
-  font-family:var(--font-body);margin-left:8px;
-}
-.search-shell.is-active .search-slash{display:none;}
-
-.search-dropdown{
-  position:absolute;top:calc(100% + 6px);left:0;right:0;
-  background:var(--mp-surface);border:1px solid var(--mp-border);
-  border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,0.5);
-  z-index:30;max-height:520px;overflow:hidden;
-  display:none;
-}
-.search-shell.is-open .search-dropdown{display:flex;flex-direction:column;}
-
-.dd-section-lbl{
-  font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;
-  color:var(--mp-text-muted);padding:12px 16px 6px;
-}
-.dd-list{flex:1;overflow-y:auto;padding:0 6px 8px;}
-.dd-list::-webkit-scrollbar{width:6px;}
-.dd-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:6px;}
-
-.dd-row{
-  display:flex;align-items:center;gap:14px;
-  padding:11px 12px;border-radius:10px;cursor:pointer;
-  transition:background .12s;
-  text-decoration:none;color:inherit;
-}
-.dd-row + .dd-row{margin-top:1px;}
-.dd-row:hover,.dd-row.is-cursor{background:var(--mp-surface2);}
-.dd-row.is-cursor{outline:1px solid var(--mp-cyan);outline-offset:-1px;}
-
-.dd-symbol{
-  font-size:15px;font-weight:700;color:var(--mp-text-primary);
-  min-width:62px;letter-spacing:.01em;
-}
-.dd-symbol mark{background:rgba(0,174,255,0.20);color:var(--mp-cyan);padding:0 1px;border-radius:2px;}
-.dd-name{
-  flex:1;font-size:13px;color:var(--mp-text-secondary);
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.4;
-}
-.dd-name mark{background:rgba(0,174,255,0.18);color:var(--mp-text-primary);padding:0 1px;border-radius:2px;}
-.dd-sector{
-  font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;
-  padding:3px 8px;border-radius:4px;
-  background:rgba(255,255,255,0.04);border:1px solid var(--mp-border);
-  color:var(--mp-text-tertiary);white-space:nowrap;flex-shrink:0;
-}
-.dd-nrs{
-  font-size:11px;font-weight:700;
-  padding:3px 8px;border-radius:5px;min-width:42px;text-align:center;
-  flex-shrink:0;font-family:var(--font-body);
-}
-.dd-nrs.bull{background:rgba(0,222,148,0.10);color:var(--mp-green);border:1px solid rgba(0,222,148,0.25);}
-.dd-nrs.bear{background:rgba(255,77,77,0.10);color:var(--mp-red);border:1px solid rgba(255,77,77,0.25);}
-.dd-nrs.neut{background:rgba(0,174,255,0.08);color:var(--mp-cyan);border:1px solid rgba(0,174,255,0.20);}
-.dd-nrs.miss{background:transparent;color:var(--mp-text-muted);border:1px dashed var(--mp-border-hover);}
-
-/* Live price (right of company name, left of sector) */
-.dd-quote{
-  display:inline-flex;align-items:baseline;gap:6px;flex-shrink:0;
-  font-family:var(--font-body);min-width:96px;justify-content:flex-end;
-}
-.dd-quote-px{font-size:13px;font-weight:600;color:var(--mp-text-primary);font-variant-numeric:tabular-nums;}
-.dd-quote-pct{font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;}
-.dd-quote-pct.up{color:var(--mp-green);}
-.dd-quote-pct.dn{color:var(--mp-red);}
-.dd-quote-pct.flat{color:var(--mp-text-tertiary);}
-.dd-quote-skel{
-  display:inline-block;height:11px;width:60px;border-radius:3px;
-  background:linear-gradient(90deg,var(--mp-surface2) 0%,var(--mp-border-hover) 50%,var(--mp-surface2) 100%);
-  background-size:200% 100%;animation:skel 1.2s linear infinite;
-}
-@keyframes skel{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
-.dd-quote-miss{font-size:11px;color:var(--mp-text-muted);}
-
-.dd-empty{padding:24px 16px;text-align:center;color:var(--mp-text-tertiary);font-size:13px;}
-.dd-footer{
-  padding:8px 14px;border-top:1px solid var(--mp-border);
-  display:flex;justify-content:space-between;align-items:center;
-  font-size:11px;color:var(--mp-text-muted);
-}
-.dd-footer .kbd{
-  display:inline-flex;align-items:center;justify-content:center;
-  min-width:18px;height:18px;padding:0 5px;border-radius:4px;
-  background:var(--mp-surface2);border:1px solid var(--mp-border);
-  font-size:10px;font-weight:600;color:var(--mp-text-secondary);
-  margin:0 3px;
-}
-
-/* ── BELOW-FOLD CONTEXT ─────────────────────────────────────────────────── */
-.universe-strip{
-  margin-top:36px;padding:18px 20px;
+/* ── FORM ───────────────────────────────────────────────────────────────── */
+.search-form{
+  margin-top:28px;padding:24px;
   background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:14px;
-  display:flex;align-items:center;gap:24px;flex-wrap:wrap;
-  box-shadow:var(--mp-card-shadow);
-  position:relative;overflow:hidden;
+  box-shadow:var(--mp-card-shadow);position:relative;overflow:hidden;
 }
-.universe-strip::before{
+.search-form::before{
   content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--mp-cyan);opacity:.3;
 }
-.us-stat{display:flex;flex-direction:column;gap:2px;min-width:80px;}
-.us-stat-v{font-size:18px;font-weight:700;color:var(--mp-text-primary);}
-.us-stat-l{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--mp-text-muted);}
-.us-stat .pulse{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--mp-green);margin-right:6px;animation:pulse 2s ease-in-out infinite;}
-@keyframes pulse{0%,100%{opacity:.4;}50%{opacity:1;}}
-.us-divider{width:1px;height:32px;background:var(--mp-border);}
-.us-tip{flex:1;font-size:12px;color:var(--mp-text-tertiary);min-width:200px;line-height:1.5;}
-.us-tip kbd{
-  display:inline-flex;align-items:center;justify-content:center;
-  min-width:18px;height:18px;padding:0 5px;border-radius:4px;
-  background:var(--mp-surface2);border:1px solid var(--mp-border);
-  font-size:10px;font-weight:600;color:var(--mp-text-secondary);
-  font-family:var(--font-body);margin:0 2px;
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+.field-lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--mp-text-muted);}
+.field input,.field textarea{
+  width:100%;padding:12px 14px;border-radius:10px;
+  background:var(--mp-obsidian);border:1px solid var(--mp-border);
+  font-family:var(--font-body);font-size:14px;font-weight:400;
+  color:var(--mp-text-primary);outline:none;
+  transition:border-color .15s,box-shadow .15s;
+}
+.field input:focus,.field textarea:focus{
+  border-color:var(--mp-cyan);box-shadow:0 0 0 3px rgba(0,174,255,0.12);
+}
+.field input::placeholder,.field textarea::placeholder{color:var(--mp-text-muted);}
+.field-ticker{text-transform:uppercase;letter-spacing:.04em;font-weight:600;font-size:16px;}
+.field-narrative{resize:vertical;min-height:90px;line-height:1.5;}
+.field-hint{font-size:11px;color:var(--mp-text-muted);margin-top:2px;}
+
+.search-btn{
+  width:100%;padding:14px 18px;margin-top:6px;border-radius:10px;
+  background:var(--mp-cyan);color:#fff;border:none;cursor:pointer;
+  font-family:var(--font-body);font-size:14px;font-weight:600;letter-spacing:.02em;
+  transition:filter .15s,transform .15s;
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+}
+.search-btn:hover:not(:disabled){filter:brightness(1.1);}
+.search-btn:active:not(:disabled){transform:translateY(1px);}
+.search-btn:disabled{opacity:.45;cursor:not-allowed;}
+.btn-spinner{
+  width:14px;height:14px;border:2px solid rgba(255,255,255,0.4);
+  border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none;
+}
+.search-btn.is-loading .btn-spinner{display:inline-block;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.search-error{
+  margin-top:14px;padding:12px 14px;border-radius:10px;
+  background:rgba(255,77,77,0.08);border:1px solid rgba(255,77,77,0.25);
+  font-size:13px;color:var(--mp-red);line-height:1.5;display:none;
+}
+.search-error.show{display:block;}
+
+/* ── RESULTS ────────────────────────────────────────────────────────────── */
+.results{margin-top:32px;display:none;}
+.results.show{display:block;animation:fadeIn .4s ease both;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+.bs-hero{
+  text-align:center;padding:40px 24px;margin-bottom:24px;
+  background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:16px;
+  box-shadow:var(--mp-card-shadow);position:relative;overflow:hidden;
+}
+.bs-hero::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.bs-hero.high::before{background:var(--mp-red);}
+.bs-hero.med::before{background:var(--mp-amber);}
+.bs-hero.low::before{background:var(--mp-green);}
+.bs-eyebrow{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--mp-text-muted);margin-bottom:10px;}
+.bs-num{
+  font-family:var(--font-body);font-size:clamp(72px,9vw,108px);font-weight:700;
+  letter-spacing:-0.04em;line-height:1;font-variant-numeric:tabular-nums;
+}
+.bs-num.high{color:var(--mp-red);}
+.bs-num.med{color:var(--mp-amber);}
+.bs-num.low{color:var(--mp-green);}
+.bs-lbl{
+  font-family:'Instrument Serif',var(--font-display);
+  font-size:22px;font-weight:400;color:var(--mp-text-primary);
+  margin-top:6px;letter-spacing:-0.015em;
+}
+.bs-meta{
+  font-size:12px;color:var(--mp-text-tertiary);margin-top:8px;
+  display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;
+}
+.bs-meta strong{color:var(--mp-text-secondary);font-weight:600;}
+.bs-warn{
+  margin-top:14px;font-size:12px;color:var(--mp-amber);
+  display:inline-flex;align-items:center;gap:6px;
 }
 
-/* ── RECENT (chips, when input empty) ───────────────────────────────────── */
-.recent-section{margin-top:28px;}
-.recent-lbl{
-  font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;
-  color:var(--mp-text-muted);margin-bottom:10px;display:flex;align-items:center;gap:8px;
+.pred-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px;}
+.pred-cell{
+  background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:12px;
+  padding:18px 16px;text-align:center;box-shadow:var(--mp-card-shadow);
 }
-.recent-chips{display:flex;gap:8px;flex-wrap:wrap;}
-.recent-chip{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:8px 14px;border-radius:10px;
-  background:var(--mp-surface);border:1px solid var(--mp-border);
-  font-size:13px;font-weight:600;color:var(--mp-text-primary);
-  text-decoration:none;cursor:pointer;transition:all .15s;
-  font-family:var(--font-body);
+.pred-lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--mp-text-muted);margin-bottom:8px;}
+.pred-val{
+  font-family:var(--font-body);font-size:24px;font-weight:700;
+  letter-spacing:-0.02em;font-variant-numeric:tabular-nums;
 }
-.recent-chip:hover{border-color:var(--mp-cyan);color:var(--mp-cyan);transform:translateY(-1px);}
-.recent-chip .chip-name{font-size:11px;font-weight:400;color:var(--mp-text-tertiary);}
-.recent-chip:hover .chip-name{color:var(--mp-text-secondary);}
-.recent-empty{font-size:13px;color:var(--mp-text-tertiary);font-style:italic;}
+.pred-val.up{color:var(--mp-green);}
+.pred-val.dn{color:var(--mp-red);}
+.pred-val.flat{color:var(--mp-text-tertiary);}
+
+.section-lbl{
+  font-family:'Instrument Serif',var(--font-display);
+  font-size:24px;font-weight:400;letter-spacing:-0.02em;
+  margin:8px 0 14px;color:var(--mp-text-primary);
+}
+
+.neighbor{
+  background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:12px;
+  padding:16px 18px;margin-bottom:10px;box-shadow:var(--mp-card-shadow);
+  transition:border-color .15s,transform .15s;
+}
+.neighbor:hover{border-color:var(--mp-border-hover);transform:translateY(-1px);}
+.nb-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px;}
+.nb-tk{font-size:14px;font-weight:700;color:var(--mp-text-primary);}
+.nb-date{font-size:11px;color:var(--mp-text-muted);margin-left:8px;}
+.nb-sim{
+  font-size:11px;font-weight:600;padding:3px 8px;border-radius:5px;
+  background:rgba(0,174,255,0.08);color:var(--mp-cyan);border:1px solid rgba(0,174,255,0.20);
+  font-variant-numeric:tabular-nums;
+}
+.nb-narr{font-size:13px;color:var(--mp-text-secondary);line-height:1.55;margin-bottom:10px;}
+.nb-foot{
+  font-size:11px;color:var(--mp-text-tertiary);
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+}
+.nb-foot .v.up{color:var(--mp-green);font-weight:600;}
+.nb-foot .v.dn{color:var(--mp-red);font-weight:600;}
+.nb-foot .v.flat{color:var(--mp-text-tertiary);}
+
+.results-actions{margin-top:24px;display:flex;gap:12px;align-items:center;}
+.link-btn{
+  background:none;border:none;cursor:pointer;font-family:var(--font-body);
+  font-size:13px;font-weight:500;color:var(--mp-cyan);text-decoration:none;
+  padding:8px 0;
+}
+.link-btn:hover{text-decoration:underline;}
 
 /* ── RESPONSIVE ─────────────────────────────────────────────────────────── */
 @media(max-width:768px){
@@ -288,10 +246,8 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
   .main{margin-left:0;}
   .topbar{padding:12px 16px;}
   .page-content{padding:24px 16px 48px;}
-  .dd-symbol{min-width:54px;font-size:14px;}
-  .dd-sector{display:none;}
-  .universe-strip{padding:14px 16px;gap:14px;}
-  .us-divider{display:none;}
+  .pred-grid{grid-template-columns:1fr;}
+  .bs-hero{padding:28px 16px;}
 }
 </style>
 </head>
@@ -321,7 +277,7 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
     <div class="nav-section-lbl">testing:</div>
     <a class="nav-item active" href="/search">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-      Search Tickers
+      Validate Narrative
       <span class="nav-item-badge" style="background:rgba(255,184,0,0.15);color:#FFB800;border-color:rgba(255,184,0,0.3);">TESTING</span>
     </a>
   </div>
@@ -334,10 +290,8 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
 <!-- ═══ MAIN ═══ -->
 <div class="main">
   <div class="topbar">
-    <div class="topbar-title">Search</div>
-    <div class="topbar-right">
-      <span>Press</span><span class="topbar-kbd">/</span><span>anywhere to focus</span>
-    </div>
+    <div class="topbar-title">Validate Narrative</div>
+    <div class="topbar-right"><span>Pattern-match against 3.5M historical observations</span></div>
   </div>
 
   <div class="page-content">
@@ -346,85 +300,65 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
       <div class="search-eyebrow">
         <span>Market Prism</span>
         <span style="color:var(--mp-text-muted);">·</span>
-        <span>Universe Lookup</span>
+        <span>Narrative Validation</span>
       </div>
-      <div class="search-h">Find any ticker.<em>Search the prism.</em></div>
-      <div class="search-sub">Type-ahead lookup across every ticker in the Prism universe — by symbol or company name. Hit <kbd style="font-family:inherit;background:var(--mp-surface2);border:1px solid var(--mp-border);padding:1px 5px;border-radius:4px;font-size:11px;">Enter</kbd> to open the full narrative scorecard.</div>
+      <div class="search-h">Validate any narrative.<em>What's the bullshit?</em></div>
+      <div class="search-sub">Paste a headline, tweet, or claim about any stock — including ones outside our tracked universe. We'll embed it, find the closest historical analogues, and aggregate what actually happened next.</div>
     </div>
 
-    <!-- ── SEARCH ── -->
-    <div class="search-shell" id="search-shell">
-      <div class="search-input-wrap">
-        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-        <input
-          id="search-input"
-          class="search-input"
-          type="text"
-          autocomplete="off"
-          spellcheck="false"
-          placeholder="Search ticker (e.g. AAPL, Apple)"
-          aria-label="Search for a ticker"
-          aria-autocomplete="list"
-          aria-controls="search-dropdown"
-        >
-        <div class="search-spinner"></div>
-        <span class="search-slash" title="Press / to focus">/</span>
+    <!-- ── FORM ── -->
+    <form class="search-form" id="search-form" onsubmit="return false;">
+      <div class="field">
+        <label class="field-lbl" for="f-ticker">Ticker</label>
+        <input id="f-ticker" class="field-ticker" type="text" autocomplete="off" spellcheck="false"
+               placeholder="AMD" maxlength="10" aria-label="Ticker symbol">
+        <div class="field-hint">Any US-listed symbol — doesn't need to be in our tracked universe.</div>
+      </div>
+      <div class="field">
+        <label class="field-lbl" for="f-narrative">Narrative</label>
+        <textarea id="f-narrative" class="field-narrative" rows="3" spellcheck="true"
+                  placeholder="Paste the headline or claim you're hearing — e.g. 'AMD's MI300 will eat NVIDIA's data-center share by 2026.'"
+                  aria-label="Narrative text"></textarea>
+        <div class="field-hint">A sentence or two works. We embed this and search for the closest matches in 3.5M past observations.</div>
+      </div>
+      <button class="search-btn" id="search-btn" type="button">
+        <span class="btn-spinner"></span>
+        <span id="btn-label">Search 3.5M historical observations</span>
+      </button>
+      <div class="search-error" id="search-error"></div>
+    </form>
+
+    <!-- ── RESULTS ── -->
+    <div class="results" id="results">
+      <div class="bs-hero" id="bs-hero">
+        <div class="bs-eyebrow">Bullshit Probability</div>
+        <div class="bs-num" id="bs-num">—%</div>
+        <div class="bs-lbl" id="bs-lbl">Aggregated from similar past cases</div>
+        <div class="bs-meta" id="bs-meta"></div>
+        <div class="bs-warn" id="bs-warn" style="display:none;"></div>
       </div>
 
-      <div class="search-dropdown" id="search-dropdown" role="listbox">
-        <div class="dd-section-lbl" id="dd-section-lbl">Results</div>
-        <div class="dd-list" id="dd-list"></div>
-        <div class="dd-footer">
-          <span><span class="kbd">↑</span><span class="kbd">↓</span> navigate · <span class="kbd">↵</span> open · <span class="kbd">Esc</span> close</span>
-          <span id="dd-count"></span>
-        </div>
+      <div class="pred-grid" id="pred-grid">
+        <div class="pred-cell"><div class="pred-lbl">Predicted 5d</div><div class="pred-val flat" id="pred-5d">—</div></div>
+        <div class="pred-cell"><div class="pred-lbl">Predicted 10d</div><div class="pred-val flat" id="pred-10d">—</div></div>
+        <div class="pred-cell"><div class="pred-lbl">Predicted 20d</div><div class="pred-val flat" id="pred-20d">—</div></div>
       </div>
-    </div>
 
-    <!-- ── RECENT ── -->
-    <div class="recent-section" id="recent-section">
-      <div class="recent-lbl">Recent tickers</div>
-      <div class="recent-chips" id="recent-chips">
-        <span class="recent-empty">Visit any ticker page and it'll show up here.</span>
-      </div>
-    </div>
+      <div class="section-lbl">Three similar historical cases</div>
+      <div id="neighbors"></div>
 
-    <!-- ── UNIVERSE STRIP ── -->
-    <div class="universe-strip" id="universe-strip">
-      <div class="us-stat">
-        <div class="us-stat-v"><span class="pulse"></span><span id="us-count">—</span></div>
-        <div class="us-stat-l">Tickers tracked</div>
-      </div>
-      <div class="us-divider"></div>
-      <div class="us-stat">
-        <div class="us-stat-v" id="us-scored">—</div>
-        <div class="us-stat-l">Scored today</div>
-      </div>
-      <div class="us-divider"></div>
-      <div class="us-stat">
-        <div class="us-stat-v" id="us-date">—</div>
-        <div class="us-stat-l">Latest snapshot</div>
-      </div>
-      <div class="us-tip">
-        Tip: type any letters and we'll match by symbol prefix or anywhere in the company name. Hit <kbd>↵</kbd> on a result to open it.
+      <div class="results-actions">
+        <button class="link-btn" id="reset-btn" type="button">← New search</button>
       </div>
     </div>
 
   </div>
 </div>
 
-<!-- ═══ DATA + LOGIC ═══ -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script id="__env_script">window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '', SCHOLAR_ENABLED: '', ANTHROPIC_KEY: '', MASSIVE_API: '' };</script>
 <script>
 (function(){
   'use strict';
 
-  var SUPABASE_URL  = (window.__env || {}).SUPABASE_URL  || '';
-  var SUPABASE_ANON = (window.__env || {}).SUPABASE_ANON || '';
-  var hdrs = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON, 'Accept': 'application/json' };
-
-  // ── Theme toggle ──────────────────────────────────────────────────────────
   window.toggleTheme = function(){
     var cur = document.documentElement.getAttribute('data-theme') || 'dark';
     var next = cur === 'dark' ? 'light' : 'dark';
@@ -432,335 +366,168 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
     try { localStorage.setItem('mp-theme', next); } catch(_){}
   };
 
-  // ── Util ─────────────────────────────────────────────────────────────────
   function esc(s){
     return s == null ? '' : (s+'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
-  function debounce(fn, ms){
-    var t; return function(){ clearTimeout(t); var a=arguments,c=this; t=setTimeout(function(){fn.apply(c,a);},ms); };
+  function fmtPct(v){
+    if (v == null || isNaN(v)) return '—';
+    var n = Number(v) * 100;
+    return (n >= 0 ? '+' : '') + n.toFixed(1) + '%';
   }
-  function highlight(text, q){
-    if (!q) return esc(text);
-    var safe = esc(text);
-    var pattern = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    return safe.replace(new RegExp('(' + pattern + ')', 'ig'), '<mark>$1</mark>');
-  }
-  function nrsBucket(nrs, verdict){
-    if (nrs == null && !verdict) return 'miss';
-    var v = (verdict||'').toLowerCase();
-    if (v.indexOf('support') >= 0 || v.indexOf('bull') >= 0) return 'bull';
-    if (v.indexOf('break') >= 0 || v.indexOf('bear') >= 0 || v.indexOf('reject') >= 0) return 'bear';
-    if (typeof nrs === 'number') {
-      if (nrs >= 60) return 'bull';
-      if (nrs <= 40) return 'bear';
-    }
-    return 'neut';
+  function dirClass(v){
+    if (v == null || isNaN(v)) return 'flat';
+    return v > 0 ? 'up' : (v < 0 ? 'dn' : 'flat');
   }
 
-  // ── State ────────────────────────────────────────────────────────────────
-  var UNIVERSE = [];               // [{ticker, name, sector}]
-  var SCORECARDS = new Map();      // ticker -> {nrs, verdict}
-  var QUOTES = new Map();          // ticker -> {price, change, changePct, fetchedAt}
-  var QUOTES_INFLIGHT = new Map(); // ticker -> Promise (dedupe concurrent fetches)
-  var QUOTE_TTL_MS = 30 * 1000;    // 30s — matches batch endpoint's 15s edge cache
-  var LATEST_DATE = null;
-  var current = { query: '', results: [], cursor: -1, fetchSeq: 0 };
+  var form     = document.getElementById('search-form');
+  var btn      = document.getElementById('search-btn');
+  var btnLbl   = document.getElementById('btn-label');
+  var errorEl  = document.getElementById('search-error');
+  var inpTk    = document.getElementById('f-ticker');
+  var inpNarr  = document.getElementById('f-narrative');
+  var resultsEl= document.getElementById('results');
+  var bsHero   = document.getElementById('bs-hero');
+  var bsNum    = document.getElementById('bs-num');
+  var bsLbl    = document.getElementById('bs-lbl');
+  var bsMeta   = document.getElementById('bs-meta');
+  var bsWarn   = document.getElementById('bs-warn');
+  var pred5    = document.getElementById('pred-5d');
+  var pred10   = document.getElementById('pred-10d');
+  var pred20   = document.getElementById('pred-20d');
+  var neighborsEl = document.getElementById('neighbors');
+  var resetBtn = document.getElementById('reset-btn');
 
-  // ── DOM ──────────────────────────────────────────────────────────────────
-  var shell    = document.getElementById('search-shell');
-  var input    = document.getElementById('search-input');
-  var dd       = document.getElementById('search-dropdown');
-  var ddList   = document.getElementById('dd-list');
-  var ddLbl    = document.getElementById('dd-section-lbl');
-  var ddCount  = document.getElementById('dd-count');
-  var recentEl = document.getElementById('recent-chips');
-  var usCount  = document.getElementById('us-count');
-  var usScored = document.getElementById('us-scored');
-  var usDate   = document.getElementById('us-date');
-
-  // ── Recent tickers (localStorage) ────────────────────────────────────────
-  function readRecent(){
-    try {
-      var raw = localStorage.getItem('recentTickers');
-      var arr = raw ? JSON.parse(raw) : [];
-      return Array.isArray(arr) ? arr.filter(function(t){ return /^[A-Z0-9.\-]{1,8}$/.test(t); }).slice(0, 5) : [];
-    } catch(_){ return []; }
+  function setLoading(on){
+    btn.classList.toggle('is-loading', on);
+    btn.disabled = on;
+    btnLbl.textContent = on ? 'Searching…' : 'Search 3.5M historical observations';
   }
-  function nameFor(t){
-    var hit = UNIVERSE.find(function(r){ return r.ticker === t; });
-    return hit && hit.name ? hit.name : '';
+  function showError(msg){
+    errorEl.textContent = msg;
+    errorEl.classList.add('show');
   }
-  function renderRecent(){
-    var list = readRecent();
-    if (!list.length) {
-      recentEl.innerHTML = '<span class="recent-empty">Visit any ticker page and it\'ll show up here.</span>';
-      return;
-    }
-    recentEl.innerHTML = list.map(function(t){
-      var n = nameFor(t);
-      return '<a class="recent-chip" href="/ticker/' + encodeURIComponent(t) + '">' +
-             '<span>' + esc(t) + '</span>' +
-             (n ? '<span class="chip-name">' + esc(n) + '</span>' : '') +
-             '</a>';
-    }).join('');
+  function clearError(){
+    errorEl.textContent = '';
+    errorEl.classList.remove('show');
+  }
+  function reset(){
+    resultsEl.classList.remove('show');
+    inpNarr.value = '';
+    inpTk.value = '';
+    inpTk.focus();
+    clearError();
   }
 
-  // ── Data load ────────────────────────────────────────────────────────────
-  function loadUniverse(){
-    if (!SUPABASE_URL || !SUPABASE_ANON) {
-      console.warn('[search] Supabase env missing — universe will be empty.');
-      return Promise.resolve([]);
-    }
-    var url = SUPABASE_URL + '/rest/v1/ticker_industry_lookup' +
-              '?select=ticker,name,sector&order=ticker.asc&limit=2000';
-    return fetch(url, { headers: hdrs })
-      .then(function(r){ return r.ok ? r.json() : []; })
-      .then(function(rows){
-        UNIVERSE = (rows || [])
-          .filter(function(r){ return r && r.ticker; })
-          .map(function(r){
-            return {
-              ticker: String(r.ticker).toUpperCase(),
-              name: r.name || '',
-              sector: r.sector || ''
-            };
-          });
-        usCount.textContent = UNIVERSE.length.toLocaleString();
-        return UNIVERSE;
-      })
-      .catch(function(){ return []; });
-  }
+  resetBtn.addEventListener('click', reset);
 
-  function loadLatestScorecards(){
-    if (!SUPABASE_URL || !SUPABASE_ANON) return Promise.resolve();
-    return fetch(SUPABASE_URL + '/rest/v1/narrative_scorecard?select=snapshot_date&order=snapshot_date.desc&limit=1', { headers: hdrs })
-      .then(function(r){ return r.ok ? r.json() : []; })
-      .then(function(rows){
-        if (!rows || !rows.length) return;
-        LATEST_DATE = rows[0].snapshot_date;
-        usDate.textContent = (function(d){
-          try { return new Date(d+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}); }
-          catch(_){ return d; }
-        })(LATEST_DATE);
-        var scUrl = SUPABASE_URL + '/rest/v1/narrative_scorecard' +
-                    '?select=ticker,nrs,verdict' +
-                    '&snapshot_date=eq.' + encodeURIComponent(LATEST_DATE) +
-                    '&limit=2000';
-        return fetch(scUrl, { headers: hdrs })
-          .then(function(r){ return r.ok ? r.json() : []; })
-          .then(function(scRows){
-            (scRows || []).forEach(function(r){
-              if (r.ticker) SCORECARDS.set(String(r.ticker).toUpperCase(), { nrs: r.nrs, verdict: r.verdict });
-            });
-            usScored.textContent = SCORECARDS.size.toLocaleString();
-          });
-      })
-      .catch(function(){});
-  }
+  inpTk.addEventListener('input', function(){
+    inpTk.value = inpTk.value.toUpperCase().replace(/[^A-Z0-9.\-]/g, '');
+  });
 
-  // ── Search ───────────────────────────────────────────────────────────────
-  function searchUniverse(q){
-    if (!q) return [];
-    var qU = q.toUpperCase();
-    var qL = q.toLowerCase();
-    var prefix = [], nameHits = [], midSym = [];
-    for (var i = 0; i < UNIVERSE.length; i++) {
-      var row = UNIVERSE[i];
-      var sym = row.ticker;
-      var nameLow = (row.name || '').toLowerCase();
-      if (sym.indexOf(qU) === 0) {
-        prefix.push(row);
-      } else if (nameLow.indexOf(qL) >= 0) {
-        nameHits.push(row);
-      } else if (sym.indexOf(qU) > 0) {
-        midSym.push(row);
+  // Submit on Enter (textarea: Ctrl/Cmd+Enter to submit, plain Enter inserts newline)
+  inpNarr.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); submit(); }
+  });
+  inpTk.addEventListener('keydown', function(e){
+    if (e.key === 'Enter') { e.preventDefault(); inpNarr.focus(); }
+  });
+  btn.addEventListener('click', submit);
+
+  function submit(){
+    clearError();
+    var ticker = (inpTk.value || '').trim().toUpperCase();
+    var narrative = (inpNarr.value || '').trim();
+    if (!ticker) { showError('Enter a ticker symbol.'); inpTk.focus(); return; }
+    if (!narrative) { showError('Paste the narrative or headline you want to validate.'); inpNarr.focus(); return; }
+    if (narrative.length < 10) { showError('Narrative is too short — give us at least a sentence to work with.'); inpNarr.focus(); return; }
+
+    setLoading(true);
+    fetch('/api/dots-predict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ticker: ticker, narrativeText: narrative })
+    })
+    .then(function(r){
+      return r.json().then(function(j){ return { ok: r.ok, status: r.status, body: j }; });
+    })
+    .then(function(res){
+      setLoading(false);
+      if (!res.ok) {
+        showError((res.body && res.body.error) || ('Request failed (HTTP ' + res.status + ').'));
+        return;
       }
-      if (prefix.length >= 8) break;
-    }
-    var combined = prefix.concat(midSym, nameHits).slice(0, 8);
-    var seen = {};
-    return combined.filter(function(r){ if (seen[r.ticker]) return false; seen[r.ticker] = true; return true; });
-  }
-
-  function renderResults(q, rows){
-    current.results = rows;
-    current.cursor = rows.length ? 0 : -1;
-
-    if (!q) {
-      ddLbl.textContent = 'Start typing to search';
-      ddList.innerHTML = '<div class="dd-empty">Type a ticker symbol or company name.</div>';
-      ddCount.textContent = '';
-      return;
-    }
-    if (!rows.length) {
-      ddLbl.textContent = 'No results';
-      ddList.innerHTML = '<div class="dd-empty">No tickers match &lsquo;<strong>' + esc(q) + '</strong>&rsquo;.</div>';
-      ddCount.textContent = '0 matches';
-      return;
-    }
-    ddLbl.textContent = 'Tickers (' + rows.length + ')';
-    ddList.innerHTML = rows.map(function(r, idx){
-      var sc = SCORECARDS.get(r.ticker);
-      var nrs = sc && typeof sc.nrs === 'number' ? sc.nrs : null;
-      var bucket = nrsBucket(nrs, sc && sc.verdict);
-      var nrsLabel = nrs != null ? Math.round(nrs) : '—';
-      return '<a class="dd-row' + (idx === 0 ? ' is-cursor' : '') + '" data-idx="' + idx +
-             '" href="/ticker/' + encodeURIComponent(r.ticker) + '">' +
-             '<span class="dd-symbol">' + highlight(r.ticker, q) + '</span>' +
-             '<span class="dd-name">' + (r.name ? highlight(r.name, q) : '<span style="color:var(--mp-text-muted);">—</span>') + '</span>' +
-             '<span class="dd-quote" data-quote-for="' + esc(r.ticker) + '">' + renderQuote(r.ticker) + '</span>' +
-             (r.sector ? '<span class="dd-sector">' + esc(r.sector) + '</span>' : '') +
-             '<span class="dd-nrs ' + bucket + '" title="NRS today">' + nrsLabel + '</span>' +
-             '</a>';
-    }).join('');
-    ddCount.textContent = rows.length + (rows.length === 1 ? ' match' : ' matches');
-    moveCursor(0, true);
-    fetchQuotesForVisible(rows.map(function(r){ return r.ticker; }));
-  }
-
-  // ── Live prices via /api/live-quotes-batch ───────────────────────────────
-  function renderQuote(ticker){
-    var q = QUOTES.get(ticker);
-    if (!q) return '<span class="dd-quote-skel" aria-label="Loading price"></span>';
-    if (q.miss) return '<span class="dd-quote-miss">—</span>';
-    var pct = (q.changePct == null) ? null : Number(q.changePct);
-    var dirClass = pct == null ? 'flat' : (pct > 0 ? 'up' : (pct < 0 ? 'dn' : 'flat'));
-    var pctStr = pct == null ? '' : (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
-    return '<span class="dd-quote-px">$' + Number(q.price).toFixed(2) + '</span>' +
-           (pctStr ? '<span class="dd-quote-pct ' + dirClass + '">' + pctStr + '</span>' : '');
-  }
-
-  function patchQuoteCells(){
-    var cells = ddList.querySelectorAll('[data-quote-for]');
-    cells.forEach(function(el){ el.innerHTML = renderQuote(el.getAttribute('data-quote-for')); });
-  }
-
-  function fetchQuotesForVisible(tickers){
-    var now = Date.now();
-    var toFetch = tickers.filter(function(t){
-      if (QUOTES_INFLIGHT.has(t)) return false;
-      var cached = QUOTES.get(t);
-      return !cached || (now - cached.fetchedAt) > QUOTE_TTL_MS;
-    });
-    if (!toFetch.length) { patchQuoteCells(); return; }
-
-    var seq = ++current.fetchSeq;
-    toFetch.forEach(function(t){ QUOTES_INFLIGHT.set(t, true); });
-
-    var url = '/api/live-quotes-batch?tickers=' + encodeURIComponent(toFetch.join(','));
-    fetch(url)
-      .then(function(r){ return r.ok ? r.json() : null; })
-      .then(function(data){
-        var quotes = (data && data.quotes) || {};
-        toFetch.forEach(function(t){
-          QUOTES_INFLIGHT.delete(t);
-          var q = quotes[t];
-          if (q && typeof q.price === 'number') {
-            QUOTES.set(t, { price: q.price, change: q.change, changePct: q.changePct, fetchedAt: Date.now() });
-          } else {
-            QUOTES.set(t, { miss: true, fetchedAt: Date.now() });
-          }
-        });
-        if (seq === current.fetchSeq) patchQuoteCells();
-      })
-      .catch(function(){
-        toFetch.forEach(function(t){
-          QUOTES_INFLIGHT.delete(t);
-          QUOTES.set(t, { miss: true, fetchedAt: Date.now() });
-        });
-        if (seq === current.fetchSeq) patchQuoteCells();
-      });
-  }
-
-  function moveCursor(delta, absolute){
-    if (!current.results.length) return;
-    var n = current.results.length;
-    if (absolute) current.cursor = delta;
-    else current.cursor = (current.cursor + delta + n) % n;
-    var rows = ddList.querySelectorAll('.dd-row');
-    rows.forEach(function(el, i){
-      el.classList.toggle('is-cursor', i === current.cursor);
-      if (i === current.cursor) {
-        var elTop = el.offsetTop, elBot = elTop + el.offsetHeight;
-        var listEl = ddList;
-        if (elTop < listEl.scrollTop) listEl.scrollTop = elTop;
-        else if (elBot > listEl.scrollTop + listEl.clientHeight) listEl.scrollTop = elBot - listEl.clientHeight;
+      if (res.body.warning === 'no_similar_dots') {
+        showError('No similar narratives found in the corpus. Try a less specific phrasing.');
+        return;
       }
+      render(res.body);
+    })
+    .catch(function(err){
+      setLoading(false);
+      showError('Network error: ' + (err && err.message || 'unknown'));
     });
   }
 
-  function selectCursor(){
-    if (current.cursor < 0 || current.cursor >= current.results.length) return;
-    var pick = current.results[current.cursor];
-    if (pick && pick.ticker) {
-      window.location.href = '/ticker/' + encodeURIComponent(pick.ticker);
+  function render(data){
+    var bs = Math.max(0, Math.min(1, Number(data.bullshit_probability) || 0));
+    var bsPct = Math.round(bs * 100);
+    var bucket = bs >= 0.66 ? 'high' : (bs >= 0.34 ? 'med' : 'low');
+
+    bsHero.classList.remove('high','med','low');
+    bsHero.classList.add(bucket);
+    bsNum.classList.remove('high','med','low');
+    bsNum.classList.add(bucket);
+    bsNum.textContent = bsPct + '%';
+
+    var conf = Math.round(((data.confidence || 0) * 100));
+    var nRes = data.n_resolved_neighbors || 0;
+    var nSim = data.n_similar_dots || 0;
+    bsMeta.innerHTML =
+      'Confidence <strong>' + conf + '%</strong> · ' +
+      '<strong>' + nRes + '</strong> resolved of <strong>' + nSim + '</strong> similar cases';
+
+    if (data.warning === 'sparse_neighborhood') {
+      bsWarn.style.display = 'inline-flex';
+      bsWarn.textContent = '⚠ Sparse data — only ' + nRes + ' similar resolved cases. Treat with caution.';
+    } else {
+      bsWarn.style.display = 'none';
     }
+
+    function setPred(el, v){
+      el.textContent = fmtPct(v);
+      el.classList.remove('up','dn','flat');
+      el.classList.add(dirClass(v));
+    }
+    setPred(pred5,  data.predicted_5d_return);
+    setPred(pred10, data.predicted_10d_return);
+    setPred(pred20, data.predicted_20d_return);
+
+    var nbs = data.neighbor_examples || [];
+    neighborsEl.innerHTML = nbs.length
+      ? nbs.map(function(n){
+          var dt = n.observed_at ? new Date(n.observed_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
+          var simPct = n.similarity != null ? Math.round(Number(n.similarity) * 100) + '% similar' : '';
+          var r10 = n.return_10d;
+          return '<div class="neighbor">' +
+            '<div class="nb-top">' +
+              '<div><span class="nb-tk">' + esc(n.ticker || '—') + '</span><span class="nb-date">' + esc(dt) + '</span></div>' +
+              (simPct ? '<span class="nb-sim">' + esc(simPct) + '</span>' : '') +
+            '</div>' +
+            '<div class="nb-narr">' + esc(n.narrative || '—') + (n.narrative && n.narrative.length >= 200 ? '…' : '') + '</div>' +
+            '<div class="nb-foot">' +
+              '<span>Source: <strong style="color:var(--mp-text-secondary);">' + esc(n.speaker || '—') + '</strong></span>' +
+              '<span>10d return: <span class="v ' + dirClass(r10) + '">' + fmtPct(r10) + '</span></span>' +
+            '</div>' +
+          '</div>';
+        }).join('')
+      : '<div style="color:var(--mp-text-tertiary);font-size:13px;">No example cases available.</div>';
+
+    resultsEl.classList.add('show');
+    resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  // ── Open / close ─────────────────────────────────────────────────────────
-  function openDropdown(){ shell.classList.add('is-open'); shell.classList.add('is-active'); }
-  function closeDropdown(){ shell.classList.remove('is-open'); }
-
-  // ── Wire input ───────────────────────────────────────────────────────────
-  var runSearch = debounce(function(q){
-    shell.classList.remove('is-loading');
-    current.query = q;
-    var rows = searchUniverse(q);
-    renderResults(q, rows);
-    openDropdown();
-  }, 200);
-
-  input.addEventListener('input', function(){
-    var q = input.value.trim();
-    if (!q) {
-      shell.classList.remove('is-loading');
-      shell.classList.remove('is-active');
-      closeDropdown();
-      current.query = '';
-      current.results = [];
-      return;
-    }
-    shell.classList.add('is-loading');
-    runSearch(q);
-  });
-
-  input.addEventListener('focus', function(){
-    shell.classList.add('is-active');
-    if (input.value.trim()) {
-      renderResults(current.query, current.results);
-      openDropdown();
-    }
-  });
-
-  input.addEventListener('keydown', function(e){
-    if (e.key === 'ArrowDown') { e.preventDefault(); openDropdown(); moveCursor(1); }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); moveCursor(-1); }
-    else if (e.key === 'Enter') { e.preventDefault(); selectCursor(); }
-    else if (e.key === 'Escape') { closeDropdown(); input.blur(); }
-  });
-
-  // Click outside to close
-  document.addEventListener('click', function(e){
-    if (!shell.contains(e.target)) closeDropdown();
-  });
-
-  // Global "/" shortcut to focus
-  document.addEventListener('keydown', function(e){
-    if (e.key !== '/') return;
-    var tag = (e.target && e.target.tagName || '').toLowerCase();
-    if (tag === 'input' || tag === 'textarea' || (e.target && e.target.isContentEditable)) return;
-    e.preventDefault();
-    input.focus();
-    input.select();
-  });
-
-  // ── Boot ─────────────────────────────────────────────────────────────────
-  renderRecent();
-  Promise.all([loadUniverse(), loadLatestScorecards()]).then(function(){
-    // Re-render recent now that we have names
-    renderRecent();
-  });
-
+  // Focus the ticker input on mount
+  setTimeout(function(){ inpTk.focus(); }, 100);
 })();
 </script>
 </body>
