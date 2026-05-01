@@ -4237,6 +4237,14 @@ body{
 .lb-arr{font-size:11px;color:var(--mp-text-tertiary);flex-shrink:0;margin-left:2px;}
 .lb-row:hover .lb-arr{color:#00AEFF;}
 .lb-empty{padding:20px 16px;font-size:13px;color:var(--mp-text-tertiary);}
+/* Skeleton rows shown while a board's data loads — pulse softly so the page
+   feels alive without distracting from the real content as it pops in. */
+.lb-row-skeleton{cursor:default;}
+.lb-row-skeleton:hover{background:transparent;}
+.lb-skel-pulse{display:inline-block;background:rgba(255,255,255,0.06);border-radius:4px;animation:lb-skel-pulse 1.6s ease-in-out infinite;}
+.lb-row-skeleton .lb-av.lb-skel-pulse{width:32px;height:32px;border-radius:8px;}
+@keyframes lb-skel-pulse{0%,100%{opacity:.5;}50%{opacity:1;}}
+.lb-section-loading{position:relative;}
 @media(max-width:767px){#lb-grid{grid-template-columns:1fr!important;}}
 
 /* ── Leaderboard Toolbar ── */
@@ -17263,12 +17271,59 @@ function renderEmpty(b){
     subtitle='Error';
     emptyMsg='AI picks unavailable: '+lbEsc(window.__lbAiPicksError);
   }
-  return '<div class="lb-section">'
+  return '<div class="lb-section" data-board-id="'+lbEsc(b.id)+'">'
+    +'<div class="lb-accent" style="background:'+b.color+';opacity:.4;"></div>'
     +'<div class="lb-head"><div class="lb-icon" style="background:'+b.bg+';">'
       +'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="'+b.color+'" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/></svg>'
     +'</div><div><div class="lb-htitle">'+lbEsc(b.title)+'</div><div class="lb-hsub">'+subtitle+'</div></div></div>'
     +'<div class="lb-empty">'+emptyMsg+'</div>'
   +'</div>';
+}
+
+// Skeleton renderer: same outer shell as a real board (title, subhead, accent
+// bar) with five pulsing placeholder rows underneath. Drops into the grid so
+// users see the structure of all 14 boards immediately while data fetches.
+// replaceBoardData() then swaps just the rows in place, no re-layout.
+function renderBoardSkeleton(b){
+  var rows='';
+  for(var i=0;i<5;i++){
+    rows+='<div class="lb-row lb-row-skeleton">'
+      +'<div class="lb-rank">'+(i+1)+'</div>'
+      +'<div class="lb-av lb-skel-pulse"></div>'
+      +'<div class="lb-info">'
+        +'<div class="lb-skel-pulse" style="width:'+(48+(i*7)%24)+'px;height:13px;border-radius:4px;"></div>'
+        +'<div class="lb-skel-pulse" style="width:'+(120+(i*11)%40)+'px;height:11px;border-radius:4px;margin-top:6px;"></div>'
+        +'<div class="lb-bar-wrap"><div class="lb-bar" style="width:0%;background:rgba(255,255,255,0.04);"></div></div>'
+      +'</div>'
+      +'<div class="lb-score">'
+        +'<div class="lb-skel-pulse" style="width:36px;height:14px;border-radius:4px;margin-left:auto;"></div>'
+        +'<div class="lb-slbl">'+lbEsc(b.scoreLabel||'')+'</div>'
+      +'</div>'
+    +'</div>';
+  }
+  return '<div class="lb-section lb-section-loading" data-board-id="'+lbEsc(b.id)+'">'
+    +'<div class="lb-accent" style="background:'+b.color+';opacity:.5;"></div>'
+    +'<div class="lb-head">'
+      +'<div class="lb-icon" style="background:'+b.bg+';">'
+        +'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="'+b.color+'" stroke-width="2" stroke-linecap="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>'
+      +'</div>'
+      +'<div><div class="lb-htitle">'+lbEsc(b.title)+'</div><div class="lb-hsub">'+lbEsc(b.sub)+'</div></div>'
+    +'</div>'
+    +'<div class="lb-rows">'+rows+'</div>'
+  +'</div>';
+}
+
+// Find this board's slot in the grid and swap its contents in place. If the
+// slot was removed (user navigated away and grid was wiped), no-op silently.
+function replaceBoardData(b, rows){
+  var slot=document.querySelector('[data-board-id="'+CSS.escape(b.id)+'"]');
+  if(!slot) return;
+  var html = (rows && rows.length) ? renderBoard(b, rows) : renderEmpty(b);
+  // Replace just the section, preserving DOM position so the grid doesn't reflow.
+  var tmp=document.createElement('div');
+  tmp.innerHTML=html;
+  var fresh=tmp.firstElementChild;
+  if(fresh) slot.parentNode.replaceChild(fresh, slot);
 }
 
 // Wait up to ~10s for the in-memory scorecardMap to be populated by the main
@@ -17305,38 +17360,50 @@ async function loadLeaderboard(){
     var user=await ensureDashboardAuth();
     if(!user) return;
     if(!SUPABASE_URL||!SUPABASE_ANON) throw new Error('Supabase not configured');
-    // Block on scorecardMap before firing the fallback-backed boards. The
-    // direct-Supabase boards (best entry zone, dark pool) don't need this
-    // but the wait is short and only kicks in on early tab clicks.
-    await waitForScorecardMap(10000);
-    // Most boards use scorecardFallback (in-memory, instant). Only consistent-keywords hits network.
-    function withTimeout(p,ms){if(p&&typeof p.then==='function')return Promise.race([p,new Promise(function(_,rej){setTimeout(function(){rej(new Error('timeout'));},ms);})]).catch(function(){return[];});return Promise.resolve(p||[]);}
-    var results=await Promise.all(BOARDS.map(function(b){return withTimeout(b.fetch(),b.timeout||10000);}));
-    var html='';
-    results.forEach(function(res,i){
-      var b=BOARDS[i];
-      if(res&&res.length){
-        html+=renderBoard(b,res);
-      } else {
-        console.warn('Leaderboard board "'+b.id+'": empty');
-        html+=renderEmpty(b);
-      }
-    });
-    grid.innerHTML=html;
-    // Intercept hash-based leaderboard row clicks to switch tabs
-    grid.addEventListener('click',function(e){
-      var row=e.target.closest('a.lb-row');
-      if(!row) return;
-      var href=row.getAttribute('href')||'';
-      if(href.startsWith('#')){
-        var tabId=href.slice(1);
-        var btn=document.querySelector('[data-tab="'+tabId+'"]');
-        if(btn){e.preventDefault();switchTab(tabId,btn);}
-      }
-    });
+
+    // Render skeletons for all 14 boards immediately so the page doesn't sit
+    // on a single "Loading…" spinner while we wait for the dashboard bundle.
+    grid.innerHTML = BOARDS.map(renderBoardSkeleton).join('');
     if(loading) loading.style.display='none';
     if(body) body.style.display='block';
     updateLBDate();
+
+    // Hash-based leaderboard row clicks → tab switches. Hook once per grid;
+    // since we now mutate sections in place, the listener survives re-renders.
+    if(!grid._lbClickHooked){
+      grid.addEventListener('click',function(e){
+        var row=e.target.closest('a.lb-row');
+        if(!row) return;
+        var href=row.getAttribute('href')||'';
+        if(href.startsWith('#')){
+          var tabId=href.slice(1);
+          var btn=document.querySelector('[data-tab="'+tabId+'"]');
+          if(btn){e.preventDefault();switchTab(tabId,btn);}
+        }
+      });
+      grid._lbClickHooked=true;
+    }
+
+    function withTimeout(p,ms){if(p&&typeof p.then==='function')return Promise.race([p,new Promise(function(_,rej){setTimeout(function(){rej(new Error('timeout'));},ms);})]).catch(function(){return[];});return Promise.resolve(p||[]);}
+
+    // scorecardFallback boards need scorecardMap (loaded by the dashboard
+    // bundle). Direct-query boards don't — they fetch their own data and
+    // can render the moment Supabase responds, often well before the bundle.
+    var scorecardReady = waitForScorecardMap(10000);
+
+    BOARDS.forEach(function(b){
+      var usesScorecard = b.fetch.toString().indexOf('scorecardFallback') !== -1
+                       || b.fetch.toString().indexOf('dataFallback') !== -1;
+      var ready = usesScorecard ? scorecardReady : Promise.resolve(true);
+      ready.then(function(){
+        return withTimeout(b.fetch(), b.timeout||10000);
+      }).then(function(rows){
+        replaceBoardData(b, rows);
+      }).catch(function(e){
+        console.warn('Leaderboard board "'+b.id+'" failed:', e&&e.message?e.message:e);
+        replaceBoardData(b, []);
+      });
+    });
     // Live-price MutationObserver will auto-fire on the newly-inserted rows.
   } catch(e){
     if(loading) loading.style.display='none';
