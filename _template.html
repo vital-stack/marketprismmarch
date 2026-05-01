@@ -9024,18 +9024,25 @@ function renderLivePortfolioStats(elId, rows){
   var openExposure=Number(currentRow.open_exposure)||0;
   var unrealizedNow=Number(currentRow.unrealized_pnl)||0;
   var realizedSinceLaunch=(Number(currentRow.realized_pnl_cumulative)||0)-(Number(baselineRow.realized_pnl_cumulative)||0);
+  var totalPnl=unrealizedNow+realizedSinceLaunch;
   var daysLive=fromBaseline.length;
-  // Sub-line on the Unrealized P&L box mentions realized too, so the closed-trade
-  // P&L isn't lost from the card just because we're not giving it its own slot —
-  // for a freshly-launched sim, unrealized is the action; realized takes time
-  // to populate as positions close.
-  var unrealizedSub='open-position mark-to-market';
-  if(realizedSinceLaunch!==0) unrealizedSub+=' &middot; '+_livePortFmtMoney(realizedSinceLaunch)+' realized since launch';
+  // Headline P&L = realized (closed since launch) + unrealized (open M2M).
+  // Show the breakdown in the sub-line so users can see which side of the
+  // ledger the gain/loss is coming from. For a sim with no closes since
+  // launch, the breakdown collapses to "all unrealized".
+  var pnlSub;
+  if (realizedSinceLaunch !== 0 && unrealizedNow !== 0) {
+    pnlSub = _livePortFmtMoney(realizedSinceLaunch) + ' realized · ' + _livePortFmtMoney(unrealizedNow) + ' unrealized';
+  } else if (realizedSinceLaunch !== 0) {
+    pnlSub = 'all realized · no open-position movement';
+  } else {
+    pnlSub = 'all unrealized · no closes since launch';
+  }
   el.innerHTML=''
     +'<div class="val-stat"><div class="val-stat-label">Return since launch</div><div class="val-stat-value '+(returnPct>0?'pos':returnPct<0?'neg':'')+'">'+valFmtPct(returnPct,2)+'</div><div class="val-stat-sub">since '+valFmtDate(LIVE_PORTFOLIO_BASELINE)+' baseline</div></div>'
     +'<div class="val-stat"><div class="val-stat-label">Portfolio value</div><div class="val-stat-value">'+_livePortFmtMoney(currentValue)+'</div><div class="val-stat-sub">from '+_livePortFmtMoney(baselineValue)+' start</div></div>'
     +'<div class="val-stat"><div class="val-stat-label">Open positions</div><div class="val-stat-value">'+openCount.toLocaleString()+'</div><div class="val-stat-sub">'+_livePortFmtMoney(openExposure)+' exposure</div></div>'
-    +'<div class="val-stat"><div class="val-stat-label">Unrealized P&amp;L</div><div class="val-stat-value '+(unrealizedNow>0?'pos':unrealizedNow<0?'neg':'')+'">'+_livePortFmtMoney(unrealizedNow)+'</div><div class="val-stat-sub">'+unrealizedSub+'</div></div>'
+    +'<div class="val-stat"><div class="val-stat-label">Total P&amp;L</div><div class="val-stat-value '+(totalPnl>0?'pos':totalPnl<0?'neg':'')+'">'+_livePortFmtMoney(totalPnl)+'</div><div class="val-stat-sub">'+pnlSub+'</div></div>'
     +'<div class="val-stat"><div class="val-stat-label">Track period</div><div class="val-stat-value" style="font-size:16px;">'+valFmtDate(LIVE_PORTFOLIO_BASELINE)+' → '+valFmtDate(currentRow.snapshot_date)+'</div><div class="val-stat-sub">'+daysLive+' trading day'+(daysLive===1?'':'s')+'</div></div>'
     +'<div class="val-stat"><div class="val-stat-label">Status</div><div class="val-stat-value pos" style="font-size:16px;">Live</div><div class="val-stat-sub">paper-trading the signal engine</div></div>';
 }
