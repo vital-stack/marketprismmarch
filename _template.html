@@ -5260,38 +5260,38 @@ body{
       <div id="val-body" style="display:none;">
         <div class="val-chart-block" id="backtest-summary-block" style="margin-bottom:16px;">
           <div class="val-chart-head">
-            <div class="val-chart-title">15-Month Backtest</div>
-            <div class="val-chart-sub">$50K base &middot; 20 slots &middot; 2,984 closed trades &middot; Jan 2025 &rarr; today &mdash; every trade, every regime</div>
+            <div class="val-chart-title">Long-Term Paper Sim &mdash; Live</div>
+            <div class="val-chart-sub">$50K base &middot; 20 slots &middot; live since Jan 2025 &middot; 2,984 closed paper trades across every regime</div>
           </div>
           <div class="val-stats" id="val-stats"></div>
         </div>
         <div class="val-chart-block">
           <div class="val-chart-head">
-            <div class="val-chart-title">Cumulative performance</div>
-            <div class="val-chart-sub" id="val-chart1-sub">Equal-weight cumulative return of all closed trades</div>
+            <div class="val-chart-title">Cumulative paper-trade performance</div>
+            <div class="val-chart-sub" id="val-chart1-sub">Equal-weight cumulative return of all closed paper trades vs. SPY</div>
           </div>
           <div class="val-chart-wrap" id="val-equity-chart"></div>
         </div>
         <div class="val-chart-row">
           <div class="val-chart-block">
             <div class="val-chart-head">
-              <div class="val-chart-title">Average return per trade</div>
+              <div class="val-chart-title">Avg paper-trade return</div>
               <div class="val-chart-sub">By signal type &middot; deeper green = higher win rate</div>
             </div>
             <div id="val-bar-avg"></div>
           </div>
           <div class="val-chart-block">
             <div class="val-chart-head">
-              <div class="val-chart-title">Annualized return</div>
-              <div class="val-chart-sub">Avg return &times; (365 / avg hold days)</div>
+              <div class="val-chart-title">Annualized paper-trade return</div>
+              <div class="val-chart-sub">Avg return &times; (365 / avg hold days) &middot; by signal type</div>
             </div>
             <div id="val-bar-ann"></div>
           </div>
         </div>
         <div class="val-table-block">
           <div class="val-chart-head">
-            <div class="val-chart-title">Recent trades</div>
-            <div class="val-chart-sub"><span id="val-table-count"></span> closed trades &middot; click a row for ticker detail &middot; <a href="mailto:hello@marketprism.co?subject=Full paper-trade ledger request" style="color:var(--mp-cyan);text-decoration:none;">email us for the full ledger</a></div>
+            <div class="val-chart-title">Recent paper trades</div>
+            <div class="val-chart-sub"><span id="val-table-count"></span> closed paper trades &middot; click a row for ticker detail &middot; <a href="mailto:hello@marketprism.co?subject=Full paper-trade ledger request" style="color:var(--mp-cyan);text-decoration:none;">email us for the full ledger</a></div>
           </div>
           <div class="val-table-filters" id="val-table-filters">
             <button class="val-chip active" data-filter="all">All</button>
@@ -8866,8 +8866,10 @@ function valRenderTable(){
   if(_VAL_CURRENT_FILTER==='wins')filtered=closed.filter(function(t){return t.pnl_pct!=null&&Number(t.pnl_pct)>0;});
   else if(_VAL_CURRENT_FILTER==='losers')filtered=closed.filter(function(t){return t.pnl_pct!=null&&Number(t.pnl_pct)<=0;});
   filtered.sort(function(a,b){return(b.exit_date||'').localeCompare(a.exit_date||'');});
-  var rows=filtered.slice(0,500);
-  if(cntEl)cntEl.textContent='Showing '+rows.length.toLocaleString()+' of '+filtered.length.toLocaleString();
+  // Cap at the most recent 50 closed trades — the table is for spot-checks /
+  // proof of life, not the full ledger (which we offer over email).
+  var rows=filtered.slice(0,50);
+  if(cntEl)cntEl.textContent='Showing '+rows.length.toLocaleString()+' most recent of '+filtered.length.toLocaleString();
   if(!rows.length){wrap.innerHTML='<div style="padding:20px;color:var(--mp-text-muted);text-align:center;">No trades match this filter.</div>';return;}
   var html='<table class="val-table"><thead><tr>'
     +'<th>Ticker</th>'
