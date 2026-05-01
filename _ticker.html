@@ -3954,17 +3954,28 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
   <main class="main-content">
     <div class="page-wrap">
 
-  <nav class="site-nav" style="flex-wrap:wrap;row-gap:12px;">
-    <a class="nav-back" href="/dashboard">&larr; Market Prism</a>
-    <span class="nav-sep">/</span>
-    <span class="nav-ticker" id="nav-ticker">&mdash;</span>
-    <div class="tk-search" id="tk-search">
-      <svg class="tk-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input class="tk-search-input" id="tk-search-input" placeholder="Search tickers… e.g. AAPL, NVDA, TSLA" autocomplete="off" aria-label="Search tickers">
-      <kbd class="tk-search-kbd">⌘K</kbd>
-      <div class="tk-search-dd" id="tk-search-dd"></div>
-    </div>
-  </nav>
+  <!-- ── TOP BAR ── (rendered by lib/mp-topbar.js — same shell as the dashboard) -->
+  <div class="topbar" id="topbar"></div>
+  <script src="/lib/mp-topbar.js"></script>
+  <script>
+    MP.renderTopbar({ container: '#topbar', title: 'Stock Prism' });
+    MP.initScholarBar();
+    // Mirror the dashboard's hamburger → sidebar toggle so the topbar's
+    // hamburger collapses/restores the sidebar on desktop.
+    (function(){
+      var ham = document.getElementById('hamburger-btn-desktop');
+      var nav = document.getElementById('side-nav');
+      if (!ham || !nav) return;
+      ham.addEventListener('click', function(){
+        if (window.innerWidth >= 768) {
+          nav.classList.toggle('collapsed');
+          document.body.classList.toggle('mp-sidebar-collapsed', nav.classList.contains('collapsed'));
+        } else {
+          nav.classList.toggle('open');
+        }
+      });
+    })();
+  </script>
 
   <!-- Hero -->
   <div class="ticker-hero" id="hero">
