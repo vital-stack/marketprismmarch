@@ -326,27 +326,50 @@ body{
 .topbar-date{font-family:var(--font-mono);font-size:11px;color:var(--mp-text-tertiary);}
 /* ── TOPBAR CENTER — SCHOLAR BAR ── */
 .topbar-center{flex:1;display:flex;justify-content:center;max-width:520px;margin:0 auto;}
+/* Scholar search bar — animated to draw the eye on first load. The
+   background uses a horizontal 3-stop gradient and animates background-position
+   so a brighter "glisten" sweeps across the bar every few seconds. We animate
+   background-position (not a pseudo-element) so the absolute-positioned
+   dropdown isn't clipped by overflow rules. */
+@keyframes scholar-glisten{
+  0%,100%{background-position:200% 0;}
+  50%{background-position:-100% 0;}
+}
 .scholar-bar{
   display:flex;align-items:center;gap:10px;width:100%;position:relative;
   padding:9px 16px;border-radius:12px;
-  border:1px solid rgba(0,0,0,0.08);
-  background:#FAFBFC;
-  transition:all .3s cubic-bezier(0.16,1,0.3,1);
+  border:1px solid rgba(0,0,0,0.10);
+  background:linear-gradient(110deg,#FFFFFF 0%,#F5F7FA 45%,#FFFFFF 55%,#FFFFFF 100%);
+  background-size:220% 100%;
+  animation:scholar-glisten 5s ease-in-out infinite;
+  transition:border-color .25s ease,box-shadow .25s ease;
   cursor:text;
-  box-shadow:none;
+  box-shadow:0 1px 3px rgba(0,0,0,0.04);
 }
 .scholar-bar:hover{
-  border-color:rgba(0,0,0,0.12);
-  background:#FAFBFC;
+  border-color:rgba(0,174,255,0.25);
+  box-shadow:0 2px 8px rgba(0,174,255,0.08);
 }
 .scholar-bar:focus-within{
-  border-color:rgba(0,174,255,0.3);
-  background:#FAFBFC;
-  box-shadow:0 0 0 3px rgba(0,174,255,0.08);
+  border-color:rgba(0,174,255,0.4);
+  box-shadow:0 0 0 3px rgba(0,174,255,0.12),0 4px 16px rgba(0,174,255,0.10);
+  /* Pause the glisten on focus so it doesn't fight with the user's input. */
+  animation-play-state:paused;
 }
-[data-theme="dark"] .scholar-bar{border-color:rgba(232,232,227,0.12);background:linear-gradient(135deg,rgba(232,232,227,0.03),rgba(232,232,227,0.01));box-shadow:0 0 16px rgba(232,232,227,0.03),inset 0 1px 0 rgba(255,255,255,0.04);}
-[data-theme="dark"] .scholar-bar:hover{border-color:rgba(232,232,227,0.18);background:linear-gradient(135deg,rgba(232,232,227,0.05),rgba(232,232,227,0.02));box-shadow:0 0 24px rgba(232,232,227,0.05),inset 0 1px 0 rgba(255,255,255,0.06);}
-[data-theme="dark"] .scholar-bar:focus-within{border-color:rgba(232,232,227,0.25);background:linear-gradient(135deg,rgba(232,232,227,0.06),rgba(232,232,227,0.03));box-shadow:0 0 32px rgba(232,232,227,0.06),0 0 0 3px rgba(232,232,227,0.04),inset 0 1px 0 rgba(255,255,255,0.08);}
+[data-theme="dark"] .scholar-bar{
+  border-color:rgba(255,255,255,0.20);
+  background:linear-gradient(110deg,rgba(255,255,255,0.10) 0%,rgba(255,255,255,0.22) 45%,rgba(255,255,255,0.10) 55%,rgba(255,255,255,0.10) 100%);
+  background-size:220% 100%;
+  box-shadow:0 0 24px rgba(255,255,255,0.08),inset 0 1px 0 rgba(255,255,255,0.12);
+}
+[data-theme="dark"] .scholar-bar:hover{
+  border-color:rgba(0,174,255,0.40);
+  box-shadow:0 0 28px rgba(0,174,255,0.15),inset 0 1px 0 rgba(255,255,255,0.14);
+}
+[data-theme="dark"] .scholar-bar:focus-within{
+  border-color:rgba(0,174,255,0.55);
+  box-shadow:0 0 0 3px rgba(0,174,255,0.18),0 0 32px rgba(0,174,255,0.20),inset 0 1px 0 rgba(255,255,255,0.16);
+}
 .scholar-bar-icon{width:18px;height:18px;flex-shrink:0;opacity:0.85;}
 .scholar-bar-label{
   font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;
