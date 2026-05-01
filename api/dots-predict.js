@@ -76,15 +76,21 @@ async function embedQuery(text) {
   return vec;
 }
 
-async function lookupSector(supabaseUrl, supabaseKey, ticker) {
+async function fetchTickerContext(supabaseUrl, supabaseKey, ticker) {
   if (!ticker) return null;
-  const url = supabaseUrl + '/rest/v1/ticker_industry_lookup?select=sector&ticker=eq.' + encodeURIComponent(ticker) + '&limit=1';
+  const url = supabaseUrl + '/rest/v1/rpc/get_ticker_context';
   const r = await fetch(url, {
-    headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey, 'Accept': 'application/json' }
+    method: 'POST',
+    headers: {
+      'apikey': supabaseKey,
+      'Authorization': 'Bearer ' + supabaseKey,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    },
+    body: JSON.stringify({ ticker_in: ticker })
   });
   if (!r.ok) return null;
-  const rows = await r.json().catch(function () { return []; });
-  return (rows && rows[0] && rows[0].sector) || null;
+  return r.json().catch(function () { return null; });
 }
 
 async function searchDots(supabaseUrl, supabaseKey, queryVector, sector) {
@@ -171,17 +177,24 @@ module.exports = async function (req, res) {
     if (narrativeText.length < 10) return send(res, 400, { error: 'narrativeText too short (need at least a sentence).' });
     if (narrativeText.length > 4000) return send(res, 400, { error: 'narrativeText too long (max 4000 chars).' });
 
-    // 1. Embed locally via @xenova/transformers
-    let queryVector;
+    // 1. Embed locally + fetch ticker context in parallel.
+    //    Context is purely additive (it adorns the response, never affects
+    //    retrieval); failures are silent and the search still returns.
+    let queryVector, context;
     try {
-      queryVector = await embedQuery(narrativeText);
+      const [vec, ctx] = await Promise.all([
+        embedQuery(narrativeText),
+        fetchTickerContext(supabaseUrl, supabaseKey, ticker).catch(function () { return null; })
+      ]);
+      queryVector = vec;
+      context = ctx;
     } catch (e) {
       return send(res, 502, { error: 'Embedding failed: ' + (e.message || 'unknown') });
     }
 
-    // 2. Sector hint (best-effort; null is fine)
-    let sector = null;
-    try { sector = await lookupSector(supabaseUrl, supabaseKey, ticker); } catch (_) {}
+    // 2. Sector hint for the embedding-search filter — pull from the context
+    //    we already fetched (sic_sector matches narrative_dots.sector format).
+    const sector = context && context.classification && context.classification.sic_sector || null;
 
     // 3. RPC similarity search
     let neighbors;
@@ -197,7 +210,8 @@ module.exports = async function (req, res) {
         warning: 'no_similar_dots',
         n_similar_dots: 0,
         n_resolved_neighbors: 0,
-        neighbors: []
+        neighbors: [],
+        context: context || null
       });
     }
 
@@ -230,6 +244,7 @@ module.exports = async function (req, res) {
         };
       }),
       warning: agg.resolved.length > 0 && agg.resolved.length < 30 ? 'sparse_neighborhood' : null,
+      context: context || null,
       updated: new Date().toISOString()
     });
   } catch (err) {
