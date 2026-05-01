@@ -9242,7 +9242,13 @@ function _tpIsZombie(r){
 function tpRenderTable(){
   var el=document.getElementById('tp-table');
   if(!el)return;
-  var data=_TP_DATA.filter(function(r){return !_tpIsZombie(r);});
+  // Hide trades whose entry_date is more than 3 calendar days old. Older
+  // OPEN rows are typically zombies whose entry_price never got populated
+  // upstream and which the cron skips forever — keeping them in the
+  // "Live Tracked Plays" view just confuses readers with a wall of dashes.
+  var _cutoffD=new Date();_cutoffD.setDate(_cutoffD.getDate()-3);
+  var _cutoff=_cutoffD.toISOString().slice(0,10);
+  var data=_TP_DATA.filter(function(r){return !_tpIsZombie(r)&&r.entry_date&&r.entry_date>=_cutoff;});
   if(_TP_FILTER==='open')data=data.filter(function(r){return r.status==='OPEN';});
   else if(_TP_FILTER==='hit')data=data.filter(function(r){return r.hit;});
   else if(_TP_FILTER==='closed')data=data.filter(function(r){return r.status!=='OPEN';});
