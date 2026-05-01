@@ -535,6 +535,15 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
     });
   }
 
+  function fvLabel(upsidePct){
+    if (upsidePct == null || isNaN(upsidePct)) return null;
+    if (upsidePct >  25) return { label: 'DEEPLY UNDERVALUED', cls: 'up' };
+    if (upsidePct >  10) return { label: 'UNDERVALUED',        cls: 'up' };
+    if (upsidePct > -10) return { label: 'FAIRLY VALUED',      cls: '' };
+    if (upsidePct > -25) return { label: 'OVERVALUED',         cls: 'dn' };
+    return                      { label: 'DEEPLY OVERVALUED',  cls: 'dn' };
+  }
+
   function renderContext(ctx){
     // Hide everything by default
     document.getElementById('ctx-warn').style.display = 'none';
@@ -559,8 +568,8 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
       txt.innerHTML = when + ' Near-term returns will be dominated by the print, not the narrative.';
       if (fv && fv.fv != null && fv.current_price != null) {
         var pctOff = ((fv.fv - fv.current_price) / fv.current_price) * 100;
-        var pctStr = (pctOff >= 0 ? '+' : '') + pctOff.toFixed(1) + '%';
-        fvSub.textContent = 'Market Prism fair value: $' + Number(fv.fv).toFixed(2) + ' (current $' + Number(fv.current_price).toFixed(2) + ', ' + pctStr + ')';
+        var lbl = fvLabel(pctOff);
+        fvSub.textContent = lbl ? 'Market Prism analysis: ' + lbl.label.toLowerCase() + '.' : '';
       } else {
         fvSub.textContent = '';
       }
@@ -623,22 +632,20 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
       card2.style.display = 'flex';
     }
 
-    // ── Card 3: Fair Value ──────────────────────────────────────────────
+    // ── Card 3: Fair Value (qualitative only — no dollar amounts surfaced) ─
     if (fv.fv != null && fv.current_price != null) {
       var card3 = document.getElementById('ctx-card-fv');
       var head3 = document.getElementById('ctx-fv-headline');
       var sub3  = document.getElementById('ctx-fv-sub');
       var meta3 = document.getElementById('ctx-fv-meta');
-      var fvNum = Number(fv.fv);
-      var cur = Number(fv.current_price);
-      var upside = ((fvNum - cur) / cur) * 100;
-      var dirCls3 = upside > 1 ? 'up' : (upside < -1 ? 'dn' : '');
-      head3.className = 'ctx-headline ' + dirCls3;
-      head3.textContent = '$' + fvNum.toFixed(2) + '  (' + (upside >= 0 ? '+' : '') + upside.toFixed(1) + '%)';
-      sub3.innerHTML = 'Current price <strong>$' + cur.toFixed(2) + '</strong>';
-      meta3.textContent = upside >= 0 ? 'PROJECTED UPSIDE' : 'TRADING ABOVE FV';
+      var upside = ((Number(fv.fv) - Number(fv.current_price)) / Number(fv.current_price)) * 100;
+      var lbl3 = fvLabel(upside);
+      head3.className = 'ctx-headline ' + (lbl3 ? lbl3.cls : '');
+      head3.textContent = lbl3 ? lbl3.label : '—';
+      sub3.innerHTML = 'Per Market Prism narrative engine.';
+      meta3.textContent = '';
       card3.classList.remove('up','dn','warn');
-      if (dirCls3) card3.classList.add(dirCls3);
+      if (lbl3 && lbl3.cls) card3.classList.add(lbl3.cls);
       card3.style.display = 'flex';
     }
   }
