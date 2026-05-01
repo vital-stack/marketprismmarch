@@ -5212,23 +5212,38 @@ body{
         </div>
       </div>
 
-      <!-- ── Live Tracked Plays (from tracked_daily_plays) ── -->
-      <div class="val-chart-block" id="tp-section" style="margin-bottom:24px;">
-        <div class="val-chart-head">
-          <div class="val-chart-title">Live Tracked Plays</div>
-          <div class="val-chart-sub">Daily Plays predictions tracked from entry through hold period</div>
+      <!-- ── Live Tracked Plays (from tracked_daily_plays) — collapsed by default,
+           click the header to expand. <details> + <summary> handles the open/close
+           with no JS; the chevron flips via the [open] attribute selector below. -->
+      <details class="val-chart-block" id="tp-section" style="margin-bottom:24px;padding:0;overflow:hidden;">
+        <summary style="list-style:none;cursor:pointer;padding:20px 20px 16px;display:flex;align-items:center;gap:12px;">
+          <span style="font-size:14px;font-weight:600;color:var(--mp-text-primary);font-family:var(--font-body);">Live Tracked Plays</span>
+          <span style="font-size:13px;color:var(--mp-text-tertiary);font-family:var(--font-body);">&middot; click to view individual Daily Plays trades from entry through hold period</span>
+          <span style="margin-left:auto;font-size:11px;color:var(--mp-text-tertiary);font-family:var(--font-body);letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;gap:6px;">
+            <span class="tp-toggle-label">Show</span>
+            <svg class="tp-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transition:transform .2s;"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+        </summary>
+        <div style="padding:0 20px 20px;">
+          <div class="val-table-filters" id="tp-filters">
+            <button class="val-chip active" data-tpf="all">All</button>
+            <button class="val-chip" data-tpf="open">Open</button>
+            <button class="val-chip" data-tpf="hit">Hits</button>
+            <button class="val-chip" data-tpf="closed">Closed</button>
+            <button class="val-chip" data-tpf="miss">Misses</button>
+          </div>
+          <div class="val-table-wrap" id="tp-table" style="font-size:13px;">
+            <div style="padding:20px;text-align:center;color:var(--mp-text-tertiary);">Loading tracked plays&hellip;</div>
+          </div>
         </div>
-        <div class="val-table-filters" id="tp-filters">
-          <button class="val-chip active" data-tpf="all">All</button>
-          <button class="val-chip" data-tpf="open">Open</button>
-          <button class="val-chip" data-tpf="hit">Hits</button>
-          <button class="val-chip" data-tpf="closed">Closed</button>
-          <button class="val-chip" data-tpf="miss">Misses</button>
-        </div>
-        <div class="val-table-wrap" id="tp-table" style="font-size:13px;">
-          <div style="padding:20px;text-align:center;color:var(--mp-text-tertiary);">Loading tracked plays&hellip;</div>
-        </div>
-      </div>
+      </details>
+      <style>
+        #tp-section > summary::-webkit-details-marker{display:none;}
+        #tp-section[open] .tp-chevron{transform:rotate(180deg);}
+        #tp-section[open] .tp-toggle-label::before{content:"Hide";}
+        #tp-section[open] .tp-toggle-label{font-size:0;}
+        #tp-section[open] .tp-toggle-label::before{font-size:11px;}
+      </style>
 
       <div class="val-chart-block" id="ppd-summary-block" style="margin-bottom:16px;">
         <div class="val-chart-head">
