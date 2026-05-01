@@ -5187,8 +5187,8 @@ body{
       <div class="page-header" style="margin-bottom:24px;">
         <div class="ph-eyebrow">Market Prism · Proof of concept</div>
         <h1>Track Record.</h1>
-        <span class="ph-italic">Every trade, every regime, nothing hidden.</span>
-        <p>Live paper trades placed by the signal engine from January 2025 through today &mdash; spanning rallies, corrections, and volatility regimes.</p>
+        <span class="ph-italic">Three portfolios. Every trade. Every regime.</span>
+        <p>Two live paper sims plus a 15-month backtest of 2,984 closed trades, all driven by the same signal engine. Wins and losses both &mdash; including the ugly weeks. Live tracking re-baselined Apr 30, 2026 after a pipeline rewrite.</p>
       </div>
       <div style="display:flex;justify-content:flex-end;margin:-8px 0 16px;">
         <button id="tr-download-btn" type="button" onclick="downloadTrackRecordImage()"
@@ -5199,6 +5199,19 @@ body{
           <span>Download image</span>
         </button>
       </div>
+      <!-- ── Live portfolio summaries (from paper_portfolio_daily_v6 + tracked_daily_plays_daily) ──
+           Re-baselined 2026-04-30 after a pipeline rewrite — pre-baseline rows
+           are not real trades. Loaded by loadLivePortfolios(). -->
+      <div class="val-chart-block" id="tdp-summary-block" style="margin-bottom:16px;">
+        <div class="val-chart-head">
+          <div class="val-chart-title">Daily Plays &mdash; Live Sim</div>
+          <div class="val-chart-sub">$1.5M base &middot; ~106 slots &middot; live since Apr 30, 2026 &mdash; every Daily Play tracked from entry through close</div>
+        </div>
+        <div class="val-stats" id="val-stats-tdp">
+          <div style="grid-column:1/-1;padding:14px 4px;text-align:center;color:var(--mp-text-tertiary);font-size:13px;">Loading live portfolio&hellip;</div>
+        </div>
+      </div>
+
       <!-- ── Live Tracked Plays (from tracked_daily_plays) ── -->
       <div class="val-chart-block" id="tp-section" style="margin-bottom:24px;">
         <div class="val-chart-head">
@@ -5217,10 +5230,26 @@ body{
         </div>
       </div>
 
+      <div class="val-chart-block" id="ppd-summary-block" style="margin-bottom:16px;">
+        <div class="val-chart-head">
+          <div class="val-chart-title">Conviction Sim &mdash; Live</div>
+          <div class="val-chart-sub">$300K base &middot; concentrated subset &middot; live since Apr 30, 2026</div>
+        </div>
+        <div class="val-stats" id="val-stats-ppd">
+          <div style="grid-column:1/-1;padding:14px 4px;text-align:center;color:var(--mp-text-tertiary);font-size:13px;">Loading live portfolio&hellip;</div>
+        </div>
+      </div>
+
       <div id="val-loading" style="text-align:center;padding:60px 0;color:var(--mp-text-tertiary);font-size:14px;">Loading validation data&hellip;</div>
       <div id="val-error" style="display:none;color:#FF4D4D;font-size:13px;padding:20px 0;"></div>
       <div id="val-body" style="display:none;">
-        <div class="val-stats" id="val-stats"></div>
+        <div class="val-chart-block" id="backtest-summary-block" style="margin-bottom:16px;">
+          <div class="val-chart-head">
+            <div class="val-chart-title">15-Month Backtest</div>
+            <div class="val-chart-sub">$50K base &middot; 20 slots &middot; 2,984 closed trades &middot; Jan 2025 &rarr; today &mdash; every trade, every regime</div>
+          </div>
+          <div class="val-stats" id="val-stats"></div>
+        </div>
         <div class="val-chart-block">
           <div class="val-chart-head">
             <div class="val-chart-title">Cumulative performance</div>
@@ -8857,6 +8886,70 @@ function valRenderTable(){
   html+='</tbody></table>';
   wrap.innerHTML=html;
 }
+// ── Live paper-portfolio summaries (Daily Plays sim + Conviction sim) ─────────
+// Pulls daily snapshots from paper_portfolio_daily_v6 and tracked_daily_plays_daily,
+// re-baselines at LIVE_PORTFOLIO_BASELINE (pre-baseline rows are pipeline noise),
+// and renders 6 stat boxes per portfolio matching the backtest layout.
+var LIVE_PORTFOLIO_BASELINE='2026-04-30';
+function _livePortFmtMoney(n){
+  n=Number(n)||0;
+  var sign=n<0?'-':'';
+  var abs=Math.abs(n);
+  if(abs>=1e6) return sign+'$'+(abs/1e6).toFixed(2)+'M';
+  if(abs>=1e4) return sign+'$'+(abs/1e3).toFixed(1)+'K';
+  return sign+'$'+Math.round(abs).toLocaleString();
+}
+function renderLivePortfolioStats(elId, rows){
+  var el=document.getElementById(elId);
+  if(!el) return;
+  if(!rows||!rows.length){
+    el.innerHTML='<div style="grid-column:1/-1;padding:14px 4px;text-align:center;color:var(--mp-text-tertiary);font-size:13px;">No data yet.</div>';
+    return;
+  }
+  var sorted=rows.slice().sort(function(a,b){return (a.snapshot_date||'').localeCompare(b.snapshot_date||'');});
+  var fromBaseline=sorted.filter(function(r){return r.snapshot_date>=LIVE_PORTFOLIO_BASELINE;});
+  // Need a baseline anchor (first row at-or-after the baseline) and a current row.
+  if(!fromBaseline.length){
+    el.innerHTML='<div style="grid-column:1/-1;padding:14px 4px;text-align:center;color:var(--mp-text-tertiary);font-size:13px;">No live data since '+valFmtDate(LIVE_PORTFOLIO_BASELINE)+' yet.</div>';
+    return;
+  }
+  var baselineRow=fromBaseline[0];
+  var currentRow=fromBaseline[fromBaseline.length-1];
+  var baselineValue=Number(baselineRow.portfolio_value)||0;
+  var currentValue=Number(currentRow.portfolio_value)||0;
+  var returnPct=baselineValue>0?((currentValue-baselineValue)/baselineValue*100):0;
+  var openCount=Number(currentRow.open_count)||0;
+  var openExposure=Number(currentRow.open_exposure)||0;
+  var realizedSinceLaunch=(Number(currentRow.realized_pnl_cumulative)||0)-(Number(baselineRow.realized_pnl_cumulative)||0);
+  var daysLive=fromBaseline.length;
+  el.innerHTML=''
+    +'<div class="val-stat"><div class="val-stat-label">Return since launch</div><div class="val-stat-value '+(returnPct>0?'pos':returnPct<0?'neg':'')+'">'+valFmtPct(returnPct,2)+'</div><div class="val-stat-sub">since '+valFmtDate(LIVE_PORTFOLIO_BASELINE)+' baseline</div></div>'
+    +'<div class="val-stat"><div class="val-stat-label">Portfolio value</div><div class="val-stat-value">'+_livePortFmtMoney(currentValue)+'</div><div class="val-stat-sub">from '+_livePortFmtMoney(baselineValue)+' start</div></div>'
+    +'<div class="val-stat"><div class="val-stat-label">Open positions</div><div class="val-stat-value">'+openCount.toLocaleString()+'</div><div class="val-stat-sub">'+_livePortFmtMoney(openExposure)+' exposure</div></div>'
+    +'<div class="val-stat"><div class="val-stat-label">Realized P&amp;L</div><div class="val-stat-value '+(realizedSinceLaunch>0?'pos':realizedSinceLaunch<0?'neg':'')+'">'+_livePortFmtMoney(realizedSinceLaunch)+'</div><div class="val-stat-sub">closed-trade gains since launch</div></div>'
+    +'<div class="val-stat"><div class="val-stat-label">Track period</div><div class="val-stat-value" style="font-size:16px;">'+valFmtDate(LIVE_PORTFOLIO_BASELINE)+' → '+valFmtDate(currentRow.snapshot_date)+'</div><div class="val-stat-sub">'+daysLive+' trading day'+(daysLive===1?'':'s')+'</div></div>'
+    +'<div class="val-stat"><div class="val-stat-label">Status</div><div class="val-stat-value pos" style="font-size:16px;">Live</div><div class="val-stat-sub">paper-trading the signal engine</div></div>';
+}
+async function loadLivePortfolios(){
+  if(!SUPABASE_URL||!SUPABASE_ANON) return;
+  var SELECT='snapshot_date,portfolio_value,realized_pnl_cumulative,open_count,open_exposure';
+  var COMMON={select:SELECT, order:'snapshot_date.desc', limit:'120'};
+  var jobs=[
+    {table:'tracked_daily_plays_daily', el:'val-stats-tdp'},
+    {table:'paper_portfolio_daily_v6',  el:'val-stats-ppd'}
+  ];
+  await Promise.all(jobs.map(async function(j){
+    try{
+      var rows=await restFetch(j.table, COMMON);
+      renderLivePortfolioStats(j.el, rows);
+    }catch(e){
+      console.warn('Live portfolio load failed for '+j.table, e&&e.message?e.message:e);
+      var el=document.getElementById(j.el);
+      if(el) el.innerHTML='<div style="grid-column:1/-1;padding:14px 4px;text-align:center;color:var(--mp-text-tertiary);font-size:13px;">Could not load &mdash; '+(e&&e.message?e.message:'unknown error')+'.</div>';
+    }
+  }));
+}
+
 async function loadValidation(force){
   if(_VAL_LOADED&&!force)return;
   var loading=document.getElementById('val-loading');
@@ -8907,6 +9000,10 @@ async function loadValidation(force){
     // valRenderStats will prefer these over client-side aggregation.
     _VAL_CACHED_STATS=await _valFetchCachedStats();
     valRenderStats(rows);
+    // Live paper-portfolio summaries (Daily Plays sim + Conviction sim).
+    // Fire-and-forget — failures render an inline "Could not load" message in
+    // each card and never block the rest of the validation render.
+    loadLivePortfolios();
     valRenderEquityChart(rows);
     var byS=valAggregateBySignal(rows);
     valRenderSignalBars('val-bar-avg',byS,'avg_pnl',function(v){return valFmtPct(v,2);});
