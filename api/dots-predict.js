@@ -1,10 +1,10 @@
 // POST /api/dots-predict
-// Embeds the user's narrative, runs a pgvector similarity search against
-// narrative_dots via the search_dots_by_embedding RPC, and returns an
-// aggregated bullshit-probability + predicted-return forecast.
+// Embeds the user's narrative locally via @xenova/transformers (ONNX runtime),
+// runs a pgvector similarity search against narrative_dots via the
+// search_dots_by_embedding RPC, and returns an aggregated bullshit-probability
+// + predicted-return forecast.
 //
 // Required env:
-//   HUGGINGFACE_API_KEY            - HF inference token (free tier)
 //   SUPABASE_URL                    - project URL
 //   SUPABASE_SERVICE_ROLE_KEY       - service role (RPC reads narrative_dots)
 //                                     falls back to SUPABASE_ANON if grant exists
@@ -13,14 +13,31 @@
 //   - public.search_dots_by_embedding(...) returning narrative_dots rows
 //   - read access for the role used by the env key
 
-const HF_MODEL = 'sentence-transformers/all-MiniLM-L6-v2';
-// HF retired api-inference.huggingface.co. Canonical Inference-Providers
-// pattern (matches what the official @huggingface/inference SDK calls):
-//   {router}/{provider}/pipeline/{task}/{model}
-const HF_URL =
-  'https://router.huggingface.co/hf-inference/pipeline/feature-extraction/' + HF_MODEL;
+const EMBED_MODEL = 'Xenova/all-MiniLM-L6-v2';  // ONNX export, 384-dim
 const DEFAULT_K = 200;
 const MAX_AGE_DAYS = 540;
+
+// Cached pipeline — lives across warm Vercel invocations on the same
+// instance. First call cold-starts ~3-8s (downloads model weights from HF
+// CDN to /tmp); subsequent calls run the embed in ~100-300ms.
+let _pipePromise = null;
+function getEmbedder() {
+  if (_pipePromise) return _pipePromise;
+  _pipePromise = (async () => {
+    const t0 = Date.now();
+    const tj = await import('@xenova/transformers');
+    tj.env.allowLocalModels = false;
+    tj.env.useFSCache = true;
+    tj.env.cacheDir = '/tmp/transformers-cache';
+    const pipe = await tj.pipeline('feature-extraction', EMBED_MODEL);
+    console.log('[dots-predict] pipeline init took', Date.now() - t0, 'ms');
+    return pipe;
+  })().catch((e) => {
+    _pipePromise = null;  // allow retry on next request
+    throw e;
+  });
+  return _pipePromise;
+}
 
 function readBody(req) {
   if (req.body && typeof req.body === 'object') return Promise.resolve(req.body);
@@ -44,27 +61,18 @@ function send(res, status, payload) {
   res.end(JSON.stringify(payload));
 }
 
-async function embedQuery(text, hfKey) {
-  const r = await fetch(HF_URL, {
-    method: 'POST',
-    headers: {
-      'Authorization': 'Bearer ' + hfKey,
-      'Content-Type': 'application/json'
-    },
-    // Pipeline endpoint speaks HF-native shape: {inputs, options}.
-    body: JSON.stringify({ inputs: text, options: { wait_for_model: true } })
-  });
-  if (!r.ok) {
-    const body = await r.text().catch(function () { return ''; });
-    throw new Error('HuggingFace embed failed (' + r.status + '): ' + body.slice(0, 300));
+async function embedQuery(text) {
+  const t0 = Date.now();
+  const pipe = await getEmbedder();
+  // pooling:'mean' + normalize:true matches sentence-transformers/all-MiniLM-L6-v2
+  // exactly — same weights, same pooling, same L2 normalization. Output is a
+  // Tensor with .data: Float32Array(384).
+  const result = await pipe(text, { pooling: 'mean', normalize: true });
+  const vec = Array.from(result.data);
+  if (vec.length !== 384) {
+    throw new Error('Unexpected embedding shape (len=' + vec.length + ')');
   }
-  const j = await r.json();
-  // Single string input on a sentence-transformers model returns a flat
-  // 384-dim array. Batched input returns [[...], [...]]. Accept both.
-  const vec = Array.isArray(j) && Array.isArray(j[0]) ? j[0] : j;
-  if (!Array.isArray(vec) || vec.length !== 384) {
-    throw new Error('Unexpected embedding shape (len=' + (Array.isArray(vec) ? vec.length : 'n/a') + ')');
-  }
+  console.log('[dots-predict] embed took', Date.now() - t0, 'ms');
   return vec;
 }
 
@@ -149,13 +157,9 @@ module.exports = async function (req, res) {
 
     const supabaseUrl = process.env.SUPABASE_URL || '';
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON || '';
-    const hfKey = process.env.HUGGINGFACE_API_KEY || '';
 
     if (!supabaseUrl || !supabaseKey) {
       return send(res, 500, { error: 'Supabase env not configured (SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY).' });
-    }
-    if (!hfKey) {
-      return send(res, 500, { error: 'HUGGINGFACE_API_KEY env var not set — needed to embed the query.' });
     }
 
     const body = await readBody(req);
@@ -167,12 +171,12 @@ module.exports = async function (req, res) {
     if (narrativeText.length < 10) return send(res, 400, { error: 'narrativeText too short (need at least a sentence).' });
     if (narrativeText.length > 4000) return send(res, 400, { error: 'narrativeText too long (max 4000 chars).' });
 
-    // 1. Embed
+    // 1. Embed locally via @xenova/transformers
     let queryVector;
     try {
-      queryVector = await embedQuery(narrativeText, hfKey);
+      queryVector = await embedQuery(narrativeText);
     } catch (e) {
-      return send(res, 502, { error: e.message || 'Embedding failed.' });
+      return send(res, 502, { error: 'Embedding failed: ' + (e.message || 'unknown') });
     }
 
     // 2. Sector hint (best-effort; null is fine)
