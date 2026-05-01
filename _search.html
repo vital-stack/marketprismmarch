@@ -267,13 +267,108 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
 .nb-foot .v.dn{color:var(--mp-red);font-weight:600;}
 .nb-foot .v.flat{color:var(--mp-text-tertiary);}
 
-.results-actions{margin-top:24px;display:flex;gap:12px;align-items:center;}
+.results-actions{margin-top:24px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
 .link-btn{
   background:none;border:none;cursor:pointer;font-family:var(--font-body);
   font-size:13px;font-weight:500;color:var(--mp-cyan);text-decoration:none;
   padding:8px 0;
 }
 .link-btn:hover{text-decoration:underline;}
+.dl-btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:8px 14px;border-radius:8px;
+  background:var(--mp-surface);border:1px solid var(--mp-border);
+  font-family:var(--font-body);font-size:12px;font-weight:600;
+  color:var(--mp-text-secondary);cursor:pointer;text-decoration:none;
+  transition:all .15s;
+}
+.dl-btn:hover{border-color:var(--mp-cyan);color:var(--mp-cyan);}
+.dl-btn:disabled{opacity:.5;cursor:not-allowed;}
+.dl-btn svg{width:14px;height:14px;}
+
+/* ── PRICE SPARKLINE ────────────────────────────────────────────────────── */
+.spark-card{
+  background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:14px;
+  padding:14px 18px;margin-bottom:14px;box-shadow:var(--mp-card-shadow);
+  display:flex;align-items:center;gap:18px;
+}
+.spark-info{flex-shrink:0;display:flex;flex-direction:column;gap:2px;min-width:140px;}
+.spark-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--mp-text-muted);}
+.spark-px{font-size:22px;font-weight:700;color:var(--mp-text-primary);font-variant-numeric:tabular-nums;letter-spacing:-.01em;}
+.spark-delta{font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;}
+.spark-delta.up{color:var(--mp-green);}
+.spark-delta.dn{color:var(--mp-red);}
+.spark-delta.flat{color:var(--mp-text-tertiary);}
+.spark-svg-wrap{flex:1;min-width:0;height:64px;position:relative;}
+.spark-svg{width:100%;height:100%;display:block;}
+.spark-loading{font-size:11px;color:var(--mp-text-muted);text-align:center;padding:20px 0;font-style:italic;}
+
+/* ── MICROSTRUCTURE STRIP ───────────────────────────────────────────────── */
+.micro-strip{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
+  margin-bottom:24px;border-radius:12px;overflow:hidden;
+  background:var(--mp-border);border:1px solid var(--mp-border);
+  box-shadow:var(--mp-card-shadow);position:relative;
+}
+.micro-strip::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--mp-cyan);opacity:.25;z-index:1;
+}
+.micro-cell{
+  background:var(--mp-surface);padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0;
+}
+.micro-lbl{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--mp-text-muted);}
+.micro-val{font-size:15px;font-weight:700;color:var(--mp-text-primary);font-variant-numeric:tabular-nums;letter-spacing:-.01em;}
+.micro-val.up{color:var(--mp-green);}
+.micro-val.dn{color:var(--mp-red);}
+.micro-val.warn{color:var(--mp-amber);}
+.micro-sub{font-size:10px;color:var(--mp-text-tertiary);}
+@media(max-width:768px){.micro-strip{grid-template-columns:1fr 1fr;}}
+
+/* ── RECENT NARRATIVES PANEL ────────────────────────────────────────────── */
+.rn-panel{margin-top:32px;}
+.rn-head{
+  display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:6px;
+}
+.rn-title{
+  font-family:'Instrument Serif',var(--font-display);
+  font-size:24px;font-weight:400;letter-spacing:-0.02em;color:var(--mp-text-primary);
+}
+.rn-sub{font-size:11px;color:var(--mp-text-muted);}
+.rn-list{display:flex;flex-direction:column;gap:8px;}
+.rn-item{
+  background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:10px;
+  padding:12px 16px;transition:border-color .15s;
+}
+.rn-item:hover{border-color:var(--mp-border-hover);}
+.rn-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px;}
+.rn-source{font-size:11px;font-weight:600;color:var(--mp-text-secondary);letter-spacing:.02em;}
+.rn-date{font-size:11px;color:var(--mp-text-muted);}
+.rn-body{font-size:13px;color:var(--mp-text-secondary);line-height:1.55;}
+.rn-foot{
+  margin-top:8px;display:flex;align-items:center;gap:14px;font-size:10px;color:var(--mp-text-muted);
+  text-transform:uppercase;letter-spacing:.05em;flex-wrap:wrap;
+}
+.rn-foot .v.up{color:var(--mp-green);font-weight:600;}
+.rn-foot .v.dn{color:var(--mp-red);font-weight:600;}
+.rn-foot .v.flat{color:var(--mp-text-tertiary);}
+.rn-foot .v.pending{color:var(--mp-text-muted);font-style:italic;}
+.rn-empty{font-size:13px;color:var(--mp-text-tertiary);font-style:italic;text-align:center;padding:18px 0;}
+
+/* ── BRAND FOOTER (always visible — stamps every screenshot) ───────────── */
+.brand-foot{
+  margin-top:32px;padding:18px 22px;
+  background:linear-gradient(135deg,rgba(0,174,255,0.04),rgba(123,97,255,0.03));
+  border:1px solid var(--mp-border);border-radius:12px;
+  display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+}
+.bf-l{display:flex;align-items:center;gap:10px;min-width:0;}
+.bf-logo{height:20px;width:auto;flex-shrink:0;opacity:.95;}
+.bf-stack{display:flex;flex-direction:column;gap:1px;min-width:0;}
+.bf-name{font-size:12px;font-weight:600;color:var(--mp-text-primary);letter-spacing:.02em;}
+.bf-tag{font-size:10px;color:var(--mp-text-muted);letter-spacing:.04em;}
+.bf-r{font-size:11px;color:var(--mp-text-tertiary);font-family:var(--font-body);letter-spacing:.04em;}
+.bf-r strong{color:var(--mp-cyan-soft);font-weight:600;}
 
 /* ── RESPONSIVE ─────────────────────────────────────────────────────────── */
 @media(max-width:768px){
@@ -366,12 +461,49 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
     <!-- ── RESULTS ── -->
     <div class="results" id="results">
 
+      <!-- 90d price sparkline (top of results) -->
+      <div class="spark-card" id="spark-card" style="display:none;">
+        <div class="spark-info">
+          <div class="spark-lbl" id="spark-lbl">Last 90 days</div>
+          <div class="spark-px" id="spark-px">—</div>
+          <div class="spark-delta flat" id="spark-delta">—</div>
+        </div>
+        <div class="spark-svg-wrap">
+          <svg class="spark-svg" id="spark-svg" viewBox="0 0 600 64" preserveAspectRatio="none"></svg>
+          <div class="spark-loading" id="spark-loading">Loading chart…</div>
+        </div>
+      </div>
+
       <!-- Earnings-proximity warning strip (shown only when |days_to_earnings| <= 5) -->
       <div class="ctx-warn" id="ctx-warn" style="display:none;">
         <svg class="ctx-warn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
         <div>
           <div id="ctx-warn-text"></div>
           <div class="ctx-warn-fv" id="ctx-warn-fv"></div>
+        </div>
+      </div>
+
+      <!-- Microstructure strip (volume vs avg, 52w pos, drawdown, short interest) -->
+      <div class="micro-strip" id="micro-strip" style="display:none;">
+        <div class="micro-cell" id="micro-vol">
+          <div class="micro-lbl">Volume vs 7d avg</div>
+          <div class="micro-val" id="micro-vol-val">—</div>
+          <div class="micro-sub" id="micro-vol-sub"></div>
+        </div>
+        <div class="micro-cell" id="micro-pos">
+          <div class="micro-lbl">52-week position</div>
+          <div class="micro-val" id="micro-pos-val">—</div>
+          <div class="micro-sub" id="micro-pos-sub"></div>
+        </div>
+        <div class="micro-cell" id="micro-dd">
+          <div class="micro-lbl">Drawdown from peak</div>
+          <div class="micro-val" id="micro-dd-val">—</div>
+          <div class="micro-sub">30-day high</div>
+        </div>
+        <div class="micro-cell" id="micro-short">
+          <div class="micro-lbl">Days to cover</div>
+          <div class="micro-val" id="micro-short-val">—</div>
+          <div class="micro-sub" id="micro-short-sub">Short interest</div>
         </div>
       </div>
 
@@ -414,8 +546,36 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
       <div class="section-lbl">Three similar historical cases</div>
       <div id="neighbors"></div>
 
+      <!-- Recent narratives about THIS ticker -->
+      <div class="rn-panel" id="rn-panel" style="display:none;">
+        <div class="rn-head">
+          <div class="rn-title">Recent narratives about <span id="rn-ticker"></span></div>
+          <div class="rn-sub" id="rn-sub"></div>
+        </div>
+        <div class="rn-list" id="rn-list"></div>
+      </div>
+
+      <!-- Brand footer — always visible so every screenshot includes attribution -->
+      <div class="brand-foot" id="brand-foot">
+        <div class="bf-l">
+          <img class="bf-logo logo-light" src="/assets/Market-Prism-Logo-Light.png" alt="Market Prism">
+          <img class="bf-logo logo-dark" src="/assets/Market-Prism-Logo-Dark.png" alt="Market Prism">
+          <div class="bf-stack">
+            <div class="bf-name">Market Prism</div>
+            <div class="bf-tag">Narrative validation against 3.5M historical observations</div>
+          </div>
+        </div>
+        <div class="bf-r">
+          <strong>marketprism.co</strong> &middot; <span id="bf-date"></span>
+        </div>
+      </div>
+
       <div class="results-actions">
         <button class="link-btn" id="reset-btn" type="button">← New search</button>
+        <button class="dl-btn" id="dl-btn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span id="dl-btn-label">Download as image</span>
+        </button>
       </div>
     </div>
 
@@ -487,6 +647,67 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
 
   resetBtn.addEventListener('click', reset);
 
+  // ── Download report as PNG (uses html2canvas, lazy-loaded) ──────────────
+  var dlBtn = document.getElementById('dl-btn');
+  var dlLbl = document.getElementById('dl-btn-label');
+  function loadHtml2Canvas(){
+    if (window.html2canvas) return Promise.resolve(window.html2canvas);
+    return new Promise(function(resolve, reject){
+      var s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+      s.onload = function(){ resolve(window.html2canvas); };
+      s.onerror = function(){ reject(new Error('Failed to load html2canvas')); };
+      document.head.appendChild(s);
+    });
+  }
+  dlBtn.addEventListener('click', function(){
+    var ticker = (inpTk.value || '').trim().toUpperCase() || 'report';
+    dlBtn.disabled = true;
+    dlLbl.textContent = 'Capturing…';
+    loadHtml2Canvas().then(function(h2c){
+      // Hide the action buttons during capture so they don't appear in the image
+      var actions = document.querySelector('.results-actions');
+      var prevDisplay = actions ? actions.style.display : '';
+      if (actions) actions.style.display = 'none';
+      var resultsEl = document.getElementById('results');
+      // Match the page's dark surface so transparent gaps render correctly
+      var bg = (document.documentElement.getAttribute('data-theme') === 'light') ? '#FFFFFF' : '#080B11';
+      return h2c(resultsEl, {
+        backgroundColor: bg,
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        windowWidth: resultsEl.scrollWidth,
+        windowHeight: resultsEl.scrollHeight
+      }).then(function(canvas){
+        if (actions) actions.style.display = prevDisplay;
+        return canvas;
+      }).catch(function(err){
+        if (actions) actions.style.display = prevDisplay;
+        throw err;
+      });
+    }).then(function(canvas){
+      canvas.toBlob(function(blob){
+        if (!blob) { throw new Error('toBlob returned null'); }
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'marketprism-' + ticker + '-' + new Date().toISOString().slice(0,10) + '.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+      }, 'image/png');
+    }).catch(function(err){
+      console.error('[download]', err);
+      alert('Image export failed: ' + (err && err.message || 'unknown error'));
+    }).finally(function(){
+      dlBtn.disabled = false;
+      dlLbl.textContent = 'Download as image';
+    });
+  });
+
   inpTk.addEventListener('input', function(){
     inpTk.value = inpTk.value.toUpperCase().replace(/[^A-Z0-9.\-]/g, '');
   });
@@ -542,6 +763,21 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
     if (upsidePct > -10) return { label: 'FAIRLY VALUED',      cls: '' };
     if (upsidePct > -25) return { label: 'OVERVALUED',         cls: 'dn' };
     return                      { label: 'DEEPLY OVERVALUED',  cls: 'dn' };
+  }
+
+  function fmtCompact(n){
+    if (n == null || isNaN(n)) return '—';
+    n = Number(n);
+    if (Math.abs(n) >= 1e9)  return (n/1e9).toFixed(2) + 'B';
+    if (Math.abs(n) >= 1e6)  return (n/1e6).toFixed(2) + 'M';
+    if (Math.abs(n) >= 1e3)  return (n/1e3).toFixed(1) + 'K';
+    return n.toLocaleString();
+  }
+
+  function fmtDate(d){
+    if (!d) return '—';
+    try { return new Date(d).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }); }
+    catch(_){ return String(d); }
   }
 
   function renderContext(ctx){
@@ -650,8 +886,174 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
     }
   }
 
+  // ── Microstructure strip ─────────────────────────────────────────────────
+  function renderMicrostructure(ctx){
+    var stripEl = document.getElementById('micro-strip');
+    var m = ctx && ctx.microstructure;
+    if (!m) { stripEl.style.display = 'none'; return; }
+
+    var anyShown = false;
+
+    // Volume vs avg
+    (function(){
+      var cell = document.getElementById('micro-vol');
+      var val  = document.getElementById('micro-vol-val');
+      var sub  = document.getElementById('micro-vol-sub');
+      if (m.volume_ratio != null && m.volume_day != null) {
+        var r = Number(m.volume_ratio);
+        val.textContent = r.toFixed(2) + '×';
+        val.className = 'micro-val ' + (r >= 1.5 ? 'warn' : (r <= 0.5 ? 'dn' : ''));
+        sub.textContent = fmtCompact(m.volume_day) + ' today';
+        cell.style.display = ''; anyShown = true;
+      } else { cell.style.display = 'none'; }
+    })();
+
+    // 52-week position
+    (function(){
+      var cell = document.getElementById('micro-pos');
+      var val  = document.getElementById('micro-pos-val');
+      var sub  = document.getElementById('micro-pos-sub');
+      var pos = m['52w_position'];
+      if (pos != null) {
+        var pct = Math.round(Number(pos) * 100);
+        val.textContent = pct + '%';
+        val.className = 'micro-val ' + (pct >= 80 ? 'up' : (pct <= 20 ? 'dn' : ''));
+        if (m.fifty_two_week_low != null && m.fifty_two_week_high != null) {
+          sub.textContent = '$' + Number(m.fifty_two_week_low).toFixed(2) + ' – $' + Number(m.fifty_two_week_high).toFixed(2);
+        } else sub.textContent = '';
+        cell.style.display = ''; anyShown = true;
+      } else { cell.style.display = 'none'; }
+    })();
+
+    // Drawdown from peak
+    (function(){
+      var cell = document.getElementById('micro-dd');
+      var val  = document.getElementById('micro-dd-val');
+      if (m.drawdown_from_peak != null) {
+        var d = Number(m.drawdown_from_peak) * 100;
+        val.textContent = (d >= 0 ? '+' : '') + d.toFixed(1) + '%';
+        val.className = 'micro-val ' + (d <= -10 ? 'dn' : (d >= -2 ? 'up' : ''));
+        cell.style.display = ''; anyShown = true;
+      } else { cell.style.display = 'none'; }
+    })();
+
+    // Days to cover (short interest)
+    (function(){
+      var cell = document.getElementById('micro-short');
+      var val  = document.getElementById('micro-short-val');
+      var sub  = document.getElementById('micro-short-sub');
+      if (m.days_to_cover != null) {
+        var d = Number(m.days_to_cover);
+        val.textContent = d.toFixed(1);
+        val.className = 'micro-val ' + (d >= 5 ? 'warn' : '');
+        sub.textContent = d >= 5 ? 'Elevated short interest' : 'Short interest';
+        cell.style.display = ''; anyShown = true;
+      } else { cell.style.display = 'none'; }
+    })();
+
+    stripEl.style.display = anyShown ? '' : 'none';
+  }
+
+  // ── Recent narratives panel ──────────────────────────────────────────────
+  function renderRecentNarratives(ticker, recent){
+    var panel = document.getElementById('rn-panel');
+    var listEl = document.getElementById('rn-list');
+    var titleTk = document.getElementById('rn-ticker');
+    var subEl = document.getElementById('rn-sub');
+    if (!Array.isArray(recent) || !recent.length) { panel.style.display = 'none'; return; }
+    titleTk.textContent = ticker;
+    subEl.textContent = 'Last ' + recent.length + ' chain-tip dot' + (recent.length === 1 ? '' : 's') + ' from the corpus';
+    listEl.innerHTML = recent.map(function(d){
+      var r10 = d.return_10d;
+      var r10Cls = r10 == null ? 'pending' : (r10 > 0 ? 'up' : (r10 < 0 ? 'dn' : 'flat'));
+      var r10Str = r10 == null ? 'unresolved' : ((r10 >= 0 ? '+' : '') + (r10 * 100).toFixed(1) + '% 10d');
+      var r5 = d.return_5d;
+      var r5Cls = r5 == null ? 'pending' : (r5 > 0 ? 'up' : (r5 < 0 ? 'dn' : 'flat'));
+      var r5Str = r5 == null ? 'unresolved' : ((r5 >= 0 ? '+' : '') + (r5 * 100).toFixed(1) + '% 5d');
+      return '<div class="rn-item">' +
+        '<div class="rn-top">' +
+          '<span class="rn-source">' + esc(d.speaker || '—') + '</span>' +
+          '<span class="rn-date">' + esc(fmtDate(d.observed_at)) + '</span>' +
+        '</div>' +
+        '<div class="rn-body">' + esc(d.narrative_text || '—') + '</div>' +
+        '<div class="rn-foot">' +
+          '<span>5d <span class="v ' + r5Cls + '">' + esc(r5Str) + '</span></span>' +
+          '<span>10d <span class="v ' + r10Cls + '">' + esc(r10Str) + '</span></span>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+    panel.style.display = '';
+  }
+
+  // ── 90-day price sparkline (Massive via /api/price-history) ──────────────
+  function fetchAndRenderSparkline(ticker){
+    var card = document.getElementById('spark-card');
+    var loading = document.getElementById('spark-loading');
+    var svg = document.getElementById('spark-svg');
+    var pxEl = document.getElementById('spark-px');
+    var deltaEl = document.getElementById('spark-delta');
+    var lblEl = document.getElementById('spark-lbl');
+    card.style.display = 'flex';
+    loading.style.display = '';
+    svg.innerHTML = '';
+    pxEl.textContent = '—';
+    deltaEl.textContent = '—';
+    deltaEl.className = 'spark-delta flat';
+    lblEl.textContent = 'Last 90 days';
+
+    fetch('/api/price-history?ticker=' + encodeURIComponent(ticker) + '&days=90')
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(j){
+        var series = (j && Array.isArray(j.series)) ? j.series.filter(function(p){ return p.price_close != null; }) : [];
+        if (series.length < 2) { card.style.display = 'none'; return; }
+        loading.style.display = 'none';
+
+        var first = series[0].price_close;
+        var last  = series[series.length - 1].price_close;
+        var pct = ((last - first) / first) * 100;
+        var dirCls = pct > 0.5 ? 'up' : (pct < -0.5 ? 'dn' : 'flat');
+        pxEl.textContent = '$' + Number(last).toFixed(2);
+        deltaEl.textContent = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '% over 90d';
+        deltaEl.className = 'spark-delta ' + dirCls;
+
+        var W = 600, H = 64, P = 4;
+        var lo = Infinity, hi = -Infinity;
+        for (var i = 0; i < series.length; i++) {
+          var c = series[i].price_close;
+          if (c < lo) lo = c;
+          if (c > hi) hi = c;
+        }
+        if (hi === lo) { hi = lo + 1; }
+        var stepX = (W - 2*P) / (series.length - 1);
+        var pts = series.map(function(p, i){
+          var x = P + i * stepX;
+          var y = H - P - ((p.price_close - lo) / (hi - lo)) * (H - 2*P);
+          return x.toFixed(1) + ',' + y.toFixed(1);
+        });
+        var stroke = pct >= 0 ? '#00DE94' : '#FF4D4D';
+        var fillStop = pct >= 0 ? 'rgba(0,222,148,0.18)' : 'rgba(255,77,77,0.18)';
+
+        // Build the gradient + area + line
+        var gradId = 'spkg' + Math.floor(Math.random() * 1e9);
+        var pathArea = 'M' + pts[0] + ' L' + pts.join(' L') + ' L' + (W-P).toFixed(1) + ',' + (H-P).toFixed(1) + ' L' + P + ',' + (H-P).toFixed(1) + ' Z';
+        var pathLine = 'M' + pts.join(' L');
+        svg.innerHTML =
+          '<defs><linearGradient id="' + gradId + '" x1="0" y1="0" x2="0" y2="1">' +
+            '<stop offset="0%" stop-color="' + fillStop + '"/>' +
+            '<stop offset="100%" stop-color="rgba(0,0,0,0)"/>' +
+          '</linearGradient></defs>' +
+          '<path d="' + pathArea + '" fill="url(#' + gradId + ')" stroke="none"/>' +
+          '<path d="' + pathLine + '" fill="none" stroke="' + stroke + '" stroke-width="1.5" vector-effect="non-scaling-stroke"/>';
+      })
+      .catch(function(){ card.style.display = 'none'; });
+  }
+
   function render(data){
     renderContext(data.context);
+    renderMicrostructure(data.context);
+    renderRecentNarratives(data.ticker, data.recent_narratives);
+    fetchAndRenderSparkline(data.ticker);
+    document.getElementById('bf-date').textContent = new Date().toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
     var bs = Math.max(0, Math.min(1, Number(data.bullshit_probability) || 0));
     var bsPct = Math.round(bs * 100);
     var bucket = bs >= 0.66 ? 'high' : (bs >= 0.34 ? 'med' : 'low');

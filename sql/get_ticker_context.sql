@@ -1,13 +1,14 @@
 -- get_ticker_context
 --
--- Backs the three "context cards" rendered above the bullshit-probability
--- hero on /search:
+-- Backs the context cards rendered above the bullshit-probability hero on
+-- /search:
 --   1. Last earnings (beat/miss + guidance)
 --   2. P/E vs GICS sector (with smart fallback to dashboard_sector / canonical_sector)
 --   3. Market Prism fair value (when |days_to_earnings| <= 5, also acts as the
 --      "projected price" anchor in the proximity warning)
+--   4. Microstructure (volume vs avg, 52w-range position, drawdown, short interest)
 --
--- All three are surfaced as separate keys in one JSONB blob so the API can
+-- All four are surfaced as separate keys in one JSONB blob so the API can
 -- get everything in a single round-trip and the frontend conditionally
 -- renders cards based on null vs non-null values.
 --
@@ -45,7 +46,7 @@ AS $$
     ORDER BY snapshot_date DESC LIMIT 1
   ),
   scorecard AS (
-    SELECT fair_value, fvd_pct, current_price
+    SELECT fair_value, fvd_pct, current_price, days_to_cover, short_pressure_modifier
     FROM public.narrative_scorecard
     WHERE ticker = (SELECT sym FROM t) AND fair_value IS NOT NULL
     ORDER BY snapshot_date DESC LIMIT 1
@@ -69,9 +70,6 @@ AS $$
       ('Utilities',              'Utilities')
     ) AS m(gics, bench)
   ),
-  -- Best-match benchmark: try dashboard_sector first (e.g. NVDA or AMD ->
-  -- Semiconductors), then canonical_sector, then GICS-mapped. First
-  -- non-null wins.
   bench_resolved AS (
     SELECT
       COALESCE(
@@ -129,6 +127,36 @@ AS $$
       'fv',            (SELECT fair_value FROM scorecard),
       'current_price', (SELECT current_price FROM scorecard),
       'fvd_pct',       (SELECT fvd_pct FROM scorecard)
+    ),
+    'microstructure', jsonb_build_object(
+      'volume_day',          (SELECT volume_day FROM snap),
+      'volume_7d_avg',       (SELECT volume_7d_avg FROM snap),
+      'volume_ratio',        CASE
+                               WHEN (SELECT volume_7d_avg FROM snap) IS NULL
+                                 OR (SELECT volume_7d_avg FROM snap) = 0
+                                 OR (SELECT volume_day FROM snap) IS NULL
+                                 THEN NULL
+                               ELSE ROUND(
+                                 ((SELECT volume_day FROM snap)::numeric
+                                  / (SELECT volume_7d_avg FROM snap)::numeric)::numeric,
+                                 2)
+                             END,
+      'fifty_two_week_high', (SELECT fifty_two_week_high FROM snap),
+      'fifty_two_week_low',  (SELECT fifty_two_week_low FROM snap),
+      '52w_position',        CASE
+                               WHEN (SELECT fifty_two_week_high FROM snap) IS NULL
+                                 OR (SELECT fifty_two_week_low FROM snap) IS NULL
+                                 OR (SELECT fifty_two_week_high FROM snap) = (SELECT fifty_two_week_low FROM snap)
+                                 OR (SELECT price_close FROM snap) IS NULL
+                                 THEN NULL
+                               ELSE ROUND(
+                                 (((SELECT price_close FROM snap)::numeric - (SELECT fifty_two_week_low FROM snap)::numeric)
+                                  / NULLIF((SELECT fifty_two_week_high FROM snap)::numeric - (SELECT fifty_two_week_low FROM snap)::numeric, 0)::numeric)
+                                 , 3)
+                             END,
+      'drawdown_from_peak',  (SELECT drawdown_from_peak FROM snap),
+      'days_to_cover',       (SELECT days_to_cover FROM scorecard),
+      'short_pressure',      (SELECT short_pressure_modifier FROM scorecard)
     )
   );
 $$;

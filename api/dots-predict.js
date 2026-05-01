@@ -93,6 +93,24 @@ async function fetchTickerContext(supabaseUrl, supabaseKey, ticker) {
   return r.json().catch(function () { return null; });
 }
 
+async function fetchRecentNarratives(supabaseUrl, supabaseKey, ticker, n) {
+  if (!ticker) return [];
+  const url = supabaseUrl + '/rest/v1/rpc/get_recent_narratives';
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'apikey': supabaseKey,
+      'Authorization': 'Bearer ' + supabaseKey,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    },
+    body: JSON.stringify({ ticker_in: ticker, n: n || 8 })
+  });
+  if (!r.ok) return [];
+  const j = await r.json().catch(function () { return []; });
+  return Array.isArray(j) ? j : [];
+}
+
 async function searchDots(supabaseUrl, supabaseKey, queryVector, sector) {
   const url = supabaseUrl + '/rest/v1/rpc/search_dots_by_embedding';
   const body = {
@@ -177,17 +195,20 @@ module.exports = async function (req, res) {
     if (narrativeText.length < 10) return send(res, 400, { error: 'narrativeText too short (need at least a sentence).' });
     if (narrativeText.length > 4000) return send(res, 400, { error: 'narrativeText too long (max 4000 chars).' });
 
-    // 1. Embed locally + fetch ticker context in parallel.
-    //    Context is purely additive (it adorns the response, never affects
-    //    retrieval); failures are silent and the search still returns.
-    let queryVector, context;
+    // 1. Embed locally + fetch ticker context + recent narratives in parallel.
+    //    Context and narratives are purely additive (they adorn the response,
+    //    never affect retrieval); failures are silent and the search still
+    //    returns.
+    let queryVector, context, recentNarratives;
     try {
-      const [vec, ctx] = await Promise.all([
+      const [vec, ctx, recent] = await Promise.all([
         embedQuery(narrativeText),
-        fetchTickerContext(supabaseUrl, supabaseKey, ticker).catch(function () { return null; })
+        fetchTickerContext(supabaseUrl, supabaseKey, ticker).catch(function () { return null; }),
+        fetchRecentNarratives(supabaseUrl, supabaseKey, ticker, 8).catch(function () { return []; })
       ]);
       queryVector = vec;
       context = ctx;
+      recentNarratives = recent;
     } catch (e) {
       return send(res, 502, { error: 'Embedding failed: ' + (e.message || 'unknown') });
     }
@@ -213,7 +234,8 @@ module.exports = async function (req, res) {
         n_similar_dots: 0,
         n_resolved_neighbors: 0,
         neighbors: [],
-        context: context || null
+        context: context || null,
+        recent_narratives: recentNarratives || []
       });
     }
 
@@ -247,6 +269,7 @@ module.exports = async function (req, res) {
       }),
       warning: agg.resolved.length > 0 && agg.resolved.length < 30 ? 'sparse_neighborhood' : null,
       context: context || null,
+      recent_narratives: recentNarratives || [],
       updated: new Date().toISOString()
     });
   } catch (err) {
