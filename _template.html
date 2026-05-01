@@ -8680,6 +8680,7 @@ async function loadTradeLanes(){
 // ── Track Record (paper_trades validation) ───────────────────────────────────
 var _VAL_LOADED=false;
 var _VAL_TIMER=null;
+var _LIVE_PORT_TIMER=null;
 var _VAL_TRADES=[];
 var _VAL_CURRENT_FILTER='all';
 var VAL_SIGNAL_LABELS={
@@ -9067,6 +9068,13 @@ async function loadValidation(force){
     // displayed numbers can sit hours behind reality on the same session.
     if(!_VAL_TIMER){
       _VAL_TIMER=setInterval(function(){loadValidation(true);}, 5*60*1000);
+    }
+    // Live portfolio cards refresh on a faster cadence than the full
+    // paper_trades re-pull — the upstream cron rebuilds the snapshot tables
+    // every 15 min during market hours, so a 60s poll gets users the new
+    // portfolio_value within a minute of the rebuild landing.
+    if(!_LIVE_PORT_TIMER){
+      _LIVE_PORT_TIMER=setInterval(loadLivePortfolios, 60*1000);
     }
     // Pull pre-computed overall stats (cron-refreshed daily). If available,
     // valRenderStats will prefer these over client-side aggregation.
