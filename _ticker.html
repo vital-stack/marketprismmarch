@@ -5422,14 +5422,13 @@ async function loadHero() {
     if (sc.suspicion_score != null && sc.suspicion_score >= 50) {
       insightBadges.push({ label: 'Manipulation Risk', color: '#7B61FF', bg: 'rgba(123,97,255,0.10)', border: 'rgba(123,97,255,0.25)' });
     }
-    // Decay
-    if (sc.decay_rate != null && sc.decay_rate >= 0.05) {
-      insightBadges.push({ label: 'Narrative Fading', color: '#FFB800', bg: 'rgba(255,184,0,0.08)', border: 'rgba(255,184,0,0.20)' });
-    }
-    // Energy
-    if (sc.energy_remaining != null) {
-      if (sc.energy_remaining >= 85) insightBadges.push({ label: 'High Energy', color: '#00AEFF', bg: 'rgba(0,174,255,0.08)', border: 'rgba(0,174,255,0.20)' });
-      else if (sc.energy_remaining <= 15) insightBadges.push({ label: 'Story Exhausted', color: '#A0A8B0', bg: 'rgba(160,168,176,0.08)', border: 'rgba(160,168,176,0.20)' });
+    // Narrative-state badges (Narrative Fading, Story Exhausted) suppressed
+    // 2026-05-01 — they routinely contradicted the trade-ticket verdict
+    // shown directly below (e.g. "HYPE FORMING / BUILDING" with a Fading
+    // chip next to the ticker). The High Energy callout is kept because it
+    // reinforces — rather than contradicts — bullish/forming verdicts.
+    if (sc.energy_remaining != null && sc.energy_remaining >= 85) {
+      insightBadges.push({ label: 'High Energy', color: '#00AEFF', bg: 'rgba(0,174,255,0.08)', border: 'rgba(0,174,255,0.20)' });
     }
     // Verdict-based badges
     const scVerdict = (sc.verdict || '').toLowerCase();
