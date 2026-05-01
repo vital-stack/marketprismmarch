@@ -4921,11 +4921,18 @@ function renderTradeTicket(f, story, sc) {
   var primary = (f.primary_horizon || '5d').toLowerCase();
   var primPct = f['predicted_' + primary + '_pct'];
   var primPrice = f['predicted_' + primary + '_price'];
+  var primLo = f['predicted_' + primary + '_low'];
+  var primHi = f['predicted_' + primary + '_high'];
+  var primBandPct = (primLo != null && primHi != null && f.current_price)
+    ? (((primHi - primLo) / 2) / f.current_price * 100) : null;
   var horizonCell = '<div class="tt-cell">'
-    + '<div class="tt-cell-label">Horizon</div>'
+    + '<div class="tt-cell-label">Predicted Horizon</div>'
     + '<div class="tt-cell-val">'+ esc(primary.toUpperCase()) +' move</div>'
-    + '<div class="tt-cell-sub"><span class="'+ttPctClass(primPct)+'">'+ ttFmtPct(primPct) +'</span>'
-      + (primPrice != null ? ' &middot; ' + ttFmtUsd(primPrice) : '') + '</div>'
+    + '<div class="tt-cell-sub">'
+      + '<span class="'+ttPctClass(primPct)+'">'+ ttFmtPct(primPct) +'</span>'
+      + (primPrice != null ? ' &middot; ' + ttFmtUsd(primPrice) : '')
+      + (primBandPct != null ? ' &middot; ± ' + primBandPct.toFixed(1) + '%' : '')
+    + '</div>'
     + '</div>';
 
   var invCell;
@@ -4990,16 +4997,6 @@ function renderTradeTicket(f, story, sc) {
       + '</div>';
   }).join('');
 
-  // ── Predicted move line ──
-  var lo = f['predicted_' + primary + '_low'];
-  var hi = f['predicted_' + primary + '_high'];
-  var halfPct = (lo != null && hi != null && f.current_price)
-    ? (((hi - lo) / 2) / f.current_price * 100) : null;
-  var predLine = 'Predicted ' + primary.toUpperCase() + ' move: '
-    + '<span class="'+ ttPctClass(primPct) +'">'+ ttFmtPct(primPct) +'</span>'
-    + (primPrice != null ? ' (' + ttFmtUsd(primPrice) + ')' : '')
-    + (halfPct != null ? ' ± ' + halfPct.toFixed(1) + '%' : '');
-
   // ── Conviction dots ──
   var primConv = f['conviction_' + primary];
   var convRow = '';
@@ -5049,7 +5046,6 @@ function renderTradeTicket(f, story, sc) {
     + '</div>'
     + (headline ? '<div class="tt-headline">'+ esc(headline) +'</div>' : '')
     + '<div class="tt-grid">'+ biasCell + horizonCell + invCell + tgtCell +'</div>'
-    + '<div class="tt-pred-line">'+ predLine +'</div>'
     + convRow
     + '<div class="tt-strip">'+ stripRows +'</div>'
     + trackRow;
@@ -5686,7 +5682,22 @@ async function loadSectorPeBubble(heroRow) {
   if (!el || !heroRow) return;
   const tickerPe = heroRow.pe_ratio;
   const sector   = heroRow.sector_name;
-  if (tickerPe == null || !sector) return;
+  if (tickerPe == null) return;
+  const tPe = Number(tickerPe);
+  if (!isFinite(tPe) || tPe <= 0) return;
+
+  // Fallback chip — shown if no matching sector benchmark is available.
+  // Keeps a stylized P/E label visible even when the sector lookup misses.
+  const renderSolo = () => {
+    el.innerHTML = `
+      <span class="pe-bubble neutral" title="Trailing P/E ratio">
+        <span class="pe-bubble-lbl">P/E</span>
+        <span class="pe-bubble-val">${tPe.toFixed(1)}x</span>
+      </span>`;
+  };
+
+  if (!sector) { renderSolo(); return; }
+
   try {
     const rows = await sbFetch('sector_pe_benchmarks', {
       select: 'median_pe,avg_pe,ticker_count_pe',
@@ -5699,10 +5710,9 @@ async function loadSectorPeBubble(heroRow) {
       const w = row.ticker_count_pe != null ? Number(row.ticker_count_pe) : 0;
       if (m != null && isFinite(m) && w > 0) { num += m * w; den += w; }
     }
-    if (den === 0) return;
+    if (den === 0) { renderSolo(); return; }
     const sectorPe = num / den;
-    const tPe = Number(tickerPe);
-    if (!isFinite(tPe) || !isFinite(sectorPe) || sectorPe <= 0) return;
+    if (!isFinite(sectorPe) || sectorPe <= 0) { renderSolo(); return; }
     const deltaPct = ((tPe - sectorPe) / sectorPe) * 100;
     const tone = deltaPct > 5 ? 'bear' : deltaPct < -5 ? 'bull' : 'neutral';
     const arrow = deltaPct > 0 ? '↑' : deltaPct < 0 ? '↓' : '→';
@@ -5716,7 +5726,7 @@ async function loadSectorPeBubble(heroRow) {
         <span class="pe-bubble-delta ${tone}">${arrow} ${sign}${deltaPct.toFixed(0)}%</span>
       </span>`;
   } catch (e) {
-    /* silently skip — bubble is non-critical */
+    renderSolo();
   }
 }
 
