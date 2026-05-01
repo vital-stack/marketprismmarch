@@ -3043,11 +3043,36 @@
     font-family:'Inter',system-ui,sans-serif;
     font-size:11px;color:var(--mp-text-tertiary);line-height:1.2;
   }
+  .tt-disclosure{
+    border-top:1px solid var(--mp-border);
+    margin-bottom:12px;
+  }
+  .tt-disclosure > summary{
+    list-style:none;cursor:pointer;
+    display:flex;align-items:center;gap:8px;
+    padding:12px 0 10px;
+    font-family:'Inter',system-ui,sans-serif;
+    font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--mp-text-tertiary);
+    user-select:none;
+  }
+  .tt-disclosure > summary::-webkit-details-marker{display:none;}
+  .tt-disclosure > summary:hover{color:var(--mp-text-primary);}
+  .tt-disclosure-chev{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:14px;height:14px;flex-shrink:0;
+    font-size:10px;line-height:1;color:currentColor;
+  }
+  .tt-disclosure-chev::before{ content:'\25B8'; }
+  .tt-disclosure[open] .tt-disclosure-chev::before{ content:'\25BE'; }
+  .tt-disclosure-hint{
+    font-weight:500;letter-spacing:.02em;text-transform:none;
+    color:var(--mp-text-muted);font-size:11px;margin-left:auto;
+  }
   .tt-strip{
     display:grid;grid-template-columns:auto 1fr 1fr 1fr auto;
     gap:8px 16px;align-items:center;
-    border-top:1px solid var(--mp-border);
-    padding:14px 0 4px;margin-bottom:12px;
+    padding:6px 0 10px;
   }
   .tt-strip-row{display:contents;}
   .tt-strip-row.is-primary .tt-h-label{color:var(--mp-text-primary);font-weight:700;}
@@ -5073,7 +5098,14 @@ function renderTradeTicket(f, story, sc) {
     + (headline ? '<div class="tt-headline">'+ esc(headline) +'</div>' : '')
     + '<div class="tt-grid">'+ biasCell + horizonCell + invCell + tgtCell +'</div>'
     + convRow
-    + '<div class="tt-strip">'+ stripRows +'</div>'
+    + '<details class="tt-disclosure">'
+      + '<summary>'
+        + '<span class="tt-disclosure-chev"></span>'
+        + '<span>All horizons</span>'
+        + '<span class="tt-disclosure-hint">1D &middot; 3D &middot; 5D &middot; 10D</span>'
+      + '</summary>'
+      + '<div class="tt-strip">'+ stripRows +'</div>'
+    + '</details>'
     + trackRow;
 }
 
