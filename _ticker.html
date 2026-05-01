@@ -5281,7 +5281,7 @@ async function loadHero() {
       'sector_trap_flag','sector_trap_name','days_to_options_expiry','next_options_expiry'
     ].join(',');
 
-    const [rows, healthRows, snapRows, tradeRows, scorecardRows, cvRows, earnContextRows, forecastRows] = await Promise.all([
+    const [rows, healthRows, snapRows, tradeRows, scorecardRows, cvRows, earnContextRows, forecastRows, latestBzEarningsRows] = await Promise.all([
       sbFetch('v_dash_daily_story', { select: cols, ticker: `eq.${TICKER}`, order: 'snapshot_date.desc', limit: '1' }),
       sbFetch('v_dash_narrative_health', {
         select: 'narrative_health,narrative_trend,attention_trend',
@@ -5326,6 +5326,18 @@ async function loadHero() {
       sbFetch('ticker_forecast', {
         select: '*',
         ticker: `eq.${TICKER}`,
+        limit:  '1'
+      }).catch(function(){ return []; }),
+      // Latest ACTUAL quarterly earnings — used to override claim_verifications
+      // in the Forensic Analysis strip when CV is stale (CV is keyed off
+      // claim-verification snapshots, which can lag the most recent quarter).
+      // Only consider rows where actual_eps is not null so we don't display
+      // estimates as if they were reported.
+      sbFetch('benzinga_earnings', {
+        select: 'date,fiscal_period,fiscal_year,actual_eps,estimated_eps,eps_surprise_percent,actual_revenue,revenue_surprise',
+        ticker: `eq.${TICKER}`,
+        'actual_eps': 'not.is.null',
+        order:  'date.desc',
         limit:  '1'
       }).catch(function(){ return []; })
     ]);
@@ -5528,17 +5540,36 @@ async function loadHero() {
       return '$' + v.toFixed(0);
     };
 
-    // Use claim_verifications for financial data, fall back to v_dash_daily_story
+    // claim_verifications often lags the most recent reported quarter (it's
+    // keyed off claim-snapshots, not the earnings cron), so the freshest
+    // ACTUAL earnings come from benzinga_earnings. Prefer that source for
+    // EPS/revenue/surprise; fall back to CV (then daily-story) when missing.
+    // Keep CV for the SEC-derived gross/net margins — Benzinga doesn't carry
+    // those, and they only refresh on filings anyway.
     const cv = (cvRows || [])[0] || {};
+    const bz = (latestBzEarningsRows || [])[0] || {};
+    // True only when bz has a more recent ACTUAL quarter than CV — guards
+    // against showing benzinga estimates over CV when bz hasn't been
+    // updated for this ticker yet.
+    const bzIsFresher = bz.date && (!cv.period_of_report || bz.date > cv.period_of_report);
 
-    const eps        = cv.benzinga_eps_actual ?? cv.sec_eps ?? r.benzinga_eps_actual ?? r.sec_eps;
-    const epsEst     = cv.benzinga_eps_estimate ?? r.benzinga_eps_estimate;
-    const epsSurp    = cv.benzinga_eps_surprise_pct ?? r.benzinga_eps_surprise_pct;
+    const eps        = (bzIsFresher ? bz.actual_eps : null) ?? cv.benzinga_eps_actual ?? cv.sec_eps ?? r.benzinga_eps_actual ?? r.sec_eps;
+    const epsEst     = (bzIsFresher ? bz.estimated_eps : null) ?? cv.benzinga_eps_estimate ?? r.benzinga_eps_estimate;
+    // benzinga_earnings.eps_surprise_percent is a decimal (0.74 = 74%);
+    // claim_verifications.benzinga_eps_surprise_pct is already a percent.
+    // Normalize bz to percent so the existing formatter doesn't double-scale.
+    const epsSurp    = (bzIsFresher && bz.eps_surprise_percent != null)
+      ? Number(bz.eps_surprise_percent) * 100
+      : (cv.benzinga_eps_surprise_pct ?? r.benzinga_eps_surprise_pct);
     const epsSurpCls = epsSurp > 0 ? 'color:var(--accent-surging)' : epsSurp < 0 ? 'color:var(--accent-breaking)' : '';
     const epsSurpTxt = epsSurp != null ? (epsSurp > 0 ? '+' : '') + epsSurp.toFixed(1) + '%' : '—';
 
-    const rev        = cv.benzinga_revenue_actual ?? cv.sec_revenue ?? r.benzinga_revenue_actual ?? r.sec_revenue;
-    const revSurp    = cv.benzinga_revenue_surprise_pct;
+    const rev        = (bzIsFresher ? bz.actual_revenue : null) ?? cv.benzinga_revenue_actual ?? cv.sec_revenue ?? r.benzinga_revenue_actual ?? r.sec_revenue;
+    // bz.revenue_surprise is an absolute dollar delta, not a pct — convert to
+    // pct using actual_revenue so the surprise label format stays consistent.
+    const revSurp    = (bzIsFresher && bz.revenue_surprise != null && bz.actual_revenue)
+      ? (Number(bz.revenue_surprise) / Number(bz.actual_revenue))
+      : cv.benzinga_revenue_surprise_pct;
     const revSurpCls = revSurp > 0 ? 'color:var(--accent-surging)' : revSurp < 0 ? 'color:var(--accent-breaking)' : '';
 
     const cvFormType = cv.form_type || r.form_type;
@@ -5546,7 +5577,9 @@ async function loadHero() {
     const filedLbl   = cvFormType && cvFilingDate
       ? `${cvFormType} · ${new Date(cvFilingDate).toLocaleDateString('en-US',{month:'short',year:'numeric'})}`
       : cvFormType || '—';
-    const fiscalPeriod = cv.benzinga_fiscal_period ? cv.benzinga_fiscal_period : '';
+    const fiscalPeriod = bzIsFresher && bz.fiscal_period
+      ? bz.fiscal_period + (bz.fiscal_year ? ' ' + bz.fiscal_year : '')
+      : (cv.benzinga_fiscal_period ? cv.benzinga_fiscal_period : '');
 
     const grossMargin = cv.sec_gross_margin ?? r.sec_gross_margin;
     const netMargin   = cv.sec_net_margin ?? r.sec_net_margin;
