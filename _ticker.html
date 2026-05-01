@@ -5563,19 +5563,10 @@ async function loadHero() {
       verdictBanner.style.display = 'block';
       verdictBanner.style.borderLeftColor = ttColor(f.color);
       verdictBanner.innerHTML = renderTradeTicket(f, r, sc);
-
-      // Move the hero badge pills (Earnings · Manipulation Risk · High Energy etc.)
-      // into the trade-ticket title row so they sit alongside the severity badge.
-      // Pill style is preserved — we just relocate the existing nodes.
-      var ttTitleRow = verdictBanner.querySelector('.tt-title-row');
-      var heroRow = document.querySelector('.hero-ticker-row');
-      if (ttTitleRow && heroRow) {
-        var pills = heroRow.querySelectorAll('.hero-insight-badge, .hero-state-badge');
-        pills.forEach(function(p){ ttTitleRow.appendChild(p); });
-      }
+      // Badges (Earnings · High Hype Gap · Coordinated Narrative · etc.) stay
+      // where they're rendered — in .hero-ticker-row next to the ticker symbol.
     } else if (verdictBanner) {
       // No forecast row yet for this ticker — keep the banner hidden.
-      // Badges remain in hero-ticker-row as a fallback.
       verdictBanner.style.display = 'none';
     }
 
