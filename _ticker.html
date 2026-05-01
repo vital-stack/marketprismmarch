@@ -10148,7 +10148,10 @@ window.MP_DOMAINS   = MP_DOMAINS;
   var idx = -1;
 
   if(SUPABASE_URL && SUPABASE_ANON){
-    fetch(SUPABASE_URL + '/rest/v1/ticker_industry_lookup?select=ticker,name,sector&ticker=' + encodeURIComponent(EXCLUDED) + '&order=ticker.asc&limit=300', {
+    // v_ticker_universe_search = ticker_forecast UNION ticker_industry_lookup,
+    // so tickers with a live forecast but no lookup row (BABA, NIO, NVO, T, etc.)
+    // still appear in this dropdown.
+    fetch(SUPABASE_URL + '/rest/v1/v_ticker_universe_search?select=ticker,name,sector&ticker=' + encodeURIComponent(EXCLUDED) + '&order=ticker.asc&limit=500', {
       headers: {'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON, 'Accept': 'application/json'}
     }).then(function(r){ return r.ok ? r.json() : []; }).then(function(rows){
       tickers = (rows || []).filter(function(r){ return r.ticker; });
