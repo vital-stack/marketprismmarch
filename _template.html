@@ -8607,6 +8607,8 @@ async function loadTradeLanes(){
       // Drop trades whose expected return rounds to 0.0% (noise signal, not a real edge).
       // Earnings lane has no predicted return — its chip is the countdown — so exempt it.
       if(p.lane!=='EARNINGS_PLAY'&&row._predPct!=null&&Math.abs(Number(row._predPct))<0.05)return;
+      // Frontend block: hide RBLX from Day Trade lane.
+      if(p.lane==='DAY_TRADE'&&p.ticker==='RBLX')return;
       buckets[p.lane].push(row);
     });
     // ── Supplement Earnings Play lane with earnings_context tickers not already present ──
