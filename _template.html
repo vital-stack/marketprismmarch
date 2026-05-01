@@ -387,6 +387,19 @@ body{
 .scholar-dd-name{font-size:12px;color:var(--mp-text-tertiary);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .scholar-dd-sector{font-size:10px;color:var(--mp-text-muted);flex-shrink:0;}
 .scholar-dd-empty{padding:16px;text-align:center;font-size:12px;color:var(--mp-text-muted);}
+/* Browse-all flyout: opens when the search bar is focused with no query.
+   Expands the standard dropdown into a sector-grouped chip grid so users
+   can scan the whole tracked universe in one glance. As soon as they
+   start typing, the standard filter view replaces this. */
+.scholar-dropdown.scholar-browse-mode{max-height:min(70vh,560px);padding:8px 0;}
+.scholar-browse-head{padding:10px 16px 8px;font-size:11px;color:var(--mp-text-muted);text-transform:uppercase;letter-spacing:.10em;font-family:var(--font-body);border-bottom:1px solid rgba(255,255,255,0.04);margin-bottom:6px;}
+.scholar-sector-group{padding:10px 16px 14px;}
+.scholar-sector-label{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--mp-text-tertiary);margin-bottom:8px;display:flex;align-items:center;gap:8px;font-family:var(--font-body);}
+.scholar-sector-label::after{content:'';flex:1;height:1px;background:var(--mp-border);}
+.scholar-sector-count{font-size:10px;color:var(--mp-text-muted);font-weight:500;letter-spacing:.04em;}
+.scholar-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.scholar-chip{display:inline-flex;align-items:center;padding:5px 10px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);font-size:12px;font-weight:600;color:var(--mp-text-secondary);text-decoration:none;font-family:var(--font-body);transition:background .15s,border-color .15s,color .15s;letter-spacing:.02em;}
+.scholar-chip:hover{background:rgba(0,174,255,0.10);border-color:rgba(0,174,255,0.30);color:#00AEFF;}
 /* ── PAGE CONTENT ── */
 .page-content{padding:24px 28px 64px;flex:1;overflow-x:hidden;max-width:100%;}
 .tab-panel{display:none;}
@@ -16335,15 +16348,18 @@ document.addEventListener('visibilitychange',function(){
         if(_ddTickers.length>0)barInput.placeholder='Search '+_ddTickers.length+' tickers\u2026 e.g. AAPL, NVDA, TSLA';
       }).catch(function(){});
     }
+    // Cheap HTML-escape for ticker/name/sector strings rendered into the dropdown.
+    function _ddEsc(s){return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
     function ddRender(matches){
       if(!_ddEl)return;
+      _ddEl.classList.remove('scholar-browse-mode');
       if(!matches.length){_ddEl.innerHTML='<div class="scholar-dd-empty">No matching tickers</div>';_ddEl.classList.add('open');return;}
       _ddIdx=-1;
       _ddEl.innerHTML=matches.slice(0,12).map(function(r,i){
-        return '<div class="scholar-dd-item" data-ticker="'+r.ticker+'" data-idx="'+i+'">'
-          +'<span class="scholar-dd-ticker">'+r.ticker+'</span>'
-          +'<span class="scholar-dd-name">'+(r.name||'')+'</span>'
-          +'<span class="scholar-dd-sector">'+(r.sector||'')+'</span>'
+        return '<div class="scholar-dd-item" data-ticker="'+_ddEsc(r.ticker)+'" data-idx="'+i+'">'
+          +'<span class="scholar-dd-ticker">'+_ddEsc(r.ticker)+'</span>'
+          +'<span class="scholar-dd-name">'+_ddEsc(r.name||'')+'</span>'
+          +'<span class="scholar-dd-sector">'+_ddEsc(r.sector||'')+'</span>'
         +'</div>';
       }).join('');
       _ddEl.classList.add('open');
@@ -16354,7 +16370,49 @@ document.addEventListener('visibilitychange',function(){
         });
       });
     }
-    function ddClose(){if(_ddEl)_ddEl.classList.remove('open');_ddIdx=-1;}
+    // Browse-all flyout: shown when the bar is focused with empty input.
+    // Renders every tracked ticker as a clickable chip, grouped by sector.
+    function ddRenderBrowseAll(){
+      if(!_ddEl)return;
+      _ddIdx=-1;
+      if(!_ddTickers.length){
+        _ddEl.innerHTML='<div class="scholar-dd-empty">Loading tickers&hellip;</div>';
+        _ddEl.classList.add('open');
+        return;
+      }
+      var bySector={};
+      _ddTickers.forEach(function(r){
+        var s=r.sector||'Other';
+        (bySector[s]=bySector[s]||[]).push(r);
+      });
+      var sectorNames=Object.keys(bySector).sort(function(a,b){
+        // Largest sectors first so the eye lands on the dense buckets.
+        return bySector[b].length - bySector[a].length;
+      });
+      var html='<div class="scholar-browse-head">All '+_ddTickers.length+' tickers &middot; grouped by sector &middot; type to filter</div>';
+      html+=sectorNames.map(function(s){
+        var tickers=bySector[s].slice().sort(function(a,b){return a.ticker.localeCompare(b.ticker);});
+        return '<div class="scholar-sector-group">'
+          +'<div class="scholar-sector-label">'+_ddEsc(s)+'<span class="scholar-sector-count">'+tickers.length+'</span></div>'
+          +'<div class="scholar-chips">'
+          +tickers.map(function(r){
+            return '<a class="scholar-chip" href="/ticker/'+encodeURIComponent(r.ticker)+'" title="'+_ddEsc(r.name||r.ticker)+'" data-ticker="'+_ddEsc(r.ticker)+'">'+_ddEsc(r.ticker)+'</a>';
+          }).join('')
+          +'</div>'
+        +'</div>';
+      }).join('');
+      _ddEl.innerHTML=html;
+      _ddEl.classList.add('open');
+      _ddEl.classList.add('scholar-browse-mode');
+      // Use mousedown so blur (which closes the dropdown) doesn't pre-empt the click.
+      _ddEl.querySelectorAll('.scholar-chip').forEach(function(chip){
+        chip.addEventListener('mousedown',function(e){
+          e.preventDefault();
+          window.location.href='/ticker/'+encodeURIComponent(this.dataset.ticker);
+        });
+      });
+    }
+    function ddClose(){if(_ddEl){_ddEl.classList.remove('open');_ddEl.classList.remove('scholar-browse-mode');}_ddIdx=-1;}
     function ddHighlight(idx){
       var items=_ddEl?_ddEl.querySelectorAll('.scholar-dd-item'):[];
       items.forEach(function(it){it.classList.remove('active');});
@@ -16363,7 +16421,9 @@ document.addEventListener('visibilitychange',function(){
 
     barInput.addEventListener('input',function(){
       var q=this.value.trim().toUpperCase();
-      if(!q){ddClose();return;}
+      // Clearing the field while still focused → reopen browse-all instead
+      // of leaving the dropdown empty.
+      if(!q){ddRenderBrowseAll();return;}
       var matches=_ddTickers.filter(function(r){
         return r.ticker.indexOf(q)===0||(r.name&&r.name.toUpperCase().indexOf(q)!==-1);
       });
@@ -16371,8 +16431,11 @@ document.addEventListener('visibilitychange',function(){
     });
     barInput.addEventListener('focus',function(){
       var q=this.value.trim().toUpperCase();
-      if(!q&&_ddTickers.length){ddRender(_ddTickers.slice(0,12));return;}
-      if(q){var m=_ddTickers.filter(function(r){return r.ticker.indexOf(q)===0||(r.name&&r.name.toUpperCase().indexOf(q)!==-1);});ddRender(m);}
+      // Empty input on focus → browse-all flyout. Once user types, the
+      // 'input' handler swaps in the standard filtered dropdown.
+      if(!q){ddRenderBrowseAll();return;}
+      var m=_ddTickers.filter(function(r){return r.ticker.indexOf(q)===0||(r.name&&r.name.toUpperCase().indexOf(q)!==-1);});
+      ddRender(m);
     });
     barInput.addEventListener('blur',function(){setTimeout(ddClose,150);});
 
