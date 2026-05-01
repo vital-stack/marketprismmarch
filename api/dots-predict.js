@@ -14,10 +14,9 @@
 //   - read access for the role used by the env key
 
 const HF_MODEL = 'sentence-transformers/all-MiniLM-L6-v2';
-// HF deprecated /pipeline/feature-extraction/{model}; use /models/{model}.
-// For sentence-transformers models the default pipeline IS feature-extraction,
-// so this returns the pooled 384-dim embedding directly.
-const HF_URL = 'https://api-inference.huggingface.co/models/' + HF_MODEL;
+// HF retired api-inference.huggingface.co. New path: router.huggingface.co
+// with the OpenAI-compatible embeddings endpoint.
+const HF_URL = 'https://router.huggingface.co/hf-inference/v1/embeddings';
 const DEFAULT_K = 200;
 const MAX_AGE_DAYS = 540;
 
@@ -50,16 +49,16 @@ async function embedQuery(text, hfKey) {
       'Authorization': 'Bearer ' + hfKey,
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ inputs: text, options: { wait_for_model: true } })
+    // OpenAI-compatible body: { model, input }. all-MiniLM-L6-v2 returns 384-dim.
+    body: JSON.stringify({ model: HF_MODEL, input: text })
   });
   if (!r.ok) {
     const body = await r.text().catch(function () { return ''; });
     throw new Error('HuggingFace embed failed (' + r.status + '): ' + body.slice(0, 200));
   }
   const j = await r.json();
-  // HF returns either a flat array (single-text input) or [[...]] for batched.
-  // all-MiniLM-L6-v2 returns 384-dim. Accept both shapes.
-  const vec = Array.isArray(j[0]) ? j[0] : j;
+  // OpenAI-compatible response: { data: [{ embedding: [...] }], model, usage }
+  const vec = j && j.data && j.data[0] && j.data[0].embedding;
   if (!Array.isArray(vec) || vec.length !== 384) {
     throw new Error('Unexpected embedding shape (len=' + (Array.isArray(vec) ? vec.length : 'n/a') + ')');
   }
