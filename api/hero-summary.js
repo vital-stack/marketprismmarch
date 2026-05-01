@@ -5,9 +5,11 @@
 // multiples are deliberately stripped from the input and forbidden in output —
 // those metrics are surfaced elsewhere on the page.
 //
-// Cached at the edge per (ticker, snapshot_date) effective key. Snapshots land
-// once a day, so s-maxage=21600 (6h) keeps cost bounded to a few hundred
-// invocations/day across the whole catalog.
+// Cached at the edge for 10 min. Ticker state (verdict, narrative health,
+// propagation, energy) shifts intraday as new articles land, so a 6h cache
+// lagged the displayed narrative behind reality. 10 min still bounds cost to a
+// few thousand LLM calls/day at typical traffic, since cost scales with users
+// landing on ticker pages, not the full catalog.
 
 const SYSTEM_PROMPT = `You are the Market Prism hero summarizer. Given a ticker's current narrative state, produce ONE sentence (max 30 words) describing the narrative — what story is being told about this ticker, how it's holding up, and where it's heading.
 
@@ -151,7 +153,7 @@ module.exports = async (req, res) => {
     // Defensive: collapse any stray newlines into a single sentence.
     text = text.replace(/\s+/g, ' ').trim();
 
-    res.setHeader('Cache-Control', 's-maxage=21600, stale-while-revalidate=86400');
+    res.setHeader('Cache-Control', 's-maxage=600, stale-while-revalidate=3600');
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     return res.status(200).json({
       ticker: ticker,

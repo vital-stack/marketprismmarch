@@ -4857,7 +4857,14 @@ if (!TICKER) {
 }
 
 document.title = TICKER ? `${TICKER} — Market Prism` : 'Market Prism';
-document.getElementById('nav-ticker').textContent = TICKER;
+// nav-ticker was the breadcrumb element in the old site-nav header; the new
+// shared topbar (lib/mp-topbar.js) has no such slot, but we still want the
+// ticker visible. Update the topbar title instead and guard the legacy node
+// in case any future header brings it back.
+var _legacyNavTicker = document.getElementById('nav-ticker');
+if (_legacyNavTicker) _legacyNavTicker.textContent = TICKER;
+var _topbarTitle = document.getElementById('topbar-title');
+if (_topbarTitle && TICKER) _topbarTitle.textContent = 'Stock Prism · ' + TICKER;
 
 // Record visit for the global search "Recent tickers" list (cap 5, dedupe).
 if (TICKER) {
@@ -5118,7 +5125,7 @@ function renderTradeTicket(f, story, sc) {
       + '</div>'
       + (fresh ? '<span class="tt-fresh">'+ esc(fresh) +'</span>' : '')
     + '</div>'
-    + (headline ? '<div class="tt-headline">'+ esc(headline) +'</div>' : '')
+    + '<div class="tt-headline" id="tt-headline" data-pending="1">'+ esc(headline || '') +'</div>'
     + '<div class="tt-grid">'+ biasCell + horizonCell + invCell + tgtCell +'</div>'
     + convRow
     + '<details class="tt-disclosure">'
@@ -5588,6 +5595,32 @@ async function loadHero() {
       verdictBanner.innerHTML = renderTradeTicket(f, r, sc);
       // Badges (Earnings · High Hype Gap · Coordinated Narrative · etc.) stay
       // where they're rendered — in .hero-ticker-row next to the ticker symbol.
+      //
+      // Headline = `narrative_scorecard.synopsis` (via ticker_forecast.one_line_headline)
+      // is a daily snapshot that mixes financial recap (P/E, fair-value premium) into
+      // the trade ticket. The Haiku-synthesized /api/hero-summary describes the
+      // narrative + how it's affecting price — and bans P/E / valuation figures by
+      // system prompt. We use it to overwrite the headline once the request lands.
+      // Falls back to whatever's already in the headline on error.
+      (function(){
+        var hl = document.getElementById('tt-headline');
+        if (!hl || !r.ticker) return;
+        fetch('/api/hero-summary?ticker=' + encodeURIComponent(r.ticker))
+          .then(function(res){ return res.ok ? res.json() : null; })
+          .then(function(j){
+            if (j && j.summary) {
+              hl.textContent = j.summary;
+              hl.removeAttribute('data-pending');
+            } else if (!hl.textContent.trim()) {
+              hl.style.display = 'none';
+            }
+          })
+          .catch(function(){
+            // Leave the existing fallback text in place; just clear pending state.
+            hl.removeAttribute('data-pending');
+            if (!hl.textContent.trim()) hl.style.display = 'none';
+          });
+      })();
     } else if (verdictBanner) {
       // No forecast row yet for this ticker — keep the banner hidden.
       verdictBanner.style.display = 'none';
