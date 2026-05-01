@@ -2455,55 +2455,84 @@
     .scholar-suggest-chip { font-size: 12px; padding: 7px 12px; }
   }
 
-  /* ── TAB BAR ── */
+  /* ── TAB BAR — folder-tab pattern matching the card design language ── */
   .tk-tab-bar {
     display: flex;
-    align-items: center;
-    gap: 0;
-    border-bottom: 1px solid rgba(0,0,0,0.08);
-    margin-bottom: 28px;
+    align-items: flex-end;
+    gap: 4px;
+    border-bottom: 1px solid var(--mp-border);
+    margin-bottom: 24px;
+    padding: 0 0 0 4px;
     position: sticky;
     top: 0;
     z-index: 30;
-    background: rgba(255,255,255,0.92);
-    backdrop-filter: blur(40px);
-    -webkit-backdrop-filter: blur(40px);
-    padding: 0;
+    background: var(--mp-obsidian);
   }
   .tk-tab {
     font-family: var(--font-body);
-    font-size: 13px;
-    font-weight: 500;
-    letter-spacing: .03em;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .06em;
     text-transform: uppercase;
     color: var(--mp-text-tertiary);
-    padding: 16px 28px;
+    padding: 11px 22px 13px;
     cursor: pointer;
-    border-bottom: 2px solid transparent;
-    transition: all .2s;
-    white-space: nowrap;
-    background: none;
-    border-top: none;
-    border-left: none;
-    border-right: none;
+    background: var(--mp-surface);
+    border: 1px solid var(--mp-border);
+    border-bottom: none;
+    border-radius: 10px 10px 0 0;
     position: relative;
+    margin-bottom: -1px;
+    transition: background .15s, color .15s, border-color .15s, transform .15s;
+    white-space: nowrap;
+    overflow: hidden;
   }
+  .tk-tab::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(to right, rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 24px 24px;
+    opacity: .5;
+    pointer-events: none;
+    border-radius: inherit;
+  }
+  [data-theme="light"] .tk-tab::before {
+    background-image:
+      linear-gradient(to right, rgba(0,0,0,0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0,0,0,0.03) 1px, transparent 1px);
+  }
+  .tk-tab > * { position: relative; z-index: 1; }
   .tk-tab:hover {
     color: var(--mp-text-primary);
-    background: none;
+    border-color: var(--mp-border-hover);
+    transform: translateY(-1px);
   }
   .tk-tab.active {
-    color: #00AEFF;
-    font-weight: 600;
-    border-bottom-color: #00AEFF;
-    text-shadow: none;
+    color: var(--mp-text-primary);
+    background: var(--mp-surface2);
+    border-color: var(--mp-border-hover);
+    font-weight: 700;
+    z-index: 2;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.18);
+  }
+  .tk-tab.active::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: #00AEFF;
+    border-radius: 10px 10px 0 0;
+    z-index: 2;
   }
   .tk-tab-panel { display: none; }
   .tk-tab-panel.active { display: block; }
 
   @media (max-width: 768px) {
-    .tk-tab-bar { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    .tk-tab { padding: 14px 18px; font-size: 12px; }
+    .tk-tab-bar { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 0; }
+    .tk-tab { padding: 10px 14px 12px; font-size: 11px; letter-spacing: .04em; }
   }
 
   /* ── Page grid — main + sidebar ── */
@@ -3327,9 +3356,6 @@
   [data-theme="dark"] .section:hover { border-color: rgba(255,255,255,0.14); }
   [data-theme="dark"] .section::before { background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px); }
   [data-theme="dark"] .section-label { border-bottom-color: rgba(255,255,255,0.06); }
-  [data-theme="dark"] .tk-tab-bar { background: #080B11; border-bottom-color: rgba(255,255,255,0.07); }
-  [data-theme="dark"] .tk-tab.active { color: #fff; border-bottom-color: #00AEFF; }
-  [data-theme="dark"] .tk-tab { color: #6b7280; }
   [data-theme="dark"] .chart-tip { background: #12131C; color: #F5F7FA; }
   [data-theme="dark"] .diag-cell { background: #12131C; }
   [data-theme="dark"] .tug-stat-item { background: #181922; border-color: rgba(255,255,255,0.06); }
