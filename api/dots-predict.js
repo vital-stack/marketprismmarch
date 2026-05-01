@@ -14,7 +14,10 @@
 //   - read access for the role used by the env key
 
 const HF_MODEL = 'sentence-transformers/all-MiniLM-L6-v2';
-const HF_URL = 'https://api-inference.huggingface.co/pipeline/feature-extraction/' + HF_MODEL;
+// HF deprecated /pipeline/feature-extraction/{model}; use /models/{model}.
+// For sentence-transformers models the default pipeline IS feature-extraction,
+// so this returns the pooled 384-dim embedding directly.
+const HF_URL = 'https://api-inference.huggingface.co/models/' + HF_MODEL;
 const DEFAULT_K = 200;
 const MAX_AGE_DAYS = 540;
 
