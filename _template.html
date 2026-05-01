@@ -17035,41 +17035,6 @@ var BOARDS=[
       });
     }catch(e){console.warn('[Leaderboard Best Entry Zone] fetch failed:',e);return [];}
   }},
-  {id:'manipulation',title:'Manipulation Risk',sub:'Active narrative traps and risk alerts',color:'#FF4D4D',bg:'rgba(255,77,77,0.12)',scoreLabel:'Confidence',
-  fetch:function(){return scorecardFallback(function(s){return s.verdict==='Narrative Trap'||s.verdict==='Narrative Risk';},function(s){var isTrap=s.verdict==='Narrative Trap';return{name:s.ticker,link:'/ticker/'+s.ticker,meta:s.verdict+(s.suspicion_score?' \u00b7 Suspicion '+Math.round(Number(s.suspicion_score)):''),score:Number(s.verdict_confidence)||0,scoreDisplay:Math.round(Number(s.verdict_confidence)||0)+'%',_scoreColor:isTrap?'#FF4D4D':'#FFB800'};},function(a,b){var ao=a.verdict==='Narrative Trap'?0:1,bo=b.verdict==='Narrative Trap'?0:1;return ao!==bo?ao-bo:(Number(b.verdict_confidence)||0)-(Number(a.verdict_confidence)||0);},10);}},
-  {id:'decaying',title:'Fastest Decaying Narratives',sub:'Stories dying fastest',color:'#00DE94',bg:'rgba(0,222,148,0.12)',scoreLabel:'Half-Life',
-  fetch:function(){return scorecardFallback(function(s){return s.half_life!=null&&Number(s.half_life)<90&&Number(s.half_life)>0;},function(s){var hl=Number(s.half_life)||0;return{name:s.ticker,link:'/ticker/'+s.ticker,meta:(s.walsh_regime||'')+(s.wks_score?' \u00b7 WKS '+(Number(s.wks_score)>0?'+':'')+Math.round(Number(s.wks_score)):''),score:100-hl,scoreDisplay:hl.toFixed(1)+'d',_scoreColor:hl<10?'#00DE94':hl<30?'#38C8B8':'#00AEFF'};},function(a,b){return(Number(a.half_life)||999)-(Number(b.half_life)||999);},10);}},
-  {id:'overreaction',title:'Most Overreacted Stories',sub:'Narrative hype exceeding fundamentals',color:'#FFB800',bg:'rgba(255,184,0,0.12)',scoreLabel:'Overreaction',
-  fetch:function(){return scorecardFallback(function(s){return s.overreaction_ratio!=null&&Number(s.overreaction_ratio)>0;},function(s){var or=Number(s.overreaction_ratio)||0;var fvd=s.fvd_pct!=null?Math.round(Number(s.fvd_pct))+'% FVD':'';return{name:s.ticker,link:'/ticker/'+s.ticker,meta:fvd+(s.verdict?' \u00b7 '+s.verdict:''),score:or,scoreDisplay:or.toFixed(1)+'x',_scoreColor:or>3?'#FF4D4D':or>2?'#FFB800':'#00AEFF'};},function(a,b){return(Number(b.overreaction_ratio)||0)-(Number(a.overreaction_ratio)||0);},10);}},
-  {id:'drift',title:'Highest Drift Scores',sub:'Narrative drifting from fundamentals',color:'#7B61FF',bg:'rgba(123,97,255,0.12)',scoreLabel:'Drift',
-  fetch:function(){return scorecardFallback(function(s){return Number(s.drift_score)>30;},function(s){var ds=Number(s.drift_score)||0;return{name:s.ticker,link:'/ticker/'+s.ticker,meta:(s.verdict||'')+(s.fvd_pct!=null?' \u00b7 FVD '+Math.round(Number(s.fvd_pct))+'%':''),score:ds,scoreDisplay:Math.round(ds),_scoreColor:ds>60?'#FF4D4D':ds>45?'#FFB800':'#7B61FF'};},function(a,b){return(Number(b.drift_score)||0)-(Number(a.drift_score)||0);},10);}},
-  {id:'dark-pool',title:'Top Dark Pool Activity',sub:'Highest dark-pool % volume · institutional flow',color:'#6366F1',bg:'rgba(99,102,241,0.12)',scoreLabel:'DP Vol %',
-  fetch:async function(){
-    try{
-      var dateRows=await sq('ticker_dark_pool?select=sample_date&order=sample_date.desc&limit=1');
-      var latest=dateRows&&dateRows[0]&&dateRows[0].sample_date;
-      if(!latest) return [];
-      var rows=await sq('ticker_dark_pool?select=ticker,dark_pool_pct_volume,dark_pool_pct_trades,dark_pool_signal,smart_money_direction&sample_date=eq.'+encodeURIComponent(latest)+'&order=dark_pool_pct_volume.desc&limit=10');
-      if(!rows||!rows.length) return [];
-      return rows.map(function(r){
-        var pct=Number(r.dark_pool_pct_volume)||0;
-        var dir=(r.smart_money_direction||'').toUpperCase();
-        var arrow=dir==='BUYING'?'▲':dir==='SELLING'?'▼':'●';
-        var color=dir==='BUYING'?'#00DE94':dir==='SELLING'?'#FF4D4D':'#A0A8B0';
-        var dirLabel=dir==='BUYING'?'Buying':dir==='SELLING'?'Selling':'Unclear';
-        var sig=r.dark_pool_signal||'';
-        var trades=Number(r.dark_pool_pct_trades)||0;
-        return {
-          name:r.ticker,
-          link:'/ticker/'+r.ticker,
-          meta:arrow+' Smart money '+dirLabel+(sig?' · '+sig:'')+' · '+trades.toFixed(0)+'% of trades',
-          score:pct,
-          scoreDisplay:pct.toFixed(1)+'%',
-          _scoreColor:color
-        };
-      });
-    }catch(e){console.warn('[Leaderboard Dark Pool] fetch failed:',e);return [];}
-  }},
   {id:'ai-picks',title:'Top AI Picks',sub:'10 highest-conviction trades synthesized across signals \u00b7 Claude',color:'#A78BFA',bg:'rgba(167,139,250,0.12)',scoreLabel:'Conviction',
   // 30s override \u2014 Claude calls can take 5-15s on a cold cache, so the
   // default 10s timeout in loadLeaderboard would reject before the response lands.
@@ -17108,6 +17073,41 @@ var BOARDS=[
         };
       });
     }catch(e){window.__lbAiPicksError=String(e&&e.message||e);console.warn('[Leaderboard AI Picks] fetch failed:',e);return [];}
+  }},
+  {id:'manipulation',title:'Manipulation Risk',sub:'Active narrative traps and risk alerts',color:'#FF4D4D',bg:'rgba(255,77,77,0.12)',scoreLabel:'Confidence',
+  fetch:function(){return scorecardFallback(function(s){return s.verdict==='Narrative Trap'||s.verdict==='Narrative Risk';},function(s){var isTrap=s.verdict==='Narrative Trap';return{name:s.ticker,link:'/ticker/'+s.ticker,meta:s.verdict+(s.suspicion_score?' \u00b7 Suspicion '+Math.round(Number(s.suspicion_score)):''),score:Number(s.verdict_confidence)||0,scoreDisplay:Math.round(Number(s.verdict_confidence)||0)+'%',_scoreColor:isTrap?'#FF4D4D':'#FFB800'};},function(a,b){var ao=a.verdict==='Narrative Trap'?0:1,bo=b.verdict==='Narrative Trap'?0:1;return ao!==bo?ao-bo:(Number(b.verdict_confidence)||0)-(Number(a.verdict_confidence)||0);},10);}},
+  {id:'decaying',title:'Fastest Decaying Narratives',sub:'Stories dying fastest',color:'#00DE94',bg:'rgba(0,222,148,0.12)',scoreLabel:'Half-Life',
+  fetch:function(){return scorecardFallback(function(s){return s.half_life!=null&&Number(s.half_life)<90&&Number(s.half_life)>0;},function(s){var hl=Number(s.half_life)||0;return{name:s.ticker,link:'/ticker/'+s.ticker,meta:(s.walsh_regime||'')+(s.wks_score?' \u00b7 WKS '+(Number(s.wks_score)>0?'+':'')+Math.round(Number(s.wks_score)):''),score:100-hl,scoreDisplay:hl.toFixed(1)+'d',_scoreColor:hl<10?'#00DE94':hl<30?'#38C8B8':'#00AEFF'};},function(a,b){return(Number(a.half_life)||999)-(Number(b.half_life)||999);},10);}},
+  {id:'overreaction',title:'Most Overreacted Stories',sub:'Narrative hype exceeding fundamentals',color:'#FFB800',bg:'rgba(255,184,0,0.12)',scoreLabel:'Overreaction',
+  fetch:function(){return scorecardFallback(function(s){return s.overreaction_ratio!=null&&Number(s.overreaction_ratio)>0;},function(s){var or=Number(s.overreaction_ratio)||0;var fvd=s.fvd_pct!=null?Math.round(Number(s.fvd_pct))+'% FVD':'';return{name:s.ticker,link:'/ticker/'+s.ticker,meta:fvd+(s.verdict?' \u00b7 '+s.verdict:''),score:or,scoreDisplay:or.toFixed(1)+'x',_scoreColor:or>3?'#FF4D4D':or>2?'#FFB800':'#00AEFF'};},function(a,b){return(Number(b.overreaction_ratio)||0)-(Number(a.overreaction_ratio)||0);},10);}},
+  {id:'drift',title:'Highest Drift Scores',sub:'Narrative drifting from fundamentals',color:'#7B61FF',bg:'rgba(123,97,255,0.12)',scoreLabel:'Drift',
+  fetch:function(){return scorecardFallback(function(s){return Number(s.drift_score)>30;},function(s){var ds=Number(s.drift_score)||0;return{name:s.ticker,link:'/ticker/'+s.ticker,meta:(s.verdict||'')+(s.fvd_pct!=null?' \u00b7 FVD '+Math.round(Number(s.fvd_pct))+'%':''),score:ds,scoreDisplay:Math.round(ds),_scoreColor:ds>60?'#FF4D4D':ds>45?'#FFB800':'#7B61FF'};},function(a,b){return(Number(b.drift_score)||0)-(Number(a.drift_score)||0);},10);}},
+  {id:'dark-pool',title:'Top Dark Pool Activity',sub:'Highest dark-pool % volume · institutional flow',color:'#6366F1',bg:'rgba(99,102,241,0.12)',scoreLabel:'DP Vol %',
+  fetch:async function(){
+    try{
+      var dateRows=await sq('ticker_dark_pool?select=sample_date&order=sample_date.desc&limit=1');
+      var latest=dateRows&&dateRows[0]&&dateRows[0].sample_date;
+      if(!latest) return [];
+      var rows=await sq('ticker_dark_pool?select=ticker,dark_pool_pct_volume,dark_pool_pct_trades,dark_pool_signal,smart_money_direction&sample_date=eq.'+encodeURIComponent(latest)+'&order=dark_pool_pct_volume.desc&limit=10');
+      if(!rows||!rows.length) return [];
+      return rows.map(function(r){
+        var pct=Number(r.dark_pool_pct_volume)||0;
+        var dir=(r.smart_money_direction||'').toUpperCase();
+        var arrow=dir==='BUYING'?'▲':dir==='SELLING'?'▼':'●';
+        var color=dir==='BUYING'?'#00DE94':dir==='SELLING'?'#FF4D4D':'#A0A8B0';
+        var dirLabel=dir==='BUYING'?'Buying':dir==='SELLING'?'Selling':'Unclear';
+        var sig=r.dark_pool_signal||'';
+        var trades=Number(r.dark_pool_pct_trades)||0;
+        return {
+          name:r.ticker,
+          link:'/ticker/'+r.ticker,
+          meta:arrow+' Smart money '+dirLabel+(sig?' · '+sig:'')+' · '+trades.toFixed(0)+'% of trades',
+          score:pct,
+          scoreDisplay:pct.toFixed(1)+'%',
+          _scoreColor:color
+        };
+      });
+    }catch(e){console.warn('[Leaderboard Dark Pool] fetch failed:',e);return [];}
   }},
   {id:'consistent-keywords',title:'Consistent Keyword Signals',sub:'Highest signal-to-noise patterns',color:'#38C8B8',bg:'rgba(56,200,184,0.12)',scoreLabel:'Signal Ratio',
   fetch:async function(){try{var rows=await sq('keyword_price_impact?select=ticker,keyword,keyword_type,article_count,avg_return_5d,stddev_10d&article_count=gte.20&order=avg_return_5d.desc&limit=50');if(!rows||!rows.length)return[];return rows.map(function(r){var ret=Number(r.avg_return_5d)||0;var std=Number(r.stddev_10d)||0;var ratio=std>0?Math.abs(ret)/std:0;return{name:r.ticker,link:'/ticker/'+r.ticker,meta:r.keyword.replace(/_/g,' ')+' \u00b7 '+Number(r.article_count)+' articles',score:ratio,scoreDisplay:ratio.toFixed(2),_scoreColor:ret>0?'#00DE94':'#FF4D4D'};}).sort(function(a,b){return b.score-a.score;}).slice(0,10);}catch(e){return[];}}},
