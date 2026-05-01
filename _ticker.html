@@ -4990,8 +4990,7 @@ function renderTradeTicket(f, story, sc) {
       + '</div>';
   }).join('');
 
-  // ── Predicted move + alpha line ──
-  var alpha = f['predicted_alpha_' + primary + '_vs_spy'];
+  // ── Predicted move line ──
   var lo = f['predicted_' + primary + '_low'];
   var hi = f['predicted_' + primary + '_high'];
   var halfPct = (lo != null && hi != null && f.current_price)
@@ -4999,8 +4998,7 @@ function renderTradeTicket(f, story, sc) {
   var predLine = 'Predicted ' + primary.toUpperCase() + ' move: '
     + '<span class="'+ ttPctClass(primPct) +'">'+ ttFmtPct(primPct) +'</span>'
     + (primPrice != null ? ' (' + ttFmtUsd(primPrice) + ')' : '')
-    + (halfPct != null ? ' ± ' + halfPct.toFixed(1) + '%' : '')
-    + (alpha != null ? ' &middot; vs SPY <span class="'+ ttPctClass(alpha) +'">'+ ttFmtPct(alpha) +'</span>' : '');
+    + (halfPct != null ? ' ± ' + halfPct.toFixed(1) + '%' : '');
 
   // ── Conviction dots ──
   var primConv = f['conviction_' + primary];
