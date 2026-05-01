@@ -896,18 +896,6 @@ body{
   animation:mp-gradient-text 6s ease infinite;
 }
 .page-header p{font-size:14px;color:var(--mp-text-secondary);letter-spacing:0.01em;font-weight:400;line-height:1.65;max-width:520px;}
-/* ── Daily Plays minimal lifetime stat bar (lives inside .lb-toolbar) ── */
-.dp-statbar{flex:1;margin:0 18px;padding:10px 16px;border:1px solid rgba(255,255,255,0.05);border-radius:10px;background:rgba(255,255,255,0.015);}
-.dp-statbar-row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;align-items:baseline;}
-.dp-stat{text-align:center;}
-.dp-stat-val{font-family:var(--font-body);font-size:15px;font-weight:500;color:#fff;letter-spacing:-0.01em;line-height:1.1;}
-.dp-stat-lbl{font-family:var(--font-body);font-size:9px;font-weight:400;color:rgba(255,255,255,0.38);letter-spacing:0.06em;text-transform:uppercase;margin-top:3px;}
-.dp-statbar-caption{font-family:var(--font-body);font-size:10px;color:rgba(255,255,255,0.32);letter-spacing:0.01em;margin-top:6px;text-align:center;font-style:italic;}
-@media (max-width:860px){
-  .lb-toolbar{flex-wrap:wrap;gap:12px;}
-  .dp-statbar{flex:1 1 100%;margin:0;order:3;}
-}
-@media (max-width:640px){.dp-statbar-row{grid-template-columns:repeat(3,1fr);row-gap:10px;}}
 /* ── STAT CARDS ── */
 .stats-row{display:flex;gap:12px;margin-bottom:24px;}
 /* ── UNIFIED STAT CARDS — matches Discover tile pattern ── */
@@ -4742,18 +4730,6 @@ body{
       </div>
       <div class="lb-toolbar">
         <span class="lb-toolbar-date" id="daily-date-tag"></span>
-        <!-- Minimal lifetime tracking strip — mirrors Track Record numbers -->
-        <div class="dp-statbar" id="dp-statbar" style="display:none;">
-          <div class="dp-statbar-row">
-            <div class="dp-stat"><div class="dp-stat-val" id="dp-sb-tracked">—</div><div class="dp-stat-lbl">Tracked</div></div>
-            <div class="dp-stat"><div class="dp-stat-val" id="dp-sb-open">—</div><div class="dp-stat-lbl">Open</div></div>
-            <div class="dp-stat"><div class="dp-stat-val" id="dp-sb-closed">—</div><div class="dp-stat-lbl">Closed</div></div>
-            <div class="dp-stat"><div class="dp-stat-val" id="dp-sb-hits">—</div><div class="dp-stat-lbl">Hits</div></div>
-            <div class="dp-stat"><div class="dp-stat-val" id="dp-sb-rate">—</div><div class="dp-stat-lbl">Hit Rate</div></div>
-            <div class="dp-stat"><div class="dp-stat-val" id="dp-sb-avg">—</div><div class="dp-stat-lbl">Avg Return</div></div>
-          </div>
-          <div class="dp-statbar-caption">Tracking since April 15, 2026</div>
-        </div>
         <button class="lb-refresh-btn" id="daily-refresh-btn" onclick="refreshDailyBrief()" title="Refresh daily plays">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
           <span>Refresh</span>
@@ -5307,7 +5283,6 @@ body{
           <div class="val-chart-title">Live Tracked Plays</div>
           <div class="val-chart-sub">Daily Plays predictions tracked from entry through hold period</div>
         </div>
-        <div id="tp-stats" style="display:flex;gap:12px;flex-wrap:wrap;margin:12px 0;"></div>
         <div class="val-table-filters" id="tp-filters">
           <button class="val-chip active" data-tpf="all">All</button>
           <button class="val-chip" data-tpf="open">Open</button>
@@ -9203,7 +9178,6 @@ async function loadTrackedPlays(){
     if(!_TP_TIMER){
       _TP_TIMER=setInterval(loadTrackedPlays, 60*1000);
     }
-    tpRenderStats();
     tpRenderTable();
     // Wire filter chips
     var filters=document.getElementById('tp-filters');
@@ -9238,31 +9212,6 @@ function _tpIsZombie(r){
     &&r.exit_return_pct!=null&&Math.abs(Number(r.exit_return_pct))<0.005
     &&r.best_return_pct!=null&&Math.abs(Number(r.best_return_pct))<0.005)return true;
   return false;
-}
-
-function tpRenderStats(){
-  var el=document.getElementById('tp-stats');
-  if(!el||!_TP_DATA.length)return;
-  // Mirror the zombie filter used in tpRenderTable so the stat strip
-  // matches the table (total count, open/closed, hit rate all stay in sync).
-  var pool=_TP_DATA.filter(function(r){return !_tpIsZombie(r);});
-  var total=pool.length;
-  var open=pool.filter(function(r){return r.status==='OPEN';}).length;
-  var closed=pool.filter(function(r){return r.status!=='OPEN';}).length;
-  var hits=pool.filter(function(r){return r.hit;}).length;
-  var hitRate=closed>0?Math.round(pool.filter(function(r){return r.status!=='OPEN'&&r.hit;}).length/closed*100):0;
-  var avgRet=closed>0?(pool.filter(function(r){return r.exit_return_pct!=null;}).reduce(function(s,r){return s+Number(r.exit_return_pct);},0)/closed):0;
-  function stat(label,val,color){
-    return '<div style="background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:10px;padding:10px 16px;min-width:80px;">'
-      +'<div style="font-size:18px;font-weight:700;color:'+(color||'var(--mp-text-primary)')+';font-family:var(--font-body);">'+val+'</div>'
-      +'<div style="font-size:11px;color:var(--mp-text-tertiary);margin-top:2px;">'+label+'</div></div>';
-  }
-  el.innerHTML=stat('Tracked',total,'#00AEFF')
-    +stat('Open',open,'#FFB800')
-    +stat('Closed',closed,'var(--mp-text-primary)')
-    +stat('Hits',hits,'#00DE94')
-    +stat('Hit Rate',hitRate+'%',hitRate>=50?'#00DE94':'#FF4D4D')
-    +stat('Avg Return',avgRet>=0?'+'+avgRet.toFixed(2)+'%':avgRet.toFixed(2)+'%',avgRet>=0?'#00DE94':'#FF4D4D');
 }
 
 function tpRenderTable(){
@@ -15654,66 +15603,12 @@ function bootNarrativeHistory(){
 bootNarrativeHistory();
 setInterval(bootNarrativeHistory, 60 * 1000);
 
-// Daily Plays minimal lifetime stat bar — same numbers as the Track Record
-// page's Live Tracked Plays widget, but in a compact all-white strip below
-// the hero. Refreshed every 5 min and on manual refresh.
-async function loadDailyPlaysStatBar(){
-  if(!SUPABASE_URL||!SUPABASE_ANON)return;
-  try{
-    // Paginate — without an explicit order PostgREST still caps the response
-    // at 1,000 rows, and the previous limit:'2000' silently dropped any rows
-    // beyond the cap. Once the table crosses 1k, lifetime totals would stop
-    // moving as new plays closed.
-    var PAGE=1000;
-    var rows=[];
-    var sel='status,hit,exit_return_pct,predicted_return_pct,best_return_pct';
-    for(var off=0;off<20000;off+=PAGE){
-      var page=await restFetch('tracked_daily_plays',{
-        select:sel,
-        order:'entry_date.desc,lane.asc',
-        limit:String(PAGE),
-        offset:String(off)
-      });
-      if(!page||!page.length)break;
-      rows=rows.concat(page);
-      if(page.length<PAGE)break;
-    }
-    if(!rows.length)return;
-    // Use the same zombie filter as Track Record's Live Tracked Plays widget
-    // (_tpIsZombie, defined earlier in this script) so both stat strips report
-    // identical Tracked / Open / Closed / Hits / Hit Rate / Avg Return.
-    rows=rows.filter(function(r){return !_tpIsZombie(r);});
-    var total=rows.length;
-    var open=rows.filter(function(r){return r.status==='OPEN';}).length;
-    var closed=total-open;
-    var hits=rows.filter(function(r){return r.hit;}).length;
-    var closedHits=rows.filter(function(r){return r.status!=='OPEN'&&r.hit;}).length;
-    var hitRate=closed>0?Math.round(closedHits/closed*100):0;
-    var avgRet=closed>0
-      ? rows.filter(function(r){return r.exit_return_pct!=null;})
-            .reduce(function(s,r){return s+Number(r.exit_return_pct);},0)/closed
-      : 0;
-    function set(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}
-    set('dp-sb-tracked',total.toLocaleString());
-    set('dp-sb-open',open);
-    set('dp-sb-closed',closed);
-    set('dp-sb-hits',hits);
-    set('dp-sb-rate',hitRate+'%');
-    set('dp-sb-avg',(avgRet>=0?'+':'')+avgRet.toFixed(2)+'%');
-    var bar=document.getElementById('dp-statbar');
-    if(bar)bar.style.display='block';
-  }catch(e){/* silent */}
-}
-loadDailyPlaysStatBar();
-setInterval(loadDailyPlaysStatBar, 5*60*1000);
-
 window.refreshDailyBrief=async function(){
   var btn=document.getElementById('daily-refresh-btn');
   if(btn){btn.disabled=true;btn.style.opacity='0.5';btn.querySelector('svg').style.animation='spin 1s linear infinite';}
   try{
     await loadData();
     liveQuotesRefreshDaily();
-    loadDailyPlaysStatBar();
     // Track Record reads from a separate cached stats table + paper_trades.
     // Refresh those too so closed plays show up everywhere a user can see them.
     if(typeof loadTrackedPlays==='function'&&trGateIsUnlocked&&trGateIsUnlocked()){
