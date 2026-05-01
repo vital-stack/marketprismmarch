@@ -8969,12 +8969,16 @@ function renderLivePortfolioStats(elId, rows){
   }
   var sorted=rows.slice().sort(function(a,b){return (a.snapshot_date||'').localeCompare(b.snapshot_date||'');});
   var fromBaseline=sorted.filter(function(r){return r.snapshot_date>=LIVE_PORTFOLIO_BASELINE;});
-  // Need a baseline anchor (first row at-or-after the baseline) and a current row.
+  // Need a baseline anchor (last snapshot strictly BEFORE the launch date — i.e.
+  // starting equity going into day 1) and a current row. Using the launch-day
+  // row itself as the anchor would silently exclude day 1's return, since that
+  // row's portfolio_value is already EOD on the launch date.
   if(!fromBaseline.length){
     el.innerHTML='<div style="grid-column:1/-1;padding:14px 4px;text-align:center;color:var(--mp-text-tertiary);font-size:13px;">No live data since '+valFmtDate(LIVE_PORTFOLIO_BASELINE)+' yet.</div>';
     return;
   }
-  var baselineRow=fromBaseline[0];
+  var preBaseline=sorted.filter(function(r){return r.snapshot_date<LIVE_PORTFOLIO_BASELINE;});
+  var baselineRow=preBaseline.length?preBaseline[preBaseline.length-1]:fromBaseline[0];
   var currentRow=fromBaseline[fromBaseline.length-1];
   var baselineValue=Number(baselineRow.portfolio_value)||0;
   var currentValue=Number(currentRow.portfolio_value)||0;
