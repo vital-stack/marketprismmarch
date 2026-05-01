@@ -2963,8 +2963,9 @@
   }
   .tt-title-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
   .tt-verdict{
-    font-family:'Instrument Serif','DM Serif Display',Georgia,serif;
-    font-weight:400;font-size:28px;letter-spacing:-0.02em;line-height:1.1;
+    font-family:'Inter','DM Sans',system-ui,sans-serif;
+    font-weight:700;font-size:18px;letter-spacing:.01em;line-height:1.2;
+    text-transform:uppercase;
   }
   .tt-sev{
     font-family:'Inter',system-ui,sans-serif;
@@ -5031,11 +5032,20 @@ function renderTradeTicket(f, story, sc) {
   var sevHtml = sev ? '<span class="tt-sev" style="background:'+sevColor+';">'+ esc(sev) +'</span>' : '';
   var clsHtml = (cls && cls !== 'STANDARD') ? '<span class="tt-class">'+ esc(cls) +'</span>' : '';
 
+  // Sector + P/E chip — moved out of the hero so it sits next to the severity badge.
+  // The pill is filled async by loadSectorPeBubble() targeting #hero-pe-bubble.
+  var sectorHtml = '';
+  if (story && story.sector_name) {
+    sectorHtml = '<span class="hero-sector" style="margin:0;">'+ esc(story.sector_name) +'</span>'
+      + '<span id="hero-pe-bubble"></span>';
+  }
+
   return '<div class="tt-head">'
       + '<div class="tt-title-row">'
         + '<span class="tt-verdict" style="color:'+color+';">'+ esc(verdict) +'</span>'
         + sevHtml
         + clsHtml
+        + sectorHtml
       + '</div>'
       + (fresh ? '<span class="tt-fresh">'+ esc(fresh) +'</span>' : '')
     + '</div>'
@@ -5406,10 +5416,6 @@ async function loadHero() {
           ${insightHtml || `<span class="hero-state-badge ${stateClass(r.narrative_state)}">${esc(r.narrative_state || '—')}</span>`}
         </div>
         <div class="hero-claim" id="hero-claim" data-pending="1">&nbsp;</div>
-        ${r.sector_name ? `<div class="hero-sector-row">
-          <div class="hero-sector">${esc(r.sector_name)}</div>
-          <span id="hero-pe-bubble"></span>
-        </div>` : ''}
       </div>
       <div class="hero-right" id="hero-right">
         <div class="live-price-row">
