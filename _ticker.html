@@ -4726,6 +4726,15 @@ if (!TICKER) {
 
 document.title = TICKER ? `${TICKER} — Market Prism` : 'Market Prism';
 document.getElementById('nav-ticker').textContent = TICKER;
+
+// Record visit for the global search "Recent tickers" list (cap 5, dedupe).
+if (TICKER) {
+  try {
+    const _rt = JSON.parse(localStorage.getItem('recentTickers') || '[]');
+    const _next = [TICKER].concat((Array.isArray(_rt) ? _rt : []).filter(t => t !== TICKER)).slice(0, 5);
+    localStorage.setItem('recentTickers', JSON.stringify(_next));
+  } catch(_) {}
+}
 var feedTickerEl = document.getElementById('tk-feed-ticker');
 if (feedTickerEl) feedTickerEl.textContent = TICKER;
 
