@@ -5353,13 +5353,6 @@ body{
           </div>
           <div class="val-stats" id="val-stats"></div>
         </div>
-        <div class="val-chart-block">
-          <div class="val-chart-head">
-            <div class="val-chart-title">Cumulative paper-trade performance</div>
-            <div class="val-chart-sub" id="val-chart1-sub">Equal-weight cumulative return of all closed paper trades vs. SPY</div>
-          </div>
-          <div class="val-chart-wrap" id="val-equity-chart"></div>
-        </div>
         <div class="val-chart-row">
           <div class="val-chart-block">
             <div class="val-chart-head">
@@ -8484,6 +8477,59 @@ function _refreshLaneHitCounters(){
     });
   }catch(e){/* silent */}
 }
+// For carryover lanes (data-fallback-date), the live-quote-based hit check at
+// liveQuotesRefreshDaily() can't see prior-day intraday range, so confirmed
+// hits from that day silently undercount. Resolve each visible row against
+// tracked_daily_plays for its snapshot date and force the row's \u2713/\u2717 from the
+// backend. _refreshLaneHitCounters() then reads the corrected DOM state.
+function _applyBackendHitsToFallbackLanes(){
+  try{
+    if(typeof _TP_DATA==='undefined'||!_TP_DATA||!_TP_DATA.length)return;
+    var laneNodes=document.querySelectorAll('.tl-lane[data-fallback-date]');
+    if(!laneNodes.length)return;
+    // Index tracked plays by entry_date|ticker|direction for O(1) lookup.
+    var idx={};
+    for(var i=0;i<_TP_DATA.length;i++){
+      var r=_TP_DATA[i];
+      if(!r||!r.entry_date||!r.ticker)continue;
+      var key=r.entry_date+'|'+r.ticker+'|'+(r.direction||'');
+      // Prefer the most informative row: hit=true beats null, closed beats OPEN.
+      var prev=idx[key];
+      if(!prev||(r.hit&&!prev.hit)||(r.status&&r.status!=='OPEN'&&prev.status==='OPEN'))idx[key]=r;
+    }
+    laneNodes.forEach(function(lane){
+      var fallbackDate=lane.getAttribute('data-fallback-date');
+      if(!fallbackDate)return;
+      lane.querySelectorAll('[data-prism-hit]').forEach(function(el){
+        var ticker=el.getAttribute('data-prism-hit');
+        var dir=el.getAttribute('data-prism-dir');
+        var dbDir=dir==='down'?'SHORT':dir==='up'?'LONG':'';
+        var r=idx[fallbackDate+'|'+ticker+'|'+dbDir];
+        // Fall back to direction-agnostic match if the ticker was logged under
+        // a different direction signal \u2014 better than dropping a confirmed hit.
+        if(!r){
+          for(var d=0;d<_TP_DATA.length;d++){
+            var x=_TP_DATA[d];
+            if(x&&x.entry_date===fallbackDate&&x.ticker===ticker){r=x;break;}
+          }
+        }
+        if(!r)return;
+        if(r.hit===true){
+          el.textContent='\u2713';
+          el.className='tl-row-hit visible hit';
+          el.setAttribute('data-prism-locked','1');
+        }else if(r.status&&r.status!=='OPEN'){
+          // Closed without hitting target \u2014 show \u2717 so the row matches the badge.
+          if(el.getAttribute('data-prism-locked')!=='1'){
+            el.textContent='\u2717';
+            el.className='tl-row-hit visible miss';
+          }
+        }
+      });
+    });
+    _refreshLaneHitCounters();
+  }catch(e){/* silent */}
+}
 function tlBuildLane(title,subtitle,cards,laneId){
   if(!cards.length)return'';
   var visible=cards.slice(0,TL_LIMIT);
@@ -8499,7 +8545,11 @@ function tlBuildLane(title,subtitle,cards,laneId){
   var dateAttrs=isFallback?' style="color:#FFB800;" title="Carried over — today\'s pipeline produced no rows for this lane"':'';
   var datePrefix=isFallback?'↺ ':'';
   var dlSlug='lane-'+String(title||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-  var html='<div class="tl-lane" id="lane-'+laneSlug+'"><div class="tl-lane-header"><div><div class="tl-lane-title">'+esc(title)+'</div><div class="tl-lane-sub">'+esc(subtitle)+' \u00B7 '+cards.length+' signals <span class="tl-lane-hits" id="hits-'+laneSlug+'"></span></div></div>'
+  // Tag carryover lanes with their snapshot date so the hit evaluator can pull
+  // backend-confirmed hits from tracked_daily_plays instead of trusting today's
+  // (often closed-market) intraday range from the live-quote feed.
+  var laneAttrs=isFallback?' data-fallback-date="'+esc(laneDate)+'"':'';
+  var html='<div class="tl-lane" id="lane-'+laneSlug+'"'+laneAttrs+'><div class="tl-lane-header"><div><div class="tl-lane-title">'+esc(title)+'</div><div class="tl-lane-sub">'+esc(subtitle)+' \u00B7 '+cards.length+' signals <span class="tl-lane-hits" id="hits-'+laneSlug+'"></span></div></div>'
     +'<div class="tl-lane-meta"><span class="tl-lane-date"'+dateAttrs+'>'+datePrefix+_tlFormatDate(laneDate)+'</span>'
     +'<button class="mp-dl-btn mp-export-hide" type="button" onclick="event.stopPropagation();mpDownloadCardImage(this,{selector:\'.tl-lane\',slug:\''+dlSlug+'\'});" title="Download as image"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12"/><path d="m6 12 6 6 6-6"/><path d="M5 20h14"/></svg></button>'
     +'<button class="tl-lane-refresh mp-export-hide" onclick="event.stopPropagation();_tlRefreshAll();" title="Refresh prices"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg></button></div>'
@@ -8838,64 +8888,6 @@ function valRenderStats(trades){
     +'<div class="val-stat"><div class="val-stat-label">Alpha vs SPY</div><div class="val-stat-value '+(avgAlpha!=null&&avgAlpha>0?'pos':avgAlpha<0?'neg':'')+'">'+(avgAlpha!=null?valFmtPct(avgAlpha,2):'\u2014')+'</div><div class="val-stat-sub">avg excess return</div></div>'
     +'<div class="val-stat"><div class="val-stat-label">Track period</div><div class="val-stat-value" style="font-size:16px;">'+valFmtDate(first)+' \u2192 '+valFmtDate(last)+'</div><div class="val-stat-sub">'+months+' months &middot; every regime</div></div>';
 }
-function valRenderEquityChart(trades){
-  var wrap=document.getElementById('val-equity-chart');
-  if(!wrap)return;
-  // Group closed trades by exit_date, sum pnl_pct per day, then cumulate
-  var byDay={};
-  trades.forEach(function(t){
-    if(t.status!=='CLOSED'||!t.exit_date||t.pnl_pct==null)return;
-    byDay[t.exit_date]=(byDay[t.exit_date]||0)+Number(t.pnl_pct);
-  });
-  var days=Object.keys(byDay).sort();
-  if(!days.length){wrap.innerHTML='<div style="padding:20px;color:var(--mp-text-muted);text-align:center;">No closed trades yet.</div>';return;}
-  var cum=0;var points=days.map(function(d){cum+=byDay[d];return{date:d,cum:cum};});
-  // SPY cumulative — avg SPY return on each day, cumulated (proxy)
-  var spyByDay={};
-  trades.forEach(function(t){
-    if(t.status!=='CLOSED'||!t.exit_date||t.spy_return_pct==null)return;
-    if(!spyByDay[t.exit_date])spyByDay[t.exit_date]={sum:0,n:0};
-    spyByDay[t.exit_date].sum+=Number(t.spy_return_pct);
-    spyByDay[t.exit_date].n+=1;
-  });
-  var spyCum=0;var spyPoints=days.map(function(d){var r=spyByDay[d]?(spyByDay[d].sum/spyByDay[d].n):0;spyCum+=r;return{date:d,cum:spyCum};});
-  // Dimensions
-  var W=1080,H=320,padL=56,padR=16,padT=16,padB=36;
-  var iw=W-padL-padR,ih=H-padT-padB;
-  var allY=points.map(function(p){return p.cum;}).concat(spyPoints.map(function(p){return p.cum;}));
-  var minY=Math.min.apply(null,allY);var maxY=Math.max.apply(null,allY);
-  if(minY===maxY){maxY=minY+1;}
-  var yPad=(maxY-minY)*0.08;minY-=yPad;maxY+=yPad;
-  function xOf(i){return padL+(i/(points.length-1||1))*iw;}
-  function yOf(v){return padT+ih-((v-minY)/(maxY-minY))*ih;}
-  // Build paths
-  function path(pts){return pts.map(function(p,i){return(i===0?'M':'L')+xOf(i).toFixed(1)+' '+yOf(p.cum).toFixed(1);}).join(' ');}
-  var mainPath=path(points);
-  var spyPath=path(spyPoints);
-  var areaPath=mainPath+' L '+xOf(points.length-1).toFixed(1)+' '+(padT+ih).toFixed(1)+' L '+xOf(0).toFixed(1)+' '+(padT+ih).toFixed(1)+' Z';
-  // Y gridlines (4 steps)
-  var steps=4;var ticks=[];
-  for(var i=0;i<=steps;i++){var v=minY+(maxY-minY)*(i/steps);ticks.push(v);}
-  var gridHTML=ticks.map(function(v){var y=yOf(v).toFixed(1);return'<line x1="'+padL+'" y1="'+y+'" x2="'+(W-padR)+'" y2="'+y+'" stroke="rgba(255,255,255,0.05)" stroke-width="1"/><text x="'+(padL-6)+'" y="'+(Number(y)+4).toFixed(1)+'" text-anchor="end" font-size="11" font-family="Inter,sans-serif" fill="var(--mp-text-tertiary)">'+(v>=0?'+':'')+v.toFixed(0)+'%</text>';}).join('');
-  // X labels — first, midpoint, last
-  var xLabels=[0,Math.floor(points.length/2),points.length-1].map(function(idx){if(idx<0||idx>=points.length)return'';var p=points[idx];var x=xOf(idx).toFixed(1);return'<text x="'+x+'" y="'+(padT+ih+20)+'" text-anchor="middle" font-size="11" font-family="Inter,sans-serif" fill="var(--mp-text-tertiary)">'+valFmtDate(p.date)+'</text>';}).join('');
-  var last=points[points.length-1];
-  var lastSpy=spyPoints[spyPoints.length-1];
-  var finalLabel='<text x="'+(W-padR-4)+'" y="'+(yOf(last.cum)-8).toFixed(1)+'" text-anchor="end" font-size="12" font-family="Inter,sans-serif" fill="var(--mp-green)" font-weight="600">Prism '+valFmtPct(last.cum,1)+'</text>';
-  var finalSpyLabel='<text x="'+(W-padR-4)+'" y="'+(yOf(lastSpy.cum)+16).toFixed(1)+'" text-anchor="end" font-size="12" font-family="Inter,sans-serif" fill="var(--mp-text-tertiary)">SPY '+valFmtPct(lastSpy.cum,1)+'</text>';
-  wrap.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Cumulative performance chart">'
-    +'<defs><linearGradient id="val-area-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00DE94" stop-opacity="0.24"/><stop offset="100%" stop-color="#00DE94" stop-opacity="0"/></linearGradient></defs>'
-    +gridHTML
-    +'<path d="'+areaPath+'" fill="url(#val-area-grad)"/>'
-    +'<path d="'+spyPath+'" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.5" stroke-dasharray="4 4"/>'
-    +'<path d="'+mainPath+'" fill="none" stroke="#00DE94" stroke-width="2"/>'
-    +xLabels
-    +finalLabel
-    +finalSpyLabel
-    +'</svg>';
-  var sub=document.getElementById('val-chart1-sub');
-  if(sub)sub.textContent='Equal-weight cumulative return of all closed trades vs. SPY dashed line';
-}
 function valAggregateBySignal(trades){
   var map={};
   trades.forEach(function(t){
@@ -9140,7 +9132,6 @@ async function loadValidation(force){
     // Fire-and-forget — failures render an inline "Could not load" message in
     // each card and never block the rest of the validation render.
     loadLivePortfolios();
-    valRenderEquityChart(rows);
     var byS=valAggregateBySignal(rows);
     valRenderSignalBars('val-bar-avg',byS,'avg_pnl',function(v){return valFmtPct(v,2);});
     valRenderSignalBars('val-bar-ann',byS,'annualized',function(v){return valFmtPct(v,0);});
@@ -9336,6 +9327,9 @@ async function loadTrackedPlays(){
       _TP_TIMER=setInterval(loadTrackedPlays, 60*1000);
     }
     tpRenderTable();
+    // Carryover lanes can't be evaluated from today's live quote — overwrite
+    // their visible row ✓/✗ with backend-confirmed hits from this dataset.
+    if(typeof _applyBackendHitsToFallbackLanes==='function')_applyBackendHitsToFallbackLanes();
     // Wire filter chips
     var filters=document.getElementById('tp-filters');
     if(filters&&!filters._wired){
@@ -15908,6 +15902,9 @@ async function liveQuotesRefreshDaily(){
     // includes ALL tickers tracked — even ones swapped out intraday — so earlier
     // hits aren't lost when backend rotates the plays)
     _refreshLaneHitCounters();
+    // For carryover lanes, override the just-computed DOM ✓/✗ with backend-
+    // confirmed hits — today's quote feed has no view into yesterday's session.
+    if(typeof _applyBackendHitsToFallbackLanes==='function')_applyBackendHitsToFallbackLanes();
   }catch(e){
     // Silent fail — existing Supabase prices remain visible.
   }finally{
