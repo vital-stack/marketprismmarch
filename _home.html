@@ -83,7 +83,7 @@
 }
 </script>
 
-<script id="__env_script">window.__env={SUPABASE_URL:'',SUPABASE_ANON:''};</script>
+<script id="__env_script">window.__env = { SUPABASE_URL: '', SUPABASE_ANON: '' };</script>
 <script>try{var t=localStorage.getItem('mp-theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}</script>
 <link rel="icon" type="image/png" href="/assets/Market-Prism-Favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -622,6 +622,79 @@ section.below{padding:64px 0;}
   background:rgba(0,174,255,0.04);transition:all .15s;
 }
 .blog-all:hover{border-color:rgba(0,174,255,0.45);background:rgba(0,174,255,0.10);transform:translateY(-1px);}
+/* Featured (book-style) editorial card */
+.blog-featured{
+  display:grid;grid-template-columns:1.15fr 1fr;gap:0;
+  background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:16px;
+  margin-bottom:18px;overflow:hidden;text-decoration:none;color:inherit;
+  position:relative;transition:transform .2s, border-color .2s, box-shadow .2s;
+}
+@media(max-width:780px){.blog-featured{grid-template-columns:1fr;}}
+.blog-featured::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg, #FF4D4D, #FFB800, #00DE94, #00AEFF, #7B61FF);
+  opacity:.7;
+}
+.blog-featured:hover{transform:translateY(-3px);border-color:var(--mp-border-hover);box-shadow:0 16px 40px rgba(0,0,0,0.4);}
+.blog-featured-l{
+  padding:36px 36px 32px;display:flex;flex-direction:column;gap:12px;
+  border-right:1px solid var(--mp-border);
+}
+@media(max-width:780px){.blog-featured-l{border-right:none;border-bottom:1px solid var(--mp-border);padding:28px;}}
+.blog-featured-eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:10px;font-weight:600;letter-spacing:.10em;text-transform:uppercase;
+  color:var(--mp-cyan);
+}
+.blog-featured-eyebrow::before{
+  content:'';width:18px;height:1px;background:var(--mp-cyan);opacity:.6;
+}
+.blog-featured-title{
+  font-family:var(--font-body);
+  font-size:clamp(22px,2.4vw,30px);font-weight:700;
+  letter-spacing:-0.025em;line-height:1.18;
+  color:var(--mp-text-primary);
+}
+.blog-featured-excerpt{
+  font-size:14px;line-height:1.65;color:var(--mp-text-tertiary);
+  display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden;
+}
+.blog-featured-foot{
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;
+  margin-top:auto;padding-top:14px;border-top:1px solid var(--mp-border);
+  font-size:11px;color:var(--mp-text-muted);
+}
+.blog-featured-foot strong{color:var(--mp-text-secondary);font-weight:600;}
+.blog-featured-r{
+  position:relative;padding:36px 32px;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(0,174,255,0.18), transparent 55%),
+    radial-gradient(circle at 80% 80%, rgba(255,77,77,0.14), transparent 55%),
+    var(--mp-surface);
+  display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:12px;
+  overflow:hidden;
+}
+@media(max-width:780px){.blog-featured-r{padding:24px 28px;}}
+.blog-featured-tag{
+  font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  padding:4px 10px;border-radius:99px;
+  background:rgba(255,77,77,0.10);color:var(--mp-red);border:1px solid rgba(255,77,77,0.22);
+}
+.blog-featured-ticker{
+  font-family:var(--font-body);font-size:42px;font-weight:800;
+  letter-spacing:-0.04em;line-height:1;color:var(--mp-text-primary);
+}
+.blog-featured-pull{
+  font-family:var(--font-body);font-style:italic;font-weight:600;
+  font-size:15px;line-height:1.5;color:var(--mp-text-secondary);
+  border-left:2px solid var(--mp-cyan);padding-left:12px;margin-top:6px;max-width:340px;
+}
+.blog-featured-cta{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:12px;font-weight:600;color:var(--mp-cyan);
+  padding-top:8px;
+}
+
 .blog-grid{
   display:grid;grid-template-columns:repeat(3,1fr);gap:16px;
 }
@@ -911,6 +984,7 @@ footer{
       </div>
       <a class="blog-all" href="/blog">All reports <span aria-hidden="true">→</span></a>
     </div>
+    <div id="blog-featured-slot"></div>
     <div class="blog-grid" id="blog-grid">
       <div class="blog-loading" id="blog-loading">Loading latest reports…</div>
     </div>
@@ -1243,6 +1317,7 @@ footer{
   // ── Latest reports (homepage blog teaser) ────────────────────────────
   (function loadBlogTeaser(){
     var grid = document.getElementById('blog-grid');
+    var featuredSlot = document.getElementById('blog-featured-slot');
     var loading = document.getElementById('blog-loading');
     if (!grid) return;
     var env = window.__env || {};
@@ -1252,11 +1327,12 @@ footer{
       if (loading) loading.textContent = 'Reports loading…';
       return;
     }
+    // Pull a wider window so we can find an RDDT post if it exists.
     var url = SUPABASE_URL + '/rest/v1/blog_posts'
       + '?select=ticker,slug,title,excerpt,tag,author,published_at'
       + '&status=eq.published'
       + '&order=published_at.desc'
-      + '&limit=6';
+      + '&limit=20';
     fetch(url, {
       headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON }
     })
@@ -1266,6 +1342,7 @@ footer{
           if (loading) loading.textContent = 'No reports published yet.';
           return;
         }
+
         function tagSlug(t){
           var s = (t || '').toLowerCase();
           if (s.indexOf('earning') >= 0) return 't-earnings';
@@ -1278,7 +1355,52 @@ footer{
           try { return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
           catch(_){ return ''; }
         }
-        grid.innerHTML = posts.slice(0, 6).map(function(p){
+
+        // Pull RDDT to the featured slot if it exists; else take the most-recent post.
+        var featured = null;
+        for (var i = 0; i < posts.length; i++) {
+          if ((posts[i].ticker || '').toUpperCase() === 'RDDT') {
+            featured = posts.splice(i, 1)[0];
+            break;
+          }
+        }
+        if (!featured) featured = posts.shift();
+
+        if (featured && featuredSlot) {
+          var fSlug = encodeURIComponent(featured.slug || '');
+          var fTitle = esc(featured.title || 'Untitled');
+          var fEx = esc(featured.excerpt || '');
+          var fTag = esc(featured.tag || 'Featured Report');
+          var fTk = featured.ticker ? esc(featured.ticker) : '';
+          var fAuthor = featured.author ? esc(featured.author) : 'Market Prism';
+          var fDate = esc(fmtDate(featured.published_at));
+          // Pull-quote: first sentence of excerpt, capped.
+          var pull = (featured.excerpt || '').split(/(?<=[.!?])\s/)[0] || '';
+          if (pull.length > 160) pull = pull.slice(0, 157) + '…';
+          featuredSlot.innerHTML =
+            '<a class="blog-featured" href="/blog/'+fSlug+'">' +
+              '<div class="blog-featured-l">' +
+                '<div class="blog-featured-eyebrow">Featured report</div>' +
+                '<div class="blog-featured-title">'+fTitle+'</div>' +
+                '<div class="blog-featured-excerpt">'+fEx+'</div>' +
+                '<div class="blog-featured-foot">' +
+                  '<span><strong>'+fAuthor+'</strong></span>' +
+                  '<span>'+fDate+' &middot; Free to read</span>' +
+                '</div>' +
+              '</div>' +
+              '<div class="blog-featured-r">' +
+                '<span class="blog-featured-tag">'+fTag+'</span>' +
+                (fTk ? '<div class="blog-featured-ticker">'+fTk+'</div>' : '') +
+                (pull ? '<div class="blog-featured-pull">"'+esc(pull)+'"</div>' : '') +
+                '<span class="blog-featured-cta">Read the full report &rarr;</span>' +
+              '</div>' +
+            '</a>';
+        }
+
+        // Remaining six in the grid.
+        var rest = posts.slice(0, 6);
+        if (!rest.length) { grid.style.display = 'none'; return; }
+        grid.innerHTML = rest.map(function(p){
           var slug = encodeURIComponent(p.slug || '');
           var title = esc(p.title || 'Untitled');
           var ex = esc(p.excerpt || '');
