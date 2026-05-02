@@ -5030,17 +5030,33 @@ function renderTradeTicket(f, story, sc) {
   }
 
   var tgtCell;
-  if (f.target_price != null && f.current_price) {
-    var tgtPct = (f.target_price - f.current_price) / f.current_price * 100;
+  // Defensive sanity check: ticker_forecast.target_price has been observed to
+  // hold stale/garbage values for many symbols (e.g. AMD target $25 vs $361
+  // current). If the implied move is wildly out of band, fall back to the
+  // primary horizon's predicted price, which is recomputed each refresh.
+  var SANE_TGT_PCT = 50;
+  var tgtPrice = f.target_price;
+  var tgtPct = (tgtPrice != null && f.current_price)
+    ? (tgtPrice - f.current_price) / f.current_price * 100 : null;
+  var tgtIsSane = tgtPct == null || Math.abs(tgtPct) <= SANE_TGT_PCT;
+  if (!tgtIsSane && primPrice != null && f.current_price) {
+    tgtPrice = primPrice;
+    tgtPct = (tgtPrice - f.current_price) / f.current_price * 100;
+    tgtIsSane = true;
+  } else if (!tgtIsSane) {
+    tgtPrice = null;
+    tgtPct = null;
+  }
+  if (tgtPrice != null && f.current_price && tgtPct != null) {
     tgtCell = '<div class="tt-cell">'
       + '<div class="tt-cell-label">Target</div>'
-      + '<div class="tt-cell-val">'+ ttFmtUsd(f.target_price) +'</div>'
+      + '<div class="tt-cell-val">'+ ttFmtUsd(tgtPrice) +'</div>'
       + '<div class="tt-cell-sub"><span class="'+ttPctClass(tgtPct)+'">'+ ttFmtPct(tgtPct) +'</span></div>'
       + '</div>';
-  } else if (f.target_price != null) {
+  } else if (tgtPrice != null) {
     tgtCell = '<div class="tt-cell">'
       + '<div class="tt-cell-label">Target</div>'
-      + '<div class="tt-cell-val">'+ ttFmtUsd(f.target_price) +'</div>'
+      + '<div class="tt-cell-val">'+ ttFmtUsd(tgtPrice) +'</div>'
       + '<div class="tt-cell-sub">Profit target</div>'
       + '</div>';
   } else {
