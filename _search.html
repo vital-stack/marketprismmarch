@@ -1213,8 +1213,22 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
     resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  // Focus the ticker input on mount
-  setTimeout(function(){ inpTk.focus(); }, 100);
+  // Focus the ticker input on mount, OR auto-fill + submit from URL params
+  // (used by the homepage hand-off: /search?ticker=X&narrative=Y)
+  (function(){
+    try {
+      var qs = new URLSearchParams(window.location.search);
+      var qt = (qs.get('ticker') || '').trim().toUpperCase();
+      var qn = (qs.get('narrative') || '').trim();
+      if (qt && qn && qn.length >= 10) {
+        inpTk.value = qt;
+        inpNarr.value = qn;
+        setTimeout(submit, 50);
+        return;
+      }
+    } catch(_){}
+    setTimeout(function(){ inpTk.focus(); }, 100);
+  })();
 })();
 </script>
 </body>
