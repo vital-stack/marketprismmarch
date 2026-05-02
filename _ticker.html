@@ -4923,7 +4923,8 @@ function stateClass(s) {
 }
 
 // ── Trade Ticket renderer ────────────────────────────────────────────────────
-// Renders directly from a `ticker_forecast` row. No derivations.
+// Renders directly from a `ticker_forecast` row plus the latest
+// `daily_fair_value` row (used for the Target cell).
 function ttColor(name) {
   switch ((name || '').toLowerCase()) {
     case 'red':    return '#FF4D4D';
@@ -4976,7 +4977,7 @@ function ttPctClass(p) {
   return 'tt-neu';
 }
 
-function renderTradeTicket(f, story, sc) {
+function renderTradeTicket(f, story, sc, fv) {
   var color = ttColor(f.color);
   var sevColor = color;
   var verdict = f.directional_verdict || '—';
@@ -5029,41 +5030,26 @@ function renderTradeTicket(f, story, sc) {
       + '</div>';
   }
 
+  // Target = central fair value from daily_fair_value (single source of truth).
+  // The previous ticker_forecast.target_price was a bias-conditional pick of
+  // fv_low / fair_value / fv_high which produced extreme numbers when the FV
+  // band is wide (AMD $25, NFLX $351, BKNG $2635). Pulling fair_value direct
+  // gives one consistent number with a sensible label.
   var tgtCell;
-  // Defensive sanity check: ticker_forecast.target_price has been observed to
-  // hold stale/garbage values for many symbols (e.g. AMD target $25 vs $361
-  // current). If the implied move is wildly out of band, fall back to the
-  // primary horizon's predicted price, which is recomputed each refresh.
-  var SANE_TGT_PCT = 50;
-  var tgtPrice = f.target_price;
-  var tgtPct = (tgtPrice != null && f.current_price)
-    ? (tgtPrice - f.current_price) / f.current_price * 100 : null;
-  var tgtIsSane = tgtPct == null || Math.abs(tgtPct) <= SANE_TGT_PCT;
-  if (!tgtIsSane && primPrice != null && f.current_price) {
-    tgtPrice = primPrice;
-    tgtPct = (tgtPrice - f.current_price) / f.current_price * 100;
-    tgtIsSane = true;
-  } else if (!tgtIsSane) {
-    tgtPrice = null;
-    tgtPct = null;
-  }
-  if (tgtPrice != null && f.current_price && tgtPct != null) {
+  var fvPrice = fv && fv.fair_value != null ? Number(fv.fair_value) : null;
+  var fvPct = (fvPrice != null && f.current_price)
+    ? (fvPrice - f.current_price) / f.current_price * 100 : null;
+  if (fvPrice != null && fvPct != null) {
     tgtCell = '<div class="tt-cell">'
-      + '<div class="tt-cell-label">Target</div>'
-      + '<div class="tt-cell-val">'+ ttFmtUsd(tgtPrice) +'</div>'
-      + '<div class="tt-cell-sub"><span class="'+ttPctClass(tgtPct)+'">'+ ttFmtPct(tgtPct) +'</span></div>'
-      + '</div>';
-  } else if (tgtPrice != null) {
-    tgtCell = '<div class="tt-cell">'
-      + '<div class="tt-cell-label">Target</div>'
-      + '<div class="tt-cell-val">'+ ttFmtUsd(tgtPrice) +'</div>'
-      + '<div class="tt-cell-sub">Profit target</div>'
+      + '<div class="tt-cell-label">Fair Value</div>'
+      + '<div class="tt-cell-val">'+ ttFmtUsd(fvPrice) +'</div>'
+      + '<div class="tt-cell-sub"><span class="'+ttPctClass(fvPct)+'">'+ ttFmtPct(fvPct) +'</span></div>'
       + '</div>';
   } else {
     tgtCell = '<div class="tt-cell">'
-      + '<div class="tt-cell-label">Target</div>'
+      + '<div class="tt-cell-label">Fair Value</div>'
       + '<div class="tt-cell-val" style="color:var(--mp-text-tertiary);">—</div>'
-      + '<div class="tt-cell-sub">No active target</div>'
+      + '<div class="tt-cell-sub">Not available</div>'
       + '</div>';
   }
 
@@ -5297,7 +5283,7 @@ async function loadHero() {
       'sector_trap_flag','sector_trap_name','days_to_options_expiry','next_options_expiry'
     ].join(',');
 
-    const [rows, healthRows, snapRows, tradeRows, scorecardRows, cvRows, earnContextRows, forecastRows, latestBzEarningsRows] = await Promise.all([
+    const [rows, healthRows, snapRows, tradeRows, scorecardRows, cvRows, earnContextRows, forecastRows, latestBzEarningsRows, fairValueRows] = await Promise.all([
       sbFetch('v_dash_daily_story', { select: cols, ticker: `eq.${TICKER}`, order: 'snapshot_date.desc', limit: '1' }),
       sbFetch('v_dash_narrative_health', {
         select: 'narrative_health,narrative_trend,attention_trend',
@@ -5355,6 +5341,17 @@ async function loadHero() {
         'actual_eps': 'not.is.null',
         order:  'date.desc',
         limit:  '1'
+      }).catch(function(){ return []; }),
+      // Source of truth for the trade-ticket Target cell. The forecast row
+      // pre-joins fv_low/fv_high into target_price based on bias direction,
+      // which produces extreme numbers when the FV band is wide. Pull the
+      // central fair_value directly so Target reflects what the stock is
+      // actually worth, not the worst-case end of the FCF band.
+      sbFetch('daily_fair_value', {
+        select: 'fair_value,fv_low,fv_high,verdict,premium_pct,snapshot_date,computed_at',
+        ticker: `eq.${TICKER}`,
+        order: 'snapshot_date.desc',
+        limit: '1'
       }).catch(function(){ return []; })
     ]);
 
@@ -5637,10 +5634,11 @@ async function loadHero() {
     // verdict derivation — the edge function is authoritative.
     var verdictBanner = document.getElementById('verdict-banner');
     var f = (forecastRows || [])[0] || null;
+    var fv = (fairValueRows || [])[0] || null;
     if (verdictBanner && f) {
       verdictBanner.style.display = 'block';
       verdictBanner.style.borderLeftColor = ttColor(f.color);
-      verdictBanner.innerHTML = renderTradeTicket(f, r, sc);
+      verdictBanner.innerHTML = renderTradeTicket(f, r, sc, fv);
       // Badges (Earnings · High Hype Gap · Coordinated Narrative · etc.) stay
       // where they're rendered — in .hero-ticker-row next to the ticker symbol.
       //
