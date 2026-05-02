@@ -300,6 +300,29 @@ nav.topnav{
 }
 .hero-lead strong{color:var(--mp-text-primary);font-weight:600;}
 
+/* ── FREE PILL (right above the search panel) ─────────────────────────── */
+.free-pill{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:8px 16px;border-radius:99px;
+  margin:0 auto 14px;
+  background:rgba(0,222,148,0.10);
+  border:1px solid rgba(0,222,148,0.32);
+  font-size:12px;font-weight:600;letter-spacing:.04em;
+  color:var(--mp-green);
+  box-shadow:0 0 24px rgba(0,222,148,0.15);
+}
+.free-pill svg{flex-shrink:0;width:14px;height:14px;}
+.free-pill strong{color:var(--mp-green);font-weight:700;}
+.free-pill .sep{opacity:.45;font-weight:400;color:var(--mp-text-tertiary);margin:0 2px;}
+
+/* ── No-friction line under the button ───────────────────────────────── */
+.no-friction{
+  display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;
+  margin-top:10px;font-size:12px;color:var(--mp-text-tertiary);
+}
+.no-friction span{display:inline-flex;align-items:center;gap:6px;}
+.no-friction svg{width:12px;height:12px;color:var(--mp-green);flex-shrink:0;}
+
 /* ── SEARCH PANEL (centered Google-style) ─────────────────────────────── */
 .search-panel{
   position:relative;
@@ -661,6 +684,14 @@ footer{
       Type any stock thesis. Get a <strong>narrative hit-rate</strong>, predicted 5/10/20-day returns, and the closest historical analogues — pattern-matched against <strong>3.5 million observations</strong> in milliseconds.
     </p>
 
+    <div class="free-pill">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+      <strong>Free</strong>
+      <span class="sep">·</span> No signup
+      <span class="sep">·</span> No card
+      <span class="sep">·</span> Generate a real report below
+    </div>
+
     <div class="search-panel">
       <form class="search-form" id="search-form" onsubmit="return false;">
         <div class="search-row">
@@ -675,8 +706,13 @@ footer{
         </div>
         <button class="search-btn" id="search-btn" type="button">
           <span class="search-spinner"></span>
-          <span id="search-btn-label">Validate against 3.5M observations</span>
+          <span id="search-btn-label">Generate report — free, no signup</span>
         </button>
+        <div class="no-friction">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> No account</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> No credit card</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Real result, every time</span>
+        </div>
         <div class="search-meta-row">
           <span><strong>LM · cosine search</strong> · 384-d embeddings · pgvector</span>
           <span><strong>~250ms</strong> median query</span>
@@ -901,7 +937,7 @@ footer{
   function setLoading(on){
     btn.classList.toggle('is-loading', on);
     btn.disabled = on;
-    btnLbl.textContent = on ? 'Searching 3.5M observations…' : 'Validate against 3.5M observations';
+    btnLbl.textContent = on ? 'Searching 3.5M observations…' : 'Generate report — free, no signup';
   }
   function showError(msg){
     errorEl.textContent = msg;
