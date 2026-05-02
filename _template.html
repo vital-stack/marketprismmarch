@@ -3298,6 +3298,19 @@ body{
   .strat-cards-grid .tc-sector-date{font-size:11px;}
   .strat-cards-grid .tc-state-tag{font-size:11px;}
   .strat-cards-grid .tc-view-btn{font-size:11px;padding:5px 12px;}
+
+  /* Mobile trading cards (.strat-scene): tap navigates to the ticker page.
+     The flip animation hides the View Ticker button under a clipped back face
+     on small screens, so we suppress the flip and treat the whole card as a
+     link target. JS handles the navigation; CSS keeps the front face visible. */
+  .strat-cards-grid .strat-scene{
+    perspective:none;
+    -webkit-tap-highlight-color:rgba(0,174,255,0.08);
+  }
+  .strat-cards-grid .strat-scene.flipped .strat-flipper{transform:none;}
+  .strat-cards-grid .strat-back{display:none;}
+  .strat-cards-grid .strat-scene:active{transform:scale(0.99);}
+  .strat-cards-grid .gc-flip-hint{font-size:12px;color:var(--mp-cyan);}
 }
 
 /* ── Collection Stats ── */
@@ -13171,7 +13184,7 @@ function buildStratCard(d){
   +'</div>';
 
   /* ── Wrap in flip scene ── */
-  return '<div class="strat-scene tier-'+tier+'" data-tier="'+gcEsc(d.card_tier||'')+'" data-direction="'+gcEsc(d.direction||'')+'">'
+  return '<div class="strat-scene tier-'+tier+'" data-ticker="'+gcEsc(d.ticker||'')+'" data-tier="'+gcEsc(d.card_tier||'')+'" data-direction="'+gcEsc(d.direction||'')+'">'
     +'<div class="strat-flipper">'
       +front+back
     +'</div>'
@@ -13193,10 +13206,15 @@ function renderStratCards(filter){
     if(filter==='bullish'&&(d.direction||'').toUpperCase()!=='BULLISH')show=false;
     if(show){grid.innerHTML+=buildStratCard(d);shown++;}
   });
-  /* Attach flip handlers */
+  /* Attach flip handlers — on mobile, tap navigates straight to the ticker page
+     (the back-face View Ticker button gets clipped by the fixed card height). */
   grid.querySelectorAll('.strat-scene').forEach(function(scene){
     scene.addEventListener('click',function(e){
       if(e.target.closest('.gc-view-ticker-btn'))return;
+      if(window.matchMedia('(max-width: 480px)').matches){
+        var t=scene.getAttribute('data-ticker');
+        if(t){window.location.href='/ticker/'+encodeURIComponent(t);return;}
+      }
       scene.classList.toggle('flipped');
     });
   });
