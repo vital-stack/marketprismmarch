@@ -259,7 +259,8 @@ body::before{
     <div class="auth-tabs">
       <button class="auth-tab active" onclick="switchAuthTab('signin')">Sign In</button>
       <button class="auth-tab" onclick="switchAuthTab('register')">Register</button>
-      <button class="auth-tab" onclick="switchAuthTab('reset')">Reset Password</button>
+      <button class="auth-tab" onclick="switchAuthTab('reset')">Reset</button>
+      <button class="auth-tab" onclick="switchAuthTab('beta')">Beta Code</button>
     </div>
 
     <!-- Message area -->
@@ -302,6 +303,18 @@ body::before{
         <input class="form-input" id="reset-email" type="email" placeholder="you@example.com" required autocomplete="email">
       </div>
       <button class="btn-submit" type="submit" id="btn-reset">Send Reset Link</button>
+    </form>
+
+    <!-- Beta Code Form -->
+    <form class="auth-form" id="form-beta" onsubmit="handleBetaCode(event)">
+      <div style="font-size:12px;color:var(--mp-text-tertiary);line-height:1.55;margin-bottom:14px;">
+        Have a beta access code? Redeem it here for 7 days of full dashboard access — no subscription required.
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="beta-code">Beta access code</label>
+        <input class="form-input" id="beta-code" type="text" placeholder="Enter your code" autocomplete="off" autocapitalize="off" spellcheck="false" required style="text-transform:none;letter-spacing:.04em;font-weight:500;">
+      </div>
+      <button class="btn-submit" type="submit" id="btn-beta">Redeem &amp; enter dashboard</button>
     </form>
   </div>
 
@@ -413,13 +426,48 @@ body::before{
 
   // ── Tab switching ──
   window.switchAuthTab = function(tab){
-    ['signin','register','reset'].forEach(function(t){
+    ['signin','register','reset','beta'].forEach(function(t){
       var form = document.getElementById('form-'+t);
-      var btn = document.querySelector('.auth-tab[onclick*="'+t+'"]');
+      var btn = document.querySelector('.auth-tab[onclick*="\''+t+'\'"]');
       if(form) form.classList.toggle('active', t===tab);
       if(btn)  btn.classList.toggle('active', t===tab);
     });
     clearMsg();
+  };
+
+  // ── Beta Code Redemption ──
+  // Codes are checked client-side for UX; the cookie gate that actually allows
+  // dashboard access is set by /api/session, which any logged-in path also
+  // touches. Codes are case-insensitive, whitespace-trimmed.
+  var BETA_CODES = ['karma'];
+  window.handleBetaCode = async function(e){
+    e.preventDefault();
+    clearMsg();
+    var raw  = document.getElementById('beta-code').value || '';
+    var code = raw.trim().toLowerCase();
+    if(!code){ showMsg('error','Enter your beta access code.'); return; }
+    if(BETA_CODES.indexOf(code) === -1){
+      showMsg('error','That beta code is not valid. Check the code and try again.');
+      return;
+    }
+    setLoading('btn-beta', true);
+    try {
+      var expires = new Date(); expires.setDate(expires.getDate() + 7);
+      // Mint the HttpOnly mp_beta cookie that the server-side dashboard gate reads.
+      await mintBetaCookie(expires.toISOString());
+      // Mirror the same localStorage flags the existing register flow sets, so
+      // every client-side soft-gate keeps treating beta users as authed.
+      localStorage.setItem('mp-beta-access', 'true');
+      localStorage.setItem('mp-beta-tier', 'pro');
+      localStorage.setItem('mp-beta-expires', expires.toISOString());
+      localStorage.setItem('mp_auth', JSON.stringify({t: Date.now()}));
+      showMsg('success','Beta access granted. Redirecting…');
+      document.getElementById('btn-beta').classList.add('success');
+      setTimeout(function(){ window.location.href = nextDestination(); }, 700);
+    } catch(err){
+      showMsg('error', err && err.message ? err.message : 'Could not redeem code. Try again.');
+      setLoading('btn-beta', false);
+    }
   };
 
   // Auto-switch tab from URL hash (e.g. /login#register)
