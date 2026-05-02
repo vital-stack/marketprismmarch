@@ -563,6 +563,70 @@ section.below{padding:64px 0;}
 .how-step-h{font-family:var(--font-body);font-size:20px;font-weight:700;letter-spacing:-0.025em;color:var(--mp-text-primary);margin-bottom:8px;line-height:1.2;}
 .how-step-p{font-size:13px;line-height:1.6;color:var(--mp-text-tertiary);}
 
+/* ── BLOG / LATEST REPORTS ────────────────────────────────────────────── */
+.blog-head{
+  display:flex;align-items:flex-end;justify-content:space-between;gap:18px;flex-wrap:wrap;
+  margin-top:32px;margin-bottom:24px;
+}
+.blog-head-l{flex:1;min-width:240px;}
+.blog-all{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:13px;font-weight:600;color:var(--mp-cyan);text-decoration:none;
+  padding:8px 14px;border-radius:9px;border:1px solid rgba(0,174,255,0.22);
+  background:rgba(0,174,255,0.04);transition:all .15s;
+}
+.blog-all:hover{border-color:rgba(0,174,255,0.45);background:rgba(0,174,255,0.10);transform:translateY(-1px);}
+.blog-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:16px;
+}
+@media(max-width:980px){.blog-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:640px){.blog-grid{grid-template-columns:1fr;}}
+.blog-card{
+  display:flex;flex-direction:column;
+  background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:14px;
+  padding:20px;text-decoration:none;color:inherit;
+  transition:transform .2s, border-color .2s, box-shadow .2s;
+  position:relative;overflow:hidden;min-height:200px;
+}
+.blog-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--mp-cyan);opacity:.4;
+}
+.blog-card.t-earnings::before{background:var(--mp-amber);}
+.blog-card.t-research::before{background:var(--mp-violet);}
+.blog-card.t-market::before{background:var(--mp-green);}
+.blog-card:hover{transform:translateY(-3px);border-color:var(--mp-border-hover);box-shadow:0 12px 28px rgba(0,0,0,0.3);}
+.blog-meta{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.blog-tag{
+  font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  padding:3px 9px;border-radius:99px;
+  background:rgba(0,174,255,0.10);color:var(--mp-cyan);border:1px solid rgba(0,174,255,0.20);
+}
+.blog-card.t-earnings .blog-tag{background:rgba(255,184,0,0.10);color:var(--mp-amber);border-color:rgba(255,184,0,0.20);}
+.blog-card.t-research .blog-tag{background:rgba(123,97,255,0.10);color:var(--mp-violet);border-color:rgba(123,97,255,0.20);}
+.blog-card.t-market   .blog-tag{background:rgba(0,222,148,0.10);color:var(--mp-green);border-color:rgba(0,222,148,0.20);}
+.blog-ticker{font-size:11px;font-weight:600;letter-spacing:.04em;color:var(--mp-text-tertiary);}
+.blog-title{
+  font-family:var(--font-body);font-size:17px;font-weight:700;
+  letter-spacing:-0.02em;line-height:1.3;
+  color:var(--mp-text-primary);margin-bottom:8px;
+}
+.blog-excerpt{
+  font-size:13px;line-height:1.55;color:var(--mp-text-tertiary);
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;
+  overflow:hidden;
+}
+.blog-foot{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-top:auto;padding-top:14px;
+  font-size:11px;color:var(--mp-text-muted);
+}
+.blog-author{color:var(--mp-text-tertiary);}
+.blog-loading,.blog-empty{
+  text-align:center;padding:40px 20px;
+  font-size:13px;color:var(--mp-text-tertiary);
+}
+
 .pricing-card{
   max-width:760px;margin:32px auto 0;
   display:grid;grid-template-columns:1.2fr 1fr;gap:0;
@@ -759,6 +823,23 @@ footer{
         <div class="how-step-h">Pattern-match</div>
         <div class="how-step-p">Drop in any new claim. We find its 200 nearest neighbors and aggregate what actually happened next — hit-rate, returns, analogues.</div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── LATEST REPORTS (blog teaser) ── -->
+<section class="below" id="blog-section">
+  <div class="container">
+    <div class="blog-head">
+      <div class="blog-head-l">
+        <div class="section-eyebrow">Latest reports</div>
+        <h2 class="section-title">Forensic intelligence, <em>published.</em></h2>
+        <p class="section-sub">Earnings forensics, narrative case studies, and market intel — the same reports Reddit's been quoting. Free to read.</p>
+      </div>
+      <a class="blog-all" href="/blog">All reports <span aria-hidden="true">→</span></a>
+    </div>
+    <div class="blog-grid" id="blog-grid">
+      <div class="blog-loading" id="blog-loading">Loading latest reports…</div>
     </div>
   </div>
 </section>
@@ -1069,6 +1150,71 @@ footer{
     if (qn) inpNarr.value = qn;
     if (qt && qn && qn.length >= 10) setTimeout(submit, 80);
   } catch(_){}
+
+  // ── Latest reports (homepage blog teaser) ────────────────────────────
+  (function loadBlogTeaser(){
+    var grid = document.getElementById('blog-grid');
+    var loading = document.getElementById('blog-loading');
+    if (!grid) return;
+    var env = window.__env || {};
+    var SUPABASE_URL  = env.SUPABASE_URL  || '';
+    var SUPABASE_ANON = env.SUPABASE_ANON || '';
+    if (!SUPABASE_URL || !SUPABASE_ANON) {
+      if (loading) loading.textContent = 'Reports loading…';
+      return;
+    }
+    var url = SUPABASE_URL + '/rest/v1/blog_posts'
+      + '?select=ticker,slug,title,excerpt,tag,author,published_at'
+      + '&status=eq.published'
+      + '&order=published_at.desc'
+      + '&limit=6';
+    fetch(url, {
+      headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON }
+    })
+      .then(function(r){ return r.ok ? r.json() : []; })
+      .then(function(posts){
+        if (!posts || !posts.length) {
+          if (loading) loading.textContent = 'No reports published yet.';
+          return;
+        }
+        function tagSlug(t){
+          var s = (t || '').toLowerCase();
+          if (s.indexOf('earning') >= 0) return 't-earnings';
+          if (s.indexOf('research') >= 0) return 't-research';
+          if (s.indexOf('market')  >= 0) return 't-market';
+          return '';
+        }
+        function fmtDate(d){
+          if (!d) return '';
+          try { return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
+          catch(_){ return ''; }
+        }
+        grid.innerHTML = posts.slice(0, 6).map(function(p){
+          var slug = encodeURIComponent(p.slug || '');
+          var title = esc(p.title || 'Untitled');
+          var ex = esc(p.excerpt || '');
+          var tagTxt = esc(p.tag || 'Report');
+          var tk = p.ticker ? esc(p.ticker) : '';
+          var author = p.author ? esc(p.author) : 'Market Prism';
+          var dt = esc(fmtDate(p.published_at));
+          return '<a class="blog-card '+tagSlug(p.tag)+'" href="/blog/'+slug+'">' +
+            '<div class="blog-meta">' +
+              '<span class="blog-tag">'+tagTxt+'</span>' +
+              (tk ? '<span class="blog-ticker">'+tk+'</span>' : '') +
+            '</div>' +
+            '<div class="blog-title">'+title+'</div>' +
+            '<div class="blog-excerpt">'+ex+'</div>' +
+            '<div class="blog-foot">' +
+              '<span class="blog-author">'+author+'</span>' +
+              '<span>'+dt+'</span>' +
+            '</div>' +
+          '</a>';
+        }).join('');
+      })
+      .catch(function(){
+        if (loading) loading.textContent = 'Reports unavailable right now.';
+      });
+  })();
 })();
 </script>
 
