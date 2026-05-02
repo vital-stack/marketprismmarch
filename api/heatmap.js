@@ -1,7 +1,11 @@
 const resolveTemplate = require('./_resolve-template');
+const requireAuth = require('./_require-auth');
 
-module.exports = (req, res) => {
+module.exports = async (req, res) => {
   try {
+    const auth = await requireAuth(req, res, { next: '/heatmap' });
+    if (!auth) return;
+
     const supabaseUrl  = process.env.SUPABASE_URL  || '';
     const supabaseAnon = process.env.SUPABASE_ANON || '';
 
@@ -13,6 +17,7 @@ module.exports = (req, res) => {
     );
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'private, no-store');
     res.status(200).send(html);
   } catch (err) {
     res.status(500).send('Heatmap error: ' + err.message);

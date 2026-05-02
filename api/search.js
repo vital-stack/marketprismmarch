@@ -1,7 +1,16 @@
 const resolveTemplate = require('./_resolve-template');
+const requireAuth = require('./_require-auth');
 
-module.exports = (req, res) => {
+module.exports = async (req, res) => {
   try {
+    // Preserve any ?ticker=&narrative= so the user lands back on the prefilled
+    // search after logging in.
+    const nextPath = req.url && req.url.indexOf('?') >= 0
+      ? '/search' + req.url.slice(req.url.indexOf('?'))
+      : '/search';
+    const auth = await requireAuth(req, res, { next: nextPath });
+    if (!auth) return;
+
     const supabaseUrl  = process.env.SUPABASE_URL  || '';
     const supabaseAnon = process.env.SUPABASE_ANON || '';
     const anthropicKey = process.env.ANTHROPIC_KEY || '';
@@ -17,7 +26,7 @@ module.exports = (req, res) => {
     );
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+    res.setHeader('Cache-Control', 'private, no-store');
     res.status(200).send(html);
   } catch (err) {
     res.status(500).send('Search view error: ' + err.message);

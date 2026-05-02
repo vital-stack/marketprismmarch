@@ -1,50 +1,15 @@
 const resolveTemplate = require('./_resolve-template');
-
-function parseCookies(header){
-  const out = {};
-  if (!header) return out;
-  String(header).split(';').forEach(c => {
-    const i = c.indexOf('=');
-    if (i < 0) return;
-    out[c.slice(0, i).trim()] = c.slice(i + 1).trim();
-  });
-  return out;
-}
-
-async function verifySupabaseToken(token, supabaseUrl, supabaseAnon){
-  if (!supabaseUrl || !supabaseAnon || !token) return null;
-  try {
-    const r = await fetch(`${supabaseUrl}/auth/v1/user`, {
-      headers: { 'Authorization': `Bearer ${token}`, 'apikey': supabaseAnon }
-    });
-    if (!r.ok) return null;
-    const u = await r.json();
-    return u && u.id ? u : null;
-  } catch (_e) {
-    return null;
-  }
-}
+const requireAuth = require('./_require-auth');
 
 module.exports = async (req, res) => {
   try {
+    const auth = await requireAuth(req, res, { next: '/dashboard' });
+    if (!auth) return;
+
     const supabaseUrl  = process.env.SUPABASE_URL  || '';
     const supabaseAnon = process.env.SUPABASE_ANON || '';
     const anthropicKey = process.env.ANTHROPIC_KEY || '';
     const massiveApi   = process.env.MASSIVE_API   || '';
-
-    // ── Hard gate: require a valid Supabase session OR a beta cookie ─────
-    const cookies = parseCookies(req.headers && req.headers.cookie);
-    const hasBeta = cookies.mp_beta === '1';
-    let user = null;
-    if (cookies.mp_session) {
-      user = await verifySupabaseToken(cookies.mp_session, supabaseUrl, supabaseAnon);
-    }
-    if (!user && !hasBeta) {
-      res.statusCode = 302;
-      res.setHeader('Location', '/login?next=%2Fdashboard');
-      res.setHeader('Cache-Control', 'no-store');
-      return res.end();
-    }
 
     let html = resolveTemplate('_template.html');
 

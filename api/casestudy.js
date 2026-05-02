@@ -1,10 +1,15 @@
 const resolveTemplate = require('./_resolve-template');
+const requireAuth = require('./_require-auth');
 const path = require('path');
 const fs = require('fs');
 
-module.exports = (req, res) => {
+module.exports = async (req, res) => {
   try {
     const slug = (req.query.slug || '').toLowerCase().replace(/[^a-z0-9_-]/g, '');
+
+    const nextPath = slug ? `/casestudy/${slug}` : '/casestudies';
+    const auth = await requireAuth(req, res, { next: nextPath });
+    if (!auth) return;
 
     const validStudies = {
       'ccj': {

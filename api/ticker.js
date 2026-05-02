@@ -1,4 +1,5 @@
 const resolveTemplate = require('./_resolve-template');
+const requireAuth = require('./_require-auth');
 
 module.exports = async (req, res) => {
   try {
@@ -39,6 +40,11 @@ module.exports = async (req, res) => {
 
     // Sanitise — only allow alphanumeric + dot + hyphen
     const safeTicker = ticker.replace(/[^A-Za-z0-9.\-]/g, '').toUpperCase();
+
+    // Hard gate — bail before the expensive Supabase fetches below.
+    const nextPath = safeTicker ? `/ticker/${safeTicker}` : '/dashboard';
+    const auth = await requireAuth(req, res, { next: nextPath });
+    if (!auth) return;
 
     let html = resolveTemplate('_ticker.html');
 
