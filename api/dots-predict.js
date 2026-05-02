@@ -242,13 +242,120 @@ module.exports = async function (req, res) {
     // 4. Aggregate
     const agg = aggregate(neighbors);
 
+    // 4b. Direction-aware narrative hit rate (over neighbors with
+    //     return_5d_narrative). bullish + positive residual = HIT,
+    //     bearish + negative residual = HIT, neutral excluded.
+    const nowMs = Date.now();
+    const hitVals = [];
+    const hitWeights = [];
+    for (let i = 0; i < neighbors.length; i++) {
+      const n = neighbors[i];
+      const resid = n.return_5d_narrative;
+      if (resid == null) continue;
+      const dir = n.narrative_direction == null ? 'bullish' : String(n.narrative_direction).toLowerCase();
+      if (dir === 'neutral') continue;
+      const r = Number(resid);
+      if (isNaN(r)) continue;
+      const isHit = (dir === 'bearish') ? (r < 0) : (r > 0);
+      const ageDays = n.observed_at ? (nowMs - new Date(n.observed_at).getTime()) / 86400000 : 365;
+      const recencyW = Math.pow(0.5, Math.max(0, ageDays) / 365);
+      const sim = Math.max(0, Math.min(1, Number(n.similarity) || 0));
+      hitVals.push(isHit ? 1.0 : 0.0);
+      hitWeights.push(recencyW * sim * sim);
+    }
+    let narrativeHitRate5d = null;
+    let narrativeHitRateNResolved = 0;
+    let narrativeHitRateConfidence = 0.0;
+    if (hitVals.length > 0) {
+      const totalW = hitWeights.reduce(function (s, w) { return s + w; }, 0) || 1.0;
+      let wSum = 0;
+      for (let i = 0; i < hitVals.length; i++) wSum += hitVals[i] * hitWeights[i];
+      narrativeHitRate5d = Math.round((wSum / totalW) * 1000) / 1000;
+      narrativeHitRateNResolved = hitVals.length;
+      narrativeHitRateConfidence = Math.round(Math.min(hitVals.length / 200.0, 1.0) * 1000) / 1000;
+    }
+
+    // 4c. Cluster-conditional hit rate (best-effort — clusterer cron may not
+    //     have populated centroids yet, in which case we silently fall back).
+    let clusterId = null;
+    let clusterHitRate5d = null;
+    let clusterNResolved = 0;
+    let clusterThesis = null;
+    try {
+      const rpcHeaders = {
+        'apikey': supabaseKey,
+        'Authorization': 'Bearer ' + supabaseKey,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      };
+      const nearestResp = await fetch(supabaseUrl + '/rest/v1/rpc/find_nearest_cluster', {
+        method: 'POST',
+        headers: rpcHeaders,
+        body: JSON.stringify({ query_vector: queryVector, filter_ticker: ticker })
+      });
+      if (nearestResp.ok) {
+        const nearest = await nearestResp.json().catch(function () { return null; });
+        if (Array.isArray(nearest) && nearest.length > 0 && nearest[0].cluster_id != null) {
+          clusterId = nearest[0].cluster_id;
+          clusterThesis = nearest[0].thesis_label || null;
+          const clusterResp = await fetch(supabaseUrl + '/rest/v1/rpc/search_dots_by_embedding', {
+            method: 'POST',
+            headers: rpcHeaders,
+            body: JSON.stringify({
+              query_vector: queryVector,
+              k: 100,
+              filter_sector: sector || null,
+              filter_max_age_days: MAX_AGE_DAYS,
+              filter_cluster_id: clusterId
+            })
+          });
+          if (clusterResp.ok) {
+            const clusterNbrs = await clusterResp.json().catch(function () { return []; });
+            if (Array.isArray(clusterNbrs) && clusterNbrs.length > 0) {
+              const cVals = [];
+              for (let j = 0; j < clusterNbrs.length; j++) {
+                const cn = clusterNbrs[j];
+                const cr = cn.return_5d_narrative;
+                if (cr == null) continue;
+                const cdir = cn.narrative_direction == null ? 'bullish' : String(cn.narrative_direction).toLowerCase();
+                if (cdir === 'neutral') continue;
+                const crn = Number(cr);
+                if (isNaN(crn)) continue;
+                const cHit = (cdir === 'bearish') ? (crn < 0) : (crn > 0);
+                cVals.push(cHit ? 1.0 : 0.0);
+              }
+              if (cVals.length > 0) {
+                const sum = cVals.reduce(function (s, v) { return s + v; }, 0);
+                clusterHitRate5d = Math.round((sum / cVals.length) * 1000) / 1000;
+                clusterNResolved = cVals.length;
+              }
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[dots-predict] cluster lookup failed:', err && err.message || err);
+    }
+
+    const clusterBaselineDelta = (clusterHitRate5d != null && narrativeHitRate5d != null)
+      ? Math.round((clusterHitRate5d - narrativeHitRate5d) * 1000) / 1000
+      : null;
+
     // 5. Build response
     const round2 = function (v) { return v == null ? null : Math.round(Number(v) * 100) / 100; };
     return send(res, 200, {
       ticker: ticker,
       narrative_text: narrativeText,
       sector_hint: sector,
-      bullshit_probability: agg.bullshit == null ? 0.5 : Math.round(agg.bullshit * 100) / 100,
+      bullshit_probability: agg.bullshit == null ? null : Math.round(agg.bullshit * 100) / 100,
+      narrative_hit_rate_5d:         narrativeHitRate5d,
+      narrative_hit_rate_n_resolved: narrativeHitRateNResolved,
+      narrative_hit_rate_confidence: narrativeHitRateConfidence,
+      cluster_id:                    clusterId,
+      cluster_hit_rate_5d:           clusterHitRate5d,
+      cluster_n_resolved:            clusterNResolved,
+      cluster_thesis_label:          clusterThesis,
+      cluster_baseline_delta:        clusterBaselineDelta,
       confidence: Math.min(1, agg.resolved.length / 100),
       n_similar_dots: neighbors.length,
       n_resolved_neighbors: agg.resolved.length,

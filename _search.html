@@ -228,6 +228,54 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
   margin-top:14px;font-size:12px;color:var(--mp-amber);
   display:inline-flex;align-items:center;gap:6px;
 }
+.bs-played{
+  margin-top:6px;font-size:13px;color:var(--mp-text-secondary);line-height:1.5;
+}
+.bs-played strong{color:var(--mp-text-primary);font-weight:600;}
+.bs-mlsig{
+  margin-top:14px;padding-top:14px;border-top:1px solid var(--mp-border);
+  font-size:11px;color:var(--mp-text-muted);letter-spacing:.04em;
+  text-transform:uppercase;font-weight:500;
+}
+.bs-mlsig strong{color:var(--mp-text-tertiary);font-weight:600;font-variant-numeric:tabular-nums;}
+
+/* ── CLUSTER PATTERN-MATCH CARD ─────────────────────────────────────────── */
+.cluster-card{
+  background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:14px;
+  padding:18px 20px;margin-bottom:24px;box-shadow:var(--mp-card-shadow);
+  position:relative;overflow:hidden;
+}
+.cluster-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--mp-violet);opacity:.5;
+}
+.cluster-eyebrow{
+  font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.10em;
+  color:var(--mp-text-muted);margin-bottom:8px;
+}
+.cluster-thesis{
+  font-family:'Inter',var(--font-body),system-ui,sans-serif;
+  font-size:16px;font-weight:600;color:var(--mp-text-primary);
+  letter-spacing:-.005em;line-height:1.35;margin-bottom:10px;
+}
+.cluster-row{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
+.cluster-rate{
+  font-size:28px;font-weight:700;letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums;color:var(--mp-text-primary);
+}
+.cluster-rate.up{color:var(--mp-green);}
+.cluster-rate.dn{color:var(--mp-red);}
+.cluster-rate.warn{color:var(--mp-amber);}
+.cluster-rate-lbl{font-size:13px;color:var(--mp-text-tertiary);}
+.cluster-meta{font-size:12px;color:var(--mp-text-muted);margin-top:4px;}
+.cluster-delta{
+  margin-top:8px;display:inline-flex;align-items:center;gap:6px;
+  padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;
+  letter-spacing:.04em;text-transform:uppercase;font-variant-numeric:tabular-nums;
+}
+.cluster-delta.up{background:rgba(0,222,148,0.10);color:var(--mp-green);border:1px solid rgba(0,222,148,0.25);}
+.cluster-delta.dn{background:rgba(255,77,77,0.10);color:var(--mp-red);border:1px solid rgba(255,77,77,0.25);}
+.cluster-delta.flat{background:rgba(255,255,255,0.04);color:var(--mp-text-tertiary);border:1px solid var(--mp-border);}
 
 .pred-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px;}
 .pred-cell{
@@ -509,17 +557,31 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
       </div>
 
       <div class="bs-hero" id="bs-hero">
-        <div class="bs-eyebrow">Bullshit Probability</div>
-        <div class="bs-num" id="bs-num">—%</div>
+        <div class="bs-eyebrow">Narrative Hit Rate</div>
+        <div class="bs-num" id="bs-num">—</div>
         <div class="bs-lbl" id="bs-lbl">Aggregated from similar past cases</div>
         <div class="bs-meta" id="bs-meta"></div>
+        <div class="bs-played" id="bs-played"></div>
         <div class="bs-warn" id="bs-warn" style="display:none;"></div>
+        <div class="bs-mlsig" id="bs-mlsig" style="display:none;"></div>
       </div>
 
       <div class="pred-grid" id="pred-grid">
         <div class="pred-cell"><div class="pred-lbl">Predicted 5d</div><div class="pred-val flat" id="pred-5d">—</div></div>
         <div class="pred-cell"><div class="pred-lbl">Predicted 10d</div><div class="pred-val flat" id="pred-10d">—</div></div>
         <div class="pred-cell"><div class="pred-lbl">Predicted 20d</div><div class="pred-val flat" id="pred-20d">—</div></div>
+      </div>
+
+      <!-- Cluster pattern-match card (shown only when a cluster is found) -->
+      <div class="cluster-card" id="cluster-card" style="display:none;">
+        <div class="cluster-eyebrow">Pattern Match</div>
+        <div class="cluster-thesis" id="cluster-thesis">—</div>
+        <div class="cluster-row">
+          <div class="cluster-rate" id="cluster-rate">—</div>
+          <div class="cluster-rate-lbl">hit rate within this pattern</div>
+        </div>
+        <div class="cluster-meta" id="cluster-meta"></div>
+        <div class="cluster-delta" id="cluster-delta" style="display:none;"></div>
       </div>
 
       <div class="section-lbl">Three similar historical cases</div>
@@ -1033,28 +1095,89 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
     renderRecentNarratives(data.ticker, data.recent_narratives);
     fetchAndRenderSparkline(data.ticker);
     document.getElementById('bf-date').textContent = new Date().toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
-    var bs = Math.max(0, Math.min(1, Number(data.bullshit_probability) || 0));
-    var bsPct = Math.round(bs * 100);
-    var bucket = bs >= 0.66 ? 'high' : (bs >= 0.34 ? 'med' : 'low');
 
+    // ── Hero: Narrative Hit Rate (higher = better; inverted from old bullshit framing) ──
+    var hr = (data.narrative_hit_rate_5d == null) ? null : Number(data.narrative_hit_rate_5d);
     bsHero.classList.remove('high','med','low');
-    bsHero.classList.add(bucket);
     bsNum.classList.remove('high','med','low');
-    bsNum.classList.add(bucket);
-    bsNum.textContent = bsPct + '%';
+    if (hr == null || isNaN(hr)) {
+      bsNum.textContent = '—';
+      bsHero.classList.add('med');
+      bsNum.classList.add('med');
+    } else {
+      var hrPct = Math.round(hr * 100);
+      bsNum.textContent = hrPct + '%';
+      // Higher hit rate = better. CSS classes: low→green, med→amber, high→red.
+      // Map inverted so good=green, bad=red.
+      var bucket = hr >= 0.60 ? 'low' : (hr >= 0.40 ? 'med' : 'high');
+      bsHero.classList.add(bucket);
+      bsNum.classList.add(bucket);
+    }
 
-    var conf = Math.round(((data.confidence || 0) * 100));
+    var hrN = data.narrative_hit_rate_n_resolved || 0;
+    var hrConf = Math.round(((data.narrative_hit_rate_confidence || 0) * 100));
     var nRes = data.n_resolved_neighbors || 0;
     var nSim = data.n_similar_dots || 0;
     bsMeta.innerHTML =
-      'Confidence <strong>' + conf + '%</strong> · ' +
-      '<strong>' + nRes + '</strong> resolved of <strong>' + nSim + '</strong> similar cases';
+      'Confidence <strong>' + hrConf + '%</strong> · ' +
+      '<strong>' + hrN + '</strong> directional of <strong>' + nSim + '</strong> similar cases';
+
+    // "X of Y similar narratives played out"
+    var bsPlayed = document.getElementById('bs-played');
+    if (hr != null && hrN > 0) {
+      var played = Math.round(hr * hrN);
+      bsPlayed.innerHTML = '<strong>' + played + '</strong> of <strong>' + hrN + '</strong> similar narratives played out';
+    } else {
+      bsPlayed.textContent = '';
+    }
 
     if (data.warning === 'sparse_neighborhood') {
       bsWarn.style.display = 'inline-flex';
-      bsWarn.textContent = '⚠ Sparse data — only ' + nRes + ' similar resolved cases. Treat with caution.';
+      bsWarn.textContent = '⚠ Sparse data — only ' + nRes + ' resolved cases. Treat with caution.';
     } else {
       bsWarn.style.display = 'none';
+    }
+
+    // ── Cluster pattern-match sub-card (only when populated) ──
+    var clusterCard  = document.getElementById('cluster-card');
+    var clusterEl    = {
+      thesis: document.getElementById('cluster-thesis'),
+      rate:   document.getElementById('cluster-rate'),
+      meta:   document.getElementById('cluster-meta'),
+      delta:  document.getElementById('cluster-delta')
+    };
+    if (data.cluster_id != null && data.cluster_hit_rate_5d != null) {
+      var ch = Number(data.cluster_hit_rate_5d);
+      var cn = data.cluster_n_resolved || 0;
+      clusterEl.thesis.textContent = data.cluster_thesis_label || ('Cluster #' + data.cluster_id);
+      clusterEl.rate.textContent = Math.round(ch * 100) + '%';
+      clusterEl.rate.classList.remove('up','dn','warn');
+      clusterEl.rate.classList.add(ch >= 0.60 ? 'up' : (ch >= 0.40 ? 'warn' : 'dn'));
+      clusterEl.meta.innerHTML = '<strong style="color:var(--mp-text-tertiary);font-weight:600;">' + cn + '</strong> resolved neighbors in this pattern';
+      if (data.cluster_baseline_delta != null) {
+        var d = Number(data.cluster_baseline_delta);
+        var dPct = Math.round(d * 100);
+        var dCls = d > 0.02 ? 'up' : (d < -0.02 ? 'dn' : 'flat');
+        var dSign = d >= 0 ? '+' : '';
+        clusterEl.delta.className = 'cluster-delta ' + dCls;
+        clusterEl.delta.textContent = 'Δ vs overall: ' + dSign + dPct + '%';
+        clusterEl.delta.style.display = '';
+      } else {
+        clusterEl.delta.style.display = 'none';
+      }
+      clusterCard.style.display = '';
+    } else {
+      clusterCard.style.display = 'none';
+    }
+
+    // ── ML signal footer (debug-style; only shown when bullshit_probability is non-null) ──
+    var mlSig = document.getElementById('bs-mlsig');
+    if (data.bullshit_probability != null) {
+      var bs = Number(data.bullshit_probability);
+      mlSig.innerHTML = 'ML signal: <strong>' + Math.round(bs * 100) + '%</strong>';
+      mlSig.style.display = '';
+    } else {
+      mlSig.style.display = 'none';
     }
 
     function setPred(el, v){
