@@ -4268,6 +4268,9 @@ body{
 .lb-icon{display:none;}
 .lb-htitle{font-family:'Inter',var(--font-body),system-ui,sans-serif;font-size:18px;font-weight:600;color:var(--mp-text-primary);}
 .lb-hsub{font-size:11px;color:var(--mp-text-tertiary);margin-top:1px;}
+.lb-download{margin-left:auto;flex-shrink:0;background:transparent;border:1px solid rgba(255,255,255,0.08);color:var(--mp-text-tertiary);width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:border-color .15s,color .15s,background .15s;padding:0;}
+.lb-download:hover{border-color:rgba(0,174,255,0.4);color:#00AEFF;background:rgba(0,174,255,0.08);}
+.lb-download:disabled{opacity:0.5;cursor:wait;}
 .lb-rows{padding:4px 0;position:relative;z-index:2;}
 .lb-row{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.04);transition:background .15s;cursor:pointer;text-decoration:none;color:inherit;}
 .lb-row:last-child{border-bottom:none;}
@@ -17377,13 +17380,16 @@ function renderBoard(b,rows){
       +(hasLink?'<div class="lb-arr">\u203a</div>':'')
     +'</'+tag+'>';
   }).join('');
-  return '<div class="lb-section">'
+  return '<div class="lb-section" data-board-id="'+lbEsc(b.id)+'">'
     +'<div class="lb-accent"></div>'
     +'<div class="lb-head">'
       +'<div class="lb-icon" style="background:'+b.bg+';">'
         +'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="'+b.color+'" stroke-width="2" stroke-linecap="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>'
       +'</div>'
       +'<div><div class="lb-htitle">'+lbEsc(b.title)+'</div><div class="lb-hsub">'+lbEsc(b.sub)+'</div></div>'
+      +'<button class="lb-download" data-download-board="'+lbEsc(b.id)+'" aria-label="Download '+lbEsc(b.title)+' as image" title="Download as image">'
+        +'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'
+      +'</button>'
     +'</div>'
     +'<div class="lb-rows">'+rowsHtml+'</div>'
   +'</div>';
@@ -17450,6 +17456,70 @@ function replaceBoardData(b, rows){
   if(fresh) slot.parentNode.replaceChild(fresh, slot);
 }
 
+// Capture a single leaderboard section as a branded PNG. Loads html2canvas on
+// demand (mirroring the ticker-page Create Image flow), strips the download
+// button from the clone, and stamps a Market Prism + marketprism.co footer
+// onto the bottom edge before rendering.
+async function exportBoardImage(boardId){
+  var section = document.querySelector('.lb-section[data-board-id="'+CSS.escape(boardId)+'"]');
+  if(!section) return;
+  var liveBtn = section.querySelector('.lb-download');
+  if(liveBtn) liveBtn.disabled = true;
+  try{
+    if(typeof html2canvas==='undefined'){
+      await new Promise(function(res, rej){
+        var s=document.createElement('script');
+        s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        s.onload=res;
+        s.onerror=function(){rej(new Error('Failed to load html2canvas'));};
+        document.head.appendChild(s);
+      });
+    }
+    var board = (typeof BOARDS!=='undefined') ? BOARDS.filter(function(b){return b.id===boardId;})[0] : null;
+    var titleForFile = (board && board.title) ? board.title : boardId;
+    var slug = titleForFile.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'leaderboard';
+    var canvas = await html2canvas(section, {
+      backgroundColor: '#0C1018',
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      onclone: function(doc){
+        var s = doc.querySelector('.lb-section[data-board-id="'+CSS.escape(boardId)+'"]');
+        if(!s) return;
+        var dl = s.querySelector('.lb-download');
+        if(dl) dl.remove();
+        var footer = doc.createElement('div');
+        footer.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:18px 20px 16px;border-top:1px solid rgba(255,255,255,0.08);background:rgba(0,0,0,0.15);position:relative;z-index:2;';
+        footer.innerHTML = '<div style="display:flex;flex-direction:column;gap:2px;">'
+          + '<span style="font-family:\'Instrument Serif\', \'DM Serif Display\', Georgia, serif;font-size:20px;font-weight:400;color:#FFFFFF;letter-spacing:-0.025em;line-height:1;">Market Prism</span>'
+          + '<span style="font-size:10px;color:rgba(255,255,255,0.45);font-family:Inter,system-ui,sans-serif;letter-spacing:0.04em;text-transform:uppercase;">Forensic narrative intelligence</span>'
+          + '</div>'
+          + '<div style="font-family:\'Instrument Serif\', Georgia, serif;font-style:italic;font-size:16px;color:#4DC8F0;letter-spacing:-0.01em;">marketprism.co</div>';
+        s.appendChild(footer);
+      }
+    });
+    await new Promise(function(res){
+      canvas.toBlob(function(blob){
+        if(!blob){ res(); return; }
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'market-prism-' + slug + '-' + new Date().toISOString().slice(0,10) + '.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        res();
+      }, 'image/png');
+    });
+  }catch(e){
+    console.error('[Leaderboard download] failed for', boardId, e);
+    alert('Image download failed. ' + (e && e.message ? e.message : ''));
+  }finally{
+    if(liveBtn) liveBtn.disabled = false;
+  }
+}
+
 // Wait up to ~10s for the in-memory scorecardMap to be populated by the main
 // dashboard data load. If a user clicks the Leaderboard tab before the initial
 // data fetch finishes, every scorecardFallback-backed board returns empty and
@@ -17496,6 +17566,13 @@ async function loadLeaderboard(){
     // since we now mutate sections in place, the listener survives re-renders.
     if(!grid._lbClickHooked){
       grid.addEventListener('click',function(e){
+        var dl=e.target.closest('.lb-download');
+        if(dl){
+          e.preventDefault();
+          e.stopPropagation();
+          exportBoardImage(dl.dataset.downloadBoard);
+          return;
+        }
         var row=e.target.closest('a.lb-row');
         if(!row) return;
         var href=row.getAttribute('href')||'';
