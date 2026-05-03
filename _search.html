@@ -132,6 +132,7 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
 .field-ticker{text-transform:uppercase;letter-spacing:.04em;font-weight:600;font-size:16px;}
 .field-narrative{resize:vertical;min-height:90px;line-height:1.5;}
 .field-hint{font-size:11px;color:var(--mp-text-muted);margin-top:2px;}
+.privacy-note{font-size:11px;color:var(--mp-text-muted);line-height:1.5;margin:14px 0 0;max-width:640px;}
 
 .search-btn{
   width:100%;padding:14px 18px;margin-top:6px;border-radius:10px;
@@ -207,6 +208,17 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
 .bs-hero.med::before{background:var(--mp-amber);}
 .bs-hero.low::before{background:var(--mp-green);}
 .bs-eyebrow{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--mp-text-muted);margin-bottom:10px;}
+.bs-signal{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:8px 16px;border-radius:999px;
+  font-family:var(--font-body);
+  font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  margin-bottom:18px;line-height:1.2;
+}
+.bs-signal.up   {background:rgba(0,222,148,0.12);color:var(--mp-green);border:1px solid rgba(0,222,148,0.30);}
+.bs-signal.dn   {background:rgba(255,77,77,0.12);color:var(--mp-red);  border:1px solid rgba(255,77,77,0.30);}
+.bs-signal.warn {background:rgba(255,184,0,0.12);color:var(--mp-amber);border:1px solid rgba(255,184,0,0.30);}
+.bs-signal.flat {background:rgba(255,255,255,0.04);color:var(--mp-text-tertiary);border:1px solid var(--mp-border);}
 .bs-num{
   font-family:var(--font-body);font-size:clamp(72px,9vw,108px);font-weight:700;
   letter-spacing:-0.04em;line-height:1;font-variant-numeric:tabular-nums;
@@ -277,6 +289,14 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
 .cluster-delta.dn{background:rgba(255,77,77,0.10);color:var(--mp-red);border:1px solid rgba(255,77,77,0.25);}
 .cluster-delta.flat{background:rgba(255,255,255,0.04);color:var(--mp-text-tertiary);border:1px solid var(--mp-border);}
 
+.pred-intro{
+  font-family:'Instrument Serif',var(--font-display);
+  font-size:20px;font-weight:400;color:var(--mp-text-primary);
+  letter-spacing:-.015em;text-align:center;line-height:1.35;
+  margin:-4px 0 14px;
+}
+.pred-intro strong{color:var(--mp-text-primary);font-weight:400;}
+.pred-intro .pi-sub{color:var(--mp-text-tertiary);font-style:italic;}
 .pred-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px;}
 .pred-cell{
   background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:12px;
@@ -483,12 +503,47 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
         <span id="btn-label">Search 3.5M historical observations</span>
       </button>
       <div class="search-error" id="search-error"></div>
+      <p class="privacy-note">
+        Anonymous searches are logged to improve our prediction model. We don't store IP addresses or fingerprints — just a random session ID kept in your browser. Clearing your browser storage removes it permanently.
+      </p>
     </form>
 
     <!-- ── RESULTS ── -->
     <div class="results" id="results">
 
-      <!-- 90d price sparkline (top of results) -->
+      <div class="bs-hero" id="bs-hero">
+        <div class="bs-signal flat" id="bs-signal">SIGNAL: AWAITING DATA</div>
+        <div class="bs-num" id="bs-num">—</div>
+        <div class="bs-lbl" id="bs-lbl">Aggregated from similar past cases</div>
+        <div class="bs-meta" id="bs-meta"></div>
+        <div class="bs-played" id="bs-played"></div>
+        <div class="bs-warn" id="bs-warn" style="display:none;"></div>
+        <div class="bs-mlsig" id="bs-mlsig" style="display:none;"></div>
+      </div>
+
+      <div class="pred-intro" id="pred-intro">Expected outcome</div>
+      <div class="pred-grid" id="pred-grid">
+        <div class="pred-cell"><div class="pred-lbl">5d</div><div class="pred-val flat" id="pred-5d">—</div></div>
+        <div class="pred-cell"><div class="pred-lbl">10d</div><div class="pred-val flat" id="pred-10d">—</div></div>
+        <div class="pred-cell"><div class="pred-lbl">20d</div><div class="pred-val flat" id="pred-20d">—</div></div>
+      </div>
+
+      <!-- Cluster pattern-match card (shown only when a cluster is found) -->
+      <div class="cluster-card" id="cluster-card" style="display:none;">
+        <div class="cluster-eyebrow">Pattern Match</div>
+        <div class="cluster-thesis" id="cluster-thesis">—</div>
+        <div class="cluster-row">
+          <div class="cluster-rate" id="cluster-rate">—</div>
+          <div class="cluster-rate-lbl">hit rate within this pattern</div>
+        </div>
+        <div class="cluster-meta" id="cluster-meta"></div>
+        <div class="cluster-delta" id="cluster-delta" style="display:none;"></div>
+      </div>
+
+      <div class="section-lbl">Three similar historical cases</div>
+      <div id="neighbors"></div>
+
+      <!-- 90d price sparkline -->
       <div class="spark-card" id="spark-card" style="display:none;">
         <div class="spark-info">
           <div class="spark-lbl" id="spark-lbl">Last 90 days</div>
@@ -556,37 +611,6 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
         </div>
       </div>
 
-      <div class="bs-hero" id="bs-hero">
-        <div class="bs-eyebrow">Narrative Hit Rate</div>
-        <div class="bs-num" id="bs-num">—</div>
-        <div class="bs-lbl" id="bs-lbl">Aggregated from similar past cases</div>
-        <div class="bs-meta" id="bs-meta"></div>
-        <div class="bs-played" id="bs-played"></div>
-        <div class="bs-warn" id="bs-warn" style="display:none;"></div>
-        <div class="bs-mlsig" id="bs-mlsig" style="display:none;"></div>
-      </div>
-
-      <div class="pred-grid" id="pred-grid">
-        <div class="pred-cell"><div class="pred-lbl">Predicted 5d</div><div class="pred-val flat" id="pred-5d">—</div></div>
-        <div class="pred-cell"><div class="pred-lbl">Predicted 10d</div><div class="pred-val flat" id="pred-10d">—</div></div>
-        <div class="pred-cell"><div class="pred-lbl">Predicted 20d</div><div class="pred-val flat" id="pred-20d">—</div></div>
-      </div>
-
-      <!-- Cluster pattern-match card (shown only when a cluster is found) -->
-      <div class="cluster-card" id="cluster-card" style="display:none;">
-        <div class="cluster-eyebrow">Pattern Match</div>
-        <div class="cluster-thesis" id="cluster-thesis">—</div>
-        <div class="cluster-row">
-          <div class="cluster-rate" id="cluster-rate">—</div>
-          <div class="cluster-rate-lbl">hit rate within this pattern</div>
-        </div>
-        <div class="cluster-meta" id="cluster-meta"></div>
-        <div class="cluster-delta" id="cluster-delta" style="display:none;"></div>
-      </div>
-
-      <div class="section-lbl">Three similar historical cases</div>
-      <div id="neighbors"></div>
-
       <!-- Recent narratives about THIS ticker -->
       <div class="rn-panel" id="rn-panel" style="display:none;">
         <div class="rn-head">
@@ -647,6 +671,23 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
     return v > 0 ? 'up' : (v < 0 ? 'dn' : 'flat');
   }
 
+  // Anonymous session ID — random UUID in localStorage, NOT identity-linked.
+  // Clearing browser storage removes it permanently.
+  var anonymousSessionId = null;
+  try {
+    anonymousSessionId = localStorage.getItem('ms_anon_sid');
+    if (!anonymousSessionId) {
+      anonymousSessionId = (window.crypto && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : ('xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            var r = Math.random() * 16 | 0;
+            var v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+          }));
+      localStorage.setItem('ms_anon_sid', anonymousSessionId);
+    }
+  } catch (_) { /* private mode / blocked storage — leave null, server tolerates */ }
+
   var form     = document.getElementById('search-form');
   var btn      = document.getElementById('search-btn');
   var btnLbl   = document.getElementById('btn-label');
@@ -655,10 +696,12 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
   var inpNarr  = document.getElementById('f-narrative');
   var resultsEl= document.getElementById('results');
   var bsHero   = document.getElementById('bs-hero');
+  var bsSignal = document.getElementById('bs-signal');
   var bsNum    = document.getElementById('bs-num');
   var bsLbl    = document.getElementById('bs-lbl');
   var bsMeta   = document.getElementById('bs-meta');
   var bsWarn   = document.getElementById('bs-warn');
+  var predIntro= document.getElementById('pred-intro');
   var pred5    = document.getElementById('pred-5d');
   var pred10   = document.getElementById('pred-10d');
   var pred20   = document.getElementById('pred-20d');
@@ -774,7 +817,11 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
     fetch('/api/dots-predict', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ticker: ticker, narrativeText: narrative })
+      body: JSON.stringify({
+        ticker: ticker,
+        narrativeText: narrative,
+        anonymousSessionId: anonymousSessionId
+      })
     })
     .then(function(r){
       return r.json().then(function(j){ return { ok: r.ok, status: r.status, body: j }; });
@@ -1104,9 +1151,11 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
       bsNum.textContent = '—';
       bsHero.classList.add('med');
       bsNum.classList.add('med');
+      bsLbl.textContent = 'Aggregated from similar past cases';
     } else {
       var hrPct = Math.round(hr * 100);
       bsNum.textContent = hrPct + '%';
+      bsLbl.textContent = 'of similar setups reached projected returns';
       // Higher hit rate = better. CSS classes: low→green, med→amber, high→red.
       // Map inverted so good=green, bad=red.
       var bucket = hr >= 0.60 ? 'low' : (hr >= 0.40 ? 'med' : 'high');
@@ -1121,6 +1170,49 @@ body{font-family:var(--font-body);background:var(--mp-obsidian);color:var(--mp-t
     bsMeta.innerHTML =
       'Confidence <strong>' + hrConf + '%</strong> · ' +
       '<strong>' + hrN + '</strong> directional of <strong>' + nSim + '</strong> similar cases';
+
+    // ── Signal banner: combines hit-rate conviction with predicted-return direction ──
+    (function(){
+      var p5  = data.predicted_5d_return,
+          p10 = data.predicted_10d_return,
+          p20 = data.predicted_20d_return;
+      var sum = 0, k = 0;
+      [p5, p10, p20].forEach(function(r){ if (r != null && !isNaN(Number(r))) { sum += Number(r); k++; } });
+      var avgRet = k > 0 ? sum / k : null;
+
+      var dir = (avgRet == null) ? 'flat' : (avgRet > 0.02 ? 'up' : (avgRet < -0.02 ? 'dn' : 'flat'));
+      var conf = (hr == null || isNaN(hr)) ? null : (hr >= 0.60 ? 'high' : (hr >= 0.40 ? 'mixed' : 'weak'));
+
+      var txt, cls;
+      if (conf == null)                       { txt = 'SIGNAL: AWAITING DATA';                          cls = 'flat'; }
+      else if (conf === 'high' && dir === 'up') { txt = 'SIGNAL: HIGH-PROBABILITY UPSIDE SETUP';        cls = 'up';   }
+      else if (conf === 'high' && dir === 'dn') { txt = 'SIGNAL: HIGH-PROBABILITY DOWNSIDE SETUP';      cls = 'dn';   }
+      else if (conf === 'high')                 { txt = 'SIGNAL: HIGH CONVICTION — RANGE-BOUND';        cls = 'warn'; }
+      else if (conf === 'mixed' && dir === 'up'){ txt = 'SIGNAL: MIXED — UPSIDE TILT';                  cls = 'warn'; }
+      else if (conf === 'mixed' && dir === 'dn'){ txt = 'SIGNAL: MIXED — DOWNSIDE TILT';                cls = 'warn'; }
+      else if (conf === 'mixed')                { txt = 'SIGNAL: MIXED — NO CLEAR EDGE';                cls = 'warn'; }
+      else if (dir === 'dn')                    { txt = 'SIGNAL: WEAK — DOWNSIDE RISK ELEVATED';        cls = 'dn';   }
+      else if (dir === 'up')                    { txt = 'SIGNAL: WEAK — NARRATIVE OFTEN MISFIRES';      cls = 'dn';   }
+      else                                      { txt = 'SIGNAL: WEAK — INSUFFICIENT EDGE';             cls = 'flat'; }
+
+      // Sparse data overrides everything: drop conviction down to a caution pill
+      if (data.warning === 'sparse_neighborhood') {
+        txt = 'SIGNAL: SPARSE DATA — TREAT WITH CAUTION';
+        cls = 'warn';
+      }
+
+      bsSignal.textContent = txt;
+      bsSignal.className = 'bs-signal ' + cls;
+    })();
+
+    // ── Pred intro: "Expected outcome (based on N similar cases)" ──
+    if (hrN > 0) {
+      predIntro.innerHTML = 'Expected outcome <span class="pi-sub">(based on <strong>' + hrN + '</strong> similar cases)</span>';
+    } else if (nSim > 0) {
+      predIntro.innerHTML = 'Expected outcome <span class="pi-sub">(based on <strong>' + nSim + '</strong> similar cases)</span>';
+    } else {
+      predIntro.textContent = 'Expected outcome';
+    }
 
     // "X of Y similar narratives played out"
     var bsPlayed = document.getElementById('bs-played');

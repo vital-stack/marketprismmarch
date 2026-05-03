@@ -13,6 +13,8 @@
 //   - public.search_dots_by_embedding(...) returning narrative_dots rows
 //   - read access for the role used by the env key
 
+const { waitUntil } = require('@vercel/functions');
+
 const EMBED_MODEL = 'Xenova/all-MiniLM-L6-v2';  // ONNX export, 384-dim
 const DEFAULT_K = 200;
 const MAX_AGE_DAYS = 540;
@@ -174,21 +176,26 @@ function aggregate(neighbors) {
 }
 
 module.exports = async function (req, res) {
+  const startTime = Date.now();
+  // Hoisted so the catch block at the bottom can include them in failure logs.
+  let body = {};
+  let ticker = '';
+  let narrativeText = '';
+  let queryVector = null;
+  const supabaseUrl = process.env.SUPABASE_URL || '';
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON || '';
   try {
     if (req.method !== 'POST') {
       return send(res, 405, { error: 'Method not allowed — POST required.' });
     }
 
-    const supabaseUrl = process.env.SUPABASE_URL || '';
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON || '';
-
     if (!supabaseUrl || !supabaseKey) {
       return send(res, 500, { error: 'Supabase env not configured (SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY).' });
     }
 
-    const body = await readBody(req);
-    const ticker = (body.ticker || '').toString().toUpperCase().replace(/[^A-Z0-9.\-]/g, '').slice(0, 10);
-    const narrativeText = (body.narrativeText || '').toString().trim();
+    body = await readBody(req);
+    ticker = (body.ticker || '').toString().toUpperCase().replace(/[^A-Z0-9.\-]/g, '').slice(0, 10);
+    narrativeText = (body.narrativeText || '').toString().trim();
 
     if (!ticker) return send(res, 400, { error: 'Missing ticker.' });
     if (!narrativeText) return send(res, 400, { error: 'Missing narrativeText.' });
@@ -199,7 +206,7 @@ module.exports = async function (req, res) {
     //    Context and narratives are purely additive (they adorn the response,
     //    never affect retrieval); failures are silent and the search still
     //    returns.
-    let queryVector, context, recentNarratives;
+    let context, recentNarratives;
     try {
       const [vec, ctx, recent] = await Promise.all([
         embedQuery(narrativeText),
@@ -224,10 +231,13 @@ module.exports = async function (req, res) {
     try {
       neighbors = await searchDots(supabaseUrl, supabaseKey, queryVector, sector);
     } catch (e) {
-      return send(res, 500, { error: e.message || 'Vector search failed.' });
+      const errMsg = e.message || 'Vector search failed.';
+      const errPayload = { error: errMsg, stage: 'search_dots_rpc', sector_hint: sector || null };
+      waitUntil(logSearchQuery(req, body, ticker, narrativeText, queryVector, errPayload, supabaseUrl, supabaseKey, startTime));
+      return send(res, 500, { error: errMsg });
     }
     if (!neighbors || !neighbors.length) {
-      return send(res, 200, {
+      const emptyResponse = {
         ticker: ticker,
         narrative_text: narrativeText,
         warning: 'no_similar_dots',
@@ -236,7 +246,9 @@ module.exports = async function (req, res) {
         neighbors: [],
         context: context || null,
         recent_narratives: recentNarratives || []
-      });
+      };
+      waitUntil(logSearchQuery(req, body, ticker, narrativeText, queryVector, emptyResponse, supabaseUrl, supabaseKey, startTime));
+      return send(res, 200, emptyResponse);
     }
 
     // 4. Aggregate
@@ -343,7 +355,7 @@ module.exports = async function (req, res) {
 
     // 5. Build response
     const round2 = function (v) { return v == null ? null : Math.round(Number(v) * 100) / 100; };
-    return send(res, 200, {
+    const responsePayload = {
       ticker: ticker,
       narrative_text: narrativeText,
       sector_hint: sector,
@@ -378,8 +390,75 @@ module.exports = async function (req, res) {
       context: context || null,
       recent_narratives: recentNarratives || [],
       updated: new Date().toISOString()
-    });
+    };
+
+    waitUntil(logSearchQuery(req, body, ticker, narrativeText, queryVector, responsePayload, supabaseUrl, supabaseKey, startTime));
+    return send(res, 200, responsePayload);
   } catch (err) {
-    return send(res, 500, { error: (err && err.message) || 'Unknown error.' });
+    const errMsg = (err && err.message) || 'Unknown error.';
+    if (queryVector && narrativeText && ticker && supabaseUrl && supabaseKey) {
+      const errPayload = { error: errMsg, stage: 'handler_uncaught' };
+      waitUntil(logSearchQuery(req, body, ticker, narrativeText, queryVector, errPayload, supabaseUrl, supabaseKey, startTime));
+    }
+    return send(res, 500, { error: errMsg });
   }
 };
+
+// Logger for search_query_log (training-data capture). Returns a Promise so
+// the caller can hand it to Vercel's waitUntil(), which keeps the lambda
+// alive until the insert settles without blocking the user response.
+// Never throws — failures are logged to console and swallowed.
+async function logSearchQuery(req, body, ticker, narrativeText, queryVector, responsePayload, supabaseUrl, supabaseKey, startTime) {
+  try {
+    const ua = (req.headers && (req.headers['user-agent'] || req.headers['User-Agent']) || '').toString().toLowerCase();
+    let uaClass = 'unknown';
+    if (/bot|crawl|spider/.test(ua)) uaClass = 'bot';
+    else if (/mobile|iphone|android/.test(ua)) uaClass = 'mobile';
+    else if (/ipad|tablet/.test(ua)) uaClass = 'tablet';
+    else if (ua) uaClass = 'desktop';
+
+    const normText = (narrativeText || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    const textHash = require('crypto').createHash('sha256').update(normText).digest('hex');
+
+    const row = {
+      ticker: ticker.toUpperCase(),
+      narrative_text: narrativeText,
+      narrative_text_hash: textHash,
+      anonymous_session_id: body.anonymousSessionId || null,
+      user_agent_class: uaClass,
+      is_logged_in: !!body.userId,
+      embedding: '[' + queryVector.join(',') + ']',
+      embedding_model: 'sentence-transformers/all-MiniLM-L6-v2',
+      candidate_direction: null,
+      candidate_cycle_phase: null,
+      candidate_market_regime: null,
+      candidate_sector: responsePayload.sector_hint || null,
+      candidate_dot_hash: null,
+      response_payload: responsePayload,
+      predicted_hit_rate_5d: responsePayload.narrative_hit_rate_5d != null ? responsePayload.narrative_hit_rate_5d : null,
+      predicted_5d_return:   responsePayload.predicted_5d_return  != null ? responsePayload.predicted_5d_return  : null,
+      predicted_10d_return:  responsePayload.predicted_10d_return != null ? responsePayload.predicted_10d_return : null,
+      predicted_20d_return:  responsePayload.predicted_20d_return != null ? responsePayload.predicted_20d_return : null,
+      predictor_version: 'dot_predictor_v1',
+      n_neighbors_returned: responsePayload.n_similar_dots != null ? responsePayload.n_similar_dots : 0,
+      backend_latency_ms: Date.now() - startTime,
+    };
+
+    const r = await fetch(supabaseUrl + '/rest/v1/search_query_log', {
+      method: 'POST',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': 'Bearer ' + supabaseKey,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify(row)
+    });
+    if (!r.ok) {
+      const t = await r.text().catch(function () { return ''; });
+      console.warn('[dots-predict] search_query_log insert failed (' + r.status + '): ' + (t || '').slice(0, 300));
+    }
+  } catch (logErr) {
+    console.warn('[dots-predict] search_query_log path failed:', (logErr && logErr.message) || logErr);
+  }
+}
