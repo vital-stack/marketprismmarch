@@ -8804,6 +8804,16 @@ var VAL_SIGNAL_LABELS={
 };
 function valFmtPct(n,digits){if(n==null||isNaN(n))return'\u2014';var d=digits!=null?digits:2;var sign=n>0?'+':n<0?'\u2212':'';return sign+Math.abs(Number(n)).toFixed(d)+'%';}
 function valFmtDate(s){if(!s)return'';try{return new Date(s+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'});}catch(_){return s;}}
+// Today's date in America/New_York as YYYY-MM-DD. Long-Term Paper Sim is a
+// live, continuously-tracked record \u2014 the period-end should always be "now",
+// not the last closed-trade event (which lags when a day has no exits).
+function valTodayET(){
+  var p=new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+  var y=p.find(function(x){return x.type==='year';}).value;
+  var m=p.find(function(x){return x.type==='month';}).value;
+  var d=p.find(function(x){return x.type==='day';}).value;
+  return y+'-'+m+'-'+d;
+}
 function valSignalLabel(b){if(!b)return'Other';return VAL_SIGNAL_LABELS[b]||b.replace(/_/g,' ').toLowerCase().replace(/\b\w/g,function(c){return c.toUpperCase();});}
 // Cached overall stats from track_record_stats (populated by daily cron).
 // If available, render instantly; otherwise fall back to on-the-fly compute.
@@ -8833,7 +8843,11 @@ function _valRenderStatsFromCache(c){
   var annualized=Number(c.annualized_return_pct)||0;
   var avgAlpha=c.alpha_vs_spy_pct!=null?Number(c.alpha_vs_spy_pct):null;
   var first=c.period_start;
-  var last=c.period_end;
+  // Track period reflects the live tracking window through today. Cron-cached
+  // period_end lags (last closed-trade exit_date) and made the card read
+  // "→ May 1" on May 4 even though the sim is running daily.
+  var today=valTodayET();
+  var last=c.period_end&&c.period_end>today?c.period_end:today;
   var daysElapsed=first&&last?Math.max(1,(new Date(last+'T00:00:00')-new Date(first+'T00:00:00'))/(1000*60*60*24)):0;
   var months=daysElapsed?Math.max(1,Math.round(daysElapsed/30.4)):0;
   el.innerHTML=''
@@ -8871,7 +8885,14 @@ function valRenderStats(trades){
   var spyArr=closed.filter(function(t){return t.excess_return_pct!=null;}).map(function(t){return Number(t.excess_return_pct);});
   var avgAlpha=spyArr.length?spyArr.reduce(function(a,b){return a+b;},0)/spyArr.length:null;
   var dates=closed.map(function(t){return t.entry_date;}).filter(Boolean).sort();
-  var first=dates[0];var last=dates[dates.length-1]||dates[0];
+  var first=dates[0];
+  // Track period end = today (live, continuously-tracked sim) rather than the
+  // last closed-trade entry_date — otherwise the card reads stale on any day
+  // without an exit. Falls back to the latest entry_date if today somehow
+  // precedes it (clock skew, dev environment).
+  var today=valTodayET();
+  var lastEntry=dates[dates.length-1]||dates[0];
+  var last=lastEntry&&lastEntry>today?lastEntry:today;
   var daysElapsed=first&&last?Math.max(1,(new Date(last+'T00:00:00')-new Date(first+'T00:00:00'))/(1000*60*60*24)):0;
   var years=daysElapsed/365.25;
   var months=daysElapsed?Math.max(1,Math.round(daysElapsed/30.4)):0;
