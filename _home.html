@@ -1695,8 +1695,9 @@ footer{
       .then(function(r){ return r.ok ? r.json() : null; })
       .then(function(data){
         if (!data) return;
+        var quotes = data.quotes || data;
         var rows = TKS.map(function(t){
-          var q = data[t];
+          var q = quotes[t];
           if (!q || q.price == null) return '';
           var pct = (q.changePct != null) ? Number(q.changePct) : null;
           var pctTxt = pct == null ? '' : (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
