@@ -169,6 +169,61 @@ nav {
 .posts-filter-btn:hover { color: var(--tx2); border-color: var(--border-mid); }
 .posts-filter-btn.active { color: var(--tx1); background: var(--surface); border-color: var(--border-mid); }
 
+/* ── SEARCH ─────────────────────────────────────────────────────────────── */
+.posts-search {
+  position: relative;
+  margin-bottom: 14px;
+}
+.posts-search-icon {
+  position: absolute;
+  top: 50%; left: 14px;
+  transform: translateY(-50%);
+  width: 16px; height: 16px;
+  color: var(--tx3);
+  pointer-events: none;
+}
+.posts-search-input {
+  width: 100%;
+  padding: 11px 40px 11px 40px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--tx1);
+  font-family: var(--font-b);
+  font-size: 14px;
+  font-weight: 400;
+  outline: none;
+  transition: border-color .15s, background .15s;
+}
+.posts-search-input:focus { border-color: var(--blue); background: var(--surface2); }
+.posts-search-input::placeholder { color: var(--tx3); }
+.posts-search-clear {
+  position: absolute;
+  top: 50%; right: 10px;
+  transform: translateY(-50%);
+  width: 24px; height: 24px;
+  border: none; background: transparent;
+  color: var(--tx3); cursor: pointer;
+  display: none;
+  align-items: center; justify-content: center;
+  border-radius: 6px;
+  transition: color .15s, background .15s;
+}
+.posts-search-clear:hover { color: var(--tx1); background: var(--border); }
+.posts-search-clear svg { width: 14px; height: 14px; }
+.posts-search.has-value .posts-search-clear { display: inline-flex; }
+.posts-search-count {
+  margin-top: 8px;
+  font-family: var(--font-m);
+  font-size: 11px;
+  color: var(--tx3);
+  letter-spacing: .04em;
+  display: none;
+}
+.posts-search-count.show { display: block; }
+.posts-search-count strong { color: var(--tx1); font-weight: 600; }
+.posts-search-count em { font-style: normal; color: var(--blue); }
+
 .posts-feed {
   display: flex;
   flex-direction: column;
@@ -382,6 +437,19 @@ nav {
 <!-- ── FEED ── -->
 <div class="posts-section">
   <div class="con">
+    <div class="posts-search" id="posts-search-wrap">
+      <svg class="posts-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"/>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input class="posts-search-input" id="posts-search" type="search"
+             placeholder="Search by ticker or company — e.g. AAPL, Apple, Nvidia"
+             autocomplete="off" spellcheck="false" aria-label="Search posts by ticker or company">
+      <button class="posts-search-clear" id="posts-search-clear" type="button" aria-label="Clear search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="posts-search-count" id="posts-search-count"></div>
     <div class="posts-section-head">
       <div class="posts-section-title">Latest</div>
       <div class="posts-filter">
@@ -480,6 +548,7 @@ var SUPABASE_ANON = window.__env && window.__env.SUPABASE_ANON ? window.__env.SU
 
 var ALL_POSTS = [];
 var ACTIVE_FILTER = 'all';
+var SEARCH_QUERY = '';
 
 function fmtDate(iso) {
   if (!iso) return '';
@@ -506,21 +575,48 @@ function tagClass(tag) {
   return '';
 }
 
+function matchesSearch(post, q) {
+  if (!q) return true;
+  var hay = ((post.ticker || '') + ' ' + (post.title || '') + ' ' + (post.excerpt || '')).toLowerCase();
+  return hay.indexOf(q) !== -1;
+}
+
 function renderFeed(posts) {
   var feed = document.getElementById('posts-feed');
   var empty = document.getElementById('posts-empty');
+  var countEl = document.getElementById('posts-search-count');
   document.getElementById('posts-loading').style.display = 'none';
 
-  var filtered = ACTIVE_FILTER === 'all'
+  var byTag = ACTIVE_FILTER === 'all'
     ? posts
     : posts.filter(function(p){
         if (ACTIVE_FILTER === 'Earnings') return p.tag === 'Earnings' || p.tag === 'Post-Earnings';
         return p.tag === ACTIVE_FILTER;
       });
 
+  var q = (SEARCH_QUERY || '').trim().toLowerCase();
+  var filtered = q ? byTag.filter(function(p){ return matchesSearch(p, q); }) : byTag;
+
+  // Search-result count line
+  if (q) {
+    countEl.classList.add('show');
+    if (filtered.length) {
+      countEl.innerHTML = '<strong>' + filtered.length + '</strong> result'
+        + (filtered.length === 1 ? '' : 's') + ' for <em>' + escapeHtml(q) + '</em>';
+    } else {
+      countEl.innerHTML = 'No matches for <em>' + escapeHtml(q) + '</em>';
+    }
+  } else {
+    countEl.classList.remove('show');
+    countEl.innerHTML = '';
+  }
+
   if (!filtered.length) {
     feed.innerHTML = '';
     empty.style.display = 'block';
+    empty.textContent = q
+      ? 'No articles match your search.'
+      : 'No articles match this filter.';
     return;
   }
   empty.style.display = 'none';
@@ -567,7 +663,7 @@ async function loadBlog() {
       + '?select=id,ticker,slug,title,excerpt,tag,author,published_at,body'
       + '&status=eq.published'
       + '&order=published_at.desc'
-      + '&limit=40';
+      + '&limit=200';
     var res = await fetch(url, {
       headers: {
         'apikey': SUPABASE_ANON,
@@ -599,7 +695,43 @@ async function loadBlog() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', loadBlog);
+// ── Search input wiring ──────────────────────────────────────────────────────
+function initSearch() {
+  var input   = document.getElementById('posts-search');
+  var clear   = document.getElementById('posts-search-clear');
+  var wrap    = document.getElementById('posts-search-wrap');
+  if (!input) return;
+
+  function setQuery(v) {
+    SEARCH_QUERY = v || '';
+    if (SEARCH_QUERY) wrap.classList.add('has-value');
+    else wrap.classList.remove('has-value');
+    renderFeed(ALL_POSTS);
+  }
+
+  input.addEventListener('input', function(){ setQuery(input.value); });
+  // The native search input "x" affordance fires "search"; mirror it.
+  input.addEventListener('search', function(){ setQuery(input.value); });
+  clear.addEventListener('click', function(){
+    input.value = '';
+    setQuery('');
+    input.focus();
+  });
+
+  // Pre-fill from ?q= query string so links can deep-link to a search.
+  try {
+    var q = new URLSearchParams(window.location.search).get('q');
+    if (q) {
+      input.value = q;
+      setQuery(q);
+    }
+  } catch(_) {}
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  loadBlog();
+  initSearch();
+});
 </script>
 
 </body>
