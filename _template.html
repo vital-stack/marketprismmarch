@@ -9444,7 +9444,13 @@ function tpRenderTable(){
   // "Live Tracked Plays" view just confuses readers with a wall of dashes.
   var _cutoffD=new Date();_cutoffD.setDate(_cutoffD.getDate()-3);
   var _cutoff=_cutoffD.toISOString().slice(0,10);
-  var data=_TP_DATA.filter(function(r){return !_tpIsZombie(r)&&r.status!=='SKIPPED_GAP'&&r.entry_date&&r.entry_date>=_cutoff;});
+  // VALUE_PICK is an FYI / discovery signal (simple discount-to-fair-value
+  // screen, not driven by the narrative-scorecard engine like the other
+  // lanes). Excluded from the "Live Tracked Plays" table so it doesn't
+  // count as a tracked trade — and so the visible row count matches the
+  // paper-portfolio sim, which has been excluding Value Picks since
+  // 2026-05-04 (see public.rebuild_tracked_daily_plays_daily).
+  var data=_TP_DATA.filter(function(r){return !_tpIsZombie(r)&&r.status!=='SKIPPED_GAP'&&r.lane!=='VALUE_PICK'&&r.entry_date&&r.entry_date>=_cutoff;});
   if(_TP_FILTER==='open')data=data.filter(function(r){return r.status==='OPEN';});
   else if(_TP_FILTER==='hit')data=data.filter(function(r){return r.hit;});
   else if(_TP_FILTER==='closed')data=data.filter(function(r){return r.status!=='OPEN';});
