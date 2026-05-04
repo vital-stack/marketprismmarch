@@ -1310,7 +1310,7 @@ footer{
   <div class="hero-prism" aria-hidden="true"></div>
   <div class="container-narrow">
     <div class="hero-eyebrow">
-      The Prism · narrative intelligence for markets
+      narrative intelligence for markets
     </div>
     <h1 class="hero-h">
       Every market signal, <em>refracted into truth.</em>
@@ -1482,7 +1482,25 @@ footer{
       </div>
       <a class="blog-all" href="/blog">All reports <span aria-hidden="true">→</span></a>
     </div>
-    <div id="blog-featured-slot"></div>
+    <div id="blog-featured-slot">
+      <a class="blog-featured" href="/blog/2026-05-04-rddt-q1-2026-forensic-ai-fuel-thesis">
+        <div class="blog-featured-l">
+          <div class="blog-featured-eyebrow">Featured report</div>
+          <div class="blog-featured-title">RDDT Q1 2026 Forensic: The AI Fuel Thesis Just Got Its Print</div>
+          <div class="blog-featured-excerpt">Reddit (NYSE: RDDT) reported Q1 2026 earnings after the close on Thursday, April 30. The print did what the pre-earnings forensic flagged as the bull-case violent-squeeze scenario.</div>
+          <div class="blog-featured-foot">
+            <span><strong>Market Prism Research</strong></span>
+            <span>May 4, 2026 &middot; Free to read</span>
+          </div>
+        </div>
+        <div class="blog-featured-r">
+          <span class="blog-featured-tag">Post-Earnings</span>
+          <div class="blog-featured-ticker">RDDT</div>
+          <div class="blog-featured-pull">"Reddit (NYSE: RDDT) reported Q1 2026 earnings after the close on Thursday, April 30."</div>
+          <span class="blog-featured-cta">Read the full report &rarr;</span>
+        </div>
+      </a>
+    </div>
     <div class="blog-grid" id="blog-grid">
       <div class="blog-loading" id="blog-loading">Loading latest reports…</div>
     </div>
@@ -2038,17 +2056,21 @@ footer{
           catch(_){ return ''; }
         }
 
-        // Pull RDDT to the featured slot if it exists; else take the most-recent post.
+        // Featured slot is hardcoded (frozen RDDT card). Still strip any matching
+        // RDDT post from the grid below so it doesn't appear twice.
+        var FROZEN_FEATURED_SLUG = '2026-05-04-rddt-q1-2026-forensic-ai-fuel-thesis';
         var featured = null;
         for (var i = 0; i < posts.length; i++) {
-          if ((posts[i].ticker || '').toUpperCase() === 'RDDT') {
-            featured = posts.splice(i, 1)[0];
-            break;
+          if ((posts[i].slug || '') === FROZEN_FEATURED_SLUG ||
+              (posts[i].ticker || '').toUpperCase() === 'RDDT') {
+            posts.splice(i, 1);
+            i--;
           }
         }
-        if (!featured) featured = posts.shift();
+        var hasStaticFeatured = !!(featuredSlot && featuredSlot.firstElementChild);
+        if (!hasStaticFeatured) featured = posts.shift();
 
-        if (featured && featuredSlot) {
+        if (featured && featuredSlot && !hasStaticFeatured) {
           var fSlug = encodeURIComponent(featured.slug || '');
           var fTitle = esc(featured.title || 'Untitled');
           var fEx = esc(featured.excerpt || '');
