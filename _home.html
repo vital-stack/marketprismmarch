@@ -711,70 +711,110 @@ section.below{padding:64px 0;}
 }
 .about-intro strong{color:var(--mp-text-primary);font-weight:600;}
 
-/* ── DASHBOARD SLIDESHOW ──────────────────────────────────────────────── */
-.dash-show{
-  position:relative;margin-top:32px;
-  background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:18px;
-  padding:24px;overflow:hidden;
+/* ── LIVE MINI TICKER ─────────────────────────────────────────────────── */
+.minit{position:relative;margin-top:32px;}
+.minit-frame{
+  position:relative;background:var(--mp-surface);border:1px solid var(--mp-border);
+  border-radius:18px;padding:24px;overflow:hidden;
   box-shadow:0 12px 40px rgba(0,0,0,0.35);
 }
-.dash-show::before{
+.minit-frame::before{
   content:'';position:absolute;top:0;left:0;right:0;height:2px;
   background:linear-gradient(110deg,#FF4D4D,#FFB800,#00DE94,#00AEFF,#7B61FF);
   opacity:.6;
 }
-.dash-show-track{position:relative;min-height:380px;}
-@media(max-width:780px){.dash-show-track{min-height:280px;}}
-.dash-show-slide{
-  position:absolute;inset:0;display:flex;flex-direction:column;gap:14px;
-  opacity:0;visibility:hidden;transition:opacity .5s ease,visibility .5s;
+.minit-livepill{
+  position:absolute;top:14px;right:18px;
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--mp-text-tertiary);
 }
-.dash-show-slide.is-active{opacity:1;visibility:visible;}
-.dash-show-meta{display:flex;flex-direction:column;gap:6px;}
-.dash-show-eyebrow{
-  font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--mp-cyan);
+.minit-livepill::before{
+  content:'';width:7px;height:7px;border-radius:50%;
+  background:#00DE94;box-shadow:0 0 8px rgba(0,222,148,.6);
+  animation:minit-blink 1.6s ease-in-out infinite;
 }
-.dash-show-title{
-  font-family:var(--font-display,'Instrument Serif','DM Serif Display',Georgia,serif);
-  font-size:clamp(20px,2.4vw,26px);font-weight:400;letter-spacing:-0.02em;
-  color:var(--mp-text-primary);line-height:1.15;
+@keyframes minit-blink{0%,100%{opacity:1;}50%{opacity:.35;}}
+.minit-head{
+  display:flex;align-items:flex-end;justify-content:space-between;gap:18px;
+  padding-bottom:14px;border-bottom:1px solid var(--mp-border);
+  flex-wrap:wrap;
 }
-.dash-show-title em{
-  font-style:italic;color:var(--mp-cyan);
+.minit-id{display:flex;flex-direction:column;gap:4px;}
+.minit-ticker{
+  font-family:var(--font-body);font-size:28px;font-weight:800;
+  letter-spacing:-0.025em;color:var(--mp-text-primary);line-height:1;
 }
-.dash-show-desc{font-size:13px;line-height:1.55;color:var(--mp-text-tertiary);max-width:680px;}
-.dash-show-frame{
-  position:relative;flex:1;border-radius:12px;overflow:hidden;
-  background:#000;border:1px solid rgba(255,255,255,0.08);
-  display:flex;align-items:center;justify-content:center;min-height:0;
-}
-.dash-show-frame img{
-  display:block;width:100%;height:100%;object-fit:cover;object-position:top center;
-}
-@media(max-width:780px){.dash-show-frame img{object-fit:contain;background:#000;}}
-.dash-show-controls{
-  display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:18px;
-}
-.dash-show-dots{display:flex;gap:8px;}
-.dash-show-dot{
-  width:8px;height:8px;border-radius:50%;border:0;padding:0;cursor:pointer;
-  background:rgba(255,255,255,0.18);transition:background .2s,transform .2s;
-}
-.dash-show-dot.is-active{background:var(--mp-cyan);transform:scale(1.2);}
-.dash-show-dot:hover{background:rgba(255,255,255,0.35);}
-.dash-show-arrows{display:flex;gap:8px;}
-.dash-show-arrow{
-  width:32px;height:32px;border-radius:8px;border:1px solid var(--mp-border);
-  background:transparent;color:var(--mp-text-secondary);cursor:pointer;
-  display:inline-flex;align-items:center;justify-content:center;font-size:14px;
-  transition:border-color .15s,color .15s;
-}
-.dash-show-arrow:hover{border-color:var(--mp-border-hover);color:var(--mp-text-primary);}
-.dash-show-counter{
-  font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--mp-text-muted);
+.minit-name{font-size:12px;color:var(--mp-text-tertiary);letter-spacing:.02em;}
+.minit-pricewrap{text-align:right;display:flex;flex-direction:column;gap:4px;align-items:flex-end;}
+.minit-price{
+  font-family:var(--font-body);font-size:26px;font-weight:700;
+  letter-spacing:-0.020em;color:var(--mp-text-primary);line-height:1;
   font-variant-numeric:tabular-nums;
 }
+.minit-delta{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;}
+.minit-delta.is-up{color:#00DE94;}
+.minit-delta.is-down{color:#FF4D4D;}
+.minit-delta.is-flat{color:var(--mp-text-tertiary);}
+.minit-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
+.minit-tag{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  padding:5px 10px;border-radius:99px;
+  border:1px solid var(--mp-border);color:var(--mp-text-secondary);
+  background:rgba(255,255,255,0.02);
+}
+.minit-tag.t-bull{border-color:rgba(0,222,148,.45);color:#00DE94;background:rgba(0,222,148,.06);}
+.minit-tag.t-bear{border-color:rgba(255,77,77,.45);color:#FF4D4D;background:rgba(255,77,77,.06);}
+.minit-tag.t-neutral{border-color:rgba(0,174,255,.45);color:#00AEFF;background:rgba(0,174,255,.06);}
+.minit-claim{
+  margin-top:14px;font-size:14px;line-height:1.55;color:var(--mp-text-secondary);
+  font-style:italic;
+}
+.minit-claim::before{content:'\201C';margin-right:2px;}
+.minit-claim::after{content:'\201D';margin-left:2px;}
+.minit-chart-wrap{
+  position:relative;margin-top:18px;border-radius:12px;overflow:hidden;
+  background:linear-gradient(180deg,rgba(0,0,0,0.18),rgba(0,0,0,0));
+  border:1px solid rgba(255,255,255,0.05);
+}
+.minit-chart{display:block;width:100%;height:280px;cursor:crosshair;}
+@media(max-width:520px){.minit-chart{height:220px;}}
+.minit-chart-loading{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:12px;color:var(--mp-text-muted);letter-spacing:.06em;
+}
+.minit-tooltip{
+  position:absolute;pointer-events:none;
+  background:rgba(8,11,17,0.96);border:1px solid var(--mp-border-hover);
+  border-radius:10px;padding:10px 12px;max-width:280px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.6);
+  font-size:12px;color:var(--mp-text-secondary);line-height:1.45;
+  opacity:0;transform:translateY(4px);transition:opacity .12s,transform .12s;
+  z-index:5;
+}
+.minit-tooltip.is-on{opacity:1;transform:translateY(0);}
+.minit-tooltip-meta{
+  display:flex;justify-content:space-between;gap:10px;margin-bottom:6px;
+  font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--mp-text-muted);
+}
+.minit-tooltip-meta .src{color:var(--mp-cyan);}
+.minit-tooltip-text{color:var(--mp-text-primary);font-size:12px;line-height:1.5;}
+.minit-foot{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin-top:18px;flex-wrap:wrap;
+}
+.minit-legend{display:flex;flex-wrap:wrap;gap:14px;font-size:11px;color:var(--mp-text-tertiary);}
+.minit-legend-item{display:inline-flex;align-items:center;gap:6px;}
+.minit-legend-dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+.minit-cta{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:12px;font-weight:600;color:var(--mp-cyan);text-decoration:none;
+  padding:8px 14px;border:1px solid rgba(0,174,255,0.35);border-radius:9px;
+  transition:background .15s,border-color .15s;
+}
+.minit-cta:hover{background:rgba(0,174,255,0.08);border-color:rgba(0,174,255,0.6);}
 
 /* ── FAQ ──────────────────────────────────────────────────────────────── */
 .faq-wrap{display:flex;flex-direction:column;gap:10px;margin-top:32px;max-width:880px;margin-left:auto;margin-right:auto;}
@@ -1172,71 +1212,41 @@ footer{
   </div>
 </section>
 
-<!-- ── INSIDE THE DASHBOARD (slideshow) ── -->
+<!-- ── LIVE MINI TICKER (NVDA demo) ── -->
 <section class="below">
   <div class="container">
-    <div class="section-eyebrow">Inside the dashboard</div>
-    <h2 class="section-title">This is what subscribers <em>actually see.</em></h2>
-    <p class="section-sub">Live screens from the Pro dashboard — narrative timelines, sector momentum, the leaderboard, and the strategy screener. No mockups.</p>
+    <div class="section-eyebrow">Live demo</div>
+    <h2 class="section-title">A ticker page, <em>rendered live from the engine.</em></h2>
+    <p class="section-sub">This is exactly what subscribers see when they open NVDA — fetched from the same Supabase tables, scored by the same pipeline, refreshed every market open.</p>
 
-    <div class="dash-show" id="dash-show" aria-roledescription="carousel" aria-label="Dashboard screenshots">
-      <div class="dash-show-track" id="dash-show-track">
-        <div class="dash-show-slide is-active" data-idx="0">
-          <div class="dash-show-meta">
-            <div class="dash-show-eyebrow">Narrative History</div>
-            <div class="dash-show-title">Price and story, <em>on the same timeline.</em></div>
-            <div class="dash-show-desc">Every narrative event plotted against price action — see how stories drive moves, where they break, and where the market gets it wrong.</div>
+    <div class="minit" id="minit">
+      <div class="minit-frame">
+        <div class="minit-livepill">Live</div>
+        <div class="minit-head">
+          <div class="minit-id">
+            <div class="minit-ticker" id="minit-ticker">NVDA</div>
+            <div class="minit-name" id="minit-name">NVIDIA Corporation</div>
           </div>
-          <div class="dash-show-frame">
-            <img src="/assets/screenshots/Screenshot%202026-03-30%20214934.png" alt="Narrative History view showing NVDA price chart with story markers overlaid" loading="lazy">
+          <div class="minit-pricewrap">
+            <div class="minit-price" id="minit-price">—</div>
+            <div class="minit-delta is-flat" id="minit-delta">—</div>
           </div>
         </div>
-
-        <div class="dash-show-slide" data-idx="1">
-          <div class="dash-show-meta">
-            <div class="dash-show-eyebrow">Sector Pulse</div>
-            <div class="dash-show-title">Where momentum lives, <em>sector by sector.</em></div>
-            <div class="dash-show-desc">Signal intensity, narrative breakdown, and momentum ranking across every tracked sector — from AI infrastructure to biotech.</div>
-          </div>
-          <div class="dash-show-frame">
-            <img src="/assets/screenshots/Screenshot%202026-03-30%20214643.png" alt="Sector Pulse dashboard with sector momentum bars and per-sector narrative cards" loading="lazy">
-          </div>
+        <div class="minit-tags" id="minit-tags"></div>
+        <div class="minit-claim" id="minit-claim">Loading the latest narrative…</div>
+        <div class="minit-chart-wrap">
+          <canvas class="minit-chart" id="minit-chart" role="img" aria-label="NVDA price chart with narrative event markers"></canvas>
+          <div class="minit-chart-loading" id="minit-chart-loading">Loading chart…</div>
+          <div class="minit-tooltip" id="minit-tooltip" role="tooltip"></div>
         </div>
-
-        <div class="dash-show-slide" data-idx="2">
-          <div class="dash-show-meta">
-            <div class="dash-show-eyebrow">Leaderboard</div>
-            <div class="dash-show-title">Who's moving markets. <em>What's driving them.</em></div>
-            <div class="dash-show-desc">Live rankings across themes, fair value gaps, downloads, and the most-aligned narratives — pulled daily from the narrative pipeline.</div>
+        <div class="minit-foot">
+          <div class="minit-legend">
+            <span class="minit-legend-item"><span class="minit-legend-dot" style="background:rgba(0,174,255,0.7);"></span>90-day price</span>
+            <span class="minit-legend-item"><span class="minit-legend-dot" style="background:#00DE94;"></span>Bullish narrative</span>
+            <span class="minit-legend-item"><span class="minit-legend-dot" style="background:#FF4D4D;"></span>Bearish narrative</span>
+            <span class="minit-legend-item"><span class="minit-legend-dot" style="background:#A0A8B0;"></span>Neutral</span>
           </div>
-          <div class="dash-show-frame">
-            <img src="/assets/screenshots/Screenshot%202026-03-30%20215042.png" alt="Leaderboard with multi-column rankings of themes, fair value, downloads, and narratives" loading="lazy">
-          </div>
-        </div>
-
-        <div class="dash-show-slide" data-idx="3">
-          <div class="dash-show-meta">
-            <div class="dash-show-eyebrow">Strategy Screener</div>
-            <div class="dash-show-title">Zone match — <em>today's price vs. best historical entry.</em></div>
-            <div class="dash-show-desc">Cross-market screener powered by the strategy contract. Surfaces tickers whose current price is sitting inside their highest-conviction historical entry zone.</div>
-          </div>
-          <div class="dash-show-frame">
-            <img src="/assets/screenshots/Screenshot%202026-03-30%20214541.png" alt="Strategy Screener with trading cards for AAPL, ADBE, AMAT, AMD, AMZN showing zone-match status" loading="lazy">
-          </div>
-        </div>
-      </div>
-
-      <div class="dash-show-controls">
-        <div class="dash-show-dots" id="dash-show-dots" role="tablist">
-          <button class="dash-show-dot is-active" type="button" data-idx="0" aria-label="Slide 1"></button>
-          <button class="dash-show-dot" type="button" data-idx="1" aria-label="Slide 2"></button>
-          <button class="dash-show-dot" type="button" data-idx="2" aria-label="Slide 3"></button>
-          <button class="dash-show-dot" type="button" data-idx="3" aria-label="Slide 4"></button>
-        </div>
-        <div class="dash-show-counter" id="dash-show-counter">01 / 04</div>
-        <div class="dash-show-arrows">
-          <button class="dash-show-arrow" type="button" id="dash-show-prev" aria-label="Previous slide">&larr;</button>
-          <button class="dash-show-arrow" type="button" id="dash-show-next" aria-label="Next slide">&rarr;</button>
+          <a class="minit-cta" href="/ticker/NVDA">Open the full NVDA report &rarr;</a>
         </div>
       </div>
     </div>
@@ -1754,57 +1764,245 @@ footer{
       });
   })();
 
-  // ── Dashboard slideshow ──────────────────────────────────────────────
-  (function dashShow(){
-    var root = document.getElementById('dash-show');
+  // ── Live mini ticker (NVDA) ─────────────────────────────────────────
+  (function miniTicker(){
+    var root = document.getElementById('minit');
     if (!root) return;
-    var slides = root.querySelectorAll('.dash-show-slide');
-    var dots   = root.querySelectorAll('.dash-show-dot');
-    var counter = document.getElementById('dash-show-counter');
-    var prevBtn = document.getElementById('dash-show-prev');
-    var nextBtn = document.getElementById('dash-show-next');
-    if (!slides.length) return;
-    var idx = 0;
-    var total = slides.length;
-    var timer = null;
-    var INTERVAL = 6000;
-    function pad(n){ return n < 10 ? '0'+n : ''+n; }
-    function go(n){
-      idx = (n + total) % total;
-      for (var i = 0; i < total; i++){
-        slides[i].classList.toggle('is-active', i === idx);
-        if (dots[i]) dots[i].classList.toggle('is-active', i === idx);
+    var env = window.__env || {};
+    var SUPABASE_URL  = env.SUPABASE_URL  || '';
+    var SUPABASE_ANON = env.SUPABASE_ANON || '';
+    var TICKER = 'NVDA';
+    var DAYS = 90;
+    var elPrice  = document.getElementById('minit-price');
+    var elDelta  = document.getElementById('minit-delta');
+    var elClaim  = document.getElementById('minit-claim');
+    var elTags   = document.getElementById('minit-tags');
+    var elCanvas = document.getElementById('minit-chart');
+    var elLoad   = document.getElementById('minit-chart-loading');
+    var elTip    = document.getElementById('minit-tooltip');
+    if (!SUPABASE_URL || !SUPABASE_ANON || !elCanvas) return;
+
+    function fmt(n, dp){ if (n == null || isNaN(n)) return '—'; return Number(n).toFixed(dp == null ? 2 : dp); }
+    function isoCutoff(){ var d = new Date(); d.setDate(d.getDate() - DAYS); return d.toISOString().slice(0,10); }
+    function get(path){
+      return fetch(SUPABASE_URL + '/rest/v1/' + path, {
+        headers: { apikey: SUPABASE_ANON, Authorization: 'Bearer ' + SUPABASE_ANON }
+      }).then(function(r){ return r.ok ? r.json() : []; }).catch(function(){ return []; });
+    }
+
+    var cutoff = isoCutoff();
+    var qPrice = 'ticker_snapshots?select=snapshot_date,price_close&ticker=eq.'+TICKER+'&snapshot_date=gte.'+cutoff+'&order=snapshot_date.asc';
+    var qDots  = 'narrative_analyses?select=snapshot_date,sentiment_score,narrative_text,source_outlet,verdict&ticker=eq.'+TICKER+'&snapshot_date=gte.'+cutoff+'&order=snapshot_date.asc&limit=200';
+    var qHead  = 'v_dash_daily_story?select=snapshot_date,price,price_change_pct,story_claim,prism_verdict,narrative_state&ticker=eq.'+TICKER+'&order=snapshot_date.desc&limit=1';
+
+    var cached = { prices: [], dots: [] };
+    Promise.all([get(qPrice), get(qDots), get(qHead)]).then(function(res){
+      var prices = res[0] || [];
+      var dots   = res[1] || [];
+      var head   = (res[2] && res[2][0]) || null;
+      cached.prices = prices; cached.dots = dots;
+
+      // Header — fall back to last price snapshot if v_dash_daily_story is sparse
+      var price = head && head.price != null ? Number(head.price) : (prices.length ? Number(prices[prices.length-1].price_close) : null);
+      var delta = head && head.price_change_pct != null ? Number(head.price_change_pct) : null;
+      if (delta == null && prices.length >= 2) {
+        var a = Number(prices[prices.length-2].price_close);
+        var b = Number(prices[prices.length-1].price_close);
+        if (a > 0) delta = ((b - a) / a) * 100;
       }
-      if (counter) counter.textContent = pad(idx+1) + ' / ' + pad(total);
-    }
-    function next(){ go(idx + 1); }
-    function prev(){ go(idx - 1); }
-    function start(){ stop(); timer = setInterval(next, INTERVAL); }
-    function stop(){ if (timer){ clearInterval(timer); timer = null; } }
-    nextBtn && nextBtn.addEventListener('click', function(){ next(); start(); });
-    prevBtn && prevBtn.addEventListener('click', function(){ prev(); start(); });
-    for (var i = 0; i < dots.length; i++){
-      (function(j){ dots[j].addEventListener('click', function(){ go(j); start(); }); })(i);
-    }
-    root.addEventListener('mouseenter', stop);
-    root.addEventListener('mouseleave', start);
-    // Touch swipe
-    var sx = 0, dx = 0;
-    root.addEventListener('touchstart', function(e){ sx = e.touches[0].clientX; dx = 0; stop(); }, {passive:true});
-    root.addEventListener('touchmove',  function(e){ dx = e.touches[0].clientX - sx; }, {passive:true});
-    root.addEventListener('touchend',   function(){
-      if (Math.abs(dx) > 40){ if (dx < 0) next(); else prev(); }
-      start();
+      elPrice.textContent = price != null ? '$' + fmt(price, 2) : '—';
+      if (delta != null) {
+        var sign = delta > 0 ? '+' : '';
+        elDelta.textContent = sign + fmt(delta, 2) + '%';
+        elDelta.className = 'minit-delta ' + (delta > 0.05 ? 'is-up' : delta < -0.05 ? 'is-down' : 'is-flat');
+      }
+      if (head && head.story_claim) elClaim.textContent = head.story_claim;
+      else elClaim.textContent = 'Live narrative summary updates pre-bell each trading day.';
+
+      // Tag pills
+      var tags = [];
+      if (head && head.prism_verdict) {
+        var v = String(head.prism_verdict).toUpperCase();
+        var tone = /BULL|SUPPORT|STABLE|VERIFIED/.test(v) ? 't-bull' :
+                   /BEAR|TRAP|RISK|COLLAPSE/.test(v) ? 't-bear' : 't-neutral';
+        tags.push({ label: 'Verdict · ' + head.prism_verdict, tone: tone });
+      }
+      if (head && head.narrative_state) tags.push({ label: 'State · ' + head.narrative_state, tone: 't-neutral' });
+      tags.push({ label: dots.length + ' narrative dots · last ' + DAYS + ' days', tone: '' });
+      elTags.innerHTML = tags.map(function(t){
+        return '<span class="minit-tag ' + (t.tone||'') + '">' + t.label + '</span>';
+      }).join('');
+
+      drawChart(prices, dots);
+      if (elLoad) elLoad.style.display = 'none';
     });
-    // Pause when off-screen to save cycles
-    if ('IntersectionObserver' in window){
-      var io = new IntersectionObserver(function(entries){
-        entries.forEach(function(en){ en.isIntersecting ? start() : stop(); });
-      }, {threshold:0.25});
-      io.observe(root);
-    } else {
-      start();
+
+    // ── Canvas chart ──
+    var dotHits = []; // {x,y,r,d} for hit-testing
+    function drawChart(prices, dots){
+      var dpr = window.devicePixelRatio || 1;
+      var rect = elCanvas.getBoundingClientRect();
+      var W = Math.max(320, Math.floor(rect.width));
+      var H = Math.max(180, Math.floor(rect.height));
+      elCanvas.width  = W * dpr;
+      elCanvas.height = H * dpr;
+      var ctx = elCanvas.getContext('2d');
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+      ctx.clearRect(0,0,W,H);
+
+      if (!prices.length) return;
+      var pad = { l: 8, r: 8, t: 16, b: 22 };
+      var iw = W - pad.l - pad.r, ih = H - pad.t - pad.b;
+      var t0 = new Date(prices[0].snapshot_date).getTime();
+      var t1 = new Date(prices[prices.length-1].snapshot_date).getTime();
+      var span = Math.max(1, t1 - t0);
+      var pmin = Infinity, pmax = -Infinity;
+      for (var i=0; i<prices.length; i++){
+        var v = Number(prices[i].price_close);
+        if (v < pmin) pmin = v; if (v > pmax) pmax = v;
+      }
+      var prng = Math.max(1e-6, pmax - pmin);
+      pmin -= prng * 0.06; pmax += prng * 0.06; prng = pmax - pmin;
+      function xAt(d){ return pad.l + (((new Date(d).getTime() - t0) / span) * iw); }
+      function yAt(p){ return pad.t + ih - (((p - pmin) / prng) * ih); }
+
+      // Grid lines (3 horizontal)
+      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+      ctx.lineWidth = 1;
+      for (var g=0; g<=3; g++){
+        var gy = pad.t + (ih * g / 3);
+        ctx.beginPath(); ctx.moveTo(pad.l, gy); ctx.lineTo(pad.l + iw, gy); ctx.stroke();
+      }
+
+      // Price area fill
+      var grad = ctx.createLinearGradient(0, pad.t, 0, pad.t + ih);
+      grad.addColorStop(0, 'rgba(0,174,255,0.28)');
+      grad.addColorStop(1, 'rgba(0,174,255,0.0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.moveTo(xAt(prices[0].snapshot_date), pad.t + ih);
+      for (var j=0; j<prices.length; j++) ctx.lineTo(xAt(prices[j].snapshot_date), yAt(Number(prices[j].price_close)));
+      ctx.lineTo(xAt(prices[prices.length-1].snapshot_date), pad.t + ih);
+      ctx.closePath();
+      ctx.fill();
+
+      // Price line
+      ctx.strokeStyle = '#00AEFF';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      for (var k=0; k<prices.length; k++){
+        var x = xAt(prices[k].snapshot_date), y = yAt(Number(prices[k].price_close));
+        if (k === 0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.stroke();
+
+      // Build a quick price lookup for dot Y-positioning
+      var byDate = {};
+      for (var p=0; p<prices.length; p++) byDate[prices[p].snapshot_date] = Number(prices[p].price_close);
+      function nearestPrice(date){
+        if (byDate[date] != null) return byDate[date];
+        var t = new Date(date).getTime();
+        var best = null, bd = Infinity;
+        for (var d in byDate){
+          var dd = Math.abs(new Date(d).getTime() - t);
+          if (dd < bd){ bd = dd; best = byDate[d]; }
+        }
+        return best;
+      }
+
+      // Narrative dots
+      dotHits = [];
+      for (var dx=0; dx<dots.length; dx++){
+        var nd = dots[dx];
+        var px = nearestPrice(nd.snapshot_date); if (px == null) continue;
+        var cx = xAt(nd.snapshot_date), cy = yAt(px);
+        var s = nd.sentiment_score == null ? 0 : Number(nd.sentiment_score);
+        var color = s > 5 ? '#00DE94' : s < -5 ? '#FF4D4D' : '#A0A8B0';
+        var r = 4;
+        ctx.beginPath();
+        ctx.fillStyle = color;
+        ctx.globalAlpha = 0.85;
+        ctx.arc(cx, cy, r, 0, Math.PI*2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(8,11,17,0.9)';
+        ctx.stroke();
+        dotHits.push({ x: cx, y: cy, r: r + 4, d: nd });
+      }
+
+      // Price label (latest)
+      var last = prices[prices.length-1];
+      var lx = xAt(last.snapshot_date), ly = yAt(Number(last.price_close));
+      ctx.fillStyle = '#00AEFF';
+      ctx.beginPath(); ctx.arc(lx, ly, 3.2, 0, Math.PI*2); ctx.fill();
+
+      // Date axis (start / end)
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.font = '10px Inter, system-ui, sans-serif';
+      ctx.textBaseline = 'top';
+      ctx.textAlign = 'left';
+      ctx.fillText(formatDate(prices[0].snapshot_date), pad.l, pad.t + ih + 6);
+      ctx.textAlign = 'right';
+      ctx.fillText(formatDate(last.snapshot_date), pad.l + iw, pad.t + ih + 6);
     }
+    function formatDate(s){
+      try { return new Date(s).toLocaleDateString('en-US',{month:'short',day:'numeric'}); }
+      catch(_){ return s; }
+    }
+
+    // Hover/tap tooltips
+    function showTip(d, cx, cy){
+      var src = (d.source_outlet || '').replace(/[<>"]/g,'');
+      var sent = d.sentiment_score == null ? '—' : Number(d.sentiment_score).toFixed(1);
+      var date = formatDate(d.snapshot_date);
+      var text = (d.narrative_text || '').slice(0, 220);
+      if (text.length === 220) text += '…';
+      elTip.innerHTML =
+        '<div class="minit-tooltip-meta"><span class="src">'+src+'</span><span>'+date+' · sentiment '+sent+'</span></div>' +
+        '<div class="minit-tooltip-text">'+text.replace(/[<>]/g,'')+'</div>';
+      var wrap = elCanvas.parentElement.getBoundingClientRect();
+      var tipW = 280, tipH = elTip.offsetHeight || 80;
+      var left = Math.min(Math.max(cx - tipW/2, 8), wrap.width - tipW - 8);
+      var top  = cy - tipH - 12;
+      if (top < 8) top = cy + 14;
+      elTip.style.left = left + 'px';
+      elTip.style.top  = top + 'px';
+      elTip.classList.add('is-on');
+    }
+    function hideTip(){ elTip.classList.remove('is-on'); }
+    function pickHit(ev){
+      var rect = elCanvas.getBoundingClientRect();
+      var x = ev.clientX - rect.left, y = ev.clientY - rect.top;
+      var best = null, bd = Infinity;
+      for (var i=0; i<dotHits.length; i++){
+        var h = dotHits[i];
+        var dd = (h.x - x)*(h.x - x) + (h.y - y)*(h.y - y);
+        if (dd < bd && dd <= h.r * h.r){ bd = dd; best = h; }
+      }
+      return best;
+    }
+    elCanvas.addEventListener('mousemove', function(ev){
+      var hit = pickHit(ev);
+      if (hit) showTip(hit.d, hit.x, hit.y); else hideTip();
+    });
+    elCanvas.addEventListener('mouseleave', hideTip);
+    elCanvas.addEventListener('touchstart', function(ev){
+      if (!ev.touches.length) return;
+      var rect = elCanvas.getBoundingClientRect();
+      var fakeEv = { clientX: ev.touches[0].clientX, clientY: ev.touches[0].clientY };
+      var hit = pickHit(fakeEv);
+      if (hit) showTip(hit.d, hit.x, hit.y); else hideTip();
+    }, {passive:true});
+
+    // Redraw on resize
+    var rzTimer = null;
+    window.addEventListener('resize', function(){
+      clearTimeout(rzTimer);
+      rzTimer = setTimeout(function(){
+        if (cached.prices.length) drawChart(cached.prices, cached.dots);
+      }, 150);
+    });
   })();
 })();
 </script>
