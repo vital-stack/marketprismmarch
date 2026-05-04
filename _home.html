@@ -1427,9 +1427,9 @@ footer{
       <div class="minit-frame">
         <div class="minit-head">
           <div class="minit-id">
-            <div class="minit-livepill">Live · NVDA</div>
-            <div class="minit-ticker" id="minit-ticker">NVDA</div>
-            <div class="minit-name" id="minit-name">NVIDIA Corporation</div>
+            <div class="minit-livepill" id="minit-livepill">Live · today's strongest signal</div>
+            <div class="minit-ticker" id="minit-ticker">—</div>
+            <div class="minit-name" id="minit-name">Picking today's strongest forecast…</div>
           </div>
           <div class="minit-pricewrap">
             <div class="minit-price" id="minit-price">—</div>
@@ -1464,7 +1464,7 @@ footer{
         <div class="tt-conv-note" id="minit-conv-note" hidden>This is a learning system. Conviction is muted until each ticker accumulates &ge;5 resolved outcomes (rolling 30 days); accuracy sharpens as that baseline fills in.</div>
         <div class="minit-foot">
           <div class="minit-foot-meta">Live data &middot; refreshed every market open</div>
-          <a class="minit-cta" href="/ticker/NVDA">Open the full NVDA report &rarr;</a>
+          <a class="minit-cta" id="minit-cta" href="/ticker/NVDA">Open the full report &rarr;</a>
         </div>
       </div>
     </div>
@@ -2109,15 +2109,21 @@ footer{
       });
   })();
 
-  // ── Live mini ticker (NVDA) — verdict panel mirrors /ticker/NVDA ─────
+  // ── Live mini ticker — picks today's strongest forecast and renders
+  // the dashboard verdict panel against that ticker. Falls back to NVDA
+  // if the picker query fails or returns nothing usable.
   (function miniTicker(){
     var root = document.getElementById('minit'); if (!root) return;
     var env = window.__env || {};
     var SUPABASE_URL  = env.SUPABASE_URL  || '';
     var SUPABASE_ANON = env.SUPABASE_ANON || '';
-    var TICKER = 'NVDA';
+    var FALLBACK_TICKER = 'NVDA';
     if (!SUPABASE_URL || !SUPABASE_ANON) return;
 
+    var elLivepill = document.getElementById('minit-livepill');
+    var elTicker = document.getElementById('minit-ticker');
+    var elName   = document.getElementById('minit-name');
+    var elCta    = document.getElementById('minit-cta');
     var elPrice  = document.getElementById('minit-price');
     var elDelta  = document.getElementById('minit-delta');
     var elRow    = document.getElementById('minit-verdict-row');
@@ -2163,16 +2169,40 @@ footer{
       return 'Updated ' + Math.floor(s/(86400*30)) + 'mo ago';
     }
 
-    var qHead = 'v_dash_daily_story?select=snapshot_date,price,price_change_pct,story_claim,prism_verdict,narrative_state,sector_name,pe_ratio&ticker=eq.'+TICKER+'&order=snapshot_date.desc&limit=1';
-    var qSnap = 'ticker_snapshots?select=snapshot_date,price_close&ticker=eq.'+TICKER+'&order=snapshot_date.desc&limit=1';
-    var qFc   = 'ticker_forecast?select=*&ticker=eq.'+TICKER+'&limit=1';
-    var qFv   = 'daily_fair_value?select=fair_value,fv_low,fv_high,verdict,premium_pct,snapshot_date,computed_at&ticker=eq.'+TICKER+'&order=snapshot_date.desc&limit=1';
+    // 1) Pick today's strongest directional forecast. Filters guard against
+    //    "INSUFFICIENT EVIDENCE"-style empty cards by requiring a real bias
+    //    + meaningful conviction. severity_label is set for any forecast
+    //    that passes the engine's quality gate.
+    var qPick = 'ticker_forecast'
+      + '?select=ticker,bias,conviction_5d,severity_label,heavy_refreshed_at'
+      + '&bias=in.(long,short,watch_long,watch_short)'
+      + '&conviction_5d=gte.60'
+      + '&severity_label=not.is.null'
+      + '&order=conviction_5d.desc,heavy_refreshed_at.desc'
+      + '&limit=1';
 
-    Promise.all([get(qHead), get(qSnap), get(qFc), get(qFv)]).then(function(res){
+    get(qPick).then(function(picks){
+      var TICKER = (picks && picks[0] && picks[0].ticker) ? picks[0].ticker : FALLBACK_TICKER;
+
+      // Reflect the picked ticker in the chrome immediately so the user
+      // doesn't see "—" while the panel queries are in flight.
+      if (elTicker) elTicker.textContent = TICKER;
+      if (elLivepill) elLivepill.textContent = 'Live · ' + TICKER;
+      if (elCta) elCta.href = '/ticker/' + encodeURIComponent(TICKER);
+
+      var qHead = 'v_dash_daily_story?select=snapshot_date,price,price_change_pct,story_claim,prism_verdict,narrative_state,sector_name,pe_ratio,company_name&ticker=eq.'+TICKER+'&order=snapshot_date.desc&limit=1';
+      var qSnap = 'ticker_snapshots?select=snapshot_date,price_close&ticker=eq.'+TICKER+'&order=snapshot_date.desc&limit=1';
+      var qFc   = 'ticker_forecast?select=*&ticker=eq.'+TICKER+'&limit=1';
+      var qFv   = 'daily_fair_value?select=fair_value,fv_low,fv_high,verdict,premium_pct,snapshot_date,computed_at&ticker=eq.'+TICKER+'&order=snapshot_date.desc&limit=1';
+
+      Promise.all([get(qHead), get(qSnap), get(qFc), get(qFv)]).then(function(res){
       var head = (res[0]||[])[0] || null;
       var snap = (res[1]||[])[0] || null;
       var f    = (res[2]||[])[0] || null;
       var fv   = (res[3]||[])[0] || null;
+
+      // Company name — fall back to ticker if v_dash_daily_story doesn't have one.
+      if (elName) elName.textContent = (head && head.company_name) ? head.company_name : TICKER;
 
       // Price / delta — prefer freshest ticker_snapshots row.
       var price = (snap && snap.price_close != null) ? Number(snap.price_close)
@@ -2262,6 +2292,7 @@ footer{
 
       // P/E bubble (uses sector benchmarks for vs-sector delta).
       loadPe(head);
+    });
     });
 
     function loadPe(head){
