@@ -2377,10 +2377,10 @@ footer{
   var ctx = canvas.getContext('2d');
   var dpr = Math.min(window.devicePixelRatio || 1, 2);
   var W, H, nodes = [], pulses = [], flares = [];
-  var NODE_COUNT = 120;
-  var LINK_DIST = 200;
+  var NODE_COUNT = 55;
+  var LINK_DIST = 150;
   var MOUSE = { x: -9999, y: -9999 };
-  var MOUSE_RADIUS = 280;
+  var MOUSE_RADIUS = 220;
   var scrollPct = 0;
   var raf, now = 0;
 
@@ -2406,13 +2406,13 @@ footer{
 
   function init(){
     resize(); nodes=[]; pulses=[]; flares=[];
-    if(window.innerWidth<768) NODE_COUNT=50;
+    if(window.innerWidth<768) NODE_COUNT=30;
     for(var i=0;i<NODE_COUNT;i++){
       nodes.push({
         x:Math.random()*W, y:Math.random()*H,
-        vx:(Math.random()-0.5)*0.12, vy:(Math.random()-0.5)*0.12,
-        r:Math.random()*2+0.6, phase:Math.random(),
-        baseAlpha:Math.random()*0.3+0.2
+        vx:(Math.random()-0.5)*0.025, vy:(Math.random()-0.5)*0.025,
+        r:Math.random()*1.6+0.5, phase:Math.random(),
+        baseAlpha:Math.random()*0.25+0.15
       });
     }
   }
@@ -2434,16 +2434,15 @@ footer{
         var dx=ni.x-nj.x, dy=ni.y-nj.y, dist=Math.sqrt(dx*dx+dy*dy);
         if(dist<LINK_DIST){
           var fade=1-dist/LINK_DIST;
-          var alpha=fade*0.12;
+          var alpha=fade*0.06;
           var mx=(ni.x+nj.x)/2, my=(ni.y+nj.y)/2;
           var mdx=mx-MOUSE.x, mdy=my-MOUSE.y, mDist=Math.sqrt(mdx*mdx+mdy*mdy);
-          if(mDist<MOUSE_RADIUS) alpha+=((1-mDist/MOUSE_RADIUS)*0.18);
+          if(mDist<MOUSE_RADIUS) alpha+=((1-mDist/MOUSE_RADIUS)*0.10);
           ctx.beginPath();
           ctx.moveTo(ni.x,ni.y); ctx.lineTo(nj.x,nj.y);
           ctx.strokeStyle='rgba('+ci+','+alpha+')';
-          ctx.lineWidth=fade*1.2;
+          ctx.lineWidth=fade*0.8;
           ctx.stroke();
-          if(Math.random()<0.0004 && pulses.length<30){ spawnPulse(ni,nj,ci); }
         }
       }
     }
@@ -2480,16 +2479,16 @@ footer{
     for(var k=0;k<nodes.length;k++){
       var n=nodes[k];
       var c=scrollColor(n.phase*0.3);
-      var pulse=n.baseAlpha+Math.sin(now*0.0012+n.phase*6.28)*0.15;
+      var pulse=n.baseAlpha+Math.sin(now*0.0004+n.phase*6.28)*0.10;
       var ndx=n.x-MOUSE.x, ndy=n.y-MOUSE.y, nDist=Math.sqrt(ndx*ndx+ndy*ndy);
       var mouseBoost=0, sizeBoost=0;
       if(nDist<MOUSE_RADIUS){
         var prox=1-nDist/MOUSE_RADIUS;
-        mouseBoost=prox*0.5;
-        sizeBoost=prox*4;
-        var pushF=prox*0.15;
-        n.vx+=ndx/nDist*pushF*0.05;
-        n.vy+=ndy/nDist*pushF*0.05;
+        mouseBoost=prox*0.35;
+        sizeBoost=prox*2.5;
+        var pushF=prox*0.05;
+        n.vx+=ndx/nDist*pushF*0.02;
+        n.vy+=ndy/nDist*pushF*0.02;
       }
       var haloR=n.r+6+sizeBoost;
       var hgrd=ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,haloR);
@@ -2517,10 +2516,7 @@ footer{
       if(n.x<-30)n.x=W+30; if(n.x>W+30)n.x=-30;
       if(n.y<-30)n.y=H+30; if(n.y>H+30)n.y=-30;
     }
-    if(Math.random()<0.003 && flares.length<5){
-      var fn=nodes[Math.floor(Math.random()*nodes.length)];
-      spawnFlare(fn.x,fn.y,scrollColor(fn.phase*0.3));
-    }
+    // bloom flares + traveling pulses removed — keep the field minimal
   }
 
   function loop(){ update(); draw(); raf=requestAnimationFrame(loop); }
