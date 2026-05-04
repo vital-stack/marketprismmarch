@@ -8500,13 +8500,20 @@ function _refreshLaneHitCounters(){
       // to backend-confirmed checkmarks against the right date.
       if(!fallbackDate&&byLane[laneCode]){
         var B=byLane[laneCode];
-        // Union in any live hit the backend hasn't recorded yet (cron lag).
+        // Union in any live hit the backend hasn't recorded yet (cron lag),
+        // but ONLY for tickers that are actually in today's tracked plays —
+        // the dashboard's "What's the play?" feed and tracked_daily_plays
+        // are populated by different pipelines and drift apart, so a DOM ✓
+        // on a non-tracked ticker would inflate the numerator past the
+        // denominator (e.g. "12/8 hit today").
         lane.querySelectorAll('[data-prism-hit].hit').forEach(function(el){
           var t=el.getAttribute('data-prism-hit');
-          if(t)B.hit[t]=1;
+          if(t&&B.tot[t])B.hit[t]=1;
         });
         total=Object.keys(B.tot).length;
         hits=Object.keys(B.hit).length;
+        // Belt and suspenders — guarantee hits ≤ total no matter what.
+        if(hits>total)hits=total;
       }else{
         var hitEls=lane.querySelectorAll('[data-prism-hit]');
         if(!hitEls.length){badge.innerHTML='';return;}
