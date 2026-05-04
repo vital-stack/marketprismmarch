@@ -430,7 +430,11 @@ function markdownToHtml(md) {
     const rows = m.trim().split('\n');
     const header = rows[0].replace(/<td>/g, '<th>').replace(/<\/td>/g, '</th>');
     const body = rows.slice(1).join('\n');
-    return '<table>' + (body ? '<thead>' + header + '</thead><tbody>' + body + '</tbody>' : '<tbody>' + m + '</tbody>') + '</table>';
+    // Re-emit the trailing \n that the regex's \n? swallowed, so a \n\n between
+    // the table and the following paragraph isn't collapsed to a single \n
+    // (which would otherwise glue the next paragraph onto the table block and
+    // strip its <p> wrapper / margin).
+    return '<table>' + (body ? '<thead>' + header + '</thead><tbody>' + body + '</tbody>' : '<tbody>' + m + '</tbody>') + '</table>\n';
   });
 
   // Headers
