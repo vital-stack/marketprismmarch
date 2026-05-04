@@ -1421,7 +1421,7 @@ footer{
   <div class="container">
     <div class="section-eyebrow">Live demo</div>
     <h2 class="section-title">A ticker page, <em>rendered live from the engine.</em></h2>
-    <p class="section-sub">This is exactly what subscribers see when they open NVDA — pulled from the live data warehouse, scored by the same pipeline, refreshed every market open.</p>
+    <p class="section-sub">This is exactly what subscribers see — pulled from the live data warehouse, scored by the same pipeline, refreshed every market open. Today's strongest directional forecast loads automatically below.</p>
 
     <div class="minit" id="minit">
       <div class="minit-frame">
@@ -2169,20 +2169,30 @@ footer{
       return 'Updated ' + Math.floor(s/(86400*30)) + 'mo ago';
     }
 
-    // 1) Pick today's strongest directional forecast. Filters guard against
-    //    "INSUFFICIENT EVIDENCE"-style empty cards by requiring a real bias
-    //    + meaningful conviction. severity_label is set for any forecast
-    //    that passes the engine's quality gate.
+    // 1) Pick today's strongest directional forecast. Pull a small pool of
+    //    candidates ordered by conviction and cull client-side — server-side
+    //    `severity_label=not.is.null` proved too strict and dumped us back to
+    //    the NVDA fallback even when good picks existed. We just want a row
+    //    with a real directional bias, healthy conviction, and a non-INSUFFICIENT
+    //    verdict.
     var qPick = 'ticker_forecast'
-      + '?select=ticker,bias,conviction_5d,severity_label,heavy_refreshed_at'
+      + '?select=ticker,bias,conviction_5d,severity_label,directional_verdict,classification_label,heavy_refreshed_at'
       + '&bias=in.(long,short,watch_long,watch_short)'
-      + '&conviction_5d=gte.60'
-      + '&severity_label=not.is.null'
-      + '&order=conviction_5d.desc,heavy_refreshed_at.desc'
-      + '&limit=1';
+      + '&order=conviction_5d.desc.nullslast,heavy_refreshed_at.desc'
+      + '&limit=20';
 
     get(qPick).then(function(picks){
-      var TICKER = (picks && picks[0] && picks[0].ticker) ? picks[0].ticker : FALLBACK_TICKER;
+      function viable(row){
+        if (!row || !row.ticker) return false;
+        if (row.classification_label === 'INSUFFICIENT') return false;
+        var v = String(row.directional_verdict || '');
+        if (/insufficient/i.test(v)) return false;
+        var conv = Number(row.conviction_5d);
+        if (!isFinite(conv) || conv < 30) return false;
+        return true;
+      }
+      var pick = (picks || []).find(viable);
+      var TICKER = pick ? pick.ticker : FALLBACK_TICKER;
 
       // Reflect the picked ticker in the chrome immediately so the user
       // doesn't see "—" while the panel queries are in flight.
