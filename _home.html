@@ -926,6 +926,99 @@ section.below{padding:64px 0;}
   transition:background .15s,border-color .15s;
 }
 .minit-cta:hover{background:rgba(0,174,255,0.08);border-color:rgba(0,174,255,0.6);}
+.minit-foot-meta{font-size:11px;color:var(--mp-text-muted);letter-spacing:.04em;}
+
+/* ── Verdict panel (mirrors ticker dashboard) ─────────────────────────── */
+.tt-row{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  margin-top:18px;padding-bottom:14px;border-bottom:1px solid var(--mp-border);
+  margin-bottom:16px;
+}
+.tt-verdict{
+  font-family:var(--font-body);font-weight:700;font-size:18px;letter-spacing:.01em;
+  line-height:1.2;text-transform:uppercase;
+}
+.tt-sev{
+  font-family:var(--font-body);font-size:11px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;padding:5px 10px;border-radius:5px;color:#0B0F17;
+}
+.tt-class{
+  font-family:var(--font-body);font-size:10px;font-weight:600;letter-spacing:.08em;
+  text-transform:uppercase;padding:4px 9px;border-radius:5px;
+  color:var(--mp-text-tertiary);background:rgba(255,255,255,0.025);
+  border:1px solid var(--mp-border);
+}
+.tt-sector{font-size:12px;color:var(--mp-text-tertiary);}
+.tt-fresh{
+  font-family:var(--font-body);font-size:11px;color:var(--mp-text-muted);
+  white-space:nowrap;margin-left:auto;
+}
+.tt-headline{
+  font-family:var(--font-body);font-size:14px;color:var(--mp-text-secondary);
+  line-height:1.55;margin-bottom:18px;
+}
+.tt-headline:empty{display:none;}
+.tt-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:0;
+  border:1px solid var(--mp-border);border-radius:10px;overflow:hidden;
+  margin-bottom:18px;background:rgba(255,255,255,0.015);
+}
+.tt-cell{
+  padding:14px 16px;border-right:1px solid var(--mp-border);
+  display:flex;flex-direction:column;gap:5px;min-width:0;
+}
+.tt-cell:last-child{border-right:none;}
+.tt-cell-label{
+  font-family:var(--font-body);font-size:11px;font-weight:600;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--mp-text-muted);
+}
+.tt-cell-val{
+  font-family:var(--font-body);font-size:16px;font-weight:600;
+  color:var(--mp-text-primary);line-height:1.2;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.tt-cell-sub{
+  font-family:var(--font-body);font-size:11px;color:var(--mp-text-tertiary);
+  line-height:1.2;
+}
+.tt-conv-row{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  font-family:var(--font-body);font-size:13px;color:var(--mp-text-secondary);
+  margin-bottom:6px;
+}
+.tt-conv-dots{letter-spacing:1px;font-size:14px;}
+.tt-conv-note{
+  font-family:var(--font-body);font-size:11px;font-style:italic;line-height:1.5;
+  color:var(--mp-text-muted);margin-bottom:6px;
+}
+.tt-pos{color:#00DE94;}
+.tt-neg{color:#FF4D4D;}
+.tt-neu{color:var(--mp-text-secondary);}
+@media(max-width:720px){
+  .tt-grid{grid-template-columns:repeat(2,1fr);}
+  .tt-cell{border-right:none;border-bottom:1px solid var(--mp-border);}
+  .tt-cell:nth-child(odd){border-right:1px solid var(--mp-border);}
+  .tt-cell:nth-last-child(-n+2){border-bottom:none;}
+  .tt-fresh{margin-left:0;}
+}
+
+/* P/E bubble (mirrors ticker page) */
+.pe-bubble{
+  display:inline-flex;align-items:center;gap:8px;padding:5px 12px;border-radius:99px;
+  background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);
+  font-family:var(--font-body);line-height:1.2;white-space:nowrap;
+}
+.pe-bubble.bull{background:rgba(0,222,148,0.06);border-color:rgba(0,222,148,0.22);}
+.pe-bubble.bear{background:rgba(255,77,77,0.06);border-color:rgba(255,77,77,0.22);}
+.pe-bubble.neutral{background:rgba(0,174,255,0.05);border-color:rgba(0,174,255,0.18);}
+.pe-bubble-lbl{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--mp-text-tertiary);}
+.pe-bubble-val{font-size:13px;font-weight:600;color:var(--mp-text-primary);}
+.pe-bubble-vs{font-size:11px;color:var(--mp-text-tertiary);}
+.pe-bubble-sec{font-size:13px;font-weight:500;color:var(--mp-text-secondary);}
+.pe-bubble-delta{font-size:11px;font-weight:700;padding:2px 7px;border-radius:99px;margin-left:2px;}
+.pe-bubble-delta.bull{background:rgba(0,222,148,0.14);color:#5fe7b4;}
+.pe-bubble-delta.bear{background:rgba(255,77,77,0.14);color:#ff7f7f;}
+.pe-bubble-delta.neutral{background:rgba(0,174,255,0.14);color:#5fc8ff;}
 
 /* ── FAQ ──────────────────────────────────────────────────────────────── */
 .faq-wrap{display:flex;flex-direction:column;gap:10px;margin-top:32px;max-width:880px;margin-left:auto;margin-right:auto;}
@@ -1343,20 +1436,34 @@ footer{
             <div class="minit-delta is-flat" id="minit-delta">—</div>
           </div>
         </div>
-        <div class="minit-tags" id="minit-tags"></div>
-        <div class="minit-claim" id="minit-claim">Loading the latest narrative…</div>
-        <div class="minit-chart-wrap">
-          <canvas class="minit-chart" id="minit-chart" role="img" aria-label="NVDA price chart with narrative event markers"></canvas>
-          <div class="minit-chart-loading" id="minit-chart-loading">Loading chart…</div>
-          <div class="minit-tooltip" id="minit-tooltip" role="tooltip"></div>
-        </div>
-        <div class="minit-foot">
-          <div class="minit-legend">
-            <span class="minit-legend-item"><span class="minit-legend-dot" style="background:rgba(0,174,255,0.7);"></span>90-day price</span>
-            <span class="minit-legend-item"><span class="minit-legend-dot" style="background:#00DE94;"></span>Bullish narrative</span>
-            <span class="minit-legend-item"><span class="minit-legend-dot" style="background:#FF4D4D;"></span>Bearish narrative</span>
-            <span class="minit-legend-item"><span class="minit-legend-dot" style="background:#A0A8B0;"></span>Neutral</span>
+        <div class="tt-row" id="minit-verdict-row" hidden></div>
+        <div class="tt-headline" id="minit-headline">Loading the latest narrative…</div>
+        <div class="tt-grid">
+          <div class="tt-cell">
+            <div class="tt-cell-label">Bias</div>
+            <div class="tt-cell-val" id="mc-bias-val">—</div>
+            <div class="tt-cell-sub" id="mc-bias-sub"></div>
           </div>
+          <div class="tt-cell">
+            <div class="tt-cell-label">Predicted Horizon</div>
+            <div class="tt-cell-val" id="mc-hor-val">—</div>
+            <div class="tt-cell-sub" id="mc-hor-sub"></div>
+          </div>
+          <div class="tt-cell">
+            <div class="tt-cell-label">Invalidation</div>
+            <div class="tt-cell-val" id="mc-inv-val">—</div>
+            <div class="tt-cell-sub" id="mc-inv-sub"></div>
+          </div>
+          <div class="tt-cell">
+            <div class="tt-cell-label">Fair Value</div>
+            <div class="tt-cell-val" id="mc-fv-val">—</div>
+            <div class="tt-cell-sub" id="mc-fv-sub"></div>
+          </div>
+        </div>
+        <div class="tt-conv-row" id="minit-conv-row" hidden></div>
+        <div class="tt-conv-note" id="minit-conv-note" hidden>This is a learning system. Conviction is muted until each ticker accumulates &ge;5 resolved outcomes (rolling 30 days); accuracy sharpens as that baseline fills in.</div>
+        <div class="minit-foot">
+          <div class="minit-foot-meta">Live data &middot; refreshed every market open</div>
           <a class="minit-cta" href="/ticker/NVDA">Open the full NVDA report &rarr;</a>
         </div>
       </div>
@@ -2002,245 +2109,193 @@ footer{
       });
   })();
 
-  // ── Live mini ticker (NVDA) ─────────────────────────────────────────
+  // ── Live mini ticker (NVDA) — verdict panel mirrors /ticker/NVDA ─────
   (function miniTicker(){
-    var root = document.getElementById('minit');
-    if (!root) return;
+    var root = document.getElementById('minit'); if (!root) return;
     var env = window.__env || {};
     var SUPABASE_URL  = env.SUPABASE_URL  || '';
     var SUPABASE_ANON = env.SUPABASE_ANON || '';
     var TICKER = 'NVDA';
-    var DAYS = 90;
+    if (!SUPABASE_URL || !SUPABASE_ANON) return;
+
     var elPrice  = document.getElementById('minit-price');
     var elDelta  = document.getElementById('minit-delta');
-    var elClaim  = document.getElementById('minit-claim');
-    var elTags   = document.getElementById('minit-tags');
-    var elCanvas = document.getElementById('minit-chart');
-    var elLoad   = document.getElementById('minit-chart-loading');
-    var elTip    = document.getElementById('minit-tooltip');
-    if (!SUPABASE_URL || !SUPABASE_ANON || !elCanvas) return;
+    var elRow    = document.getElementById('minit-verdict-row');
+    var elHL     = document.getElementById('minit-headline');
+    var elBV = document.getElementById('mc-bias-val'), elBS = document.getElementById('mc-bias-sub');
+    var elHV = document.getElementById('mc-hor-val'),  elHS = document.getElementById('mc-hor-sub');
+    var elIV = document.getElementById('mc-inv-val'),  elIS = document.getElementById('mc-inv-sub');
+    var elFV = document.getElementById('mc-fv-val'),   elFS = document.getElementById('mc-fv-sub');
+    var elConvRow  = document.getElementById('minit-conv-row');
+    var elConvNote = document.getElementById('minit-conv-note');
 
-    function fmt(n, dp){ if (n == null || isNaN(n)) return '—'; return Number(n).toFixed(dp == null ? 2 : dp); }
-    function isoCutoff(){ var d = new Date(); d.setDate(d.getDate() - DAYS); return d.toISOString().slice(0,10); }
     function get(path){
       return fetch(SUPABASE_URL + '/rest/v1/' + path, {
         headers: { apikey: SUPABASE_ANON, Authorization: 'Bearer ' + SUPABASE_ANON }
       }).then(function(r){ return r.ok ? r.json() : []; }).catch(function(){ return []; });
     }
-
-    var cutoff = isoCutoff();
-    var qPrice = 'ticker_snapshots?select=snapshot_date,price_close&ticker=eq.'+TICKER+'&snapshot_date=gte.'+cutoff+'&order=snapshot_date.asc';
-    var qDots  = 'narrative_analyses?select=snapshot_date,sentiment_score,narrative_text,source_outlet,verdict&ticker=eq.'+TICKER+'&snapshot_date=gte.'+cutoff+'&order=snapshot_date.asc&limit=200';
-    var qHead  = 'v_dash_daily_story?select=snapshot_date,price,price_change_pct,story_claim,prism_verdict,narrative_state&ticker=eq.'+TICKER+'&order=snapshot_date.desc&limit=1';
-
-    var cached = { prices: [], dots: [] };
-    Promise.all([get(qPrice), get(qDots), get(qHead)]).then(function(res){
-      var prices = res[0] || [];
-      var dots   = res[1] || [];
-      var head   = (res[2] && res[2][0]) || null;
-      cached.prices = prices; cached.dots = dots;
-
-      // Header — fall back to last price snapshot if v_dash_daily_story is sparse
-      var price = head && head.price != null ? Number(head.price) : (prices.length ? Number(prices[prices.length-1].price_close) : null);
-      var delta = head && head.price_change_pct != null ? Number(head.price_change_pct) : null;
-      if (delta == null && prices.length >= 2) {
-        var a = Number(prices[prices.length-2].price_close);
-        var b = Number(prices[prices.length-1].price_close);
-        if (a > 0) delta = ((b - a) / a) * 100;
+    function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+    function fmtUsd(p){ if (p == null || isNaN(p)) return '—'; var n = Number(p); return Math.abs(n) >= 100 ? '$' + n.toFixed(0) : '$' + n.toFixed(2); }
+    function fmtPct(p, dp){ if (p == null || isNaN(p)) return '—'; dp = dp == null ? 1 : dp; var s = p > 0 ? '+' : ''; return s + Number(p).toFixed(dp) + '%'; }
+    function pctClass(p){ if (p == null || isNaN(p)) return 'tt-neu'; return p > 0 ? 'tt-pos' : (p < 0 ? 'tt-neg' : 'tt-neu'); }
+    function ttColor(name){
+      switch ((name||'').toLowerCase()){
+        case 'red': return '#FF4D4D'; case 'green': return '#00DE94'; case 'amber': return '#FFB800';
+        case 'blue': return '#00AEFF'; case 'gray': case 'grey': return '#A0A8B0';
+        default: return '#A0A8B0';
       }
-      elPrice.textContent = price != null ? '$' + fmt(price, 2) : '—';
-      if (delta != null) {
+    }
+    function ttBiasLabel(b){
+      switch ((b||'').toLowerCase()){
+        case 'short': return 'Short / Avoid Long'; case 'long': return 'Long / Buy Setup';
+        case 'watch_short': return 'Watch — Short Bias'; case 'watch_long': return 'Watch — Long Bias';
+        case 'neutral': return 'Neutral'; default: return b || '—';
+      }
+    }
+    function ttRelative(iso){
+      if (!iso) return ''; var t = new Date(iso).getTime(); if (!isFinite(t)) return '';
+      var s = Math.max(0, Math.floor((Date.now() - t) / 1000));
+      if (s < 60) return 'Updated just now';
+      if (s < 3600) return 'Updated ' + Math.floor(s/60) + 'm ago';
+      if (s < 86400) return 'Updated ' + Math.floor(s/3600) + 'h ago';
+      if (s < 86400*7) return 'Updated ' + Math.floor(s/86400) + 'd ago';
+      if (s < 86400*30) return 'Updated ' + Math.floor(s/(86400*7)) + 'w ago';
+      return 'Updated ' + Math.floor(s/(86400*30)) + 'mo ago';
+    }
+
+    var qHead = 'v_dash_daily_story?select=snapshot_date,price,price_change_pct,story_claim,prism_verdict,narrative_state,sector_name,pe_ratio&ticker=eq.'+TICKER+'&order=snapshot_date.desc&limit=1';
+    var qSnap = 'ticker_snapshots?select=snapshot_date,price_close&ticker=eq.'+TICKER+'&order=snapshot_date.desc&limit=1';
+    var qFc   = 'ticker_forecast?select=*&ticker=eq.'+TICKER+'&limit=1';
+    var qFv   = 'daily_fair_value?select=fair_value,fv_low,fv_high,verdict,premium_pct,snapshot_date,computed_at&ticker=eq.'+TICKER+'&order=snapshot_date.desc&limit=1';
+
+    Promise.all([get(qHead), get(qSnap), get(qFc), get(qFv)]).then(function(res){
+      var head = (res[0]||[])[0] || null;
+      var snap = (res[1]||[])[0] || null;
+      var f    = (res[2]||[])[0] || null;
+      var fv   = (res[3]||[])[0] || null;
+
+      // Price / delta — prefer freshest ticker_snapshots row.
+      var price = (snap && snap.price_close != null) ? Number(snap.price_close)
+                : (head && head.price != null) ? Number(head.price) : null;
+      var delta = head && head.price_change_pct != null ? Number(head.price_change_pct) : null;
+      elPrice.textContent = price != null ? '$' + price.toFixed(2) : '—';
+      if (delta != null){
         var sign = delta > 0 ? '+' : '';
-        elDelta.textContent = sign + fmt(delta, 2) + '%';
+        elDelta.textContent = sign + delta.toFixed(2) + '%';
         elDelta.className = 'minit-delta ' + (delta > 0.05 ? 'is-up' : delta < -0.05 ? 'is-down' : 'is-flat');
       }
-      if (head && head.story_claim) elClaim.textContent = head.story_claim;
-      else elClaim.textContent = 'Live narrative summary updates pre-bell each trading day.';
 
-      // Tag pills
-      var tags = [];
-      if (head && head.prism_verdict) {
-        var v = String(head.prism_verdict).toUpperCase();
-        var tone = /BULL|SUPPORT|STABLE|VERIFIED/.test(v) ? 't-bull' :
-                   /BEAR|TRAP|RISK|COLLAPSE/.test(v) ? 't-bear' : 't-neutral';
-        tags.push({ label: 'Verdict · ' + head.prism_verdict, tone: tone });
-      }
-      if (head && head.narrative_state) tags.push({ label: 'State · ' + head.narrative_state, tone: 't-neutral' });
-      tags.push({ label: dots.length + ' narrative dots · last ' + DAYS + ' days', tone: '' });
-      elTags.innerHTML = tags.map(function(t){
-        return '<span class="minit-tag ' + (t.tone||'') + '">' + t.label + '</span>';
-      }).join('');
+      // Verdict / severity / classification / sector / fresh
+      var color = ttColor(f && f.color);
+      var verdict = (f && f.directional_verdict) || (head && head.prism_verdict) || 'Monitoring';
+      var sev = f && f.severity_label, cls = f && f.classification_label;
+      var fresh = f && f.heavy_refreshed_at ? ttRelative(f.heavy_refreshed_at) : '';
+      var sector = head && head.sector_name ? esc(head.sector_name) : '';
+      var rowHtml = '<span class="tt-verdict" style="color:'+color+';">'+ esc(verdict) +'</span>';
+      if (sev) rowHtml += '<span class="tt-sev" style="background:'+color+';">'+ esc(sev) +'</span>';
+      if (cls && cls !== 'STANDARD') rowHtml += '<span class="tt-class">'+ esc(cls) +'</span>';
+      if (sector) rowHtml += '<span class="tt-sector">'+ sector +'</span>';
+      rowHtml += '<span id="minit-pe-bubble"></span>';
+      if (fresh) rowHtml += '<span class="tt-fresh">'+ esc(fresh) +'</span>';
+      elRow.innerHTML = rowHtml; elRow.hidden = false;
 
-      drawChart(prices, dots);
-      if (elLoad) elLoad.style.display = 'none';
-    });
+      // Headline
+      var headline = (f && f.one_line_headline && String(f.one_line_headline).trim())
+                  || (head && head.story_claim) || '';
+      elHL.textContent = headline || 'Live narrative summary updates pre-bell each trading day.';
 
-    // ── Canvas chart ──
-    var dotHits = []; // {x,y,r,d} for hit-testing
-    function drawChart(prices, dots){
-      var dpr = window.devicePixelRatio || 1;
-      var rect = elCanvas.getBoundingClientRect();
-      var W = Math.max(320, Math.floor(rect.width));
-      var H = Math.max(180, Math.floor(rect.height));
-      elCanvas.width  = W * dpr;
-      elCanvas.height = H * dpr;
-      var ctx = elCanvas.getContext('2d');
-      ctx.setTransform(dpr,0,0,dpr,0,0);
-      ctx.clearRect(0,0,W,H);
+      // Bias / Horizon / Invalidation cells
+      if (f) {
+        elBV.textContent = ttBiasLabel(f.bias);
+        elBV.style.color = color;
 
-      if (!prices.length) return;
-      var pad = { l: 8, r: 8, t: 16, b: 22 };
-      var iw = W - pad.l - pad.r, ih = H - pad.t - pad.b;
-      var t0 = new Date(prices[0].snapshot_date).getTime();
-      var t1 = new Date(prices[prices.length-1].snapshot_date).getTime();
-      var span = Math.max(1, t1 - t0);
-      var pmin = Infinity, pmax = -Infinity;
-      for (var i=0; i<prices.length; i++){
-        var v = Number(prices[i].price_close);
-        if (v < pmin) pmin = v; if (v > pmax) pmax = v;
-      }
-      var prng = Math.max(1e-6, pmax - pmin);
-      pmin -= prng * 0.06; pmax += prng * 0.06; prng = pmax - pmin;
-      function xAt(d){ return pad.l + (((new Date(d).getTime() - t0) / span) * iw); }
-      function yAt(p){ return pad.t + ih - (((p - pmin) / prng) * ih); }
+        var primary = (f.primary_horizon || '5d').toLowerCase();
+        var primPct = f['predicted_'+primary+'_pct'];
+        var primPrice = f['predicted_'+primary+'_price'];
+        var primLo = f['predicted_'+primary+'_low'];
+        var primHi = f['predicted_'+primary+'_high'];
+        elHV.textContent = primary.toUpperCase() + ' move';
+        var bandPct = (primLo != null && primHi != null && f.current_price)
+          ? (((primHi - primLo)/2) / Number(f.current_price) * 100) : null;
+        var hsub = '<span class="'+pctClass(primPct)+'">'+ fmtPct(primPct) +'</span>';
+        if (primPrice != null) hsub += ' &middot; ' + fmtUsd(primPrice);
+        if (bandPct != null)   hsub += ' &middot; ± ' + bandPct.toFixed(1) + '%';
+        elHS.innerHTML = hsub;
 
-      // Grid lines (3 horizontal)
-      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
-      ctx.lineWidth = 1;
-      for (var g=0; g<=3; g++){
-        var gy = pad.t + (ih * g / 3);
-        ctx.beginPath(); ctx.moveTo(pad.l, gy); ctx.lineTo(pad.l + iw, gy); ctx.stroke();
-      }
-
-      // Price area fill
-      var grad = ctx.createLinearGradient(0, pad.t, 0, pad.t + ih);
-      grad.addColorStop(0, 'rgba(0,174,255,0.28)');
-      grad.addColorStop(1, 'rgba(0,174,255,0.0)');
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.moveTo(xAt(prices[0].snapshot_date), pad.t + ih);
-      for (var j=0; j<prices.length; j++) ctx.lineTo(xAt(prices[j].snapshot_date), yAt(Number(prices[j].price_close)));
-      ctx.lineTo(xAt(prices[prices.length-1].snapshot_date), pad.t + ih);
-      ctx.closePath();
-      ctx.fill();
-
-      // Price line
-      ctx.strokeStyle = '#00AEFF';
-      ctx.lineWidth = 1.6;
-      ctx.beginPath();
-      for (var k=0; k<prices.length; k++){
-        var x = xAt(prices[k].snapshot_date), y = yAt(Number(prices[k].price_close));
-        if (k === 0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-      }
-      ctx.stroke();
-
-      // Build a quick price lookup for dot Y-positioning
-      var byDate = {};
-      for (var p=0; p<prices.length; p++) byDate[prices[p].snapshot_date] = Number(prices[p].price_close);
-      function nearestPrice(date){
-        if (byDate[date] != null) return byDate[date];
-        var t = new Date(date).getTime();
-        var best = null, bd = Infinity;
-        for (var d in byDate){
-          var dd = Math.abs(new Date(d).getTime() - t);
-          if (dd < bd){ bd = dd; best = byDate[d]; }
+        if (f.invalidation_price != null){
+          var biasIsShort = (f.bias === 'short' || f.bias === 'watch_short');
+          elIV.textContent = (biasIsShort ? 'Above ' : 'Below ') + fmtUsd(f.invalidation_price);
+          elIS.textContent = 'Stop level';
+        } else {
+          elIV.textContent = '—';
+          elIV.style.color = 'var(--mp-text-tertiary)';
+          elIS.textContent = 'Neutral bias';
         }
-        return best;
+
+        // Conviction
+        var primConv = f['conviction_'+primary];
+        if (primConv != null){
+          var filled = Math.max(0, Math.min(10, Math.round(Number(primConv)/10)));
+          var dotsF = '●'.repeat(filled), dotsE = '○'.repeat(10 - filled);
+          elConvRow.innerHTML = '<span>Conviction ' + Math.round(Number(primConv)) + '%</span>'
+            + '<span class="tt-conv-dots" style="color:'+color+';">'+ dotsF +'</span>'
+            + '<span class="tt-conv-dots" style="color:var(--mp-text-muted);">'+ dotsE +'</span>';
+          elConvRow.hidden = false; elConvNote.hidden = false;
+        }
+      } else {
+        elBV.textContent = 'Neutral';
+        elHV.textContent = '—'; elHS.textContent = 'Awaiting forecast';
+        elIV.textContent = '—'; elIV.style.color = 'var(--mp-text-tertiary)'; elIS.textContent = 'Neutral bias';
       }
 
-      // Narrative dots
-      dotHits = [];
-      for (var dx=0; dx<dots.length; dx++){
-        var nd = dots[dx];
-        var px = nearestPrice(nd.snapshot_date); if (px == null) continue;
-        var cx = xAt(nd.snapshot_date), cy = yAt(px);
-        var s = nd.sentiment_score == null ? 0 : Number(nd.sentiment_score);
-        var color = s > 5 ? '#00DE94' : s < -5 ? '#FF4D4D' : '#A0A8B0';
-        var r = 4;
-        ctx.beginPath();
-        ctx.fillStyle = color;
-        ctx.globalAlpha = 0.85;
-        ctx.arc(cx, cy, r, 0, Math.PI*2);
-        ctx.fill();
-        ctx.globalAlpha = 1;
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = 'rgba(8,11,17,0.9)';
-        ctx.stroke();
-        dotHits.push({ x: cx, y: cy, r: r + 4, d: nd });
+      // Fair Value — central daily_fair_value, % vs current price.
+      var fvPrice = fv && fv.fair_value != null ? Number(fv.fair_value) : null;
+      var ref = price != null ? price : (f && f.current_price != null ? Number(f.current_price) : null);
+      var fvPct = (fvPrice != null && ref != null && ref > 0) ? (fvPrice - ref) / ref * 100 : null;
+      if (fvPrice != null && fvPct != null){
+        elFV.textContent = fmtUsd(fvPrice);
+        elFS.innerHTML = '<span class="'+pctClass(fvPct)+'">'+ fmtPct(fvPct) +'</span>';
+      } else {
+        elFV.textContent = '—'; elFV.style.color = 'var(--mp-text-tertiary)';
+        elFS.textContent = 'Not available';
       }
 
-      // Price label (latest)
-      var last = prices[prices.length-1];
-      var lx = xAt(last.snapshot_date), ly = yAt(Number(last.price_close));
-      ctx.fillStyle = '#00AEFF';
-      ctx.beginPath(); ctx.arc(lx, ly, 3.2, 0, Math.PI*2); ctx.fill();
-
-      // Date axis (start / end)
-      ctx.fillStyle = 'rgba(255,255,255,0.35)';
-      ctx.font = '10px Inter, system-ui, sans-serif';
-      ctx.textBaseline = 'top';
-      ctx.textAlign = 'left';
-      ctx.fillText(formatDate(prices[0].snapshot_date), pad.l, pad.t + ih + 6);
-      ctx.textAlign = 'right';
-      ctx.fillText(formatDate(last.snapshot_date), pad.l + iw, pad.t + ih + 6);
-    }
-    function formatDate(s){
-      try { return new Date(s).toLocaleDateString('en-US',{month:'short',day:'numeric'}); }
-      catch(_){ return s; }
-    }
-
-    // Hover/tap tooltips
-    function showTip(d, cx, cy){
-      var src = (d.source_outlet || '').replace(/[<>"]/g,'');
-      var sent = d.sentiment_score == null ? '—' : Number(d.sentiment_score).toFixed(1);
-      var date = formatDate(d.snapshot_date);
-      var text = (d.narrative_text || '').slice(0, 220);
-      if (text.length === 220) text += '…';
-      elTip.innerHTML =
-        '<div class="minit-tooltip-meta"><span class="src">'+src+'</span><span>'+date+' · sentiment '+sent+'</span></div>' +
-        '<div class="minit-tooltip-text">'+text.replace(/[<>]/g,'')+'</div>';
-      var wrap = elCanvas.parentElement.getBoundingClientRect();
-      var tipW = 280, tipH = elTip.offsetHeight || 80;
-      var left = Math.min(Math.max(cx - tipW/2, 8), wrap.width - tipW - 8);
-      var top  = cy - tipH - 12;
-      if (top < 8) top = cy + 14;
-      elTip.style.left = left + 'px';
-      elTip.style.top  = top + 'px';
-      elTip.classList.add('is-on');
-    }
-    function hideTip(){ elTip.classList.remove('is-on'); }
-    function pickHit(ev){
-      var rect = elCanvas.getBoundingClientRect();
-      var x = ev.clientX - rect.left, y = ev.clientY - rect.top;
-      var best = null, bd = Infinity;
-      for (var i=0; i<dotHits.length; i++){
-        var h = dotHits[i];
-        var dd = (h.x - x)*(h.x - x) + (h.y - y)*(h.y - y);
-        if (dd < bd && dd <= h.r * h.r){ bd = dd; best = h; }
-      }
-      return best;
-    }
-    elCanvas.addEventListener('mousemove', function(ev){
-      var hit = pickHit(ev);
-      if (hit) showTip(hit.d, hit.x, hit.y); else hideTip();
+      // P/E bubble (uses sector benchmarks for vs-sector delta).
+      loadPe(head);
     });
-    elCanvas.addEventListener('mouseleave', hideTip);
-    elCanvas.addEventListener('touchstart', function(ev){
-      if (!ev.touches.length) return;
-      var rect = elCanvas.getBoundingClientRect();
-      var fakeEv = { clientX: ev.touches[0].clientX, clientY: ev.touches[0].clientY };
-      var hit = pickHit(fakeEv);
-      if (hit) showTip(hit.d, hit.x, hit.y); else hideTip();
-    }, {passive:true});
 
-    // Redraw on resize
-    var rzTimer = null;
-    window.addEventListener('resize', function(){
-      clearTimeout(rzTimer);
-      rzTimer = setTimeout(function(){
-        if (cached.prices.length) drawChart(cached.prices, cached.dots);
-      }, 150);
-    });
+    function loadPe(head){
+      var el = document.getElementById('minit-pe-bubble');
+      if (!el || !head || head.pe_ratio == null) return;
+      var tPe = Number(head.pe_ratio);
+      if (!isFinite(tPe) || tPe <= 0) return;
+      var solo = '<span class="pe-bubble neutral" title="Trailing P/E ratio">'
+               + '<span class="pe-bubble-lbl">P/E</span> '
+               + '<span class="pe-bubble-val">'+ tPe.toFixed(1) +'x</span></span>';
+      if (!head.sector_name){ el.outerHTML = solo; return; }
+      get('sector_pe_benchmarks?select=median_pe,avg_pe,ticker_count_pe&sector=eq.'+encodeURIComponent(head.sector_name)+'&keyword=is.null').then(function(rows){
+        var num = 0, den = 0;
+        (rows||[]).forEach(function(row){
+          var m = row.median_pe != null ? Number(row.median_pe) : null;
+          var w = row.ticker_count_pe != null ? Number(row.ticker_count_pe) : 0;
+          if (m != null && isFinite(m) && w > 0){ num += m*w; den += w; }
+        });
+        if (den === 0){ el.outerHTML = solo; return; }
+        var sectorPe = num/den;
+        if (!isFinite(sectorPe) || sectorPe <= 0){ el.outerHTML = solo; return; }
+        var deltaPct = ((tPe - sectorPe) / sectorPe) * 100;
+        var tone = deltaPct > 5 ? 'bear' : deltaPct < -5 ? 'bull' : 'neutral';
+        var arrow = deltaPct > 0 ? '↑' : deltaPct < 0 ? '↓' : '→';
+        var sign = deltaPct > 0 ? '+' : '';
+        el.outerHTML = '<span class="pe-bubble '+tone+'" title="P/E vs sector median">'
+          + '<span class="pe-bubble-lbl">P/E</span> '
+          + '<span class="pe-bubble-val">'+ tPe.toFixed(1) +'x</span> '
+          + '<span class="pe-bubble-vs">vs Sector</span> '
+          + '<span class="pe-bubble-sec">'+ sectorPe.toFixed(1) +'x</span> '
+          + '<span class="pe-bubble-delta '+tone+'">'+ arrow +' '+ sign + deltaPct.toFixed(0) +'%</span>'
+          + '</span>';
+      }).catch(function(){ el.outerHTML = solo; });
+    }
   })();
 })();
 </script>
