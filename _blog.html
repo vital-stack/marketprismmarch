@@ -372,6 +372,55 @@ nav {
 }
 .blog-cta-btn:hover { background: #33BFFF; }
 
+/* Slim variant — top-of-page CTA above the feed */
+.blog-cta-slim {
+  padding: 20px 24px;
+  text-align: left;
+  margin: 0 0 32px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.blog-cta-slim::before {
+  left: 0; transform: none;
+  width: 100%;
+  background: linear-gradient(90deg, transparent, var(--blue), transparent);
+}
+.blog-cta-slim .blog-cta-slim-text {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+.blog-cta-slim .blog-cta-slim-eyebrow {
+  font-family: var(--font-b);
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--blue);
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+.blog-cta-slim .blog-cta-title {
+  font-size: 18px;
+  margin-bottom: 0;
+  line-height: 1.3;
+}
+.blog-cta-slim .blog-cta-form {
+  flex: 1 1 320px;
+  margin: 0;
+  max-width: none;
+  justify-content: flex-start;
+}
+.blog-cta-slim .beta-cta-msg {
+  flex-basis: 100%;
+  margin: 4px 0 0;
+  font-size: 12px;
+  min-height: 16px;
+}
+@media (max-width: 640px) {
+  .blog-cta-slim { padding: 18px; gap: 12px; }
+}
+
 /* ── FOOTER ── */
 .blog-footer {
   border-top: 1px solid var(--border);
@@ -434,6 +483,21 @@ nav {
   </div>
 </div>
 
+<!-- ── BETA CTA (TOP) ── -->
+<div class="con">
+  <div class="blog-cta blog-cta-slim" id="blog-cta-top">
+    <div class="blog-cta-slim-text">
+      <div class="blog-cta-slim-eyebrow">Limited Beta Access</div>
+      <div class="blog-cta-title">Get every signal — before the print, every quarter.</div>
+    </div>
+    <form class="blog-cta-form" id="blog-cta-top-form" onsubmit="return false;">
+      <input class="blog-cta-input" id="blog-cta-top-input" type="email" placeholder="Work email" required>
+      <button class="blog-cta-btn" id="blog-cta-top-btn" type="submit">Claim a Beta Seat</button>
+    </form>
+    <div class="beta-cta-msg" id="blog-cta-top-msg"></div>
+  </div>
+</div>
+
 <!-- ── FEED ── -->
 <div class="posts-section">
   <div class="con">
@@ -482,54 +546,59 @@ nav {
 
 <script>
 (function(){
-  var form = document.getElementById('beta-cta-form');
-  if (!form) return;
-  var input = document.getElementById('beta-cta-input');
-  var btn = document.getElementById('beta-cta-btn');
-  var msg = document.getElementById('beta-cta-msg');
-  form.addEventListener('submit', function(){
-    var email = (input.value || '').trim().toLowerCase();
-    if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-      msg.textContent = 'Please enter a valid email address.';
-      msg.style.color = '#FF4D4D';
-      return;
-    }
-    if (!SUPABASE_URL || !SUPABASE_ANON) {
-      window.location.href = '/login#register';
-      return;
-    }
-    btn.disabled = true; btn.textContent = 'Sending...';
-    fetch(SUPABASE_URL + '/rest/v1/beta_signups', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_ANON,
-        'Authorization': 'Bearer ' + SUPABASE_ANON,
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify({
-        email: email,
-        source: 'blog_index',
-        referrer: document.referrer || null,
-        user_agent: navigator.userAgent || null
-      })
-    }).then(function(r){
-      if (r.ok || r.status === 201 || r.status === 409) {
-        msg.style.color = '#00DE94';
-        msg.textContent = "You're on the list. We'll be in touch.";
-        input.value = '';
-        btn.textContent = 'Requested ✓';
-      } else {
+  function wireBetaCta(formId, inputId, btnId, msgId, source) {
+    var form = document.getElementById(formId);
+    if (!form) return;
+    var input = document.getElementById(inputId);
+    var btn = document.getElementById(btnId);
+    var msg = document.getElementById(msgId);
+    var defaultBtnText = btn.textContent;
+    form.addEventListener('submit', function(){
+      var email = (input.value || '').trim().toLowerCase();
+      if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+        msg.textContent = 'Please enter a valid email address.';
         msg.style.color = '#FF4D4D';
-        msg.textContent = 'Something went wrong. Try again.';
-        btn.disabled = false; btn.textContent = 'Request Access';
+        return;
       }
-    }).catch(function(){
-      msg.style.color = '#FF4D4D';
-      msg.textContent = 'Network error. Try again.';
-      btn.disabled = false; btn.textContent = 'Request Access';
+      if (!SUPABASE_URL || !SUPABASE_ANON) {
+        window.location.href = '/login#register';
+        return;
+      }
+      btn.disabled = true; btn.textContent = 'Sending...';
+      fetch(SUPABASE_URL + '/rest/v1/beta_signups', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON,
+          'Authorization': 'Bearer ' + SUPABASE_ANON,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
+          email: email,
+          source: source,
+          referrer: document.referrer || null,
+          user_agent: navigator.userAgent || null
+        })
+      }).then(function(r){
+        if (r.ok || r.status === 201 || r.status === 409) {
+          msg.style.color = '#00DE94';
+          msg.textContent = "You're on the list. We'll be in touch.";
+          input.value = '';
+          btn.textContent = 'Requested ✓';
+        } else {
+          msg.style.color = '#FF4D4D';
+          msg.textContent = 'Something went wrong. Try again.';
+          btn.disabled = false; btn.textContent = defaultBtnText;
+        }
+      }).catch(function(){
+        msg.style.color = '#FF4D4D';
+        msg.textContent = 'Network error. Try again.';
+        btn.disabled = false; btn.textContent = defaultBtnText;
+      });
     });
-  });
+  }
+  wireBetaCta('blog-cta-top-form', 'blog-cta-top-input', 'blog-cta-top-btn', 'blog-cta-top-msg', 'blog_index_top');
+  wireBetaCta('beta-cta-form', 'beta-cta-input', 'beta-cta-btn', 'beta-cta-msg', 'blog_index');
 })();
 </script>
 
