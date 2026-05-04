@@ -15891,10 +15891,20 @@ async function liveQuotesRefreshDaily(){
       if(predPct==null||predPct===0)return;
       var isHit=false;
       var targetPct=Math.abs(predPct);
-      if(dir==='up'&&q.dayHigh!=null){
-        isHit=((q.dayHigh-basePrice)/basePrice)*100>=targetPct;
-      }else if(dir==='down'&&q.dayLow!=null){
-        isHit=((basePrice-q.dayLow)/basePrice)*100>=targetPct;
+      // dayHigh/dayLow can be null in the first minutes of a session (Polygon
+      // hasn't aggregated yet) or when day.h/day.l come back as 0 (the API
+      // collapses those to null). Fall back to the current price so a row
+      // that's already past target still reads as \u2713 \u2014 otherwise NBIS at
+      // +3.71% with a +1.1% target would render as \u2717 until day-aggregate
+      // data appears.
+      var hi=q.dayHigh!=null?q.dayHigh:null;
+      if(q.price!=null)hi=hi!=null?Math.max(hi,q.price):q.price;
+      var lo=q.dayLow!=null?q.dayLow:null;
+      if(q.price!=null)lo=lo!=null?Math.min(lo,q.price):q.price;
+      if(dir==='up'&&hi!=null){
+        isHit=((hi-basePrice)/basePrice)*100>=targetPct;
+      }else if(dir==='down'&&lo!=null){
+        isHit=((basePrice-lo)/basePrice)*100>=targetPct;
       }
       el.textContent=isHit?'\u2713':'\u2717';
       el.className='tl-row-hit visible '+(isHit?'hit':'miss');
