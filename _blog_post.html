@@ -561,7 +561,7 @@ function markdownToHtml(md) {
   var html = md;
 
   // Tables
-  html = html.replace(/^\|(.+)\|\s*$/gm, function(line) {
+  html = html.replace(/^\|(.+)\|[ \t]*$/gm, function(line) {
     if (/^[\|\s\-:]+$/.test(line)) return '<!-- separator -->';
     var cells = line.split('|').slice(1, -1).map(function(c) { return c.trim(); });
     return '<tr>' + cells.map(function(c) { return '<td>' + c + '</td>'; }).join('') + '</tr>';

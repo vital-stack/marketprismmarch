@@ -420,7 +420,7 @@ function markdownToHtml(md) {
   let html = md;
 
   // Tables
-  html = html.replace(/^\|(.+)\|\s*$/gm, function(line) {
+  html = html.replace(/^\|(.+)\|[ \t]*$/gm, function(line) {
     if (/^[\|\s\-:]+$/.test(line)) return '<!-- separator -->';
     const cells = line.split('|').slice(1, -1).map(c => c.trim());
     return '<tr>' + cells.map(c => '<td>' + c + '</td>').join('') + '</tr>';
