@@ -8463,6 +8463,27 @@ var _TL_LANE_MAP={
 };
 function _refreshLaneHitCounters(){
   try{
+    var todayET=(typeof valTodayET==='function')?valTodayET():null;
+    // Index today's tracked plays: lane code -> {tot:Set<ticker>,hit:Set<ticker>}.
+    // Distinct tickers, so a re-entered name doesn't double-count. Cumulative
+    // across the day: picks that hit and rotate out of the visible top-N still
+    // contribute to both numerator and denominator.
+    var byLane={};
+    if(todayET&&typeof _TP_DATA!=='undefined'&&_TP_DATA&&_TP_DATA.length){
+      for(var i=0;i<_TP_DATA.length;i++){
+        var r=_TP_DATA[i];
+        if(!r||r.entry_date!==todayET||!r.lane||!r.ticker)continue;
+        // SKIPPED_GAP rows never actually entered (price gapped out of the
+        // entry window) — they aren't trades that "ran today". The Live
+        // Tracked Plays table hides them too; mirror that here so the
+        // denominator matches what the user sees.
+        if(r.status==='SKIPPED_GAP')continue;
+        if(typeof _tpIsZombie==='function'&&_tpIsZombie(r))continue;
+        var L=byLane[r.lane]||(byLane[r.lane]={tot:Object.create(null),hit:Object.create(null)});
+        L.tot[r.ticker]=1;
+        if(r.hit===true)L.hit[r.ticker]=1;
+      }
+    }
     Object.keys(_TL_LANE_MAP).forEach(function(slug){
       var lane=document.getElementById('lane-'+slug);
       var badge=document.getElementById('hits-'+slug);
@@ -8471,10 +8492,28 @@ function _refreshLaneHitCounters(){
       // aren't actual tracked trades \u2014 the hit counter would always read
       // misleadingly low. Suppress the badge entirely for this lane.
       if(slug==='tl-overflow-earnings'){badge.innerHTML='';return;}
-      var hitEls=lane.querySelectorAll('[data-prism-hit]');
-      if(!hitEls.length){badge.innerHTML='';return;}
-      var total=hitEls.length;
-      var hits=lane.querySelectorAll('[data-prism-hit].hit').length;
+      var fallbackDate=lane.getAttribute('data-fallback-date');
+      var laneCode=_TL_LANE_MAP[slug];
+      var hits,total;
+      // Carryover lanes are scoped to a prior trading day \u2014 keep the DOM
+      // path; _applyBackendHitsToFallbackLanes already forces those rows
+      // to backend-confirmed checkmarks against the right date.
+      if(!fallbackDate&&byLane[laneCode]){
+        var B=byLane[laneCode];
+        // Union in any live hit the backend hasn't recorded yet (cron lag).
+        lane.querySelectorAll('[data-prism-hit].hit').forEach(function(el){
+          var t=el.getAttribute('data-prism-hit');
+          if(t)B.hit[t]=1;
+        });
+        total=Object.keys(B.tot).length;
+        hits=Object.keys(B.hit).length;
+      }else{
+        var hitEls=lane.querySelectorAll('[data-prism-hit]');
+        if(!hitEls.length){badge.innerHTML='';return;}
+        total=hitEls.length;
+        hits=lane.querySelectorAll('[data-prism-hit].hit').length;
+      }
+      if(!total){badge.innerHTML='';return;}
       var color=hits/total>=0.5?'#00DE94':hits>0?'#38C8B8':'#FF4D4D';
       badge.innerHTML='\u00B7 <span style="color:'+color+';">'+hits+'/'+total+' hit today</span>';
     });
