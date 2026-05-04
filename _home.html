@@ -711,6 +711,71 @@ section.below{padding:64px 0;}
 }
 .about-intro strong{color:var(--mp-text-primary);font-weight:600;}
 
+/* ── DASHBOARD SLIDESHOW ──────────────────────────────────────────────── */
+.dash-show{
+  position:relative;margin-top:32px;
+  background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:18px;
+  padding:24px;overflow:hidden;
+  box-shadow:0 12px 40px rgba(0,0,0,0.35);
+}
+.dash-show::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(110deg,#FF4D4D,#FFB800,#00DE94,#00AEFF,#7B61FF);
+  opacity:.6;
+}
+.dash-show-track{position:relative;min-height:380px;}
+@media(max-width:780px){.dash-show-track{min-height:280px;}}
+.dash-show-slide{
+  position:absolute;inset:0;display:flex;flex-direction:column;gap:14px;
+  opacity:0;visibility:hidden;transition:opacity .5s ease,visibility .5s;
+}
+.dash-show-slide.is-active{opacity:1;visibility:visible;}
+.dash-show-meta{display:flex;flex-direction:column;gap:6px;}
+.dash-show-eyebrow{
+  font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--mp-cyan);
+}
+.dash-show-title{
+  font-family:var(--font-display,'Instrument Serif','DM Serif Display',Georgia,serif);
+  font-size:clamp(20px,2.4vw,26px);font-weight:400;letter-spacing:-0.02em;
+  color:var(--mp-text-primary);line-height:1.15;
+}
+.dash-show-title em{
+  font-style:italic;color:var(--mp-cyan);
+}
+.dash-show-desc{font-size:13px;line-height:1.55;color:var(--mp-text-tertiary);max-width:680px;}
+.dash-show-frame{
+  position:relative;flex:1;border-radius:12px;overflow:hidden;
+  background:#000;border:1px solid rgba(255,255,255,0.08);
+  display:flex;align-items:center;justify-content:center;min-height:0;
+}
+.dash-show-frame img{
+  display:block;width:100%;height:100%;object-fit:cover;object-position:top center;
+}
+@media(max-width:780px){.dash-show-frame img{object-fit:contain;background:#000;}}
+.dash-show-controls{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:18px;
+}
+.dash-show-dots{display:flex;gap:8px;}
+.dash-show-dot{
+  width:8px;height:8px;border-radius:50%;border:0;padding:0;cursor:pointer;
+  background:rgba(255,255,255,0.18);transition:background .2s,transform .2s;
+}
+.dash-show-dot.is-active{background:var(--mp-cyan);transform:scale(1.2);}
+.dash-show-dot:hover{background:rgba(255,255,255,0.35);}
+.dash-show-arrows{display:flex;gap:8px;}
+.dash-show-arrow{
+  width:32px;height:32px;border-radius:8px;border:1px solid var(--mp-border);
+  background:transparent;color:var(--mp-text-secondary);cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;font-size:14px;
+  transition:border-color .15s,color .15s;
+}
+.dash-show-arrow:hover{border-color:var(--mp-border-hover);color:var(--mp-text-primary);}
+.dash-show-counter{
+  font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--mp-text-muted);
+  font-variant-numeric:tabular-nums;
+}
+
 /* ── FAQ ──────────────────────────────────────────────────────────────── */
 .faq-wrap{display:flex;flex-direction:column;gap:10px;margin-top:32px;max-width:880px;margin-left:auto;margin-right:auto;}
 .faq-item{
@@ -1103,6 +1168,77 @@ footer{
     <div style="text-align:center;margin-top:36px;">
       <a href="/pricing" class="btn-primary" style="display:inline-block;padding:14px 28px;font-size:14px;text-decoration:none;">Get founding access — $25/month &rarr;</a>
       <div style="margin-top:12px;font-size:11px;color:var(--mp-text-muted);letter-spacing:.04em;">Limited to 150 founding members · cancel anytime</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── INSIDE THE DASHBOARD (slideshow) ── -->
+<section class="below">
+  <div class="container">
+    <div class="section-eyebrow">Inside the dashboard</div>
+    <h2 class="section-title">This is what subscribers <em>actually see.</em></h2>
+    <p class="section-sub">Live screens from the Pro dashboard — narrative timelines, sector momentum, the leaderboard, and the strategy screener. No mockups.</p>
+
+    <div class="dash-show" id="dash-show" aria-roledescription="carousel" aria-label="Dashboard screenshots">
+      <div class="dash-show-track" id="dash-show-track">
+        <div class="dash-show-slide is-active" data-idx="0">
+          <div class="dash-show-meta">
+            <div class="dash-show-eyebrow">Narrative History</div>
+            <div class="dash-show-title">Price and story, <em>on the same timeline.</em></div>
+            <div class="dash-show-desc">Every narrative event plotted against price action — see how stories drive moves, where they break, and where the market gets it wrong.</div>
+          </div>
+          <div class="dash-show-frame">
+            <img src="/assets/screenshots/Screenshot%202026-03-30%20214934.png" alt="Narrative History view showing NVDA price chart with story markers overlaid" loading="lazy">
+          </div>
+        </div>
+
+        <div class="dash-show-slide" data-idx="1">
+          <div class="dash-show-meta">
+            <div class="dash-show-eyebrow">Sector Pulse</div>
+            <div class="dash-show-title">Where momentum lives, <em>sector by sector.</em></div>
+            <div class="dash-show-desc">Signal intensity, narrative breakdown, and momentum ranking across every tracked sector — from AI infrastructure to biotech.</div>
+          </div>
+          <div class="dash-show-frame">
+            <img src="/assets/screenshots/Screenshot%202026-03-30%20214643.png" alt="Sector Pulse dashboard with sector momentum bars and per-sector narrative cards" loading="lazy">
+          </div>
+        </div>
+
+        <div class="dash-show-slide" data-idx="2">
+          <div class="dash-show-meta">
+            <div class="dash-show-eyebrow">Leaderboard</div>
+            <div class="dash-show-title">Who's moving markets. <em>What's driving them.</em></div>
+            <div class="dash-show-desc">Live rankings across themes, fair value gaps, downloads, and the most-aligned narratives — pulled daily from the narrative pipeline.</div>
+          </div>
+          <div class="dash-show-frame">
+            <img src="/assets/screenshots/Screenshot%202026-03-30%20215042.png" alt="Leaderboard with multi-column rankings of themes, fair value, downloads, and narratives" loading="lazy">
+          </div>
+        </div>
+
+        <div class="dash-show-slide" data-idx="3">
+          <div class="dash-show-meta">
+            <div class="dash-show-eyebrow">Strategy Screener</div>
+            <div class="dash-show-title">Zone match — <em>today's price vs. best historical entry.</em></div>
+            <div class="dash-show-desc">Cross-market screener powered by the strategy contract. Surfaces tickers whose current price is sitting inside their highest-conviction historical entry zone.</div>
+          </div>
+          <div class="dash-show-frame">
+            <img src="/assets/screenshots/Screenshot%202026-03-30%20214541.png" alt="Strategy Screener with trading cards for AAPL, ADBE, AMAT, AMD, AMZN showing zone-match status" loading="lazy">
+          </div>
+        </div>
+      </div>
+
+      <div class="dash-show-controls">
+        <div class="dash-show-dots" id="dash-show-dots" role="tablist">
+          <button class="dash-show-dot is-active" type="button" data-idx="0" aria-label="Slide 1"></button>
+          <button class="dash-show-dot" type="button" data-idx="1" aria-label="Slide 2"></button>
+          <button class="dash-show-dot" type="button" data-idx="2" aria-label="Slide 3"></button>
+          <button class="dash-show-dot" type="button" data-idx="3" aria-label="Slide 4"></button>
+        </div>
+        <div class="dash-show-counter" id="dash-show-counter">01 / 04</div>
+        <div class="dash-show-arrows">
+          <button class="dash-show-arrow" type="button" id="dash-show-prev" aria-label="Previous slide">&larr;</button>
+          <button class="dash-show-arrow" type="button" id="dash-show-next" aria-label="Next slide">&rarr;</button>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -1616,6 +1752,59 @@ footer{
       .catch(function(){
         if (loading) loading.textContent = 'Reports unavailable right now.';
       });
+  })();
+
+  // ── Dashboard slideshow ──────────────────────────────────────────────
+  (function dashShow(){
+    var root = document.getElementById('dash-show');
+    if (!root) return;
+    var slides = root.querySelectorAll('.dash-show-slide');
+    var dots   = root.querySelectorAll('.dash-show-dot');
+    var counter = document.getElementById('dash-show-counter');
+    var prevBtn = document.getElementById('dash-show-prev');
+    var nextBtn = document.getElementById('dash-show-next');
+    if (!slides.length) return;
+    var idx = 0;
+    var total = slides.length;
+    var timer = null;
+    var INTERVAL = 6000;
+    function pad(n){ return n < 10 ? '0'+n : ''+n; }
+    function go(n){
+      idx = (n + total) % total;
+      for (var i = 0; i < total; i++){
+        slides[i].classList.toggle('is-active', i === idx);
+        if (dots[i]) dots[i].classList.toggle('is-active', i === idx);
+      }
+      if (counter) counter.textContent = pad(idx+1) + ' / ' + pad(total);
+    }
+    function next(){ go(idx + 1); }
+    function prev(){ go(idx - 1); }
+    function start(){ stop(); timer = setInterval(next, INTERVAL); }
+    function stop(){ if (timer){ clearInterval(timer); timer = null; } }
+    nextBtn && nextBtn.addEventListener('click', function(){ next(); start(); });
+    prevBtn && prevBtn.addEventListener('click', function(){ prev(); start(); });
+    for (var i = 0; i < dots.length; i++){
+      (function(j){ dots[j].addEventListener('click', function(){ go(j); start(); }); })(i);
+    }
+    root.addEventListener('mouseenter', stop);
+    root.addEventListener('mouseleave', start);
+    // Touch swipe
+    var sx = 0, dx = 0;
+    root.addEventListener('touchstart', function(e){ sx = e.touches[0].clientX; dx = 0; stop(); }, {passive:true});
+    root.addEventListener('touchmove',  function(e){ dx = e.touches[0].clientX - sx; }, {passive:true});
+    root.addEventListener('touchend',   function(){
+      if (Math.abs(dx) > 40){ if (dx < 0) next(); else prev(); }
+      start();
+    });
+    // Pause when off-screen to save cycles
+    if ('IntersectionObserver' in window){
+      var io = new IntersectionObserver(function(entries){
+        entries.forEach(function(en){ en.isIntersecting ? start() : stop(); });
+      }, {threshold:0.25});
+      io.observe(root);
+    } else {
+      start();
+    }
   })();
 })();
 </script>
