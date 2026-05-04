@@ -547,6 +547,109 @@ nav.topnav{
 .r-card.med::before{background:var(--mp-amber);}
 .r-card.low::before{background:var(--mp-red);}
 
+/* ── DECISION CARD (top of report — consumer-decision label) ──────────── */
+.r-decision{
+  background:var(--mp-surface);border:1px solid var(--mp-border);border-radius:14px;
+  padding:22px 24px;margin-bottom:12px;box-shadow:var(--mp-card-shadow);
+  position:relative;overflow:hidden;
+}
+.r-decision::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:var(--mp-text-muted);
+}
+.r-decision.bull::before{background:var(--mp-green);}
+.r-decision.bear::before{background:var(--mp-red);}
+.r-decision.warn::before, .r-decision.neutral::before{background:var(--mp-amber);}
+.r-decision.bull{background:linear-gradient(180deg,rgba(0,222,148,0.06),var(--mp-surface) 60%);}
+.r-decision.bear{background:linear-gradient(180deg,rgba(255,77,77,0.07),var(--mp-surface) 60%);}
+.r-decision.warn,.r-decision.neutral{background:linear-gradient(180deg,rgba(255,184,0,0.06),var(--mp-surface) 60%);}
+.r-dc-tag{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 10px;border-radius:99px;
+  font-size:11px;font-weight:600;letter-spacing:.10em;text-transform:uppercase;
+  background:rgba(255,255,255,0.04);color:var(--mp-text-tertiary);
+  border:1px solid var(--mp-border);margin-bottom:12px;
+}
+.r-dc-tag::before{content:'';width:6px;height:6px;border-radius:99px;background:var(--mp-text-muted);}
+.r-decision.bull .r-dc-tag::before{background:var(--mp-green);}
+.r-decision.bear .r-dc-tag::before{background:var(--mp-red);}
+.r-decision.warn .r-dc-tag::before, .r-decision.neutral .r-dc-tag::before{background:var(--mp-amber);}
+.r-dc-label{
+  font-family:'Instrument Serif',var(--font-display);
+  font-size:clamp(22px,2.8vw,30px);font-weight:400;letter-spacing:-0.02em;
+  line-height:1.2;color:var(--mp-text-primary);margin-bottom:8px;
+}
+.r-decision.bull .r-dc-label{color:var(--mp-green);}
+.r-decision.bear .r-dc-label{color:var(--mp-red);}
+.r-decision.warn .r-dc-label, .r-decision.neutral .r-dc-label{color:var(--mp-amber);}
+.r-dc-summary{font-size:14px;color:var(--mp-text-secondary);line-height:1.55;}
+
+/* ── PLAIN-ENGLISH TAKEAWAY ──────────────────────────────────────────── */
+.r-takeaway{
+  background:var(--mp-surface2);border:1px solid var(--mp-border);border-radius:12px;
+  padding:16px 18px;margin-bottom:14px;
+}
+.r-tk-eyebrow{
+  font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.10em;
+  color:var(--mp-text-muted);margin-bottom:6px;
+  display:flex;align-items:center;gap:8px;
+}
+.r-tk-eyebrow::before{content:'';width:18px;height:1px;background:var(--mp-cyan);}
+.r-tk-body{font-size:14px;color:var(--mp-text-primary);line-height:1.6;}
+.r-tk-body strong{font-weight:600;}
+
+/* ── EDGE-SCORE INTERPRETATION (replaces old r-tag plain-text) ───────── */
+.r-edge-interp{
+  display:inline-block;margin-top:8px;font-size:13px;font-weight:600;
+  letter-spacing:.02em;color:var(--mp-text-secondary);
+}
+.r-edge-interp.up{color:var(--mp-green);}
+.r-edge-interp.warn{color:var(--mp-amber);}
+.r-edge-interp.dn{color:var(--mp-red);}
+.r-edge-interp.flat{color:var(--mp-text-tertiary);}
+
+/* ── PRED CELL SUB-LABEL (noise / moderate / meaningful) ─────────────── */
+.r-pred-sub{
+  margin-top:6px;font-size:11px;font-weight:500;letter-spacing:.02em;
+  color:var(--mp-text-tertiary);line-height:1.4;
+}
+.r-pred-sub.up{color:var(--mp-green);}
+.r-pred-sub.warn{color:var(--mp-amber);}
+.r-pred-sub.dn{color:var(--mp-red);}
+.r-pred-sub .r-pred-conf{
+  display:block;margin-top:2px;font-size:10px;
+  text-transform:uppercase;letter-spacing:.06em;color:var(--mp-amber);font-weight:600;
+}
+
+/* ── ANALOGUE INTRO ──────────────────────────────────────────────────── */
+.r-analogue-intro{margin:24px 0 14px;}
+@media(max-width:540px){.r-analogue-intro{text-align:center;}}
+.r-ai-h{
+  font-family:'Instrument Serif',var(--font-display);
+  font-size:22px;font-weight:400;letter-spacing:-0.02em;
+  color:var(--mp-text-primary);line-height:1.25;
+}
+.r-ai-sub{
+  margin-top:6px;font-size:13px;color:var(--mp-text-tertiary);line-height:1.55;
+  max-width:620px;
+}
+@media(max-width:540px){.r-ai-sub{margin-left:auto;margin-right:auto;}}
+
+/* ── ANALOGUE OUTCOME BADGE + REASON ─────────────────────────────────── */
+.r-nb-outcome{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:3px 8px;border-radius:5px;
+  font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  margin-left:6px;
+}
+.r-nb-outcome.win {background:rgba(0,222,148,0.12);color:var(--mp-green);border:1px solid rgba(0,222,148,0.30);}
+.r-nb-outcome.lose{background:rgba(255,77,77,0.12);color:var(--mp-red);  border:1px solid rgba(255,77,77,0.30);}
+.r-nb-outcome.flat{background:rgba(255,255,255,0.04);color:var(--mp-text-tertiary);border:1px solid var(--mp-border);}
+.r-nb-reason{
+  margin-top:8px;font-size:12px;color:var(--mp-text-tertiary);
+  line-height:1.5;font-style:italic;
+}
+
 .r-hero{
   display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
   margin-bottom:6px;
@@ -1516,80 +1619,207 @@ footer{
     });
   });
 
+  // ── Consumer-decision helpers ────────────────────────────────────────
+  // hitRatePct / confPct are 0–100 numbers (or null). p5/p10/p20 are
+  // fractions (0.06 == +6%) — same shape /api/dots-predict returns.
+  function computeDecision(hitRatePct, confPct, p5, p10, p20){
+    var p5p  = (p5  == null || isNaN(p5))  ? null : Number(p5)  * 100;
+    var p10p = (p10 == null || isNaN(p10)) ? null : Number(p10) * 100;
+    var p20p = (p20 == null || isNaN(p20)) ? null : Number(p20) * 100;
+    if ((p5p != null && p5p < -2) || (p10p != null && p10p < -3) || (p20p != null && p20p < -5)) {
+      return { tone:'bear', label:'BEARISH RISK — AVOID LONG',
+               summary:'Historical analogues suggest downside risk.' };
+    }
+    if ((confPct != null && confPct < 35) || (hitRatePct != null && hitRatePct < 52)) {
+      return { tone:'warn', label:'WEAK SIGNAL — AVOID OR SMALL POSITION',
+               summary:'This narrative does not show a strong historical edge.' };
+    }
+    if (hitRatePct != null && hitRatePct < 60) {
+      return { tone:'neutral', label:'MIXED SIGNAL — WAIT FOR CONFIRMATION',
+               summary:'Similar narratives have produced inconsistent outcomes.' };
+    }
+    if (hitRatePct != null && hitRatePct >= 60 && confPct != null && confPct >= 40) {
+      return { tone:'bull', label:'BULLISH EDGE — WATCH FOR ENTRY',
+               summary:'Similar narratives have historically shown positive follow-through.' };
+    }
+    return { tone:'warn', label:'WEAK SIGNAL — AVOID OR SMALL POSITION',
+             summary:'This narrative does not show a strong historical edge.' };
+  }
+
+  function edgeInterp(hitRatePct){
+    if (hitRatePct == null || isNaN(hitRatePct)) return { text:'Insufficient data', cls:'flat' };
+    if (hitRatePct >= 70) return { text:'Strong edge',   cls:'up'   };
+    if (hitRatePct >= 60) return { text:'Positive edge', cls:'up'   };
+    if (hitRatePct >= 52) return { text:'Mixed edge',    cls:'warn' };
+    return                       { text:'No clear edge', cls:'dn'   };
+  }
+
+  function moveLabel(p, confPct){
+    if (p == null || isNaN(p)) return { text:'no data', cls:'' };
+    var pct = Number(p) * 100;
+    var abs = Math.abs(pct);
+    var base, cls;
+    if (abs < 2) {
+      base = pct === 0 ? 'no edge' : 'noise / not actionable';
+      cls = '';
+    } else if (abs <= 5) {
+      base = pct > 0 ? 'moderate upside move' : 'moderate downside move';
+      cls = pct > 0 ? 'up' : 'dn';
+    } else {
+      base = pct > 0 ? 'meaningful upside move' : 'meaningful downside move';
+      cls = pct > 0 ? 'up' : 'dn';
+    }
+    return { text:base, cls:cls, lowConf:(confPct != null && confPct < 35) };
+  }
+
+  function genTakeaway(ticker, narrative, hitRatePct, confPct, p5, p10, p20){
+    var tk = ticker || 'this ticker';
+    var narr = (narrative || '').trim();
+    var snippet = narr.length > 120 ? narr.slice(0, 117).replace(/\s+\S*$/, '') + '…' : narr;
+    var p20p = (p20 == null || isNaN(p20)) ? null : Number(p20) * 100;
+    var p5p  = (p5  == null || isNaN(p5))  ? null : Number(p5)  * 100;
+    var p10p = (p10 == null || isNaN(p10)) ? null : Number(p10) * 100;
+
+    var bearish = (p5p != null && p5p < -2) || (p10p != null && p10p < -3) || (p20p != null && p20p < -5);
+    var weak = (confPct != null && confPct < 35) || (hitRatePct != null && hitRatePct < 52);
+    var mixed = hitRatePct != null && hitRatePct >= 52 && hitRatePct < 60;
+    var bullish = hitRatePct != null && hitRatePct >= 60 && confPct != null && confPct >= 40;
+
+    var head = '<strong>' + esc(tk) + '</strong>'
+      + (snippet ? '’s narrative — “' + esc(snippet) + '” — ' : ' — ');
+    var body;
+    if (bearish) {
+      body = 'shows clearly negative follow-through in the historical analogues. The system flags downside risk; this is not a long setup.';
+    } else if (weak) {
+      body = 'does not have a strong historical edge in our match set. The system does not show enough confidence for an aggressive trade.';
+    } else if (mixed) {
+      var hint = (p20p != null && p20p > 5)  ? ' has some longer-term upside analogues, but the current match set is mixed.' :
+                 (p20p != null && p20p < -5) ? ' has some longer-term downside analogues, but the current match set is mixed.' :
+                                                ' has historically produced inconsistent outcomes in similar setups.';
+      body = hint + ' Wait for confirmation before sizing up.';
+    } else if (bullish) {
+      body = 'has historically shown positive follow-through in similar setups. Watch for an entry, but size to the confidence on display.';
+    } else {
+      body = 'has limited historical signal at present. Treat the metrics as directional, not actionable.';
+    }
+    return head + body;
+  }
+
   function neighborHTML(n){
     var dt = n.observed_at ? fmtDate(n.observed_at) : '—';
     var simPct = n.similarity != null ? Math.round(Number(n.similarity) * 100) + '% similar' : '';
     var r10 = n.return_10d;
     var narr = n.narrative || '—';
     if (narr.length > 240) narr = narr.slice(0, 240) + '…';
+    var oc, reason;
+    if (r10 == null || isNaN(r10)) {
+      oc = { cls:'flat', text:'Unresolved' };
+      reason = 'Similar story, outcome not yet resolved.';
+    } else {
+      var pct = Number(r10) * 100;
+      if (pct >= 2)       { oc = { cls:'win',  text:'Winner' }; reason = 'Similar story, market followed through to the upside.'; }
+      else if (pct <= -2) { oc = { cls:'lose', text:'Loser'  }; reason = 'Similar story, market faded the narrative.'; }
+      else                { oc = { cls:'flat', text:'Flat'   }; reason = 'Similar story, no meaningful follow-through.'; }
+    }
     return '<div class="r-neighbor">' +
       '<div class="r-nb-top">' +
         '<div class="r-nb-l"><span class="r-nb-tk">'+esc(n.ticker || '—')+'</span><span class="r-nb-date">'+esc(dt)+'</span></div>' +
-        (simPct ? '<span class="r-nb-sim">'+esc(simPct)+'</span>' : '') +
+        '<div>' +
+          (simPct ? '<span class="r-nb-sim">'+esc(simPct)+'</span>' : '') +
+          '<span class="r-nb-outcome '+oc.cls+'">'+esc(oc.text)+'</span>' +
+        '</div>' +
       '</div>' +
       '<div class="r-nb-narr">'+esc(narr)+'</div>' +
       '<div class="r-nb-foot">' +
         '<span>Source: '+esc(n.speaker || '—')+'</span>' +
         '<span>10d return <span class="r-nb-ret '+dirClass(r10)+'">'+fmtPct(r10)+'</span></span>' +
       '</div>' +
+      '<div class="r-nb-reason">'+esc(reason)+'</div>' +
     '</div>';
   }
 
   function renderResult(data){
     var ticker = data.ticker || (inpTk.value || '').trim().toUpperCase();
+    var narrInput = (inpNarr && inpNarr.value) || '';
 
     var hr = (data.narrative_hit_rate_5d == null) ? null : Number(data.narrative_hit_rate_5d);
-    var bucket = '', hrTxt = '—', hrLabel = '';
+    var bucket = '', hrTxt = '—';
+    var hrPctNum = null;
     if (hr != null && !isNaN(hr)) {
-      hrTxt = Math.round(hr * 100) + '%';
+      hrPctNum = Math.round(hr * 100);
+      hrTxt = hrPctNum + '%';
       bucket = hr >= 0.60 ? 'high' : (hr >= 0.40 ? 'med' : 'low');
-      hrLabel = bucket === 'high' ? 'Strong directional pattern' :
-                bucket === 'med'  ? 'Mixed historical signal'    :
-                                    'Pattern fades historically';
     }
     var hrN   = data.narrative_hit_rate_n_resolved || 0;
     var hrConf= Math.round(((data.narrative_hit_rate_confidence || 0) * 100));
     var nSim  = data.n_similar_dots || 0;
+    var p5  = data.predicted_5d_return,
+        p10 = data.predicted_10d_return,
+        p20 = data.predicted_20d_return;
+
+    var decision = computeDecision(hrPctNum, hrConf, p5, p10, p20);
+    var ei = edgeInterp(hrPctNum);
 
     function predHTML(label, v){
+      var m = moveLabel(v, hrConf);
+      var subHTML = esc(m.text) + (m.lowConf && m.text !== 'no data' ? '<span class="r-pred-conf">low confidence</span>' : '');
       return '<div class="r-pred">' +
                '<div class="r-pred-l">'+label+'</div>' +
                '<div class="r-pred-v '+dirClass(v)+'">'+fmtPct(v)+'</div>' +
+               '<div class="r-pred-sub '+(m.cls||'')+'">'+subHTML+'</div>' +
              '</div>';
     }
 
     var nbs = (data.neighbor_examples || []).slice(0, 3);
 
     var html =
+      // 1. Decision card
+      '<div class="r-decision '+decision.tone+'">' +
+        '<div class="r-dc-tag">Trade decision</div>' +
+        '<div class="r-dc-label">'+esc(decision.label)+'</div>' +
+        '<div class="r-dc-summary">'+esc(decision.summary)+'</div>' +
+      '</div>' +
+      // 2. Plain-English takeaway
+      '<div class="r-takeaway">' +
+        '<div class="r-tk-eyebrow">Plain-English takeaway</div>' +
+        '<div class="r-tk-body">'+genTakeaway(ticker, narrInput, hrPctNum, hrConf, p5, p10, p20)+'</div>' +
+      '</div>' +
+      // 3. Historical Edge Score (renamed)
       '<div class="r-card '+bucket+'">' +
         '<div class="r-hero">' +
           '<div class="r-hero-l">' +
-            '<div class="r-eyebrow">Narrative Hit Rate · <strong>'+esc(ticker)+'</strong></div>' +
+            '<div class="r-eyebrow">Historical Edge Score · <strong>'+esc(ticker)+'</strong></div>' +
             '<div class="r-num '+bucket+'">'+hrTxt+'</div>' +
-            (hrLabel ? '<span class="r-tag '+bucket+'">'+esc(hrLabel)+'</span>' : '') +
+            '<span class="r-edge-interp '+ei.cls+'">'+esc(ei.text)+'</span>' +
           '</div>' +
           '<div class="r-hero-r">' +
             'Confidence <strong>'+hrConf+'%</strong><br>' +
             '<strong>'+hrN+'</strong> directional of <strong>'+nSim+'</strong> similar narratives' +
           '</div>' +
         '</div>' +
+        // 4. Expected moves with sub-labels
         '<div class="r-preds">' +
-          predHTML('Predicted 5d',  data.predicted_5d_return) +
-          predHTML('Predicted 10d', data.predicted_10d_return) +
-          predHTML('Predicted 20d', data.predicted_20d_return) +
+          predHTML('5d expected move',  p5) +
+          predHTML('10d expected move', p10) +
+          predHTML('20d expected move', p20) +
         '</div>' +
       '</div>';
 
+    // 5. Analogues — reframed as "Why the signal is mixed"
     if (nbs.length) {
-      html += '<div class="r-section-title">Three closest historical analogues</div>';
+      html += '<div class="r-analogue-intro">' +
+                '<div class="r-ai-h">Why the signal is mixed</div>' +
+                '<div class="r-ai-sub">These are past narratives that were semantically similar. Similar stories produced both winners and losers, which lowers conviction.</div>' +
+              '</div>';
       html += nbs.map(neighborHTML).join('');
     }
 
+    // 6. Upsell CTA
     html +=
       '<div class="r-cta">' +
-        '<div class="r-cta-text">Want the <strong>full pattern match</strong> — sparkline, microstructure, all 200 neighbors, and saved searches?</div>' +
+        '<div class="r-cta-text">Want to see whether this signal <strong>improves or breaks down</strong>? Unlock the full report — all 200 analogues, confidence drivers, microstructure, and saved alerts.</div>' +
         '<div class="r-cta-btns">' +
-          '<a class="r-cta-primary" href="/login#register">Get full access — $25/mo →</a>' +
+          '<a class="r-cta-primary" href="/login#register">Unlock full report →</a>' +
           '<a class="r-cta-secondary" href="/login">Sign in</a>' +
         '</div>' +
       '</div>';
