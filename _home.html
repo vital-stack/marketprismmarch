@@ -2147,6 +2147,19 @@ footer{
     resultsEl.scrollIntoView({ behavior:'smooth', block:'start' });
   }
 
+  // Persistent anonymous session ID — survives page reloads, resets on
+  // localStorage clear. Used server-side to group anonymous searches.
+  function getAnonSessionId(){
+    var KEY = 'mp_anon_sid';
+    try {
+      var existing = localStorage.getItem(KEY);
+      if (existing) return existing;
+      var id = 'anon-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 9);
+      localStorage.setItem(KEY, id);
+      return id;
+    } catch(_){ return null; }
+  }
+
   function submit(){
     clearError();
 
@@ -2160,7 +2173,7 @@ footer{
     fetch('/api/dots-predict', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ ticker: ticker, narrativeText: narrative })
+      body: JSON.stringify({ ticker: ticker, narrativeText: narrative, anonymousSessionId: getAnonSessionId() })
     })
     .then(function(r){ return r.json().then(function(j){ return { ok:r.ok, status:r.status, body:j }; }); })
     .then(function(res){
