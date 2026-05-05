@@ -922,7 +922,7 @@
   // ── Load data ──
   async function slLoadChart(ticker){
     var r=await Promise.all([
-      restFetch('ticker_snapshots',{select:'snapshot_date,price_close',ticker:'eq.'+ticker,order:'snapshot_date.asc',limit:'2000'}),
+      fetch('/api/price-history?ticker='+encodeURIComponent(ticker)+'&days=2000').then(function(res){return res.ok?res.json():{series:[]};}).then(function(j){return (j&&Array.isArray(j.series))?j.series.map(function(x){return {snapshot_date:x.snapshot_date,price_close:x.price_close};}):[];}).catch(function(){return [];}),
       restFetch('narrative_analyses',{select:'snapshot_date,narrative_text,source_outlet,article_url,sentiment_score,verdict',ticker:'eq.'+ticker,order:'snapshot_date.asc',limit:'2000'}),
       restFetch('v_dash_narrative_health',{select:'snapshot_date,narrative_trend,sentiment_score',ticker:'eq.'+ticker,order:'snapshot_date.asc',limit:'2000'}),
       restFetch('decay_metrics',{select:'snapshot_date,energy_remaining_pct,day_number',ticker:'eq.'+ticker,order:'snapshot_date.asc',limit:'2000'}),

@@ -823,6 +823,22 @@ async function sbFetch(table, params) {
   return JSON.parse(await res.text());
 }
 
+// Live price history via Massive/Polygon. Returns the same shape as a
+// sbFetch('ticker_snapshots') call so callers can drop it in. Sidesteps the
+// off-by-one labeling bug in the internal ticker_snapshots table.
+async function fetchPriceSeries(ticker, days) {
+  if (!ticker) return [];
+  try {
+    const res = await fetch('/api/price-history?ticker=' + encodeURIComponent(ticker) + '&days=' + (days || 730));
+    if (!res.ok) return [];
+    const j = await res.json();
+    if (!j || !Array.isArray(j.series)) return [];
+    return j.series.map(function (r) {
+      return { snapshot_date: r.snapshot_date, price_close: r.price_close };
+    });
+  } catch (_) { return []; }
+}
+
 // ── Helpers ──
 function esc(s) { return s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : ''; }
 function fmtPrice(p) { return p == null ? '\u2014' : '$' + (p >= 100 ? p.toFixed(2) : p.toFixed(3)); }
@@ -1185,7 +1201,7 @@ function drawChart(snaps, narrs, drawCandles) {
 // ── Load chart data ──
 async function loadChart(ticker) {
   const [priceRows, storyRows, healthRows, decayRows, scorecardRows] = await Promise.all([
-    sbFetch('ticker_snapshots', { select: 'snapshot_date,price_close', ticker: 'eq.' + ticker, order: 'snapshot_date.asc', limit: '2000' }),
+    fetchPriceSeries(ticker, 2000),
     sbFetch('narrative_analyses', { select: 'snapshot_date,narrative_text,source_outlet,article_url,sentiment_score,verdict', ticker: 'eq.' + ticker, order: 'snapshot_date.asc', limit: '2000' }),
     sbFetch('v_dash_narrative_health', { select: 'snapshot_date,narrative_trend,sentiment_score', ticker: 'eq.' + ticker, order: 'snapshot_date.asc', limit: '2000' }),
     sbFetch('decay_metrics', { select: 'snapshot_date,energy_remaining_pct,day_number', ticker: 'eq.' + ticker, order: 'snapshot_date.asc', limit: '2000' }),
