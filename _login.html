@@ -562,17 +562,6 @@ body::before{
       }
       var regToken = result.data && result.data.session ? result.data.session.access_token : null;
       await mintSessionCookie(regToken);
-      // Apply pending beta token if user came from a landing page (e.g. /stockpsycho)
-      var pendingBeta = sessionStorage.getItem('mp-pending-beta');
-      if(pendingBeta === 'stockpsycho'){
-        var expires = new Date(); expires.setDate(expires.getDate() + 3);
-        localStorage.setItem('mp-beta-access', 'true');
-        localStorage.setItem('mp-beta-tier', 'pro');
-        localStorage.setItem('mp-beta-expires', expires.toISOString());
-        localStorage.setItem('mp_auth', JSON.stringify({t: Date.now()}));
-        await mintBetaCookie(expires.toISOString());
-        sessionStorage.removeItem('mp-pending-beta');
-      }
       setTimeout(function(){ window.location.href = nextDestination(); }, 800);
     } catch(err){
       if(isOutageError(err)){

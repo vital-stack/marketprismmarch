@@ -12,7 +12,6 @@ module.exports = (req, res) => {
     'Disallow: /heatmap',
     'Disallow: /scorer-dev',
     'Disallow: /signalstudies',
-    'Disallow: /stockpsycho',
     'Disallow: /signal-charts',
     'Disallow: /search',
     '',

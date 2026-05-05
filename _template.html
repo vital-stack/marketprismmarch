@@ -4656,17 +4656,6 @@ body{
       return false;
     }
 
-    if(val==='stockpsycho'){
-      var expires = new Date(); expires.setDate(expires.getDate() + 3);
-      localStorage.setItem('mp-beta-access', 'true');
-      localStorage.setItem('mp-beta-tier', 'pro');
-      localStorage.setItem('mp-beta-expires', expires.toISOString());
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({t:Date.now()}));
-      document.getElementById('pw-gate').classList.add('hidden');
-      input.value='';
-      return false;
-    }
-
     // Legacy password support
     if(val==='Karma' || val==='karma'){
       localStorage.setItem(STORAGE_KEY, JSON.stringify({t:Date.now()}));
@@ -7015,7 +7004,7 @@ function getSubscriptionAccent(status){
 }
 
 function canAccessFeature(requiredPlan){
-  // Beta-code users (entered a valid code like "karma"/"prismview"/"stockpsycho" on the
+  // Beta-code users (entered a valid code like "karma"/"prismview" on the
   // password gate) get full access while the code is unexpired. This check is
   // synchronous and independent of CURRENT_SUBSCRIPTION, so gated features work on
   // first render even before getSubscription() resolves.
