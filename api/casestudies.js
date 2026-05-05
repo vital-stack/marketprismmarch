@@ -1,11 +1,7 @@
 const resolveTemplate = require('./_resolve-template');
-const requireAuth = require('./_require-auth');
 
 module.exports = async (req, res) => {
   try {
-    const auth = await requireAuth(req, res, { next: '/casestudies' });
-    if (!auth) return;
-
     let html = resolveTemplate('_casestudies.html');
 
     const pageUrl = 'https://marketprism.co/casestudies';

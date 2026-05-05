@@ -1,11 +1,7 @@
 const resolveTemplate = require('./_resolve-template');
-const requireAuth = require('./_require-auth');
 
 module.exports = async (req, res) => {
   try {
-    const auth = await requireAuth(req, res, { next: '/methodology' });
-    if (!auth) return;
-
     let html = resolveTemplate('_methodology.html');
 
     // ── SEO injection (non-destructive, head-only) ──────────────────────
