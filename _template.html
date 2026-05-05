@@ -5296,16 +5296,22 @@ body{
           <span>Download image</span>
         </button>
       </div>
-      <!-- ── Live portfolio summaries (from paper_portfolio_daily_v6 + tracked_daily_plays_daily) ──
-           Re-baselined 2026-04-30 after a pipeline rewrite — pre-baseline rows
-           are not real trades. Loaded by loadLivePortfolios(). -->
+      <!-- Daily Plays — Live Sim. Numbers temporarily disabled pending a data
+           fix; loader is short-circuited in loadLivePortfolios() so these
+           "Pending" placeholders aren't overwritten. To restore: remove the
+           skip in loadLivePortfolios() — markup stays as-is. -->
       <div class="val-chart-block" id="tdp-summary-block" style="margin-bottom:16px;">
         <div class="val-chart-head">
           <div class="val-chart-title">Daily Plays &mdash; Live Sim</div>
           <div class="val-chart-sub">$1.5M base &middot; ~106 slots &middot; live since Apr 30, 2026 &mdash; every Daily Play tracked from entry through close</div>
         </div>
         <div class="val-stats" id="val-stats-tdp">
-          <div style="grid-column:1/-1;padding:14px 4px;text-align:center;color:var(--mp-text-tertiary);font-size:13px;">Loading live portfolio&hellip;</div>
+          <div class="val-stat"><div class="val-stat-label">Return since launch</div><div class="val-stat-value" style="color:var(--mp-text-tertiary);">Pending</div><div class="val-stat-sub">&nbsp;</div></div>
+          <div class="val-stat"><div class="val-stat-label">Portfolio value</div><div class="val-stat-value" style="color:var(--mp-text-tertiary);">Pending</div><div class="val-stat-sub">&nbsp;</div></div>
+          <div class="val-stat"><div class="val-stat-label">Open positions</div><div class="val-stat-value" style="color:var(--mp-text-tertiary);">Pending</div><div class="val-stat-sub">&nbsp;</div></div>
+          <div class="val-stat"><div class="val-stat-label">Total P&amp;L</div><div class="val-stat-value" style="color:var(--mp-text-tertiary);">Pending</div><div class="val-stat-sub">&nbsp;</div></div>
+          <div class="val-stat"><div class="val-stat-label">Track period</div><div class="val-stat-value" style="font-size:16px;color:var(--mp-text-tertiary);">Pending</div><div class="val-stat-sub">&nbsp;</div></div>
+          <div class="val-stat"><div class="val-stat-label">Status</div><div class="val-stat-value" style="font-size:16px;color:var(--mp-text-tertiary);">Pending</div><div class="val-stat-sub">data fix in progress</div></div>
         </div>
       </div>
 
@@ -8498,35 +8504,36 @@ function _refreshLaneHitCounters(){
       // aren't actual tracked trades \u2014 the hit counter would always read
       // misleadingly low. Suppress the badge entirely for this lane.
       if(slug==='tl-overflow-earnings'){badge.innerHTML='';return;}
-      var fallbackDate=lane.getAttribute('data-fallback-date');
       var laneCode=_TL_LANE_MAP[slug];
-      var hits,total;
-      // Carryover lanes are scoped to a prior trading day \u2014 keep the DOM
-      // path; _applyBackendHitsToFallbackLanes already forces those rows
-      // to backend-confirmed checkmarks against the right date.
-      if(!fallbackDate&&byLane[laneCode]){
-        var B=byLane[laneCode];
-        // Union in any live hit the backend hasn't recorded yet (cron lag),
-        // but ONLY for tickers that are actually in today's tracked plays —
-        // the dashboard's "What's the play?" feed and tracked_daily_plays
-        // are populated by different pipelines and drift apart, so a DOM ✓
-        // on a non-tracked ticker would inflate the numerator past the
-        // denominator (e.g. "12/8 hit today").
-        lane.querySelectorAll('[data-prism-hit].hit').forEach(function(el){
-          var t=el.getAttribute('data-prism-hit');
-          if(t&&B.tot[t])B.hit[t]=1;
-        });
-        total=Object.keys(B.tot).length;
-        hits=Object.keys(B.hit).length;
-        // Belt and suspenders — guarantee hits ≤ total no matter what.
-        if(hits>total)hits=total;
-      }else{
-        var hitEls=lane.querySelectorAll('[data-prism-hit]');
-        if(!hitEls.length){badge.innerHTML='';return;}
-        total=hitEls.length;
-        hits=lane.querySelectorAll('[data-prism-hit].hit').length;
-      }
+      // Single source of truth for the denominator: distinct tickers
+      // rendered in this lane. This matches the "N signals" subtitle next
+      // to the badge so the two numbers can never disagree. A previous
+      // version branched between a TDP-scoped denominator and a DOM-only
+      // fallback, and every live-quote refresh flipped which path won --
+      // so the badge oscillated (e.g. 0/7 -> 4/10 -> 2/32) as cron caught
+      // up to the lane.
+      var visibleTickers=Object.create(null);
+      lane.querySelectorAll('[data-prism-hit]').forEach(function(el){
+        var t=el.getAttribute('data-prism-hit');
+        if(t)visibleTickers[t]=1;
+      });
+      var total=Object.keys(visibleTickers).length;
       if(!total){badge.innerHTML='';return;}
+      // Numerator: union of backend hits (tracked_daily_plays.hit==true)
+      // and live DOM check marks, both restricted to visible tickers.
+      // Either source alone misses cases — TDP lags cron, DOM misses
+      // prior-day carryover lanes resolved by _applyBackendHitsToFallbackLanes.
+      var hitScoped=Object.create(null);
+      var B=byLane[laneCode];
+      if(B){
+        Object.keys(B.hit).forEach(function(t){if(visibleTickers[t])hitScoped[t]=1;});
+      }
+      lane.querySelectorAll('[data-prism-hit].hit').forEach(function(el){
+        var t=el.getAttribute('data-prism-hit');
+        if(t&&visibleTickers[t])hitScoped[t]=1;
+      });
+      var hits=Object.keys(hitScoped).length;
+      if(hits>total)hits=total;
       var color=hits/total>=0.5?'#00DE94':hits>0?'#38C8B8':'#FF4D4D';
       badge.innerHTML='\u00B7 <span style="color:'+color+';">'+hits+'/'+total+' hit today</span>';
     });
@@ -9132,7 +9139,9 @@ async function loadLivePortfolios(){
   var SELECT='snapshot_date,portfolio_value,realized_pnl_cumulative,unrealized_pnl,open_count,open_exposure';
   var COMMON={select:SELECT, order:'snapshot_date.desc', limit:'120'};
   var jobs=[
-    {table:'tracked_daily_plays_daily', el:'val-stats-tdp'},
+    // Daily Plays sim numbers temporarily disabled pending a data fix —
+    // markup at #val-stats-tdp shows hardcoded "Pending" placeholders.
+    // {table:'tracked_daily_plays_daily', el:'val-stats-tdp'},
     {table:'paper_portfolio_daily_v6',  el:'val-stats-ppd'}
   ];
   await Promise.all(jobs.map(async function(j){
