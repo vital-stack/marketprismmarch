@@ -5049,6 +5049,23 @@ async function sbFetch(table, params) {
   return JSON.parse(text);
 }
 
+// Live price history via Massive/Polygon (proxied through /api/price-history).
+// Returns the same shape as a sbFetch('ticker_snapshots') call so callers can
+// drop it in without further reshaping. Source of truth for chart prices —
+// avoids the off-by-one labeling bug in the internal ticker_snapshots table.
+async function fetchPriceSeries(ticker, days) {
+  if (!ticker) return [];
+  try {
+    const res = await fetch('/api/price-history?ticker=' + encodeURIComponent(ticker) + '&days=' + (days || 730));
+    if (!res.ok) return [];
+    const j = await res.json();
+    if (!j || !Array.isArray(j.series)) return [];
+    return j.series.map(function (r) {
+      return { snapshot_date: r.snapshot_date, price_close: r.price_close };
+    });
+  } catch (_) { return []; }
+}
+
 // ── Utils ────────────────────────────────────────────────────────────────────
 function esc(s) {
   return s ? String(s)
@@ -5437,11 +5454,10 @@ async function loadHero() {
         order:  'snapshot_date.desc',
         limit:  '1'
       }),
-      sbFetch('ticker_snapshots', {
-        select: 'snapshot_date,price_close',
-        ticker: `eq.${TICKER}`,
-        order:  'snapshot_date.desc',
-        limit:  '1'
+      fetchPriceSeries(TICKER, 5).then(function(s){
+        // Drop in the most recent close so the hero overlay reflects live
+        // Polygon truth, not the off-by-one ticker_snapshots row.
+        return s.length ? [s[s.length - 1]] : [];
       }),
       sbFetch('trade_classifications', {
         select: 'primary_label,primary_confidence,shortest_timeframe,longest_timeframe,labels,label_count,signal_combo',
@@ -6046,12 +6062,7 @@ async function loadChart() {
     // Fetch prices, stories, narrative health, decay, scorecard, and both
     // normalized-energy materialized views in parallel.
     const [priceRows, storyRows, healthRows, decayRows, physicsRows, peMvRows, etMvRows] = await Promise.all([
-      sbFetch('ticker_snapshots', {
-        select: 'snapshot_date,price_close',
-        ticker: `eq.${TICKER}`,
-        order:  'snapshot_date.asc',
-        limit:  '2000'
-      }),
+      fetchPriceSeries(TICKER, 2000),
       sbFetch('narrative_analyses', {
         select: 'snapshot_date,narrative_text,source_outlet,article_url,sentiment_score,verdict',
         ticker: `eq.${TICKER}`,
@@ -6890,12 +6901,7 @@ async function loadNarratives() {
         order:  'snapshot_date.desc',
         limit:  '30'
       }),
-      sbFetch('ticker_snapshots', {
-        select: 'snapshot_date,price_close',
-        ticker: `eq.${TICKER}`,
-        order:  'snapshot_date.asc',
-        limit:  '365'
-      }),
+      fetchPriceSeries(TICKER, 365),
       sbFetch('v_narrative_scorecard_deduped', {
         select: 'narrative_hash,narrative,propagation_pressure,energy_remaining,half_life,narrative_energy_regime,snapshot_date',
         ticker: `eq.${TICKER}`,
