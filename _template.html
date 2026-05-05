@@ -9197,16 +9197,12 @@ async function loadValidation(force){
     // Keep stats fresh while the user is on the page. Without this, the panel
     // is gated by _VAL_LOADED and never refetches as new trades close — the
     // displayed numbers can sit hours behind reality on the same session.
-    if(!_VAL_TIMER){
-      _VAL_TIMER=setInterval(function(){loadValidation(true);}, 5*60*1000);
-    }
+    // Intraday refresh disabled — validation stats freeze on initial load.
     // Live portfolio cards refresh on a faster cadence than the full
     // paper_trades re-pull — the upstream cron rebuilds the snapshot tables
     // every 15 min during market hours, so a 60s poll gets users the new
     // portfolio_value within a minute of the rebuild landing.
-    if(!_LIVE_PORT_TIMER){
-      _LIVE_PORT_TIMER=setInterval(loadLivePortfolios, 60*1000);
-    }
+    // Intraday refresh disabled — live portfolio cards freeze on initial load.
     // Pull pre-computed overall stats (cron-refreshed daily). If available,
     // valRenderStats will prefer these over client-side aggregation.
     _VAL_CACHED_STATS=await _valFetchCachedStats();
@@ -9406,9 +9402,7 @@ async function loadTrackedPlays(){
       if(page.length<PAGE)break;
     }
     _TP_DATA=rows;
-    if(!_TP_TIMER){
-      _TP_TIMER=setInterval(loadTrackedPlays, 60*1000);
-    }
+    // Intraday refresh disabled — tracked plays freeze on initial load.
     tpRenderTable();
     // Carryover lanes can't be evaluated from today's live quote — overwrite
     // their visible row ✓/✗ with backend-confirmed hits from this dataset.
@@ -15852,7 +15846,7 @@ function bootNarrativeHistory(){
 }
 
 bootNarrativeHistory();
-setInterval(bootNarrativeHistory, 60 * 1000);
+// Intraday refresh disabled — narrative history freezes on initial load.
 
 window.refreshDailyBrief=async function(){
   var btn=document.getElementById('daily-refresh-btn');
@@ -16071,17 +16065,15 @@ function _liveQuotesInstallObserver(){
   _liveQuotesObserver.observe(document.body,{childList:true,subtree:true});
 }
 
-// Initial kick — reduced from 1500ms to 400ms. The MutationObserver catches
-// anything that renders later.
+// Initial kick — runs once on page load to populate prices with the latest
+// quote (typically the morning pre-market value). Intraday auto-refresh is
+// disabled by request: no liveQuotesSchedule(), no visibilitychange refresh.
+// The MutationObserver still kicks for late-rendering cards during initial
+// hydration, but each kick is a single fetch — no repeating cadence.
 setTimeout(function(){
   _liveQuotesInstallObserver();
-  liveQuotesRefreshDaily().then(liveQuotesSchedule);
+  liveQuotesRefreshDaily();
 },400);
-
-// Refresh immediately when the user tabs back in
-document.addEventListener('visibilitychange',function(){
-  if(!document.hidden){liveQuotesRefreshDaily();}
-});
 // ── Dismiss page loader ──
 function dismissPageLoader(){
   var el = document.getElementById('mp-page-loader');
@@ -16098,22 +16090,9 @@ ensureDashboardAuth().then(function(user){
   loadSubscriptionStatus();
   loadData().then(dismissPageLoader).catch(dismissPageLoader);
 });
-setInterval(function(){
-  ensureDashboardAuth().then(function(user){
-    if(!user) return;
-    loadSubscriptionStatus();
-    loadData();
-  });
-},5*60*1000);
-document.addEventListener('visibilitychange',function(){
-  if(document.hidden) return;
-  bootNarrativeHistory();
-  ensureDashboardAuth().then(function(user){
-    if(!user) return;
-    loadSubscriptionStatus();
-    loadData();
-  });
-});
+// Intraday auto-refresh disabled by request — dashboard data freezes after
+// the initial load. Users get one update per page load (typically the morning
+// pre-market values) and a manual reload is required to pull anything newer.
 
 // ── Market Scholar AI ────────────────────────────────────────────────────────
 (function(){
@@ -17727,9 +17706,8 @@ var _lbAutoRefresh=null;
 onTabSwitch(function(id){
   if(id==='leaderboard'){
     setTimeout(loadLeaderboard,50);
-    // Auto-refresh every 5 minutes while on the tab
-    if(_lbAutoRefresh) clearInterval(_lbAutoRefresh);
-    _lbAutoRefresh=setInterval(function(){loadLeaderboard();},5*60*1000);
+    // Intraday refresh disabled — leaderboard freezes after the initial load.
+    if(_lbAutoRefresh){clearInterval(_lbAutoRefresh);_lbAutoRefresh=null;}
   } else {
     if(_lbAutoRefresh){clearInterval(_lbAutoRefresh);_lbAutoRefresh=null;}
   }
