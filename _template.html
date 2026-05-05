@@ -8532,8 +8532,10 @@ function _refreshLaneHitCounters(){
         var t=el.getAttribute('data-prism-hit');
         if(t&&visibleTickers[t])hitScoped[t]=1;
       });
-      // Hit-count display disabled \u2014 counter logic is unreliable; show "pending" instead.
-      badge.innerHTML='\u00B7 <span style="color:rgba(255,255,255,0.5);">pending</span>';
+      var hits=Object.keys(hitScoped).length;
+      if(hits>total)hits=total;
+      var color=hits/total>=0.5?'#00DE94':hits>0?'#38C8B8':'#FF4D4D';
+      badge.innerHTML='\u00B7 <span style="color:'+color+';">'+hits+'/'+total+' hit today</span>';
     });
   }catch(e){/* silent */}
 }
@@ -8670,7 +8672,12 @@ async function loadTradeLanes(){
       snapshot_date:'eq.'+scDate,
       ticker:MP_EXCLUDED_TICKERS
     });
-    var priceP=restFetch('ticker_snapshots',{select:'ticker,price_close,revenue_growth_yoy',snapshot_date:'eq.'+scDate});
+    // Pull a fallback window and pick the most recent non-null price per ticker.
+    // ticker_snapshots is sometimes only partially populated for the current
+    // date (the daily writer's UTC-vs-ET offset can leave today with one row),
+    // and an exact-date join would otherwise drop every scorecard row and
+    // zero out the Signal Summary boxes.
+    var priceP=restFetch('ticker_snapshots',{select:'ticker,snapshot_date,price_close,revenue_growth_yoy',snapshot_date:'gte.'+fallbackFloor,order:'snapshot_date.desc'});
     var earnP=restFetch('earnings_context',{select:'ticker,days_to_earnings,earnings_surprise_pct,next_earnings_date',snapshot_date:'eq.'+scDate,ticker:MP_EXCLUDED_TICKERS}).catch(function(){return[];});
 
     var plays=await playsP;
@@ -8680,7 +8687,12 @@ async function loadTradeLanes(){
 
     // Enrich scorecard rows (for AI picks + summary boxes only)
     var priceMap={},revMap={};
-    if(priceRows)priceRows.forEach(function(p){priceMap[p.ticker]=Number(p.price_close);revMap[p.ticker]=p.revenue_growth_yoy!=null?Number(p.revenue_growth_yoy):null;});
+    // priceRows is ordered snapshot_date.desc — keep the first non-null price seen per ticker.
+    if(priceRows)priceRows.forEach(function(p){
+      if(p.price_close==null)return;
+      if(!(p.ticker in priceMap))priceMap[p.ticker]=Number(p.price_close);
+      if(!(p.ticker in revMap)&&p.revenue_growth_yoy!=null)revMap[p.ticker]=Number(p.revenue_growth_yoy);
+    });
     var earnMap={};
     if(earnRows)earnRows.forEach(function(e){earnMap[e.ticker]=e;});
     var enriched=(scRows||[]).map(function(r){
