@@ -1,11 +1,10 @@
 // Daily Plays — Top AI Picks via Claude API
 // Vercel Serverless Function (Node.js runtime)
 //
-// Strategy: The pipeline produces a deterministic daily snapshot keyed by
-// snapshot_date. We cache Claude's ranking in-memory by that date so the model
-// is called at most a few times per day (once per cold function instance),
-// regardless of dashboard traffic. To persist across cold starts, swap the
-// CACHE Map for a Supabase table read/write keyed by snapshot_date.
+// Cache strategy: check Supabase ai_daily_picks first (persists across cold
+// starts). Only call Claude when no row exists for today's snapshot_date.
+// In-memory CACHE Map acts as a hot layer to skip the Supabase round-trip on
+// subsequent requests within the same function instance.
 
 const CACHE = new Map(); // key = snapshot_date, value = {picks, generated_at, model}
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h safety cap
@@ -22,6 +21,46 @@ function rateCheck(ip) {
   RATE_LIMIT[ip].push(now);
   return true;
 }
+
+// ── Supabase helpers ──────────────────────────────────────────────────────────
+
+function getSbCreds() {
+  var url = process.env.SUPABASE_URL || '';
+  var key = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || '';
+  return { url, key };
+}
+
+async function sbRead(snapshotDate) {
+  var { url, key } = getSbCreds();
+  if (!url || !key) return null;
+  try {
+    var r = await fetch(url + '/rest/v1/ai_daily_picks?snapshot_date=eq.' + encodeURIComponent(snapshotDate) + '&limit=1', {
+      headers: { 'apikey': key, 'Authorization': 'Bearer ' + key }
+    });
+    if (!r.ok) return null;
+    var rows = await r.json();
+    return Array.isArray(rows) && rows.length ? rows[0] : null;
+  } catch (_) { return null; }
+}
+
+async function sbWrite(snapshotDate, picks, model) {
+  var { url, key } = getSbCreds();
+  if (!url || !key) return;
+  try {
+    await fetch(url + '/rest/v1/ai_daily_picks', {
+      method: 'POST',
+      headers: {
+        'apikey': key,
+        'Authorization': 'Bearer ' + key,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify({ snapshot_date: snapshotDate, picks: picks, model: model, generated_at: new Date().toISOString() })
+    });
+  } catch (_) {}
+}
+
+// ── Prompt ────────────────────────────────────────────────────────────────────
 
 const SYSTEM_PROMPT = `You are the Market Prism senior signal analyst. You receive a compact JSON list of tickers with forensic signals derived from the narrative scorecard pipeline. Your job is to surface the 10 highest-conviction trades for the day across ALL setup types — day trade, swing, momentum, earnings, value, or trap shorts.
 
@@ -59,7 +98,6 @@ RULES:
 - If fewer than 10 tickers meet a reasonable conviction bar, return what you have — do not pad.`;
 
 function pickCompact(r) {
-  // Trim to the fields Claude actually needs. Keeps input tokens low.
   return {
     ticker: r.ticker,
     price: r.price,
@@ -113,24 +151,26 @@ module.exports = async (req, res) => {
     return res.status(400).json({ error: 'snapshot_date and rows[] required' });
   }
 
-  // Cache hit
+  // 1. In-memory hot cache (same function instance)
   var cached = CACHE.get(snapshotDate);
   if (cached && (Date.now() - cached.generated_at) < CACHE_TTL_MS) {
-    return res.status(200).json({
-      picks: cached.picks,
-      snapshot_date: snapshotDate,
-      model: cached.model,
-      cached: true
-    });
+    return res.status(200).json({ picks: cached.picks, snapshot_date: snapshotDate, model: cached.model, cached: true });
   }
 
+  // 2. Supabase persistent cache (survives cold starts)
+  var sbRow = await sbRead(snapshotDate);
+  if (sbRow && sbRow.picks) {
+    var sbPicks = Array.isArray(sbRow.picks) ? sbRow.picks : [];
+    CACHE.set(snapshotDate, { picks: sbPicks, generated_at: Date.now(), model: sbRow.model });
+    return res.status(200).json({ picks: sbPicks, snapshot_date: snapshotDate, model: sbRow.model, cached: true });
+  }
+
+  // 3. No cache — call Claude
   var apiKey = process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_KEY || '';
   if (!apiKey) {
     return res.status(500).json({ error: 'AI picks not configured (no ANTHROPIC_API_KEY / ANTHROPIC_KEY in env).' });
   }
 
-  // Pre-filter: only send tickers that have at least one meaningful signal.
-  // Cuts input tokens ~5-10x without losing the interesting candidates.
   var candidates = rows.filter(function(r) {
     if (!r || !r.ticker) return false;
     return (r.walsh_regime === 'CLEAR_PATH')
@@ -141,7 +181,7 @@ module.exports = async (req, res) => {
       || (r.half_life < 15)
       || (r.drift_score > 60)
       || (r._earn && r._earn.days_to_earnings != null && Math.abs(r._earn.days_to_earnings) <= 7);
-  }).slice(0, 120).map(pickCompact); // cap at 120 to bound tokens
+  }).slice(0, 120).map(pickCompact);
 
   if (!candidates.length) {
     return res.status(200).json({ picks: [], snapshot_date: snapshotDate, model: null });
@@ -189,8 +229,6 @@ module.exports = async (req, res) => {
     }
 
     if (!response || !response.ok) {
-      // Surface the upstream error so the front-end can show what Anthropic
-      // actually said (e.g. "model not found", "credit balance too low").
       var detail = '';
       try {
         var parsed = JSON.parse(lastErrText);
@@ -203,8 +241,6 @@ module.exports = async (req, res) => {
     var data = await response.json();
     var text = data.content && data.content[0] ? data.content[0].text : '';
 
-    // Extract JSON array from the response (model should return raw JSON, but
-    // fall back to a bracket-slice in case it wraps the array).
     var picks = null;
     try {
       picks = JSON.parse(text);
@@ -220,7 +256,6 @@ module.exports = async (req, res) => {
       return res.status(502).json({ error: 'AI returned unparseable response' });
     }
 
-    // Sanitize: keep only known fields, clamp lengths
     var clean = picks.filter(function(p){ return p && p.ticker; }).slice(0, 10).map(function(p){
       return {
         ticker: String(p.ticker).toUpperCase().slice(0, 8),
@@ -231,14 +266,11 @@ module.exports = async (req, res) => {
       };
     });
 
+    // Persist to both caches so future calls (any cold start) skip Claude
     CACHE.set(snapshotDate, { picks: clean, generated_at: Date.now(), model: modelUsed });
+    await sbWrite(snapshotDate, clean, modelUsed);
 
-    return res.status(200).json({
-      picks: clean,
-      snapshot_date: snapshotDate,
-      model: modelUsed,
-      cached: false
-    });
+    return res.status(200).json({ picks: clean, snapshot_date: snapshotDate, model: modelUsed, cached: false });
   } catch (err) {
     console.error('Top AI Picks error:', err);
     return res.status(500).json({ error: 'Internal error: ' + err.message });

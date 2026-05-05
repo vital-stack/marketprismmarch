@@ -9535,6 +9535,12 @@ async function loadAiPicks(snapshotDate,enriched){
   if(_AI_PICKS_INFLIGHT===snapshotDate)return;
   _AI_PICKS_INFLIGHT=snapshotDate;
   try{
+    // Session cache — if we already fetched picks for this snapshot today, reuse them
+    var _ssKey='ai_picks_'+snapshotDate;
+    try{
+      var _ssCached=sessionStorage.getItem(_ssKey);
+      if(_ssCached){renderAiPicks(JSON.parse(_ssCached));return;}
+    }catch(_){}
     // Compact payload — strip to just what the endpoint scorer uses
     var rows=enriched.map(function(r){
       return{
@@ -9556,7 +9562,9 @@ async function loadAiPicks(snapshotDate,enriched){
       var errMsg=(data&&data.error)?data.error:('HTTP '+res.status);
       throw new Error(errMsg);
     }
-    renderAiPicks((data&&data.picks)||[]);
+    var picks=(data&&data.picks)||[];
+    try{sessionStorage.setItem(_ssKey,JSON.stringify(picks));}catch(_){}
+    renderAiPicks(picks);
   }catch(e){
     console.warn('[AI Picks] Load failed:',e);
     if(body)body.innerHTML='<div class="tl-ai-empty">AI picks unavailable: '+esc(String(e.message||e))+'</div>';
@@ -17327,8 +17335,7 @@ var BOARDS=[
     }catch(e){console.warn('[Leaderboard Best Entry Zone] fetch failed:',e);return [];}
   }},
   {id:'ai-picks',title:'CLAUDE\u2019S CONVICTION LIST',sub:'Claude\u2019s top 10 picks \u2014 synthesized only from Market Prism\u2019s daily signal stack',color:'#A78BFA',bg:'rgba(167,139,250,0.12)',scoreLabel:'Conviction',
-  // 30s override \u2014 Claude calls can take 5-15s on a cold cache, so the
-  // default 10s timeout in loadLeaderboard would reject before the response lands.
+  // 30s override \u2014 Claude calls can take 5-15s on a cold Supabase cache miss.
   timeout:30000,
   fetch:async function(){
     try{
@@ -17336,6 +17343,21 @@ var BOARDS=[
       var dateRows=await sq('narrative_scorecard?select=snapshot_date&order=snapshot_date.desc&limit=1');
       var snapshotDate=dateRows&&dateRows[0]&&dateRows[0].snapshot_date;
       if(!snapshotDate) return [];
+      // Session cache \u2014 reuse picks already fetched this session
+      var _ssKey='ai_picks_'+snapshotDate;
+      try{
+        var _ssCached=sessionStorage.getItem(_ssKey);
+        if(_ssCached){
+          var _cached=JSON.parse(_ssCached);
+          return _cached.slice(0,10).map(function(p){
+            var dirArrow=p.direction==='BULLISH'?'\u25b2':p.direction==='BEARISH'?'\u25bc':'\u25cf';
+            var dirColor=p.direction==='BULLISH'?'#00DE94':p.direction==='BEARISH'?'#FF4D4D':'#00AEFF';
+            var thesis=String(p.thesis||'');
+            var truncated=thesis.length>90?thesis.slice(0,87)+'\u2026':thesis;
+            return{name:p.ticker,link:'/ticker/'+p.ticker,meta:(p.action||'')+' '+dirArrow+' \u00b7 '+truncated,score:Number(p.conviction)||0,scoreDisplay:Math.round(Number(p.conviction)||0)+'%',_scoreColor:dirColor};
+          });
+        }
+      }catch(_){}
       // narrative_scorecard has no `price` column; the AI endpoint accepts null
       // price, so we just omit it (the row's signals are what Claude scores on).
       var rows=await sq('narrative_scorecard?select=ticker,nrs,wks_score,walsh_regime,narrative_energy_absolute,narrative_energy_regime,narrative_mass_score,coordination_score,drift_score,half_life,fvd_pct,vms,verdict,verdict_confidence&snapshot_date=eq.'+encodeURIComponent(snapshotDate)+'&limit=200');
@@ -17349,6 +17371,7 @@ var BOARDS=[
         return [];
       }
       var picks=(data&&data.picks)||[];
+      try{sessionStorage.setItem(_ssKey,JSON.stringify(picks));}catch(_){}
       return picks.slice(0,10).map(function(p){
         var dirArrow=p.direction==='BULLISH'?'\u25b2':p.direction==='BEARISH'?'\u25bc':'\u25cf';
         var dirColor=p.direction==='BULLISH'?'#00DE94':p.direction==='BEARISH'?'#FF4D4D':'#00AEFF';
