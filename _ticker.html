@@ -6886,12 +6886,30 @@ function calcNarrativeReach(citations) {
   return total;
 }
 
+// Reject ticker landing / quote / holdings dashboards that get scraped daily
+// and produce LLM "general information about X stock price" filler rows.
+// (Real fix is upstream in the scraper; this is the frontend guard.)
+const NON_ARTICLE_URL_RE = /(?:finviz\.com\/quote\.ashx|gurufocus\.com\/stock\/[^/]+\/(?:summary|insider|13f|institutional|holdings)|marketwatch\.com\/investing\/stock\/[^/?#]+\/?(?:[?#]|$)|tipranks\.com\/stocks\/[^/]+\/?(?:forecast|stock-news|stock-analysis)?\/?(?:[?#]|$)|finance\.yahoo\.com\/quote\/[^/?#]+\/?(?:[?#]|$)|stockanalysis\.com\/stocks\/[^/?#]+\/?(?:[?#]|$))/i;
+const NON_ARTICLE_TEXT_RE = /general information (?:about|regarding)|stock price and quote|basic financial data|comprehensive data point|stock price, trades,? and news|holding history|is being tracked, suggesting institutional/i;
+function isNonArticleNarrative(r) {
+  if (!r) return false;
+  if (r.article_url && NON_ARTICLE_URL_RE.test(r.article_url)) return true;
+  if (r.narrative_text && NON_ARTICLE_TEXT_RE.test(r.narrative_text)) return true;
+  // Structural rows with no source ref AND no numeric anchor are landing-page
+  // descriptions, not narratives. Only apply when the flags are present
+  // (loadStoriesFeed doesn't fetch them).
+  if (String(r.narrative_type || '').toLowerCase() === 'structural'
+      && r.has_source_ref === false
+      && r.has_numeric_anchor === false) return true;
+  return false;
+}
+
 async function loadNarratives() {
   if (!TICKER) return;
   try {
     // Fetch narratives, price snapshots, scorecard (for fuel bar),
     // and article keywords in parallel
-    const [rows, snaps, scorecardRows, articleKwRows] = await Promise.all([
+    let [rows, snaps, scorecardRows, articleKwRows] = await Promise.all([
       sbFetch('narrative_analyses', {
         select: [
           'narrative_hash','narrative_text','verdict','source_outlet','analyst_firm',
@@ -6919,6 +6937,9 @@ async function loadNarratives() {
         limit:  '400'
       }).catch(() => [])
     ]);
+
+    // Drop ticker landing / quote / holdings dashboards before clustering.
+    rows = (rows || []).filter(r => !isNonArticleNarrative(r));
 
     // Build date → price lookup
     const priceByDate = {};
@@ -7211,14 +7232,19 @@ async function loadNarratives() {
 
       // Source rows — show all citations from the theme cluster
       const citations = n.allCitations || [n];
-      // Deduplicate by outlet+date, sort newest first
+      // Dedup by outlet+url (or outlet+hash if url is missing), keeping the
+      // newest snapshot. Daily re-scrapes of the same URL would otherwise show
+      // up as 3-4 "different" citations of the same publication.
+      const sortedCites = [...citations].sort(
+        (a, b) => (b.snapshot_date || '').localeCompare(a.snapshot_date || '')
+      );
       const seen = new Set();
-      const uniqueCites = citations.filter(c => {
-        const k = (c.source_outlet||'') + '|' + (c.snapshot_date||'').slice(0,10);
+      const uniqueCites = sortedCites.filter(c => {
+        const k = (c.source_outlet || '') + '|' + (c.article_url || c.narrative_hash || '');
         if (seen.has(k)) return false;
         seen.add(k);
         return true;
-      }).sort((a, b) => (b.snapshot_date || '').localeCompare(a.snapshot_date || ''));
+      });
 
       const sourceHtml = `<div class="narr-sources-list">
         <div class="narr-sources-label">Sources (${uniqueCites.length})</div>
@@ -9248,12 +9274,24 @@ async function loadStoriesFeed() {
   if (!TICKER) return;
   const feedList = document.getElementById('tk-feed-list');
   try {
-    const rows = await sbFetch('narrative_analyses', {
+    let rows = await sbFetch('narrative_analyses', {
       select: 'narrative_text,verdict,sentiment_score,snapshot_date,created_at,source_outlet,narrative_type,article_url',
       ticker: `eq.${TICKER}`,
       order: 'created_at.desc',
       limit: '100'
     }).catch(() => []);
+
+    // Drop ticker landing / quote / holdings dashboards.
+    rows = (rows || []).filter(r => !isNonArticleNarrative(r));
+
+    // Collapse daily re-scrapes of the same URL — keep newest only.
+    const seenUrls = new Set();
+    rows = rows.filter(r => {
+      const k = (r.source_outlet || '') + '|' + (r.article_url || r.narrative_text || '');
+      if (seenUrls.has(k)) return false;
+      seenUrls.add(k);
+      return true;
+    });
 
     if (!rows.length) {
       if(feedList) feedList.innerHTML = '<div class="tk-feed-empty">No stories available for this ticker.</div>';
