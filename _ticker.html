@@ -6904,6 +6904,23 @@ function isNonArticleNarrative(r) {
   return false;
 }
 
+// Strip LLM meta-prefixes ("This article reports that…", "The piece notes…")
+// so the narrative reads as a claim, not a description of a claim. If after
+// stripping the remainder is too short to carry a thought, returns null so
+// the row gets dropped instead of rendered as a stub.
+const META_PREFIX_RE = /^\s*(?:this|the)\s+(?:article|piece|story|report|post|analysis|writeup|write-up|column|news\s+article)\s+(?:also\s+)?(?:discusses|reports|notes|states|says|claims|argues|covers|highlights|mentions|explains|describes|examines|explores|details|outlines|points\s+out|focuses\s+on|centers\s+on|talks\s+about)(?:\s+that|\s+how|\s+on|\s+the\s+fact\s+that)?\s*[:,-]?\s*/i;
+function cleanNarrativeText(text) {
+  if (!text) return text;
+  var cleaned = String(text).replace(META_PREFIX_RE, '');
+  // Capitalize first character if we stripped something.
+  if (cleaned !== text && cleaned.length) {
+    cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+  }
+  // If what's left is just a fragment, drop the row entirely.
+  if (cleaned.trim().split(/\s+/).length < 4) return null;
+  return cleaned;
+}
+
 async function loadNarratives() {
   if (!TICKER) return;
   try {
@@ -6938,8 +6955,15 @@ async function loadNarratives() {
       }).catch(() => [])
     ]);
 
-    // Drop ticker landing / quote / holdings dashboards before clustering.
-    rows = (rows || []).filter(r => !isNonArticleNarrative(r));
+    // Drop ticker landing / quote / holdings dashboards before clustering,
+    // and strip LLM meta-prefixes from the remaining narrative text.
+    rows = (rows || [])
+      .filter(r => !isNonArticleNarrative(r))
+      .map(r => {
+        const cleaned = cleanNarrativeText(r.narrative_text);
+        return cleaned ? { ...r, narrative_text: cleaned } : null;
+      })
+      .filter(Boolean);
 
     // Build date → price lookup
     const priceByDate = {};
@@ -9281,8 +9305,15 @@ async function loadStoriesFeed() {
       limit: '100'
     }).catch(() => []);
 
-    // Drop ticker landing / quote / holdings dashboards.
-    rows = (rows || []).filter(r => !isNonArticleNarrative(r));
+    // Drop ticker landing / quote / holdings dashboards, and strip LLM
+    // meta-prefixes ("This article reports that…") from what remains.
+    rows = (rows || [])
+      .filter(r => !isNonArticleNarrative(r))
+      .map(r => {
+        const cleaned = cleanNarrativeText(r.narrative_text);
+        return cleaned ? { ...r, narrative_text: cleaned } : null;
+      })
+      .filter(Boolean);
 
     // Collapse daily re-scrapes of the same URL — keep newest only.
     const seenUrls = new Set();
