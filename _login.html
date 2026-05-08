@@ -399,13 +399,13 @@ body::before{
     }).catch(function(){});
   }
 
-  function mintBetaCookie(expiresIso){
+  function mintBetaCookie(code, expiresIso){
     return fetch('/api/session', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       credentials:'same-origin',
-      body: JSON.stringify({ beta:true, expires: expiresIso })
-    }).catch(function(){});
+      body: JSON.stringify({ beta:true, code: code, expires: expiresIso })
+    });
   }
 
   // Check if already logged in (don't hang the page if provider is down)
@@ -436,25 +436,30 @@ body::before{
   };
 
   // ── Beta Code Redemption ──
-  // Codes are checked client-side for UX; the cookie gate that actually allows
-  // dashboard access is set by /api/session, which any logged-in path also
-  // touches. Codes are case-insensitive, whitespace-trimmed.
-  var BETA_CODES = ['karma'];
+  // Codes are validated server-side by /api/session against the BETA_CODES
+  // env var. The client only does a non-empty sanity check before submitting —
+  // it does NOT know which codes are valid (that lived in client source
+  // historically and was a security regression).
   window.handleBetaCode = async function(e){
     e.preventDefault();
     clearMsg();
     var raw  = document.getElementById('beta-code').value || '';
-    var code = raw.trim().toLowerCase();
+    var code = raw.trim();
     if(!code){ showMsg('error','Enter your beta access code.'); return; }
-    if(BETA_CODES.indexOf(code) === -1){
-      showMsg('error','That beta code is not valid. Check the code and try again.');
-      return;
-    }
     setLoading('btn-beta', true);
     try {
       var expires = new Date(); expires.setDate(expires.getDate() + 7);
-      // Mint the HttpOnly mp_beta cookie that the server-side dashboard gate reads.
-      await mintBetaCookie(expires.toISOString());
+      // Mint the HttpOnly mp_beta cookie via /api/session. Server validates
+      // the code against the BETA_CODES env var; rejects with 401 if invalid
+      // or 503 if BETA_CODES is unset.
+      var resp = await mintBetaCookie(code, expires.toISOString());
+      if(!resp.ok){
+        var msg = 'Could not redeem code. Try again.';
+        try { var body = await resp.json(); if(body && body.error) msg = body.error; } catch(_){}
+        showMsg('error', msg);
+        setLoading('btn-beta', false);
+        return;
+      }
       // Mirror the same localStorage flags the existing register flow sets, so
       // every client-side soft-gate keeps treating beta users as authed.
       localStorage.setItem('mp-beta-access', 'true');

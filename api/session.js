@@ -1,9 +1,15 @@
 // Session cookie endpoint. Mints HttpOnly cookies that the server can read,
 // since the rest of the site stores Supabase auth in localStorage only.
 //
-// POST { access_token }      -> verify with Supabase, set mp_session (24h)
-// POST { beta:true, expires } -> set mp_beta until expires (matches localStorage 'mp-beta-expires')
-// DELETE                     -> clear both cookies
+// POST { access_token }              -> verify with Supabase, set mp_session (24h)
+// POST { beta:true, code, expires }  -> verify code against BETA_CODES env var,
+//                                       set mp_beta until expires (matches
+//                                       localStorage 'mp-beta-expires')
+// DELETE                             -> clear both cookies
+//
+// Security: BETA_CODES env var holds a comma-separated allowlist of valid
+// codes (case-insensitive, trimmed). If BETA_CODES is unset or empty, the
+// beta path is closed — fails 503 instead of granting blanket access.
 
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_ANON = process.env.SUPABASE_ANON || '';
@@ -44,6 +50,22 @@ async function verifySupabaseToken(token) {
   }
 }
 
+function getValidBetaCodes() {
+  const raw = process.env.BETA_CODES || '';
+  return raw
+    .split(',')
+    .map(s => s.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function isValidBetaCode(submitted) {
+  const code = String(submitted || '').trim().toLowerCase();
+  if (!code) return false;
+  const valid = getValidBetaCodes();
+  if (!valid.length) return false;
+  return valid.includes(code);
+}
+
 module.exports = async (req, res) => {
   if (req.method === 'DELETE') {
     res.setHeader('Set-Cookie', [clearCookie('mp_session'), clearCookie('mp_beta')]);
@@ -70,6 +92,19 @@ module.exports = async (req, res) => {
   }
 
   if (body.beta === true) {
+    // Beta path is closed unless the operator has configured BETA_CODES.
+    // Fails closed to prevent the previous wide-open backdoor.
+    const validCodes = getValidBetaCodes();
+    if (!validCodes.length) {
+      return res.status(503).json({
+        error: 'Beta access is not currently available. Please contact support.'
+      });
+    }
+
+    if (!isValidBetaCode(body.code)) {
+      return res.status(401).json({ error: 'Invalid beta code.' });
+    }
+
     let maxAge = BETA_MAX_AGE_CAP;
     if (body.expires) {
       const ms = new Date(body.expires).getTime() - Date.now();
