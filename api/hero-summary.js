@@ -83,6 +83,8 @@ function compactState(story, scorecard, health, narratives) {
   return lines.join('\n');
 }
 
+const rateLimit = require('./_rate-limit');
+
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
 
@@ -91,6 +93,10 @@ module.exports = async (req, res) => {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     return res.status(200).end();
   }
+
+  // Rate limit AFTER the CORS preflight so OPTIONS isn't blocked.
+  // Hero summary calls Claude — expensive, so cap aggressively.
+  if (!rateLimit(req, res, 'hero-summary', 30)) return;
 
   var url = new URL(req.url, 'http://localhost');
   var ticker = (url.searchParams.get('ticker') || '').replace(/[^A-Za-z0-9.\-]/g, '').toUpperCase();

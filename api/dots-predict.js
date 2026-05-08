@@ -175,7 +175,14 @@ function aggregate(neighbors) {
   };
 }
 
+const rateLimit = require('./_rate-limit');
+
 module.exports = async function (req, res) {
+  // Cap aggressively — embeds via local ML inference + pgvector search.
+  // Most expensive endpoint by CPU/mem. 20/min/IP still lets a homepage
+  // visitor try ~3 narratives per minute, plenty for legit exploration.
+  if (!rateLimit(req, res, 'dots-predict', 20)) return;
+
   const startTime = Date.now();
   // Hoisted so the catch block at the bottom can include them in failure logs.
   let body = {};

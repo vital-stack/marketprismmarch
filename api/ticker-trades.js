@@ -1,4 +1,7 @@
+const rateLimit = require('./_rate-limit');
+
 module.exports = async (req, res) => {
+  if (!rateLimit(req, res, 'ticker-trades', 60)) return;
   try {
     const url = new URL(req.url, 'http://localhost');
     const ticker = (url.searchParams.get('ticker') || '').replace(/[^A-Za-z0-9.\-]/g, '').toUpperCase();

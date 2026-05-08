@@ -39,7 +39,10 @@ function previousTradingDay(yyyymmdd) {
   return date.toISOString().slice(0, 10);
 }
 
+const rateLimit = require('./_rate-limit');
+
 module.exports = async (req, res) => {
+  if (!rateLimit(req, res, 'live-quotes-batch', 60)) return;
   try {
     const url = new URL(req.url, 'http://localhost');
     const raw = (url.searchParams.get('tickers') || '').trim();
