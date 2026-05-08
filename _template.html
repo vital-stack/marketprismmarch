@@ -4303,6 +4303,36 @@ body{
 .lb-row-skeleton .lb-av.lb-skel-pulse{width:32px;height:32px;border-radius:8px;}
 @keyframes lb-skel-pulse{0%,100%{opacity:.5;}50%{opacity:1;}}
 .lb-section-loading{position:relative;}
+/* ── Horse-race tote-board drop-in ──
+   Real rows (not skeletons) flap down from above with a slight overshoot,
+   staggered by row index so each row clicks into place behind the one above
+   it — like split-flap odds boards at a track. The parent gets perspective
+   so the rotateX reads as a flip rather than a squash. */
+.lb-rows{perspective:900px;perspective-origin:50% 0;}
+.lb-row:not(.lb-row-skeleton){
+  animation:lb-flap-drop .55s cubic-bezier(.34,1.56,.64,1) both;
+  transform-origin:top center;
+  will-change:transform,opacity;
+}
+.lb-row:not(.lb-row-skeleton):nth-child(1){animation-delay:.04s;}
+.lb-row:not(.lb-row-skeleton):nth-child(2){animation-delay:.10s;}
+.lb-row:not(.lb-row-skeleton):nth-child(3){animation-delay:.16s;}
+.lb-row:not(.lb-row-skeleton):nth-child(4){animation-delay:.22s;}
+.lb-row:not(.lb-row-skeleton):nth-child(5){animation-delay:.28s;}
+.lb-row:not(.lb-row-skeleton):nth-child(6){animation-delay:.34s;}
+.lb-row:not(.lb-row-skeleton):nth-child(7){animation-delay:.40s;}
+.lb-row:not(.lb-row-skeleton):nth-child(8){animation-delay:.46s;}
+.lb-row:not(.lb-row-skeleton):nth-child(9){animation-delay:.52s;}
+.lb-row:not(.lb-row-skeleton):nth-child(10){animation-delay:.58s;}
+@keyframes lb-flap-drop{
+  0%  {opacity:0;transform:translateY(-22px) rotateX(-65deg);}
+  60% {opacity:1;transform:translateY(3px)   rotateX(8deg);}
+  80% {transform:translateY(-1px) rotateX(-3deg);}
+  100%{opacity:1;transform:translateY(0)     rotateX(0);}
+}
+@media(prefers-reduced-motion:reduce){
+  .lb-row:not(.lb-row-skeleton){animation:none;}
+}
 @media(max-width:767px){#lb-grid{grid-template-columns:1fr!important;}}
 
 /* ── Leaderboard Toolbar ── */
