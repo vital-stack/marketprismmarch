@@ -80,18 +80,23 @@ module.exports = async (req, res) => {
           price_close: Number(row.c),
         }))
       : [];
+    // Polygon's daily aggregates are the canonical list of US-equity trading
+    // days — non-trading days (weekends, market holidays, pre-bar moments)
+    // simply don't appear in the response. Treat that list as authoritative:
+    // refresh the latest bar's close with the live price only if its date
+    // equals today (i.e., today is a trading day that has already opened).
+    // Never fabricate a new row from the live snapshot — Polygon's snapshot
+    // endpoint returns the most-recent trade price on weekends/holidays, and
+    // dating that as "today" produces phantom non-trading-day points.
+    const etYmd = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/New_York',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+    }).format(new Date()); // en-CA gives YYYY-MM-DD
     const livePrice = await fetchLivePrice(ticker, apiKey);
-    const today = new Date().toISOString().slice(0, 10);
-
     if (livePrice) {
       const latest = series[series.length - 1];
-      if (latest && latest.snapshot_date === today) {
+      if (latest && latest.snapshot_date === etYmd) {
         latest.price_close = Number(livePrice);
-      } else {
-        series.push({
-          snapshot_date: today,
-          price_close: Number(livePrice),
-        });
       }
     }
 
