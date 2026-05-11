@@ -3402,6 +3402,19 @@
     background:rgba(0,174,255,0.12);color:#85b7eb;
     border-color:rgba(0,174,255,0.40);font-weight:500;
   }
+  .tt-horizon-tab.starred{
+    border-color:rgba(255,184,0,0.45);
+    box-shadow:0 0 0 1px rgba(255,184,0,0.10) inset;
+  }
+  .tt-horizon-tab.starred.active{
+    border-color:rgba(255,184,0,0.65);
+    background:rgba(255,184,0,0.10);
+    color:#FAC775;
+  }
+  .tt-horizon-star{
+    color:#FFB800;font-size:11px;margin-right:1px;
+    display:inline-block;line-height:1;
+  }
   .tt-horizons .tt-grid{margin-bottom:0;border:none;background:transparent;}
   .tt-horizons .tt-cell{border-right:none;padding:0 18px 0 0;}
   .tt-horizons .tt-cell:last-child{padding-right:0;}
@@ -5482,6 +5495,30 @@ var TT_HORIZON_TABS = [
   { key:'lth', label:'Long term hold',   horizonDays:90, source:'fair_value'   }
 ];
 
+// Bias direction descriptor for the trade-type sub-label. "Neutral" /
+// "Long bias" / "Short bias" / "Long bias (verify)" / "Short bias (verify)".
+function ttBiasDescriptor(bias) {
+  switch ((bias || '').toLowerCase()) {
+    case 'long':        return 'Long bias';
+    case 'short':       return 'Short bias';
+    case 'watch_long':  return 'Long bias (verify)';
+    case 'watch_short': return 'Short bias (verify)';
+    case 'neutral':     return 'Neutral';
+    default:            return '';
+  }
+}
+
+// Short trade-type name shown in the TRADE TYPE cell value. Always the
+// horizon-type, regardless of bias. (User explicitly: "they are all
+// forecasts, just show the trade type as being Day, Swing, etc.")
+var TT_TRADE_TYPE_NAME = {
+  '1d':  'Day trade',
+  '5d':  'Short swing',
+  '10d': 'Long swing',
+  '20d': 'Position',
+  'lth': 'Long-term hold'
+};
+
 // Resolve per-horizon values per tab source: forecast tabs read fields
 // directly; 20D extrapolates from the 10D model; Long term hold derives
 // from daily_fair_value.
@@ -5490,7 +5527,7 @@ function ttResolveHorizon(f, sc, fv, tab) {
   var current = Number(f.current_price);
   var res = {
     pct:null, price:null, lo:null, hi:null, conv:null,
-    tradeLabel:null, tradeLabelColor:null, tradeSub:'',
+    tradeLabel:null, tradeLabelColor:null, tradeSub:'', tradeSubColor:null,
     convSub:'', moveSub:'', probSub: tab.horizonDays + '-day horizon'
   };
 
@@ -5500,19 +5537,10 @@ function ttResolveHorizon(f, sc, fv, tab) {
     res.lo    = f['predicted_' + tab.key + '_low'];
     res.hi    = f['predicted_' + tab.key + '_high'];
     res.conv  = f['conviction_' + tab.key];
-    if (bias === 'neutral' || !bias) {
-      var hzName = tab.label.split('·').pop().trim().toUpperCase();
-      if (hzName.startsWith('DAY TRADE')) hzName = 'DAY TRADE';
-      res.tradeLabel = 'No ' + hzName + ' signal';
-      res.tradeSub = 'Forecast only';
-    } else {
-      res.tradeLabel = ttBiasLabel(f.bias);
-      res.tradeLabelColor = ttColor(f.color);
-      res.tradeSub = ({
-        'long':'Long setup', 'short':'Short setup',
-        'watch_long':'Wait for setup', 'watch_short':'Wait for setup'
-      })[bias] || '';
-    }
+    res.tradeLabel = TT_TRADE_TYPE_NAME[tab.key] || tab.label;
+    res.tradeSub = ttBiasDescriptor(bias);
+    if (bias === 'long' || bias === 'watch_long')   res.tradeSubColor = '#00DE94';
+    if (bias === 'short' || bias === 'watch_short') res.tradeSubColor = '#FF4D4D';
     if (f.rolling_30_total != null && f.rolling_30_total >= 5) {
       res.convSub = f.rolling_30_directional + '/' + f.rolling_30_total + ' last 30d';
     }
@@ -5536,20 +5564,17 @@ function ttResolveHorizon(f, sc, fv, tab) {
       res.hi = mid + halfBand10 * bandScale;
     }
     if (p10conv != null) res.conv = Math.max(5, p10conv * 0.7);
-    if (bias === 'neutral' || !bias) {
-      res.tradeLabel = 'No POSITION signal';
-      res.tradeSub = 'Forecast only';
-    } else {
-      res.tradeLabel = ttBiasLabel(f.bias);
-      res.tradeLabelColor = ttColor(f.color);
-      res.tradeSub = 'Extrapolated';
-    }
+    res.tradeLabel = TT_TRADE_TYPE_NAME[tab.key] || 'Position';
+    res.tradeSub = ttBiasDescriptor(bias);
+    if (bias === 'long' || bias === 'watch_long')   res.tradeSubColor = '#00DE94';
+    if (bias === 'short' || bias === 'watch_short') res.tradeSubColor = '#FF4D4D';
     res.convSub = 'From 10D model';
     res.moveSub = 'Range scaled √t';
     return res;
   }
 
   if (tab.source === 'fair_value') {
+    res.tradeLabel = TT_TRADE_TYPE_NAME[tab.key] || 'Long-term hold';
     var fvPrice = fv && fv.fair_value != null ? Number(fv.fair_value) : null;
     if (fvPrice != null && isFinite(current) && current > 0) {
       var gapPct = (fvPrice - current) / current * 100;
@@ -5570,17 +5595,15 @@ function ttResolveHorizon(f, sc, fv, tab) {
       } else {
         lbl = 'Hold'; col = '#00AEFF';
       }
-      res.tradeLabel = lbl;
-      res.tradeLabelColor = col;
-      res.tradeSub = 'Fair-value driven';
+      res.tradeSub = lbl;
+      res.tradeSubColor = col;
       var vms = sc && sc.vms != null ? Number(sc.vms) : null;
       if (vms != null && isFinite(vms)) res.conv = Math.max(0, Math.min(100, vms));
       res.convSub = vms != null ? 'Fundamentals (VMS)' : 'No VMS available';
       res.moveSub = 'Gap to fair value';
       res.probSub = 'Long-term convergence';
     } else {
-      res.tradeLabel = 'No fair-value data';
-      res.tradeSub = 'Long-term unavailable';
+      res.tradeSub = 'No fair-value data';
       res.convSub = 'No model fit';
     }
     return res;
@@ -5595,13 +5618,18 @@ function buildHorizonGrid(f, sc, fv, h) {
   var data = ttResolveHorizon(f, sc, fv, tab);
 
   // ── TRADE TYPE ──
-  var tradeVal = data.tradeLabelColor
-    ? '<span style="color:'+ data.tradeLabelColor +';">'+ esc(data.tradeLabel || '—') +'</span>'
-    : '<span class="tt-empty-val">'+ esc(data.tradeLabel || '—') +'</span>';
+  // Value is always the horizon-type name (Day trade / Short swing / etc).
+  // Sub-label carries the bias direction (or action verb for Long-term hold).
+  var tradeVal = '<span>'+ esc(data.tradeLabel || '—') +'</span>';
+  var tradeSubHtml = data.tradeSub
+    ? (data.tradeSubColor
+        ? '<span style="color:'+ data.tradeSubColor +';">'+ esc(data.tradeSub) +'</span>'
+        : esc(data.tradeSub))
+    : '&nbsp;';
   var tradeCell = '<div class="tt-cell">'
     + '<div class="tt-cell-label">Trade Type</div>'
     + '<div class="tt-cell-val">'+ tradeVal +'</div>'
-    + '<div class="tt-cell-sub">'+ esc(data.tradeSub || '') +'</div>'
+    + '<div class="tt-cell-sub">'+ tradeSubHtml +'</div>'
     + '</div>';
 
   // ── PREDICTED MOVE ──
@@ -5716,9 +5744,26 @@ function renderTradeTicket(f, story, sc, fv, earn, priceRange) {
     : (story && (story.story_claim || story.forensic_rebuttal)) || '';
 
   var fresh = ttRelativeTime(f.heavy_refreshed_at);
-  var primary = (f.primary_horizon || '5d').toLowerCase();
+
+  // Default tab = the horizon with the highest forecast confidence (conviction).
+  // Falls back to f.primary_horizon → 5D if no conv values resolve.
+  var bestKey = null;
+  var bestConv = -Infinity;
+  TT_HORIZON_TABS.forEach(function(t){
+    var d = ttResolveHorizon(f, sc, fv, t);
+    if (d.conv != null && isFinite(d.conv) && d.conv > bestConv) {
+      bestConv = d.conv;
+      bestKey = t.key;
+    }
+  });
+  var primary = bestKey
+    || (f.primary_horizon || '5d').toLowerCase();
   if (!TT_HORIZON_TABS.some(function(x){ return x.key === primary; })) primary = '5d';
   var primaryTab = TT_HORIZON_TABS.filter(function(t){ return t.key === primary; })[0] || TT_HORIZON_TABS[1];
+  // Star icon ★ marks the highest-conviction tab so users know why the
+  // default tab is selected. Only added when conviction-based selection
+  // actually fired (bestKey set).
+  var starredKey = bestKey;
 
   // ── Price position bar (60-day) — pin position patched in by caller once
   //    the supplementary fetch lands. Initially renders centered as placeholder.
@@ -5818,7 +5863,13 @@ function renderTradeTicket(f, story, sc, fv, earn, priceRange) {
 
   // ── Horizon tabs + 4-col grid ──
   var tabsHtml = TT_HORIZON_TABS.map(function(t){
-    return '<button type="button" class="tt-horizon-tab'+(t.key === primary ? ' active' : '')+'" data-h="'+ t.key +'">'+ esc(t.label) +'</button>';
+    var classes = 'tt-horizon-tab';
+    if (t.key === primary) classes += ' active';
+    if (t.key === starredKey) classes += ' starred';
+    var starHtml = (t.key === starredKey)
+      ? '<span class="tt-horizon-star" title="Highest forecast confidence">★</span> '
+      : '';
+    return '<button type="button" class="'+ classes +'" data-h="'+ t.key +'">'+ starHtml + esc(t.label) +'</button>';
   }).join('');
 
   var horizonsCard = ''
