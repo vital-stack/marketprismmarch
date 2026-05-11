@@ -5506,7 +5506,7 @@ var TT_TRADE_TYPE_NAME = {
 //   confValHtml, confSub  — FORECAST CONFIDENCE cell content (Html overrides numeric)
 //   suppressDots          — suppress the 10-dot meter (used by LTH where the
 //                           value is a return %, not a confidence score)
-function ttResolveHorizon(f, sc, fv, tab, strategy) {
+function ttResolveHorizon(f, sc, fv, tab, strategy, story) {
   var bias = (f.bias || '').toLowerCase();
   var current = Number(f.current_price);
   var res = {
@@ -5568,10 +5568,29 @@ function ttResolveHorizon(f, sc, fv, tab, strategy) {
     res.tradeLabel = 'Long-term hold';
 
     var strat = strategy || null;
-    var fvPrice = fv && fv.fair_value != null ? Number(fv.fair_value) : null;
-    var fvLow = fv && fv.fv_low != null ? Number(fv.fv_low) : null;
-    var fvHigh = fv && fv.fv_high != null ? Number(fv.fv_high) : null;
-    var premiumPct = fv && fv.premium_pct != null ? Number(fv.premium_pct) : null;
+    // Fair-value resolution chain: daily_fair_value first (richest — has
+    // range + stored premium_pct), then ticker_forecast, then
+    // v_dash_daily_story (fair_value only). Many tickers don't have a
+    // daily_fair_value row, so without these fallbacks the LTH boxes
+    // render blank even when fair_value exists upstream.
+    function pick(o, k) {
+      return o && o[k] != null && isFinite(Number(o[k])) ? Number(o[k]) : null;
+    }
+    var fvPrice = pick(fv, 'fair_value');
+    if (fvPrice == null) fvPrice = pick(f, 'fair_value');
+    if (fvPrice == null) fvPrice = pick(story, 'fair_value');
+
+    var fvLow  = pick(fv, 'fv_low');
+    if (fvLow == null)  fvLow  = pick(f, 'fv_low');
+    var fvHigh = pick(fv, 'fv_high');
+    if (fvHigh == null) fvHigh = pick(f, 'fv_high');
+
+    var premiumPct = pick(fv, 'premium_pct');
+    if (premiumPct == null) premiumPct = pick(f, 'premium_pct');
+    // Derived fallback: (current - fair) / fair * 100. Positive = overvalued.
+    if (premiumPct == null && fvPrice != null && isFinite(current) && current > 0) {
+      premiumPct = (current - fvPrice) / fvPrice * 100;
+    }
 
     var anySourceData = (strat != null) || (fvPrice != null) || (premiumPct != null);
 
@@ -5632,10 +5651,10 @@ function ttResolveHorizon(f, sc, fv, tab, strategy) {
   return res;
 }
 
-function buildHorizonGrid(f, sc, fv, h, strategy) {
+function buildHorizonGrid(f, sc, fv, h, strategy, story) {
   var color = ttColor(f.color);
   var tab = TT_HORIZON_TABS.filter(function(t){ return t.key === h; })[0] || TT_HORIZON_TABS[1];
-  var data = ttResolveHorizon(f, sc, fv, tab, strategy);
+  var data = ttResolveHorizon(f, sc, fv, tab, strategy, story);
 
   // ── TRADE TYPE ──
   // Value is always the horizon-type name (Day trade / Short swing / etc).
@@ -5783,7 +5802,7 @@ function renderTradeTicket(f, story, sc, fv, earn, priceRange, strategy) {
   var bestKey = null;
   var bestConv = -Infinity;
   TT_HORIZON_TABS.forEach(function(t){
-    var d = ttResolveHorizon(f, sc, fv, t, strategy);
+    var d = ttResolveHorizon(f, sc, fv, t, strategy, story);
     if (d.conv != null && isFinite(d.conv) && d.conv > bestConv) {
       bestConv = d.conv;
       bestKey = t.key;
@@ -5912,7 +5931,7 @@ function renderTradeTicket(f, story, sc, fv, earn, priceRange, strategy) {
         + tabsHtml
       + '</div>'
       + '<div class="tt-grid-wrap">'
-        + buildHorizonGrid(f, sc, fv, primary, strategy)
+        + buildHorizonGrid(f, sc, fv, primary, strategy, story)
       + '</div>'
     + '</div>';
 
@@ -5924,7 +5943,7 @@ function renderTradeTicket(f, story, sc, fv, earn, priceRange, strategy) {
 
 // Attach horizon-tab click handler. Called once after renderTradeTicket()
 // writes the banner HTML. Re-renders only the .tt-grid-wrap inner content.
-function wireTradeTicket(bannerEl, f, sc, fv, strategy) {
+function wireTradeTicket(bannerEl, f, sc, fv, strategy, story) {
   if (!bannerEl) return;
   var card = bannerEl.querySelector('.tt-horizons');
   if (!card) return;
@@ -5938,7 +5957,7 @@ function wireTradeTicket(bannerEl, f, sc, fv, strategy) {
     if (prev) prev.classList.remove('active');
     btn.classList.add('active');
     var wrap = card.querySelector('.tt-grid-wrap');
-    if (wrap) wrap.innerHTML = buildHorizonGrid(f, sc, fv, h, strategy);
+    if (wrap) wrap.innerHTML = buildHorizonGrid(f, sc, fv, h, strategy, story);
   });
 }
 
@@ -6412,7 +6431,7 @@ async function loadHero() {
       // initially and patch the price-position bar once it lands.
       var priceRange60 = null;
       verdictBanner.innerHTML = renderTradeTicket(f, r, sc, fv, earnCtxForTicket, priceRange60, strategyForTicket);
-      wireTradeTicket(verdictBanner, f, sc, fv, strategyForTicket);
+      wireTradeTicket(verdictBanner, f, sc, fv, strategyForTicket, r);
       fetchPriceSeries(TICKER, 65).then(function(series){
         if (!series || !series.length) return;
         var prices = series.map(function(p){ return Number(p.price_close); }).filter(function(n){ return isFinite(n); });
