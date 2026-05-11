@@ -9975,6 +9975,7 @@ async function loadEarnings() {
     var rows = await sbFetch('benzinga_earnings', {
       select: 'ticker,date,fiscal_period,fiscal_year,time,actual_eps,estimated_eps,eps_surprise,eps_surprise_percent,actual_revenue,revenue_surprise',
       ticker: 'eq.' + TICKER,
+      actual_eps: 'not.is.null',
       order: 'date.desc',
       limit: '8'
     }).catch(function() { return []; });
