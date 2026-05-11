@@ -3072,6 +3072,26 @@
   }
   .tk-feed-link:hover { opacity: 0.8; text-decoration: underline; }
 
+  /* ── Lane context strip — bridges "I clicked X lane in Daily Plays" with the forensic verdict below ── */
+  .tk-lane-context{
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    background:var(--mp-surface);
+    border:1px solid var(--mp-border);
+    border-left:3px solid var(--mp-cyan);
+    border-radius:10px;
+    padding:10px 16px;
+    margin-bottom:12px;
+    font-family:'Inter',system-ui,sans-serif;
+    font-size:13px;line-height:1.45;
+    color:var(--mp-text-secondary);
+  }
+  .tk-lane-context-label{
+    font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--mp-text-tertiary);
+  }
+  .tk-lane-context-name{font-weight:700;}
+  .tk-lane-context-sep{color:var(--mp-text-muted);}
+
   /* ── Verdict Banner / Trade Ticket ── */
   .verdict-banner{
     background:var(--mp-surface);
@@ -4108,8 +4128,38 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
     </div>
   </div>
 
+  <!-- ── Lane context strip — explains why this ticker was surfaced when arriving from Daily Plays (?lane=…) ── -->
+  <div class="tk-lane-context" id="lane-context-strip" style="display:none;"></div>
+
   <!-- ── Verdict Banner — immediately visible on page load ── -->
   <div class="verdict-banner" id="verdict-banner" style="display:none;"></div>
+  <script>
+  (function renderLaneContext(){
+    try{
+      var lane = new URLSearchParams(window.location.search).get('lane');
+      if(!lane) return;
+      var MAP = {
+        DAY_TRADE:      {name:'Day Trade',      desc:'Short-term mispricing — in and out today.',                              color:'#00AEFF'},
+        SWING_TRADE:    {name:'Swing Trade',    desc:'Multi-day setup — 5–7 day hold window.',                              color:'#38C8B8'},
+        MOMENTUM:       {name:'Momentum',       desc:'Riding a confirmed trend — narrative still has fuel.',                  color:'#00DE94'},
+        EARNINGS_PLAY:  {name:'Earnings Play',  desc:'Event-driven — positioning around the print.',                          color:'#FFB800'},
+        VALUE_PICK:     {name:'Value Pick',     desc:'Fundamentals-driven FYI signal — hold weeks while the fair-value gap closes (not a paper-portfolio trade).', color:'#00DE94'},
+        NARRATIVE_TRAP: {name:'Narrative Trap', desc:'Defensive flag — coverage outpacing what filings support. Avoid or short.', color:'#FF4D4D'}
+      };
+      var m = MAP[String(lane).toUpperCase()];
+      if(!m) return;
+      var strip = document.getElementById('lane-context-strip');
+      if(!strip) return;
+      strip.style.display = 'flex';
+      strip.style.borderLeftColor = m.color;
+      strip.innerHTML =
+        '<span class="tk-lane-context-label">Surfaced as</span>'
+      + '<span class="tk-lane-context-name" style="color:'+m.color+';">'+m.name+'</span>'
+      + '<span class="tk-lane-context-sep">·</span>'
+      + '<span>'+m.desc+'</span>';
+    }catch(e){/* silent */}
+  })();
+  </script>
 
   <!-- Ask Market Scholar AI bar removed — replaced by the sidebar AI section. -->
   <!-- Attached script at the bottom of the file is guarded with a null check. -->

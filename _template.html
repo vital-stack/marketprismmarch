@@ -8440,7 +8440,8 @@ function tlBuildRow(r){
   var chip=r._chip||'';
   var price=r.price?'$'+fmtPrice(Number(r.price)):'';
   var dirAttr=d.up?'up':d.down?'down':'';
-  return '<div class="tl-row" data-ticker="'+esc(r.ticker)+'" onclick="window.location.href=\'/ticker/'+encodeURIComponent(r.ticker)+'\'">'
+  var laneQS=r.lane?'?lane='+encodeURIComponent(r.lane):'';
+  return '<div class="tl-row" data-ticker="'+esc(r.ticker)+'" onclick="window.location.href=\'/ticker/'+encodeURIComponent(r.ticker)+laneQS+'\'">'
     +'<div class="tl-row-left"><span class="tl-row-ticker">'+esc(r.ticker)+'</span><span class="tl-row-price" data-live-price="'+esc(r.ticker)+'">'+price+'</span><span class="tl-row-change" data-live-change="'+esc(r.ticker)+'" style="font-size:11px;color:var(--mp-text-tertiary);font-family:var(--font-body);margin-left:4px;"></span></div>'
     +'<div class="tl-row-right">'
       +(chip?'<div class="tl-row-pred"><span class="tl-row-pred-label">Prism Est.</span><span class="tl-row-action" style="color:var(--mp-text-primary);">'+esc(chip)+'</span></div>':'')
@@ -8653,7 +8654,8 @@ function tlBuildValueRow(r){
   var arrowColor=d.down?'#FF4D4D':'#00DE94';
   var arrow=d.down?'\u25BC':'\u25B2';
   var dirAttr=d.down?'down':'up';
-  return '<div class="tl-row" data-ticker="'+esc(r.ticker)+'" onclick="window.location.href=\'/ticker/'+encodeURIComponent(r.ticker)+'\'">'
+  var laneQS=r.lane?'?lane='+encodeURIComponent(r.lane):'';
+  return '<div class="tl-row" data-ticker="'+esc(r.ticker)+'" onclick="window.location.href=\'/ticker/'+encodeURIComponent(r.ticker)+laneQS+'\'">'
     +'<div class="tl-row-left"><span class="tl-row-ticker">'+esc(r.ticker)+'</span><span class="tl-row-price" data-live-price="'+esc(r.ticker)+'">'+price+'</span><span class="tl-row-change" data-live-change="'+esc(r.ticker)+'" style="font-size:11px;color:var(--mp-text-tertiary);font-family:var(--font-body);margin-left:4px;"></span></div>'
     +'<div class="tl-row-right">'
     +(chip?'<div class="tl-row-pred"><span class="tl-row-pred-label">Prism Est.</span><span class="tl-row-action" style="color:var(--mp-text-primary);">'+esc(chip)+'</span></div>':'')
