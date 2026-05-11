@@ -4768,7 +4768,11 @@ body{
       </div>
       <div class="lb-toolbar">
         <span class="lb-toolbar-date" id="daily-date-tag"></span>
-        <button class="lb-refresh-btn" id="daily-refresh-btn" onclick="refreshDailyBrief()" title="Refresh daily plays">
+        <button class="lb-refresh-btn mp-export-hide" id="daily-download-btn" onclick="mpDownloadDailyPage(this)" title="Download entire page as PNG">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12"/><path d="m6 12 6 6 6-6"/><path d="M5 20h14"/></svg>
+          <span>Download page</span>
+        </button>
+        <button class="lb-refresh-btn mp-export-hide" id="daily-refresh-btn" onclick="refreshDailyBrief()" title="Refresh daily plays">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
           <span>Refresh</span>
         </button>
@@ -9378,6 +9382,16 @@ async function mpDownloadCardImage(triggerEl,opts){
   }
 }
 window.mpDownloadCardImage=mpDownloadCardImage;
+
+// ── Full Daily Plays page snapshot ────────────────────────────────────────
+// Captures the entire #tab-daily panel as a single tall PNG that matches
+// what's on screen. Hides all .mp-export-hide controls during capture.
+async function mpDownloadDailyPage(triggerEl){
+  var root=document.getElementById('tab-daily');
+  if(!root){alert('Daily Plays panel not found');return;}
+  return mpDownloadCardImage(triggerEl,{root:root,slug:'daily-plays',background:'#080B11'});
+}
+window.mpDownloadDailyPage=mpDownloadDailyPage;
 
 // ── Track Record access gate ──────────────────────────────────────────────
 // Requires code "168" to unlock. Remembered in localStorage per browser.
