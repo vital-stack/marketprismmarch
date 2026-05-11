@@ -8475,16 +8475,21 @@ function _tlRefreshAll(){
     setTimeout(function(){document.querySelectorAll('.tl-lane-refresh').forEach(function(b){b.classList.remove('spinning');});},600);
   });
 }
-// Per-lane hit counter format: "10 signals · 3/10 hit today"
-//   • "10 signals" (lane subtitle) = total picks on the card.
-//   • "3/10 hit today" (this badge) = live count from the row-level ✓/✗ DOM
-//     state so the badge always matches what the user visually sees.
-//   Live hits are monotonic: once a row is confirmed hit it's locked
-//   (data-prism-locked="1"), so the count only grows intraday.
-//   Previously the badge read tracked_daily_plays.hit (backend-confirmed),
-//   but that column lags — often NULL mid-day — which made the badge show
-//   "0/N" while the row ✓'s were already green. DOM-sourced removes the
-//   disagreement.
+// Per-lane hit counter format: "12 signals · 5/12 hit today"
+//   Denominator = today's tracked entry cohort for this lane from
+//   tracked_daily_plays (entry_date === lane's effective date, lane === L,
+//   excluding SKIPPED_GAP and zombie rows). Carryover lanes use their
+//   data-fallback-date instead of today.
+//   Numerator = union of backend hits (tracked_daily_plays.hit===true) for
+//   that cohort and live DOM ✓ marks (covers the window where price has
+//   crossed target but TDP.hit hasn't been written yet).
+//   The "N signals" subtitle is rewritten from the same cohort so the two
+//   numbers cannot disagree.
+//   Why this beats a DOM-visible-only denominator: lanes can re-render with
+//   a different visible roster (re-rank, swap-in) during the day, which made
+//   "4/7" turn into "5/8" even though no genuinely new entry happened —
+//   the goalposts appeared to move. Anchoring to the entry cohort keeps the
+//   denominator stable once the day's entries are recorded.
 var _TL_LANE_MAP={
   'tl-overflow-day-trade':'DAY_TRADE',
   'tl-overflow-swing-trade':'SWING_TRADE',
@@ -8496,22 +8501,19 @@ var _TL_LANE_MAP={
 function _refreshLaneHitCounters(){
   try{
     var todayET=(typeof valTodayET==='function')?valTodayET():null;
-    // Index today's tracked plays: lane code -> {tot:Set<ticker>,hit:Set<ticker>}.
-    // Distinct tickers, so a re-entered name doesn't double-count. Cumulative
-    // across the day: picks that hit and rotate out of the visible top-N still
-    // contribute to both numerator and denominator.
-    var byLane={};
-    if(todayET&&typeof _TP_DATA!=='undefined'&&_TP_DATA&&_TP_DATA.length){
+    // Index by (lane, entry_date) so carryover lanes pull the cohort for the
+    // date they're actually showing, not today.
+    var byLaneDate={};
+    if(typeof _TP_DATA!=='undefined'&&_TP_DATA&&_TP_DATA.length){
       for(var i=0;i<_TP_DATA.length;i++){
         var r=_TP_DATA[i];
-        if(!r||r.entry_date!==todayET||!r.lane||!r.ticker)continue;
+        if(!r||!r.lane||!r.ticker||!r.entry_date)continue;
         // SKIPPED_GAP rows never actually entered (price gapped out of the
-        // entry window) — they aren't trades that "ran today". The Live
-        // Tracked Plays table hides them too; mirror that here so the
-        // denominator matches what the user sees.
+        // entry window); the Live Tracked Plays table hides them too.
         if(r.status==='SKIPPED_GAP')continue;
         if(typeof _tpIsZombie==='function'&&_tpIsZombie(r))continue;
-        var L=byLane[r.lane]||(byLane[r.lane]={tot:Object.create(null),hit:Object.create(null)});
+        var key=r.lane+'|'+r.entry_date;
+        var L=byLaneDate[key]||(byLaneDate[key]={tot:Object.create(null),hit:Object.create(null)});
         L.tot[r.ticker]=1;
         if(r.hit===true)L.hit[r.ticker]=1;
       }
@@ -8519,38 +8521,48 @@ function _refreshLaneHitCounters(){
     Object.keys(_TL_LANE_MAP).forEach(function(slug){
       var lane=document.getElementById('lane-'+slug);
       var badge=document.getElementById('hits-'+slug);
+      var countEl=document.getElementById('count-'+slug);
       if(!lane||!badge)return;
       // Earnings Play lane is supplemented by earnings_context tickers that
       // aren't actual tracked trades \u2014 the hit counter would always read
       // misleadingly low. Suppress the badge entirely for this lane.
       if(slug==='tl-overflow-earnings'){badge.innerHTML='';return;}
       var laneCode=_TL_LANE_MAP[slug];
-      // Single source of truth for the denominator: distinct tickers
-      // rendered in this lane. This matches the "N signals" subtitle next
-      // to the badge so the two numbers can never disagree. A previous
-      // version branched between a TDP-scoped denominator and a DOM-only
-      // fallback, and every live-quote refresh flipped which path won --
-      // so the badge oscillated (e.g. 0/7 -> 4/10 -> 2/32) as cron caught
-      // up to the lane.
-      var visibleTickers=Object.create(null);
-      lane.querySelectorAll('[data-prism-hit]').forEach(function(el){
-        var t=el.getAttribute('data-prism-hit');
-        if(t)visibleTickers[t]=1;
-      });
-      var total=Object.keys(visibleTickers).length;
+      // Carryover lanes (data-fallback-date) show prior-day picks; their
+      // cohort lives at that date in TDP, not today's.
+      var effectiveDate=lane.getAttribute('data-fallback-date')||todayET;
+      var B=effectiveDate?byLaneDate[laneCode+'|'+effectiveDate]:null;
+      var cohort=B?Object.keys(B.tot):[];
+      var total=cohort.length;
+      // Fall back to DOM-derived cohort when TDP hasn't loaded yet, or has no
+      // rows for this lane/date (early page-load, legacy lanes). Keeps the
+      // badge from disappearing while the page initializes.
+      if(!total){
+        var visibleTickers=Object.create(null);
+        lane.querySelectorAll('[data-prism-hit]').forEach(function(el){
+          var t=el.getAttribute('data-prism-hit');
+          if(t)visibleTickers[t]=1;
+        });
+        cohort=Object.keys(visibleTickers);
+        total=cohort.length;
+      }
       if(!total){badge.innerHTML='';return;}
-      // Numerator: union of backend hits (tracked_daily_plays.hit==true)
-      // and live DOM check marks, both restricted to visible tickers.
-      // Either source alone misses cases — TDP lags cron, DOM misses
-      // prior-day carryover lanes resolved by _applyBackendHitsToFallbackLanes.
+      // Sync the "N signals" subtitle to the same cohort so the two numbers
+      // can never disagree.
+      if(countEl&&countEl.textContent!==String(total))countEl.textContent=total;
+      // Numerator: backend hits for the full cohort (so a hit that rotated
+      // out of the visible top-N still counts) plus live DOM ✓ marks for
+      // tickers in the cohort (covers the window where price crossed target
+      // but TDP.hit hasn't been written yet).
+      var cohortSet=Object.create(null);
+      cohort.forEach(function(t){cohortSet[t]=1;});
       var hitScoped=Object.create(null);
-      var B=byLane[laneCode];
       if(B){
-        Object.keys(B.hit).forEach(function(t){if(visibleTickers[t])hitScoped[t]=1;});
+        Object.keys(B.hit).forEach(function(t){hitScoped[t]=1;});
       }
       lane.querySelectorAll('[data-prism-hit].hit').forEach(function(el){
         var t=el.getAttribute('data-prism-hit');
-        if(t&&visibleTickers[t])hitScoped[t]=1;
+        if(t&&cohortSet[t])hitScoped[t]=1;
       });
       var hits=Object.keys(hitScoped).length;
       if(hits>total)hits=total;
@@ -8631,7 +8643,7 @@ function tlBuildLane(title,subtitle,cards,laneId){
   // backend-confirmed hits from tracked_daily_plays instead of trusting today's
   // (often closed-market) intraday range from the live-quote feed.
   var laneAttrs=isFallback?' data-fallback-date="'+esc(laneDate)+'"':'';
-  var html='<div class="tl-lane" id="lane-'+laneSlug+'"'+laneAttrs+'><div class="tl-lane-header"><div><div class="tl-lane-title">'+esc(title)+'</div><div class="tl-lane-sub">'+esc(subtitle)+' \u00B7 '+cards.length+' signals <span class="tl-lane-hits" id="hits-'+laneSlug+'"></span></div></div>'
+  var html='<div class="tl-lane" id="lane-'+laneSlug+'"'+laneAttrs+'><div class="tl-lane-header"><div><div class="tl-lane-title">'+esc(title)+'</div><div class="tl-lane-sub">'+esc(subtitle)+' \u00B7 <span class="tl-lane-count" id="count-'+laneSlug+'">'+cards.length+'</span> signals <span class="tl-lane-hits" id="hits-'+laneSlug+'"></span></div></div>'
     +'<div class="tl-lane-meta"><span class="tl-lane-date"'+dateAttrs+'>'+datePrefix+_tlFormatDate(laneDate)+'</span>'
     +'<button class="mp-dl-btn mp-export-hide" type="button" onclick="event.stopPropagation();mpDownloadCardImage(this,{selector:\'.tl-lane\',slug:\''+dlSlug+'\'});" title="Download as image"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12"/><path d="m6 12 6 6 6-6"/><path d="M5 20h14"/></svg></button>'
     +'<button class="tl-lane-refresh mp-export-hide" onclick="event.stopPropagation();_tlRefreshAll();" title="Refresh prices"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg></button></div>'
