@@ -7073,15 +7073,15 @@ async function loadNarratives() {
       themes.push(theme);
     });
 
-    // Sort themes by total citation count, take top 5
+    // Sort themes by total citation count
     themes.sort((a, b) => b.allCitations.length - a.allCitations.length);
-    const top = themes.slice(0, 5).map(t => ({
+    let allThemes = themes.map(t => ({
       ...t.primary,
       citation_count: t.allCitations.length,
       allCitations: t.allCitations
     }));
 
-    // ── Merge v_narrative_scorecard_deduped fields onto each top narrative ──
+    // ── Merge v_narrative_scorecard_deduped fields onto every theme ──
     // Build lookup by hash (latest wins since we already ordered desc) and text tokens.
     // Note: scorecard view uses column `narrative` (not `narrative_text`).
     const scByHash = {};
@@ -7103,7 +7103,7 @@ async function loadNarratives() {
       }
       return best;
     }
-    top.forEach(n => {
+    allThemes.forEach(n => {
       const sc = pickScorecard(n);
       if (sc) {
         if (n.propagation_pressure   == null) n.propagation_pressure   = sc.propagation_pressure;
@@ -7112,6 +7112,21 @@ async function loadNarratives() {
         if (n.narrative_energy_regime == null) n.narrative_energy_regime = sc.narrative_energy_regime;
       }
     });
+
+    // ── Filter to fuel-bearing narratives only ──
+    // "Trending Narratives" should only surface stories that are actually
+    // moving the stock — i.e. contributing measurable propagation pressure or
+    // sitting in a live energy regime. Dormant / fuel-less rows get hidden.
+    const fuelThemes = allThemes.filter(n => {
+      const pp = Number(n.propagation_pressure);
+      if (Number.isFinite(pp) && pp > 0) return true;
+      const er = Number(n.energy_remaining);
+      if (Number.isFinite(er) && er > 0) return true;
+      const regime = String(n.narrative_energy_regime || '').toUpperCase();
+      if (regime && regime !== 'DORMANT') return true;
+      return false;
+    });
+    const top = (fuelThemes.length ? fuelThemes : allThemes).slice(0, 5);
 
     // Reorder by composite: latest article date → energy regime (explosive first) → citation count
     const regimeRank = { EXPLOSIVE: 5, HIGH: 4, MODERATE: 3, LOW: 2, DORMANT: 1 };
