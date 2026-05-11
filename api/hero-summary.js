@@ -72,9 +72,14 @@ function synthesizedStateLabel(sc, priceChangePct) {
   var freshEnergy = /critical/i.test(ner) && !/sub/i.test(ner);
   var s = sc.current_sentiment;
   var tone = (s == null || !isFinite(s)) ? null : (s > 0.30 ? 'BULLISH' : s < -0.30 ? 'BEARISH' : 'MIXED');
+  // See deriveState() in _ticker.html for the rationale — both signals must
+  // explicitly agree before the Quiet label fires; nulls default to FALSE.
+  var nea = sc.narrative_energy_absolute != null && isFinite(Number(sc.narrative_energy_absolute))
+    ? Number(sc.narrative_energy_absolute) : null;
+  var lowEnergy = nea != null && nea < 100;
   var dailyAbsPct = priceChangePct != null && isFinite(Number(priceChangePct))
     ? Math.abs(Number(priceChangePct)) : null;
-  var priceIsQuiet = dailyAbsPct == null || dailyAbsPct < 1;
+  var priceIsQuiet = dailyAbsPct != null && dailyAbsPct < 1;
 
   if (ns === 'WHALE_ACCUMULATION' && cc === 'LIKELY_COORDINATED') return 'Smart money behind a story';
   if (ns === 'WHALE_ACCUMULATION') return 'Quiet accumulation';
@@ -86,7 +91,7 @@ function synthesizedStateLabel(sc, priceChangePct) {
   if (ns === 'RETAIL_PUMP' && cc === 'SUSPICIOUS_PATTERN') return 'Suspicious retail activity';
   if (ns === 'RETAIL_PUMP') return 'Retail momentum';
   if (wr === 'EXHAUSTING') return 'Narrative collapsing';
-  if (ns === 'DORMANT' && priceIsQuiet) return 'Quiet';
+  if (ns === 'DORMANT' && lowEnergy && priceIsQuiet) return 'Quiet';
   if (cc === 'LIKELY_COORDINATED') return 'Coordinated narrative';
   if (!ns) return 'Insufficient signal';
   return 'Mixed signals';
@@ -205,7 +210,7 @@ module.exports = async (req, res) => {
   var sinceISO = new Date(Date.now() - 3 * 86400000).toISOString().slice(0, 10);
   var [storyRows, scoreRows, healthRows, narrativeRows, fvRows, articleRows] = await Promise.all([
     fetchSupabase('v_dash_daily_story?select=ticker,sector_name,price,price_change_pct,narrative_state,prism_verdict,story_claim,forensic_rebuttal,days_to_earnings,guidance_direction,earnings_surprise_pct,snapshot_date&' + tFilter + '&order=snapshot_date.desc&limit=1'),
-    fetchSupabase('narrative_scorecard?select=ticker,verdict,narrative_state,coordination_score,walsh_regime,narrative_energy_regime,current_sentiment,fvd_pct,half_life,snapshot_date&' + tFilter + '&order=snapshot_date.desc&limit=1'),
+    fetchSupabase('narrative_scorecard?select=ticker,verdict,narrative_state,coordination_score,walsh_regime,narrative_energy_regime,narrative_energy_absolute,current_sentiment,fvd_pct,half_life,snapshot_date&' + tFilter + '&order=snapshot_date.desc&limit=1'),
     fetchSupabase('v_dash_narrative_health?select=ticker,narrative_health,narrative_trend,snapshot_date&' + tFilter + '&order=snapshot_date.desc&limit=1'),
     fetchSupabase('v_narrative_scorecard_deduped?select=narrative,propagation_pressure,energy_remaining,narrative_energy_regime,snapshot_date&' + tFilter + '&order=snapshot_date.desc,propagation_pressure.desc.nullslast&limit=8'),
     fetchSupabase('daily_fair_value?select=fair_value,fv_low,fv_high,verdict,snapshot_date&' + tFilter + '&order=snapshot_date.desc&limit=1'),

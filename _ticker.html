@@ -5380,11 +5380,21 @@ function deriveState(sc, ctx) {
   var ner  = (sc.narrative_energy_regime || '').toString();
   var freshEnergy = /critical/i.test(ner) && !/sub/i.test(ner);
   var tone = ttNarrativeTone(sc.current_sentiment);
-  // Today's price move (absolute %). Null = unknown — treat as quiet so we
-  // don't suppress the Quiet label on tickers without a fresh snapshot.
+  // "Genuinely quiet" guard for the Quiet label. Two signals must agree:
+  //   1. LOW NARRATIVE ENERGY — the actually-reliable signal at render time.
+  //      narrative_energy_absolute = total article-weighted coverage. NVDA-grade
+  //      tickers have hundreds; a truly quiet small-cap has tens or less.
+  //      Without explicit low-energy data we refuse to call it Quiet.
+  //   2. Today's price not moving — snapshot-stored price_change_pct (can be
+  //      stale at intraday — that's why energy is the primary check, not this).
+  // Both default to FALSE when their source is missing so the rule errs toward
+  // dropping the Quiet label rather than asserting quiet on incomplete data.
+  var nea = sc.narrative_energy_absolute != null && isFinite(Number(sc.narrative_energy_absolute))
+    ? Number(sc.narrative_energy_absolute) : null;
+  var lowEnergy = nea != null && nea < 100;
   var dailyAbsPct = ctx && ctx.priceChangePct != null && isFinite(Number(ctx.priceChangePct))
     ? Math.abs(Number(ctx.priceChangePct)) : null;
-  var priceIsQuiet = dailyAbsPct == null || dailyAbsPct < 1;
+  var priceIsQuiet = dailyAbsPct != null && dailyAbsPct < 1;
 
   // 1. WHALE_ACCUMULATION + LIKELY_COORDINATED — story-driven accumulation.
   //    Note: the dark-pool-gated "Smart money loading" branch is omitted —
@@ -5426,9 +5436,10 @@ function deriveState(sc, ctx) {
     return { label: 'Narrative collapsing', action: 'CONSIDER EXIT', tone: 'negative' };
   }
   // DORMANT alone isn't enough for "Quiet" — a large-cap like NVDA can hit
-  // narrative-dormant on a sparse news day while the stock moves +3%
-  // intraday. Require both a dormant narrative AND a quiet tape.
-  if (ns === 'DORMANT' && priceIsQuiet) {
+  // narrative-dormant on a sparse-news day while the stock moves +3% and
+  // generates massive narrative energy. Require all three: dormant narrative,
+  // low narrative energy (sparse coverage), AND a quiet tape.
+  if (ns === 'DORMANT' && lowEnergy && priceIsQuiet) {
     return { label: 'Quiet', action: 'NO SETUP', tone: 'neutral' };
   }
   if (cc === 'LIKELY_COORDINATED') {
