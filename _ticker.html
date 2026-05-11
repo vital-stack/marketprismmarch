@@ -9992,7 +9992,9 @@ async function loadEarnings() {
 
     var beats = 0;
     rowsEl.innerHTML = rows.slice(0, 6).map(function(r) {
-      var surprise = r.eps_surprise_percent != null ? r.eps_surprise_percent : (r.actual_eps != null && r.estimated_eps != null && r.estimated_eps !== 0 ? ((r.actual_eps - r.estimated_eps) / Math.abs(r.estimated_eps)) * 100 : null);
+      // benzinga_earnings.eps_surprise_percent is a decimal (0.0538 = 5.38%),
+      // not already a percent — normalize to percent to match Forensic Analysis.
+      var surprise = r.eps_surprise_percent != null ? Number(r.eps_surprise_percent) * 100 : (r.actual_eps != null && r.estimated_eps != null && r.estimated_eps !== 0 ? ((r.actual_eps - r.estimated_eps) / Math.abs(r.estimated_eps)) * 100 : null);
       var isBeat = surprise != null && surprise > 0;
       if (isBeat) beats++;
       var period = r.fiscal_period || '';
