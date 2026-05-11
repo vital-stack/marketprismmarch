@@ -5455,6 +5455,21 @@ var TT_HORIZON_TABS = [
   { key:'lth', label:'Long term hold',   horizonDays:90, source:'fair_value'   }
 ];
 
+// Map raw best_historical_entry_zone strings to display labels. Handles both
+// the bare key form ("near_high") used in this codebase's strategy table and
+// the parenthetical form ("near_high (>-5%)") used by some upstreams.
+function cleanZoneName(zone) {
+  if (!zone) return '';
+  var key = String(zone).toLowerCase().split('(')[0].trim();
+  var map = {
+    'near_high':     'Near high',
+    'dip':           'Dip',
+    'pullback':      'Pullback',
+    'deep_pullback': 'Deep discount'
+  };
+  return map[key] || zone;
+}
+
 // Bias direction descriptor for the trade-type sub-label. "Neutral" /
 // "Long bias" / "Short bias" / "Long bias (verify)" / "Short bias (verify)".
 function ttBiasDescriptor(bias) {
@@ -5481,13 +5496,23 @@ var TT_TRADE_TYPE_NAME = {
 
 // Resolve per-horizon values per tab source: forecast tabs read fields
 // directly; 20D extrapolates from the 10D model; Long term hold derives
-// from daily_fair_value.
-function ttResolveHorizon(f, sc, fv, tab) {
+// from daily_fair_value + ticker_strategy_summary.
+//
+// Result fields:
+//   pct/price/lo/hi/conv  — numeric inputs for default cell rendering
+//   tradeLabel/tradeSub   — TRADE TYPE cell content
+//   moveValHtml, moveSub  — PREDICTED MOVE cell content (Html overrides numeric)
+//   probValHtml, probSub  — PROB UP cell content (Html overrides numeric)
+//   confValHtml, confSub  — FORECAST CONFIDENCE cell content (Html overrides numeric)
+//   suppressDots          — suppress the 10-dot meter (used by LTH where the
+//                           value is a return %, not a confidence score)
+function ttResolveHorizon(f, sc, fv, tab, strategy) {
   var bias = (f.bias || '').toLowerCase();
   var current = Number(f.current_price);
   var res = {
     pct:null, price:null, lo:null, hi:null, conv:null,
     tradeLabel:null, tradeLabelColor:null, tradeSub:'', tradeSubColor:null,
+    moveValHtml:null, probValHtml:null, confValHtml:null, suppressDots:false,
     convSub:'', moveSub:'', probSub: tab.horizonDays + '-day horizon'
   };
 
@@ -5534,48 +5559,83 @@ function ttResolveHorizon(f, sc, fv, tab) {
   }
 
   if (tab.source === 'fair_value') {
-    res.tradeLabel = TT_TRADE_TYPE_NAME[tab.key] || 'Long-term hold';
+    // Long-term hold — populates the same 4 boxes but with different semantics:
+    //   TRADE TYPE          = "Long-term hold" (static) / narrative_behavior
+    //   PREDICTED MOVE      = fair_value target / fv_low–fv_high range
+    //   PROB UP             = premium_pct (color-coded: red if overvalued)
+    //   FORECAST CONFIDENCE = avg historical 5d return from best entry zone /
+    //                         zone name + obs count
+    res.tradeLabel = 'Long-term hold';
+
+    var strat = strategy || null;
     var fvPrice = fv && fv.fair_value != null ? Number(fv.fair_value) : null;
-    if (fvPrice != null && isFinite(current) && current > 0) {
-      var gapPct = (fvPrice - current) / current * 100;
-      res.pct = gapPct;
-      res.price = fvPrice;
-      if (fv.fv_low != null) res.lo = Number(fv.fv_low);
-      if (fv.fv_high != null) res.hi = Number(fv.fv_high);
-      var verdictTxt = (fv.verdict || '').toLowerCase();
-      var lbl, col;
-      if (verdictTxt.indexOf('under') >= 0 || gapPct >= 20) {
-        lbl = 'Accumulate'; col = '#00DE94';
-      } else if (verdictTxt.indexOf('over') >= 0 || gapPct <= -20) {
-        lbl = 'Avoid / Trim'; col = '#FF4D4D';
-      } else if (gapPct >= 5) {
-        lbl = 'Buy'; col = '#00DE94';
-      } else if (gapPct <= -5) {
-        lbl = 'Trim'; col = '#FFB800';
-      } else {
-        lbl = 'Hold'; col = '#00AEFF';
-      }
-      res.tradeSub = lbl;
-      res.tradeSubColor = col;
-      var vms = sc && sc.vms != null ? Number(sc.vms) : null;
-      if (vms != null && isFinite(vms)) res.conv = Math.max(0, Math.min(100, vms));
-      res.convSub = vms != null ? 'Fundamentals (VMS)' : 'No VMS available';
-      res.moveSub = 'Gap to fair value';
-      res.probSub = 'Long-term convergence';
+    var fvLow = fv && fv.fv_low != null ? Number(fv.fv_low) : null;
+    var fvHigh = fv && fv.fv_high != null ? Number(fv.fv_high) : null;
+    var premiumPct = fv && fv.premium_pct != null ? Number(fv.premium_pct) : null;
+
+    var anySourceData = (strat != null) || (fvPrice != null) || (premiumPct != null);
+
+    // TRADE TYPE sub — narrative_behavior from strategy summary.
+    if (strat && strat.narrative_behavior) {
+      res.tradeSub = strat.narrative_behavior;
+    } else if (!anySourceData) {
+      res.tradeSub = 'Long-term data unavailable';
     } else {
-      res.tradeSub = 'No fair-value data';
-      res.convSub = 'No model fit';
+      res.tradeSub = '';
     }
+
+    // PREDICTED MOVE — fair value target + range. Independent of strategy row.
+    if (fvPrice != null) {
+      res.moveValHtml = ttFmtUsd(fvPrice);
+      if (fvLow != null && fvHigh != null) {
+        res.moveSub = 'Fair value · ' + ttFmtUsd(fvLow) + ' – ' + ttFmtUsd(fvHigh) + ' range';
+      } else {
+        res.moveSub = 'Fair value';
+      }
+    } else {
+      res.moveValHtml = '<span class="tt-empty-val">—</span>';
+      res.moveSub = anySourceData ? '' : 'Long-term data unavailable';
+    }
+
+    // PROB UP — premium_pct. Positive (overvalued) = red, negative (undervalued) = green.
+    if (premiumPct != null && isFinite(premiumPct)) {
+      var sign = premiumPct > 0 ? '+' : '';
+      var probColor = premiumPct > 0 ? '#FF4D4D' : premiumPct < 0 ? '#00DE94' : 'inherit';
+      res.probValHtml = '<span style="color:'+ probColor +';">'+ sign + premiumPct.toFixed(0) + '%</span>';
+      res.probSub = premiumPct > 0 ? 'Above fair value' : premiumPct < 0 ? 'Below fair value' : 'At fair value';
+    } else {
+      res.probValHtml = '<span class="tt-empty-val">—</span>';
+      res.probSub = anySourceData ? '' : 'Long-term data unavailable';
+    }
+
+    // FORECAST CONFIDENCE — avg historical 5d return from best entry zone.
+    // No 10-dot meter on this tab: the value is a return %, not a 0-100 score.
+    res.suppressDots = true;
+    if (strat && strat.avg_5d_return_from_best_entry_zone != null && isFinite(strat.avg_5d_return_from_best_entry_zone)) {
+      var ret = Number(strat.avg_5d_return_from_best_entry_zone) * 100;
+      var retColor = ret > 0 ? '#00DE94' : ret < 0 ? '#FF4D4D' : 'inherit';
+      res.confValHtml = '<span style="color:'+ retColor +';">'+ ret.toFixed(1) + '%</span>';
+      var zone = cleanZoneName(strat.best_historical_entry_zone);
+      var obs = strat.best_entry_zone_observations;
+      var subParts = [];
+      if (zone) subParts.push(zone);
+      if (obs != null) subParts.push(obs + ' obs');
+      res.convSub = subParts.join(' · ');
+    } else {
+      res.confValHtml = '<span class="tt-empty-val">—</span>';
+      res.convSub = anySourceData ? '' : 'Long-term data unavailable';
+    }
+
     return res;
   }
 
   return res;
 }
 
-function buildHorizonGrid(f, sc, fv, h) {
+function buildHorizonGrid(f, sc, fv, h, strategy) {
   var color = ttColor(f.color);
   var tab = TT_HORIZON_TABS.filter(function(t){ return t.key === h; })[0] || TT_HORIZON_TABS[1];
-  var data = ttResolveHorizon(f, sc, fv, tab);
+  var data = ttResolveHorizon(f, sc, fv, tab, strategy);
 
   // ── TRADE TYPE ──
   // Value is always the horizon-type name (Day trade / Short swing / etc).
@@ -5594,7 +5654,10 @@ function buildHorizonGrid(f, sc, fv, h) {
 
   // ── PREDICTED MOVE ──
   var moveVal, moveSub;
-  if (data.pct != null) {
+  if (data.moveValHtml != null) {
+    moveVal = data.moveValHtml;
+    moveSub = data.moveSub || '';
+  } else if (data.pct != null) {
     moveVal = '<span class="'+ttPctClass(data.pct)+'">'+ ttFmtPct(data.pct) +'</span>'
       + (data.price != null ? ' &middot; ' + ttFmtUsd(data.price) : '');
     if (data.lo != null && data.hi != null) {
@@ -5614,39 +5677,49 @@ function buildHorizonGrid(f, sc, fv, h) {
     + '</div>';
 
   // ── PROB UP ──
-  var prob = null;
-  if (data.conv != null) {
-    var sign = 0;
-    if (data.pct != null && isFinite(data.pct)) {
-      sign = data.pct > 0 ? 1 : data.pct < 0 ? -1 : 0;
-    } else {
-      var b = (f.bias || '').toLowerCase();
-      if (b === 'long' || b === 'watch_long')   sign =  1;
-      if (b === 'short' || b === 'watch_short') sign = -1;
+  var probVal;
+  if (data.probValHtml != null) {
+    probVal = data.probValHtml;
+  } else {
+    var prob = null;
+    if (data.conv != null) {
+      var sign = 0;
+      if (data.pct != null && isFinite(data.pct)) {
+        sign = data.pct > 0 ? 1 : data.pct < 0 ? -1 : 0;
+      } else {
+        var b = (f.bias || '').toLowerCase();
+        if (b === 'long' || b === 'watch_long')   sign =  1;
+        if (b === 'short' || b === 'watch_short') sign = -1;
+      }
+      prob = sign === 0 ? 50 : Math.max(5, Math.min(95, 50 + sign * Math.round(data.conv * 0.45)));
     }
-    prob = sign === 0 ? 50 : Math.max(5, Math.min(95, 50 + sign * Math.round(data.conv * 0.45)));
+    probVal = prob != null ? prob + '%' : '<span class="tt-empty-val">—</span>';
   }
-  var probVal = prob != null ? prob + '%' : '<span class="tt-empty-val">—</span>';
   var probCell = '<div class="tt-cell">'
     + '<div class="tt-cell-label">Prob Up</div>'
     + '<div class="tt-cell-val">'+ probVal +'</div>'
-    + '<div class="tt-cell-sub">'+ esc(data.probSub) +'</div>'
+    + '<div class="tt-cell-sub">'+ esc(data.probSub || '') +'</div>'
     + '</div>';
 
   // ── FORECAST CONFIDENCE ──
   var convDotsHtml = '';
   var convVal;
-  if (data.conv != null) {
+  if (data.confValHtml != null) {
+    convVal = data.confValHtml;
+  } else if (data.conv != null) {
     var filled = Math.max(0, Math.min(10, Math.round(data.conv / 10)));
     var dots = '';
     for (var i = 0; i < 10; i++) {
       dots += '<span class="dot'+(i < filled ? ' on' : '')+'"></span>';
     }
-    convDotsHtml = '<span class="tt-conv-inline-dots" style="color:'+color+';">'+ dots +'</span>';
+    if (!data.suppressDots) {
+      convDotsHtml = '<span class="tt-conv-inline-dots" style="color:'+color+';">'+ dots +'</span>';
+    }
     convVal = Math.round(data.conv) + '%';
   } else {
     convVal = '<span class="tt-empty-val">—</span>';
   }
+  if (data.suppressDots) convDotsHtml = '';
   var convCell = '<div class="tt-cell">'
     + '<div class="tt-cell-label">Forecast Confidence</div>'
     + '<div class="tt-cell-val tt-conv-inline">'
@@ -5695,7 +5768,7 @@ function ttDarken(hex, amount) {
   return 'rgb('+r+','+g+','+b+')';
 }
 
-function renderTradeTicket(f, story, sc, fv, earn, priceRange) {
+function renderTradeTicket(f, story, sc, fv, earn, priceRange, strategy) {
   var color = ttColor(f.color);
 
   // Headline gets overwritten by /api/hero-summary once that lands (#tt-headline).
@@ -5710,7 +5783,7 @@ function renderTradeTicket(f, story, sc, fv, earn, priceRange) {
   var bestKey = null;
   var bestConv = -Infinity;
   TT_HORIZON_TABS.forEach(function(t){
-    var d = ttResolveHorizon(f, sc, fv, t);
+    var d = ttResolveHorizon(f, sc, fv, t, strategy);
     if (d.conv != null && isFinite(d.conv) && d.conv > bestConv) {
       bestConv = d.conv;
       bestKey = t.key;
@@ -5839,7 +5912,7 @@ function renderTradeTicket(f, story, sc, fv, earn, priceRange) {
         + tabsHtml
       + '</div>'
       + '<div class="tt-grid-wrap">'
-        + buildHorizonGrid(f, sc, fv, primary)
+        + buildHorizonGrid(f, sc, fv, primary, strategy)
       + '</div>'
     + '</div>';
 
@@ -5851,7 +5924,7 @@ function renderTradeTicket(f, story, sc, fv, earn, priceRange) {
 
 // Attach horizon-tab click handler. Called once after renderTradeTicket()
 // writes the banner HTML. Re-renders only the .tt-grid-wrap inner content.
-function wireTradeTicket(bannerEl, f, sc, fv) {
+function wireTradeTicket(bannerEl, f, sc, fv, strategy) {
   if (!bannerEl) return;
   var card = bannerEl.querySelector('.tt-horizons');
   if (!card) return;
@@ -5865,7 +5938,7 @@ function wireTradeTicket(bannerEl, f, sc, fv) {
     if (prev) prev.classList.remove('active');
     btn.classList.add('active');
     var wrap = card.querySelector('.tt-grid-wrap');
-    if (wrap) wrap.innerHTML = buildHorizonGrid(f, sc, fv, h);
+    if (wrap) wrap.innerHTML = buildHorizonGrid(f, sc, fv, h, strategy);
   });
 }
 
@@ -6011,7 +6084,7 @@ async function loadHero() {
       'sector_trap_flag','sector_trap_name','days_to_options_expiry','next_options_expiry'
     ].join(',');
 
-    const [rows, healthRows, snapRows, tradeRows, scorecardRows, cvRows, earnContextRows, forecastRows, latestBzEarningsRows, fairValueRows] = await Promise.all([
+    const [rows, healthRows, snapRows, tradeRows, scorecardRows, cvRows, earnContextRows, forecastRows, latestBzEarningsRows, fairValueRows, strategyRows] = await Promise.all([
       sbFetch('v_dash_daily_story', { select: cols, ticker: `eq.${TICKER}`, order: 'snapshot_date.desc', limit: '1' }),
       sbFetch('v_dash_narrative_health', {
         select: 'narrative_health,narrative_trend,attention_trend',
@@ -6078,6 +6151,12 @@ async function loadHero() {
         select: 'fair_value,fv_low,fv_high,verdict,premium_pct,snapshot_date,computed_at',
         ticker: `eq.${TICKER}`,
         order: 'snapshot_date.desc',
+        limit: '1'
+      }).catch(function(){ return []; }),
+      // Long-term hold tab pulls historical entry-zone aggregates from here.
+      sbFetch('ticker_strategy_summary', {
+        select: 'narrative_behavior,best_historical_entry_zone,avg_5d_return_from_best_entry_zone,best_entry_zone_observations',
+        ticker: `eq.${TICKER}`,
         limit: '1'
       }).catch(function(){ return []; })
     ]);
@@ -6325,14 +6404,15 @@ async function loadHero() {
     var f = (forecastRows || [])[0] || null;
     var fv = (fairValueRows || [])[0] || null;
     var earnCtxForTicket = (earnContextRows || [])[0] || null;
+    var strategyForTicket = (strategyRows || [])[0] || null;
     if (verdictBanner && f) {
       verdictBanner.style.display = 'block';
       verdictBanner.style.borderLeftColor = ttColor(f.color);
       // Kick off 60-day price-range fetch in parallel; render with placeholder
       // initially and patch the price-position bar once it lands.
       var priceRange60 = null;
-      verdictBanner.innerHTML = renderTradeTicket(f, r, sc, fv, earnCtxForTicket, priceRange60);
-      wireTradeTicket(verdictBanner, f, sc, fv);
+      verdictBanner.innerHTML = renderTradeTicket(f, r, sc, fv, earnCtxForTicket, priceRange60, strategyForTicket);
+      wireTradeTicket(verdictBanner, f, sc, fv, strategyForTicket);
       fetchPriceSeries(TICKER, 65).then(function(series){
         if (!series || !series.length) return;
         var prices = series.map(function(p){ return Number(p.price_close); }).filter(function(n){ return isFinite(n); });
