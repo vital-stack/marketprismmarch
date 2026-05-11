@@ -3321,6 +3321,8 @@
   .tt-pricepos-scale > span:last-child{color:#FFB800;}
 
   /* ── Narrative state strip ── */
+  /* Background tint applied inline per ticker via the bias color so the card
+     picks up the amber/cyan/green/red wash the mockup uses. */
   .tt-narr{
     border-radius:10px;padding:18px 20px;margin-bottom:16px;
     border-left:3px solid var(--mp-text-muted);
@@ -3333,12 +3335,12 @@
   .tt-narr-title-wrap{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
   .tt-narr-title{
     font-family:'Inter',system-ui,sans-serif;
-    font-size:18px;font-weight:600;line-height:1.2;
+    font-size:18px;font-weight:500;line-height:1.2;letter-spacing:-0.005em;
   }
   .tt-narr-action{
-    font-family:'Inter',system-ui,sans-serif;font-size:11px;font-weight:600;
-    letter-spacing:.06em;text-transform:uppercase;
-    padding:4px 10px;border-radius:4px;
+    font-family:'Inter',system-ui,sans-serif;font-size:11px;font-weight:500;
+    letter-spacing:.04em;text-transform:uppercase;
+    padding:3px 10px;border-radius:4px;
   }
   .tt-narr-meta{
     font-family:'Inter',system-ui,sans-serif;font-size:11px;color:var(--mp-text-muted);
@@ -3408,10 +3410,10 @@
   .tt-horizons .tt-cell-sub{margin-top:2px;}
 
   /* Conviction cell with inline dots */
-  .tt-conv-inline{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
-  .tt-conv-inline-dots{display:inline-flex;gap:2px;}
+  .tt-conv-inline{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .tt-conv-inline-dots{display:inline-flex;gap:3px;align-items:center;}
   .tt-conv-inline-dots .dot{
-    width:5px;height:5px;border-radius:50%;
+    width:6px;height:6px;border-radius:50%;
     background:#374151;
   }
   .tt-conv-inline-dots .dot.on{background:currentColor;}
@@ -5392,19 +5394,29 @@ function buildHorizonGrid(f, sc, fv, h) {
   var horizonLabel = tab.horizonDays + '-day horizon';
 
   // ── TRADE TYPE ──
+  // "No actionable trade" = unavailable horizon OR neutral bias. Mockup
+  // treats neutral as forecast-only (italic gray "No SWING signal").
+  var bias = (f.bias || '').toLowerCase();
+  var isNeutral = bias === 'neutral' || bias === '';
+  var actionable = tab.available && !isNeutral;
   var tradeVal, tradeSub;
-  if (tab.available) {
+  if (actionable) {
     tradeVal = '<span style="color:'+color+';">'+ esc(ttBiasLabel(f.bias)) +'</span>';
-    switch ((f.bias || '').toLowerCase()) {
+    switch (bias) {
       case 'long':        tradeSub = 'Long setup'; break;
       case 'short':       tradeSub = 'Short setup'; break;
       case 'watch_long':
       case 'watch_short': tradeSub = 'Wait for setup'; break;
-      case 'neutral':     tradeSub = 'No directional edge'; break;
       default:            tradeSub = '';
     }
   } else {
-    tradeVal = '<span class="tt-empty-val">No '+ esc(tab.label.split('·').pop().trim() || tab.label) +' signal</span>';
+    // Extract horizon name from the tab label, e.g. "Short swing · 5D" → "SWING".
+    var hzName = tab.label.split('·').pop().trim().toUpperCase();
+    if (!hzName || hzName === tab.label.toUpperCase()) hzName = tab.label.toUpperCase();
+    // Normalize a couple of cases for readable copy.
+    if (hzName === 'LONG TERM HOLD') hzName = 'LONG-TERM';
+    if (hzName.startsWith('DAY TRADE')) hzName = 'DAY TRADE';
+    tradeVal = '<span class="tt-empty-val">No '+ esc(hzName) +' signal</span>';
     tradeSub = 'Forecast only';
   }
   var tradeCell = '<div class="tt-cell">'
@@ -5498,6 +5510,33 @@ function ttCoordClass(coord) {
   return 'None';
 }
 
+// Lighten a hex color by mixing toward white. amount in [0..1].
+// Used so the bias color reads as cream/light-tint in the narrative title
+// instead of saturated chip-color.
+function ttLighten(hex, amount) {
+  if (!hex || hex[0] !== '#' || hex.length !== 7) return hex;
+  var r = parseInt(hex.slice(1,3), 16);
+  var g = parseInt(hex.slice(3,5), 16);
+  var b = parseInt(hex.slice(5,7), 16);
+  r = Math.round(r + (255-r)*amount);
+  g = Math.round(g + (255-g)*amount);
+  b = Math.round(b + (255-b)*amount);
+  return 'rgb('+r+','+g+','+b+')';
+}
+
+// Darken a hex color by mixing toward black. amount in [0..1].
+// Used for the action chip background — a deep tint of the bias color.
+function ttDarken(hex, amount) {
+  if (!hex || hex[0] !== '#' || hex.length !== 7) return hex;
+  var r = parseInt(hex.slice(1,3), 16);
+  var g = parseInt(hex.slice(3,5), 16);
+  var b = parseInt(hex.slice(5,7), 16);
+  r = Math.round(r * (1 - amount));
+  g = Math.round(g * (1 - amount));
+  b = Math.round(b * (1 - amount));
+  return 'rgb('+r+','+g+','+b+')';
+}
+
 function renderTradeTicket(f, story, sc, fv, earn, priceRange) {
   var color = ttColor(f.color);
 
@@ -5540,22 +5579,33 @@ function renderTradeTicket(f, story, sc, fv, earn, priceRange) {
   if (narrTitle === narrTitle.toUpperCase()) {
     narrTitle = narrTitle.charAt(0) + narrTitle.slice(1).toLowerCase();
   }
-  // Soften the title color slightly (mockup uses a desaturated tint of the bias color).
-  var titleColor = color;
+  // Title color: lightened toward white (matches mockup's cream-on-amber look).
+  // Card background: a deep tint of the bias color so the whole card picks up
+  // the amber/cyan/red wash like the mockup.
+  var titleColor = ttLighten(color, 0.55);
+  var narrBg = color + '14';     // ~8% alpha tint of bias color
+  var narrBorder = color + '88'; // ~53% alpha for a stronger left bar
 
   var action = ttActionChip(f);
   var actionHtml = '';
   if (action) {
-    // Tinted background like the mockup's `#412402` dark amber on `#ef9f27` text.
-    actionHtml = '<span class="tt-narr-action" style="background:'+color+'22;color:'+color+';">'+ esc(action) +'</span>';
+    // Deep tint of the bias color (like mockup's #412402 on #ef9f27).
+    var chipBg = ttDarken(color, 0.72);
+    actionHtml = '<span class="tt-narr-action" style="background:'+chipBg+';color:'+color+';">'+ esc(action) +'</span>';
   }
 
-  // Lifecycle meta — "Updated Xm ago · ~Nd horizon" (mockup: "Day 11 · ~90d horizon").
-  // We don't store narrative-inception days, so we use the freshness stamp.
-  var metaBits = [];
-  if (fresh) metaBits.push(esc(fresh));
-  metaBits.push('~' + primaryTab.horizonDays + 'd horizon');
-  var narrMeta = '<span class="tt-narr-meta">'+ metaBits.join(' · ') +'</span>';
+  // Lifecycle meta — "Day X · ~Nd horizon" (mockup: "Day 11 · ~90d horizon").
+  // We don't store narrative-inception days; use scorecard half_life as a
+  // best-available proxy. half_life is days-until-decay, so Day-X is computed
+  // as max(1, round(horizon - half_life)) — a rough lifecycle position.
+  var lifecycleDay = 1;
+  if (sc && sc.half_life != null && isFinite(sc.half_life)) {
+    var hl = Math.max(0, Number(sc.half_life));
+    lifecycleDay = Math.max(1, Math.round(primaryTab.horizonDays - hl));
+    if (!isFinite(lifecycleDay) || lifecycleDay < 1) lifecycleDay = 1;
+  }
+  var narrMeta = '<span class="tt-narr-meta">Day ' + lifecycleDay
+    + ' &middot; ~' + primaryTab.horizonDays + 'd horizon</span>';
 
   // Signals-behind-label expandable rows.
   var signalRows = [];
@@ -5594,7 +5644,7 @@ function renderTradeTicket(f, story, sc, fv, earn, priceRange) {
   }
 
   var narrHtml = ''
-    + '<div class="tt-narr" style="border-left-color:'+color+';">'
+    + '<div class="tt-narr" style="border-left-color:'+narrBorder+';background:'+narrBg+';">'
       + '<div class="tt-narr-head">'
         + '<div class="tt-narr-title-wrap">'
           + '<span class="tt-narr-title" style="color:'+titleColor+';">'+ esc(narrTitle) +'</span>'
