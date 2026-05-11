@@ -5361,85 +5361,154 @@ function ttActionChip(f) {
 }
 
 // Tabs shown in the horizon strip — exactly the mockup's 5.
+// source:
+//   'forecast' — pulls predicted_<key>_* fields directly
+//   'extrapolated' — derived from the 10D forecast (no 20D model)
+//   'fair_value' — derived from daily_fair_value (long-term hold)
 var TT_HORIZON_TABS = [
-  { key:'1d',  label:'Day trade · 1D',   horizonDays:1,  available:true  },
-  { key:'5d',  label:'Short swing · 5D', horizonDays:5,  available:true  },
-  { key:'10d', label:'Long swing · 10D', horizonDays:10, available:true  },
-  { key:'20d', label:'Position · 20D',   horizonDays:20, available:false },
-  { key:'lth', label:'Long term hold',         horizonDays:90, available:false }
+  { key:'1d',  label:'Day trade · 1D',   horizonDays:1,  source:'forecast'     },
+  { key:'5d',  label:'Short swing · 5D', horizonDays:5,  source:'forecast'     },
+  { key:'10d', label:'Long swing · 10D', horizonDays:10, source:'forecast'     },
+  { key:'20d', label:'Position · 20D',   horizonDays:20, source:'extrapolated' },
+  { key:'lth', label:'Long term hold',   horizonDays:90, source:'fair_value'   }
 ];
 
-// Derived prob_up from bias + per-horizon conviction. Sign comes from predicted
-// pct (or bias when pct missing). Conviction maps to distance from 50%.
-function ttProbUp(f, h) {
-  var pct = f['predicted_' + h + '_pct'];
-  var conv = f['conviction_' + h];
-  if (conv == null) return null;
-  var sign = 0;
-  if (pct != null && isFinite(pct)) {
-    sign = pct > 0 ? 1 : pct < 0 ? -1 : 0;
-  } else {
-    var b = (f.bias || '').toLowerCase();
-    if (b === 'long' || b === 'watch_long')   sign =  1;
-    if (b === 'short' || b === 'watch_short') sign = -1;
+// Resolve per-horizon values per tab source: forecast tabs read fields
+// directly; 20D extrapolates from the 10D model; Long term hold derives
+// from daily_fair_value.
+function ttResolveHorizon(f, sc, fv, tab) {
+  var bias = (f.bias || '').toLowerCase();
+  var current = Number(f.current_price);
+  var res = {
+    pct:null, price:null, lo:null, hi:null, conv:null,
+    tradeLabel:null, tradeLabelColor:null, tradeSub:'',
+    convSub:'', moveSub:'', probSub: tab.horizonDays + '-day horizon'
+  };
+
+  if (tab.source === 'forecast') {
+    res.pct   = f['predicted_' + tab.key + '_pct'];
+    res.price = f['predicted_' + tab.key + '_price'];
+    res.lo    = f['predicted_' + tab.key + '_low'];
+    res.hi    = f['predicted_' + tab.key + '_high'];
+    res.conv  = f['conviction_' + tab.key];
+    if (bias === 'neutral' || !bias) {
+      var hzName = tab.label.split('·').pop().trim().toUpperCase();
+      if (hzName.startsWith('DAY TRADE')) hzName = 'DAY TRADE';
+      res.tradeLabel = 'No ' + hzName + ' signal';
+      res.tradeSub = 'Forecast only';
+    } else {
+      res.tradeLabel = ttBiasLabel(f.bias);
+      res.tradeLabelColor = ttColor(f.color);
+      res.tradeSub = ({
+        'long':'Long setup', 'short':'Short setup',
+        'watch_long':'Wait for setup', 'watch_short':'Wait for setup'
+      })[bias] || '';
+    }
+    if (f.rolling_30_total != null && f.rolling_30_total >= 5) {
+      res.convSub = f.rolling_30_directional + '/' + f.rolling_30_total + ' last 30d';
+    }
+    return res;
   }
-  if (sign === 0) return 50;
-  return Math.max(5, Math.min(95, 50 + sign * Math.round(conv * 0.45)));
+
+  if (tab.source === 'extrapolated') {
+    // 20D from 10D — linear pct scaling, sqrt-time band widening, conv haircut.
+    var p10pct = f.predicted_10d_pct;
+    var p10lo = f.predicted_10d_low;
+    var p10hi = f.predicted_10d_high;
+    var p10conv = f.conviction_10d;
+    var scale = tab.horizonDays / 10;
+    var bandScale = Math.sqrt(scale);
+    if (p10pct != null) res.pct = p10pct * scale;
+    if (res.pct != null && isFinite(current)) res.price = current * (1 + res.pct/100);
+    if (p10lo != null && p10hi != null && isFinite(current)) {
+      var mid = current * (1 + (res.pct || 0)/100);
+      var halfBand10 = (p10hi - p10lo) / 2;
+      res.lo = mid - halfBand10 * bandScale;
+      res.hi = mid + halfBand10 * bandScale;
+    }
+    if (p10conv != null) res.conv = Math.max(5, p10conv * 0.7);
+    if (bias === 'neutral' || !bias) {
+      res.tradeLabel = 'No POSITION signal';
+      res.tradeSub = 'Forecast only';
+    } else {
+      res.tradeLabel = ttBiasLabel(f.bias);
+      res.tradeLabelColor = ttColor(f.color);
+      res.tradeSub = 'Extrapolated';
+    }
+    res.convSub = 'From 10D model';
+    res.moveSub = 'Range scaled √t';
+    return res;
+  }
+
+  if (tab.source === 'fair_value') {
+    var fvPrice = fv && fv.fair_value != null ? Number(fv.fair_value) : null;
+    if (fvPrice != null && isFinite(current) && current > 0) {
+      var gapPct = (fvPrice - current) / current * 100;
+      res.pct = gapPct;
+      res.price = fvPrice;
+      if (fv.fv_low != null) res.lo = Number(fv.fv_low);
+      if (fv.fv_high != null) res.hi = Number(fv.fv_high);
+      var verdictTxt = (fv.verdict || '').toLowerCase();
+      var lbl, col;
+      if (verdictTxt.indexOf('under') >= 0 || gapPct >= 20) {
+        lbl = 'Accumulate'; col = '#00DE94';
+      } else if (verdictTxt.indexOf('over') >= 0 || gapPct <= -20) {
+        lbl = 'Avoid / Trim'; col = '#FF4D4D';
+      } else if (gapPct >= 5) {
+        lbl = 'Buy'; col = '#00DE94';
+      } else if (gapPct <= -5) {
+        lbl = 'Trim'; col = '#FFB800';
+      } else {
+        lbl = 'Hold'; col = '#00AEFF';
+      }
+      res.tradeLabel = lbl;
+      res.tradeLabelColor = col;
+      res.tradeSub = 'Fair-value driven';
+      var vms = sc && sc.vms != null ? Number(sc.vms) : null;
+      if (vms != null && isFinite(vms)) res.conv = Math.max(0, Math.min(100, vms));
+      res.convSub = vms != null ? 'Fundamentals (VMS)' : 'No VMS available';
+      res.moveSub = 'Gap to fair value';
+      res.probSub = 'Long-term convergence';
+    } else {
+      res.tradeLabel = 'No fair-value data';
+      res.tradeSub = 'Long-term unavailable';
+      res.convSub = 'No model fit';
+    }
+    return res;
+  }
+
+  return res;
 }
 
-// Build just the 4-cell grid for a given horizon. Re-rendered when tabs change.
 function buildHorizonGrid(f, sc, fv, h) {
   var color = ttColor(f.color);
   var tab = TT_HORIZON_TABS.filter(function(t){ return t.key === h; })[0] || TT_HORIZON_TABS[1];
-  var horizonLabel = tab.horizonDays + '-day horizon';
+  var data = ttResolveHorizon(f, sc, fv, tab);
 
   // ── TRADE TYPE ──
-  // "No actionable trade" = unavailable horizon OR neutral bias. Mockup
-  // treats neutral as forecast-only (italic gray "No SWING signal").
-  var bias = (f.bias || '').toLowerCase();
-  var isNeutral = bias === 'neutral' || bias === '';
-  var actionable = tab.available && !isNeutral;
-  var tradeVal, tradeSub;
-  if (actionable) {
-    tradeVal = '<span style="color:'+color+';">'+ esc(ttBiasLabel(f.bias)) +'</span>';
-    switch (bias) {
-      case 'long':        tradeSub = 'Long setup'; break;
-      case 'short':       tradeSub = 'Short setup'; break;
-      case 'watch_long':
-      case 'watch_short': tradeSub = 'Wait for setup'; break;
-      default:            tradeSub = '';
-    }
-  } else {
-    // Extract horizon name from the tab label, e.g. "Short swing · 5D" → "SWING".
-    var hzName = tab.label.split('·').pop().trim().toUpperCase();
-    if (!hzName || hzName === tab.label.toUpperCase()) hzName = tab.label.toUpperCase();
-    // Normalize a couple of cases for readable copy.
-    if (hzName === 'LONG TERM HOLD') hzName = 'LONG-TERM';
-    if (hzName.startsWith('DAY TRADE')) hzName = 'DAY TRADE';
-    tradeVal = '<span class="tt-empty-val">No '+ esc(hzName) +' signal</span>';
-    tradeSub = 'Forecast only';
-  }
+  var tradeVal = data.tradeLabelColor
+    ? '<span style="color:'+ data.tradeLabelColor +';">'+ esc(data.tradeLabel || '—') +'</span>'
+    : '<span class="tt-empty-val">'+ esc(data.tradeLabel || '—') +'</span>';
   var tradeCell = '<div class="tt-cell">'
     + '<div class="tt-cell-label">Trade Type</div>'
     + '<div class="tt-cell-val">'+ tradeVal +'</div>'
-    + '<div class="tt-cell-sub">'+ esc(tradeSub) +'</div>'
+    + '<div class="tt-cell-sub">'+ esc(data.tradeSub || '') +'</div>'
     + '</div>';
 
   // ── PREDICTED MOVE ──
-  var pct = tab.available ? f['predicted_' + h + '_pct'] : null;
-  var price = tab.available ? f['predicted_' + h + '_price'] : null;
-  var lo = tab.available ? f['predicted_' + h + '_low'] : null;
-  var hi = tab.available ? f['predicted_' + h + '_high'] : null;
   var moveVal, moveSub;
-  if (tab.available && pct != null) {
-    moveVal = '<span class="'+ttPctClass(pct)+'">'+ ttFmtPct(pct) +'</span>'
-      + (price != null ? ' &middot; ' + ttFmtUsd(price) : '');
-    moveSub = (lo != null && hi != null)
-      ? ttFmtUsd(lo) + ' – ' + ttFmtUsd(hi) + ' range'
-      : 'Range unavailable';
+  if (data.pct != null) {
+    moveVal = '<span class="'+ttPctClass(data.pct)+'">'+ ttFmtPct(data.pct) +'</span>'
+      + (data.price != null ? ' &middot; ' + ttFmtUsd(data.price) : '');
+    if (data.lo != null && data.hi != null) {
+      moveSub = ttFmtUsd(data.lo) + ' – ' + ttFmtUsd(data.hi) + ' range';
+      if (data.moveSub) moveSub += ' · ' + data.moveSub;
+    } else {
+      moveSub = data.moveSub || 'Range unavailable';
+    }
   } else {
     moveVal = '<span class="tt-empty-val">—</span>';
-    moveSub = 'Not modeled';
+    moveSub = data.moveSub || 'Not modeled';
   }
   var moveCell = '<div class="tt-cell">'
     + '<div class="tt-cell-label">Predicted Move</div>'
@@ -5448,46 +5517,38 @@ function buildHorizonGrid(f, sc, fv, h) {
     + '</div>';
 
   // ── PROB UP ──
-  var probVal, probSub;
-  if (tab.available) {
-    var prob = ttProbUp(f, h);
-    if (prob != null) {
-      probVal = prob + '%';
-      probSub = horizonLabel;
+  var prob = null;
+  if (data.conv != null) {
+    var sign = 0;
+    if (data.pct != null && isFinite(data.pct)) {
+      sign = data.pct > 0 ? 1 : data.pct < 0 ? -1 : 0;
     } else {
-      probVal = '<span class="tt-empty-val">—</span>';
-      probSub = horizonLabel;
+      var b = (f.bias || '').toLowerCase();
+      if (b === 'long' || b === 'watch_long')   sign =  1;
+      if (b === 'short' || b === 'watch_short') sign = -1;
     }
-  } else {
-    probVal = '<span class="tt-empty-val">—</span>';
-    probSub = horizonLabel;
+    prob = sign === 0 ? 50 : Math.max(5, Math.min(95, 50 + sign * Math.round(data.conv * 0.45)));
   }
+  var probVal = prob != null ? prob + '%' : '<span class="tt-empty-val">—</span>';
   var probCell = '<div class="tt-cell">'
     + '<div class="tt-cell-label">Prob Up</div>'
     + '<div class="tt-cell-val">'+ probVal +'</div>'
-    + '<div class="tt-cell-sub">'+ esc(probSub) +'</div>'
+    + '<div class="tt-cell-sub">'+ esc(data.probSub) +'</div>'
     + '</div>';
 
   // ── FORECAST CONFIDENCE ──
-  var conv = tab.available ? f['conviction_' + h] : null;
   var convDotsHtml = '';
   var convVal;
-  if (conv != null) {
-    var filled = Math.max(0, Math.min(10, Math.round(conv / 10)));
+  if (data.conv != null) {
+    var filled = Math.max(0, Math.min(10, Math.round(data.conv / 10)));
     var dots = '';
     for (var i = 0; i < 10; i++) {
       dots += '<span class="dot'+(i < filled ? ' on' : '')+'"></span>';
     }
     convDotsHtml = '<span class="tt-conv-inline-dots" style="color:'+color+';">'+ dots +'</span>';
-    convVal = Math.round(conv) + '%';
+    convVal = Math.round(data.conv) + '%';
   } else {
     convVal = '<span class="tt-empty-val">—</span>';
-  }
-  var convSub = '';
-  if (tab.available && f.rolling_30_total != null && f.rolling_30_total >= 5) {
-    convSub = f.rolling_30_directional + '/' + f.rolling_30_total + ' last 30d';
-  } else if (!tab.available) {
-    convSub = 'No model fit';
   }
   var convCell = '<div class="tt-cell">'
     + '<div class="tt-cell-label">Forecast Confidence</div>'
@@ -5495,7 +5556,7 @@ function buildHorizonGrid(f, sc, fv, h) {
       + '<span>'+ convVal +'</span>'
       + convDotsHtml
     + '</div>'
-    + '<div class="tt-cell-sub">'+ (convSub ? esc(convSub) : '&nbsp;') +'</div>'
+    + '<div class="tt-cell-sub">'+ (data.convSub ? esc(data.convSub) : '&nbsp;') +'</div>'
     + '</div>';
 
   return '<div class="tt-grid">' + tradeCell + moveCell + probCell + convCell + '</div>';
