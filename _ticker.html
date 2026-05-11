@@ -3273,6 +3273,121 @@
     .tt-verdict{font-size:24px;}
   }
 
+  /* ── Price position bar (60-day range) ── */
+  .tt-pricepos{
+    background:rgba(255,255,255,0.015);
+    border:1px solid var(--mp-border);border-radius:10px;
+    padding:14px 16px;margin-bottom:14px;
+  }
+  .tt-pricepos-head{
+    display:flex;justify-content:space-between;align-items:center;
+    margin-bottom:12px;font-family:'Inter',system-ui,sans-serif;
+  }
+  .tt-pricepos-label{
+    font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--mp-text-muted);
+  }
+  .tt-pricepos-pct{
+    font-size:11px;color:var(--mp-text-tertiary);
+  }
+  .tt-pricepos-track{
+    position:relative;height:10px;border-radius:5px;
+    background:linear-gradient(90deg,
+      #00DE94 0%, #00DE94 25%,
+      rgba(0,222,148,0.35) 25%, rgba(0,222,148,0.35) 50%,
+      rgba(255,184,0,0.35) 50%, rgba(255,184,0,0.35) 75%,
+      #FFB800 75%, #FFB800 100%);
+    margin-bottom:8px;
+  }
+  .tt-pricepos-pin{
+    position:absolute;top:-6px;width:4px;height:22px;background:#FFFFFF;
+    border-radius:2px;box-shadow:0 0 0 2px var(--mp-surface);
+    transform:translateX(-50%);
+  }
+  .tt-pricepos-pin-label{
+    position:absolute;top:-22px;left:50%;transform:translateX(-50%);
+    font-family:'Inter',system-ui,sans-serif;font-size:10px;color:#fff;
+    background:rgba(255,255,255,0.10);border:1px solid var(--mp-border);
+    padding:2px 6px;border-radius:3px;white-space:nowrap;
+  }
+  .tt-pricepos-scale{
+    display:flex;justify-content:space-between;
+    font-family:'Inter',system-ui,sans-serif;font-size:10px;
+    color:var(--mp-text-muted);
+  }
+  .tt-pricepos-scale > span:first-child{color:#00DE94;}
+  .tt-pricepos-scale > span:last-child{color:#FFB800;}
+
+  /* ── Narrative state strip ── */
+  .tt-narr{
+    border-radius:10px;padding:14px 16px;margin-bottom:14px;
+    border-left:3px solid var(--mp-text-muted);
+    background:rgba(255,255,255,0.02);
+  }
+  .tt-narr-head{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    margin-bottom:6px;flex-wrap:wrap;
+  }
+  .tt-narr-title-wrap{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .tt-narr-title{
+    font-family:'Inter',system-ui,sans-serif;
+    font-size:16px;font-weight:600;color:var(--mp-text-primary);line-height:1.2;
+  }
+  .tt-narr-stage{
+    font-family:'Inter',system-ui,sans-serif;font-size:10px;font-weight:700;
+    letter-spacing:.08em;text-transform:uppercase;
+    padding:3px 9px;border-radius:4px;
+  }
+  .tt-narr-meta{
+    font-family:'Inter',system-ui,sans-serif;font-size:11px;color:var(--mp-text-muted);
+  }
+  .tt-narr-desc{
+    font-family:'Inter',system-ui,sans-serif;
+    font-size:13px;color:var(--mp-text-secondary);line-height:1.55;
+  }
+
+  /* ── Horizon tabs + grid card ── */
+  .tt-horizons{
+    background:rgba(255,255,255,0.015);border:1px solid var(--mp-border);
+    border-radius:10px;padding:14px 16px;
+  }
+  .tt-horizon-tabs{
+    display:flex;gap:6px;margin-bottom:14px;align-items:center;flex-wrap:wrap;
+    font-family:'Inter',system-ui,sans-serif;
+  }
+  .tt-horizon-tabs-label{
+    font-size:12px;color:var(--mp-text-muted);margin-right:6px;
+  }
+  .tt-horizon-tab{
+    background:rgba(255,255,255,0.025);color:var(--mp-text-tertiary);
+    border:1px solid var(--mp-border);
+    padding:6px 12px;border-radius:6px;font-size:12px;
+    font-family:'Inter',system-ui,sans-serif;cursor:pointer;
+    transition:all .12s ease;
+  }
+  .tt-horizon-tab:hover{
+    color:var(--mp-text-primary);border-color:var(--mp-border-hover);
+  }
+  .tt-horizon-tab.active{
+    background:rgba(0,174,255,0.10);color:#00AEFF;
+    border-color:rgba(0,174,255,0.40);font-weight:600;
+  }
+  .tt-horizons .tt-grid{margin-bottom:0;}
+
+  /* Conviction cell with inline dots */
+  .tt-conv-inline{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .tt-conv-inline-dots{display:inline-flex;gap:2px;}
+  .tt-conv-inline-dots .dot{
+    width:5px;height:5px;border-radius:50%;
+    background:var(--mp-border-hover);
+  }
+  .tt-conv-inline-dots .dot.on{background:currentColor;}
+
+  @media (max-width: 720px){
+    .tt-horizon-tabs{gap:4px;}
+    .tt-horizon-tab{padding:5px 10px;font-size:11px;}
+  }
+
   /* ── Redesigned Hero ── */
   .ticker-hero {
     padding: 36px 40px 32px;
@@ -5194,7 +5309,121 @@ function ttPctClass(p) {
   return 'tt-neu';
 }
 
-function renderTradeTicket(f, story, sc, fv) {
+// Stage label derived from severity / narrative regime — used for the chip
+// next to the narrative-state title.
+function ttStageLabel(f, sc) {
+  if (f && f.severity_label) return f.severity_label;
+  if (sc && sc.narrative_energy_regime) {
+    return String(sc.narrative_energy_regime).replace(/_/g,' ').toUpperCase();
+  }
+  if (sc && sc.walsh_regime) {
+    return String(sc.walsh_regime).replace(/_/g,' ').toUpperCase();
+  }
+  return '';
+}
+
+// Trade-type label for the first grid cell — same mapping that powered the
+// legacy "Bias" cell, just renamed to match the mockup.
+function ttTradeTypeSub(f) {
+  switch ((f && f.bias || '').toLowerCase()) {
+    case 'short':       return 'Sell / Short setup';
+    case 'long':        return 'Long setup';
+    case 'watch_short': return 'Wait for setup';
+    case 'watch_long':  return 'Wait for setup';
+    case 'neutral':     return 'No directional edge';
+    default:            return '';
+  }
+}
+
+// Build just the 4-cell grid for a given horizon. Re-rendered when tabs change.
+function buildHorizonGrid(f, sc, fv, h) {
+  var color = ttColor(f.color);
+
+  // TRADE TYPE — bias label (constant per ticker)
+  var tradeCell = '<div class="tt-cell">'
+    + '<div class="tt-cell-label">Trade Type</div>'
+    + '<div class="tt-cell-val" style="color:'+color+';">'+ esc(ttBiasLabel(f.bias)) +'</div>'
+    + '<div class="tt-cell-sub">'+ esc(ttTradeTypeSub(f)) +'</div>'
+    + '</div>';
+
+  // PREDICTED MOVE — varies per horizon
+  var pct = f['predicted_' + h + '_pct'];
+  var price = f['predicted_' + h + '_price'];
+  var lo = f['predicted_' + h + '_low'];
+  var hi = f['predicted_' + h + '_high'];
+  var bandPct = (lo != null && hi != null && f.current_price)
+    ? (((hi - lo) / 2) / f.current_price * 100) : null;
+  var moveCell = '<div class="tt-cell">'
+    + '<div class="tt-cell-label">Predicted Move</div>'
+    + '<div class="tt-cell-val">'
+      + '<span class="'+ttPctClass(pct)+'">'+ ttFmtPct(pct) +'</span>'
+      + (price != null ? ' &middot; ' + ttFmtUsd(price) : '')
+    + '</div>'
+    + '<div class="tt-cell-sub">'
+      + (bandPct != null ? '± ' + bandPct.toFixed(1) + '% range' : 'Range unavailable')
+    + '</div>'
+    + '</div>';
+
+  // EXIT IF — invalidation_price (constant per ticker)
+  var exitCell;
+  if (f.invalidation_price != null) {
+    var biasIsShort = (f.bias === 'short' || f.bias === 'watch_short');
+    exitCell = '<div class="tt-cell">'
+      + '<div class="tt-cell-label">Exit If</div>'
+      + '<div class="tt-cell-val">'+ (biasIsShort ? 'Above ' : 'Below ') + ttFmtUsd(f.invalidation_price) +'</div>'
+      + '<div class="tt-cell-sub">Thesis invalidated</div>'
+      + '</div>';
+  } else {
+    var fvPrice = fv && fv.fair_value != null ? Number(fv.fair_value) : null;
+    var fvPct = (fvPrice != null && f.current_price)
+      ? (fvPrice - f.current_price) / f.current_price * 100 : null;
+    if (fvPrice != null) {
+      exitCell = '<div class="tt-cell">'
+        + '<div class="tt-cell-label">Fair Value</div>'
+        + '<div class="tt-cell-val">'+ ttFmtUsd(fvPrice) +'</div>'
+        + '<div class="tt-cell-sub">'
+          + (fvPct != null ? '<span class="'+ttPctClass(fvPct)+'">'+ ttFmtPct(fvPct) +'</span>' : 'Reference')
+        + '</div>'
+        + '</div>';
+    } else {
+      exitCell = '<div class="tt-cell">'
+        + '<div class="tt-cell-label">Exit If</div>'
+        + '<div class="tt-cell-val" style="color:var(--mp-text-tertiary);">—</div>'
+        + '<div class="tt-cell-sub">Neutral bias</div>'
+        + '</div>';
+    }
+  }
+
+  // CONVICTION — varies per horizon, inline dots
+  var conv = f['conviction_' + h];
+  var convDotsHtml = '';
+  var convVal = '—';
+  if (conv != null) {
+    var filled = Math.max(0, Math.min(10, Math.round(conv / 10)));
+    var dots = '';
+    for (var i = 0; i < 10; i++) {
+      dots += '<span class="dot'+(i < filled ? ' on' : '')+'"></span>';
+    }
+    convDotsHtml = '<span class="tt-conv-inline-dots" style="color:'+color+';">'+ dots +'</span>';
+    convVal = Math.round(conv) + '%';
+  }
+  var convSub = '';
+  if (f.rolling_30_total != null && f.rolling_30_total >= 5) {
+    convSub = f.rolling_30_directional + '/' + f.rolling_30_total + ' last 30d';
+  }
+  var convCell = '<div class="tt-cell">'
+    + '<div class="tt-cell-label">Conviction</div>'
+    + '<div class="tt-cell-val tt-conv-inline">'
+      + '<span>'+ convVal +'</span>'
+      + convDotsHtml
+    + '</div>'
+    + (convSub ? '<div class="tt-cell-sub">'+ esc(convSub) +'</div>' : '<div class="tt-cell-sub">&nbsp;</div>')
+    + '</div>';
+
+  return '<div class="tt-grid">' + tradeCell + moveCell + exitCell + convCell + '</div>';
+}
+
+function renderTradeTicket(f, story, sc, fv, earn, priceRange) {
   var color = ttColor(f.color);
   var sevColor = color;
   var verdict = f.directional_verdict || '—';
@@ -5202,114 +5431,94 @@ function renderTradeTicket(f, story, sc, fv) {
   var cls = f.classification_label || '';
 
   // Headline: prefer the forecast row's one_liner, fall back to story_claim/forensic_rebuttal.
+  // This gets overwritten by /api/hero-summary once that lands (see #tt-headline).
   var headline = (f.one_line_headline && f.one_line_headline.trim())
     ? f.one_line_headline.trim()
     : (story && (story.story_claim || story.forensic_rebuttal)) || '';
 
   var fresh = ttRelativeTime(f.heavy_refreshed_at);
 
-  // ── Top summary grid: BIAS · HORIZON · INVALIDATION · TARGET ──
-  var biasCell = '<div class="tt-cell">'
-    + '<div class="tt-cell-label">Bias</div>'
-    + '<div class="tt-cell-val" style="color:'+color+';">'+esc(ttBiasLabel(f.bias))+'</div>'
-    + '</div>';
-
-  var primary = (f.primary_horizon || '5d').toLowerCase();
-  var primPct = f['predicted_' + primary + '_pct'];
-  var primPrice = f['predicted_' + primary + '_price'];
-  var primLo = f['predicted_' + primary + '_low'];
-  var primHi = f['predicted_' + primary + '_high'];
-  var primBandPct = (primLo != null && primHi != null && f.current_price)
-    ? (((primHi - primLo) / 2) / f.current_price * 100) : null;
-  var horizonCell = '<div class="tt-cell">'
-    + '<div class="tt-cell-label">Predicted Horizon</div>'
-    + '<div class="tt-cell-val">'+ esc(primary.toUpperCase()) +' move</div>'
-    + '<div class="tt-cell-sub">'
-      + '<span class="'+ttPctClass(primPct)+'">'+ ttFmtPct(primPct) +'</span>'
-      + (primPrice != null ? ' &middot; ' + ttFmtUsd(primPrice) : '')
-      + (primBandPct != null ? ' &middot; ± ' + primBandPct.toFixed(1) + '%' : '')
-    + '</div>'
-    + '</div>';
-
-  var invCell;
-  if (f.invalidation_price != null) {
-    var biasIsShort = (f.bias === 'short' || f.bias === 'watch_short');
-    invCell = '<div class="tt-cell">'
-      + '<div class="tt-cell-label">Invalidation</div>'
-      + '<div class="tt-cell-val">'+ (biasIsShort ? 'Above ' : 'Below ') + ttFmtUsd(f.invalidation_price) +'</div>'
-      + '<div class="tt-cell-sub">Stop level</div>'
-      + '</div>';
-  } else {
-    invCell = '<div class="tt-cell">'
-      + '<div class="tt-cell-label">Invalidation</div>'
-      + '<div class="tt-cell-val" style="color:var(--mp-text-tertiary);">—</div>'
-      + '<div class="tt-cell-sub">Neutral bias</div>'
-      + '</div>';
-  }
-
-  // Target = central fair value from daily_fair_value (single source of truth).
-  // The previous ticker_forecast.target_price was a bias-conditional pick of
-  // fv_low / fair_value / fv_high which produced extreme numbers when the FV
-  // band is wide (AMD $25, NFLX $351, BKNG $2635). Pulling fair_value direct
-  // gives one consistent number with a sensible label.
-  var tgtCell;
-  var fvPrice = fv && fv.fair_value != null ? Number(fv.fair_value) : null;
-  var fvPct = (fvPrice != null && f.current_price)
-    ? (fvPrice - f.current_price) / f.current_price * 100 : null;
-  if (fvPrice != null && fvPct != null) {
-    tgtCell = '<div class="tt-cell">'
-      + '<div class="tt-cell-label">Fair Value</div>'
-      + '<div class="tt-cell-val">'+ ttFmtUsd(fvPrice) +'</div>'
-      + '<div class="tt-cell-sub"><span class="'+ttPctClass(fvPct)+'">'+ ttFmtPct(fvPct) +'</span></div>'
-      + '</div>';
-  } else {
-    tgtCell = '<div class="tt-cell">'
-      + '<div class="tt-cell-label">Fair Value</div>'
-      + '<div class="tt-cell-val" style="color:var(--mp-text-tertiary);">—</div>'
-      + '<div class="tt-cell-sub">Not available</div>'
-      + '</div>';
-  }
-
-  // ── Horizon strip ──
-  var horizons = ['1d','3d','5d','10d'];
-  var stripRows = horizons.map(function(h) {
-    var pct = f['predicted_' + h + '_pct'];
-    var lo = f['predicted_' + h + '_low'];
-    var hi = f['predicted_' + h + '_high'];
-    var conv = f['conviction_' + h];
-    var bandTxt = '';
-    if (lo != null && hi != null && f.current_price) {
-      var halfPct = ((hi - lo) / 2) / f.current_price * 100;
-      bandTxt = '± ' + halfPct.toFixed(1) + '%';
-    }
-    var isPrimary = h === primary;
-    return '<div class="tt-strip-row'+(isPrimary?' is-primary':'')+'">'
-      + '<div class="tt-h-label">'+ h.toUpperCase() +'</div>'
-      + '<div class="tt-h-pct '+ttPctClass(pct)+'">'+ ttFmtPct(pct) +'</div>'
-      + '<div class="tt-h-band">'+ esc(bandTxt) +'</div>'
-      + '<div class="tt-h-conv">'+ (conv != null ? 'conv ' + Math.round(conv) + '%' : '') +'</div>'
-      + '<div class="tt-h-mark'+(isPrimary?' primary':'')+'" style="'+(isPrimary?'color:'+color+';':'')+'">'
-        + (isPrimary ? '← primary' : '')
+  // ── Price position bar (60-day) — pin position patched in by caller once
+  //    the supplementary fetch lands. Initially renders centered as placeholder.
+  var pricePosHtml = ''
+    + '<div class="tt-pricepos" style="visibility:hidden;">'
+      + '<div class="tt-pricepos-head">'
+        + '<span class="tt-pricepos-label">Price position &middot; 60 day</span>'
+        + '<span class="tt-pricepos-pct">—</span>'
       + '</div>'
-      + '</div>';
+      + '<div class="tt-pricepos-track">'
+        + '<div class="tt-pricepos-pin" style="left:50%;">'
+          + '<div class="tt-pricepos-pin-label">You are here</div>'
+        + '</div>'
+      + '</div>'
+      + '<div class="tt-pricepos-scale">'
+        + '<span>Deep discount</span>'
+        + '<span>Pullback</span>'
+        + '<span>Dip</span>'
+        + '<span>Near high</span>'
+      + '</div>'
+    + '</div>';
+
+  // ── Narrative state strip ──
+  // Title prefers the forecast's directional_verdict (e.g. "MIXED SIGNAL");
+  // falls back to scorecard narrative_state. Stage chip from severity/regime.
+  var narrTitle = (f.directional_verdict || '').trim()
+    || (sc && sc.narrative_state ? String(sc.narrative_state).replace(/_/g,' ') : '')
+    || 'Narrative';
+  // Normalize casing — uppercase verdicts stay uppercase, others get sentence case.
+  if (narrTitle === narrTitle.toUpperCase()) {
+    narrTitle = narrTitle.charAt(0) + narrTitle.slice(1).toLowerCase();
+  }
+  var stage = ttStageLabel(f, sc);
+  var stageHtml = stage ? '<span class="tt-narr-stage" style="background:'+color+';color:#0B0F17;">'+ esc(stage) +'</span>' : '';
+  // Sector + P/E chip lives in the meta row alongside the freshness stamp.
+  var sectorPill = '';
+  if (story && story.sector_name) {
+    sectorPill = '<span class="hero-sector" style="margin:0;">'+ esc(story.sector_name) +'</span>'
+      + '<span id="hero-pe-bubble"></span>';
+  }
+  var narrMetaParts = [];
+  if (sectorPill) narrMetaParts.push(sectorPill);
+  if (fresh) narrMetaParts.push('<span class="tt-narr-meta">'+ esc(fresh) +'</span>');
+  var narrMeta = narrMetaParts.length
+    ? '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'+ narrMetaParts.join('') +'</div>'
+    : '';
+
+  var narrHtml = ''
+    + '<div class="tt-narr" style="border-left-color:'+color+';">'
+      + '<div class="tt-narr-head">'
+        + '<div class="tt-narr-title-wrap">'
+          + '<span class="tt-narr-title" style="color:'+color+';">'+ esc(narrTitle) +'</span>'
+          + stageHtml
+        + '</div>'
+        + narrMeta
+      + '</div>'
+      + '<div class="tt-narr-desc" id="tt-headline" data-pending="1">'+ esc(headline || '') +'</div>'
+    + '</div>';
+
+  // ── Horizon tabs + 4-col grid ──
+  var horizons = [
+    { key:'1d',  label:'Day trade · 1D' },
+    { key:'3d',  label:'3D' },
+    { key:'5d',  label:'Short swing · 5D' },
+    { key:'10d', label:'Long swing · 10D' }
+  ];
+  var primary = (f.primary_horizon || '5d').toLowerCase();
+  if (!horizons.some(function(x){ return x.key === primary; })) primary = '5d';
+  var tabsHtml = horizons.map(function(h){
+    return '<button type="button" class="tt-horizon-tab'+(h.key === primary ? ' active' : '')+'" data-h="'+ h.key +'">'+ esc(h.label) +'</button>';
   }).join('');
 
-  // ── Conviction dots ──
-  var primConv = f['conviction_' + primary];
-  var convRow = '';
-  if (primConv != null) {
-    var filled = Math.max(0, Math.min(10, Math.round(primConv / 10)));
-    var dotsFilled = '●'.repeat(filled);
-    var dotsEmpty = '○'.repeat(10 - filled);
-    convRow = '<div class="tt-conv-row">'
-      + '<span>Conviction ' + Math.round(primConv) + '%</span>'
-      + '<span class="tt-conv-dots" style="color:'+color+';">'+ dotsFilled +'</span>'
-      + '<span class="tt-conv-dots" style="color:var(--mp-text-muted);">'+ dotsEmpty +'</span>'
+  var horizonsCard = ''
+    + '<div class="tt-horizons" data-active-horizon="'+ primary +'">'
+      + '<div class="tt-horizon-tabs">'
+        + '<span class="tt-horizon-tabs-label">View as:</span>'
+        + tabsHtml
       + '</div>'
-      + '<div class="tt-conv-note">'
-        + 'Conviction blends four channels: model directional edge &times; confidence (30%), per-ticker trust score (30%), 90-day Brier calibration (25%), and recent narrative quality (15%). Higher trust + cleaner narratives + a sharper directional edge push the score up.'
-      + '</div>';
-  }
+      + '<div class="tt-grid-wrap">'
+        + buildHorizonGrid(f, sc, fv, primary)
+      + '</div>'
+    + '</div>';
 
   // ── Track record ribbon — hide if sample < 5 ──
   var trackRow = '';
@@ -5322,40 +5531,38 @@ function renderTradeTicket(f, story, sc, fv) {
       + '</div>';
   }
 
-  // Apply the colored left bar (set on the wrapper element by caller).
-  // We can't set inline style on the wrapper here, so the caller does it.
-  var sevHtml = sev ? '<span class="tt-sev" style="background:'+sevColor+';">'+ esc(sev) +'</span>' : '';
-  var clsHtml = (cls && cls !== 'STANDARD') ? '<span class="tt-class">'+ esc(cls) +'</span>' : '';
-
-  // Sector + P/E chip — moved out of the hero so it sits next to the severity badge.
-  // The pill is filled async by loadSectorPeBubble() targeting #hero-pe-bubble.
-  var sectorHtml = '';
-  if (story && story.sector_name) {
-    sectorHtml = '<span class="hero-sector" style="margin:0;">'+ esc(story.sector_name) +'</span>'
-      + '<span id="hero-pe-bubble"></span>';
-  }
-
-  return '<div class="tt-head">'
-      + '<div class="tt-title-row">'
-        + '<span class="tt-verdict" style="color:'+color+';">'+ esc(verdict) +'</span>'
-        + sevHtml
-        + clsHtml
-        + sectorHtml
-      + '</div>'
-      + (fresh ? '<span class="tt-fresh">'+ esc(fresh) +'</span>' : '')
-    + '</div>'
-    + '<div class="tt-headline" id="tt-headline" data-pending="1">'+ esc(headline || '') +'</div>'
-    + '<div class="tt-grid">'+ biasCell + horizonCell + invCell + tgtCell +'</div>'
-    + convRow
+  var convNoteDetails = ''
     + '<details class="tt-disclosure">'
       + '<summary>'
         + '<span class="tt-disclosure-chev"></span>'
-        + '<span>All horizons</span>'
-        + '<span class="tt-disclosure-hint">1D &middot; 3D &middot; 5D &middot; 10D</span>'
+        + '<span>How conviction is scored</span>'
       + '</summary>'
-      + '<div class="tt-strip">'+ stripRows +'</div>'
-    + '</details>'
-    + trackRow;
+      + '<div class="tt-conv-note" style="margin:8px 0 4px;">'
+        + 'Conviction blends four channels: model directional edge &times; confidence (30%), per-ticker trust score (30%), 90-day Brier calibration (25%), and recent narrative quality (15%). Higher trust + cleaner narratives + a sharper directional edge push the score up.'
+      + '</div>'
+    + '</details>';
+
+  return pricePosHtml + narrHtml + horizonsCard + convNoteDetails + trackRow;
+}
+
+// Attach horizon-tab click handler. Called once after renderTradeTicket()
+// writes the banner HTML. Re-renders only the .tt-grid-wrap inner content.
+function wireTradeTicket(bannerEl, f, sc, fv) {
+  if (!bannerEl) return;
+  var card = bannerEl.querySelector('.tt-horizons');
+  if (!card) return;
+  card.addEventListener('click', function(ev){
+    var btn = ev.target.closest && ev.target.closest('.tt-horizon-tab');
+    if (!btn || !card.contains(btn)) return;
+    var h = btn.getAttribute('data-h');
+    if (!h || h === card.getAttribute('data-active-horizon')) return;
+    card.setAttribute('data-active-horizon', h);
+    var prev = card.querySelector('.tt-horizon-tab.active');
+    if (prev) prev.classList.remove('active');
+    btn.classList.add('active');
+    var wrap = card.querySelector('.tt-grid-wrap');
+    if (wrap) wrap.innerHTML = buildHorizonGrid(f, sc, fv, h);
+  });
 }
 
 // ── Lane classifier ──────────────────────────────────────────────────────────
@@ -5846,10 +6053,32 @@ async function loadHero() {
     var verdictBanner = document.getElementById('verdict-banner');
     var f = (forecastRows || [])[0] || null;
     var fv = (fairValueRows || [])[0] || null;
+    var earnCtxForTicket = (earnContextRows || [])[0] || null;
     if (verdictBanner && f) {
       verdictBanner.style.display = 'block';
       verdictBanner.style.borderLeftColor = ttColor(f.color);
-      verdictBanner.innerHTML = renderTradeTicket(f, r, sc, fv);
+      // Kick off 60-day price-range fetch in parallel; render with placeholder
+      // initially and patch the price-position bar once it lands.
+      var priceRange60 = null;
+      verdictBanner.innerHTML = renderTradeTicket(f, r, sc, fv, earnCtxForTicket, priceRange60);
+      wireTradeTicket(verdictBanner, f, sc, fv);
+      fetchPriceSeries(TICKER, 65).then(function(series){
+        if (!series || !series.length) return;
+        var prices = series.map(function(p){ return Number(p.price_close); }).filter(function(n){ return isFinite(n); });
+        if (!prices.length) return;
+        var peak = Math.max.apply(null, prices);
+        var trough = Math.min.apply(null, prices);
+        var current = Number(f.current_price);
+        if (!isFinite(current) || peak <= trough) return;
+        var pos = Math.max(0, Math.min(100, (current - trough) / (peak - trough) * 100));
+        var fromPeak = (current - peak) / peak * 100;
+        var pinEl = verdictBanner.querySelector('.tt-pricepos-pin');
+        var pctEl = verdictBanner.querySelector('.tt-pricepos-pct');
+        if (pinEl) pinEl.style.left = pos.toFixed(1) + '%';
+        if (pctEl) pctEl.textContent = (fromPeak >= 0 ? '+' : '') + fromPeak.toFixed(2) + '% from peak';
+        var posWrap = verdictBanner.querySelector('.tt-pricepos');
+        if (posWrap) posWrap.style.visibility = 'visible';
+      }).catch(function(){ /* leave placeholder */ });
       // Badges (Earnings · High Hype Gap · Coordinated Narrative · etc.) stay
       // where they're rendered — in .hero-ticker-row next to the ticker symbol.
       //
