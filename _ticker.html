@@ -5657,18 +5657,15 @@ function buildHorizonGrid(f, sc, fv, h, strategy, story) {
   var data = ttResolveHorizon(f, sc, fv, tab, strategy, story);
 
   // ── TRADE TYPE ──
-  // Value is always the horizon-type name (Day trade / Short swing / etc).
-  // Sub-label carries the bias direction (or action verb for Long-term hold).
+  // Value-only cell: the horizon-type name (Day trade / Short swing / Long
+  // swing / Position / Long-term hold). The sub-label slot is kept as &nbsp;
+  // to preserve row-height alignment with the other three cells but renders
+  // no text — the bias descriptor / narrative_behavior text was too noisy.
   var tradeVal = '<span>'+ esc(data.tradeLabel || '—') +'</span>';
-  var tradeSubHtml = data.tradeSub
-    ? (data.tradeSubColor
-        ? '<span style="color:'+ data.tradeSubColor +';">'+ esc(data.tradeSub) +'</span>'
-        : esc(data.tradeSub))
-    : '&nbsp;';
   var tradeCell = '<div class="tt-cell">'
     + '<div class="tt-cell-label">Trade Type</div>'
     + '<div class="tt-cell-val">'+ tradeVal +'</div>'
-    + '<div class="tt-cell-sub">'+ tradeSubHtml +'</div>'
+    + '<div class="tt-cell-sub">&nbsp;</div>'
     + '</div>';
 
   // ── PREDICTED MOVE ──
