@@ -25,6 +25,11 @@
 //     if (!auth) return;
 //     // ... existing handler
 //   };
+//
+// JSON mode: pass { jsonOnly: true } for /api/* endpoints called via fetch().
+// Unauthorized requests get JSON 401/402 instead of 302 redirects, so the
+// client can react in-page (e.g. show an "Upgrade" prompt) instead of being
+// bounced through /login.
 
 function parseCookies(header){
   const out = {};
@@ -112,8 +117,16 @@ function isSubscriptionActive(sub){
   return true;
 }
 
+function sendJson(res, status, body){
+  res.statusCode = status;
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-store');
+  res.end(JSON.stringify(body));
+}
+
 module.exports = async function requireAuth(req, res, options){
   const opts = options || {};
+  const jsonOnly = !!opts.jsonOnly;
   const supabaseUrl  = process.env.SUPABASE_URL  || '';
   const supabaseAnon = process.env.SUPABASE_ANON || '';
   const enforceSub   = String(process.env.ENFORCE_SUBSCRIPTION || '').toLowerCase() === 'true';
@@ -129,7 +142,7 @@ module.exports = async function requireAuth(req, res, options){
   // testers/press/operators with a valid code. (The code itself is now
   // server-validated in api/session.js, so this is no longer a wide door.)
   if (hasBeta) {
-    return { user: user, hasBeta: true, subscription: null };
+    return { user: user, hasBeta: true, subscription: null, jwt: cookies.mp_session || null };
   }
 
   // Logged-in path. Enforce subscription only if the kill switch is on.
@@ -137,19 +150,23 @@ module.exports = async function requireAuth(req, res, options){
     if (!enforceSub) {
       // Legacy behavior — preserved while the kill switch is off so this
       // ships without locking anyone out.
-      return { user: user, hasBeta: false, subscription: null };
+      return { user: user, hasBeta: false, subscription: null, jwt: cookies.mp_session };
     }
 
     if (isAdminUser(user.id)) {
-      return { user: user, hasBeta: false, subscription: { status: 'admin_allowlist' } };
+      return { user: user, hasBeta: false, subscription: { status: 'admin_allowlist' }, jwt: cookies.mp_session };
     }
 
     const sub = await getActiveSubscription(user.id, supabaseUrl, supabaseAnon, cookies.mp_session);
     if (isSubscriptionActive(sub)) {
-      return { user: user, hasBeta: false, subscription: sub };
+      return { user: user, hasBeta: false, subscription: sub, jwt: cookies.mp_session };
     }
 
-    // Logged in but no active subscription → send to /pricing, not /login.
+    // Logged in but no active subscription.
+    if (jsonOnly) {
+      sendJson(res, 402, { error: 'subscription_required', upgrade_url: '/pricing?reason=subscription_required' });
+      return false;
+    }
     res.statusCode = 302;
     res.setHeader('Location', '/pricing?reason=subscription_required');
     res.setHeader('Cache-Control', 'no-store');
@@ -157,7 +174,11 @@ module.exports = async function requireAuth(req, res, options){
     return false;
   }
 
-  // Not authorized at all — redirect to /login?next=<original path>.
+  // Not authorized at all.
+  if (jsonOnly) {
+    sendJson(res, 401, { error: 'login_required' });
+    return false;
+  }
   const nextPath = opts.next || (req.url || '/dashboard');
   res.statusCode = 302;
   res.setHeader('Location', '/login?next=' + encodeURIComponent(nextPath));

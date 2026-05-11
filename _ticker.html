@@ -3456,6 +3456,34 @@
     margin-bottom: 14px;
     flex-wrap: wrap;
   }
+  .mp-watch-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.14);
+    color: var(--mp-text-secondary, rgba(255,255,255,0.7));
+    font-family: var(--font-body, 'Inter', system-ui, sans-serif);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: border-color 140ms ease, color 140ms ease, background 140ms ease, transform 140ms ease;
+    user-select: none;
+  }
+  .mp-watch-btn:hover { border-color: rgba(255,255,255,0.28); color: #fff; }
+  .mp-watch-btn:disabled { opacity: 0.55; cursor: progress; }
+  .mp-watch-btn .mp-watch-icon { font-size: 14px; line-height: 1; transform: translateY(-1px); }
+  .mp-watch-btn[data-saved="1"] {
+    background: rgba(255,184,0,0.10);
+    border-color: rgba(255,184,0,0.55);
+    color: #FFB800;
+  }
+  .mp-watch-btn[data-saved="1"]:hover { background: rgba(255,184,0,0.16); }
+  .mp-watch-btn[data-saved="1"] .mp-watch-icon { color: #FFB800; }
   .hero-ticker-logo {
     width: 56px; height: 56px;
     border-radius: 12px;
@@ -6329,6 +6357,10 @@ async function loadHero() {
           ${earningsPill}
           ${r.sector_name ? `<span class="hero-insight-badge hero-sector-chip">${esc(r.sector_name)}</span>` : ''}
           <span id="hero-pe-bubble"></span>
+          <button id="mp-watch-btn" class="mp-watch-btn" type="button" aria-pressed="false" title="Save to your watchlist">
+            <span class="mp-watch-icon" aria-hidden="true">☆</span>
+            <span class="mp-watch-label">Save</span>
+          </button>
         </div>
       </div>
       <div class="hero-right" id="hero-right">
@@ -6347,6 +6379,7 @@ async function loadHero() {
     // prefetch failed). Without this, the first price update has to wait for
     // the poll interval in scheduleLivePrice (30s during market hours, 2m otherwise).
     try { fetchLivePrice(); } catch(e){}
+    try { initWatchButton(); } catch(e){ console.warn('watch button init failed', e); }
 
     // Update feed ticker
     const feedTicker = document.getElementById('tk-feed-ticker');
@@ -10164,6 +10197,73 @@ async function refreshAll() {
   // Authenticated — load all data
   refreshAll();
 })();
+
+// ── Watchlist star button ────────────────────────────────────────────────
+// Loads current saved state for TICKER, toggles on click. Read = 200 OK list;
+// write = POST add / DELETE remove. 402 → user is logged in without an active
+// sub: bounce them to /pricing. 401 → /login. Other errors are silent — the
+// button just re-enables and stays in its prior state.
+async function initWatchButton(){
+  const btn = document.getElementById('mp-watch-btn');
+  if (!btn || !TICKER) return;
+  const setSaved = (saved) => {
+    btn.setAttribute('data-saved', saved ? '1' : '0');
+    btn.setAttribute('aria-pressed', saved ? 'true' : 'false');
+    const icon  = btn.querySelector('.mp-watch-icon');
+    const label = btn.querySelector('.mp-watch-label');
+    if (icon)  icon.textContent  = saved ? '★' : '☆';
+    if (label) label.textContent = saved ? 'Saved' : 'Save';
+    btn.title = saved ? 'Remove from your watchlist' : 'Save to your watchlist';
+  };
+  setSaved(false);
+
+  // Initial state — request the user's list and check membership.
+  let isSaved = false;
+  try {
+    const r = await fetch('/api/watchlist', { credentials: 'same-origin' });
+    if (r.ok) {
+      const j = await r.json();
+      isSaved = Array.isArray(j.items) && j.items.some(x => x.ticker === TICKER);
+      setSaved(isSaved);
+    } else if (r.status === 401 || r.status === 402) {
+      // Logged out / no sub — show button but click will prompt.
+      setSaved(false);
+    }
+  } catch (_e) { /* network blip — leave default */ }
+
+  btn.addEventListener('click', async () => {
+    if (btn.disabled) return;
+    btn.disabled = true;
+    const wasSaved = btn.getAttribute('data-saved') === '1';
+    // Optimistic flip
+    setSaved(!wasSaved);
+    try {
+      const opts = wasSaved
+        ? { method: 'DELETE' }
+        : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ticker: TICKER }) };
+      const url = wasSaved
+        ? '/api/watchlist?ticker=' + encodeURIComponent(TICKER)
+        : '/api/watchlist';
+      const r = await fetch(url, { ...opts, credentials: 'same-origin' });
+      if (r.ok) return;
+      // Revert and route the user to the right place if gated.
+      setSaved(wasSaved);
+      if (r.status === 401) {
+        window.location.href = '/login?next=' + encodeURIComponent(location.pathname);
+      } else if (r.status === 402) {
+        const body = await r.json().catch(() => ({}));
+        window.location.href = body.upgrade_url || '/pricing?reason=subscription_required';
+      } else {
+        console.warn('[watchlist]', r.status, await r.text().catch(()=>''));
+      }
+    } catch (err) {
+      setSaved(wasSaved);
+      console.warn('[watchlist] click failed', err);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+}
 
 // Story feed refresh button
 document.getElementById('tk-feed-refresh')?.addEventListener('click', async function() {
