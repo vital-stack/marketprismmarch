@@ -354,6 +354,16 @@
   .hero-insight-badge:hover {
     opacity: 0.85;
   }
+  /* Sector chip — neutral pill next to the earnings chip in the hero row.
+     Keeps full opacity so it reads as primary metadata, not a soft badge. */
+  .hero-sector-chip {
+    background: rgba(255,255,255,0.04);
+    color: var(--mp-text-secondary);
+    border: 1px solid rgba(255,255,255,0.10);
+    opacity: 1;
+    font-weight: 500;
+  }
+  .hero-sector-chip:hover { opacity: 1; }
   .hero-company-ctx {
     font-size: 13px;
     color: var(--text-secondary);
@@ -5883,12 +5893,10 @@ function renderTradeTicket(f, story, sc, fv, earn, priceRange) {
       + '</div>'
     + '</div>';
 
-  // Sector + P/E chip — render hidden so existing loadSectorPeBubble() still
-  // has #hero-pe-bubble to populate without throwing.
-  var sectorAnchor = '<span id="hero-pe-bubble" style="display:none;"></span>';
-
   // Order: narrative block first, then price-position bar, then horizon grid.
-  return narrHtml + pricePosHtml + horizonsCard + sectorAnchor;
+  // Sector + P/E chip lives in the hero ticker row now (loadSectorPeBubble
+  // populates #hero-pe-bubble there).
+  return narrHtml + pricePosHtml + horizonsCard;
 }
 
 // Attach horizon-tab click handler. Called once after renderTradeTicket()
@@ -6186,47 +6194,13 @@ async function loadHero() {
     const winTxt = shortTf && longTf && shortTf !== longTf ? (shortTf + '–' + longTf) : (shortTf || longTf || '');
     const energy = h.narrative_health != null ? h.narrative_health : null;
 
-    // ── Build stock-specific insight badges from scorecard data ──
+    // Scorecard row — referenced downstream (narrative strip, trade ticket).
+    // The legacy hero insight badges (Overvalued / Coordinated Narrative /
+    // Manipulation Risk / Whale Accumulation / Retail Pump / Fundamentally
+    // Supported) were removed — replaced by the sector chip + P/E bubble in
+    // the hero row, and the deterministic deriveState() label in the
+    // narrative strip.
     const sc = (scorecardRows || [])[0] || {};
-    const insightBadges = [];
-    // Fair value deviation badges — only surface the over-valued side.
-    // Below/Under Fair Value chips suppressed 2026-05-02 (too noisy / often
-    // contradicted the trade verdict).
-    if (sc.fvd_pct != null) {
-      if (sc.fvd_pct > 100) insightBadges.push({ label: 'High Hype Gap', color: '#FF4D4D', bg: 'rgba(255,77,77,0.10)', border: 'rgba(255,77,77,0.25)' });
-      else if (sc.fvd_pct > 30) insightBadges.push({ label: 'Overvalued', color: '#FF4D4D', bg: 'rgba(255,77,77,0.08)', border: 'rgba(255,77,77,0.20)' });
-    }
-    // Coordination / manipulation risk
-    if (sc.coordination_score != null && sc.coordination_score >= 60) {
-      insightBadges.push({ label: 'Coordinated Narrative', color: '#FF4D4D', bg: 'rgba(255,77,77,0.08)', border: 'rgba(255,77,77,0.20)' });
-    }
-    // Suspicion
-    if (sc.suspicion_score != null && sc.suspicion_score >= 50) {
-      insightBadges.push({ label: 'Manipulation Risk', color: '#7B61FF', bg: 'rgba(123,97,255,0.10)', border: 'rgba(123,97,255,0.25)' });
-    }
-    // Narrative-state badges (Narrative Fading, Story Exhausted, High Energy)
-    // suppressed — too subjective and routinely contradicted the trade-ticket
-    // verdict shown directly below.
-    // Verdict-based badges — Narrative Trap suppressed 2026-05-02 (the
-    // trade-ticket verdict already conveys the bear case).
-    const scVerdict = (sc.verdict || '').toLowerCase();
-    if (scVerdict.includes('verified') || scVerdict.includes('supported')) insightBadges.push({ label: 'Fundamentally Supported', color: '#00DE94', bg: 'rgba(0,222,148,0.08)', border: 'rgba(0,222,148,0.20)' });
-
-    // Narrative state — only surface the actionable states (whale buying or retail hype).
-    // DORMANT and DISTRIBUTION are suppressed: dormant is too common to be informative,
-    // distribution overlaps with the existing trap/decay badges.
-    const ns = sc.narrative_state;
-    if (ns === 'WHALE_ACCUMULATION' || ns === 'RETAIL_PUMP') {
-      const nsLabel = String(ns).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-      const nsBadge = ns === 'WHALE_ACCUMULATION'
-        ? { label: nsLabel, color: '#00DE94', bg: 'rgba(0,222,148,0.10)', border: 'rgba(0,222,148,0.25)' }
-        : { label: nsLabel, color: '#FFB800', bg: 'rgba(255,184,0,0.10)', border: 'rgba(255,184,0,0.25)' };
-      insightBadges.unshift(nsBadge);
-    }
-
-    const insightHtml = insightBadges.slice(0, 4).map(b =>
-      `<span class="hero-insight-badge" style="background:${b.bg};color:${b.color};border:1px solid ${b.border};">${esc(b.label)}</span>`
-    ).join('');
 
     // ── Earnings pill — prominent, color-coded by proximity ──
     // Recalculate days_to_earnings from next_earnings_date relative to TODAY
@@ -6283,7 +6257,8 @@ async function loadHero() {
         <div class="hero-ticker-row">
           <span class="hero-ticker">${esc(r.ticker)}</span>
           ${earningsPill}
-          ${insightHtml || `<span class="hero-state-badge ${stateClass(r.narrative_state)}">${esc(r.narrative_state || '—')}</span>`}
+          ${r.sector_name ? `<span class="hero-insight-badge hero-sector-chip">${esc(r.sector_name)}</span>` : ''}
+          <span id="hero-pe-bubble"></span>
         </div>
       </div>
       <div class="hero-right" id="hero-right">
