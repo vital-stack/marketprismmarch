@@ -61,7 +61,9 @@ function coordinationClass(score) {
 
 // Mirror the frontend's deriveState() so we can pass the synthesized state
 // label to the LLM and instruct it not to restate.
-function synthesizedStateLabel(sc) {
+// priceChangePct: today's % change. Used to gate the "Quiet" label so a
+// large-cap with sparse news but a +3% tape doesn't get labeled Quiet.
+function synthesizedStateLabel(sc, priceChangePct) {
   if (!sc) return 'Insufficient signal';
   var ns = sc.narrative_state || null;
   var cc = coordinationClass(sc.coordination_score);
@@ -70,6 +72,9 @@ function synthesizedStateLabel(sc) {
   var freshEnergy = /critical/i.test(ner) && !/sub/i.test(ner);
   var s = sc.current_sentiment;
   var tone = (s == null || !isFinite(s)) ? null : (s > 0.30 ? 'BULLISH' : s < -0.30 ? 'BEARISH' : 'MIXED');
+  var dailyAbsPct = priceChangePct != null && isFinite(Number(priceChangePct))
+    ? Math.abs(Number(priceChangePct)) : null;
+  var priceIsQuiet = dailyAbsPct == null || dailyAbsPct < 1;
 
   if (ns === 'WHALE_ACCUMULATION' && cc === 'LIKELY_COORDINATED') return 'Smart money behind a story';
   if (ns === 'WHALE_ACCUMULATION') return 'Quiet accumulation';
@@ -81,7 +86,7 @@ function synthesizedStateLabel(sc) {
   if (ns === 'RETAIL_PUMP' && cc === 'SUSPICIOUS_PATTERN') return 'Suspicious retail activity';
   if (ns === 'RETAIL_PUMP') return 'Retail momentum';
   if (wr === 'EXHAUSTING') return 'Narrative collapsing';
-  if (ns === 'DORMANT') return 'Quiet';
+  if (ns === 'DORMANT' && priceIsQuiet) return 'Quiet';
   if (cc === 'LIKELY_COORDINATED') return 'Coordinated narrative';
   if (!ns) return 'Insufficient signal';
   return 'Mixed signals';
@@ -129,8 +134,9 @@ function compactState(story, scorecard, health, narratives, fairValue, articles)
   if (sc.half_life != null) lines.push('- Narrative half-life (days remaining): ' + Math.round(Number(sc.half_life)));
 
   // Synthesized state — the deterministic label rendered above this paragraph.
-  // Surfaced explicitly so the LLM doesn't restate it.
-  var stateLabel = synthesizedStateLabel(sc);
+  // Surfaced explicitly so the LLM doesn't restate it. Pass today's price
+  // change so the Quiet rule stays in sync with the frontend.
+  var stateLabel = synthesizedStateLabel(sc, s.price_change_pct);
   lines.push('');
   lines.push('Synthesized state label (already shown above the paragraph — DO NOT restate): "' + stateLabel + '"');
 
@@ -198,7 +204,7 @@ module.exports = async (req, res) => {
   // falls back to the deduped scorecard narratives view.
   var sinceISO = new Date(Date.now() - 3 * 86400000).toISOString().slice(0, 10);
   var [storyRows, scoreRows, healthRows, narrativeRows, fvRows, articleRows] = await Promise.all([
-    fetchSupabase('v_dash_daily_story?select=ticker,sector_name,price,narrative_state,prism_verdict,story_claim,forensic_rebuttal,days_to_earnings,guidance_direction,earnings_surprise_pct,snapshot_date&' + tFilter + '&order=snapshot_date.desc&limit=1'),
+    fetchSupabase('v_dash_daily_story?select=ticker,sector_name,price,price_change_pct,narrative_state,prism_verdict,story_claim,forensic_rebuttal,days_to_earnings,guidance_direction,earnings_surprise_pct,snapshot_date&' + tFilter + '&order=snapshot_date.desc&limit=1'),
     fetchSupabase('narrative_scorecard?select=ticker,verdict,narrative_state,coordination_score,walsh_regime,narrative_energy_regime,current_sentiment,fvd_pct,half_life,snapshot_date&' + tFilter + '&order=snapshot_date.desc&limit=1'),
     fetchSupabase('v_dash_narrative_health?select=ticker,narrative_health,narrative_trend,snapshot_date&' + tFilter + '&order=snapshot_date.desc&limit=1'),
     fetchSupabase('v_narrative_scorecard_deduped?select=narrative,propagation_pressure,energy_remaining,narrative_energy_regime,snapshot_date&' + tFilter + '&order=snapshot_date.desc,propagation_pressure.desc.nullslast&limit=8'),

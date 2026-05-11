@@ -5364,7 +5364,12 @@ function ttNarrativeTone(sentiment) {
 //   - signal_regime substituted with narrative_energy_regime
 //   - narrative_tone substituted with ttNarrativeTone(current_sentiment)
 //   - dark_pool_signal does not exist; rules gated on it are omitted.
-function deriveState(sc) {
+//
+// ctx (optional): { priceChangePct } — additional non-scorecard signals used
+//   to guard rules from misfiring. e.g. "Quiet" requires narrative_state =
+//   DORMANT AND |today's change| < 1% so a ticker like NVDA up 3% intraday
+//   doesn't get labeled Quiet just because narrative coverage went sparse.
+function deriveState(sc, ctx) {
   if (!sc) return { label: 'Insufficient signal', action: 'MORE DATA NEEDED', tone: 'neutral' };
 
   var ns   = sc.narrative_state || null;
@@ -5375,6 +5380,11 @@ function deriveState(sc) {
   var ner  = (sc.narrative_energy_regime || '').toString();
   var freshEnergy = /critical/i.test(ner) && !/sub/i.test(ner);
   var tone = ttNarrativeTone(sc.current_sentiment);
+  // Today's price move (absolute %). Null = unknown — treat as quiet so we
+  // don't suppress the Quiet label on tickers without a fresh snapshot.
+  var dailyAbsPct = ctx && ctx.priceChangePct != null && isFinite(Number(ctx.priceChangePct))
+    ? Math.abs(Number(ctx.priceChangePct)) : null;
+  var priceIsQuiet = dailyAbsPct == null || dailyAbsPct < 1;
 
   // 1. WHALE_ACCUMULATION + LIKELY_COORDINATED — story-driven accumulation.
   //    Note: the dark-pool-gated "Smart money loading" branch is omitted —
@@ -5415,7 +5425,10 @@ function deriveState(sc) {
   if (wr === 'EXHAUSTING') {
     return { label: 'Narrative collapsing', action: 'CONSIDER EXIT', tone: 'negative' };
   }
-  if (ns === 'DORMANT') {
+  // DORMANT alone isn't enough for "Quiet" — a large-cap like NVDA can hit
+  // narrative-dormant on a sparse news day while the stock moves +3%
+  // intraday. Require both a dormant narrative AND a quiet tape.
+  if (ns === 'DORMANT' && priceIsQuiet) {
     return { label: 'Quiet', action: 'NO SETUP', tone: 'neutral' };
   }
   if (cc === 'LIKELY_COORDINATED') {
@@ -5837,8 +5850,9 @@ function renderTradeTicket(f, story, sc, fv, earn, priceRange, strategy) {
 
   // ── Narrative state strip ──
   // Title + action chip + tone come from the deterministic deriveState()
-  // function (operates on narrative_scorecard fields only — no LLM).
-  var state = deriveState(sc);
+  // function (operates on narrative_scorecard fields plus a small ctx for
+  // non-scorecard signals like today's price change — no LLM).
+  var state = deriveState(sc, { priceChangePct: story && story.price_change_pct });
   var pal = ttTonePalette(state.tone);
   var narrTitle = state.label;
   var titleColor = pal.titleLight;
