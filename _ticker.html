@@ -5349,14 +5349,123 @@ function ttPctClass(p) {
 }
 
 // Action verb chip next to the narrative-state title (mockup: "WATCH — VERIFY").
+// Kept as a final fallback when deriveState() returns no action (e.g. truly
+// empty scorecard rows).
 function ttActionChip(f) {
   switch ((f && f.bias || '').toLowerCase()) {
     case 'long':        return 'BUY';
     case 'short':       return 'SELL / SHORT';
-    case 'watch_long':  return 'WATCH — VERIFY';
-    case 'watch_short': return 'WATCH — SHORT';
+    case 'watch_long':  return 'WATCH - VERIFY';
+    case 'watch_short': return 'WATCH - SHORT';
     case 'neutral':     return 'MONITOR';
     default:            return '';
+  }
+}
+
+// Derive coordination class from the numeric coordination_score (0-100).
+// Dedicated coordination_class column doesn't exist on narrative_scorecard,
+// so deriveState() consumes this internal mapping instead.
+function ttCoordinationClass(score) {
+  if (score == null) return null;
+  if (score >= 60) return 'LIKELY_COORDINATED';
+  if (score >= 30) return 'SUSPICIOUS_PATTERN';
+  if (score >= 10) return 'ORGANIC_SPREAD';
+  return 'ORGANIC';
+}
+
+// Map current_sentiment (numeric, roughly [-1, 1]) to a tone label so the
+// DISTRIBUTION + bullish-tone rule can fire. The dedicated narrative_tone
+// column doesn't exist on narrative_scorecard.
+function ttNarrativeTone(sentiment) {
+  if (sentiment == null || !isFinite(sentiment)) return null;
+  var s = Number(sentiment);
+  if (s >  0.30) return 'BULLISH';
+  if (s < -0.30) return 'BEARISH';
+  return 'MIXED';
+}
+
+// Deterministic synthesized state label + action chip + tone for the
+// narrative strip. Order matters — first match wins. Adapted to columns
+// that actually exist on narrative_scorecard:
+//   - coordination_class derived from coordination_score (see ttCoordinationClass)
+//   - signal_regime substituted with narrative_energy_regime
+//   - narrative_tone substituted with ttNarrativeTone(current_sentiment)
+//   - dark_pool_signal does not exist; rules gated on it are omitted.
+function deriveState(sc) {
+  if (!sc) return { label: 'Insufficient signal', action: 'MORE DATA NEEDED', tone: 'neutral' };
+
+  var ns   = sc.narrative_state || null;
+  var cc   = ttCoordinationClass(sc.coordination_score);
+  var wr   = sc.walsh_regime || null;
+  // narrative_energy_regime values seen in the wild: 'Sub-Critical', 'Critical',
+  // 'Supercritical'. Map Critical/Supercritical to the spec's FRESH_ENERGY bucket.
+  var ner  = (sc.narrative_energy_regime || '').toString();
+  var freshEnergy = /critical/i.test(ner) && !/sub/i.test(ner);
+  var tone = ttNarrativeTone(sc.current_sentiment);
+
+  // 1. WHALE_ACCUMULATION + LIKELY_COORDINATED — story-driven accumulation.
+  //    Note: the dark-pool-gated "Smart money loading" branch is omitted —
+  //    no dark_pool_signal column in this schema.
+  if (ns === 'WHALE_ACCUMULATION' && cc === 'LIKELY_COORDINATED') {
+    return { label: 'Smart money behind a story', action: 'WATCH - VERIFY', tone: 'caution' };
+  }
+  if (ns === 'WHALE_ACCUMULATION') {
+    return { label: 'Quiet accumulation', action: 'WATCH FOR ENTRY', tone: 'positive' };
+  }
+
+  // 2. DISTRIBUTION branches.
+  if (ns === 'DISTRIBUTION' && (cc === 'LIKELY_COORDINATED' || cc === 'SUSPICIOUS_PATTERN') && tone === 'BULLISH') {
+    return { label: 'Whales selling into hype', action: 'AVOID LONG', tone: 'negative' };
+  }
+  if (ns === 'DISTRIBUTION' && wr === 'EXHAUSTING') {
+    return { label: 'Smart money exiting', action: 'REDUCE EXPOSURE', tone: 'negative' };
+  }
+  if (ns === 'DISTRIBUTION' && freshEnergy) {
+    return { label: 'Distribution into strength', action: 'SUSPECT TRAP', tone: 'negative' };
+  }
+  if (ns === 'DISTRIBUTION') {
+    return { label: 'Quiet distribution', action: 'REDUCE EXPOSURE', tone: 'negative' };
+  }
+
+  // 3. RETAIL_PUMP branches.
+  if (ns === 'RETAIL_PUMP' && cc === 'LIKELY_COORDINATED') {
+    return { label: 'Manufactured pump', action: 'DO NOT CHASE', tone: 'negative' };
+  }
+  if (ns === 'RETAIL_PUMP' && cc === 'SUSPICIOUS_PATTERN') {
+    return { label: 'Suspicious retail activity', action: 'AVOID', tone: 'negative' };
+  }
+  if (ns === 'RETAIL_PUMP') {
+    return { label: 'Retail momentum', action: 'TRADE WITH CAUTION', tone: 'caution' };
+  }
+
+  // 4. Regime / catch-alls.
+  if (wr === 'EXHAUSTING') {
+    return { label: 'Narrative collapsing', action: 'CONSIDER EXIT', tone: 'negative' };
+  }
+  if (ns === 'DORMANT') {
+    return { label: 'Quiet', action: 'NO SETUP', tone: 'neutral' };
+  }
+  if (cc === 'LIKELY_COORDINATED') {
+    return { label: 'Coordinated narrative', action: 'VERIFY BEFORE ACTING', tone: 'caution' };
+  }
+  if (!ns) {
+    return { label: 'Insufficient signal', action: 'MORE DATA NEEDED', tone: 'neutral' };
+  }
+  return { label: 'Mixed signals', action: 'MONITOR', tone: 'neutral' };
+}
+
+// Tone → palette for the narrative strip. Replaces the bias-color tinting so
+// that label/action/border/title/background all key off the same tone signal.
+function ttTonePalette(tone) {
+  switch (tone) {
+    case 'positive':
+    case 'caution':
+      return { color:'#FFB800', titleLight:'#FAC775', chipBg:'#412402', cardBg:'rgba(255,184,0,0.08)', border:'rgba(255,184,0,0.55)' };
+    case 'negative':
+      return { color:'#FF4D4D', titleLight:'#FFB3B3', chipBg:'#3A0F0F', cardBg:'rgba(255,77,77,0.08)', border:'rgba(255,77,77,0.55)' };
+    case 'neutral':
+    default:
+      return { color:'#A0A8B0', titleLight:'#D6DCE3', chipBg:'#1A1E26', cardBg:'rgba(160,168,176,0.06)', border:'rgba(160,168,176,0.40)' };
   }
 }
 
@@ -5633,27 +5742,17 @@ function renderTradeTicket(f, story, sc, fv, earn, priceRange) {
     + '</div>';
 
   // ── Narrative state strip ──
-  // Title: prefer directional_verdict, fall back to narrative_state.
-  var narrTitle = (f.directional_verdict || '').trim()
-    || (sc && sc.narrative_state ? String(sc.narrative_state).replace(/_/g,' ') : '')
-    || 'Narrative';
-  if (narrTitle === narrTitle.toUpperCase()) {
-    narrTitle = narrTitle.charAt(0) + narrTitle.slice(1).toLowerCase();
-  }
-  // Title color: lightened toward white (matches mockup's cream-on-amber look).
-  // Card background: a deep tint of the bias color so the whole card picks up
-  // the amber/cyan/red wash like the mockup.
-  var titleColor = ttLighten(color, 0.55);
-  var narrBg = color + '14';     // ~8% alpha tint of bias color
-  var narrBorder = color + '88'; // ~53% alpha for a stronger left bar
-
-  var action = ttActionChip(f);
-  var actionHtml = '';
-  if (action) {
-    // Deep tint of the bias color (like mockup's #412402 on #ef9f27).
-    var chipBg = ttDarken(color, 0.72);
-    actionHtml = '<span class="tt-narr-action" style="background:'+chipBg+';color:'+color+';">'+ esc(action) +'</span>';
-  }
+  // Title + action chip + tone come from the deterministic deriveState()
+  // function (operates on narrative_scorecard fields only — no LLM).
+  var state = deriveState(sc);
+  var pal = ttTonePalette(state.tone);
+  var narrTitle = state.label;
+  var titleColor = pal.titleLight;
+  var narrBg = pal.cardBg;
+  var narrBorder = pal.border;
+  var actionHtml = state.action
+    ? '<span class="tt-narr-action" style="background:'+pal.chipBg+';color:'+pal.color+';">'+ esc(state.action) +'</span>'
+    : '';
 
   // Lifecycle meta — "Day X · ~Nd horizon" (mockup: "Day 11 · ~90d horizon").
   // We don't store narrative-inception days; use scorecard half_life as a
@@ -5737,7 +5836,8 @@ function renderTradeTicket(f, story, sc, fv, earn, priceRange) {
   // has #hero-pe-bubble to populate without throwing.
   var sectorAnchor = '<span id="hero-pe-bubble" style="display:none;"></span>';
 
-  return pricePosHtml + narrHtml + horizonsCard + sectorAnchor;
+  // Order: narrative block first, then price-position bar, then horizon grid.
+  return narrHtml + pricePosHtml + horizonsCard + sectorAnchor;
 }
 
 // Attach horizon-tab click handler. Called once after renderTradeTicket()
