@@ -64,7 +64,9 @@ function coordinationClass(score) {
 // priceChangePct: today's % change. Used to gate the "Quiet" label so a
 // large-cap with sparse news but a +3% tape doesn't get labeled Quiet.
 function synthesizedStateLabel(sc, priceChangePct) {
-  if (!sc) return 'Insufficient signal';
+  // Universal fallback — never returns "Insufficient signal" so the LLM hint
+  // stays in lockstep with the frontend deriveState() catch-all.
+  if (!sc) return 'Mixed signals';
   var ns = sc.narrative_state || null;
   var cc = coordinationClass(sc.coordination_score);
   var wr = sc.walsh_regime || null;
@@ -93,7 +95,9 @@ function synthesizedStateLabel(sc, priceChangePct) {
   if (wr === 'EXHAUSTING') return 'Narrative collapsing';
   if (ns === 'DORMANT' && lowEnergy && priceIsQuiet) return 'Quiet';
   if (cc === 'LIKELY_COORDINATED') return 'Coordinated narrative';
-  if (!ns) return 'Insufficient signal';
+  // Falls through to "Mixed signals" when ns is null/unclassified but other
+  // scorecard fields are present (e.g. major tickers like AAPL with rich
+  // coverage but no specific narrative state). See _ticker.html deriveState().
   return 'Mixed signals';
 }
 

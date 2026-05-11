@@ -5398,7 +5398,11 @@ function ttNarrativeTone(sentiment) {
 //   DORMANT AND |today's change| < 1% so a ticker like NVDA up 3% intraday
 //   doesn't get labeled Quiet just because narrative coverage went sparse.
 function deriveState(sc, ctx) {
-  if (!sc) return { label: 'Insufficient signal', action: 'MORE DATA NEEDED', tone: 'neutral' };
+  // Generic catch-all used when the scorecard row is missing entirely (newly
+  // tracked tickers, e.g. RDDT) or when no rule matches. Avoids ever showing
+  // "Insufficient signal / MORE DATA NEEDED" on any ticker.
+  var FALLBACK = { label: 'Mixed signals', action: 'MONITOR', tone: 'neutral' };
+  if (!sc) return FALLBACK;
 
   var ns   = sc.narrative_state || null;
   var cc   = ttCoordinationClass(sc.coordination_score);
@@ -5473,10 +5477,12 @@ function deriveState(sc, ctx) {
   if (cc === 'LIKELY_COORDINATED') {
     return { label: 'Coordinated narrative', action: 'VERIFY BEFORE ACTING', tone: 'caution' };
   }
-  if (!ns) {
-    return { label: 'Insufficient signal', action: 'MORE DATA NEEDED', tone: 'neutral' };
-  }
-  return { label: 'Mixed signals', action: 'MONITOR', tone: 'neutral' };
+  // No earlier rule matched: ns may be null or just unclassified ("DORMANT"
+  // with high energy, or simply blank for a major ticker). The right label
+  // here is the catch-all "Mixed signals / MONITOR" — NOT "Insufficient
+  // signal", which incorrectly suggested we had no data on tickers like AAPL
+  // that have rich scorecard rows but no specific narrative classification.
+  return FALLBACK;
 }
 
 // Tone → palette for the narrative strip. Replaces the bias-color tinting so
