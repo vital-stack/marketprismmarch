@@ -3388,6 +3388,75 @@
   .tt-narr-signal-label{color:var(--mp-text-muted);}
   .tt-narr-signal-val{color:var(--mp-text-secondary);text-align:right;}
 
+  /* ── Reality-Belief gauge (UBER test only — narrative card right column) ── */
+  .tt-narr-cols{
+    display:flex;gap:24px;align-items:flex-start;
+  }
+  .tt-narr-col-left{flex:1 1 70%;min-width:0;}
+  .tt-narr-col-right{
+    flex:0 0 30%;
+    display:flex;flex-direction:column;align-items:stretch;gap:10px;
+    padding-left:20px;
+    border-left:1px solid var(--mp-border);
+  }
+  .tt-narr-col-right .tt-narr-meta-top{
+    text-align:right;
+    font-family:'Inter',system-ui,sans-serif;font-size:11px;
+    color:var(--mp-text-muted);
+  }
+  .rbi-gauge{
+    display:flex;flex-direction:column;align-items:center;gap:6px;
+  }
+  .rbi-gauge-svg-wrap{position:relative;width:100%;max-width:240px;}
+  .rbi-gauge-svg{display:block;width:100%;height:auto;}
+  .rbi-gauge-center{
+    position:absolute;left:0;right:0;bottom:18px;
+    text-align:center;pointer-events:none;line-height:1;
+  }
+  .rbi-gauge-value{font-family:'Inter',system-ui,sans-serif;line-height:1;}
+  .rbi-gauge-num{font-size:28px;font-weight:600;letter-spacing:-0.02em;}
+  .rbi-gauge-sub{font-size:11px;color:var(--mp-text-muted);font-weight:400;margin-left:2px;}
+  .rbi-gauge-zone{
+    font-family:'Inter',system-ui,sans-serif;font-size:11px;font-weight:500;
+    letter-spacing:.08em;margin-top:4px;
+  }
+  .rbi-gauge-empty{
+    font-family:'Inter',system-ui,sans-serif;font-size:11px;
+    color:var(--mp-text-muted);text-align:center;padding:6px 4px 0;
+  }
+  .rbi-gauge-skeleton{
+    width:100%;max-width:240px;aspect-ratio: 200 / 135;
+    background:linear-gradient(90deg,rgba(255,255,255,0.03),rgba(255,255,255,0.07),rgba(255,255,255,0.03));
+    background-size:200% 100%;border-radius:8px;
+    animation:rbi-shimmer 1.4s ease-in-out infinite;
+  }
+  @keyframes rbi-shimmer{
+    0%{background-position:200% 0;}
+    100%{background-position:-200% 0;}
+  }
+  .rbi-theme-wrap{
+    display:flex;flex-direction:column;gap:4px;align-items:center;margin-top:4px;
+  }
+  .rbi-theme-label{
+    font-family:'Inter',system-ui,sans-serif;font-size:10px;
+    color:var(--mp-text-muted);letter-spacing:.05em;text-transform:uppercase;
+  }
+  .rbi-theme-chip{
+    font-family:'Inter',system-ui,sans-serif;font-size:11px;
+    background:rgba(255,255,255,0.05);border:1px solid var(--mp-border);
+    color:var(--mp-text-secondary);
+    padding:4px 10px;border-radius:999px;
+  }
+  @media (max-width: 768px){
+    .tt-narr-cols{flex-direction:column;gap:16px;}
+    .tt-narr-col-left, .tt-narr-col-right{flex-basis:auto;width:100%;}
+    .tt-narr-col-right{
+      padding-left:0;border-left:none;
+      border-top:1px solid var(--mp-border);padding-top:14px;
+    }
+    .tt-narr-col-right .tt-narr-meta-top{text-align:left;}
+  }
+
   /* ── Horizon tabs + grid card ── */
   .tt-horizons{
     background:rgba(255,255,255,0.015);border:1px solid var(--mp-border);
@@ -5726,6 +5795,89 @@ function ttDarken(hex, amount) {
   return 'rgb('+r+','+g+','+b+')';
 }
 
+// ── Reality-Belief gauge (UBER test) ─────────────────────────────────────
+// Half-circle SVG gauge with 4 colored segments + needle, value/zone in
+// center, theme chip underneath. Pass null/empty rbi to render empty state.
+function renderRealityBeliefGaugeBody(rbi) {
+  var value = (rbi && rbi.reality_belief_index != null && isFinite(Number(rbi.reality_belief_index)))
+    ? Number(rbi.reality_belief_index) : null;
+  var zone = (rbi && rbi.gauge_zone) ? String(rbi.gauge_zone) : '';
+  var narrCount = (rbi && rbi.active_narrative_count != null) ? Number(rbi.active_narrative_count) : 0;
+  var theme = (rbi && rbi.dominant_belief_theme)
+    ? String(rbi.dominant_belief_theme).replace(/_/g, ' ') : '';
+
+  var hasData = value != null && narrCount > 0;
+  var zoneColors = {
+    reality: '#10b981', plausible: '#84cc16', risky: '#f59e0b', belief: '#ef4444'
+  };
+  var zoneColor = zoneColors[zone] || '#94a3b8';
+
+  // SVG geometry: viewBox 0 0 200 135. Center (100,108), radius 75.
+  var cx = 100, cy = 108, r = 75;
+  function arc(startDeg, endDeg, color){
+    var s = startDeg * Math.PI / 180;
+    var e = endDeg * Math.PI / 180;
+    var x1 = (cx + r * Math.cos(s)).toFixed(2);
+    var y1 = (cy - r * Math.sin(s)).toFixed(2);
+    var x2 = (cx + r * Math.cos(e)).toFixed(2);
+    var y2 = (cy - r * Math.sin(e)).toFixed(2);
+    return '<path d="M '+x1+' '+y1+' A '+r+' '+r+' 0 0 1 '+x2+' '+y2
+      +'" stroke="'+color+'" stroke-width="14" fill="none" stroke-linecap="butt"/>';
+  }
+  var arcs = hasData
+    ? arc(180,135,'#10b981') + arc(135,90,'#84cc16') + arc(90,45,'#f59e0b') + arc(45,0,'#ef4444')
+    : arc(180, 0, 'rgba(255,255,255,0.08)');
+
+  var needleHtml = '';
+  if (hasData) {
+    var angleDeg = -90 + (value/100) * 180;
+    var tipY = cy - r + 6;
+    needleHtml = '<g transform="rotate('+angleDeg.toFixed(2)+' '+cx+' '+cy+')">'
+      + '<path d="M '+cx+' '+tipY+' L '+(cx-5)+' '+(cy-8)+' L '+(cx+5)+' '+(cy-8)+' Z" fill="'+zoneColor+'"/>'
+      + '<circle cx="'+cx+'" cy="'+cy+'" r="6" fill="#0C1018" stroke="'+zoneColor+'" stroke-width="2"/>'
+      + '</g>';
+  }
+  var endLabels = ''
+    + '<text x="'+(cx - r + 2)+'" y="'+(cy + 22)+'" text-anchor="middle" '
+      + 'fill="rgba(255,255,255,0.45)" font-family="Inter,system-ui,sans-serif" '
+      + 'font-size="10" letter-spacing="1">REALITY</text>'
+    + '<text x="'+(cx + r - 2)+'" y="'+(cy + 22)+'" text-anchor="middle" '
+      + 'fill="rgba(255,255,255,0.45)" font-family="Inter,system-ui,sans-serif" '
+      + 'font-size="10" letter-spacing="1">BELIEF</text>';
+
+  var svg = '<svg class="rbi-gauge-svg" viewBox="0 0 200 135" xmlns="http://www.w3.org/2000/svg" aria-label="Reality-Belief gauge">'
+    + arcs + needleHtml + endLabels
+    + '</svg>';
+
+  var centerHtml = '';
+  if (hasData) {
+    centerHtml = '<div class="rbi-gauge-center">'
+      + '<div class="rbi-gauge-value" style="color:'+zoneColor+';">'
+        + '<span class="rbi-gauge-num">'+ Math.round(value) +'</span>'
+        + '<span class="rbi-gauge-sub">/100</span>'
+      + '</div>'
+      + '<div class="rbi-gauge-zone" style="color:'+zoneColor+';">'+ esc(zone.toUpperCase()) +'</div>'
+    + '</div>';
+  }
+
+  var themeChip = (hasData && theme)
+    ? '<div class="rbi-theme-wrap">'
+        + '<div class="rbi-theme-label">Driving theme</div>'
+        + '<div class="rbi-theme-chip">'+ esc(theme) +'</div>'
+      + '</div>'
+    : '';
+
+  var emptyCaption = !hasData
+    ? '<div class="rbi-gauge-empty">No active narratives in last 30 days</div>'
+    : '';
+
+  return '<div class="rbi-gauge">'
+    + '<div class="rbi-gauge-svg-wrap">' + svg + centerHtml + '</div>'
+    + emptyCaption
+    + themeChip
+    + '</div>';
+}
+
 function renderTradeTicket(f, story, sc, fv, earn, priceRange, strategy) {
   var color = ttColor(f.color);
 
@@ -5840,18 +5992,44 @@ function renderTradeTicket(f, story, sc, fv, earn, priceRange, strategy) {
       + '</details>';
   }
 
-  var narrHtml = ''
-    + '<div class="tt-narr" style="border-left-color:'+narrBorder+';background:'+narrBg+';">'
-      + '<div class="tt-narr-head">'
-        + '<div class="tt-narr-title-wrap">'
-          + '<span class="tt-narr-title" style="color:'+titleColor+';">'+ esc(narrTitle) +'</span>'
-          + actionHtml
+  var narrHtml;
+  if (TICKER === 'UBER') {
+    // RBI gauge test layout: 70/30 split with gauge in right column.
+    // Day-N · ~Nd horizon meta moves to the top-right of the gauge column.
+    var metaTopHtml = 'Day ' + lifecycleDay + ' &middot; ~' + primaryTab.horizonDays + 'd horizon';
+    narrHtml = ''
+      + '<div class="tt-narr" style="border-left-color:'+narrBorder+';background:'+narrBg+';">'
+        + '<div class="tt-narr-cols">'
+          + '<div class="tt-narr-col-left">'
+            + '<div class="tt-narr-head">'
+              + '<div class="tt-narr-title-wrap">'
+                + '<span class="tt-narr-title" style="color:'+titleColor+';">'+ esc(narrTitle) +'</span>'
+                + actionHtml
+              + '</div>'
+            + '</div>'
+            + '<div class="tt-narr-desc" id="tt-headline" data-pending="1" data-fallback="'+ esc(headline || '') +'" style="display:none;"></div>'
+            + signalsHtml
+          + '</div>'
+          + '<div class="tt-narr-col-right">'
+            + '<div class="tt-narr-meta-top">'+ metaTopHtml +'</div>'
+            + '<div id="rbi-gauge-mount"><div class="rbi-gauge-skeleton"></div></div>'
+          + '</div>'
         + '</div>'
-        + narrMeta
-      + '</div>'
-      + '<div class="tt-narr-desc" id="tt-headline" data-pending="1" data-fallback="'+ esc(headline || '') +'" style="display:none;"></div>'
-      + signalsHtml
-    + '</div>';
+      + '</div>';
+  } else {
+    narrHtml = ''
+      + '<div class="tt-narr" style="border-left-color:'+narrBorder+';background:'+narrBg+';">'
+        + '<div class="tt-narr-head">'
+          + '<div class="tt-narr-title-wrap">'
+            + '<span class="tt-narr-title" style="color:'+titleColor+';">'+ esc(narrTitle) +'</span>'
+            + actionHtml
+          + '</div>'
+          + narrMeta
+        + '</div>'
+        + '<div class="tt-narr-desc" id="tt-headline" data-pending="1" data-fallback="'+ esc(headline || '') +'" style="display:none;"></div>'
+        + signalsHtml
+      + '</div>';
+  }
 
   // ── Horizon tabs + 4-col grid ──
   var tabsHtml = TT_HORIZON_TABS.map(function(t){
@@ -6404,6 +6582,26 @@ async function loadHero() {
       var priceRange60 = null;
       verdictBanner.innerHTML = renderTradeTicket(f, r, sc, fv, earnCtxForTicket, priceRange60, strategyForTicket);
       wireTradeTicket(verdictBanner, f, sc, fv, strategyForTicket, r);
+
+      // ── Reality-Belief gauge (UBER test only) ──
+      // Fetches ticker_reality_belief view and mounts the gauge into the
+      // narrative card's right column. NULL/empty rows render the empty
+      // state. After visual approval this gate gets removed and the gauge
+      // becomes the default for all tickers.
+      if (TICKER === 'UBER') {
+        sbFetch('ticker_reality_belief', {
+          select: 'reality_belief_index,gauge_zone,active_narrative_count,dominant_belief_theme,dominant_belief_narrative',
+          ticker: 'eq.' + TICKER,
+          limit: 1
+        }).then(function(rows){
+          var mount = document.getElementById('rbi-gauge-mount');
+          if (!mount) return;
+          mount.innerHTML = renderRealityBeliefGaugeBody(rows && rows[0]);
+        }).catch(function(){
+          var mount = document.getElementById('rbi-gauge-mount');
+          if (mount) mount.innerHTML = renderRealityBeliefGaugeBody(null);
+        });
+      }
       fetchPriceSeries(TICKER, 65).then(function(series){
         if (!series || !series.length) return;
         var prices = series.map(function(p){ return Number(p.price_close); }).filter(function(n){ return isFinite(n); });
