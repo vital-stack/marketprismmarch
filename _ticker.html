@@ -7290,17 +7290,12 @@ function drawChart(snaps, narrs, drawCandles) {
     if (!d) return;
     const pos = xyOfDate(d);
     if (!pos) return;
-    const activeDays = getActiveDays();
-    const dotScale = (activeDays > 0 && activeDays <= 14) ? 1.8 : (activeDays > 0 && activeDays <= 30) ? 1.4 : 1.1;
-    const r = Math.round((m.mass >= 0.5 ? 9 : m.mass >= 0.3 ? 7 : 5) * dotScale);
+    const r = m.mass >= 0.5 ? 7 : m.mass >= 0.3 ? 5 : 3;
     const color = m.wks > 10 ? '#00DE94' : m.wks < -10 ? '#FF4D4D' : '#A0A8B8';
-    ctx.save();
-    ctx.globalAlpha = 0.9;
     ctx.beginPath();
     ctx.arc(pos.cx, pos.cy, r, 0, Math.PI*2);
     ctx.fillStyle = color; ctx.fill();
     ctx.strokeStyle = isLight() ? '#FFFFFF' : '#0A0E1A'; ctx.lineWidth = 1.5; ctx.stroke();
-    ctx.restore();
     dotHits.push({ cx: pos.cx, cy: pos.cy, n: { snapshot_date: m.snapshot_date, mass: m.mass, wks: m.wks, isMassDot: true } });
   });
 
