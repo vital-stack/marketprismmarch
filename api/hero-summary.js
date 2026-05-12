@@ -18,7 +18,7 @@ const SYSTEM_PROMPT = `You are writing a 2-3 sentence editorial summary for a st
 
 Sentence 1 — Lead with what's dominating discourse. If multiple articles share a theme, name it specifically (use proper nouns from the articles). If they conflict, describe the conflict.
 
-Sentence 2 — Quantify the disconnect between narrative and fundamentals. Reference the fair value gap, recent earnings if applicable, and narrative health (use the narrative regime / walsh_regime to characterize whether the story is fresh or fading).
+Sentence 2 — Quantify the disconnect between narrative and fundamentals. If a fair value gap is provided in the input, reference it; if it is not provided, do NOT mention fair value, valuation, premium, discount, over/undervalued, or any "X% above/below fair value" phrasing. Always reference narrative health (use the narrative regime / walsh_regime to characterize whether the story is fresh or fading), and recent earnings when applicable.
 
 Sentence 3 (optional) — If the institutional signal is meaningful (narrative_state = WHALE_ACCUMULATION or DISTRIBUTION, or strong coordination), add the institutional read in plain English.
 
@@ -238,7 +238,14 @@ module.exports = async (req, res) => {
   }
 
   var stateBlock = compactState(story, scorecard, health, narratives, fairValue, articles);
-  var userMessage = 'Ticker dashboard state:\n\n' + stateBlock + '\n\nWrite the 2-3 sentence editorial paragraph now.';
+  // Hard-rule reinforcement: if neither daily_fair_value nor scorecard fvd_pct
+  // provided a valuation gap, forbid the LLM from inventing one. System prompt
+  // already says this, but a per-request rule next to the data is harder to miss.
+  var hasFV = (fairValue && fairValue.fair_value != null)
+    || (scorecard && scorecard.fvd_pct != null);
+  var fvRule = hasFV ? '' :
+    '\n\nIMPORTANT: No fair-value data is available for this ticker. Do NOT mention fair value, valuation, premium, discount, over/undervalued, or any "X% above/below fair value" phrasing. Focus sentence 2 on narrative health and earnings instead.';
+  var userMessage = 'Ticker dashboard state:\n\n' + stateBlock + fvRule + '\n\nWrite the 2-3 sentence editorial paragraph now.';
 
   try {
     var apiRes = await fetch('https://api.anthropic.com/v1/messages', {
