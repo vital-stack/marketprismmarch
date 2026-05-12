@@ -270,7 +270,7 @@ module.exports = async (req, res) => {
     // Defensive: collapse any stray newlines into a single sentence.
     text = text.replace(/\s+/g, ' ').trim();
 
-    res.setHeader('Cache-Control', 's-maxage=600, stale-while-revalidate=3600');
+    res.setHeader('Cache-Control', 's-maxage=180, stale-while-revalidate=3600');
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     return res.status(200).json({
       ticker: ticker,
