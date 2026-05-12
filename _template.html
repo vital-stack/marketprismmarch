@@ -2159,12 +2159,12 @@ body{
 .val-chip.active{background:var(--mp-cyan);border-color:var(--mp-cyan);color:#fff;}
 .val-table-wrap{overflow-x:auto;}
 .val-table{width:100%;border-collapse:collapse;font-family:var(--font-body);font-size:13px;}
-.val-table thead th{text-align:left;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mp-text-tertiary);border-bottom:1px solid var(--mp-border);font-weight:600;}
+.val-table thead th{text-align:center;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mp-text-tertiary);border-bottom:1px solid var(--mp-border);font-weight:600;}
 .val-table tbody tr{border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer;transition:background .12s;}
 .val-table tbody tr:hover{background:rgba(0,174,255,0.05);}
-.val-table td{padding:10px 12px;color:var(--mp-text-secondary);vertical-align:middle;}
+.val-table td{padding:10px 12px;color:var(--mp-text-secondary);vertical-align:middle;text-align:center;}
 .val-table td.ticker{color:var(--mp-text-primary);font-weight:600;}
-.val-table td.num{font-variant-numeric:tabular-nums;text-align:right;}
+.val-table td.num{font-variant-numeric:tabular-nums;text-align:center;}
 .val-table td.pos{color:var(--mp-green);}
 .val-table td.neg{color:var(--mp-red);}
 .val-dir-pill{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;}
@@ -9128,12 +9128,10 @@ function valRenderTable(){
     +'<th>Exited</th>'
     +'<th class="num">Days</th>'
     +'<th class="num">PnL%</th>'
-    +'<th class="num">vs SPY</th>'
     +'<th>Reason</th>'
     +'</tr></thead><tbody>';
   html+=rows.map(function(t){
     var pnl=t.pnl_pct!=null?Number(t.pnl_pct):null;
-    var excess=t.excess_return_pct!=null?Number(t.excess_return_pct):null;
     var dir=(t.direction||'').toUpperCase();
     var dirCls=dir==='LONG'?'val-dir-long':dir==='SHORT'?'val-dir-short':'';
     var reason=(t.exit_reason||'').split('(')[0].trim().replace(/_/g,' ');
@@ -9145,7 +9143,6 @@ function valRenderTable(){
       +'<td>'+valFmtDate(t.exit_date)+'</td>'
       +'<td class="num">'+(t.days_held!=null?t.days_held:'\u2014')+'</td>'
       +'<td class="num '+(pnl!=null&&pnl>0?'pos':pnl!=null&&pnl<0?'neg':'')+'">'+(pnl!=null?valFmtPct(pnl,2):'\u2014')+'</td>'
-      +'<td class="num '+(excess!=null&&excess>0?'pos':excess!=null&&excess<0?'neg':'')+'">'+(excess!=null?valFmtPct(excess,2):'\u2014')+'</td>'
       +'<td style="color:var(--mp-text-tertiary);">'+esc(reason||'\u2014')+'</td>'
     +'</tr>';
   }).join('');
