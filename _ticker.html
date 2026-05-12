@@ -6202,6 +6202,32 @@ async function loadHero() {
     // narrative strip.
     const sc = (scorecardRows || [])[0] || {};
 
+    // ── Stage pill — PRE_REVENUE vs PRE_SCALE for speculative-stage names ──
+    // Curated list of tickers whose market cap is paid entirely (or almost
+    // entirely) for future scale, not current revenue. The label tells viewers
+    // that traditional fundamentals (P/E, P/S) don't apply.
+    const STAGE_MAP = {
+      OKLO: { label: 'Pre-Revenue', color: '#FFB800', bg: 'rgba(255,184,0,0.10)', border: 'rgba(255,184,0,0.30)',
+              title: 'Genuinely $0 revenue — small modular reactors, no deployments yet' },
+      RGTI: { label: 'Pre-Scale', color: '#7B61FF', bg: 'rgba(123,97,255,0.10)', border: 'rgba(123,97,255,0.30)',
+              title: 'Quantum computing · ~$7M revenue, implied P/S ~962×' },
+      ASTS: { label: 'Pre-Scale', color: '#7B61FF', bg: 'rgba(123,97,255,0.10)', border: 'rgba(123,97,255,0.30)',
+              title: 'Space-based cellular · ~$85M revenue, implied P/S ~377×' },
+      SMR:  { label: 'Pre-Scale', color: '#7B61FF', bg: 'rgba(123,97,255,0.10)', border: 'rgba(123,97,255,0.30)',
+              title: 'Small modular reactors · ~$19M revenue, implied P/S ~246×' },
+      IONQ: { label: 'Pre-Scale', color: '#7B61FF', bg: 'rgba(123,97,255,0.10)', border: 'rgba(123,97,255,0.30)',
+              title: 'Quantum computing · ~$130M revenue, implied P/S ~163×' },
+      RKLB: { label: 'Pre-Scale', color: '#7B61FF', bg: 'rgba(123,97,255,0.10)', border: 'rgba(123,97,255,0.30)',
+              title: 'Rocket launches · ~$602M revenue, implied P/S ~113×' }
+    };
+    let stagePill = '';
+    {
+      const s = STAGE_MAP[r.ticker];
+      if (s) {
+        stagePill = `<span class="hero-insight-badge" title="${esc(s.title)}" style="background:${s.bg};color:${s.color};border:1px solid ${s.border};font-weight:600;opacity:1;">${s.label}</span>`;
+      }
+    }
+
     // ── Earnings pill — prominent, color-coded by proximity ──
     // Recalculate days_to_earnings from next_earnings_date relative to TODAY
     // so the badge stays accurate regardless of when the snapshot was taken.
@@ -6258,6 +6284,7 @@ async function loadHero() {
           <span class="hero-ticker">${esc(r.ticker)}</span>
           ${earningsPill}
           ${r.sector_name ? `<span class="hero-insight-badge hero-sector-chip">${esc(r.sector_name)}</span>` : ''}
+          ${stagePill}
           <span id="hero-pe-bubble"></span>
           <button id="mp-watch-btn" class="mp-watch-btn" type="button" aria-pressed="false" title="Save to your watchlist">
             <span class="mp-watch-icon" aria-hidden="true">☆</span>
