@@ -112,14 +112,19 @@ function compactState(story, scorecard, health, narratives, fairValue, articles)
   if (s.ticker) lines.push('Ticker: ' + s.ticker);
   if (s.sector_name) lines.push('Sector: ' + s.sector_name);
   if (s.price != null) lines.push('Current price: $' + Number(s.price).toFixed(2));
-  if (fv.fair_value != null) {
+  // Valuation gap — emitted as explicit "undervalued/overvalued by X%" so the
+  // LLM can't flip the sign. Convention: gap = (price - fair_value) / fair_value
+  // (matches narrative_scorecard.fvd_pct: positive = overvalued).
+  if (fv.fair_value != null && s.price) {
     var fvPrice = Number(fv.fair_value);
-    var pricePct = s.price ? ((fvPrice - Number(s.price)) / Number(s.price) * 100) : null;
+    var gapPct = (Number(s.price) - fvPrice) / fvPrice * 100;
+    var direction = gapPct >= 0 ? 'overvalued' : 'undervalued';
     lines.push('Fair value: $' + fvPrice.toFixed(2)
-      + (pricePct != null ? ' (' + (pricePct >= 0 ? '+' : '') + pricePct.toFixed(1) + '% from current)' : ''));
+      + ' (stock is ' + Math.abs(gapPct).toFixed(1) + '% ' + direction + ' vs fair value)');
   } else if (sc.fvd_pct != null) {
     var fvd = Number(sc.fvd_pct);
-    lines.push('Fair-value gap: ' + (fvd >= 0 ? '+' : '') + fvd.toFixed(1) + '%');
+    var fvdDirection = fvd >= 0 ? 'overvalued' : 'undervalued';
+    lines.push('Fair-value gap: stock is ' + Math.abs(fvd).toFixed(1) + '% ' + fvdDirection + ' vs fair value');
   }
   if (s.days_to_earnings != null) lines.push('Days to earnings: ' + s.days_to_earnings + ' (negative = post-earnings)');
   if (s.earnings_surprise_pct != null) lines.push('Last earnings surprise: ' + Number(s.earnings_surprise_pct).toFixed(1) + '%');
@@ -217,7 +222,7 @@ module.exports = async (req, res) => {
     fetchSupabase('narrative_scorecard?select=ticker,verdict,narrative_state,coordination_score,walsh_regime,narrative_energy_regime,narrative_energy_absolute,current_sentiment,fvd_pct,half_life,snapshot_date&' + tFilter + '&order=snapshot_date.desc&limit=1'),
     fetchSupabase('v_dash_narrative_health?select=ticker,narrative_health,narrative_trend,snapshot_date&' + tFilter + '&order=snapshot_date.desc&limit=1'),
     fetchSupabase('v_narrative_scorecard_deduped?select=narrative,propagation_pressure,energy_remaining,narrative_energy_regime,snapshot_date&' + tFilter + '&order=snapshot_date.desc,propagation_pressure.desc.nullslast&limit=8'),
-    fetchSupabase('daily_fair_value?select=fair_value,fv_low,fv_high,verdict,snapshot_date&' + tFilter + '&order=snapshot_date.desc&limit=1'),
+    fetchSupabase('daily_fair_value?select=fair_value,fv_low,fv_high,verdict,snapshot_date&' + tFilter + '&fair_value=not.is.null&order=snapshot_date.desc&limit=1'),
     fetchSupabase('narrative_analyses?select=narrative_text,source_outlet,sentiment_score,snapshot_date&' + tFilter + '&snapshot_date=gte.' + sinceISO + '&order=snapshot_date.desc&limit=10')
   ]);
 
