@@ -3388,7 +3388,7 @@
   .tt-narr-signal-label{color:var(--mp-text-muted);}
   .tt-narr-signal-val{color:var(--mp-text-secondary);text-align:right;}
 
-  /* ── Reality-Belief gauge (UBER test only — narrative card right column) ── */
+  /* ── Reality-Belief gauge (narrative card right column) ── */
   .tt-narr-cols{
     display:flex;gap:24px;align-items:flex-start;
   }
@@ -5797,7 +5797,7 @@ function ttDarken(hex, amount) {
   return 'rgb('+r+','+g+','+b+')';
 }
 
-// ── Reality-Belief gauge (UBER test) ─────────────────────────────────────
+// ── Reality-Belief gauge ─────────────────────────────────────────────────
 // Half-circle SVG gauge with 4 colored segments + needle, value/zone in
 // center, theme chip underneath. Pass null/empty rbi to render empty state.
 function renderRealityBeliefGaugeBody(rbi) {
@@ -5993,46 +5993,29 @@ function renderTradeTicket(f, story, sc, fv, earn, priceRange, strategy) {
       + '</details>';
   }
 
-  var narrHtml;
-  if (TICKER === 'UBER') {
-    // RBI gauge test layout: 70/30 split. Gauge + meta go right; price
-    // position bar gets pulled into the left column under the signals
-    // dropdown to fill what would otherwise be dead space.
-    var metaTopHtml = 'Day ' + lifecycleDay + ' &middot; ~' + primaryTab.horizonDays + 'd horizon';
-    narrHtml = ''
-      + '<div class="tt-narr" style="border-left-color:'+narrBorder+';background:'+narrBg+';">'
-        + '<div class="tt-narr-cols">'
-          + '<div class="tt-narr-col-left">'
-            + '<div class="tt-narr-head">'
-              + '<div class="tt-narr-title-wrap">'
-                + '<span class="tt-narr-title" style="color:'+titleColor+';">'+ esc(narrTitle) +'</span>'
-                + actionHtml
-              + '</div>'
+  // Narrative card: 70/30 split with the Reality-Belief gauge in the right
+  // column. Price position bar nests inside the left column under signals.
+  var metaTopHtml = 'Day ' + lifecycleDay + ' &middot; ~' + primaryTab.horizonDays + 'd horizon';
+  var narrHtml = ''
+    + '<div class="tt-narr" style="border-left-color:'+narrBorder+';background:'+narrBg+';">'
+      + '<div class="tt-narr-cols">'
+        + '<div class="tt-narr-col-left">'
+          + '<div class="tt-narr-head">'
+            + '<div class="tt-narr-title-wrap">'
+              + '<span class="tt-narr-title" style="color:'+titleColor+';">'+ esc(narrTitle) +'</span>'
+              + actionHtml
             + '</div>'
-            + '<div class="tt-narr-desc" id="tt-headline" data-pending="1" data-fallback="'+ esc(headline || '') +'" style="display:none;"></div>'
-            + signalsHtml
-            + pricePosHtml
           + '</div>'
-          + '<div class="tt-narr-col-right">'
-            + '<div class="tt-narr-meta-top">'+ metaTopHtml +'</div>'
-            + '<div id="rbi-gauge-mount"><div class="rbi-gauge-skeleton"></div></div>'
-          + '</div>'
+          + '<div class="tt-narr-desc" id="tt-headline" data-pending="1" data-fallback="'+ esc(headline || '') +'" style="display:none;"></div>'
+          + signalsHtml
+          + pricePosHtml
         + '</div>'
-      + '</div>';
-  } else {
-    narrHtml = ''
-      + '<div class="tt-narr" style="border-left-color:'+narrBorder+';background:'+narrBg+';">'
-        + '<div class="tt-narr-head">'
-          + '<div class="tt-narr-title-wrap">'
-            + '<span class="tt-narr-title" style="color:'+titleColor+';">'+ esc(narrTitle) +'</span>'
-            + actionHtml
-          + '</div>'
-          + narrMeta
+        + '<div class="tt-narr-col-right">'
+          + '<div class="tt-narr-meta-top">'+ metaTopHtml +'</div>'
+          + '<div id="rbi-gauge-mount"><div class="rbi-gauge-skeleton"></div></div>'
         + '</div>'
-        + '<div class="tt-narr-desc" id="tt-headline" data-pending="1" data-fallback="'+ esc(headline || '') +'" style="display:none;"></div>'
-        + signalsHtml
-      + '</div>';
-  }
+      + '</div>'
+    + '</div>';
 
   // ── Horizon tabs + 4-col grid ──
   var tabsHtml = TT_HORIZON_TABS.map(function(t){
@@ -6059,9 +6042,8 @@ function renderTradeTicket(f, story, sc, fv, earn, priceRange, strategy) {
   // Order: narrative block first, then price-position bar, then horizon grid.
   // Sector + P/E chip lives in the hero ticker row now (loadSectorPeBubble
   // populates #hero-pe-bubble there).
-  // UBER test: pricePosHtml is already nested inside narrHtml's left column.
-  if (TICKER === 'UBER') return narrHtml + horizonsCard;
-  return narrHtml + pricePosHtml + horizonsCard;
+  // pricePosHtml is already nested inside narrHtml's left column.
+  return narrHtml + horizonsCard;
 }
 
 // Attach horizon-tab click handler. Called once after renderTradeTicket()
@@ -6588,36 +6570,33 @@ async function loadHero() {
       verdictBanner.innerHTML = renderTradeTicket(f, r, sc, fv, earnCtxForTicket, priceRange60, strategyForTicket);
       wireTradeTicket(verdictBanner, f, sc, fv, strategyForTicket, r);
 
-      // ── Reality-Belief gauge (UBER test only) ──
+      // ── Reality-Belief gauge ──
       // Fetches ticker_reality_belief view and mounts the gauge into the
-      // narrative card's right column. NULL/empty rows render the empty
-      // state. After visual approval this gate gets removed and the gauge
-      // becomes the default for all tickers.
-      if (TICKER === 'UBER') {
-        sbFetch('ticker_reality_belief', {
-          select: 'reality_belief_index,gauge_zone,active_narrative_count,dominant_belief_theme,dominant_belief_narrative',
-          ticker: 'eq.' + TICKER,
-          limit: 1
-        }).then(function(rows){
-          var mount = document.getElementById('rbi-gauge-mount');
-          if (!mount) return;
-          mount.innerHTML = renderRealityBeliefGaugeBody(rows && rows[0]);
-          // Trigger needle sweep: initial transform is -90deg, swap to target
-          // angle after two animation frames so the CSS transition runs.
+      // narrative card's right column. NULL rows / tickers missing from
+      // the view render the empty state.
+      sbFetch('ticker_reality_belief', {
+        select: 'reality_belief_index,gauge_zone,active_narrative_count,dominant_belief_theme,dominant_belief_narrative',
+        ticker: 'eq.' + TICKER,
+        limit: 1
+      }).then(function(rows){
+        var mount = document.getElementById('rbi-gauge-mount');
+        if (!mount) return;
+        mount.innerHTML = renderRealityBeliefGaugeBody(rows && rows[0]);
+        // Trigger needle sweep: initial transform is -90deg, swap to target
+        // angle after two animation frames so the CSS transition runs.
+        requestAnimationFrame(function(){
           requestAnimationFrame(function(){
-            requestAnimationFrame(function(){
-              var needle = mount.querySelector('.rbi-needle');
-              if (needle) {
-                var a = needle.getAttribute('data-angle');
-                if (a) needle.style.transform = 'rotate(' + a + 'deg)';
-              }
-            });
+            var needle = mount.querySelector('.rbi-needle');
+            if (needle) {
+              var a = needle.getAttribute('data-angle');
+              if (a) needle.style.transform = 'rotate(' + a + 'deg)';
+            }
           });
-        }).catch(function(){
-          var mount = document.getElementById('rbi-gauge-mount');
-          if (mount) mount.innerHTML = renderRealityBeliefGaugeBody(null);
         });
-      }
+      }).catch(function(){
+        var mount = document.getElementById('rbi-gauge-mount');
+        if (mount) mount.innerHTML = renderRealityBeliefGaugeBody(null);
+      });
       fetchPriceSeries(TICKER, 65).then(function(series){
         if (!series || !series.length) return;
         var prices = series.map(function(p){ return Number(p.price_close); }).filter(function(n){ return isFinite(n); });
