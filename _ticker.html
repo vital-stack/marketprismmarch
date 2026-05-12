@@ -1248,6 +1248,28 @@
   .narr-section { margin-bottom: 24px; width: 100%; }
   .narr-list { display: flex; flex-direction: column; gap: 0; }
 
+  .narr-window-tabs {
+    display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
+    margin: 8px 0 12px; font-family: 'Inter', system-ui, sans-serif;
+  }
+  .narr-window-tabs-label {
+    font-size: 12px; color: var(--mp-text-muted); margin-right: 6px;
+  }
+  .narr-window-tab {
+    background: rgba(255,255,255,0.025); color: var(--mp-text-tertiary);
+    border: 1px solid var(--mp-border);
+    padding: 5px 11px; border-radius: 4px; font-size: 12px;
+    font-family: 'Inter', system-ui, sans-serif; cursor: pointer;
+    transition: all .12s ease;
+  }
+  .narr-window-tab:hover {
+    color: var(--mp-text-primary); border-color: var(--mp-border-hover);
+  }
+  .narr-window-tab.active {
+    background: rgba(0,174,255,0.12); color: #85b7eb;
+    border-color: rgba(0,174,255,0.40); font-weight: 500;
+  }
+
   .narr-item {
     background: var(--mp-surface);
     border: 1px solid var(--mp-border);
@@ -4458,6 +4480,13 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
           <div class="narr-info-box" id="narr-info-box" style="display:none;padding:14px 18px;margin:0 0 4px;background:rgba(0,174,255,0.04);border:1px solid rgba(0,174,255,0.12);border-radius:10px;font-size:13px;color:var(--mp-text-secondary);line-height:1.6;">
             <strong style="color:var(--mp-text-primary);">Trending Narratives</strong> are the most-cited market stories about this ticker, clustered by theme. Each narrative is scored by our four-agent pipeline for verification quality, source credibility, and data-backing. The rank number reflects how many independent citations we found across news sources. Click any narrative to expand its claim verification, quality signals, and full source list.
           </div>
+          <div class="narr-window-tabs">
+            <span class="narr-window-tabs-label">Window:</span>
+            <button type="button" class="narr-window-tab" data-days="7">7D</button>
+            <button type="button" class="narr-window-tab active" data-days="14">14D</button>
+            <button type="button" class="narr-window-tab" data-days="30">30D</button>
+            <button type="button" class="narr-window-tab" data-days="90">90D</button>
+          </div>
           <div class="section-body">
             <div id="narr-list-top" class="narr-list">
               <div class="narr-header" style="cursor:default;"><div style="flex:1;"><div class="skel" style="height:13px;width:80%;margin-bottom:8px;"></div><div class="skel" style="height:11px;width:40%;"></div></div></div>
@@ -4656,6 +4685,13 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
       </div>
       <div class="narr-info-box" style="display:none;padding:14px 18px;margin:0 0 4px;background:rgba(0,174,255,0.04);border:1px solid rgba(0,174,255,0.12);border-radius:10px;font-size:13px;color:var(--mp-text-secondary);line-height:1.6;">
         <strong style="color:var(--mp-text-primary);">Trending Narratives</strong> are the most-cited market stories about this ticker, clustered by theme. Each narrative is scored by our four-agent pipeline for verification quality, source credibility, and data-backing. The rank number reflects how many independent citations we found across news sources. Click any narrative to expand its claim verification, quality signals, and full source list.
+      </div>
+      <div class="narr-window-tabs">
+        <span class="narr-window-tabs-label">Window:</span>
+        <button type="button" class="narr-window-tab" data-days="7">7D</button>
+        <button type="button" class="narr-window-tab active" data-days="14">14D</button>
+        <button type="button" class="narr-window-tab" data-days="30">30D</button>
+        <button type="button" class="narr-window-tab" data-days="90">90D</button>
       </div>
       <div class="section-body">
         <div id="narr-list" class="narr-list">
@@ -7496,6 +7532,18 @@ function cleanNarrativeText(text) {
   return cleaned;
 }
 
+var _NARR_WINDOW_DAYS = 14;
+document.addEventListener('click', function(e) {
+  var tab = e.target && e.target.closest && e.target.closest('.narr-window-tab');
+  if (!tab) return;
+  var days = parseInt(tab.getAttribute('data-days'), 10);
+  if (!days || days === _NARR_WINDOW_DAYS) return;
+  _NARR_WINDOW_DAYS = days;
+  document.querySelectorAll('.narr-window-tab').forEach(function(b) {
+    b.classList.toggle('active', parseInt(b.getAttribute('data-days'), 10) === days);
+  });
+  loadNarratives();
+});
 async function loadNarratives() {
   if (!TICKER) return;
   try {
@@ -7513,7 +7561,7 @@ async function loadNarratives() {
         ].join(','),
         ticker: `eq.${TICKER}`,
         order:  'snapshot_date.desc',
-        limit:  '200'
+        limit:  '500'
       }),
       fetchPriceSeries(TICKER, 365),
       sbFetch('v_narrative_scorecard_deduped', {
@@ -7539,6 +7587,10 @@ async function loadNarratives() {
         return cleaned ? { ...r, narrative_text: cleaned } : null;
       })
       .filter(Boolean);
+
+    const _narrCutoff = new Date(Date.now() - _NARR_WINDOW_DAYS * 86400000)
+      .toISOString().slice(0, 10);
+    rows = rows.filter(r => (r.snapshot_date || '') >= _narrCutoff);
 
     // Build date → price lookup
     const priceByDate = {};
