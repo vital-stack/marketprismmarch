@@ -5470,33 +5470,16 @@ function ttTonePalette(tone) {
   }
 }
 
-// Tabs shown in the horizon strip — exactly the mockup's 5.
+// Tabs shown in the horizon strip.
 // source:
 //   'forecast' — pulls predicted_<key>_* fields directly
 //   'extrapolated' — derived from the 10D forecast (no 20D model)
-//   'fair_value' — derived from daily_fair_value (long-term hold)
 var TT_HORIZON_TABS = [
   { key:'1d',  label:'Day trade · 1D',   horizonDays:1,  source:'forecast'     },
   { key:'5d',  label:'Short swing · 5D', horizonDays:5,  source:'forecast'     },
   { key:'10d', label:'Long swing · 10D', horizonDays:10, source:'forecast'     },
-  { key:'20d', label:'Position · 20D',   horizonDays:20, source:'extrapolated' },
-  { key:'lth', label:'Long term hold',   horizonDays:90, source:'fair_value'   }
+  { key:'20d', label:'Position · 20D',   horizonDays:20, source:'extrapolated' }
 ];
-
-// Map raw best_historical_entry_zone strings to display labels. Handles both
-// the bare key form ("near_high") used in this codebase's strategy table and
-// the parenthetical form ("near_high (>-5%)") used by some upstreams.
-function cleanZoneName(zone) {
-  if (!zone) return '';
-  var key = String(zone).toLowerCase().split('(')[0].trim();
-  var map = {
-    'near_high':     'Near high',
-    'dip':           'Dip',
-    'pullback':      'Pullback',
-    'deep_pullback': 'Deep discount'
-  };
-  return map[key] || zone;
-}
 
 // Bias direction descriptor for the trade-type sub-label. "Neutral" /
 // "Long bias" / "Short bias" / "Long bias (verify)" / "Short bias (verify)".
@@ -5518,13 +5501,11 @@ var TT_TRADE_TYPE_NAME = {
   '1d':  'Day trade',
   '5d':  'Short swing',
   '10d': 'Long swing',
-  '20d': 'Position',
-  'lth': 'Long-term hold'
+  '20d': 'Position'
 };
 
 // Resolve per-horizon values per tab source: forecast tabs read fields
-// directly; 20D extrapolates from the 10D model; Long term hold derives
-// from daily_fair_value + ticker_strategy_summary.
+// directly; 20D extrapolates from the 10D model.
 //
 // Result fields:
 //   pct/price/lo/hi/conv  — numeric inputs for default cell rendering
@@ -5532,8 +5513,7 @@ var TT_TRADE_TYPE_NAME = {
 //   moveValHtml, moveSub  — PREDICTED MOVE cell content (Html overrides numeric)
 //   probValHtml, probSub  — PROB UP cell content (Html overrides numeric)
 //   confValHtml, confSub  — FORECAST CONFIDENCE cell content (Html overrides numeric)
-//   suppressDots          — suppress the 10-dot meter (used by LTH where the
-//                           value is a return %, not a confidence score)
+//   suppressDots          — suppress the 10-dot meter
 function ttResolveHorizon(f, sc, fv, tab, strategy, story) {
   var bias = (f.bias || '').toLowerCase();
   var current = Number(f.current_price);
@@ -5583,96 +5563,6 @@ function ttResolveHorizon(f, sc, fv, tab, strategy, story) {
     if (bias === 'short' || bias === 'watch_short') res.tradeSubColor = '#FF4D4D';
     res.convSub = 'From 10D model';
     res.moveSub = 'Range scaled √t';
-    return res;
-  }
-
-  if (tab.source === 'fair_value') {
-    // Long-term hold — populates the same 4 boxes but with different semantics:
-    //   TRADE TYPE          = "Long-term hold" (static) / narrative_behavior
-    //   PREDICTED MOVE      = fair_value target / fv_low–fv_high range
-    //   PROB UP             = premium_pct (color-coded: red if overvalued)
-    //   FORECAST CONFIDENCE = avg historical 5d return from best entry zone /
-    //                         zone name + obs count
-    res.tradeLabel = 'Long-term hold';
-
-    var strat = strategy || null;
-    // Fair-value resolution chain: daily_fair_value first (richest — has
-    // range + stored premium_pct), then ticker_forecast, then
-    // v_dash_daily_story (fair_value only). Many tickers don't have a
-    // daily_fair_value row, so without these fallbacks the LTH boxes
-    // render blank even when fair_value exists upstream.
-    function pick(o, k) {
-      return o && o[k] != null && isFinite(Number(o[k])) ? Number(o[k]) : null;
-    }
-    var fvPrice = pick(fv, 'fair_value');
-    if (fvPrice == null) fvPrice = pick(f, 'fair_value');
-    if (fvPrice == null) fvPrice = pick(story, 'fair_value');
-
-    var fvLow  = pick(fv, 'fv_low');
-    if (fvLow == null)  fvLow  = pick(f, 'fv_low');
-    var fvHigh = pick(fv, 'fv_high');
-    if (fvHigh == null) fvHigh = pick(f, 'fv_high');
-
-    var premiumPct = pick(fv, 'premium_pct');
-    if (premiumPct == null) premiumPct = pick(f, 'premium_pct');
-    // Derived fallback: (current - fair) / fair * 100. Positive = overvalued.
-    if (premiumPct == null && fvPrice != null && isFinite(current) && current > 0) {
-      premiumPct = (current - fvPrice) / fvPrice * 100;
-    }
-
-    var anySourceData = (strat != null) || (fvPrice != null) || (premiumPct != null);
-
-    // TRADE TYPE sub — narrative_behavior from strategy summary.
-    if (strat && strat.narrative_behavior) {
-      res.tradeSub = strat.narrative_behavior;
-    } else if (!anySourceData) {
-      res.tradeSub = 'Long-term data unavailable';
-    } else {
-      res.tradeSub = '';
-    }
-
-    // PREDICTED MOVE — fair value target + range. Independent of strategy row.
-    if (fvPrice != null) {
-      res.moveValHtml = ttFmtUsd(fvPrice);
-      if (fvLow != null && fvHigh != null) {
-        res.moveSub = 'Fair value · ' + ttFmtUsd(fvLow) + ' – ' + ttFmtUsd(fvHigh) + ' range';
-      } else {
-        res.moveSub = 'Fair value';
-      }
-    } else {
-      res.moveValHtml = '<span class="tt-empty-val">—</span>';
-      res.moveSub = anySourceData ? '' : 'Long-term data unavailable';
-    }
-
-    // PROB UP — premium_pct. Positive (overvalued) = red, negative (undervalued) = green.
-    if (premiumPct != null && isFinite(premiumPct)) {
-      var sign = premiumPct > 0 ? '+' : '';
-      var probColor = premiumPct > 0 ? '#FF4D4D' : premiumPct < 0 ? '#00DE94' : 'inherit';
-      res.probValHtml = '<span style="color:'+ probColor +';">'+ sign + premiumPct.toFixed(0) + '%</span>';
-      res.probSub = premiumPct > 0 ? 'Above fair value' : premiumPct < 0 ? 'Below fair value' : 'At fair value';
-    } else {
-      res.probValHtml = '<span class="tt-empty-val">—</span>';
-      res.probSub = anySourceData ? '' : 'Long-term data unavailable';
-    }
-
-    // FORECAST CONFIDENCE — avg historical 5d return from best entry zone.
-    // No 10-dot meter on this tab: the value is a return %, not a 0-100 score.
-    res.suppressDots = true;
-    if (strat && strat.avg_5d_return_from_best_entry_zone != null && isFinite(strat.avg_5d_return_from_best_entry_zone)) {
-      var ret = Number(strat.avg_5d_return_from_best_entry_zone) * 100;
-      var retColor = ret > 0 ? '#00DE94' : ret < 0 ? '#FF4D4D' : 'inherit';
-      res.confValHtml = '<span style="color:'+ retColor +';">'+ ret.toFixed(1) + '%</span>';
-      var zone = cleanZoneName(strat.best_historical_entry_zone);
-      var obs = strat.best_entry_zone_observations;
-      var subParts = [];
-      if (zone) subParts.push(zone);
-      if (obs != null) subParts.push(obs + ' obs');
-      res.convSub = subParts.join(' · ');
-    } else {
-      res.confValHtml = '<span class="tt-empty-val">—</span>';
-      res.convSub = anySourceData ? '' : 'Long-term data unavailable';
-    }
-
     return res;
   }
 
