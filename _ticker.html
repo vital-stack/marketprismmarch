@@ -5861,7 +5861,7 @@ function renderTradeTicket(f, story, sc, fv, earn, priceRange, strategy) {
         + '</div>'
         + narrMeta
       + '</div>'
-      + '<div class="tt-narr-desc" id="tt-headline" data-pending="1">'+ esc(headline || '') +'</div>'
+      + '<div class="tt-narr-desc" id="tt-headline" data-pending="1" data-fallback="'+ esc(headline || '') +'" style="display:none;"></div>'
       + signalsHtml
     + '</div>';
 
@@ -6445,21 +6445,26 @@ async function loadHero() {
       (function(){
         var hl = document.getElementById('tt-headline');
         if (!hl || !r.ticker) return;
+        var fallback = hl.getAttribute('data-fallback') || '';
+        var revealFallback = function(){
+          if (fallback) {
+            hl.textContent = fallback;
+            hl.style.display = '';
+          }
+          hl.removeAttribute('data-pending');
+        };
         fetch('/api/hero-summary?ticker=' + encodeURIComponent(r.ticker) + '&v=2')
           .then(function(res){ return res.ok ? res.json() : null; })
           .then(function(j){
             if (j && j.summary) {
               hl.textContent = j.summary;
+              hl.style.display = '';
               hl.removeAttribute('data-pending');
-            } else if (!hl.textContent.trim()) {
-              hl.style.display = 'none';
+            } else {
+              revealFallback();
             }
           })
-          .catch(function(){
-            // Leave the existing fallback text in place; just clear pending state.
-            hl.removeAttribute('data-pending');
-            if (!hl.textContent.trim()) hl.style.display = 'none';
-          });
+          .catch(revealFallback);
       })();
     } else if (verdictBanner) {
       // No forecast row yet for this ticker — keep the banner hidden.
