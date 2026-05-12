@@ -567,7 +567,7 @@
         <button class="toggle-btn active" data-line="mass-dots" title="Dot size = narrative mass. Color = keyword price prediction (green=bullish, red=bearish)." style="--color:#00AEFF;--bg-color:rgba(0,174,255,0.08);">
           <span class="toggle-swatch" style="background:linear-gradient(135deg,#00DE94,#A0A8B8,#FF4D4D);border-radius:50%;width:7px;height:7px;"></span> Mass Dots
         </button>
-        <button class="toggle-btn active" data-line="sma-smooth" title="Smooth lines with a 3-day simple moving average" style="--color:#F0F4FF;--bg-color:rgba(240,244,255,0.08);">
+        <button class="toggle-btn" data-line="sma-smooth" title="Smooth lines with a 3-day simple moving average" style="--color:#F0F4FF;--bg-color:rgba(240,244,255,0.08);">
           <span class="toggle-swatch" style="background:#F0F4FF;"></span> 3-Day SMA
         </button>
       </div>
@@ -582,8 +582,8 @@
           <button class="tf-btn" data-days="0">All</button>
         </div>
         <div class="chart-view">
-          <button class="view-btn active" data-view="lines">Lines</button>
-          <button class="view-btn" data-view="candles" title="Daily OHLC candles">Candles</button>
+          <button class="view-btn" data-view="lines">Lines</button>
+          <button class="view-btn active" data-view="candles" title="Daily OHLC candles">Candles</button>
         </div>
         <div class="chart-sort">
           <span>Sort stories</span>
@@ -847,7 +847,7 @@ function isLight() { return document.documentElement.getAttribute('data-theme') 
 // ── Toggle state ──
 const VISIBLE_LINES = {
   'narr-force': true, 'risk-pressure': true,
-  'mass-dots': true, 'sma-smooth': true
+  'mass-dots': true, 'sma-smooth': false
 };
 
 // ── Chart data ──
@@ -857,7 +857,7 @@ let CURRENT_TICKER = '';
 // OHLC cache keyed by ticker; lazy-fetched from /api/price-history when the
 // user activates the Candles view. Source: Polygon daily aggregates.
 const OHLC_CACHE = {};
-let CURRENT_VIEW = 'lines';
+let CURRENT_VIEW = 'candles';
 
 async function fetchOHLC(ticker) {
   if (!ticker) return null;
@@ -1071,7 +1071,7 @@ function drawChart(snaps, narrs, drawCandles) {
 
   // Narrative Force line (teal, 0-100)
   if (VISIBLE_LINES['narr-force'] && forceSeries.length > 1) {
-    ctx.save(); ctx.setLineDash([]); ctx.strokeStyle = '#38C8B8'; ctx.lineWidth = 1.8; ctx.globalAlpha = 0.85;
+    ctx.save(); ctx.setLineDash([]); ctx.strokeStyle = '#38C8B8'; ctx.lineWidth = 2.4; ctx.globalAlpha = 1.0;
     ctx.beginPath();
     let fs = false;
     forceSeries.forEach(d => {
@@ -1087,7 +1087,7 @@ function drawChart(snaps, narrs, drawCandles) {
     let prf = ALL_PRESSURE.filter(d => { const ds = d.snapshot_date?.slice(0,10); return ds && ds >= lo && ds <= hi; });
     if (VISIBLE_LINES['sma-smooth']) prf = sma3(prf, 'pressure');
     if (prf.length > 1) {
-      ctx.save(); ctx.setLineDash([]); ctx.strokeStyle = '#FF6B4A'; ctx.lineWidth = 1.4; ctx.globalAlpha = 0.8;
+      ctx.save(); ctx.setLineDash([]); ctx.strokeStyle = '#FF6B4A'; ctx.lineWidth = 1.2; ctx.globalAlpha = 0.6;
       ctx.beginPath();
       let rs = false;
       prf.forEach(d => {
@@ -1138,9 +1138,12 @@ function drawChart(snaps, narrs, drawCandles) {
       const dotScale = (activeDays > 0 && activeDays <= 14) ? 1.8 : (activeDays > 0 && activeDays <= 30) ? 1.3 : 1;
       const r = Math.round((m.mass >= 0.5 ? 7 : m.mass >= 0.3 ? 5 : 3) * dotScale);
       const color = m.wks > 10 ? '#00DE94' : m.wks < -10 ? '#FF4D4D' : '#A0A8B8';
+      ctx.save();
+      ctx.globalAlpha = 0.75;
       ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
       ctx.fillStyle = color; ctx.fill();
       ctx.strokeStyle = isLight() ? '#FFFFFF' : '#0A0E1A'; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.restore();
       dotHits.push({ cx, cy, n: { snapshot_date: m.snapshot_date, mass: m.mass, wks: m.wks, isMassDot: true } });
     });
   }
@@ -1293,6 +1296,11 @@ async function loadSignalLab(ticker) {
       document.getElementById('interpret-btn').disabled = false;
       document.getElementById('interpret-panel').classList.remove('visible');
     });
+    if (CURRENT_VIEW === 'candles' && !OHLC_CACHE[ticker]) {
+      fetchOHLC(ticker).then(rows => {
+        if (rows && CURRENT_VIEW === 'candles') renderChart();
+      });
+    }
   } catch (err) {
     document.getElementById('chart-outer').innerHTML = '<div class="chart-no-data" style="color:var(--mp-red);">' + esc(err.message) + '</div>';
   }

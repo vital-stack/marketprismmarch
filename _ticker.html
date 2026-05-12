@@ -4489,15 +4489,6 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
                 <button class="tf-btn" data-days="365">1Y</button>
                 <button class="tf-btn" data-days="0">All</button>
               </div>
-              <div class="chart-sort">
-                <span>Sort stories</span>
-                <select class="sort-select" id="story-sort">
-                  <option value="date-desc">Newest first</option>
-                  <option value="date-asc">Oldest first</option>
-                  <option value="bear">Bearish only</option>
-                  <option value="bull">Bullish only</option>
-                </select>
-              </div>
             </div>
             <div class="chart-outer" id="chart-outer" style="height:400px;">
               <canvas id="price-canvas"></canvas>
@@ -7167,11 +7158,10 @@ function drawChart(snaps, narrs) {
     const blu = blueByDate[ds] != null ? blueByDate[ds] : 0;
     return { snapshot_date: ds, force: (yel * 0.6) + ((100 - blu) * 0.4) };
   });
-  forceSeries = sma3(forceSeries, 'force');
 
   // Narrative Force line (teal, 0-100)
   if (forceSeries.length > 1) {
-    ctx.save(); ctx.setLineDash([]); ctx.strokeStyle = '#38C8B8'; ctx.lineWidth = 1.8; ctx.globalAlpha = 0.85;
+    ctx.save(); ctx.setLineDash([]); ctx.strokeStyle = '#38C8B8'; ctx.lineWidth = 2.4; ctx.globalAlpha = 1.0;
     ctx.beginPath();
     let fs = false;
     forceSeries.forEach(d => {
@@ -7184,9 +7174,8 @@ function drawChart(snaps, narrs) {
 
   // Risk Pressure line (orange-red, 0-100)
   let prf = ALL_PRESSURE.filter(d => { const ds = d.snapshot_date?.slice(0,10); return ds && ds >= lo && ds <= hi; });
-  prf = sma3(prf, 'pressure');
   if (prf.length > 1) {
-    ctx.save(); ctx.setLineDash([]); ctx.strokeStyle = '#FF6B4A'; ctx.lineWidth = 1.4; ctx.globalAlpha = 0.8;
+    ctx.save(); ctx.setLineDash([]); ctx.strokeStyle = '#FF6B4A'; ctx.lineWidth = 1.2; ctx.globalAlpha = 0.6;
     ctx.beginPath();
     let rs = false;
     prf.forEach(d => {
@@ -7195,22 +7184,6 @@ function drawChart(snaps, narrs) {
       if (!rs) { ctx.moveTo(x, y); rs = true; } else ctx.lineTo(x, y);
     });
     ctx.stroke(); ctx.restore();
-  }
-
-  // Regime label on chart
-  if (forceSeries.length && ALL_PRESSURE.length) {
-    const lastForce = forceSeries[forceSeries.length - 1].force;
-    const lastBlue = blueByDate[forceSeries[forceSeries.length - 1].snapshot_date] ?? 0;
-    const lastPressure = ALL_PRESSURE[ALL_PRESSURE.length - 1].pressure;
-    let regLbl = '', regClr = '';
-    if (lastForce > 60 && lastPressure < 20) { regLbl = 'Building'; regClr = '#00DE94'; }
-    else if (lastForce < 30 && lastBlue < 50) { regLbl = 'Recovering'; regClr = '#7BE8A4'; }
-    else if (lastForce > 40 && lastPressure > 20) { regLbl = 'Pressure'; regClr = '#FF4D4D'; }
-    else if (lastForce < 40 && lastBlue > 80) { regLbl = 'Fading'; regClr = '#FFB800'; }
-    if (regLbl) {
-      ctx.save(); ctx.font = 'bold 13px Inter, sans-serif'; ctx.fillStyle = regClr; ctx.globalAlpha = 0.85; ctx.textAlign = 'right';
-      ctx.fillText(regLbl, W - PAD.right - 4, PAD.top + 16); ctx.restore();
-    }
   }
 
   // Mass dots — position by REAL calendar date, interpolating between
@@ -7252,10 +7225,13 @@ function drawChart(snaps, narrs) {
     if (!pos) return;
     const r = m.mass >= 0.5 ? 7 : m.mass >= 0.3 ? 5 : 3;
     const color = m.wks > 10 ? '#00DE94' : m.wks < -10 ? '#FF4D4D' : '#A0A8B8';
+    ctx.save();
+    ctx.globalAlpha = 0.75;
     ctx.beginPath();
     ctx.arc(pos.cx, pos.cy, r, 0, Math.PI*2);
     ctx.fillStyle = color; ctx.fill();
     ctx.strokeStyle = isLight() ? '#FFFFFF' : '#0A0E1A'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.restore();
     dotHits.push({ cx: pos.cx, cy: pos.cy, n: { snapshot_date: m.snapshot_date, mass: m.mass, wks: m.wks, isMassDot: true } });
   });
 
