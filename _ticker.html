@@ -7651,6 +7651,8 @@ async function loadNarratives() {
       if (regime && regime !== 'DORMANT') return true;
       return false;
     });
+    // No per-outlet cap here: themes are already content-clustered (word-overlap
+    // merge above), which dedupes harder than a per-source cap would.
     const top = (fuelThemes.length ? fuelThemes : allThemes).slice(0, 5);
 
     // Reorder by composite: latest article date → energy regime (explosive first) → citation count
@@ -9891,12 +9893,15 @@ async function loadStoriesFeed() {
   if (!TICKER) return;
   const feedList = document.getElementById('tk-feed-list');
   try {
-    let rows = await sbFetch('narrative_analyses', {
-      select: 'narrative_text,verdict,sentiment_score,snapshot_date,created_at,source_outlet,narrative_type,article_url',
-      ticker: `eq.${TICKER}`,
-      order: 'created_at.desc',
-      limit: '100'
-    }).catch(() => []);
+    let [rows, srsRows] = await Promise.all([
+      sbFetch('narrative_analyses', {
+        select: 'narrative_text,verdict,sentiment_score,snapshot_date,created_at,source_outlet,narrative_type,article_url',
+        ticker: `eq.${TICKER}`,
+        order: 'created_at.desc',
+        limit: '50'
+      }).catch(() => []),
+      sbFetch('source_scores', { select: 'source_name,srs', limit: '200' }).catch(() => [])
+    ]);
 
     // Drop ticker landing / quote / holdings dashboards, and strip LLM
     // meta-prefixes ("This article reports that…") from what remains.
@@ -9921,6 +9926,31 @@ async function loadStoriesFeed() {
       if(feedList) feedList.innerHTML = '<div class="tk-feed-empty">No stories available for this ticker.</div>';
       return;
     }
+
+    // source_scores join is case-insensitive — lowercase both sides
+    // (matches step5_physics.py convention).
+    const srsMap = {};
+    (srsRows || []).forEach(s => {
+      if (s && s.source_name) {
+        const v = Number(s.srs);
+        if (Number.isFinite(v)) srsMap[String(s.source_name).toLowerCase()] = v;
+      }
+    });
+    const total = rows.length;
+    rows = rows
+      .map((r, i) => {
+        const srs = srsMap[String(r.source_outlet || '').toLowerCase()];
+        const srsVal = Number.isFinite(srs) ? srs : 45;
+        const recencyRank = total > 1 ? 1 - (i / (total - 1)) : 1;
+        return { ...r, _rankScore: 0.6 * recencyRank + 0.4 * (srsVal / 100) };
+      })
+      .sort((a, b) => b._rankScore - a._rankScore);
+    const perPubCount = {};
+    rows = rows.filter(r => {
+      const k = String(r.source_outlet || '').toLowerCase();
+      perPubCount[k] = (perPubCount[k] || 0) + 1;
+      return perPubCount[k] <= 2;
+    });
 
     feedList.innerHTML = rows.map(r => {
       const score = r.sentiment_score ?? 0;
