@@ -8973,6 +8973,10 @@ function _valRenderStatsFromCache(c){
   var totalReturnPct=Number(c.total_return_pct)/20;
   var annualized=Number(c.annualized_return_pct)||0;
   var avgAlpha=c.alpha_vs_spy_pct!=null?Number(c.alpha_vs_spy_pct):null;
+  // Annualize alpha with the same turnover method used for annualized_return_pct
+  // (per-trade × 365 / avg_hold_days), so the two stats are apples-to-apples.
+  var avgHold=Number(c.avg_hold_days)||0;
+  var annualizedAlpha=(avgAlpha!=null&&avgHold>0)?avgAlpha*(365/avgHold):null;
   var first=c.period_start;
   // Track period reflects the live tracking window through today. Cron-cached
   // period_end lags (last closed-trade exit_date) and made the card read
@@ -8986,7 +8990,7 @@ function _valRenderStatsFromCache(c){
     +'<div class="val-stat"><div class="val-stat-label">Trades</div><div class="val-stat-value">'+n.toLocaleString()+'</div><div class="val-stat-sub">closed positions</div></div>'
     +'<div class="val-stat"><div class="val-stat-label">Win rate</div><div class="val-stat-value '+(winRate>=55?'pos':'')+'">'+winRate.toFixed(1)+'%</div><div class="val-stat-sub">'+wins.toLocaleString()+' winners / '+losers.toLocaleString()+' losers</div></div>'
     +'<div class="val-stat"><div class="val-stat-label">Avg return</div><div class="val-stat-value '+(avgPnl>0?'pos':avgPnl<0?'neg':'')+'">'+valFmtPct(avgPnl,2)+'</div><div class="val-stat-sub">per trade</div></div>'
-    +'<div class="val-stat"><div class="val-stat-label">Alpha vs SPY</div><div class="val-stat-value '+(avgAlpha!=null&&avgAlpha>0?'pos':avgAlpha<0?'neg':'')+'">'+(avgAlpha!=null?valFmtPct(avgAlpha,2):'\u2014')+'</div><div class="val-stat-sub">avg excess return</div></div>'
+    +'<div class="val-stat"><div class="val-stat-label">Alpha vs SPY</div><div class="val-stat-value '+(annualizedAlpha!=null&&annualizedAlpha>0?'pos':annualizedAlpha<0?'neg':'')+'">'+(annualizedAlpha!=null?valFmtPct(annualizedAlpha,1):'\u2014')+'</div><div class="val-stat-sub">annualized excess vs SPY</div></div>'
     +'<div class="val-stat"><div class="val-stat-label">Track period</div><div class="val-stat-value" style="font-size:16px;">'+valFmtDate(first)+' \u2192 '+valFmtDate(last)+'</div><div class="val-stat-sub">'+months+' months &middot; every regime</div></div>';
 }
 
@@ -9015,6 +9019,10 @@ function valRenderStats(trades){
   var avgPnl=n?(sumPnl/n):0;
   var spyArr=closed.filter(function(t){return t.excess_return_pct!=null;}).map(function(t){return Number(t.excess_return_pct);});
   var avgAlpha=spyArr.length?spyArr.reduce(function(a,b){return a+b;},0)/spyArr.length:null;
+  // Annualize alpha with same turnover method as annualized return (per-trade × 365/hold).
+  var holdArr=closed.filter(function(t){return t.days_held!=null;}).map(function(t){return Number(t.days_held);});
+  var avgHold=holdArr.length?holdArr.reduce(function(a,b){return a+b;},0)/holdArr.length:0;
+  var annualizedAlpha=(avgAlpha!=null&&avgHold>0)?avgAlpha*(365/avgHold):null;
   var dates=closed.map(function(t){return t.entry_date;}).filter(Boolean).sort();
   var first=dates[0];
   // Track period end = today (live, continuously-tracked sim) rather than the
@@ -9040,7 +9048,7 @@ function valRenderStats(trades){
     +'<div class="val-stat"><div class="val-stat-label">Trades</div><div class="val-stat-value">'+n.toLocaleString()+'</div><div class="val-stat-sub">closed positions</div></div>'
     +'<div class="val-stat"><div class="val-stat-label">Win rate</div><div class="val-stat-value '+(winRate>=55?'pos':'')+'">'+winRate.toFixed(1)+'%</div><div class="val-stat-sub">'+wins.toLocaleString()+' winners / '+(n-wins).toLocaleString()+' losers</div></div>'
     +'<div class="val-stat"><div class="val-stat-label">Avg return</div><div class="val-stat-value '+(avgPnl>0?'pos':avgPnl<0?'neg':'')+'">'+valFmtPct(avgPnl,2)+'</div><div class="val-stat-sub">per trade</div></div>'
-    +'<div class="val-stat"><div class="val-stat-label">Alpha vs SPY</div><div class="val-stat-value '+(avgAlpha!=null&&avgAlpha>0?'pos':avgAlpha<0?'neg':'')+'">'+(avgAlpha!=null?valFmtPct(avgAlpha,2):'\u2014')+'</div><div class="val-stat-sub">avg excess return</div></div>'
+    +'<div class="val-stat"><div class="val-stat-label">Alpha vs SPY</div><div class="val-stat-value '+(annualizedAlpha!=null&&annualizedAlpha>0?'pos':annualizedAlpha<0?'neg':'')+'">'+(annualizedAlpha!=null?valFmtPct(annualizedAlpha,1):'\u2014')+'</div><div class="val-stat-sub">annualized excess vs SPY</div></div>'
     +'<div class="val-stat"><div class="val-stat-label">Track period</div><div class="val-stat-value" style="font-size:16px;">'+valFmtDate(first)+' \u2192 '+valFmtDate(last)+'</div><div class="val-stat-sub">'+months+' months &middot; every regime</div></div>';
 }
 function valAggregateBySignal(trades){
