@@ -3404,6 +3404,10 @@
     font-family:'Inter',system-ui,sans-serif;font-size:11px;
     color:var(--mp-text-muted);
   }
+  /* Small breathing room between the signals dropdown and the price-position
+     bar when the bar is nested inside the narrative card's left column. */
+  .tt-narr-col-left .tt-narr-signals + .tt-pricepos{margin-top:14px;}
+  .tt-narr-col-left .tt-pricepos{margin-bottom:0;}
   .rbi-gauge{
     display:flex;flex-direction:column;align-items:center;gap:4px;
   }
@@ -5852,16 +5856,9 @@ function renderRealityBeliefGaugeBody(rbi) {
     + arcs + needleHtml + endLabels
     + '</svg>';
 
-  // Value + zone live BELOW the arc (small, single line) — not inside it.
+  // No numeric/zone readout — the gauge visual is the readout. Theme chip
+  // below carries the supporting context.
   var readoutHtml = '';
-  if (hasData) {
-    readoutHtml = '<div class="rbi-gauge-readout">'
-      + '<span class="rbi-gauge-num" style="color:'+zoneColor+';">'+ Math.round(value) +'</span>'
-      + '<span class="rbi-gauge-sub">/100</span>'
-      + '<span class="rbi-gauge-sep">&middot;</span>'
-      + '<span class="rbi-gauge-zone" style="color:'+zoneColor+';">'+ esc(zone.toUpperCase()) +'</span>'
-    + '</div>';
-  }
 
   var themeChip = (hasData && theme)
     ? '<div class="rbi-theme-wrap">'
