@@ -4489,6 +4489,10 @@ window.MP_DOMAINS={NVDA:'nvidia.com',AMD:'amd.com',INTC:'intel.com',AVGO:'broadc
                 <button class="tf-btn" data-days="365">1Y</button>
                 <button class="tf-btn" data-days="0">All</button>
               </div>
+              <div class="chart-timeframes">
+                <button class="tf-btn" data-view="lines">Lines</button>
+                <button class="tf-btn active" data-view="candles" title="Daily OHLC candles">Candles</button>
+              </div>
             </div>
             <div class="chart-outer" id="chart-outer" style="height:400px;">
               <canvas id="price-canvas"></canvas>
@@ -6991,6 +6995,11 @@ async function loadChart() {
 
     renderChart();
     buildBearList();
+    if (CURRENT_VIEW === 'candles' && !OHLC_CACHE[TICKER]) {
+      fetchOHLC(TICKER).then(rows => {
+        if (rows && CURRENT_VIEW === 'candles') renderChart();
+      });
+    }
   } catch (err) {
     document.getElementById('chart-outer').innerHTML = `<div class="chart-no-data" style="color:var(--accent-breaking);">Chart: ${esc(err.message)}</div>`;
   }
@@ -7028,11 +7037,39 @@ function filterNarrs() {
 
 function isLight(){ return document.documentElement.getAttribute('data-theme')==='light'; }
 
+// OHLC cache for candle view (Polygon daily aggs via /api/price-history)
+const OHLC_CACHE = {};
+let CURRENT_VIEW = 'candles';
+async function fetchOHLC(ticker) {
+  if (!ticker) return null;
+  if (OHLC_CACHE[ticker]) return OHLC_CACHE[ticker];
+  try {
+    const res = await fetch('/api/price-history?ticker=' + encodeURIComponent(ticker) + '&days=730');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const j = await res.json();
+    const rows = (j.series || []).filter(r => r && r.snapshot_date && r.price_close != null);
+    OHLC_CACHE[ticker] = rows;
+    return rows;
+  } catch (e) { console.warn('[Ticker] OHLC fetch failed', e); return null; }
+}
+function filterOHLC() {
+  const rows = OHLC_CACHE[TICKER];
+  if (!rows || !rows.length) return null;
+  const days = getActiveDays();
+  if (!days) return rows;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  const cutStr = cutoff.toISOString().slice(0,10);
+  return rows.filter(s => s.snapshot_date >= cutStr);
+}
+
 function renderChart() {
-  const snaps = filterSnaps();
+  const useCandles = CURRENT_VIEW === 'candles';
+  const ohlc = useCandles ? filterOHLC() : null;
+  const snaps = (useCandles && ohlc && ohlc.length) ? ohlc : filterSnaps();
   const narrs = filterNarrs();
   if (!snaps.length) return;
-  drawChart(snaps, narrs);
+  drawChart(snaps, narrs, useCandles && ohlc && ohlc.length > 0);
 }
 
 function buildBearList() {
@@ -7055,7 +7092,7 @@ function buildBearList() {
   });
 }
 
-function drawChart(snaps, narrs) {
+function drawChart(snaps, narrs, drawCandles) {
   const outer  = document.getElementById('chart-outer');
   const canvas = document.getElementById('price-canvas');
   const tip    = document.getElementById('chart-tip');
@@ -7076,8 +7113,16 @@ function drawChart(snaps, narrs) {
   const prices = snaps.map(s => s.price_close).filter(p => p != null);
   if (!prices.length) return;
 
-  const minP = Math.min(...prices) * 0.975;
-  const maxP = Math.max(...prices) * 1.025;
+  let minP, maxP;
+  if (drawCandles) {
+    const lows  = snaps.map(s => s.price_low  != null ? s.price_low  : s.price_close).filter(p => p != null);
+    const highs = snaps.map(s => s.price_high != null ? s.price_high : s.price_close).filter(p => p != null);
+    minP = Math.min(...lows)  * 0.99;
+    maxP = Math.max(...highs) * 1.01;
+  } else {
+    minP = Math.min(...prices) * 0.975;
+    maxP = Math.max(...prices) * 1.025;
+  }
   const PAD  = { top:8, right:52, bottom:28, left:50 };
   const CW   = W - PAD.left - PAD.right;
   const CH   = H - PAD.top  - PAD.bottom;
@@ -7118,19 +7163,41 @@ function drawChart(snaps, narrs) {
     lastRenderedIdx = i;
   });
 
-  // Area fill under price
-  const grad = ctx.createLinearGradient(0, PAD.top, 0, H - PAD.bottom);
-  grad.addColorStop(0, 'rgba(26,110,255,0.12)');
-  grad.addColorStop(1, 'rgba(26,110,255,0)');
-  ctx.beginPath();
-  snaps.forEach((s,i) => { if (s.price_close==null) return; i===0 ? ctx.moveTo(xOf(i),yOf(s.price_close)) : ctx.lineTo(xOf(i),yOf(s.price_close)); });
-  ctx.lineTo(xOf(N-1), H-PAD.bottom); ctx.lineTo(xOf(0), H-PAD.bottom); ctx.closePath();
-  ctx.fillStyle = grad; ctx.fill();
+  if (drawCandles) {
+    // Real OHLC candlesticks from /api/price-history (Polygon daily aggs).
+    const stepPx = CW / Math.max(N-1, 1);
+    const bodyW  = Math.max(2, Math.min(10, stepPx * 0.6));
+    const upClr  = isLight() ? '#1D9E75' : '#00DE94';
+    const dnClr  = isLight() ? '#C8372A' : '#FF4D4D';
+    snaps.forEach((s, i) => {
+      if (s.price_close == null) return;
+      const o = s.price_open != null ? s.price_open : s.price_close;
+      const c = s.price_close;
+      const h = s.price_high != null ? s.price_high : Math.max(o, c);
+      const l = s.price_low  != null ? s.price_low  : Math.min(o, c);
+      const x = Math.round(xOf(i)) + 0.5;
+      const up = c >= o;
+      ctx.strokeStyle = up ? upClr : dnClr; ctx.fillStyle = up ? upClr : dnClr; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x, yOf(h)); ctx.lineTo(x, yOf(l)); ctx.stroke();
+      const yOpen = yOf(o), yClose = yOf(c);
+      const top = Math.min(yOpen, yClose), bot = Math.max(yOpen, yClose);
+      ctx.fillRect(x - bodyW/2, top, bodyW, Math.max(1, bot - top));
+    });
+  } else {
+    // Area fill under price
+    const grad = ctx.createLinearGradient(0, PAD.top, 0, H - PAD.bottom);
+    grad.addColorStop(0, 'rgba(26,110,255,0.12)');
+    grad.addColorStop(1, 'rgba(26,110,255,0)');
+    ctx.beginPath();
+    snaps.forEach((s,i) => { if (s.price_close==null) return; i===0 ? ctx.moveTo(xOf(i),yOf(s.price_close)) : ctx.lineTo(xOf(i),yOf(s.price_close)); });
+    ctx.lineTo(xOf(N-1), H-PAD.bottom); ctx.lineTo(xOf(0), H-PAD.bottom); ctx.closePath();
+    ctx.fillStyle = grad; ctx.fill();
 
-  // Price line
-  ctx.beginPath(); ctx.setLineDash([]);
-  snaps.forEach((s,i) => { if (s.price_close==null) return; i===0 ? ctx.moveTo(xOf(i),yOf(s.price_close)) : ctx.lineTo(xOf(i),yOf(s.price_close)); });
-  ctx.strokeStyle = isLight() ? '#3b82f6' : '#F0F4FF'; ctx.lineWidth = 1.5; ctx.stroke();
+    // Price line
+    ctx.beginPath(); ctx.setLineDash([]);
+    snaps.forEach((s,i) => { if (s.price_close==null) return; i===0 ? ctx.moveTo(xOf(i),yOf(s.price_close)) : ctx.lineTo(xOf(i),yOf(s.price_close)); });
+    ctx.strokeStyle = isLight() ? '#3b82f6' : '#F0F4FF'; ctx.lineWidth = 1.5; ctx.stroke();
+  }
 
   // Right axis labels (0-100)
   const lo = snaps[0]?.snapshot_date?.slice(0,10) || '';
@@ -7223,10 +7290,12 @@ function drawChart(snaps, narrs) {
     if (!d) return;
     const pos = xyOfDate(d);
     if (!pos) return;
-    const r = m.mass >= 0.5 ? 7 : m.mass >= 0.3 ? 5 : 3;
+    const activeDays = getActiveDays();
+    const dotScale = (activeDays > 0 && activeDays <= 14) ? 1.8 : (activeDays > 0 && activeDays <= 30) ? 1.4 : 1.1;
+    const r = Math.round((m.mass >= 0.5 ? 9 : m.mass >= 0.3 ? 7 : 5) * dotScale);
     const color = m.wks > 10 ? '#00DE94' : m.wks < -10 ? '#FF4D4D' : '#A0A8B8';
     ctx.save();
-    ctx.globalAlpha = 0.75;
+    ctx.globalAlpha = 0.9;
     ctx.beginPath();
     ctx.arc(pos.cx, pos.cy, r, 0, Math.PI*2);
     ctx.fillStyle = color; ctx.fill();
@@ -7299,12 +7368,32 @@ function drawChart(snaps, narrs) {
 }
 
 // Timeframe buttons
-document.querySelectorAll('.tf-btn').forEach(btn => {
+document.querySelectorAll('.tf-btn[data-days]').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tf-btn[data-days]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('story-popup').classList.remove('visible');
     renderChart();
+  });
+});
+
+// View toggle (Lines / Candles)
+document.querySelectorAll('.tf-btn[data-view]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const view = btn.dataset.view;
+    if (view === CURRENT_VIEW) return;
+    CURRENT_VIEW = view;
+    document.querySelectorAll('.tf-btn[data-view]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('story-popup').classList.remove('visible');
+    if (view === 'candles' && TICKER && !OHLC_CACHE[TICKER]) {
+      renderChart();
+      fetchOHLC(TICKER).then(rows => {
+        if (rows && CURRENT_VIEW === 'candles') renderChart();
+      });
+    } else {
+      renderChart();
+    }
   });
 });
 
