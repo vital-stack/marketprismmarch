@@ -3354,10 +3354,6 @@
     letter-spacing:.04em;text-transform:uppercase;
     padding:3px 10px;border-radius:4px;
   }
-  .tt-narr-meta{
-    font-family:'Inter',system-ui,sans-serif;font-size:11px;color:var(--mp-text-muted);
-    white-space:nowrap;
-  }
   .tt-narr-desc{
     font-family:'Inter',system-ui,sans-serif;
     font-size:14px;color:var(--mp-text-secondary);line-height:1.55;
@@ -3398,11 +3394,6 @@
     display:flex;flex-direction:column;align-items:stretch;gap:10px;
     padding-left:20px;
     border-left:1px solid var(--mp-border);
-  }
-  .tt-narr-col-right .tt-narr-meta-top{
-    text-align:right;
-    font-family:'Inter',system-ui,sans-serif;font-size:11px;
-    color:var(--mp-text-muted);
   }
   /* Small breathing room between the signals dropdown and the price-position
      bar when the bar is nested inside the narrative card's left column. */
@@ -3456,7 +3447,6 @@
       padding-left:0;border-left:none;
       border-top:1px solid var(--mp-border);padding-top:14px;
     }
-    .tt-narr-col-right .tt-narr-meta-top{text-align:left;}
   }
 
   /* ── Horizon tabs + grid card ── */
@@ -5944,19 +5934,6 @@ function renderTradeTicket(f, story, sc, fv, earn, priceRange, strategy) {
     ? '<span class="tt-narr-action" style="background:'+pal.chipBg+';color:'+pal.color+';">'+ esc(state.action) +'</span>'
     : '';
 
-  // Lifecycle meta — "Day X · ~Nd horizon" (mockup: "Day 11 · ~90d horizon").
-  // We don't store narrative-inception days; use scorecard half_life as a
-  // best-available proxy. half_life is days-until-decay, so Day-X is computed
-  // as max(1, round(horizon - half_life)) — a rough lifecycle position.
-  var lifecycleDay = 1;
-  if (sc && sc.half_life != null && isFinite(sc.half_life)) {
-    var hl = Math.max(0, Number(sc.half_life));
-    lifecycleDay = Math.max(1, Math.round(primaryTab.horizonDays - hl));
-    if (!isFinite(lifecycleDay) || lifecycleDay < 1) lifecycleDay = 1;
-  }
-  var narrMeta = '<span class="tt-narr-meta">Day ' + lifecycleDay
-    + ' &middot; ~' + primaryTab.horizonDays + 'd horizon</span>';
-
   // Signals-behind-label expandable rows.
   var signalRows = [];
   if (sc && sc.narrative_state) {
@@ -5995,7 +5972,6 @@ function renderTradeTicket(f, story, sc, fv, earn, priceRange, strategy) {
 
   // Narrative card: 70/30 split with the Reality-Belief gauge in the right
   // column. Price position bar nests inside the left column under signals.
-  var metaTopHtml = 'Day ' + lifecycleDay + ' &middot; ~' + primaryTab.horizonDays + 'd horizon';
   var narrHtml = ''
     + '<div class="tt-narr" style="border-left-color:'+narrBorder+';background:'+narrBg+';">'
       + '<div class="tt-narr-cols">'
@@ -6011,7 +5987,6 @@ function renderTradeTicket(f, story, sc, fv, earn, priceRange, strategy) {
           + pricePosHtml
         + '</div>'
         + '<div class="tt-narr-col-right">'
-          + '<div class="tt-narr-meta-top">'+ metaTopHtml +'</div>'
           + '<div id="rbi-gauge-mount"><div class="rbi-gauge-skeleton"></div></div>'
         + '</div>'
       + '</div>'
