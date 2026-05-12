@@ -6158,6 +6158,35 @@ function vLabelToStructural(vLabel, sc) {
   return { label: prettyLabel, action: entry.action, color: entry.color, desc: entry.desc };
 }
 
+// Renders an empty-state when the ticker isn't tracked by Market Prism.
+// Suppresses every downstream loader so the rest of the page doesn't render
+// skeletons against missing data.
+var _TICKER_NOT_FOUND = false;
+function renderTickerNotFound() {
+  _TICKER_NOT_FOUND = true;
+  var hero = document.getElementById('hero');
+  if (hero) {
+    hero.outerHTML =
+      '<div class="ticker-notfound" style="max-width:640px;margin:48px auto;padding:32px 28px;background:var(--mp-surface);border:1px solid rgba(255,255,255,0.08);border-radius:16px;text-align:center;position:relative;">'
+      + '<div style="position:absolute;top:0;left:0;right:0;height:2px;background:#FFB800;border-radius:16px 16px 0 0;opacity:0.85;"></div>'
+      + '<div style="font-family:\'Instrument Serif\',Georgia,serif;font-size:32px;font-weight:400;letter-spacing:-0.02em;color:var(--mp-text-primary);margin-bottom:12px;">' + esc(TICKER) + ' isn’t in our system yet</div>'
+      + '<div style="font-size:14px;line-height:1.6;color:var(--mp-text-secondary);margin-bottom:24px;">Market Prism tracks a curated universe of tickers with active narrative coverage. We don’t have analysis for <strong style="color:var(--mp-text-primary);">' + esc(TICKER) + '</strong> right now.</div>'
+      + '<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">'
+      + '<a href="/" style="font-size:13px;padding:10px 18px;border-radius:8px;background:var(--mp-cyan);color:#0B0F1A;text-decoration:none;font-weight:600;">Back to Daily Plays</a>'
+      + '<a href="/leaderboard" style="font-size:13px;padding:10px 18px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.14);color:var(--mp-text-primary);text-decoration:none;">Browse tracked tickers</a>'
+      + '</div></div>';
+  }
+  // Hide the rest of the page chrome — tab bar, all tab panels, verdict
+  // banner, sidebar — so we don't render skeletons against missing data.
+  var tabBar = document.querySelector('.tk-tab-bar');
+  if (tabBar) tabBar.style.display = 'none';
+  document.querySelectorAll('.tk-tab-panel').forEach(function(p){ p.style.display = 'none'; });
+  var verdict = document.getElementById('verdict-banner');
+  if (verdict) verdict.style.display = 'none';
+  var sidebar = document.querySelector('.tk-sidebar');
+  if (sidebar) sidebar.style.display = 'none';
+}
+
 // ── 1. Hero + Forensic ───────────────────────────────────────────────────────
 async function loadHero() {
   if (!TICKER) return null;
@@ -6256,7 +6285,7 @@ async function loadHero() {
     ]);
 
     if (!rows.length) {
-      document.getElementById('hero').innerHTML = `<div class="no-data">No data found for "${esc(TICKER)}".</div>`;
+      renderTickerNotFound();
       return null;
     }
 
@@ -10302,6 +10331,12 @@ async function refreshAll() {
     loadHero(),
     loadPulse()
   ]);
+  // Ticker isn't tracked — renderTickerNotFound() has already swapped the page
+  // to an empty-state. Skip every downstream loader so they don't render skeletons.
+  if (_TICKER_NOT_FOUND) {
+    document.title = TICKER + ' — not tracked | Market Prism';
+    return;
+  }
   _tickerHeroData = heroData;
   _tickerPulseData = pulse;
   const fairValue = heroData?.fair_value ?? pulse?.fair_value ?? null;
