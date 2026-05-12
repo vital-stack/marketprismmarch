@@ -7513,7 +7513,7 @@ async function loadNarratives() {
         ].join(','),
         ticker: `eq.${TICKER}`,
         order:  'snapshot_date.desc',
-        limit:  '30'
+        limit:  '200'
       }),
       fetchPriceSeries(TICKER, 365),
       sbFetch('v_narrative_scorecard_deduped', {
@@ -7655,21 +7655,27 @@ async function loadNarratives() {
     // merge above), which dedupes harder than a per-source cap would.
     const top = (fuelThemes.length ? fuelThemes : allThemes).slice(0, 5);
 
-    // Reorder by composite: latest article date → energy regime (explosive first) → citation count
+    // Rank by enduring narrative power across time, not by which theme had the
+    // most recent single article. Recency falls to last-resort tiebreaker.
     const regimeRank = { EXPLOSIVE: 5, HIGH: 4, MODERATE: 3, LOW: 2, DORMANT: 1 };
     top.sort((a, b) => {
-      // 1. Latest article date (newest first)
+      const pa = Number(a.propagation_pressure) || 0;
+      const pb = Number(b.propagation_pressure) || 0;
+      if (pa !== pb) return pb - pa;
+      const ea = Number(a.energy_remaining) || 0;
+      const eb = Number(b.energy_remaining) || 0;
+      if (ea !== eb) return eb - ea;
+      const ca = a.citation_count || 0;
+      const cb = b.citation_count || 0;
+      if (ca !== cb) return cb - ca;
+      const ra = regimeRank[String(a.narrative_energy_regime || '').toUpperCase()] || 0;
+      const rb = regimeRank[String(b.narrative_energy_regime || '').toUpperCase()] || 0;
+      if (ra !== rb) return rb - ra;
       const allDatesA = (a.allCitations || [a]).map(c => c.snapshot_date).filter(Boolean);
       const allDatesB = (b.allCitations || [b]).map(c => c.snapshot_date).filter(Boolean);
       const latestA = allDatesA.length ? allDatesA.sort().pop() : '';
       const latestB = allDatesB.length ? allDatesB.sort().pop() : '';
-      if (latestA !== latestB) return latestB.localeCompare(latestA);
-      // 2. Energy regime (explosive > high > moderate > low > dormant)
-      const ra = regimeRank[String(a.narrative_energy_regime || '').toUpperCase()] || 0;
-      const rb = regimeRank[String(b.narrative_energy_regime || '').toUpperCase()] || 0;
-      if (ra !== rb) return rb - ra;
-      // 3. Citation count (most cited first)
-      return (b.citation_count || 0) - (a.citation_count || 0);
+      return latestB.localeCompare(latestA);
     });
 
     // ── Fuel bar math ──
