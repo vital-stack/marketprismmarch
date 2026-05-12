@@ -3405,27 +3405,24 @@
     color:var(--mp-text-muted);
   }
   .rbi-gauge{
-    display:flex;flex-direction:column;align-items:center;gap:6px;
+    display:flex;flex-direction:column;align-items:center;gap:4px;
   }
-  .rbi-gauge-svg-wrap{position:relative;width:100%;max-width:240px;}
+  .rbi-gauge-svg-wrap{position:relative;width:100%;max-width:200px;}
   .rbi-gauge-svg{display:block;width:100%;height:auto;}
-  .rbi-gauge-center{
-    position:absolute;left:0;right:0;bottom:18px;
-    text-align:center;pointer-events:none;line-height:1;
+  .rbi-gauge-readout{
+    display:flex;align-items:baseline;gap:6px;line-height:1;
+    font-family:'Inter',system-ui,sans-serif;margin-top:-10px;
   }
-  .rbi-gauge-value{font-family:'Inter',system-ui,sans-serif;line-height:1;}
-  .rbi-gauge-num{font-size:28px;font-weight:600;letter-spacing:-0.02em;}
-  .rbi-gauge-sub{font-size:11px;color:var(--mp-text-muted);font-weight:400;margin-left:2px;}
-  .rbi-gauge-zone{
-    font-family:'Inter',system-ui,sans-serif;font-size:11px;font-weight:500;
-    letter-spacing:.08em;margin-top:4px;
-  }
+  .rbi-gauge-num{font-size:14px;font-weight:600;letter-spacing:-0.01em;}
+  .rbi-gauge-sub{font-size:10px;color:var(--mp-text-muted);}
+  .rbi-gauge-sep{font-size:11px;color:var(--mp-text-muted);opacity:0.6;}
+  .rbi-gauge-zone{font-size:10px;font-weight:600;letter-spacing:.08em;}
   .rbi-gauge-empty{
     font-family:'Inter',system-ui,sans-serif;font-size:11px;
     color:var(--mp-text-muted);text-align:center;padding:6px 4px 0;
   }
   .rbi-gauge-skeleton{
-    width:100%;max-width:240px;aspect-ratio: 200 / 135;
+    width:100%;max-width:200px;aspect-ratio: 200 / 135;
     background:linear-gradient(90deg,rgba(255,255,255,0.03),rgba(255,255,255,0.07),rgba(255,255,255,0.03));
     background-size:200% 100%;border-radius:8px;
     animation:rbi-shimmer 1.4s ease-in-out infinite;
@@ -3435,17 +3432,18 @@
     100%{background-position:-200% 0;}
   }
   .rbi-theme-wrap{
-    display:flex;flex-direction:column;gap:4px;align-items:center;margin-top:4px;
+    display:inline-flex;flex-wrap:wrap;gap:6px;align-items:center;
+    margin-top:6px;justify-content:center;
   }
   .rbi-theme-label{
     font-family:'Inter',system-ui,sans-serif;font-size:10px;
-    color:var(--mp-text-muted);letter-spacing:.05em;text-transform:uppercase;
+    color:var(--mp-text-muted);letter-spacing:.04em;
   }
   .rbi-theme-chip{
     font-family:'Inter',system-ui,sans-serif;font-size:11px;
     background:rgba(255,255,255,0.05);border:1px solid var(--mp-border);
     color:var(--mp-text-secondary);
-    padding:4px 10px;border-radius:999px;
+    padding:3px 9px;border-radius:999px;
   }
   @media (max-width: 768px){
     .tt-narr-cols{flex-direction:column;gap:16px;}
@@ -5828,11 +5826,16 @@ function renderRealityBeliefGaugeBody(rbi) {
     ? arc(180,135,'#10b981') + arc(135,90,'#84cc16') + arc(90,45,'#f59e0b') + arc(45,0,'#ef4444')
     : arc(180, 0, 'rgba(255,255,255,0.08)');
 
+  // Needle starts at -90° (left/0) and animates to target via CSS transition
+  // applied after mount (see renderTradeTicket caller for the rAF swap).
   var needleHtml = '';
+  var angleDeg = 0;
   if (hasData) {
-    var angleDeg = -90 + (value/100) * 180;
+    angleDeg = -90 + (value/100) * 180;
     var tipY = cy - r + 6;
-    needleHtml = '<g transform="rotate('+angleDeg.toFixed(2)+' '+cx+' '+cy+')">'
+    needleHtml = '<g class="rbi-needle" data-angle="'+angleDeg.toFixed(2)+'" '
+      + 'style="transform:rotate(-90deg);transform-origin:'+cx+'px '+cy+'px;'
+      + 'transition:transform 1.1s cubic-bezier(0.34,1.05,0.64,1);">'
       + '<path d="M '+cx+' '+tipY+' L '+(cx-5)+' '+(cy-8)+' L '+(cx+5)+' '+(cy-8)+' Z" fill="'+zoneColor+'"/>'
       + '<circle cx="'+cx+'" cy="'+cy+'" r="6" fill="#0C1018" stroke="'+zoneColor+'" stroke-width="2"/>'
       + '</g>';
@@ -5849,21 +5852,21 @@ function renderRealityBeliefGaugeBody(rbi) {
     + arcs + needleHtml + endLabels
     + '</svg>';
 
-  var centerHtml = '';
+  // Value + zone live BELOW the arc (small, single line) — not inside it.
+  var readoutHtml = '';
   if (hasData) {
-    centerHtml = '<div class="rbi-gauge-center">'
-      + '<div class="rbi-gauge-value" style="color:'+zoneColor+';">'
-        + '<span class="rbi-gauge-num">'+ Math.round(value) +'</span>'
-        + '<span class="rbi-gauge-sub">/100</span>'
-      + '</div>'
-      + '<div class="rbi-gauge-zone" style="color:'+zoneColor+';">'+ esc(zone.toUpperCase()) +'</div>'
+    readoutHtml = '<div class="rbi-gauge-readout">'
+      + '<span class="rbi-gauge-num" style="color:'+zoneColor+';">'+ Math.round(value) +'</span>'
+      + '<span class="rbi-gauge-sub">/100</span>'
+      + '<span class="rbi-gauge-sep">&middot;</span>'
+      + '<span class="rbi-gauge-zone" style="color:'+zoneColor+';">'+ esc(zone.toUpperCase()) +'</span>'
     + '</div>';
   }
 
   var themeChip = (hasData && theme)
     ? '<div class="rbi-theme-wrap">'
-        + '<div class="rbi-theme-label">Driving theme</div>'
-        + '<div class="rbi-theme-chip">'+ esc(theme) +'</div>'
+        + '<span class="rbi-theme-label">Driving theme:</span>'
+        + '<span class="rbi-theme-chip">'+ esc(theme) +'</span>'
       + '</div>'
     : '';
 
@@ -5872,7 +5875,8 @@ function renderRealityBeliefGaugeBody(rbi) {
     : '';
 
   return '<div class="rbi-gauge">'
-    + '<div class="rbi-gauge-svg-wrap">' + svg + centerHtml + '</div>'
+    + '<div class="rbi-gauge-svg-wrap">' + svg + '</div>'
+    + readoutHtml
     + emptyCaption
     + themeChip
     + '</div>';
@@ -5994,8 +5998,9 @@ function renderTradeTicket(f, story, sc, fv, earn, priceRange, strategy) {
 
   var narrHtml;
   if (TICKER === 'UBER') {
-    // RBI gauge test layout: 70/30 split with gauge in right column.
-    // Day-N · ~Nd horizon meta moves to the top-right of the gauge column.
+    // RBI gauge test layout: 70/30 split. Gauge + meta go right; price
+    // position bar gets pulled into the left column under the signals
+    // dropdown to fill what would otherwise be dead space.
     var metaTopHtml = 'Day ' + lifecycleDay + ' &middot; ~' + primaryTab.horizonDays + 'd horizon';
     narrHtml = ''
       + '<div class="tt-narr" style="border-left-color:'+narrBorder+';background:'+narrBg+';">'
@@ -6009,6 +6014,7 @@ function renderTradeTicket(f, story, sc, fv, earn, priceRange, strategy) {
             + '</div>'
             + '<div class="tt-narr-desc" id="tt-headline" data-pending="1" data-fallback="'+ esc(headline || '') +'" style="display:none;"></div>'
             + signalsHtml
+            + pricePosHtml
           + '</div>'
           + '<div class="tt-narr-col-right">'
             + '<div class="tt-narr-meta-top">'+ metaTopHtml +'</div>'
@@ -6056,6 +6062,8 @@ function renderTradeTicket(f, story, sc, fv, earn, priceRange, strategy) {
   // Order: narrative block first, then price-position bar, then horizon grid.
   // Sector + P/E chip lives in the hero ticker row now (loadSectorPeBubble
   // populates #hero-pe-bubble there).
+  // UBER test: pricePosHtml is already nested inside narrHtml's left column.
+  if (TICKER === 'UBER') return narrHtml + horizonsCard;
   return narrHtml + pricePosHtml + horizonsCard;
 }
 
@@ -6597,6 +6605,17 @@ async function loadHero() {
           var mount = document.getElementById('rbi-gauge-mount');
           if (!mount) return;
           mount.innerHTML = renderRealityBeliefGaugeBody(rows && rows[0]);
+          // Trigger needle sweep: initial transform is -90deg, swap to target
+          // angle after two animation frames so the CSS transition runs.
+          requestAnimationFrame(function(){
+            requestAnimationFrame(function(){
+              var needle = mount.querySelector('.rbi-needle');
+              if (needle) {
+                var a = needle.getAttribute('data-angle');
+                if (a) needle.style.transform = 'rotate(' + a + 'deg)';
+              }
+            });
+          });
         }).catch(function(){
           var mount = document.getElementById('rbi-gauge-mount');
           if (mount) mount.innerHTML = renderRealityBeliefGaugeBody(null);
