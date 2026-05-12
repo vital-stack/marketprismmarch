@@ -8949,6 +8949,26 @@ function valSignalLabel(b){if(!b)return'Other';return VAL_SIGNAL_LABELS[b]||b.re
 // Cached overall stats from track_record_stats (populated by daily cron).
 // If available, render instantly; otherwise fall back to on-the-fly compute.
 var _VAL_CACHED_STATS=null;
+// SPY calendar-annualized return over the strategy's track window. Used as the
+// baseline for "Alpha vs SPY" so the stat reads as "strategy beat buy-and-hold
+// SPY by X pp/yr" — the framing readers actually want. Loaded once on entry.
+var _VAL_SPY_ANNUALIZED=null;
+async function _valFetchSpyAnnualized(startDate,endDate){
+  if(!SUPABASE_URL||!SUPABASE_ANON||!startDate||!endDate)return null;
+  try{
+    var firstP=restFetch('ticker_snapshots',{select:'snapshot_date,price_close',ticker:'eq.SPY',snapshot_date:'gte.'+startDate,order:'snapshot_date.asc',limit:'1'});
+    var lastP =restFetch('ticker_snapshots',{select:'snapshot_date,price_close',ticker:'eq.SPY',snapshot_date:'lte.'+endDate,  order:'snapshot_date.desc',limit:'1'});
+    var first=await firstP, last=await lastP;
+    if(!first||!first.length||!last||!last.length)return null;
+    var p0=Number(first[0].price_close), p1=Number(last[0].price_close);
+    if(!(p0>0)||!(p1>0))return null;
+    var d0=new Date(first[0].snapshot_date+'T00:00:00');
+    var d1=new Date(last[0].snapshot_date +'T00:00:00');
+    var years=Math.max(1/365,(d1-d0)/(1000*60*60*24*365.25));
+    var total=(p1/p0-1);
+    return (total/years)*100;
+  }catch(e){return null;}
+}
 async function _valFetchCachedStats(){
   if(!SUPABASE_URL||!SUPABASE_ANON)return null;
   try{
@@ -8972,11 +8992,9 @@ function _valRenderStatsFromCache(c){
   var avgPnl=Number(c.avg_return_pct)||0;
   var totalReturnPct=Number(c.total_return_pct)/20;
   var annualized=Number(c.annualized_return_pct)||0;
-  var avgAlpha=c.alpha_vs_spy_pct!=null?Number(c.alpha_vs_spy_pct):null;
-  // Annualize alpha with the same turnover method used for annualized_return_pct
-  // (per-trade × 365 / avg_hold_days), so the two stats are apples-to-apples.
-  var avgHold=Number(c.avg_hold_days)||0;
-  var annualizedAlpha=(avgAlpha!=null&&avgHold>0)?avgAlpha*(365/avgHold):null;
+  // Alpha vs SPY = strategy annualized − SPY calendar-annualized over the same
+  // window. _VAL_SPY_ANNUALIZED is fetched in loadValidation before this runs.
+  var annualizedAlpha=(_VAL_SPY_ANNUALIZED!=null)?(annualized-_VAL_SPY_ANNUALIZED):null;
   var first=c.period_start;
   // Track period reflects the live tracking window through today. Cron-cached
   // period_end lags (last closed-trade exit_date) and made the card read
@@ -8990,7 +9008,7 @@ function _valRenderStatsFromCache(c){
     +'<div class="val-stat"><div class="val-stat-label">Trades</div><div class="val-stat-value">'+n.toLocaleString()+'</div><div class="val-stat-sub">closed positions</div></div>'
     +'<div class="val-stat"><div class="val-stat-label">Win rate</div><div class="val-stat-value '+(winRate>=55?'pos':'')+'">'+winRate.toFixed(1)+'%</div><div class="val-stat-sub">'+wins.toLocaleString()+' winners / '+losers.toLocaleString()+' losers</div></div>'
     +'<div class="val-stat"><div class="val-stat-label">Avg return</div><div class="val-stat-value '+(avgPnl>0?'pos':avgPnl<0?'neg':'')+'">'+valFmtPct(avgPnl,2)+'</div><div class="val-stat-sub">per trade</div></div>'
-    +'<div class="val-stat"><div class="val-stat-label">Alpha vs SPY</div><div class="val-stat-value '+(annualizedAlpha!=null&&annualizedAlpha>0?'pos':annualizedAlpha<0?'neg':'')+'">'+(annualizedAlpha!=null?valFmtPct(annualizedAlpha,1):'\u2014')+'</div><div class="val-stat-sub">annualized excess vs SPY</div></div>'
+    +'<div class="val-stat"><div class="val-stat-label">Alpha vs SPY</div><div class="val-stat-value '+(annualizedAlpha!=null&&annualizedAlpha>0?'pos':annualizedAlpha<0?'neg':'')+'">'+(annualizedAlpha!=null?valFmtPct(annualizedAlpha,1):'\u2014')+'</div><div class="val-stat-sub">vs SPY buy &amp; hold</div></div>'
     +'<div class="val-stat"><div class="val-stat-label">Track period</div><div class="val-stat-value" style="font-size:16px;">'+valFmtDate(first)+' \u2192 '+valFmtDate(last)+'</div><div class="val-stat-sub">'+months+' months &middot; every regime</div></div>';
 }
 
@@ -9017,12 +9035,8 @@ function valRenderStats(trades){
   var winRate=n?(wins/n*100):0;
   var sumPnl=closed.reduce(function(a,t){return a+(t.pnl_pct!=null?Number(t.pnl_pct):0);},0);
   var avgPnl=n?(sumPnl/n):0;
-  var spyArr=closed.filter(function(t){return t.excess_return_pct!=null;}).map(function(t){return Number(t.excess_return_pct);});
-  var avgAlpha=spyArr.length?spyArr.reduce(function(a,b){return a+b;},0)/spyArr.length:null;
-  // Annualize alpha with same turnover method as annualized return (per-trade × 365/hold).
-  var holdArr=closed.filter(function(t){return t.days_held!=null;}).map(function(t){return Number(t.days_held);});
-  var avgHold=holdArr.length?holdArr.reduce(function(a,b){return a+b;},0)/holdArr.length:0;
-  var annualizedAlpha=(avgAlpha!=null&&avgHold>0)?avgAlpha*(365/avgHold):null;
+  // Alpha vs SPY = strategy annualized − SPY calendar-annualized over the same
+  // window. annualized var is computed below; fill in alpha after it's known.
   var dates=closed.map(function(t){return t.entry_date;}).filter(Boolean).sort();
   var first=dates[0];
   // Track period end = today (live, continuously-tracked sim) rather than the
@@ -9041,6 +9055,7 @@ function valRenderStats(trades){
   var PORTFOLIO_SLOTS=20;
   var totalReturnPct=sumPnl/PORTFOLIO_SLOTS;
   var annualized=years>0?(totalReturnPct/years):0;
+  var annualizedAlpha=(_VAL_SPY_ANNUALIZED!=null)?(annualized-_VAL_SPY_ANNUALIZED):null;
   var el=document.getElementById('val-stats');
   if(!el)return;
   el.innerHTML=''
@@ -9048,7 +9063,7 @@ function valRenderStats(trades){
     +'<div class="val-stat"><div class="val-stat-label">Trades</div><div class="val-stat-value">'+n.toLocaleString()+'</div><div class="val-stat-sub">closed positions</div></div>'
     +'<div class="val-stat"><div class="val-stat-label">Win rate</div><div class="val-stat-value '+(winRate>=55?'pos':'')+'">'+winRate.toFixed(1)+'%</div><div class="val-stat-sub">'+wins.toLocaleString()+' winners / '+(n-wins).toLocaleString()+' losers</div></div>'
     +'<div class="val-stat"><div class="val-stat-label">Avg return</div><div class="val-stat-value '+(avgPnl>0?'pos':avgPnl<0?'neg':'')+'">'+valFmtPct(avgPnl,2)+'</div><div class="val-stat-sub">per trade</div></div>'
-    +'<div class="val-stat"><div class="val-stat-label">Alpha vs SPY</div><div class="val-stat-value '+(annualizedAlpha!=null&&annualizedAlpha>0?'pos':annualizedAlpha<0?'neg':'')+'">'+(annualizedAlpha!=null?valFmtPct(annualizedAlpha,1):'\u2014')+'</div><div class="val-stat-sub">annualized excess vs SPY</div></div>'
+    +'<div class="val-stat"><div class="val-stat-label">Alpha vs SPY</div><div class="val-stat-value '+(annualizedAlpha!=null&&annualizedAlpha>0?'pos':annualizedAlpha<0?'neg':'')+'">'+(annualizedAlpha!=null?valFmtPct(annualizedAlpha,1):'\u2014')+'</div><div class="val-stat-sub">vs SPY buy &amp; hold</div></div>'
     +'<div class="val-stat"><div class="val-stat-label">Track period</div><div class="val-stat-value" style="font-size:16px;">'+valFmtDate(first)+' \u2192 '+valFmtDate(last)+'</div><div class="val-stat-sub">'+months+' months &middot; every regime</div></div>';
 }
 function valAggregateBySignal(trades){
@@ -9283,6 +9298,11 @@ async function loadValidation(force){
     // Pull pre-computed overall stats (cron-refreshed daily). If available,
     // valRenderStats will prefer these over client-side aggregation.
     _VAL_CACHED_STATS=await _valFetchCachedStats();
+    // Compute SPY's calendar-annualized return over the strategy's track window
+    // so "Alpha vs SPY" = strategy_annualized − spy_annualized (vs buy & hold).
+    var spyStart=(_VAL_CACHED_STATS&&_VAL_CACHED_STATS.period_start)||(rows[0]&&rows[0].entry_date)||'2025-01-31';
+    var spyEnd=valTodayET();
+    _VAL_SPY_ANNUALIZED=await _valFetchSpyAnnualized(spyStart,spyEnd);
     valRenderStats(rows);
     // Live paper-portfolio summaries (Daily Plays sim + Conviction sim).
     // Fire-and-forget — failures render an inline "Could not load" message in
