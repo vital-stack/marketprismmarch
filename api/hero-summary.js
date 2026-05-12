@@ -9,10 +9,11 @@
 // percentages are now allowed (and expected) in output — the second sentence
 // is supposed to quantify the narrative/fundamentals disconnect.
 //
-// Cached at the edge for 10 min. Ticker state shifts intraday as new articles
-// land, so a longer cache lags the displayed narrative behind reality. 10 min
-// bounds cost to a few thousand LLM calls/day at typical traffic since the
-// cost scales with users landing on ticker pages, not the full catalog.
+// Cached at the edge: s-maxage=1800 (30 min fresh) + stale-while-revalidate=86400
+// (serve stale up to a day while revalidating in background). Ticker state shifts
+// intraday as new articles land, but the 30-min fresh window keeps the displayed
+// narrative close to reality while collapsing per-visit LLM cost — the second
+// visitor in any 30-min window gets the cached summary instantly.
 
 const SYSTEM_PROMPT = `You are writing a 2-3 sentence editorial summary for a stock ticker page. The reader is a retail trader who wants to understand what's happening to this stock right now and whether they should care.
 
@@ -277,7 +278,7 @@ module.exports = async (req, res) => {
     // Defensive: collapse any stray newlines into a single sentence.
     text = text.replace(/\s+/g, ' ').trim();
 
-    res.setHeader('Cache-Control', 's-maxage=180, stale-while-revalidate=3600');
+    res.setHeader('Cache-Control', 's-maxage=1800, stale-while-revalidate=86400');
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     return res.status(200).json({
       ticker: ticker,
