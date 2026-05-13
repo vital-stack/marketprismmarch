@@ -5867,10 +5867,14 @@ function renderRealityBeliefGaugeBody(rbi) {
 function renderTradeTicket(f, story, sc, fv, earn, priceRange, strategy) {
   var color = ttColor(f.color);
 
-  // Headline gets overwritten by /api/hero-summary once that lands (#tt-headline).
-  var headline = (f.one_line_headline && f.one_line_headline.trim())
-    ? f.one_line_headline.trim()
-    : (story && (story.story_claim || story.forensic_rebuttal)) || '';
+  // Headline reads `v_dash_daily_story.headline_explanation` directly — that
+  // column is the pre-computed per-ticker editorial line, refreshed upstream.
+  // Falls back to forecast/scorecard fields when the column is null.
+  var headline = (story && story.headline_explanation && story.headline_explanation.trim())
+    ? story.headline_explanation.trim()
+    : (f.one_line_headline && f.one_line_headline.trim())
+      ? f.one_line_headline.trim()
+      : (story && (story.story_claim || story.forensic_rebuttal)) || '';
 
   var fresh = ttRelativeTime(f.heavy_refreshed_at);
 
@@ -5977,7 +5981,7 @@ function renderTradeTicket(f, story, sc, fv, earn, priceRange, strategy) {
               + actionHtml
             + '</div>'
           + '</div>'
-          + '<div class="tt-narr-desc" id="tt-headline" data-pending="1" data-fallback="'+ esc(headline || '') +'" style="display:none;"></div>'
+          + '<div class="tt-narr-desc" id="tt-headline">'+ esc(headline || '') +'</div>'
           + signalsHtml
           + pricePosHtml
         + '</div>'
@@ -6193,6 +6197,7 @@ async function loadHero() {
   try {
     const cols = [
       'ticker','price','price_change_pct','narrative_state','story_claim',
+      'headline_explanation',
       'forensic_rebuttal','prism_verdict','institutional_positioning','fair_value',
       // Financials from SEC + Benzinga
       'sec_revenue','sec_eps','sec_gross_margin','sec_net_margin',
@@ -6613,39 +6618,9 @@ async function loadHero() {
         var posWrap = verdictBanner.querySelector('.tt-pricepos');
         if (posWrap) posWrap.style.visibility = 'visible';
       }).catch(function(){ /* leave placeholder */ });
-      // Badges (Earnings · High Hype Gap · Coordinated Narrative · etc.) stay
-      // where they're rendered — in .hero-ticker-row next to the ticker symbol.
-      //
-      // Headline = `narrative_scorecard.synopsis` (via ticker_forecast.one_line_headline)
-      // is a daily snapshot that mixes financial recap (P/E, fair-value premium) into
-      // the trade ticket. The Haiku-synthesized /api/hero-summary describes the
-      // narrative + how it's affecting price — and bans P/E / valuation figures by
-      // system prompt. We use it to overwrite the headline once the request lands.
-      // Falls back to whatever's already in the headline on error.
-      (function(){
-        var hl = document.getElementById('tt-headline');
-        if (!hl || !r.ticker) return;
-        var fallback = hl.getAttribute('data-fallback') || '';
-        var revealFallback = function(){
-          if (fallback) {
-            hl.textContent = fallback;
-            hl.style.display = '';
-          }
-          hl.removeAttribute('data-pending');
-        };
-        fetch('/api/hero-summary?ticker=' + encodeURIComponent(r.ticker) + '&v=2')
-          .then(function(res){ return res.ok ? res.json() : null; })
-          .then(function(j){
-            if (j && j.summary) {
-              hl.textContent = j.summary;
-              hl.style.display = '';
-              hl.removeAttribute('data-pending');
-            } else {
-              revealFallback();
-            }
-          })
-          .catch(revealFallback);
-      })();
+      // Headline now reads `v_dash_daily_story.headline_explanation` directly
+      // (see renderTradeTicket). No per-visit LLM fetch — the column is
+      // pre-computed upstream and refreshed on the daily-story pipeline.
     } else if (verdictBanner) {
       // No forecast row yet for this ticker — keep the banner hidden.
       verdictBanner.style.display = 'none';
