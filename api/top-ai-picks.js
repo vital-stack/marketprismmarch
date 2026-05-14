@@ -6,6 +6,8 @@
 // In-memory CACHE Map acts as a hot layer to skip the Supabase round-trip on
 // subsequent requests within the same function instance.
 
+const { isHidden: isHiddenTicker } = require('./_hidden-tickers');
+
 const CACHE = new Map(); // key = snapshot_date, value = {picks, generated_at, model}
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h safety cap
 
@@ -160,7 +162,8 @@ module.exports = async (req, res) => {
   // 2. Supabase persistent cache (survives cold starts)
   var sbRow = await sbRead(snapshotDate);
   if (sbRow && sbRow.picks) {
-    var sbPicks = Array.isArray(sbRow.picks) ? sbRow.picks : [];
+    var sbPicks = (Array.isArray(sbRow.picks) ? sbRow.picks : [])
+      .filter(function(p){ return p && !isHiddenTicker(p.ticker); });
     CACHE.set(snapshotDate, { picks: sbPicks, generated_at: Date.now(), model: sbRow.model });
     return res.status(200).json({ picks: sbPicks, snapshot_date: snapshotDate, model: sbRow.model, cached: true });
   }
@@ -173,6 +176,7 @@ module.exports = async (req, res) => {
 
   var candidates = rows.filter(function(r) {
     if (!r || !r.ticker) return false;
+    if (isHiddenTicker(r.ticker)) return false;
     return (r.walsh_regime === 'CLEAR_PATH')
       || (r.walsh_regime === 'PERSISTENT' && r.nrs > 40)
       || (r.narrative_energy_absolute > 500)
@@ -256,7 +260,7 @@ module.exports = async (req, res) => {
       return res.status(502).json({ error: 'AI returned unparseable response' });
     }
 
-    var clean = picks.filter(function(p){ return p && p.ticker; }).slice(0, 10).map(function(p){
+    var clean = picks.filter(function(p){ return p && p.ticker && !isHiddenTicker(p.ticker); }).slice(0, 10).map(function(p){
       return {
         ticker: String(p.ticker).toUpperCase().slice(0, 8),
         action: ['Long','Short','Watch'].indexOf(p.action) >= 0 ? p.action : 'Watch',

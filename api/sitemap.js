@@ -1,3 +1,5 @@
+const { isHidden: isHiddenTicker } = require('./_hidden-tickers');
+
 module.exports = async (req, res) => {
   try {
     const supabaseUrl  = process.env.SUPABASE_URL  || '';
@@ -40,7 +42,7 @@ module.exports = async (req, res) => {
         // Deduplicate to unique tickers
         const seen = new Set();
         for (const r of rows) {
-          if (r.ticker && !seen.has(r.ticker)) {
+          if (r.ticker && !seen.has(r.ticker) && !isHiddenTicker(r.ticker)) {
             seen.add(r.ticker);
             tickers.push({ ticker: r.ticker, date: r.snapshot_date });
           }
