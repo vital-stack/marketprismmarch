@@ -1,5 +1,6 @@
 const resolveTemplate = require('./_resolve-template');
 const requireAuth = require('./_require-auth');
+const { isHidden: isHiddenTicker } = require('./_hidden-tickers');
 
 module.exports = async (req, res) => {
   try {
@@ -40,6 +41,16 @@ module.exports = async (req, res) => {
 
     // Sanitise — only allow alphanumeric + dot + hyphen
     const safeTicker = ticker.replace(/[^A-Za-z0-9.\-]/g, '').toUpperCase();
+
+    // Tickers hidden from the frontend (e.g. fair-value issues) — redirect
+    // before auth/render so they never leak into bookmarks or referrers.
+    if (isHiddenTicker(safeTicker)) {
+      res.setHeader('Cache-Control', 'private, no-store');
+      res.statusCode = 302;
+      res.setHeader('Location', '/dashboard');
+      res.end();
+      return;
+    }
 
     // Hard gate — bail before the expensive Supabase fetches below.
     const nextPath = safeTicker ? `/ticker/${safeTicker}` : '/dashboard';
