@@ -6752,8 +6752,23 @@ async function loadSectorIntelligence(heroRow) {
 async function loadSectorPeBubble(heroRow) {
   const el = document.getElementById('hero-pe-bubble');
   if (!el || !heroRow) return;
-  const tickerPe = heroRow.pe_ratio;
-  const sector   = heroRow.sector_name;
+  let tickerPe = heroRow.pe_ratio;
+  const sector  = heroRow.sector_name;
+  // Upstream pipeline intermittently leaves pe_ratio null on the latest row
+  // (whole-table outages observed 2026-05-06..08 and 2026-05-14..15). Walk
+  // back up to 14 days to find the last good value so the chip stays visible.
+  if (tickerPe == null && TICKER) {
+    try {
+      const back = await sbFetch('v_dash_daily_story', {
+        select: 'pe_ratio',
+        ticker: 'eq.' + TICKER,
+        pe_ratio: 'not.is.null',
+        order: 'snapshot_date.desc',
+        limit: '1'
+      });
+      if (back && back.length && back[0].pe_ratio != null) tickerPe = back[0].pe_ratio;
+    } catch (_) { /* fall through to early-return below */ }
+  }
   if (tickerPe == null) return;
   const tPe = Number(tickerPe);
   if (!isFinite(tPe) || tPe <= 0) return;
