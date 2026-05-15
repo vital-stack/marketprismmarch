@@ -6785,6 +6785,53 @@ async function loadSectorPeBubble(heroRow) {
 
   if (!sector) { renderSolo(); return; }
 
+  // Live-compute fallback: when sector_pe_benchmarks misses (it was a one-shot
+  // 2026-04-01 snapshot, never refreshed, and is missing ~22 newer sectors
+  // like AI Infrastructure, Cloud Computing, EV, Biotech, Fintech, etc.),
+  // derive the sector median directly from peer tickers in v_dash_daily_story.
+  const computeLiveSectorPe = async () => {
+    const since = new Date();
+    since.setUTCDate(since.getUTCDate() - 14);
+    const sinceDate = since.toISOString().slice(0, 10);
+    const peerRows = await sbFetch('v_dash_daily_story', {
+      select: 'ticker,snapshot_date,pe_ratio',
+      sector_name: 'eq.' + sector,
+      pe_ratio: 'not.is.null',
+      snapshot_date: 'gte.' + sinceDate,
+      order: 'snapshot_date.desc',
+      limit: '500'
+    }).catch(() => []);
+    if (!peerRows || !peerRows.length) return null;
+    // Rows arrive snapshot_date.desc, so first hit per ticker is the latest.
+    const latestPerTicker = new Map();
+    for (const r of peerRows) {
+      if (r.ticker === TICKER) continue;
+      if (!latestPerTicker.has(r.ticker)) latestPerTicker.set(r.ticker, Number(r.pe_ratio));
+    }
+    const vals = Array.from(latestPerTicker.values())
+      .filter(v => isFinite(v) && v > 0)
+      .sort((a, b) => a - b);
+    if (vals.length < 2) return null;
+    const mid = Math.floor(vals.length / 2);
+    const median = vals.length % 2 === 0 ? (vals[mid - 1] + vals[mid]) / 2 : vals[mid];
+    return { median, n: vals.length };
+  };
+
+  const renderVs = (sectorPe, title) => {
+    const deltaPct = ((tPe - sectorPe) / sectorPe) * 100;
+    const tone = deltaPct > 5 ? 'bear' : deltaPct < -5 ? 'bull' : 'neutral';
+    const arrow = deltaPct > 0 ? '↑' : deltaPct < 0 ? '↓' : '→';
+    const sign  = deltaPct > 0 ? '+' : '';
+    el.innerHTML = `
+      <span class="pe-bubble ${tone}" title="${title}">
+        <span class="pe-bubble-lbl">P/E</span>
+        <span class="pe-bubble-val">${tPe.toFixed(1)}x</span>
+        <span class="pe-bubble-vs">vs Sector</span>
+        <span class="pe-bubble-sec">${sectorPe.toFixed(1)}x</span>
+        <span class="pe-bubble-delta ${tone}">${arrow} ${sign}${deltaPct.toFixed(0)}%</span>
+      </span>`;
+  };
+
   try {
     const rows = await sbFetch('sector_pe_benchmarks', {
       select: 'median_pe,avg_pe,ticker_count_pe',
@@ -6797,21 +6844,19 @@ async function loadSectorPeBubble(heroRow) {
       const w = row.ticker_count_pe != null ? Number(row.ticker_count_pe) : 0;
       if (m != null && isFinite(m) && w > 0) { num += m * w; den += w; }
     }
-    if (den === 0) { renderSolo(); return; }
-    const sectorPe = num / den;
-    if (!isFinite(sectorPe) || sectorPe <= 0) { renderSolo(); return; }
-    const deltaPct = ((tPe - sectorPe) / sectorPe) * 100;
-    const tone = deltaPct > 5 ? 'bear' : deltaPct < -5 ? 'bull' : 'neutral';
-    const arrow = deltaPct > 0 ? '↑' : deltaPct < 0 ? '↓' : '→';
-    const sign  = deltaPct > 0 ? '+' : '';
-    el.innerHTML = `
-      <span class="pe-bubble ${tone}" title="P/E vs sector median (weighted across growth tiers)">
-        <span class="pe-bubble-lbl">P/E</span>
-        <span class="pe-bubble-val">${tPe.toFixed(1)}x</span>
-        <span class="pe-bubble-vs">vs Sector</span>
-        <span class="pe-bubble-sec">${sectorPe.toFixed(1)}x</span>
-        <span class="pe-bubble-delta ${tone}">${arrow} ${sign}${deltaPct.toFixed(0)}%</span>
-      </span>`;
+    if (den > 0) {
+      const sectorPe = num / den;
+      if (isFinite(sectorPe) && sectorPe > 0) {
+        renderVs(sectorPe, 'P/E vs sector median (weighted across growth tiers)');
+        return;
+      }
+    }
+    const live = await computeLiveSectorPe();
+    if (live) {
+      renderVs(live.median, `P/E vs sector median (live across ${live.n} peer tickers)`);
+      return;
+    }
+    renderSolo();
   } catch (e) {
     renderSolo();
   }
